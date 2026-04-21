@@ -248,17 +248,17 @@ class AnalyticsController {
             ${JSON.stringify(stats.radar_data, null, 2)}
             
             TAREA:
-            Genera un diagnóstico preciso y directo de máximo 2 párrafos indicando en qué áreas es fuerte, y en cuáles DEBE reforzar su estudio para no jalar el examen. Usa un tono alentador pero estricto y profesional.
+            Genera un diagnóstico clínico y estadístico extremadamente detallado, analítico y profesional. Evalúa no solo el conocimiento, sino posibles deficiencias de juicio clínico basadas en su precisión. Usa un tono de mentor experimentado: alentador, estrictamente analítico, pero accionable. No hagas introducciones genéricas. Debes mencionar porcentajes reales y su impacto en la práctica médica real.
             
             JSON ESTRICTO:
             {
-                "strengths": "Texto HTML crudo con puntos fuertes (ej. <strong>Cardiología:</strong> Buen manejo de ECG...).",
-                "weaknesses": "Texto HTML crudo con debilidades críticas resaltadas (ej. <strong>Pediatría:</strong> Urge repasar inmunizaciones...)"
+                "strengths": "HTML Premium sin Markdown. Usa <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'> para un resumen inicial de sus virtudes. Luego usa <ul style='margin:0; padding:0; list-style:none;'> con items <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>. Empieza cada <li...> con un div o span con el icono: <i class='fas fa-check-circle' style='color:#34d399; margin-top:2px;'></i> seguido de un span que envuelva el contenido. Las áreas van en <strong style='color:#f8fafc;'>. Menciona su precisión específica si existe.",
+                "weaknesses": "Mismo formato HTML sin Markdown (Párrafo + Lista ul/li). El icono de la lista debe ser: <i class='fas fa-exclamation-triangle' style='color:#fbbf24; margin-top:2px;'></i>. Centra el análisis en la urgencia y riesgo de ignorar estas áreas. Al final de la lista de áreas, incluye OBLIGATORIAMENTE un bloque visual extra de acción así: <div style='margin-top:1.25rem; padding:1rem; background:rgba(245,158,11,0.06); border:1px dashed rgba(245,158,11,0.3); border-radius:10px;'><span style='font-weight:700; color:#fbbf24; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;'>Estrategia de Intervención Recomendada</span><p style='color:#cbd5e1; margin:0; font-size:0.85rem; line-height:1.5;'>[Tu consejo directo paramédico para subir los puntajes antes del examen final].</p></div>"
             }
             `;
 
             const activeModel = (tier === 'admin') ? modelPro : modelLite;
-            console.log(`🧠 [IA CLÍNICA] Usando modelo ${tier === 'admin' ? 'Pro/Estándar' : 'Lite'} para Tier: ${tier}`);
+            console.log(`🧠[IA CLÍNICA] Usando modelo ${ tier === 'admin' ? 'Pro/Estándar' : 'Lite' } para Tier: ${ tier } `);
 
             const result = await activeModel.generateContent(prompt);
             const text = result.response.candidates[0].content.parts[0].text;
@@ -267,34 +267,34 @@ class AnalyticsController {
             try {
                 diagnostic = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
 
-                // 💸 DESCONTAR LÍMITE (Chat Standard Diario)
-                try {
-                    const db = require('../../infrastructure/database/db');
-                    if (req.usageType) {
-                        await db.query(
-                            `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
-                            [userId]
-                        );
-                        console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}. (DIAGNÓSTICO EXITOSO)`);
-                    }
-                } catch (limitErr) {
-                    console.error("⚠️ No se pudo actualizar el límite. Continuando...", limitErr);
-                }
-
-            } catch (err) {
-                console.error("❌ Fallo parseando el JSON del Diagnóstico", err);
-                diagnostic = {
-                    strengths: "Tus datos base son sólidos, sigue practicando.",
-                    weaknesses: "Hubo un pequeño error procesando tus áreas débiles, intenta más tarde. (No se consumió cuota)"
-                };
+        // 💸 DESCONTAR LÍMITE (Chat Standard Diario)
+        try {
+            const db = require('../../infrastructure/database/db');
+            if (req.usageType) {
+                await db.query(
+                    `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                    [userId]
+                );
+                console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}. (DIAGNÓSTICO EXITOSO)`);
             }
+        } catch (limitErr) {
+            console.error("⚠️ No se pudo actualizar el límite. Continuando...", limitErr);
+        }
+
+    } catch(err) {
+        console.error("❌ Fallo parseando el JSON del Diagnóstico", err);
+        diagnostic = {
+            strengths: "Tus datos base son sólidos, sigue practicando.",
+            weaknesses: "Hubo un pequeño error procesando tus áreas débiles, intenta más tarde. (No se consumió cuota)"
+        };
+    }
 
             res.json({ success: true, ...diagnostic });
 
-        } catch (error) {
-            console.error('❌ Error en getAIDiagnostic:', error);
-            res.status(500).json({ error: 'Hubo un problema generando tu diagnóstico con IA.' });
-        }
+} catch (error) {
+    console.error('❌ Error en getAIDiagnostic:', error);
+    res.status(500).json({ error: 'Hubo un problema generando tu diagnóstico con IA.' });
+}
     }
 
     // ==========================================
@@ -302,38 +302,38 @@ class AnalyticsController {
     // ==========================================
 
     async recordPulse(req, res) {
-        try {
-            const { sessionId, isMobile } = req.body;
-            const userId = req.user ? req.user.id : null;
+    try {
+        const { sessionId, isMobile } = req.body;
+        const userId = req.user ? req.user.id : null;
 
-            if (!sessionId) {
-                return res.status(400).json({ error: 'sessionId es requerido.' });
-            }
-
-            await this.analyticsService.logPulse(sessionId, userId, isMobile);
-            res.status(204).send();
-        } catch (error) {
-            // ✅ CORRECCIÓN: Si es un error de red (DNS/Conexión), logeamos un warning silencioso
-            // Esto evita que el servidor se llene de errores rojos por micro-cortes de internet.
-            if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.syscall === 'getaddrinfo') {
-                console.warn('⚠️ Pulso de tráfico omitido temporalmente por inestabilidad de red (DNS/Supabase).');
-            } else {
-                console.error('❌ Error registrando pulso:', error);
-            }
-            // Respondemos 200/204 de todos modos para no afectar al frontend
-            res.status(204).send();
+        if (!sessionId) {
+            return res.status(400).json({ error: 'sessionId es requerido.' });
         }
+
+        await this.analyticsService.logPulse(sessionId, userId, isMobile);
+        res.status(204).send();
+    } catch (error) {
+        // ✅ CORRECCIÓN: Si es un error de red (DNS/Conexión), logeamos un warning silencioso
+        // Esto evita que el servidor se llene de errores rojos por micro-cortes de internet.
+        if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.syscall === 'getaddrinfo') {
+            console.warn('⚠️ Pulso de tráfico omitido temporalmente por inestabilidad de red (DNS/Supabase).');
+        } else {
+            console.error('❌ Error registrando pulso:', error);
+        }
+        // Respondemos 200/204 de todos modos para no afectar al frontend
+        res.status(204).send();
     }
+}
 
     async getRealTimeStats(req, res) {
-        try {
-            const stats = await this.analyticsService.getRealTimeStats();
-            res.json(stats);
-        } catch (error) {
-            console.error('❌ Error obteniendo tráfico real-time:', error);
-            res.status(500).json({ error: 'Error al obtener estadísticas en vivo.' });
-        }
+    try {
+        const stats = await this.analyticsService.getRealTimeStats();
+        res.json(stats);
+    } catch (error) {
+        console.error('❌ Error obteniendo tráfico real-time:', error);
+        res.status(500).json({ error: 'Error al obtener estadísticas en vivo.' });
     }
+}
 }
 
 module.exports = AnalyticsController;

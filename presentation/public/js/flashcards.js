@@ -159,8 +159,8 @@ const FlashcardManager = (() => {
         const deckName = urlParams.get('deckName');
 
         ui.topic.textContent = card.topic || deckName || 'GENERAL';
-        ui.frontText.textContent = card.front_content;
-        ui.backText.textContent = card.back_content;
+        ui.frontText.innerHTML = card.front_content.replace(/\n/g, '<br>');
+        ui.backText.innerHTML = card.back_content.replace(/\n/g, '<br>');
 
         // --- Render Images if they exist ---
         renderMedia(ui.frontImage, card.image_url);

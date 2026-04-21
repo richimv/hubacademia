@@ -791,7 +791,7 @@ class TrainingRepository {
 
     // --- ANALYTICS & EVOLUTION ---
 
-    async getQuizEvolution(userId, context, target) {
+    async getQuizEvolution(userId, context, target, limit) {
         // Context filter logic matching Controller
         let filter = '';
         const params = [userId];
@@ -799,13 +799,18 @@ class TrainingRepository {
         if (context === 'MEDICINA') {
             if (target) {
                 params.push(target);
-                filter = `AND (target = $2 OR (target IS NULL AND difficulty = $2))`;
+                filter += ` AND (target = $${params.length} OR (target IS NULL AND difficulty = $${params.length}))`;
             } else {
-                filter = `AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado')`;
+                filter += ` AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado')`;
             }
         } else if (context) {
-            filter = `AND topic ILIKE $2`;
             params.push(`%${context}%`);
+            filter += ` AND topic ILIKE $${params.length}`;
+        }
+
+        if (limit) {
+            params.push(parseInt(limit, 10));
+            filter += ` AND total_questions = $${params.length}`;
         }
 
         // Get last 10 attempts, ordered by date ASC specifically for Chart

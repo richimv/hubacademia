@@ -535,20 +535,23 @@ class TrainingService {
         await repository.incrementSimulatorUsage(userId);
     }
 
-    async getUserQuizStats(userId, context, target) {
+    async getUserQuizStats(userId, context, target, limit) {
         let topicFilter = '';
         const params = [userId];
         
         if (context === 'MEDICINA') {
             if (target) {
                 params.push(target);
-                topicFilter = `AND target = $2`;
-            } else {
-                topicFilter = ``; 
+                topicFilter += ` AND target = $${params.length}`;
             }
         } else if (context) {
             params.push(`%${context}%`);
-            topicFilter = `AND topic ILIKE $2`;
+            topicFilter += ` AND topic ILIKE $${params.length}`;
+        }
+
+        if (limit) {
+            params.push(parseInt(limit, 10));
+            topicFilter += ` AND total_questions = $${params.length}`;
         }
 
         const qStats = await repository.getBasicQuizStats(userId, topicFilter, params);

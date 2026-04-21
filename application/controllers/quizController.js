@@ -263,7 +263,7 @@ class QuizController {
      */
     async getStats(req, res) {
         try {
-            const { context, target } = req.query; // 'MEDICINA', etc.
+            const { context, target, limit } = req.query; // 'MEDICINA', etc.
 
             // ✅ GUEST MODE: Return example stats if not logged in
             if (!req.user) {
@@ -288,7 +288,7 @@ class QuizController {
                 return res.json({ success: true, kpis: exampleKpis });
             }
 
-            const kpis = await TrainingService.getUserQuizStats(req.user.id, context, target);
+            const kpis = await TrainingService.getUserQuizStats(req.user.id, context, target, limit);
 
             res.json({
                 success: true,
@@ -317,7 +317,7 @@ class QuizController {
      */
     async getEvolution(req, res) {
         try {
-            const { context, target } = req.query;
+            const { context, target, limit } = req.query;
 
             // ✅ GUEST MODE: Return example chart data
             if (!req.user) {
@@ -331,7 +331,7 @@ class QuizController {
             const userId = req.user.id;
             const TrainingRepository = require('../../domain/repositories/trainingRepository');
 
-            const data = await TrainingRepository.getQuizEvolution(userId, context, target);
+            const data = await TrainingRepository.getQuizEvolution(userId, context, target, limit);
 
             // Format for Chart.js
             const chartData = {

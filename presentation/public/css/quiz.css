@@ -202,35 +202,35 @@ body.quiz-body {
 }
 
 .option-btn {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 1rem 1.25rem;
-    border-radius: 14px;
-    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.25rem 1.5rem;
+    border-radius: 18px;
+    color: #94a3b8;
     text-align: left;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1.5rem;
 }
 
 .option-letter {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    width: 38px;
-    height: 38px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    width: 42px;
+    height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    color: white;
-    font-size: 0.95rem;
+    font-weight: 700;
+    color: #64748b;
+    font-size: 0.9rem;
     flex-shrink: 0;
-    transition: all 0.25s ease;
+    transition: all 0.3s ease;
 }
 
 .option-text {
@@ -239,43 +239,40 @@ body.quiz-body {
 }
 
 .option-btn:hover:not(:disabled) {
-    background: rgba(59, 130, 246, 0.08);
-    border-color: rgba(59, 130, 246, 0.3);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: none;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+    transform: translateX(8px);
 }
 
 .option-btn:hover:not(:disabled) .option-letter {
-    background: #3b82f6;
-    border-color: #3b82f6;
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
 }
 
+/* Feedback Premium */
 .option-btn.selected {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: #3b82f6;
-    color: white;
-}
-.option-btn.selected .option-letter {
-    background: #3b82f6;
-    border-color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.05);
 }
 
 .option-btn.correct {
-    background: rgba(34, 197, 94, 0.12) !important;
-    border-color: rgba(34, 197, 94, 0.5) !important;
-    color: white !important;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+    border-color: rgba(59, 130, 246, 0.6) !important;
+    color: #f8fafc !important;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15) !important;
 }
 
 .option-btn.correct .option-letter {
-    background: #22c55e !important;
-    border-color: #22c55e !important;
-    color: #000;
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: white !important;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
 }
 
 .option-btn.wrong {
-    background: rgba(239, 68, 68, 0.12) !important;
-    border-color: rgba(239, 68, 68, 0.5) !important;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%) !important;
+    border-color: rgba(239, 68, 68, 0.6) !important;
     color: #f8fafc !important;
     opacity: 0.8;
 }
@@ -283,14 +280,15 @@ body.quiz-body {
 .option-btn.wrong .option-letter {
     background: #ef4444 !important;
     border-color: #ef4444 !important;
+    color: white !important;
 }
 
 /* Feedback Area */
 .feedback-box {
     margin-top: 2rem;
     padding: 2rem;
-    background: rgba(34, 197, 94, 0.05); /* Faint green back */
-    border: 1px solid rgba(34, 197, 94, 0.1); /* Very subtle border */
+    background: rgba(59, 130, 246, 0.05); /* Faint blue match */
+    border: 1px solid rgba(59, 130, 246, 0.1); 
     border-radius: 12px;
     display: none;
     flex-direction: column; /* ✅ FLUJO VERTICAL: Texto -> Imagen -> Botón */
@@ -407,14 +405,14 @@ body.quiz-body {
 
 .svg-circle-progress {
     fill: none;
-    stroke: #22c55e; /* Bright green */
+    stroke: #3b82f6; /* Premium blue */
     stroke-width: 8;
     stroke-linecap: round;
     /* length = 2 * PI * 45(r) = ~282.7 */
     stroke-dasharray: 283; 
     stroke-dashoffset: 283; /* Starts empty */
     transition: stroke-dashoffset 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.5)); /* Glow effect */
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5)); /* Glow effect */
 }
 
 .score-value {
@@ -556,11 +554,11 @@ body.quiz-body {
 }
 
 .r-correct {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(59, 130, 246, 0.08);
+    border-color: rgba(59, 130, 246, 0.4);
     color: #f8fafc;
 }
-.r-correct strong { color: #34d399; }
+.r-correct strong { color: #60a5fa; }
 
 .r-wrong {
     background: rgba(239, 68, 68, 0.08);

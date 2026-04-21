@@ -804,7 +804,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
             saveBtnHTML = `
             <div>
                 <button class="btn-neon saved-flashcard-btn" disabled
-                    style="padding: 0.5rem 1rem; font-size: 0.75rem; white-space: nowrap; border-radius: 20px; opacity: 0.5; cursor: not-allowed; background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #10b981; box-shadow: none;">
+                    style="padding: 0.5rem 1rem; font-size: 0.75rem; white-space: nowrap; border-radius: 20px; opacity: 0.5; cursor: not-allowed; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4); color: #60a5fa; box-shadow: none;">
                     <i class="fas fa-check"></i> Ya guardado
                 </button>
             </div>`;
@@ -850,7 +850,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
     });
 
     const defaultExp = 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.';
-    const expText = question.explanation || defaultExp;
+    const expText = (question.explanation || defaultExp).replace(/\n/g, '<br>');
 
     let expImageHTML = '';
     if (question.explanation_image_url) {

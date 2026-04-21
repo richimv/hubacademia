@@ -21,6 +21,7 @@ const SimulatorDash = (() => {
 
     let currentContext = 'MEDICINA'; // Default
     let activeConfig = null; // Stores user custom exam configuration
+    let activeMode = null;   // null = Todos | 10 = Rápido | 20 = Estudio
     let lineChartInst = null;
     let radarChartInst = null;
 
@@ -85,7 +86,12 @@ const SimulatorDash = (() => {
                     border: '#94a3b8',
                     order: 99
                 };
-                return { name: subject, acc, ...gInfo };
+                return {
+                    name: subject, acc,
+                    correct: cleanRadarMap[subject].correct,
+                    total: cleanRadarMap[subject].total,
+                    ...gInfo
+                };
             });
 
         if (activeSubjects.length === 0) {
@@ -134,7 +140,7 @@ const SimulatorDash = (() => {
                 barRow.innerHTML = `
                     <div class="html-bar-info">
                         <span class="html-bar-label">${item.name}</span>
-                        <span class="html-bar-value">${item.acc}%</span>
+                        <span class="html-bar-value">${item.acc}% <span style="font-size:0.72rem;opacity:0.45;font-weight:400;">(${item.correct}/${item.total} q)</span></span>
                     </div>
                     <div class="html-bar-track">
                         <div class="html-bar-fill" data-width="${item.acc}%" style="width: 0%; background: ${item.bg}; border: 1px solid ${item.border};"></div>
@@ -152,6 +158,29 @@ const SimulatorDash = (() => {
                     const targetWidth = fill.getAttribute('data-width');
                     fill.style.width = targetWidth;
                 });
+            });
+        });
+    }
+
+    // ── Tabs de Modo (Todos / Rápido / Estudio) ────────────
+    function setupModeTabs() {
+        const tabs = document.querySelectorAll('.kpi-mode-tab');
+        if (!tabs.length) return;
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Actualizar estado activo
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const val = tab.dataset.mode;
+                activeMode = val === 'all' ? null : parseInt(val);
+
+                // Re-cargar stats con el nuevo filtro
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    loadStats();
+                    loadEvolution();
+                }
             });
         });
     }
@@ -194,10 +223,10 @@ const SimulatorDash = (() => {
                 const summaryBox = document.getElementById('active-config-summary');
                 if (summaryBox && activeConfig) {
                     summaryBox.style.display = 'flex';
-                    const targetDisplay = activeConfig.target === 'SERUMS' && activeConfig.career 
-                        ? `${activeConfig.target} (${activeConfig.career})` 
+                    const targetDisplay = activeConfig.target === 'SERUMS' && activeConfig.career
+                        ? `${activeConfig.target} (${activeConfig.career})`
                         : activeConfig.target;
-                    
+
                     summaryBox.innerHTML = `
                         <i class="fas fa-filter"></i> 
                         <span><strong>Filtro Recuperado:</strong> ${targetDisplay} | ${activeConfig.areas ? activeConfig.areas.length : 0} áreas</span>
@@ -214,10 +243,11 @@ const SimulatorDash = (() => {
 
         // 4. Fetch Stats or Demo Data
         if (token) {
-            // ✅ Sincronizar usuario para tener contadores de límites (usageCount, dailySimulatorUsage) actualizados
+            // ✅ Sincronizar usuario para tener contadores de límites actualizados
             if (window.sessionManager) {
                 await window.sessionManager.refreshUser();
             }
+            setupModeTabs();
             await loadStats();
             await loadEvolution();
         } else {
@@ -589,8 +619,8 @@ const SimulatorDash = (() => {
 
                 // Update UI Summary
                 summaryBox.style.display = 'flex';
-                const targetDisplay = target === 'SERUMS' && career 
-                    ? `${target} (${career})` 
+                const targetDisplay = target === 'SERUMS' && career
+                    ? `${target} (${career})`
                     : target;
 
                 summaryBox.innerHTML = `
@@ -620,6 +650,7 @@ const SimulatorDash = (() => {
         try {
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
+            if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo
 
             const headers = {};
             if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -641,6 +672,29 @@ const SimulatorDash = (() => {
                 if (!evoCanvas) return; // Guard for non-dashboard pages
 
                 const evolutionCtx = evoCanvas.getContext('2d');
+                // Helpers para la línea de aprobatoria
+                const approvalLine = {
+                    id: 'approvalLine',
+                    afterDatasetsDraw(chart) {
+                        const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+                        const yPos = y.getPixelForValue(14);
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.setLineDash([6, 4]);
+                        ctx.moveTo(left, yPos);
+                        ctx.lineTo(right, yPos);
+                        ctx.strokeStyle = 'rgba(245, 158, 11, 0.55)';
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.fillStyle = 'rgba(245, 158, 11, 0.75)';
+                        ctx.font = '600 10px Inter, sans-serif';
+                        ctx.textAlign = 'right';
+                        ctx.fillText('Aprobatorio ≥ 14', right - 4, yPos - 5);
+                        ctx.restore();
+                    }
+                };
+
                 lineChartInst = new Chart(evolutionCtx, {
                     type: 'line',
                     data: {
@@ -648,13 +702,29 @@ const SimulatorDash = (() => {
                         datasets: [{
                             label: 'Puntaje (Base 20)',
                             data: data.chart.scores,
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            pointBackgroundColor: '#60a5fa',
+                            borderColor: '#8b5cf6',
+                            backgroundColor: (context) => {
+                                const chart = context.chart;
+                                const { ctx, chartArea } = chart;
+                                if (!chartArea) return null;
+                                let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                gradient.addColorStop(0, 'rgba(139,92,246,0.01)');
+                                gradient.addColorStop(1, 'rgba(139,92,246,0.25)');
+                                return gradient;
+                            },
+                            borderWidth: 3,
+                            pointBackgroundColor: '#1e293b',
+                            pointBorderColor: '#a78bfa',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#c4b5fd',
+                            pointHoverBorderColor: '#ffffff',
                             tension: 0.4,
                             fill: true
                         }]
                     },
+                    plugins: [approvalLine],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -662,28 +732,40 @@ const SimulatorDash = (() => {
                             legend: {
                                 display: true,
                                 position: 'top',
-                                labels: { color: '#cbd5e1' }
+                                labels: { color: '#64748b', boxWidth: 12, font: { size: 11 } }
                             },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ` Nota: ${ctx.parsed.y.toFixed(1)} / 20`
+                                }
+                            }
                         },
                         scales: {
                             y: {
-                                beginAtZero: true,
+                                beginAtZero: false,
+                                min: 0,
                                 max: 20,
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: {
+                                    color: '#475569',
+                                    stepSize: 2,
+                                    callback: (v) => v
+                                },
                                 title: {
                                     display: true,
-                                    text: 'Nota (0-20)',
-                                    color: '#64748b'
+                                    text: 'Nota (0–20)',
+                                    color: '#334155',
+                                    font: { size: 11 }
                                 }
                             },
                             x: {
                                 grid: { display: false },
-                                ticks: { color: '#94a3b8' },
+                                ticks: { color: '#475569', font: { size: 11 } },
                                 title: {
                                     display: true,
                                     text: 'Intentos Recientes',
-                                    color: '#64748b'
+                                    color: '#334155',
+                                    font: { size: 11 }
                                 }
                             }
                         }
@@ -708,6 +790,7 @@ const SimulatorDash = (() => {
             // Fetch Optimized Summary
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
+            if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo (10 = Rápido, 20 = Estudio)
 
             const headers = {};
             if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -730,10 +813,21 @@ const SimulatorDash = (() => {
             if (countsEl) countsEl.textContent = `${kpis.total_correct || 0} / ${kpis.total_incorrect || 0}`;
             if (masteryEl) masteryEl.textContent = kpis.mastered_cards || 0;
 
-            // Setup Flashcard Link
+            // Setup Flashcard Link — también links el KPI de Tarjetas Dominadas
             if (kpis.system_deck_id) {
-                const btnFlash = document.getElementById('btn-flashcards');
+                const btnFlash = document.getElementById('btn-mode-flash');
                 if (btnFlash) btnFlash.href = `repaso?deckId=${kpis.system_deck_id}`;
+
+                // KPI de tarjetas dominadas ahora es un enlace directo al deck
+                const masteryBox = masteryEl ? masteryEl.closest('.stat-box') : null;
+                if (masteryBox && !masteryBox.dataset.linked) {
+                    masteryBox.dataset.linked = '1';
+                    masteryBox.style.cursor = 'pointer';
+                    masteryBox.title = 'Ver mis Flashcards';
+                    masteryBox.addEventListener('click', () => {
+                        window.location.href = `repaso?deckId=${kpis.system_deck_id}`;
+                    });
+                }
             }
 
             // --- Render Bar Chart (Áreas) ---
@@ -815,26 +909,27 @@ const SimulatorDash = (() => {
                     let targetExamName = activeCfg.target || 'General';
 
                     let mockStrengths = `
-                        <ul style="margin-top: 0.5rem; padding-left: 0.5rem; color: #cbd5e1; list-style-type: none;">
-                            <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Diagnóstico Diferencial (${targetExamName}):</strong> Los patrones de decisión evidencian una alta asimilación de protocolos clínicos de primera línea, reaccionando óptimamente frente a escenarios de presión temporal característicos de este nivel de evaluación.</li>
-                            <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Bloque Clínico Estratégico:</strong> Rendimiento superior a la media de la cohorte en preguntas transversales asociadas a Pediatría y Ginecología para ${targetExamName}, reflejando un sólido razonamiento médico.</li>
-                            <li style="line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Ciencias Básicas Interrelacionadas:</strong> Tus respuestas denotan una buena correlación entre la fisiopatología y la clínica manifiesta.</li>
+                        <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Las métricas de tu sesión de prueba revelan patrones de decisión fundamentales muy bien afianzados:</p>
+                        <ul style="margin:0; padding:0; list-style-type: none;">
+                            <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Diagnóstico Diferencial (${targetExamName}):</strong> Reacción óptima frente a escenarios clínicos de presión temporal, con alta asimilación de guías clínicas primarias.</span></li>
+                            <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Bloque Estratégico:</strong> Rendimiento transversal en áreas materno-infantiles que sugiere bases sólidas de razonamiento médico aplicado.</span></li>
                         </ul>
                     `;
 
                     let mockWeaknesses = `
-                        <ul style="margin-top: 0.5rem; padding-left: 0.5rem; color: #cbd5e1; list-style-type: none;">
-                            <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 0.5rem;"></i> <strong>Salud Pública y Gestión de Servicios (${targetExamName}):</strong> Se detectan inconsistencias analíticas críticas en el dominio de normas técnicas vigentes (NTS), indicadores epidemiológicos de impacto y cadena de gestión documental exigidos para este eje.</li>
+                        <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Se advierten zonas oscuras que podrían generar fugas críticas de puntaje en tu evaluación principal.</p>
+                        <ul style="margin:0; padding:0; list-style-type: none;">
+                            <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-exclamation-triangle" style="color: #fbbf24; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Salud Pública y Gestión (${targetExamName}):</strong> Fallos de deducción en normativas NTS y epidemiología básica, mermando tu índice global.</span></li>
                         </ul>
-                        <div style="margin-top: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; border-radius: 6px;">
-                            <span style="color: #60a5fa; font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; letter-spacing: 0.5px;"><i class="fas fa-microchip"></i> RECOMENDACIÓN DEL MOTOR:</span>
-                            <span style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5;">De acuerdo a las matrices del histórico reciente para ${targetExamName}, aislar la disciplina de "Salud Pública" y realizar simulacros cruzados de 30 preguntas exclusivas durante los próximos 2 ciclos te ayudará dramáticamente a emparejar tu puntaje general.</span>
+                        <div style="margin-top: 1.25rem; padding: 1rem; background: rgba(245, 158, 11, 0.06); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 10px;">
+                            <span style="font-weight: 700; color: #fbbf24; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia de Intervención Recomendada</span>
+                            <span style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">De acuerdo a esta muestra, aislar la disciplina general de "Salud Pública" en tu panel de configuración y realizar bloques exclusivos fortalecerá dramáticamente tus ratios de aprobación.</span>
                         </div>
                         <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1.5rem;">
-                            <button onclick="window.uiManager.showAuthPromptModal();" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                                Desbloquear Análisis Individualizado
+                            <button onclick="window.uiManager.showAuthPromptModal();" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">
+                                Obtener Diagnóstico Completamente Personalizado IA
                             </button>
-                            <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.75rem; line-height: 1.4;">Nota: Esta cuenta utiliza matrices de diagnóstico generales de prueba. Para compilar análisis volumétricos reales de tu propio rendimiento sobre miles de correlaciones cruzadas exclusivas de ${targetExamName}, crea una cuenta gratuitamente.</p>
+                            <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.75rem; line-height: 1.4;">Atención: Esta estadística es generada en un entorno efímero. Crear una cuenta permite a nuestro Motor Deep Learning correlacionar tu historial completo sobre miles de casos clínicos exclusivos de ${targetExamName}.</p>
                         </div>
                     `;
 
@@ -881,20 +976,22 @@ const SimulatorDash = (() => {
 
                         // We use the real topics here, making it completely pertinent to whatever config is active
                         const fStrong = `
-                            <ul style="margin-top: 0.5rem; padding-left: 0.5rem; color: #cbd5e1; list-style-type: none;">
-                                <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Diagnóstico Algorítmico (${restrictedTarget}):</strong> Tus patrones de decisión evidencian una alta asimilación de los protocolos clínicos de primera línea evaluados frecuentemente en el objetivo seleccionado.</li>
-                                <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Dominio en ${topSub1}:</strong> Tienes un alto dominio en esta materia asimilando la casuística de evaluación y correlacionando la clínica efectivamente. Este es tu bloque más fuerte.</li>
-                                <li style="line-height: 1.5;"><i class="fas fa-angle-right" style="color: #22c55e; margin-right: 0.5rem;"></i> <strong>Criterios en ${topSub2}:</strong> Tus respuestas denotan una buena correlación entre la fisiopatología y la clínica manifiesta para este requerimiento del examen.</li>
+                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Existen claras virtudes formadas en tu base de conocimiento que servirán de ancla resolutiva táctica:</p>
+                            <ul style="margin:0; padding:0; list-style-type: none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Estructura Algorítmica (${restrictedTarget}):</strong> Tus decisiones evidencian una asimilación muy rápida de los protocolos de primera línea requeridos.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Retención Sólida en ${topSub1}:</strong> Tu correlación clínica principal se encuentra estable y efectiva en esta disciplina fundamental.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Bases en ${topSub2}:</strong> Fuerte articulación fisiopatológica al enfrentar distractores diagnósticos simples.</span></li>
                             </ul>
                         `;
 
                         const fWeak = `
-                            <ul style="margin-top: 0.5rem; padding-left: 0.5rem; color: #cbd5e1; list-style-type: none;">
-                                <li style="margin-bottom: 0.5rem; line-height: 1.5;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 0.5rem;"></i> <strong>Área Crítica en ${weakSub}:</strong> Se detectan inconsistencias analíticas de alto riesgo. Necesitas priorizar intensivamente el simulacro cruzado de este eje transversal para corregir la curva estadística negativa.</li>
+                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Es imperativo atacar de inmediato los siguientes flancos expuestos para prevenir pérdida de efectividad durante la evaluación real:</p>
+                            <ul style="margin:0; padding:0; list-style-type: none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-exclamation-triangle" style="color: #fbbf24; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Deficiencia en ${weakSub}:</strong> Se detectan debilidades transversales o patrones de duda al responder preguntas relacionadas, marcando un claro foco de intervención.</span></li>
                             </ul>
-                            <div style="margin-top: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; border-radius: 6px;">
-                                <span style="color: #60a5fa; font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; letter-spacing: 0.5px;"><i class="fas fa-microchip"></i> RECOMENDACIÓN DEL MOTOR:</span>
-                                <span style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5;">De acuerdo a las métricas acopladas al entorno ${restrictedTarget}, debes configurar inmediatamente un filtro exclusivo para la disciplina de "${weakSub}" abarcando 50 preguntas correlativas en el próximo ciclo continuo. Esto emparejará tus ratios antes del simulacro general final.</span>
+                            <div style="margin-top: 1.25rem; padding: 1rem; background: rgba(245, 158, 11, 0.06); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 10px;">
+                                <span style="font-weight: 700; color: #fbbf24; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia de Intervención Recomendada</span>
+                                <span style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">Genera ahora mismo simulacros de 30 minutos priorizando de modo exclusivo preguntas de "${weakSub}". Este bloqueo frenará inmediatamente el efecto de arrastre estadístico negativo que debilita tu nota global final.</span>
                             </div>
                         `;
 
@@ -1021,6 +1118,29 @@ const SimulatorDash = (() => {
             }
 
             const evolutionCtx = evoCanvas.getContext('2d');
+            // Plugin línea de aprobatoria (también en demo)
+            const approvalLineDemo = {
+                id: 'approvalLineDemo',
+                afterDatasetsDraw(chart) {
+                    const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+                    const yPos = y.getPixelForValue(14);
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.setLineDash([6, 4]);
+                    ctx.moveTo(left, yPos);
+                    ctx.lineTo(right, yPos);
+                    ctx.strokeStyle = 'rgba(245, 158, 11, 0.55)';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = 'rgba(245, 158, 11, 0.75)';
+                    ctx.font = '600 10px Inter, sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('Aprobatorio ≥ 14', right - 4, yPos - 5);
+                    ctx.restore();
+                }
+            };
+
             lineChartInst = new Chart(evolutionCtx, {
                 type: 'line',
                 data: {
@@ -1028,13 +1148,45 @@ const SimulatorDash = (() => {
                     datasets: [{
                         label: 'Puntaje (Demo)',
                         data: [11, 13, 12, 15, 14.5],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#8b5cf6',
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const { ctx, chartArea } = chart;
+                            if (!chartArea) return null;
+                            let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(139,92,246,0.01)');
+                            gradient.addColorStop(1, 'rgba(139,92,246,0.25)');
+                            return gradient;
+                        },
+                        borderWidth: 3,
+                        pointBackgroundColor: '#1e293b',
+                        pointBorderColor: '#a78bfa',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#c4b5fd',
+                        pointHoverBorderColor: '#ffffff',
                         tension: 0.4,
                         fill: true
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                plugins: [approvalLineDemo],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0, max: 20,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#475569', stepSize: 2 }
+                        },
+                        x: { grid: { display: false }, ticks: { color: '#475569' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#64748b', font: { size: 11 } } },
+                        tooltip: { callbacks: { label: (ctx) => ` Nota: ${ctx.parsed.y.toFixed(1)} / 20` } }
+                    }
+                }
             });
         }
 

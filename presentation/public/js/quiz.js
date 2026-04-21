@@ -250,6 +250,7 @@ function saveSession() {
     if (new URLSearchParams(window.location.search).get('demo') === 'true') return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
         ...state,
+        savedAt: Date.now(), // ✅ Expiración tracker
         quizId: state.quizId
     }));
 }
@@ -259,9 +260,26 @@ function loadSession() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return null;
         const data = JSON.parse(stored);
-        
-        // Validar que el mazo/tema sea el mismo (para no cargar un examen viejo en un contexto nuevo)
+        // Regla 1: Expiración por tiempo (2 horas = 7200000 ms)
+        const ageInMs = Date.now() - (data.savedAt || 0);
+        if (ageInMs > 7200000) {
+            console.log("♻️ Sesión expirada por antigüedad (> 2hrs).");
+            clearSession();
+            return null;
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
+        
+        // Regla 2: Límite de preguntas debe coincidir (Evita cargar 10qs cuando se pide 20qs)
+        const limitParam = parseInt(urlParams.get('limit'));
+        const expectedLimit = (!isNaN(limitParam) && limitParam > 0) ? limitParam : 20;
+        if (data.maxQuestions && data.maxQuestions !== expectedLimit) {
+            console.log("♻️ Sesión descartada por desajuste de modalidad (límite distinto).");
+            clearSession();
+            return null;
+        }
+
+        // Regla 3: Validar que el mazo/tema sea el mismo (para no cargar un examen viejo en un contexto nuevo)
         const currentAreas = (urlParams.get('areas') || '').split(',').sort().join(',');
         const storedAreas = (data.areas || []).sort().join(',');
 
@@ -680,46 +698,38 @@ function handleAnswer(selectedIndex, btnElement) {
 
     saveSession(); // ✅ PERSISTENCIA INMEDIATA
 
-    // 🏆 MODO CIEGO (Simulacro Real)
-    if (state.maxQuestions === 100) {
-        // Solo marcar azul sin relevar acierto/error
-        btnElement.classList.add('selected');
-        if (isCorrect) state.score++;
-
-        // Auto-avanzar después de medio segundo de delay "táctil"
-        setTimeout(() => {
-            state.currentQuestionIndex++;
-            // ✅ CORRECCIÓN: No finalizar hasta llegar al total esperado (10, 20 o 100)
-            if (state.currentQuestionIndex >= state.maxQuestions) {
-                finishQuiz();
-            } else {
-                renderQuestion();
-            }
-        }, 600);
-        return;
-    }
-
-    // 📚 MODO ESTUDIO (Comportamiento Clásico)
-    // Estilos Visuales
+    // --- Retroalimentación Visual ---
     if (isCorrect) {
         btnElement.classList.add('correct');
         state.score++;
     } else {
         btnElement.classList.add('wrong');
-        // Mostrar cuál era la correcta (Seguridad: q.correct_option_index debe ser válido)
         const correctIdx = q.correct_option_index !== undefined ? q.correct_option_index : q.correct_index;
         if (correctIdx !== undefined && allBtns[correctIdx]) {
             allBtns[correctIdx].classList.add('correct');
         }
-        elements.feedbackBox.classList.add('error');
     }
 
-    // Mostrar Feedback (Explicación)
-    elements.explanationText.textContent = q.explanation || "Respuesta correcta basada en guías clínicas.";
+    // 🚀 BIFURCACIÓN DE COMPORTAMIENTO
+    if (state.maxQuestions === 10) {
+        // MODO RÁPIDO: Solo feedback visual en botones, no muestra feedbackBox, solo avanza tras delay
+        setTimeout(() => {
+            state.currentQuestionIndex++;
+            if (state.currentQuestionIndex >= state.maxQuestions) {
+                finishQuiz();
+            } else {
+                renderQuestion();
+            }
+        }, 1000); // 1 segundo para ver el acierto/error
+        return;
+    }
+
+    // Mostrar explicación y caja de feedback en Modos de Aprendizaje (20qs +)
+
+    // 📚 MODO ESTUDIO (20qs): Comportamiento de Aprendizaje Profundo
+    elements.explanationText.innerHTML = (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.").replace(/\n/g, '<br>');
     
-    // ✅ NUEVO: Mostrar Imagen de Explicación (si existe)
     if (q.explanation_image_url) {
-        // ✅ Usar el resolutor universal (Soporta GCS, ID-Proxy y URLs Externas)
         elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);
         elements.explanationImageContainer.classList.remove('hidden');
     } else {
@@ -728,11 +738,10 @@ function handleAnswer(selectedIndex, btnElement) {
     }
 
     elements.feedbackBox.style.display = 'block';
+    if (!isCorrect) elements.feedbackBox.classList.add('error');
 
-    // Configurar Botón Siguiente
     elements.nextBtn.onclick = () => {
         state.currentQuestionIndex++;
-        // ✅ CORRECCIÓN: No finalizar hasta llegar al total esperado (10, 20 o 100)
         if (state.currentQuestionIndex >= state.maxQuestions) {
             finishQuiz();
         } else {

@@ -9,8 +9,8 @@ El **Simulador Médico** es el motor de entrenamiento de alto rendimiento de Hub
 
 ### 🖥️ Frontend (Presentation)
 - **`simulator-dashboard.html`**: Tablero de mando con KPIs y analíticas. Presenta un diseño de interfaz de usuario limpia (*Clean UI/Flat Design*) y utiliza gráficas renderizadas de forma nativa (HTML/CSS) sin pesadas librerías externas para visualización en móviles.
-- **`quiz.html`**: Interfaz de ejecución del examen (Motor de Quiz)4. **Monitor Visual**: El **Status Pill** global alerta al usuario si sus repasos están siendo guardados localmente a la espera de señal.
-5. **Control de Concurrencia (Anti double-tap)**: Bloqueo semafórico (`_isRating`) en el motor de flashcards para prevenir múltiples peticiones accidentales durante microcortes de red, garantizando una calificación única y limpia.
+- **`quiz.html`**: Interfaz de ejecución del examen (Motor de Quiz).
+- **Control de Concurrencia (Anti double-tap)**: Bloqueo semafórico (`_isRating`) en el motor de flashcards para prevenir múltiples peticiones.
 
 ---
 *Documentación técnica oficial - Actualizada Abril 2026*
@@ -51,11 +51,12 @@ El usuario puede cruzar variables fundamentales:
 - Al finalizar, el sistema calcula el desempeño por cada una de las 22 áreas.
 - Estos datos se inyectan en una columna **JSONB** (`area_stats`).
 - El dashboard lee esta estructura para renderizar un diagrama semántico ultra-rápido en barras HTML/CSS, permitiendo identificar fortalezas y debilidades subatómicas. A su vez, el **Motor IA Fallback** simula la presencia de Inteligencia Artificial para cuentas "Guest/Demo" imprimiendo evaluaciones y diagnósticos extendidos de la casuística particular de cada alumno.
+- **Futura Mejora: Análisis Agéntico de Patrones de Error**: Se implementará un motor de IA que, procesando el historial completo de `area_stats`, generará automáticamente una **Guía de Estudio Dinámica**. Esta guía vinculará directamente los recursos académicos (PDFs, Videos, Lecturas) almacenados en la base de datos de la IPRESS con los puntos de dolor detectados del alumno.
 
 ---
 
 ## 4. Modos de Ejecución
-- ⚡ **Simulacro Rápido (10 q)**: Feedback instantáneo + Justificación Médica. *(Modo accesible también para cuentas Invitadas/Demo con contadores de uso estricto para incentivar registro)*.
+- ⚡ **Simulacro Rápido (10 q)**: Feedback visual inmediato (Rojo/Azul) con auto-avance. La justificación médica y revisión profunda se reserva exclusivamente para el final del examen para maximizar la agilidad. *(Modo accesible también para cuentas Invitadas/Demo)*.
 - 📚 **Modo Estudio (20 q)**: Enfoque formativo sin presión de tiempo.
 - 🎯 **Simulacro Real (100 q)**: "Modo Ciego" (sin feedback), cronómetro de 120min y revisión diferida al final con generación de Flashcards selectivas.
 
@@ -76,3 +77,17 @@ Para garantizar la continuidad en exámenes de alta exigencia (100q), el simulad
 4. **Validación de Integridad**: Al restaurar una sesión, el sistema verifica que el `quizId` y el mazo coincidan con la configuración actual para evitar colisiones de datos.
 5. **Batching Resiliente (v3.0)**: La carga de lotes (`fetchNextBatch`) ha sido refactorizada para ser tolerante a fallos. Si un lote falla por red, el sistema no aborta el examen; en su lugar, notifica al usuario vía Toast y permite reintentos, ajustando dinámicamente el progreso para garantizar que el alumno pueda finalizar su sesión sin pérdida de datos.
 6. **Estandarización de Errores**: Se eliminaron los `ReferenceError` mediante la migración a bloques `catch (error)` unificados y la invalidación de caché forzada (`v=20240410`).
+
+---
+
+## 7. Refinamiento UI/UX y Renderizado de Exámenes (Abril 2026)
+Como parte de la evolución hacia un producto Premium (*High-fidelity UI*), se aplicaron rediseños estructurales al front-end del simulador:
+
+1. **Retroalimentación Global (Omnipresent Feedback Box)**: Se eliminaron las bifurcaciones rígidas que forzaban el auto-avance ciego en los Simulacros Rápidos (10qs). Ahora, **todos** los exámenes interactivos (salvo el Modo Ciego del Simulacro Real) despliegan invariablemente la `feedbackBox`, permitiendo al usuario revisar la caja de **Explicación Médica** de manera pausada y requerir un clic manual para avanzar a la siguiente pregunta.
+2. **Pintado de Explicaciones Médicas**: Se abandonó el color gris oscuro/verde clásico por un **sistema cromático Azul Premium** (`#60a5fa` y `#93c5fd`) para alinear de forma nativa la respuesta correcta y la explicación justificada al concepto de acierto (*Blue = Correct, Red = Wrong*).
+3. **Manejo Seguro de Párrafos (Multi-paragraph rendering)**: Se parcheó la asignación asfixiante de `.textContent` migrando a una inyección controlada por `.replace(/\n/g, '<br>')` vía `.innerHTML`. Esto permite aprovechar al máximo la entrada del panel administrativo, asegurando que guiones o listas enviadas en la DB sean leídas limpiamente en Modo Estudio y Modo Revisión.
+4. **Refactorización CSS a Flexbox**: Se eliminó la dependencia de arquitecturas Grid complejas causantes de parpadeos y desalineaciones de 13px en el Hub Academia. Se migró a *Flexbox* central para las tarjetas (`.mode-card`), asegurando que todos los iconos (`fa-layer-group`, `fa-rocket`) coincidan geométricamente exactos sin depender de resoluciones.
+5. **Session Strict Expiration & Limit Validation**: Se reforzó la lógica de `loadSession()` para invalidar exámenes "zombis".
+   - Limpieza cronológica de exámenes dejados a medias por más de 2 horas.
+   - Restricción de colisiones cruzadas (`expectedLimit !== stored.maxQuestions`), impidiendo que un simulacro interrumpido de 20 preguntas ahogue e invada el inicio en limpio de un Simulacro Rápido de 10 preguntas.
+6. **Aggressive Cache Busting**: Ante la persistencia de Service Workers / Cache del navegador, se implementó una agresiva cadena de invalidación (`?v=...`) en `quiz.html`, forzando en el cliente una recarga de todos los componentes gráficos y módulos ECMAScript sin necesidad de que el usuario vacíe su historial explícitamente.
