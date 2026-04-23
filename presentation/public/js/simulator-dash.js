@@ -9,7 +9,6 @@ const SimulatorDash = (() => {
     const contexts = {
         'MEDICINA': {
             title: 'Ciencias de la Salud',
-            icon: '<i class="fas fa-heartbeat"></i>',
             quizParams: '?target=SERUMS&career=Medicina%20Humana'
         },
         'INGLES': {
@@ -237,7 +236,7 @@ const SimulatorDash = (() => {
         const iconEl = document.getElementById('ctx-icon');
 
         if (titleEl) titleEl.textContent = ctxConfig.title;
-        if (iconEl) iconEl.innerHTML = ctxConfig.icon;
+        // Icon removed per user request for a cleaner UI
 
         // 2. Setup Config Modal Logic & Load Persistent Config
         setupConfigModal();

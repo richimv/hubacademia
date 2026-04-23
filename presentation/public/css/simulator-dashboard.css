@@ -35,37 +35,22 @@
     padding: 2rem 1.5rem 5rem;
 }
 
-/* ── Header ─────────────────────────────────────────────── */
+/* ── Header (Compact & Professional) ────────────────────── */
 .dashboard-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 2.5rem;
-    padding-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--border);
 }
 
-.context-title {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    font-size: 1.5rem;
-    font-weight: 800;
+.ctx-title-compact {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: var(--text-primary);
-    letter-spacing: -0.03em;
-}
-
-.context-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
-    background: rgba(59,130,246,0.12);
-    border: 1px solid rgba(59,130,246,0.2);
-    color: var(--blue);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
+    letter-spacing: -0.02em;
 }
 
 /* ── Section Labels ─────────────────────────────────────── */
