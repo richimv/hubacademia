@@ -168,6 +168,7 @@ router.get('/decks', optionalAuth, DeckController.listDecks);
 router.get('/decks/:deckId', optionalAuth, DeckController.getDeckById); // ✅ NUEVO: Fetch Single Deck
 router.post('/decks', auth, DeckController.createDeck);
 router.get('/decks/:deckId/cards/due', auth, DeckController.getDueCards);
+router.get('/decks/:deckId/cards/:cardId/study', auth, DeckController.getStudyCard);
 router.get('/decks/:deckId/cards', optionalAuth, DeckController.listCards); // ✅ NUEVO
 router.post('/decks/:deckId/cards', auth, DeckController.addCard); // ✅ NUEVO
 router.post('/decks/:deckId/generate', auth, checkAILimits('monthly_flashcards'), DeckController.generateCards); // ✅✨ NUEVO: IA Gen
@@ -175,6 +176,7 @@ router.put('/decks/:deckId', auth, DeckController.updateDeck); // ✅ NUEVO: Ren
 router.delete('/decks/:deckId', auth, DeckController.deleteDeck); // ✅ NUEVO
 router.put('/decks/:deckId/cards/reorder', auth, DeckController.reorderCards); // ✅ NUEVO: Reorder
 router.delete('/cards/batch', auth, DeckController.deleteBulkCards); // ✅ NUEVO: Batch Delete
+router.post('/cards/upload-image', auth, upload.single('file'), DeckController.uploadCardImage); // ✅ NUEVO: Flashcard Image Upload
 router.put('/cards/:cardId', auth, DeckController.updateCard); // ✅ NUEVO
 router.delete('/cards/:cardId', auth, DeckController.deleteCard); // ✅ NUEVO
 

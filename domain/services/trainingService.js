@@ -410,19 +410,19 @@ class TrainingService {
     /**
      * Genera Flashcards a partir de un tema o texto (Para Custom Decks).
      * @param {string} topic - Tema o texto corto.
-     * @param {number} count - Número sugerido (Default 10, adaptable).
+     * @param {number} count - Número sugerido (Default 20, adaptable).
      */
-    async generateFlashcardsFromTopic(topic, count = 10) {
+    async generateFlashcardsFromTopic(topic, count = 20) {
         try {
             const prompt = `
             Actúa como un experto pedagogogía y diseño instruccional.
-            Crea entre 1 y 15 Flashcards educativas sobre el tema: "${topic}".
+            Crea entre 1 y 20 Flashcards educativas sobre el tema: "${topic}".
             
             🚨 REGLA DE INTELIGENCIA ADAPTATIVA:
-            - Si el usuario solicita EXPLÍCITAMENTE una cantidad en el tema (ej: "3 tarjetas"), cumple con esa cantidad exacta SIEMPRE QUE esté entre 1 y 15.
+            - Si el usuario solicita EXPLÍCITAMENTE una cantidad en el tema (ej: "3 tarjetas"), cumple con esa cantidad exacta SIEMPRE QUE esté entre 1 y 20.
             - Si no hay una cantidad explícita, sé proporcional a la densidad del tema. Si el tema es simple o muy específico, genera lo necesario (aunque sea 1 o 2 tarjetas).
-            - Si el tema es complejo o extenso, genera el máximo de 15 tarjetas críticas.
-            - No intentes meter todo un libro en 15 tarjetas; prioriza lo que un estudiante NECESITA memorizar primero.
+            - Si el tema es complejo o extenso, genera el máximo de 20 tarjetas críticas.
+            - No intentes meter todo un libro en 20 tarjetas; prioriza lo que un estudiante NECESITA memorizar primero.
 
             FORMATO JSON ESTRICTO:
             [{ "front": "Pregunta o Concepto", "back": "Respuesta o Definición Breve" }]
@@ -434,7 +434,7 @@ class TrainingService {
             4. Evita preguntas de verdadero/falso o sí/no.
             `;
 
-            console.log(`🧠 AI Adaptive Flashcards: Procesando '${topic}' (Margen 5-15)...`);
+            console.log(`🧠 AI Adaptive Flashcards: Procesando '${topic}' (Margen 5-20)...`);
             // Flashcards siempre usan Lite para ahorro
             const result = await modelCreativeLite.generateContent(prompt);
             const text = result.response.candidates[0].content.parts[0].text;

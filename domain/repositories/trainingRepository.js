@@ -482,7 +482,7 @@ class TrainingRepository {
                     0 as mastery_percentage
                 FROM decks d
                 WHERE d.type = 'SYSTEM' AND (d.parent_id = $1 OR ($1 IS NULL AND d.parent_id IS NULL))
-                ORDER BY d.name, d.created_at DESC
+                ORDER BY d.name, d.created_at ASC
             `;
             const result = await db.query(query, [parentId]);
             return result.rows;
@@ -509,7 +509,7 @@ class TrainingRepository {
             query += ` AND d.parent_id IS NULL`;
         }
 
-        query += ` GROUP BY d.id ORDER BY d.created_at DESC`;
+        query += ` GROUP BY d.id ORDER BY d.created_at ASC`;
         const result = await db.query(query, params);
         return result.rows;
     }
@@ -681,6 +681,12 @@ class TrainingRepository {
         await db.query(query, [cardId, interval, ef, reps, nextDate, lastQuality]);
     }
 
+    async getFlashcardById(cardId) {
+        const query = `SELECT * FROM user_flashcards WHERE id = $1`;
+        const result = await db.query(query, [cardId]);
+        return result.rows[0];
+    }
+
     // --- CRUD CARDS (Anki-Style) ---
 
     async getDeckCards(deckId) {
@@ -693,7 +699,7 @@ class TrainingRepository {
         return result.rows;
     }
 
-    async createFlashcard(userId, deckId, front, back) {
+    async createFlashcard(userId, deckId, front, back, imageUrl = null, backImageUrl = null) {
         // 1. Fetch Deck Name for Topic Strategy
         const deckQuery = `SELECT name FROM decks WHERE id = $1`;
         const deckRes = await db.query(deckQuery, [deckId]);
@@ -701,22 +707,22 @@ class TrainingRepository {
 
         // 2. Insert Card
         const query = `
-            INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, interval_days, easiness_factor, repetition_number, next_review_at)
-            VALUES ($1, $2, $3, $4, $5, 0, 2.5, 0, NOW())
-            RETURNING id, front_content, back_content, topic
+            INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, interval_days, easiness_factor, repetition_number, next_review_at, image_url, explanation_image_url)
+            VALUES ($1, $2, $3, $4, $5, 0, 2.5, 0, NOW(), $6, $7)
+            RETURNING id, front_content, back_content, topic, image_url, explanation_image_url
         `;
-        const result = await db.query(query, [userId, deckId, front, back, topic]);
+        const result = await db.query(query, [userId, deckId, front, back, topic, imageUrl, backImageUrl]);
         return result.rows[0];
     }
 
-    async updateFlashcardContent(userId, cardId, front, back) {
+    async updateFlashcardContent(userId, cardId, front, back, imageUrl = null, backImageUrl = null) {
         const query = `
             UPDATE user_flashcards 
-            SET front_content = $3, back_content = $4 
+            SET front_content = $3, back_content = $4, image_url = $5, explanation_image_url = $6
             WHERE id = $2 AND user_id = $1
-            RETURNING id, front_content, back_content
+            RETURNING id, front_content, back_content, image_url, explanation_image_url
         `;
-        const result = await db.query(query, [userId, cardId, front, back]);
+        const result = await db.query(query, [userId, cardId, front, back, imageUrl, backImageUrl]);
         return result.rows[0];
     }
 
@@ -787,6 +793,35 @@ class TrainingRepository {
             console.error("Error deleting deck tree:", error);
             throw error; // Re-throw to be caught by controller
         }
+    }
+
+    async getCardsImages(userId, cardIds) {
+        if (!cardIds || cardIds.length === 0) return [];
+        const query = `
+            SELECT image_url, explanation_image_url 
+            FROM user_flashcards 
+            WHERE id = ANY($1::uuid[]) AND user_id = $2
+            AND (image_url IS NOT NULL OR explanation_image_url IS NOT NULL);
+        `;
+        const { rows } = await db.query(query, [cardIds, userId]);
+        return rows;
+    }
+
+    async getDeckTreeImages(userId, deckId) {
+        const query = `
+            WITH RECURSIVE deck_tree AS (
+                SELECT id FROM decks WHERE id = $1 AND user_id = $2
+                UNION ALL
+                SELECT d.id FROM decks d
+                INNER JOIN deck_tree dt ON d.parent_id = dt.id
+            )
+            SELECT image_url, explanation_image_url 
+            FROM user_flashcards 
+            WHERE deck_id IN (SELECT id FROM deck_tree) 
+            AND (image_url IS NOT NULL OR explanation_image_url IS NOT NULL);
+        `;
+        const { rows } = await db.query(query, [deckId, userId]);
+        return rows;
     }
 
     // --- ANALYTICS & EVOLUTION ---

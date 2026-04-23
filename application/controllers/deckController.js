@@ -104,6 +104,28 @@ class DeckController {
     }
 
     /**
+     * GET /api/decks/:deckId/cards/:cardId/study
+     */
+    getStudyCard = async (req, res) => {
+        try {
+            const { cardId } = req.params;
+            const { userId } = this._getUserContext(req);
+            
+            const card = await DeckService.getCardById(cardId);
+            
+            // Validar propiedad de la tarjeta (seguridad básica)
+            if (!card || card.user_id !== userId) {
+                return res.status(403).json({ error: 'Tarjeta no encontrada o sin acceso' });
+            }
+
+            res.json({ success: true, cards: [card] }); // Envuelto en array para compatibilidad con el frontend
+        } catch (error) {
+            console.error('[getStudyCard] Error:', error);
+            res.status(500).json({ error: 'Error al obtener tarjeta de estudio' });
+        }
+    }
+
+    /**
      * GET /api/decks/:deckId/cards
      */
     listCards = async (req, res) => {
@@ -133,12 +155,18 @@ class DeckController {
     addCard = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const { front, back } = req.body;
+            const { front, back, imageUrl, backImageUrl } = req.body;
             const { userId } = this._getUserContext(req);
 
-            if (!front || !back) return res.status(400).json({ error: 'Faltan datos de la tarjeta' });
+            // Validar que al menos haya texto o imagen en ambos lados
+            const hasFront = (front && front.trim()) || imageUrl;
+            const hasBack = (back && back.trim()) || backImageUrl;
 
-            const card = await DeckService.addCard(userId, deckId, front, back);
+            if (!hasFront || !hasBack) {
+                return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
+            }
+
+            const card = await DeckService.addCard(userId, deckId, front, back, imageUrl, backImageUrl);
             res.json({ success: true, card });
         } catch (error) {
             console.error('[addCard] Error:', error);
@@ -179,7 +207,19 @@ class DeckController {
                 return res.status(400).json({ error: 'Se requieren IDs de tarjetas' });
             }
 
+            // 1. Obtener las imágenes de GCS a eliminar
+            const imagesToDelete = await DeckService.getCardsImages(userId, cardIds);
+
+            // 2. Eliminar tarjetas de la BD
             await DeckService.deleteBulkCards(userId, cardIds);
+
+            // 3. Limpiar GCS
+            const mediaController = require('./mediaController');
+            for (const img of imagesToDelete) {
+                if (img.image_url) await mediaController.deleteFile(img.image_url);
+                if (img.explanation_image_url) await mediaController.deleteFile(img.explanation_image_url);
+            }
+
             res.json({ success: true, deletedCount: cardIds.length });
         } catch (error) {
             console.error('[deleteBulkCards] Error:', error);
@@ -193,12 +233,34 @@ class DeckController {
     updateCard = async (req, res) => {
         try {
             const { cardId } = req.params;
-            const { front, back } = req.body;
+            const { front, back, imageUrl, backImageUrl } = req.body;
             const { userId } = this._getUserContext(req);
 
-            if (!front || !back) return res.status(400).json({ error: 'Faltan datos de la tarjeta' });
+            // Validar que al menos haya texto o imagen en ambos lados
+            const hasFront = (front && front.trim()) || imageUrl;
+            const hasBack = (back && back.trim()) || backImageUrl;
 
-            const card = await DeckService.updateCard(userId, cardId, front, back);
+            if (!hasFront || !hasBack) {
+                return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
+            }
+
+            // 1. Obtener la tarjeta actual para comparar imágenes
+            const currentCard = await DeckService.getCardById(cardId);
+            if (!currentCard) return res.status(404).json({ error: 'Tarjeta no encontrada' });
+
+            const card = await DeckService.updateCard(userId, cardId, front, back, imageUrl, backImageUrl);
+
+            // 2. Limpieza de GCS (Post-Guardado)
+            // Si la URL cambió y la anterior no era null, borrar el archivo viejo
+            const mediaController = require('./mediaController');
+            
+            if (currentCard.image_url && currentCard.image_url !== imageUrl) {
+                await mediaController.deleteFile(currentCard.image_url);
+            }
+            if (currentCard.explanation_image_url && currentCard.explanation_image_url !== backImageUrl) {
+                await mediaController.deleteFile(currentCard.explanation_image_url);
+            }
+
             res.json({ success: true, card });
         } catch (error) {
             console.error('[updateCard] Error:', error);
@@ -213,7 +275,18 @@ class DeckController {
         try {
             const { cardId } = req.params;
             const { userId } = this._getUserContext(req);
+
+            // 1. Obtener la tarjeta para saber qué archivos borrar
+            const card = await DeckService.getCardById(cardId);
+            if (!card) return res.status(404).json({ error: 'Tarjeta no encontrada' });
+
             await DeckService.deleteCard(userId, cardId);
+
+            // 2. Limpiar GCS
+            const mediaController = require('./mediaController');
+            if (card.image_url) await mediaController.deleteFile(card.image_url);
+            if (card.explanation_image_url) await mediaController.deleteFile(card.explanation_image_url);
+
             res.json({ success: true });
         } catch (error) {
             console.error('[deleteCard] Error:', error);
@@ -228,7 +301,20 @@ class DeckController {
         try {
             const { deckId } = req.params;
             const { userId } = this._getUserContext(req);
+
+            // 1. Obtener todas las imágenes del árbol de mazos
+            const imagesToDelete = await DeckService.getDeckTreeImages(userId, deckId);
+
+            // 2. Eliminar el mazo y sub-mazos de la BD
             await DeckService.deleteDeck(userId, deckId);
+
+            // 3. Limpiar GCS
+            const mediaController = require('./mediaController');
+            for (const img of imagesToDelete) {
+                if (img.image_url) await mediaController.deleteFile(img.image_url);
+                if (img.explanation_image_url) await mediaController.deleteFile(img.explanation_image_url);
+            }
+
             res.json({ success: true });
         } catch (error) {
             console.error('[deleteDeck] Error:', error);
@@ -273,6 +359,25 @@ class DeckController {
         } catch (error) {
             console.error('[generateCards] Error:', error);
             res.status(500).json({ error: 'Error al generar tarjetas con IA' });
+        }
+    }
+
+    /**
+     * POST /api/cards/upload-image
+     */
+    uploadCardImage = async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No se recibió ninguna imagen.' });
+            }
+
+            const mediaController = require('./mediaController');
+            const gcsPath = await mediaController.uploadFile(req.file, 'flashcards');
+            
+            res.json({ success: true, imageUrl: gcsPath });
+        } catch (error) {
+            console.error('[uploadCardImage] Error:', error);
+            res.status(500).json({ error: 'Error al subir imagen de tarjeta' });
         }
     }
 }

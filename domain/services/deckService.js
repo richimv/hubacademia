@@ -22,12 +22,16 @@ class DeckService {
         return await trainingRepository.getDeckCards(deckId);
     }
 
-    async addCard(userId, deckId, front, back) {
-        return await trainingRepository.createFlashcard(userId, deckId, front, back);
+    async getCardById(cardId) {
+        return await trainingRepository.getFlashcardById(cardId);
     }
 
-    async updateCard(userId, cardId, front, back) {
-        return await trainingRepository.updateFlashcardContent(userId, cardId, front, back);
+    async addCard(userId, deckId, front, back, imageUrl = null, backImageUrl = null) {
+        return await trainingRepository.createFlashcard(userId, deckId, front, back, imageUrl, backImageUrl);
+    }
+
+    async updateCard(userId, cardId, front, back, imageUrl = null, backImageUrl = null) {
+        return await trainingRepository.updateFlashcardContent(userId, cardId, front, back, imageUrl, backImageUrl);
     }
 
     async deleteCard(userId, cardId) {
@@ -48,6 +52,14 @@ class DeckService {
 
     async deleteDeck(userId, deckId) {
         return await trainingRepository.deleteDeck(userId, deckId);
+    }
+
+    async getCardsImages(userId, cardIds) {
+        return await trainingRepository.getCardsImages(userId, cardIds);
+    }
+
+    async getDeckTreeImages(userId, deckId) {
+        return await trainingRepository.getDeckTreeImages(userId, deckId);
     }
 }
 

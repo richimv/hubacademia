@@ -12,13 +12,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Shared CSS -->
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/header.css">
-    <link rel="stylesheet" href="css/footer.css">
-    <link rel="stylesheet" href="css/dashboard.css">
-    <link rel="stylesheet" href="css/repaso.css">
-    <link rel="stylesheet" href="css/modal.css">
-    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/base.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/header.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/footer.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/dashboard.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/repaso.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/modal.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/components.css?v=v_pure_dark_v8">
 </head>
 
 <body class="hero-hidden">
@@ -158,22 +158,85 @@
             <form id="card-form">
                 <input type="hidden" id="card-deck-id">
                 <input type="hidden" id="card-id">
-                <div class="form-group">
-                    <label class="form-label">Frente (Pregunta)</label>
-                    <textarea class="form-input" id="card-front" required
-                        placeholder="Ej: ¿Qué es el mitocondria?"></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Dorso (Respuesta)</label>
-                    <textarea class="form-input" id="card-back" required
-                        placeholder="Ej: La central energética de la célula."></textarea>
+
+                <!-- Scrollable Content Wrapper -->
+                <div
+                    style="max-height: 65vh; overflow-y: auto; overflow-x: hidden; padding: 0.5rem; margin-bottom: 1rem; scrollbar-width: thin; scrollbar-color: #3b82f6 transparent;">
+                    <!-- CARA FRONTAL (ANVERSO) -->
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label"
+                            style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>Frente (Pregunta)</span>
+                            <span style="font-size:0.7rem; color:#64748b; font-weight:normal;">Texto e/o Imagen</span>
+                        </label>
+                        <textarea class="form-input" id="card-front" placeholder="Ej: ¿Qué es el mitocondria?"
+                            style="min-height: 80px;"></textarea>
+
+                        <!-- Upload Anverso -->
+                        <div class="card-upload-area" style="margin-top: 0.8rem;">
+                            <input type="file" id="card-image-input-front" accept="image/*" style="display: none;"
+                                onchange="window.repasoManager.handleImageUpload(this, 'front')">
+                            <input type="hidden" id="card-image-url-front">
+
+                            <div id="preview-front" class="image-preview-box" style="display: none;">
+                                <img id="img-front" src=""
+                                    style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
+                                <button type="button" onclick="window.repasoManager.removeImage('front')"
+                                    class="btn-remove-img"><i class="fas fa-times"></i></button>
+                            </div>
+
+                            <button type="button" id="btn-trigger-front"
+                                onclick="document.getElementById('card-image-input-front').click()"
+                                class="btn-upload-minimal">
+                                <i class="fas fa-image"></i> <span>Añadir Imagen al Frente</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CARA TRASERA (REVERSO) -->
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label"
+                            style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>Dorso (Respuesta)</span>
+                            <span style="font-size:0.7rem; color:#64748b; font-weight:normal;">Texto e/o Imagen</span>
+                        </label>
+                        <textarea class="form-input" id="card-back"
+                            placeholder="Ej: La central energética de la célula." style="min-height: 80px;"></textarea>
+
+                        <!-- Upload Reverso -->
+                        <div class="card-upload-area" style="margin-top: 0.8rem;">
+                            <input type="file" id="card-image-input-back" accept="image/*" style="display: none;"
+                                onchange="window.repasoManager.handleImageUpload(this, 'back')">
+                            <input type="hidden" id="card-image-url-back">
+
+                            <div id="preview-back" class="image-preview-box" style="display: none;">
+                                <img id="img-back" src=""
+                                    style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
+                                <button type="button" onclick="window.repasoManager.removeImage('back')"
+                                    class="btn-remove-img"><i class="fas fa-times"></i></button>
+                            </div>
+
+                            <button type="button" id="btn-trigger-back"
+                                onclick="document.getElementById('card-image-input-back').click()"
+                                class="btn-upload-minimal">
+                                <i class="fas fa-image"></i> <span>Añadir Imagen al Dorso</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Spinner Global Carga -->
+                    <div id="card-upload-spinner"
+                        style="display: none; text-align: center; margin-bottom: 1.5rem; background: rgba(59,130,246,0.1); padding: 0.8rem; border-radius: 8px;">
+                        <i class="fas fa-circle-notch fa-spin" style="color: #60a5fa;"></i>
+                        <span style="margin-left: 8px; color: #94a3b8; font-size: 0.85rem;">Procesando imagen...</span>
+                    </div>
                 </div>
 
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                     <button type="button" class="btn-action btn-secondary-action"
                         onclick="window.repasoManager.closeCardModal()">Cancelar</button>
                     <button type="submit" class="btn-action btn-study"
-                        style="background: #3b82f6; color: white;">Guardar</button>
+                        style="background: #3b82f6; color: white; padding: 0.8rem 2rem;">Guardar Tarjeta</button>
                 </div>
             </form>
         </div>
@@ -183,8 +246,10 @@
     <div class="modal-overlay" id="ai-modal">
         <div class="modal-content">
             <h2 style="margin-bottom: 1rem;"><i class="fas fa-magic" style="color: #a855f7;"></i> Generar con IA</h2>
-            <p style="color: #94a3b8; margin-bottom: 0.5rem;">Escribe un tema o concepto, y la IA creará de <b>1 a 15 flashcards</b> inteligentemente.</p>
-            <p style="color: #64748b; font-size: 0.8rem; margin-bottom: 1.5rem;"><i>Tip: Si deseas una cantidad exacta, especifícalo (Ej: "3 tarjetas"). Máx: 15.</i></p>
+            <p style="color: #94a3b8; margin-bottom: 0.5rem;">Escribe un tema o concepto, y la IA creará de <b>1 a 20
+                    flashcards</b> inteligentemente.</p>
+            <p style="color: #64748b; font-size: 0.8rem; margin-bottom: 1.5rem;"><i>Tip: Si deseas una cantidad exacta,
+                    especifícalo (Ej: "3 tarjetas"). Máx: 20.</i></p>
 
             <div class="form-group">
                 <label class="form-label">Tema o Concepto</label>
@@ -202,7 +267,7 @@
                     onclick="window.repasoManager.closeAiModal()">Cancelar</button>
                 <button type="button" class="btn-action" onclick="window.repasoManager.generateAiCards()"
                     style="background: #a855f7; color: white;">
-                    ✨ Generar
+                    Generar
                 </button>
             </div>
         </div>
@@ -210,9 +275,9 @@
 
     <!-- Modal Stats -->
     <div class="modal-overlay" id="stats-modal">
-        <div class="modal-content" style="text-align: center;">
+        <div class="modal-content" style="text-align: center; max-height: 85vh; overflow-y: auto;">
             <h2 style="margin-bottom: 2rem;">Estadísticas del Mazo</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px;">
                     <div style="font-size: 2rem; font-weight: bold; color: white;" id="modal-total">0</div>
                     <div style="color: #94a3b8; font-size: 0.9rem;">Total Tarjetas</div>
@@ -223,9 +288,40 @@
                 </div>
             </div>
 
+            <!-- Gráfico de Dona para el Mazo -->
+            <div style="max-width: 200px; margin: 0 auto 1.5rem auto; position: relative;">
+                <canvas id="deck-stats-chart"></canvas>
+            </div>
+
+            <!-- Explicación de la Leyenda del Gráfico (SRS) -->
+            <div
+                style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; margin-bottom: 2rem; text-align: left; font-size: 0.85rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                    <div
+                        style="width: 12px; height: 12px; border-radius: 50%; background: #60a5fa; flex-shrink: 0; margin-top: 4px;">
+                    </div>
+                    <div><b>Nuevas / Aprendiendo:</b> Tarjetas recién creadas o en las que has fallado recientemente.
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                    <div
+                        style="width: 12px; height: 12px; border-radius: 50%; background: #f87171; flex-shrink: 0; margin-top: 4px;">
+                    </div>
+                    <div><b>Por Repasar (Due):</b> Tarjetas que el algoritmo SRS ha determinado que tu cerebro está por
+                        olvidar y debes repasar hoy.</div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                    <div
+                        style="width: 12px; height: 12px; border-radius: 50%; background: #34d399; flex-shrink: 0; margin-top: 4px;">
+                    </div>
+                    <div><b>Dominadas:</b> Tarjetas de sólido recuerdo (más de 21 días de intervalo o múltiples aciertos
+                        consecutivos).</div>
+                </div>
+            </div>
+
             <!-- Heatmap Container -->
             <div id="activity-heatmap" class="heatmap-container"
-                style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; margin-bottom: 2rem; overflow: hidden; min-height: 150px;">
+                style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.2rem; margin-bottom: 2rem; height: auto;">
                 <!-- JS will render here -->
             </div>
 
@@ -290,6 +386,7 @@
     <!-- Scripts -->
 
     <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/services/authApiService.js"></script>
@@ -314,7 +411,7 @@
 
     <script src="js/heatmap.js"></script> <!-- Optional for Stats -->
     <script src="js/deck-explorer.js"></script> <!-- NEW -->
-    <script src="js/repaso.js"></script>
+    <script src="js/repaso.js?v=v_pure_dark_v8"></script>
 </body>
 
 </html>

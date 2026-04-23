@@ -56,7 +56,6 @@
         // Caso GCS: Es una ruta como "test.png" o "folders/image.jpg"
         const token = localStorage.getItem('authToken');
         const tokenParam = token ? `&token=${token}` : '';
-        
         return `${window.AppConfig.API_URL}/api/media/gcs?file=${encodeURIComponent(url)}${tokenParam}`;
     };
 

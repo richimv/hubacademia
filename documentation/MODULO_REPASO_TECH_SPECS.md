@@ -3,59 +3,62 @@
 ## 1. Visión General
 El **Módulo de Repaso** es el sistema de memorización a largo plazo de Hub Academia. Utiliza tarjetas de aprendizaje dinámicas (Flashcards) organizadas en mazos (Decks) y un algoritmo de repetición espaciada para optimizar la retención de conocimientos médicos.
 
----
+## Estado de Implementación (Abril 2026)
 
-## 2. Arquitectura de Archivos
+### ✅ Finalizado: Edición Visual de Tarjetas
+- **Persistencia**: Se ha extendido el backend (`trainingRepository`, `deckService`, `deckController`) para soportar el campo `image_url` en flashcards de usuario.
+- **Carga de Medios**: Integración con GCS mediante el proxy `/api/media/gcs`. Implementación de carga directa desde el modal de edición con optimización visual.
+- **UI/UX**: 
+  - Las tarjetas en la lista de repaso ahora muestran una miniatura si contienen imagen.
+  - El modal de edición incluye previsualización en tiempo real y gestión de archivos.
+  - El modo estudio (`flashcards.html`) renderiza correctamente las imágenes en el anverso.
 
-### 🖥️ Frontend (Presentation)
-- **`repaso.js`**: Gestor principal de la UI de repaso. Maneja la navegación entre mazos, la renderización de carpetas y la integración con el explorador de archivos.
-- **`flashcards.js`**: Motor de estudio interactivo. Maneja la lógica de voltear tarjetas, calificación de dificultad y temporizadores.
-- **`deck-explorer.js`**: Componente de navegación lateral para la jerarquía de mazos.
+### ✅ Corrección de Errores y Refactorización
+- **Bug de Navegación**: Se corrigió el error donde editar un mazo (nombre/icono) redirigía al usuario a la raíz (`loadDashboard`). Ahora el sistema refresca la vista actual (`loadFolder`) manteniendo el contexto.
+- **Reducción de Redundancia**: Se unificaron los flujos de apertura de modales entre `RepasoManager` y `DeckExplorer`.
+- **Resiliencia**: Mejora en la captura de errores en `loadFolder` para evitar estados de carga infinitos.
 
-### ⚙️ Backend (Application & Domain)
-- **`deckController.js`**: Maneja las peticiones API para CRUD de mazos y tarjetas, incluyendo la generación masiva por IA.
-- **`deckService.js`**: Implementa la lógica de negocio, incluyendo el cálculo de intervalos de repetición espaciada.
+### ✅ Garbage Collection y Métricas Visuales
+- **Eliminación en Cascada (GCS)**: Se implementó un sistema de recolección de basura donde al eliminar un mazo (o grupo de tarjetas), el backend recopila recursivamente (mediante CTE en SQL) todas las URLs de imágenes asociadas y las elimina físicamente de Google Cloud Storage antes de borrar los registros de la base de datos.
+- **Estadísticas Dinámicas**:
+  - Se reparó la inicialización del `ActivityHeatmap` para que consuma datos reales del endpoint `/api/analytics/heatmap`.
+  - Se introdujo un **Gráfico de Anillo (Chart.js)** en el modal de estadísticas que desglosa el estado de las tarjetas del mazo actual en tres categorías: "Nuevas/Aprendiendo", "Por Repasar" (Due) y "Dominadas".
 
-### 🗄️ Infraestructura (Persistence)
-- **`user_flashcards`**: Tabla principal que almacena el contenido (frente/dorso) y los metadatos de estudio (`interval_days`, `easiness_factor`, `last_reviewed`).
-- **`decks`**: Tabla de organización jerárquica de mazos.
+## Arquitectura de Medios en Vercel
+Para evitar que Vercel bloquee peticiones directas a Google Cloud Storage o existan problemas de expiración de URLs firmadas, el sistema utiliza:
+1. `window.resolveImageUrl(path)`: Resuelve rutas relativas de GCS a través del proxy del backend.
+2. `MediaController`: Centraliza la subida, validación de tipo MIME y almacenamiento organizado por carpetas (`/flashcards`).
 
----
-
-## 3. Sistemas Core
-
-### ⏳ Algoritmo de Repetición Espaciada (SM-2 Modified)
-El sistema utiliza una variante del algoritmo SM-2 para calcular cuándo debe reaparecer una tarjeta:
-1. **Calificación del Usuario**: El usuario califica su recuerdo (Fácil, Bien, Difícil, Repetir).
-2. **Intervalo de Repetición**: Se calcula basado en el `easiness_factor` y el número de repasos exitosos consecutivos.
-3. **Olvido Saludable**: Integrado con el sistema global para asegurar que el usuario no se abrume con repasos acumulados.
-
-### ✨ Generación Agéntica y UI Premium
-1. **Generación Manual por Usuario**: Al finalizar un simulacro, el alumno selecciona qué preguntas convertir en Flashcards.
-    - **Estrategia "Solo Respuesta"**: Para optimizar la velocidad de estudio y evitar desbordamientos, las tarjetas derivadas de simulacros solo almacenan la **respuesta correcta** en el dorso, omitiendo explicaciones extensas.
-    - **Layout Responsivo (Side-by-Side)**: El frente de la tarjeta utiliza un diseño de dos columnas en PC (Imagen izquierda / Texto derecha) para maximizar el uso del espacio, similar al simulador.
-2. **Generación IA por Tema**: Permite al usuario crear un mazo completo sobre un tema específico usando Gemini 2.5 Flash Lite.
-
-### 📁 Organización y Visualización
-- Soporte para sub-mazos (carpetas) con iconografía vibrante y mapeo de emojis.
-- Las imágenes en flashcards se sirven mediante el proxy de GCS, asegurando carga rápida y optimización WebP activa.
+## Futuras Mejoras
+- **IA Agéntica**: Vincular estadísticas de error con recursos específicos de la base de datos IPRESS.
+- **Bulk Import**: Carga masiva de tarjetas desde Excel/CSV con soporte de URLs de imágenes.
 
 ---
 
-## 4. Flujos de Trabajo
-- **Estudio Diario**: El sistema prioriza las tarjetas con `due_date <= NOW()`.
-- **Modo Explorador**: Permite editar, mover y borrar tarjetas de forma masiva.
-- **Sincronización Multi-Simulador**: Las tarjetas creadas desde el simulador heredan el `topic` y `target` del examen original.
+## 2. Componentes Clave
+
+### A. Gestión de Mazos (Decks)
+- **DeckExplorer**: Componente lateral que gestiona la navegación en árbol. Implementa carga perezosa (lazy loading) para sub-mazos.
+- **RepasoManager**: Controlador principal de la vista de contenido. Maneja el renderizado de cabeceras, cuadrículas de mazos y listas de tarjetas.
+
+### B. Sistema de Tarjetas (Cards)
+- **SRS Algorithm**: Implementación de SuperMemo-2 (SM-2) para calcular los próximos intervalos de repaso basados en la calidad de la respuesta (1-4).
+- **Formatos Soportados**: Texto plano y Soporte Visual (Imágenes en GCS).
+
+### C. Generación con IA
+- **IA Assistant**: Integración con modelos de lenguaje para generar flashcards automáticamente a partir de temas médicos específicos. Soporta la creación de hasta **20 tarjetas por intento**, adaptando el contenido a la densidad del tema solicitado.
 
 ---
 
-## 5. Modo Offline y Sincronización Diferida (NUEVO) 📡
-Para asegurar un estudio fluido en cualquier entorno, el módulo de repaso incorpora una arquitectura de resiliencia:
+## 3. Flujos de Datos Principales
 
-1. **Estudio Offline**: El lote de tarjetas pendientes se precarga localmente. El usuario puede calificar su desempeño sin conexión.
-2. **Cola de Sincronización (Sync Queue)**: Las calificaciones se guardan en una cola de fondo. El sistema intenta subirlas al servidor automáticamente usando la utilidad `safeFetch`.
-3. **Reintentos Inteligentes**: Si la sincronización falla debido a un microcorte, el sistema aplica **Exponential Backoff** (reintentos a los 1s, 2s, 4s...) hasta confirmar que la curva de aprendizaje del usuario ha sido actualizada en la base de datos.
-4. **Monitor Visual**: El **Status Pill** global alerta al usuario si sus repasos están siendo guardados localmente a la espera de señal.
+### Creación de Tarjeta con Imagen
+1. El usuario selecciona un archivo en el modal.
+2. `repaso.js` envía el archivo a `POST /api/cards/upload-image`.
+3. El backend optimiza a WebP y sube a Google Cloud Storage.
+4. Se retorna la ruta GCS y se guarda en la base de datos junto con el contenido textual.
 
----
-*Documentación técnica oficial - Actualizada Abril 2026*
+### Sincronización de Repaso
+1. Durante el estudio, el usuario califica una tarjeta.
+2. `flashcards.js` calcula localmente el progreso y lo envía a `POST /api/training/flashcards/review`.
+3. El backend actualiza los parámetros SRS en la base de datos.

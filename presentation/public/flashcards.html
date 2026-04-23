@@ -11,10 +11,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Estilos Premium -->
-    <link rel="stylesheet" href="css/flashcards.css">
-    <link rel="stylesheet" href="css/modal.css">
-    <link rel="stylesheet" href="css/components.css">
+    <!-- Estilos Pure Dark v3 (Fix Grid overflow 9:16) -->
+    <link rel="stylesheet" href="css/flashcards.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/modal.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/components.css?v=v_pure_dark_v8">
 </head>
 
 <body>
@@ -28,8 +28,9 @@
             <i class="fas fa-arrow-left"></i> Volver a Mazos
         </a>
 
-        <div class="stats-bar">
-            Pendientes: <strong id="pending-count" style="color: white;">--</strong>
+        <div class="fc-stats-badge">
+            <span class="label">Pendientes</span>
+            <span class="count" id="pending-count">--</span>
         </div>
 
         <!-- VIEW: LOADING -->
@@ -47,11 +48,11 @@
                 <p style="color: var(--text-secondary); margin: 1rem 0 2rem;">
                     Has completado todos tus repasos pendientes por hoy.
                 </p>
-                <div style="display: flex; gap: 1rem; justify-content: center;">
-                    <a id="btn-back-deck" href="/repaso" class="btn-primary">
+                <div class="empty-actions">
+                    <a id="btn-back-deck" href="/repaso" class="btn-action btn-secondary">
                         <i class="fas fa-arrow-left"></i> Volver al Mazo
                     </a>
-                    <button onclick="FlashcardManager.init()" class="btn-primary">
+                    <button onclick="FlashcardManager.init()" class="btn-action btn-primary">
                         <i class="fas fa-sync-alt"></i> Verificar
                     </button>
                 </div>
@@ -65,21 +66,30 @@
                 <div class="card" id="flashcard">
 
                     <!-- FRONT -->
-                    <div class="card__face card__face--front">
-                        <span class="badge" id="card-topic">ANATOMÍA</span>
-                        <div id="front-image-container" class="card-image-container"></div>
-                        <div class="content-text" id="front-text">
-                            ¿Cuál es la función principal del ventrículo izquierdo?
+                    <div class="fc-card-face fc-card-face--front">
+                        <div class="fc-badge-container">
+                            <span class="fc-badge" id="card-topic">ANATOMÍA</span>
                         </div>
-                        <div class="tap-hint"><i class="fas fa-hand-pointer"></i> Toca para ver respuesta</div>
+                        <div class="fc-content-area">
+                            <div id="front-image-container" class="card-image-container"></div>
+                            <div class="content-text" id="front-text">...</div>
+                        </div>
+                        <div class="fc-hint-container">
+                            <div class="tap-hint"><i class="fas fa-hand-pointer"></i> Toca para ver respuesta</div>
+                        </div>
                     </div>
 
                     <!-- BACK -->
-                    <div class="card__face card__face--back">
-                        <span class="badge" style="background:rgba(59,130,246,0.2); color:#60a5fa;">RESPUESTA</span>
-                        <div id="back-image-container" class="card-image-container"></div>
-                        <div class="content-text" id="back-text">
-                            Bombear sangre oxigenada a todo el cuerpo a través de la aorta.
+                    <div class="fc-card-face fc-card-face--back">
+                        <div class="fc-badge-container">
+                            <span class="fc-badge">RESPUESTA</span>
+                        </div>
+                        <div class="fc-content-area">
+                            <div id="back-image-container" class="card-image-container"></div>
+                            <div class="content-text" id="back-text">...</div>
+                        </div>
+                        <div class="fc-hint-container">
+                            <!-- Hint opcional o vacío -->
                         </div>
                     </div>
 
@@ -88,19 +98,19 @@
 
             <!-- CONTROLS -->
             <div class="controls" id="controls">
-                <button class="control-btn btn-again" onclick="FlashcardManager.rate(0)">
+                <button class="control-btn btn-again" onclick="event.stopPropagation(); FlashcardManager.rate(0)">
                     <i class="fas fa-times"></i> Olvidé
                     <span class="sub-label">&lt; 1 min</span>
                 </button>
-                <button class="control-btn btn-hard" onclick="FlashcardManager.rate(3)">
+                <button class="control-btn btn-hard" onclick="event.stopPropagation(); FlashcardManager.rate(3)">
                     <i class="fas fa-exclamation"></i> Difícil
                     <span class="sub-label">Mañana</span>
                 </button>
-                <button class="control-btn btn-good" onclick="FlashcardManager.rate(4)">
+                <button class="control-btn btn-good" onclick="event.stopPropagation(); FlashcardManager.rate(4)">
                     <i class="fas fa-check"></i> Bien
                     <span class="sub-label">3 días</span>
                 </button>
-                <button class="control-btn btn-easy" onclick="FlashcardManager.rate(5)">
+                <button class="control-btn btn-easy" onclick="event.stopPropagation(); FlashcardManager.rate(5)">
                     <i class="fas fa-grin-stars"></i> Fácil
                     <span class="sub-label">7 días</span>
                 </button>
@@ -121,7 +131,7 @@
     <script src="js/app.js?v=20240410"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/flashcards.js?v=20240410"></script>
+    <script src="js/flashcards.js?v=v_pure_dark_v8"></script>
 
 </body>
 

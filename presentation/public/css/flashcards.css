@@ -1,37 +1,41 @@
+/* ==========================================================================
+   FLASHCARDS.CSS — Motor Visual Pure Dark v5
+   
+   ARQUITECTURA:
+   - Card Face usa Flexbox con 3 hijos de altura fija/flexible
+   - Badge Container: altura fija, nunca se comprime
+   - Content Area: flex:1 con overflow:hidden (toma todo el espacio restante)
+   - Hint Container: altura fija, nunca se comprime
+   
+   MANEJO DE IMAGENES 9:16:
+   - La imagen NUNCA usa height:100% (causa desbordamiento en flex/grid)
+   - En su lugar, usa max-height con calc() basado en la altura de la tarjeta
+   - object-fit:contain escala SIN cortar
+   ========================================================================== */
+
 :root {
-    --bg-dark: #141414;
-    --glass-bg: rgba(31, 31, 31, 0.7);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
+    --bg-pure: #050505;
+    --card-bg: #111111;
+    --border-dim: rgba(255, 255, 255, 0.1);
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
     --accent-color: #3b82f6;
     --success-color: #22c55e;
-    --danger-color: #ef4444;
-    --warning-color: #f59e0b;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--bg-dark);
-    background-image: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
-        radial-gradient(circle at 85% 30%, rgba(239, 68, 68, 0.08), transparent 25%);
+    background-color: var(--bg-pure);
     color: var(--text-primary);
     min-height: 100vh;
     display: flex;
-    /* Centrado absoluto */
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    /* Evitar scrollbar en flip */
 }
 
-/* --- CONTENEDOR PRINCIPAL ESTRICTO --- */
 #app-root {
     width: 100%;
     max-width: 1200px;
@@ -41,82 +45,85 @@ body {
     align-items: center;
     justify-content: center;
     position: relative;
+    padding: 20px;
 }
 
-/* --- ESTADOS (MUTUAMENTE EXCLUYENTES) --- */
+/* --- View Sections --- */
 .view-section {
     display: none;
-    /* Por defecto ocultos */
     flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
     animation: fadeIn 0.4s ease-out;
 }
+.view-section.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.view-section.active {
-    display: flex;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* --- LOADING STATE --- */
-.loading-spinner {
-    font-size: 2rem;
-    color: var(--accent-color);
-    margin-bottom: 1rem;
-}
-
-/* --- EMPTY STATE --- */
+/* ==========================================================================
+   EMPTY STATE — Pantalla "Todo al dia"
+   ========================================================================== */
 .empty-content {
-    text-align: center;
-    background: var(--glass-bg);
-    border: var(--glass-border);
-    padding: 3rem;
+    background: #0f0f0f;
+    border: 1px solid #222;
+    padding: 4rem 3rem;
     border-radius: 24px;
-    backdrop-filter: blur(10px);
-    max-width: 450px;
-    width: 90%;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    border: none;
-    color: white;
-    padding: 0.8rem 1.5rem;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 1.5rem;
-    transition: transform 0.2s;
-    text-decoration: none;
-    display: inline-block;
-}
-
-.btn-primary:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-}
-
-/* --- FLASHCARD SCENE --- */
-.scene {
+    text-align: center;
+    max-width: 550px;
     width: 95%;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+}
+
+/* Contenedor de botones de accion */
+.empty-actions {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+/* Botones gemelos dark */
+.btn-action {
+    padding: 1.1rem 2.2rem;
+    border-radius: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid #333;
+    cursor: pointer;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 1rem;
+    min-width: 200px;
+}
+.btn-action.btn-primary {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+}
+.btn-action:hover {
+    transform: translateY(-3px);
+    background: #222;
+    border-color: #444;
+}
+
+/* ==========================================================================
+   FLASHCARD SCENE — Contenedor 3D
+   ========================================================================== */
+
+/* Alturas de tarjeta (usadas en calc() para limitar imagenes) */
+/* PC: 440px total - 55px badge - 40px hint = 345px para contenido */
+/* Movil: 420px total - 55px badge - 40px hint = 325px para contenido */
+
+.scene {
+    width: 100%;
     max-width: 850px;
-    height: 420px;
-    perspective: 1200px;
+    height: 440px;
+    perspective: 2000px;
     margin-bottom: 2rem;
-    position: relative;
 }
 
 .card {
@@ -124,180 +131,234 @@ body {
     height: 100%;
     position: relative;
     transform-style: preserve-3d;
-    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
 }
+.card.is-flipped { transform: rotateY(180deg); }
 
-.card.is-flipped {
-    transform: rotateY(180deg);
-}
-
-.card__face {
+/* ==========================================================================
+   CARD FACE — Flexbox de 3 filas
+   ========================================================================== */
+.fc-card-face {
     position: absolute;
     width: 100%;
     height: 100%;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    border-radius: 20px;
-    padding: 1.5rem;
+    border-radius: 24px;
+    background: var(--card-bg);
+    border: 1px solid #222;
+    /* Flexbox columna: badge | contenido | hint */
     display: flex;
     flex-direction: column;
+    padding: 0 1.5rem;
+    overflow: hidden;
+}
+.fc-card-face--back { transform: rotateY(180deg); }
+
+/* --- Fila 1: Badge (altura fija, nunca se comprime) --- */
+.fc-badge-container {
+    height: 55px;
+    flex-shrink: 0;
+    display: flex;
     align-items: center;
-    /* Remove absolute vertical centering so long text scrolls from top */
-    text-align: center;
-    background: rgba(31, 31, 31, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+    justify-content: center;
 }
-
-.card__face--front {
-    background: linear-gradient(145deg, #1f1f1f, #141414);
-}
-
-.card__face--back {
-    background: linear-gradient(145deg, #2a2a2a, #1f1f1f);
-    transform: rotateY(180deg);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-.badge {
-    background: rgba(255, 255, 255, 0.08);
-    padding: 4px 10px;
+.fc-badge {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 16px;
     border-radius: 50px;
-    font-size: 0.7rem;
+    border: 1px solid #333;
+    font-size: 0.75rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1px;
     color: var(--text-secondary);
-    margin-bottom: 1rem;
 }
 
-.content-text {
-    font-size: 1.6rem;
-    line-height: 1.35;
-    font-weight: 600;
-    color: #f1f5f9;
-    flex-grow: 1;
+/* --- Fila 2: Content Area (toma todo el espacio restante) --- */
+.fc-content-area {
+    flex: 1;             /* Toma todo el espacio disponible */
+    min-height: 0;       /* Permite que flex lo comprima si es necesario */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow: hidden;    /* Contiene cualquier desbordamiento */
     width: 100%;
-    overflow: hidden;
-    word-break: break-word;
-    padding: 0 0.5rem;
 }
 
-/* After JS adjustFontSize runs, this class enables scroll for extreme cases */
-.content-text.sized {
+/* --- Fila 3: Hint (altura fija, nunca se comprime) --- */
+.fc-hint-container {
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.tap-hint { font-size: 0.8rem; color: #444; font-weight: 600; }
+
+/* ==========================================================================
+   IMAGE CONTAINER
+   
+   Clave: NO usar height:100% en la imagen. En su lugar:
+   - El container tiene max-height explicito basado en la tarjeta
+   - La imagen usa max-height:100% + max-width:100% + object-fit:contain
+   - Esto permite que imagenes 9:16 se reduzcan proporcionalmente
+   ========================================================================== */
+.card-image-container {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    /* PC: max-height = 440px - 55px badge - 40px hint = 345px */
+    max-height: 345px;
+    flex-shrink: 1;      /* Puede encogerse si compite con texto */
+}
+.card-image-container.visible { display: flex; }
+
+/* La imagen se escala proporcionalmente sin cortarse */
+.card-image {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;    /* 100% del container, que ya esta limitado */
+    width: auto;
+    height: auto;        /* Tamano natural, limitado por max-height/max-width */
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+/* ==========================================================================
+   TEXTO — Adaptativo con scroll para contenido largo
+   ========================================================================== */
+.content-text {
+    width: 100%;
+    min-height: 0;
+    flex-shrink: 1;      /* Puede encogerse si compite con imagen */
     overflow-y: auto;
-    justify-content: flex-start;
-    /* Ensure top alignment when scrolling */
-    padding-right: 8px;
-    /* Room for scrollbar */
-}
-
-/* Custom scrollbar */
-.content-text::-webkit-scrollbar {
-    width: 4px;
-}
-
-.content-text::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.content-text::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
-}
-
-.tap-hint {
-    margin-top: auto;
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.4);
+    font-weight: 700;
+    text-align: center;
+    font-size: 1.6rem;
+    scrollbar-width: none;
     display: flex;
     align-items: center;
-    gap: 6px;
-}
-
-/* --- CONTROLS --- */
-.controls {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    width: 100%;
-    max-width: 850px;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(20px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.controls.visible {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(0);
-}
-
-.control-btn {
-    border: none;
-    padding: 1rem 0.5rem;
-    border-radius: 16px;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
+    justify-content: center;
     flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    padding: 0.5rem 0;
+}
+.content-text::-webkit-scrollbar { display: none; }
+
+/* ==========================================================================
+   MODO: Solo Imagen (sin texto visible)
+   height:100% da una referencia definida al container para que
+   max-height:100% en la <img> resuelva correctamente.
+   Sin esto, imagenes 9:16 se renderizan a tamano natural y se recortan.
+   ========================================================================== */
+.fc-card-face.fc-only-image .content-text { display: none; }
+.fc-card-face.fc-only-image .card-image-container {
+    flex: 1;             /* Toma todo el espacio del content-area */
+    height: 100%;        /* ✅ Referencia definida para la imagen */
+    max-height: none;    /* Sin limite, el content-area lo contiene */
 }
 
-.control-btn:hover {
-    transform: translateY(-3px);
-    filter: brightness(1.1);
+/* ==========================================================================
+   MODO: Solo Texto (sin imagen)
+   ========================================================================== */
+.fc-card-face.fc-only-text .content-text {
+    font-size: 2.2rem;   /* Texto mas grande si no hay imagen */
 }
 
-.control-btn:active {
-    transform: scale(0.98);
+/* ==========================================================================
+   PC — 2 columnas (imagen izquierda, texto derecha)
+   ========================================================================== */
+@media (min-width: 769px) {
+    /* Content area se convierte en fila horizontal */
+    .fc-card-face.fc-has-image:not(.fc-only-image) .fc-content-area {
+        flex-direction: row;
+        gap: 2rem;
+        padding: 0 1rem;
+    }
+
+    /* Imagen: 45% del ancho, DEBE tener height:100% para que
+       max-height:100% en la <img> tenga una referencia real de alto.
+       Sin esto, la imagen 9:16 se renderiza a su tamano natural
+       y overflow:hidden del padre la recorta. */
+    .fc-card-face.fc-has-image:not(.fc-only-image) .card-image-container {
+        width: 50%;
+        height: 100%;      /* ✅ Referencia de alto para la imagen */
+        flex-shrink: 0;
+        max-height: none;
+    }
+
+    /* Texto: ocupa el 50% restante, centrado vertical */
+    .fc-card-face.fc-has-image:not(.fc-only-image) .content-text {
+        width: 50%;
+        flex-shrink: 0;
+        justify-content: center;
+        align-items: center;
+    }
 }
 
-.btn-again {
-    background: var(--danger-color);
-    box-shadow: 0 4px 0 #b91c1c;
+/* ==========================================================================
+   MOBILE — Imagen arriba, texto abajo (stack vertical)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Tarjeta mas alta en movil */
+    .scene { height: 420px; }
+
+    /* Imagen + texto en movil: apilar desde arriba (sin espacio vacio)
+       justify-content: flex-start elimina el gap entre badge e imagen.
+       height: 55% da una referencia definida al container para que
+       max-height:100% en la <img> resuelva y no se ignore. */
+    .fc-card-face.fc-has-image:not(.fc-only-image) .fc-content-area {
+        justify-content: flex-start; /* ✅ Sin espacio superior */
+    }
+
+    .fc-card-face.fc-has-image:not(.fc-only-image) .card-image-container {
+        height: 55%;         /* ✅ Referencia definida para la imagen */
+        max-height: 55%;     /* Techo de seguridad */
+        flex-shrink: 0;
+        width: 100%;
+    }
+
+    .fc-card-face.fc-has-image:not(.fc-only-image) .content-text {
+        font-size: 1.1rem;
+        flex: 1; /* ✅ Toma todo el espacio restante bajo la imagen */
+        justify-content: center; /* Centrado vertical para alejar de imagen */
+    }
+
+    /* Stats badge responsive */
+    .fc-stats-badge { top: 1rem; right: 1rem; }
+    .empty-actions { flex-direction: column; }
+    .btn-action { min-width: 100%; }
 }
 
-.btn-hard {
-    background: var(--warning-color);
-    box-shadow: 0 4px 0 #b45309;
-}
-
-.btn-good {
-    background: var(--accent-color);
-    box-shadow: 0 4px 0 #1e40af;
-}
-
-.btn-easy {
-    background: var(--success-color);
-    box-shadow: 0 4px 0 #15803d;
-}
-
-.sub-label {
-    font-size: 0.7rem;
-    opacity: 0.8;
-    font-weight: normal;
-}
-
-.stats-bar {
+/* ==========================================================================
+   STATS BADGE — Esquina superior derecha
+   ========================================================================== */
+.fc-stats-badge {
     position: absolute;
     top: 2rem;
     right: 2rem;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
+    background: #111;
+    border: 1px solid #333;
+    padding: 8px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 100;
 }
+.fc-stats-badge .label {
+    font-size: 0.7rem;
+    color: #666;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.fc-stats-badge .count { color: var(--accent-color); font-weight: 900; }
 
+/* ==========================================================================
+   BACK NAV — Boton de volver
+   ========================================================================== */
 .back-nav {
     position: absolute;
     top: 2rem;
@@ -310,121 +371,48 @@ body {
     gap: 8px;
     transition: color 0.2s;
 }
+.back-nav:hover { color: white; }
+@media (max-width: 768px) { .back-nav { top: 1rem; left: 1rem; } }
 
-.back-nav:hover {
+/* ==========================================================================
+   CONTROLS — Botones de dificultad
+   ========================================================================== */
+.controls {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    width: 100%;
+    max-width: 850px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(10px);
+}
+.controls.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+.control-btn {
+    border: 1px solid #222;
+    padding: 1.2rem 0.5rem;
+    border-radius: 16px;
     color: white;
-}
-
-@media (max-width: 768px) {
-    .scene {
-        height: 400px;
-    }
-
-    .content-text {
-        font-size: 1rem;
-    }
-
-    .controls {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.8rem;
-    }
-
-    .stats-bar {
-        top: 1rem;
-        right: 1rem;
-    }
-
-    .back-nav {
-        top: 1rem;
-        left: 1rem;
-    }
-}
-
-/* --- FLASHCARD IMAGES --- */
-.card-image-container {
-    width: 100%;
-    margin-bottom: 1rem;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    aspect-ratio: 1 / 1; /* ✅ Relación 1:1 Estándar */
-    max-width: 250px; /* Tamaño controlado en tarjetas */
-    border-radius: 12px;
-    background: #000;
+    font-weight: 800;
     cursor: pointer;
-}
-
-.card-image-container.visible {
+    background: #111;
+    transition: all 0.2s ease;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
+.control-btn:hover { transform: translateY(-3px); }
 
-.card-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* ✅ Cubre el cuadrado sin deformar */
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
+.btn-again { color: #f43f5e; border-color: rgba(244, 63, 94, 0.3); }
+.btn-hard { color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+.btn-good { color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
+.btn-easy { color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
 
-/* SIDE-BY-SIDE LAYOUT (Desktop) */
-@media (min-width: 769px) {
-    .card__face--front.has-image {
-        display: grid !important;
-        grid-template-columns: 40% 60% !important;
-        gap: 1.5rem;
-        align-items: center;
-        text-align: left;
-        padding: 2.5rem;
-    }
+.sub-label { font-size: 0.65rem; opacity: 0.6; font-weight: 400; }
 
-    .card__face--front.has-image .badge {
-        grid-column: 1 / span 2;
-        margin-bottom: 0;
-        width: fit-content;
-    }
-
-    .card__face--front.has-image .card-image-container {
-        margin-bottom: 0;
-        max-width: 300px; /* ✅ Más grande en desktop side-by-side */
-        display: flex !important;
-        aspect-ratio: 1 / 1;
-    }
-
-    .card__face--front.has-image .card-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .card__face--front.has-image .content-text {
-        padding: 0;
-        justify-content: center;
-        align-items: flex-start;
-        font-size: 1.4rem;
-        text-align: left;
-    }
-
-    .card__face--front.has-image .tap-hint {
-        grid-column: 1 / span 2;
-        justify-content: center;
-    }
-}
-
-/* Mobile Tweak for has-image */
-@media (max-width: 768px) {
-    .card__face--front.has-image .card-image-container {
-        max-width: 180px;
-        aspect-ratio: 1 / 1;
-        margin-bottom: 1rem;
-    }
-    .card__face--front.has-image .card-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    .card__face--front.has-image .content-text {
-        font-size: 1.1rem;
-    }
+@media (max-width: 480px) {
+    .controls { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
 }

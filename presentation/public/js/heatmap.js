@@ -49,9 +49,10 @@ class ActivityHeatmap {
         wrapper.style.alignItems = 'flex-end'; // Alinear todo a la base
         wrapper.style.justifyContent = 'space-between';
         wrapper.style.gap = '6px'; // Espacio entre barras
-        wrapper.style.height = `${maxBarHeight + 35}px`; // Altura barras + etiquetas
-        wrapper.style.padding = '15px 10px 10px 10px';
-        wrapper.style.overflowX = 'auto'; // Responsive scroll interno si hace falta
+        wrapper.style.height = `${maxBarHeight + 30}px`; // Altura barras + etiquetas
+        wrapper.style.padding = '10px 0 0 0'; // Padding superior mínimo para el brillo de las barras
+        wrapper.style.width = '100%';
+        wrapper.style.overflowX = 'hidden'; // Evitar scroll innecesario si cabe bien
         wrapper.style.position = 'relative'; // Para tooltips flotantes si quisieramos inyectar uno global
 
         // 3. Generar Fechas (Del pasado reciente hacia Hoy)

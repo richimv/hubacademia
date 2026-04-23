@@ -120,11 +120,17 @@ const FlashcardManager = (() => {
             backDeckBtn.href = `/repaso?deckId=${deckId}`;
         }
 
-        // 2. Build URL based on context (Deck vs Global)
+        // 2. Build URL based on context (Deck vs Global vs Single Card)
+        const cardId = urlParams.get('cardId');
         let endpoint = `${API_URL}/due`; // Default Legacy Global
         if (deckId) {
             endpoint = `${window.AppConfig.API_URL}/api/decks/${deckId}/cards/due`;
         }
+        if (cardId) {
+            // Si hay cardId, usamos el nuevo endpoint de estudio individual
+            endpoint = `${window.AppConfig.API_URL}/api/decks/${deckId || 'all'}/cards/${cardId}/study`;
+        }
+
 
         // ✅ NUEVO: Carga resiliente
         const res = await window.uiManager.safeFetch(endpoint, {
@@ -163,58 +169,54 @@ const FlashcardManager = (() => {
         ui.backText.innerHTML = card.back_content.replace(/\n/g, '<br>');
 
         // --- Render Images if they exist ---
+        const hasFrontImage = !!card.image_url;
+        const hasBackImage = !!card.explanation_image_url;
+        const hasFrontText = !!card.front_content.trim();
+        const hasBackText = !!card.back_content.trim();
+
         renderMedia(ui.frontImage, card.image_url);
         renderMedia(ui.backImage, card.explanation_image_url);
 
-        // Toggle 'has-image' class for responsive layout on front face
-        const frontFace = ui.card.querySelector('.card__face--front');
+        // --- Intelligent Layout Classes ---
+        const frontFace = ui.card.querySelector('.fc-card-face--front');
+        const backFace = ui.card.querySelector('.fc-card-face--back');
+
         if (frontFace) {
-            if (card.image_url) frontFace.classList.add('has-image');
-            else frontFace.classList.remove('has-image');
+            frontFace.classList.toggle('fc-has-image', hasFrontImage);
+            frontFace.classList.toggle('fc-only-image', hasFrontImage && !hasFrontText);
+            frontFace.classList.toggle('fc-only-text', !hasFrontImage && hasFrontText);
+        }
+
+        if (backFace) {
+            backFace.classList.toggle('fc-has-image', hasBackImage);
+            backFace.classList.toggle('fc-only-image', hasBackImage && !hasBackText);
+            backFace.classList.toggle('fc-only-text', !hasBackImage && hasBackText);
         }
 
         // 🟢 FIX: Adjust Font Size to fit container (Prevent Overflow)
-        // We use a timeout to let the DOM render the content first (even if microseconds)
-        // actually not needed if synchronous, but better for layout reflow calc.
-        requestAnimationFrame(() => {
-            adjustFontSize(ui.frontText);
-            adjustFontSize(ui.backText);
-        });
-    }
+        const adjustFontSize = (element, text, hasImage) => {
+            // ✅ Algoritmo Dinámico: Escalar según longitud y presencia de imagen
+            let baseSize = 1.6; // Valor base
+            const length = text.length;
 
-    /**
-     * Dynamically adjusts font size based on text length and container size.
-     */
-    function adjustFontSize(element) {
-        element.classList.remove('sized');
-        element.style.overflow = 'hidden';
+            if (length > 250) baseSize = 0.95;
+            else if (length > 150) baseSize = 1.1;
+            else if (length > 100) baseSize = 1.25;
+            else if (length > 50) baseSize = 1.45;
+            else if (length > 0 && length <= 20) baseSize = 2.8; // ✅ ULTRA BIG para textos cortos (test, términos únicos)
+            else if (length > 20 && length <= 50) baseSize = 2.0;
 
-        const isMobile = window.innerWidth <= 768;
-        const textLength = element.textContent.length;
+            // ✅ Si hay imagen, reducimos proporcionalmente para que no colisionen
+            if (hasImage) {
+                if (length <= 20) baseSize = 1.8; // Ajuste moderado si hay imagen
+                else baseSize *= 0.8; 
+            }
 
-        // Base sizing heuristics based on character count
-        let size = isMobile ? 1.2 : 2.0;
+            element.style.fontSize = `${baseSize}rem`;
+        };
 
-        if (textLength > 50) size = isMobile ? 1.1 : 1.6;
-        if (textLength > 150) size = isMobile ? 1.0 : 1.4;
-        if (textLength > 300) size = isMobile ? 0.9 : 1.1;
-
-        const minSize = 0.7;
-        const step = 0.05;
-
-        element.style.fontSize = `${size}rem`;
-
-        // Reduce font incrementally if it STILL overflows vertically
-        while (element.scrollHeight > element.clientHeight && size > minSize) {
-            size -= step;
-            element.style.fontSize = `${size}rem`;
-        }
-
-        // If it still overflows after max shrinkage, enable scrollbar
-        element.style.overflow = '';
-        if (element.scrollHeight > element.clientHeight) {
-            element.classList.add('sized');
-        }
+        adjustFontSize(ui.frontText, card.front_content || '', hasFrontImage);
+        adjustFontSize(ui.backText, card.back_content || '', hasBackImage);
     }
 
     function toggleFlip() {
@@ -234,8 +236,12 @@ const FlashcardManager = (() => {
         if (_isRating || !currentCard) return;
         _isRating = true;
 
-        // Visual feedback: Bloquear clics durante la sincronización para evitar doble-tappeo
-        if (ui.controls) ui.controls.style.pointerEvents = 'none';
+        // Visual feedback: Bloquear temporalmente controles para evitar doble-click
+        if (ui.controls) {
+            ui.controls.style.pointerEvents = 'none';
+            ui.controls.style.opacity = '0.5';
+        }
+
 
         const urlParams = new URLSearchParams(window.location.search);
         const isDemo = urlParams.get('demo') === 'true';
@@ -277,9 +283,23 @@ const FlashcardManager = (() => {
             currentReps: processedCard.repetition_number
         };
 
-        syncReview(reviewData, token);
+        syncReview(reviewData, token); // Fire and forget (Asíncrono)
 
-        // 3. Show next card IMMEDIATELY (UX fluida)
+        // Liberar bloqueo inmediatamente después del proceso local (antes de que responda red)
+        _isRating = false;
+        if (ui.controls) {
+            ui.controls.style.pointerEvents = 'auto';
+            ui.controls.style.opacity = '1';
+        }
+
+        // 3. Si estudiábamos una sola tarjeta (cardId), volvemos al mazo inmediatamente
+        if (urlParams.has('cardId')) {
+            const currentDeckId = urlParams.get('deckId') || '';
+            window.location.href = `/repaso?deckId=${currentDeckId}`;
+            return;
+        }
+
+        // 4. Show next card IMMEDIATELY (UX fluida)
         if (queue.length > 0) {
             renderCard(queue[0]);
         } else {
@@ -305,11 +325,8 @@ const FlashcardManager = (() => {
         } catch (e) {
             console.error("Sync Failed definitely for card", reviewData.cardId, e);
             if (window.uiManager && window.uiManager.showToast) {
-                window.uiManager.showToast('Error de sincronización. Reintentando...', 'warning');
+                window.uiManager.showToast('Error de sincronización de tarjeta.', 'warning');
             }
-        } finally {
-            _isRating = false;
-            if (ui.controls) ui.controls.style.pointerEvents = 'auto';
         }
     }
 
