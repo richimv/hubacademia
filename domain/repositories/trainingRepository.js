@@ -322,7 +322,7 @@ class TrainingRepository {
              * Normalizamos al valor canónico estricto para evitar violaciones de VARCHAR en PostgreSQL.
              */
             const canonicalDifficulty = (val) => {
-                return 'Senior'; // Unificado
+                return 'Senior';
             };
 
             /**
@@ -370,7 +370,7 @@ class TrainingRepository {
                 const difficulty = canonicalDifficulty(q.difficulty);
                 const question_text = String(q.question_text || q.question);
                 const optionsStr = JSON.stringify(q.options || []);
-                const correct_option_index = q.correct_option_index !== undefined ? q.correct_option_index : (q.correctAnswerIndex || 0);
+                const correct_option_index = q.correct_option_index !== undefined ? q.correct_option_index : (q.correct_answer !== undefined ? q.correct_answer : (q.correctAnswerIndex || 0));
                 const explanation = q.explanation || '';
                 const explanation_image_url = q.explanation_image_url || q.EXPLICACION_IMAGEN || null;
                 const image_url = q.image_url || null;
@@ -629,6 +629,50 @@ class TrainingRepository {
 
         await db.query(query, values);
         console.log(`✅ Saved ${insertCount} new UNIQUE flashcards with individual topics.`);
+    }
+
+    /**
+     * ✅ NUEVO: Inserción manual masiva desde Excel/Frontend.
+     * @param {string} userId
+     * @param {string} deckId
+     * @param {Array} cards - [{front, back}]
+     */
+    async createFlashcardsManualBatch(userId, deckId, cards) {
+        if (!cards || cards.length === 0) return { inserted: 0 };
+
+        // 1. Evitar duplicados exactos en el mismo mazo
+        const existingQuery = `
+            SELECT front_content FROM user_flashcards 
+            WHERE user_id = $1 AND deck_id = $2
+        `;
+        const existingRes = await db.query(existingQuery, [userId, deckId]);
+        const existingFronts = new Set(existingRes.rows.map(r => r.front_content.trim()));
+
+        const values = [];
+        const placeholders = [];
+        let insertCount = 0;
+
+        cards.forEach((c) => {
+            const front = c.front.trim();
+            const back = c.back.trim();
+
+            if (existingFronts.has(front)) return;
+
+            const offset = insertCount * 6;
+            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`);
+            values.push(userId, deckId, front, back, 'Manual Import', new Date());
+            insertCount++;
+        });
+
+        if (insertCount === 0) return { inserted: 0 };
+
+        const query = `
+            INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, created_at)
+            VALUES ${placeholders.join(', ')}
+        `;
+
+        await db.query(query, values);
+        return { inserted: insertCount };
     }
 
     /**

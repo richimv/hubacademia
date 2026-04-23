@@ -61,6 +61,10 @@ class DeckService {
     async getDeckTreeImages(userId, deckId) {
         return await trainingRepository.getDeckTreeImages(userId, deckId);
     }
+
+    async addBulkCards(userId, deckId, cards) {
+        return await trainingRepository.createFlashcardsManualBatch(userId, deckId, cards);
+    }
 }
 
 module.exports = new DeckService();

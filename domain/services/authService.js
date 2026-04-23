@@ -76,7 +76,7 @@ class AuthService {
                         target: 'SERUMS',
                         difficulty: 'Básico',
                         career: 'Medicina Humana',
-                        areas: ['Salud Pública', 'Cuidado Integral De Salud', 'Ética E Interculturalidad', 'Investigación', 'Gestión De Servicios De Salud']
+                        areas: ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud']
                     });
                 }
             } catch (prefErr) {

@@ -123,6 +123,7 @@ class UIManager {
                 }
             });
             this.openModals.clear();
+            document.body.classList.remove('modal-open');
         }
     }
 
@@ -131,6 +132,7 @@ class UIManager {
      */
     pushModalState(modalId) {
         this.openModals.add(modalId);
+        document.body.classList.add('modal-open');
         window.history.pushState({ modalOpen: true, modalId }, '');
     }
 
@@ -140,6 +142,9 @@ class UIManager {
     popModalState(modalId) {
         if (this.openModals.has(modalId)) {
             this.openModals.delete(modalId);
+            if (this.openModals.size === 0) {
+                document.body.classList.remove('modal-open');
+            }
             // Hacer "atrás" invisible si cerramos manual para no ensuciar el historial extra
             if (window.history.state && window.history.state.modalOpen) {
                 window.history.back();

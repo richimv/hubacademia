@@ -10,6 +10,9 @@
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Excel Parsing Library -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Shared CSS -->
     <link rel="stylesheet" href="css/base.css?v=v_pure_dark_v8">
@@ -230,6 +233,26 @@
                         <i class="fas fa-circle-notch fa-spin" style="color: #60a5fa;"></i>
                         <span style="margin-left: 8px; color: #94a3b8; font-size: 0.85rem;">Procesando imagen...</span>
                     </div>
+
+                    <!-- CARGA MASIVA (NUEVO) -->
+                    <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px dashed rgba(255,255,255,0.1);">
+                        <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #60a5fa;"><i class="fas fa-file-excel"></i> Carga Masiva</h4>
+                        <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 1rem;">Sube un archivo Excel con dos columnas: <b>Frente</b> y <b>Dorso</b> para crear tarjetas rápidamente.</p>
+                        
+                        <div style="display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="btn-upload-minimal" onclick="window.repasoManager.downloadFlashcardTemplate()" style="flex: 1; min-width: 150px; justify-content: center; background: rgba(255,255,255,0.05);">
+                                <i class="fas fa-download"></i> Plantilla Excel
+                            </button>
+                            
+                            <label class="btn-upload-minimal" style="flex: 2; min-width: 200px; justify-content: center; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981; cursor: pointer;">
+                                <i class="fas fa-file-upload"></i> <span>Seleccionar Archivo</span>
+                                <input type="file" id="bulk-flashcard-input" accept=".xlsx, .xls, .csv" style="display: none;" onchange="window.repasoManager.handleBulkFlashcardUpload(this)">
+                            </label>
+                        </div>
+                        <div id="bulk-upload-preview" style="display: none; margin-top: 1rem; font-size: 0.8rem; color: #34d399; text-align: center; background: rgba(16, 185, 129, 0.05); padding: 0.5rem; border-radius: 6px;">
+                            <i class="fas fa-check-circle"></i> <span id="bulk-count-text">0 tarjetas detectadas</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
@@ -411,7 +434,7 @@
 
     <script src="js/heatmap.js?v=v_pure_dark_v9"></script> <!-- Optional for Stats -->
     <script src="js/deck-explorer.js"></script> <!-- NEW -->
-    <script src="js/repaso.js?v=v_pure_dark_v8"></script>
+    <script src="js/repaso.js?v=v_bulk_v1"></script>
 </body>
 
 </html>

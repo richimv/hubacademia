@@ -85,3 +85,11 @@ El sistema implementa un motor de analíticas para motivar la constancia del est
 
 ### C. Almacenamiento y Persistencia
 Los datos se persisten en PostgreSQL y se sirven a través del endpoint unificado `/api/analytics/heatmap`. Este endpoint requiere autenticación JWT para filtrar la actividad por el `user_id` correspondiente.
+
+
+## 5. Optimizaciones de UX (Abril 2026 - Sprint Final)
+
+1. **Carga Masiva de Flashcards (Excel Engine)**: Integración de un motor de importación basado en SheetJS (XLSX) dentro del módulo de repaso.
+    - **UX Directa**: Permite al usuario descargar una plantilla optimizada y subir cientos de tarjetas en segundos.
+    - **Backend Batching**: Endpoint /api/decks/:deckId/cards/batch con validación de duplicados.
+    - **Feedback Visual**: Contador en tiempo real y spinners de carga.

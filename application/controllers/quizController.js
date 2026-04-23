@@ -22,10 +22,10 @@ class QuizController {
             if (finalAreas.length === 0 || (finalAreas.length === 1 && (finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' || finalAreas[0].toUpperCase() === 'GENERAL'))) {
                 finalAreas = [
                     'Salud Pública',
-                    'Gestión De Servicios De Salud',
-                    'Ética E Interculturalidad',
+                    'Gestión de Servicios de Salud',
+                    'Ética e Interculturalidad',
                     'Investigación',
-                    'Cuidado Integral De Salud'
+                    'Cuidado Integral de Salud'
                 ];
                 console.log(`📡 Fallback Controller: Aplicando 5 ejes MINSA para ${user.email}`);
             }
@@ -375,10 +375,10 @@ class QuizController {
             if (finalAreas.length === 0 || (finalAreas.length === 1 && (finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' || finalAreas[0].toUpperCase() === 'GENERAL'))) {
                 finalAreas = [
                     'Salud Pública',
-                    'Gestión De Servicios De Salud',
-                    'Ética E Interculturalidad',
+                    'Gestión de Servicios de Salud',
+                    'Ética e Interculturalidad',
                     'Investigación',
-                    'Cuidado Integral De Salud'
+                    'Cuidado Integral de Salud'
                 ];
                 console.log(`📡 Fallback Controller [Batch]: Aplicando 5 ejes MINSA.`);
             }

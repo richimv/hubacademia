@@ -171,6 +171,7 @@ router.get('/decks/:deckId/cards/due', auth, DeckController.getDueCards);
 router.get('/decks/:deckId/cards/:cardId/study', auth, DeckController.getStudyCard);
 router.get('/decks/:deckId/cards', optionalAuth, DeckController.listCards); // ✅ NUEVO
 router.post('/decks/:deckId/cards', auth, DeckController.addCard); // ✅ NUEVO
+router.post('/decks/:deckId/cards/batch', auth, DeckController.addBulkCards); // ✅ NUEVO: Batch Import
 router.post('/decks/:deckId/generate', auth, checkAILimits('monthly_flashcards'), DeckController.generateCards); // ✅✨ NUEVO: IA Gen
 router.put('/decks/:deckId', auth, DeckController.updateDeck); // ✅ NUEVO: Rename
 router.delete('/decks/:deckId', auth, DeckController.deleteDeck); // ✅ NUEVO

@@ -8,6 +8,7 @@ class RepasoManager {
         this.token = localStorage.getItem('authToken');
         this._isCreatingDeck = false;
         this._pendingFiles = { front: null, back: null }; // ✅ NUEVO: Cola de archivos para subir al guardar
+        this._pendingBulkCards = []; // ✅ NUEVO: Cola de tarjetas detectadas en Excel
 
         this.explorer = new DeckExplorer(this);
 
@@ -1147,6 +1148,12 @@ class RepasoManager {
         const imageUrl = document.getElementById('card-image-url-front').value || null;
         const backImageUrl = document.getElementById('card-image-url-back').value || null;
 
+        // ✅ NUEVO: Manejo de Carga Masiva si existe archivo procesado
+        if (this._pendingBulkCards && this._pendingBulkCards.length > 0) {
+            await this._saveBulkCards(deckId);
+            return;
+        }
+
         // Validaciones UX
         if (!front && !imageUrl) {
             alert('El frente de la tarjeta no puede estar vacío. Añade texto o una imagen.');
@@ -1251,6 +1258,13 @@ class RepasoManager {
         document.getElementById('card-back').value = back;
         document.getElementById('modal-title').innerText = 'Editar Tarjeta';
 
+        // Reset Bulk UI
+        this._pendingBulkCards = [];
+        const preview = document.getElementById('bulk-upload-preview');
+        if (preview) preview.style.display = 'none';
+        const fileInput = document.getElementById('bulk-flashcard-input');
+        if (fileInput) fileInput.value = '';
+
         // Previews Anverso
         this._updateImagePreview('front', imageUrl);
         // Previews Reverso
@@ -1310,6 +1324,116 @@ class RepasoManager {
         
         this._pendingFiles[side] = null;
         this._updateImagePreview(side, '');
+    }
+
+    // --- CARGA MASIVA EXCEL (NUEVO) ---
+
+    downloadFlashcardTemplate() {
+        if (typeof window.XLSX === 'undefined') return alert('Error: Cargando motor de Excel...');
+        
+        const ws_data = [
+            ["Frente", "Dorso"],
+            ["¿Cuál es la capital de Perú?", "Lima"],
+            ["Nombre del neurotransmisor principal de la placa motora", "Acetilcolina (ACh)"],
+            ["Triada de Virchow", "1. Estasis venosa\n2. Daño endotelial\n3. Hipercoagulabilidad"]
+        ];
+
+        const ws = window.XLSX.utils.aoa_to_sheet(ws_data);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, "Flashcards");
+        window.XLSX.writeFile(wb, "HubAcademia_Plantilla_Flashcards.xlsx");
+    }
+
+    async handleBulkFlashcardUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        if (typeof window.XLSX === 'undefined') {
+            alert('El procesador de Excel no está listo. Intenta en unos segundos.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = window.XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const rows = window.XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                // Procesar filas (omitir encabezado)
+                const newCards = [];
+                for (let i = 1; i < rows.length; i++) {
+                    const front = rows[i][0]?.toString().trim();
+                    const back = rows[i][1]?.toString().trim();
+                    if (front && back) {
+                        newCards.push({ front, back });
+                    }
+                }
+
+                if (newCards.length === 0) {
+                    alert('No se detectaron tarjetas válidas en el archivo. Asegúrate de usar las columnas "Frente" y "Dorso".');
+                    input.value = '';
+                    return;
+                }
+
+                this._pendingBulkCards = newCards;
+                
+                // UI Feedback
+                const preview = document.getElementById('bulk-upload-preview');
+                const text = document.getElementById('bulk-count-text');
+                if (preview && text) {
+                    text.textContent = `${newCards.length} tarjetas detectadas listas para guardar.`;
+                    preview.style.display = 'block';
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert('Error al leer el archivo Excel.');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    async _saveBulkCards(deckId) {
+        const submitBtn = document.querySelector('#card-form button[type="submit"]');
+        const originalText = submitBtn ? submitBtn.innerHTML : '';
+        
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Subiendo mazo...';
+        }
+
+        try {
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards/batch`, {
+                method: 'POST',
+                isRetryable: true,
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${this.token}` 
+                },
+                body: JSON.stringify({ cards: this._pendingBulkCards })
+            });
+
+            if (res.ok) {
+                this._pendingBulkCards = [];
+                this.closeCardModal();
+                this.loadFolder(deckId);
+                if (window.uiManager.showToast) window.uiManager.showToast('¡Carga masiva completada con éxito!', 'success');
+            } else {
+                const data = await res.json();
+                alert('Error en carga masiva: ' + (data.error || 'Fallo desconocido'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error de red en la carga masiva.');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
     }
 
     // AI Generation

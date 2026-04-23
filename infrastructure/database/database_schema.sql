@@ -137,6 +137,8 @@ CREATE TABLE IF NOT EXISTS public.question_bank (
 );
 
 -- Table: quiz_history
+-- NOTA: Los nombres de los tópicos (topic) deben seguir el estándar gramatical (e/de minúsculas)
+-- Ej: 'Ética e Interculturalidad', 'Gestión de Servicios de Salud', 'Cuidado Integral de Salud'
 CREATE TABLE IF NOT EXISTS public.quiz_history (
     id UUID NOT NULL DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL,
@@ -146,7 +148,7 @@ CREATE TABLE IF NOT EXISTS public.quiz_history (
     total_questions INTEGER NOT NULL,
     weak_points TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    area_stats JSONB DEFAULT '{}'::jsonb,
+    area_stats JSONB DEFAULT '{}'::jsonb, -- Estructura: {"Nombre Tópico": {"correct": X, "total": Y}}
     target CHARACTER VARYING(50),
     career CHARACTER VARYING(100),
     CONSTRAINT quiz_history_pkey PRIMARY KEY (id)

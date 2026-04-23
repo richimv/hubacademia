@@ -24,7 +24,7 @@ La configuración se divide en los siguientes apartados críticos:
     1.  **CIENCIAS BÁSICAS:** Anatomía, Fisiología, Farmacología, Microbiología y Parasitología.
     2.  **LAS 4 GRANDES:** Medicina Interna, Pediatría, Ginecología y Obstetricia, Cirugía General.
     3.  **ESPECIALIDADES CLÍNICAS:** Cardiología, Gastroenterología, Neurología, Nefrología, Neumología, Endocrinología, Hematología, Reumatología, Infectología, Dermatología, Psiquiatría.
-    4.  **SALUD PÚBLICA Y GESTIÓN (MINSA):** Salud Pública, Gestión De Servicios De Salud, Ética E Interculturalidad, Investigación, Cuidado Integral De Salud.
+    4.  **SALUD PÚBLICA Y GESTIÓN (MINSA):** Salud Pública, Gestión de Servicios de Salud, Ética e Interculturalidad, Investigación, Cuidado Integral de Salud.
 
 ### 0.2 Bindeo con el Motor de IA
 Cuando el usuario presiona "Configurar Simulacro" o el administrador "Generar con IA", estos parámetros se encapsulan en un objeto JSON que viaja a `mlService.js`. Este servicio utiliza el **Target** para elegir los recursos vectorizados y la **Carrera** para inyectar los ejemplos de estilo (Few-Shot) recuperados por el RAG.

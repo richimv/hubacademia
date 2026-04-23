@@ -119,6 +119,10 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+body.modal-open {
+    overflow: hidden !important;
+}
+
 a {
     color: var(--primary-light);
     text-decoration: none;

@@ -175,6 +175,26 @@ class DeckController {
     }
 
     /**
+     * POST /api/decks/:deckId/cards/batch
+     */
+    addBulkCards = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { cards } = req.body;
+            const { userId, isGuest } = this._getUserContext(req);
+
+            if (isGuest) return res.status(403).json({ error: 'Inicia sesión para subir tarjetas.' });
+            if (!cards || !Array.isArray(cards)) return res.status(400).json({ error: 'Se requiere un array de tarjetas.' });
+
+            const result = await DeckService.addBulkCards(userId, deckId, cards);
+            res.json({ success: true, count: result.inserted });
+        } catch (error) {
+            console.error('[addBulkCards] Error:', error);
+            res.status(500).json({ error: 'Error en la carga masiva.' });
+        }
+    }
+
+    /**
      * PUT /api/decks/:deckId/cards/reorder
      */
     reorderCards = async (req, res) => {

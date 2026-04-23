@@ -603,3 +603,67 @@ body {
 .upload-img-btn:hover {
     background: #4b5563;
 }
+
+/* Estilos para Modal de Importación (Premium) */
+.import-method-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.import-method-card {
+    background: var(--bg-secondary, rgba(255,255,255,0.02));
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.import-method-card:focus-within {
+    border-color: var(--accent-color, #6366f1);
+    background: rgba(99, 102, 241, 0.03);
+}
+
+.import-method-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.import-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    background: rgba(255,255,255,0.05);
+}
+
+.json-icon { color: #f59e0b; }
+.excel-icon { color: #22c55e; }
+
+.import-method-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.import-method-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-bottom: 15px;
+}
+
+/* Animación de Entrada para Modales de Inyección */
+@keyframes modalSlideIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#generic-modal .modal-content {
+    animation: modalSlideIn 0.3s ease-out;
+}

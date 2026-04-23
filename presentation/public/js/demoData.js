@@ -18,7 +18,7 @@ window.DemoBank = {
             "correct_option_index": 0,
             "explanation": "La vacuna BCG (Bacilo de Calmette-Guérin) forma parte del Esquema Nacional de Vacunación del Perú y se administra a recién nacidos para prevenir las formas graves de tuberculosis, especialmente la tuberculosis militar y la meningitis tuberculosa. Según la Norma Técnica de Salud N° 141-MINSA/2018/DGIESP, la vía de administración correcta es intradérmica en el brazo derecho.\n\nEsta vía permite una respuesta inmunológica local adecuada y la formación de la pápula característica. Es fundamental seguir estrictamente la técnica de administración establecida en la normativa oficial del MINSA para asegurar la protección adecuada y minimizar riesgos de reacciones adversas locales.",
             "domain": "medicine",
-            "topic": "Cuidado Integral De Salud",
+            "topic": "Cuidado Integral de Salud",
             "subtopic": "Programa Ampliado de Inmunizaciones (PAI)",
             "target": "SERUMS",
             "career": "Medicina Humana"
@@ -50,7 +50,7 @@ window.DemoBank = {
             "correct_option_index": 0,
             "explanation": "La Ley N° 29414 establece los Derechos de las Personas Usuarias de los Servicios de Salud. Entre ellos destaca el acceso a información adecuada y oportuna sobre el diagnóstico, tratamiento y alternativas de su estado de salud.\n\nEste derecho es clave para asegurar la autonomía del paciente y permitir la toma de decisiones informadas mediante el consentimiento informado, pilar de la ética médica moderna y la normativa legal vigente de la SUSALUD.",
             "domain": "medicine",
-            "topic": "Ética E Interculturalidad",
+            "topic": "Ética e Interculturalidad",
             "subtopic": "Derechos del Paciente",
             "target": "SERUMS",
             "career": "Medicina Humana",
@@ -82,13 +82,13 @@ window.DemoBank = {
             "correct_option_index": 1,
             "explanation": "La NTS N° 105-MINSA/DGSP-V.01 establece como mínimo seis controles prenatales para una gestante sin complicaciones.\n\nEstos controles son esenciales para la detección temprana de riesgos, la promoción de hábitos saludables y la preparación para el parto institucional seguro, contribuyendo directamente a la reducción de la morbi-mortalidad materna y neonatal en el Perú.",
             "domain": "medicine",
-            "topic": "Cuidado Integral De Salud",
+            "topic": "Cuidado Integral de Salud",
             "subtopic": "Salud Materno-Perinatal",
             "target": "SERUMS",
             "career": "Medicina Humana",
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "Usted asume la jefatura de un centro de salud I-3. ¿A qué órgano técnico le corresponde asignar formalmente el nivel de categorización a su IPRESS?",
             "options": [
                 "Dirección de Gestión de Establecimientos",
@@ -104,7 +104,7 @@ window.DemoBank = {
             "subtopic": "Categorización"
         },
         {
-            "topic": "Ética E Interculturalidad",
+            "topic": "Ética e Interculturalidad",
             "question_text": "Una obstetra administra metamizol intramuscular a una gestante. Minutos después, la paciente presenta rash y náuseas. ¿A qué comité debe reportarse obligatoriamente esta sospecha?",
             "options": [
                 "Comité de control interno",
@@ -120,7 +120,7 @@ window.DemoBank = {
             "subtopic": "Farmacovigilancia"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "En el análisis FODA de un puesto de salud, el comportamiento negativo de la población y sus hábitos difíciles de modificar se identifican como:",
             "options": [
                 "Debilidades",
@@ -184,7 +184,7 @@ window.DemoBank = {
             "subtopic": "Diseños de Investigación"
         },
         {
-            "topic": "Ética E Interculturalidad",
+            "topic": "Ética e Interculturalidad",
             "question_text": "Según el Código de Ética de la Función Pública, el servidor tiene el deber de _____ y _____ los bienes del Estado asignados para sus funciones.",
             "options": [
                 "Usar / Cuidar",
@@ -216,7 +216,7 @@ window.DemoBank = {
             "subtopic": "Proceso de Investigación"
         },
         {
-            "topic": "Cuidado Integral De Salud",
+            "topic": "Cuidado Integral de Salud",
             "question_text": "Acude gestante de 19 años con 34 semanas y anemia sever (Hb: 9 g/dL). ¿Qué tipo de anemia tiene mayor riesgo de presentar el recién nacido?",
             "options": [
                 "Megaloblástica",
@@ -232,7 +232,7 @@ window.DemoBank = {
             "subtopic": "Anemia Materno-Infantil"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "El POI es un instrumento de gestión que establece metas físicas y financieras de vigencia anual, las cuales deben estar alineadas con el:",
             "options": [
                 "Manual de Organización y Funciones",
@@ -280,7 +280,7 @@ window.DemoBank = {
             "subtopic": "Vigilancia Epidemiológica"
         },
         {
-            "topic": "Ética E Interculturalidad",
+            "topic": "Ética e Interculturalidad",
             "question_text": "Paciente de 80 años con cáncer decide no aceptar quimioterapia tras ser informada de riesgos y beneficios. ¿Qué registro es obligatorio en este escenario?",
             "options": [
                 "El alta por retiro voluntario del establecimiento.",
@@ -296,7 +296,7 @@ window.DemoBank = {
             "subtopic": "Derechos del Paciente y Autonomía"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "Durante su guardia en un puesto de salud I-2 en Sullana, evalúa a un joven con diagnóstico de dengue y signos de alarma. Debido a la gravedad del caso, ¿cuál es el nivel del establecimiento receptor obligatorio para garantizar el monitoreo clínico continuo?",
             "options": [
                 "Establecimiento de nivel I-4 o II-1",
@@ -328,7 +328,7 @@ window.DemoBank = {
             "subtopic": "Prevención y Control de Tuberculosis"
         },
         {
-            "topic": "Cuidado Integral De Salud",
+            "topic": "Cuidado Integral de Salud",
             "question_text": "Neonato de 2 días nacido en domicilio es traído a un puesto de salud I-1 de una comunidad aymara en Puno. Presenta hipoactividad, rechazo al pecho y temperatura de 35.5 °C. Como parte de los cuidados primarios, ¿cuál es la medida obligatoria antes y durante su traslado?",
             "options": [
                 "Iniciar infusión de antibióticos de amplio espectro",
@@ -344,7 +344,7 @@ window.DemoBank = {
             "subtopic": "Atención Integral Neonatal"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "Al retornar de una campaña extramural, el enfermero de un centro de salud I-3 en Ucayali reporta que el termo registró temperaturas entre +10 °C y +15 °C durante 6 días. ¿Qué indica la normativa técnica sobre los viales cerrados de vacuna combinada pentavalente expuestos?",
             "options": [
                 "Deben recongelarse durante unas veinticuatro horas",
@@ -408,7 +408,7 @@ window.DemoBank = {
             "subtopic": "Vigilancia de Enfermedades Metaxénicas"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "Usted asume la jefatura de un centro de salud I-3. ¿A qué órgano técnico le corresponde asignar formalmente el nivel de categorización a su IPRESS?",
             "options": [
                 "Dirección de Servicios de Salud",
@@ -424,7 +424,7 @@ window.DemoBank = {
             "subtopic": "Categorización de IPRESS"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "Es el documento de gestión que comprende la programación de actividades operativas e inversiones alineadas al PEI, permitiendo el ejercicio del rol rector anual.",
             "options": [
                 "ROF",
@@ -440,7 +440,7 @@ window.DemoBank = {
             "subtopic": "Planeamiento Estratégico (POI)"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "Dada la necesidad de optimizar la atención de pacientes crónicos en un hospital III-1, se decide implementar seguimiento domiciliario. ¿Qué componente es prioritario para el éxito?",
             "options": [
                 "Incrementar camas hospitalarias.",
@@ -456,7 +456,7 @@ window.DemoBank = {
             "subtopic": "Redes Integradas de Salud (RIS)"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "Ante una alta incidencia de IAAS en una UCI de Hospital III-2, se decide implementar vigilancia intensiva. ¿Qué componente es CRUCIAL para la efectividad?",
             "options": [
                 "Capacitación de personal de limpieza.",
@@ -472,7 +472,7 @@ window.DemoBank = {
             "subtopic": "Gestión de la Calidad y Seguridad"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "Todo servidor público debe proteger y conservar los bienes del Estado asignados para sus funciones, evitando abuso o derroche. ¿A qué deber alude?",
             "options": [
                 "Ejecución eficiente",
@@ -504,7 +504,7 @@ window.DemoBank = {
             "subtopic": "Pruebas Diagnósticas"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "En el marco de las Redes Integradas de Salud (RIS), ¿qué atributo se refiere a la capacidad de la red para garantizar que el paciente reciba atenciones coordinadas a lo largo de los diferentes niveles?",
             "options": [
                 "Accesibilidad",
@@ -520,7 +520,7 @@ window.DemoBank = {
             "subtopic": "Redes Integradas de Salud"
         },
         {
-            "topic": "Ética E Interculturalidad",
+            "topic": "Ética e Interculturalidad",
             "question_text": "El médico serumista es consultado por la policía sobre el diagnóstico de una paciente víctima de agresión. ¿En qué caso el secreto profesional NO es obligatorio?",
             "options": [
                 "Solicitud del cónyuge",
@@ -536,7 +536,7 @@ window.DemoBank = {
             "subtopic": "Secreto Profesional"
         },
         {
-            "topic": "Ética E Interculturalidad",
+            "topic": "Ética e Interculturalidad",
             "question_text": "Usted atiende a un varón que fallece por herida de arma de fuego. ¿Cuál es la conducta médico-legal correcta respecto al cadáver?",
             "options": [
                 "Certificar la defunción",
@@ -568,7 +568,7 @@ window.DemoBank = {
             "subtopic": "Muestreo Probabilístico"
         },
         {
-            "topic": "Cuidado Integral De Salud",
+            "topic": "Cuidado Integral de Salud",
             "question_text": "En el control prenatal de una gestante sin factores de riesgo, ¿a partir de qué semana se debe iniciar la suplementación con Calcio para prevenir la preeclampsia?",
             "options": [
                 "14 semanas",
@@ -600,7 +600,7 @@ window.DemoBank = {
             "subtopic": "Inmunizaciones"
         },
         {
-            "topic": "Gestión De Servicios De Salud",
+            "topic": "Gestión de Servicios de Salud",
             "question_text": "La dimensión de la calidad de atención que busca minimizar los riesgos y daños para el paciente durante el proceso de atención se denomina:",
             "options": [
                 "Eficacia",
@@ -616,7 +616,7 @@ window.DemoBank = {
             "subtopic": "Gestión de Calidad"
         },
         {
-            "topic": "Ética E Interculturalidad",
+            "topic": "Ética e Interculturalidad",
             "question_text": "En la cosmovisión andina, el concepto de salud no solo implica la ausencia de enfermedad, sino la armonía con el entorno y la comunidad. Esto se denomina:",
             "options": [
                 "Allin Kawsay",
@@ -632,7 +632,7 @@ window.DemoBank = {
             "subtopic": "Salud Intercultural"
         },
         {
-            "topic": "Cuidado Integral De Salud",
+            "topic": "Cuidado Integral de Salud",
             "question_text": "Para evaluar la capacidad de un adulto mayor para realizar actividades instrumentales como usar el teléfono, ir de compras o cocinar, ¿qué escala debe aplicar?",
             "options": [
                 "Índice de Katz",

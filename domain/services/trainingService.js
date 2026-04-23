@@ -98,10 +98,10 @@ class TrainingService {
         if (isGeneric) {
             areas = [
                 'Salud Pública',
-                'Gestión De Servicios De Salud',
-                'Ética E Interculturalidad',
+                'Gestión de Servicios de Salud',
+                'Ética e Interculturalidad',
                 'Investigación',
-                'Cuidado Integral De Salud'
+                'Cuidado Integral de Salud'
             ];
             console.log(`📡 Fallback Activado: Usando 5 áreas oficiales de SERUMS para configuración inicial.`);
         }
