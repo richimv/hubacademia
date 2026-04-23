@@ -826,7 +826,7 @@ class TrainingRepository {
 
     // --- ANALYTICS & EVOLUTION ---
 
-    async getQuizEvolution(userId, context, target, limit) {
+    async getQuizEvolution(userId, context, target, limit, timeFilter = '', areas = null) {
         // Context filter logic matching Controller
         let filter = '';
         const params = [userId];
@@ -848,6 +848,14 @@ class TrainingRepository {
             filter += ` AND total_questions = $${params.length}`;
         }
 
+        if (areas && Array.isArray(areas) && areas.length > 0) {
+            params.push(areas);
+            filter += ` AND jsonb_typeof(area_stats) = 'object' AND EXISTS (
+                SELECT 1 FROM jsonb_each(area_stats) 
+                WHERE key = ANY($${params.length}::text[])
+            )`;
+        }
+
         // Get last 10 attempts, ordered by date ASC specifically for Chart
         const query = `
             SELECT 
@@ -856,7 +864,7 @@ class TrainingRepository {
                 total_questions,
                 (score::float / NULLIF(total_questions, 0)) * 20 as score_20 -- Projected to 0-20 scale
             FROM quiz_history
-            WHERE user_id = $1 ${filter}
+            WHERE user_id = $1 ${filter} ${timeFilter}
             ORDER BY created_at ASC
             LIMIT 10
         `;
@@ -880,32 +888,49 @@ class TrainingRepository {
         return parseInt(res.rows[0].count_mastered, 10);
     }
 
-    async getBasicQuizStats(userId, topicFilter, params) {
+    async getBasicQuizStats(userId, topicFilter, params, timeFilter = '', areas = null) {
+        const queryParams = [...params];
+        let areaFilter = '';
+        if (areas && Array.isArray(areas) && areas.length > 0) {
+            queryParams.push(areas);
+            areaFilter = ` AND jsonb_typeof(area_stats) = 'object' AND EXISTS (
+                SELECT 1 FROM jsonb_each(area_stats) 
+                WHERE key = ANY($${queryParams.length}::text[])
+            )`;
+        }
+
         const query = `
             SELECT 
-                COUNT(*) as total_games,
+                COALESCE(SUM(total_questions), 0) as total_questions,
                 COALESCE(SUM(score), 0) as total_correct,
-                COALESCE(SUM(total_questions), 0) as total_questions
+                COUNT(*) as total_games
             FROM quiz_history
-            WHERE user_id = $1 ${topicFilter}
+            WHERE user_id = $1 ${topicFilter} ${timeFilter} ${areaFilter}
         `;
-        const res = await db.query(query, params);
+        const res = await db.query(query, queryParams);
         return res.rows[0];
     }
 
-    async getTopicAnalysis(userId, topicFilter, params) {
+    async getTopicAnalysis(userId, topicFilter, params, timeFilter = '', areas = null) {
+        const queryParams = [...params];
+        let areaFilter = '';
+        if (areas && Array.isArray(areas) && areas.length > 0) {
+            queryParams.push(areas);
+            areaFilter = ` AND key = ANY($${queryParams.length}::text[])`;
+        }
+
         const query = `
             SELECT 
                 key as subtema,
                 SUM((value->>'correct')::int) as correct_answers,
                 SUM((value->>'total')::int) as total_answers
             FROM quiz_history, jsonb_each(area_stats)
-            WHERE user_id = $1 ${topicFilter} AND jsonb_typeof(area_stats) = 'object'
+            WHERE user_id = $1 ${topicFilter} ${timeFilter} ${areaFilter} AND jsonb_typeof(area_stats) = 'object'
             GROUP BY key
             HAVING SUM((value->>'total')::int) > 0
             ORDER BY (SUM((value->>'correct')::int)::float / SUM((value->>'total')::int)) DESC
         `;
-        const res = await db.query(query, params);
+        const res = await db.query(query, queryParams);
         return res.rows;
     }
 

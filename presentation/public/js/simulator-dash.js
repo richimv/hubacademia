@@ -22,6 +22,7 @@ const SimulatorDash = (() => {
     let currentContext = 'MEDICINA'; // Default
     let activeConfig = null; // Stores user custom exam configuration
     let activeMode = null;   // null = Todos | 10 = Rápido | 20 = Estudio
+    let activeDays = null;   // null = Histórico | 30 = 30d | 7 = 7d
     let lineChartInst = null;
     let radarChartInst = null;
 
@@ -172,8 +173,49 @@ const SimulatorDash = (() => {
                 // Actualizar estado activo
                 tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
+                
+                // Estilos visuales
+                tabs.forEach(t => {
+                    t.style.background = 'transparent';
+                    t.style.color = '#475569';
+                });
+                tab.style.background = 'rgba(59,130,246,0.2)';
+                tab.style.color = '#93c5fd';
+
                 const val = tab.dataset.mode;
                 activeMode = val === 'all' ? null : parseInt(val);
+
+                // Re-cargar stats con el nuevo filtro
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    loadStats();
+                    loadEvolution();
+                }
+            });
+        });
+    }
+
+    // ── Tabs de Tiempo (Histórico / 30d / 7d) ────────────
+    function setupTimeTabs() {
+        const tabs = document.querySelectorAll('.kpi-time-tab');
+        if (!tabs.length) return;
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Actualizar estado activo
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Estilos visuales
+                tabs.forEach(t => {
+                    t.style.background = 'transparent';
+                    t.style.color = '#475569';
+                });
+                tab.style.background = 'rgba(139,92,246,0.2)';
+                tab.style.color = '#c4b5fd';
+
+                const val = tab.dataset.days;
+                activeDays = val === 'all' ? null : parseInt(val);
 
                 // Re-cargar stats con el nuevo filtro
                 const token = localStorage.getItem('authToken');
@@ -248,6 +290,7 @@ const SimulatorDash = (() => {
                 await window.sessionManager.refreshUser();
             }
             setupModeTabs();
+            setupTimeTabs();
             await loadStats();
             await loadEvolution();
         } else {
@@ -650,7 +693,11 @@ const SimulatorDash = (() => {
         try {
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
+            if (activeConfig && activeConfig.areas && activeConfig.areas.length > 0) {
+                qs += `&areas=${encodeURIComponent(activeConfig.areas.join(','))}`;
+            }
             if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo
+            if (activeDays) qs += `&days=${activeDays}`;     // Filtro por tiempo
 
             const headers = {};
             if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -790,7 +837,11 @@ const SimulatorDash = (() => {
             // Fetch Optimized Summary
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
+            if (activeConfig && activeConfig.areas && activeConfig.areas.length > 0) {
+                qs += `&areas=${encodeURIComponent(activeConfig.areas.join(','))}`;
+            }
             if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo (10 = Rápido, 20 = Estudio)
+            if (activeDays) qs += `&days=${activeDays}`;     // Filtro por tiempo (7, 30)
 
             const headers = {};
             if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -1056,40 +1107,17 @@ const SimulatorDash = (() => {
                     style.id = 'arcade-glow-style';
                     style.textContent = `
                         @keyframes arcade-glow {
-                            0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); border-color: rgba(59, 130, 246, 0.3); }
-                            50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 10px rgba(34, 197, 94, 0.4); border-color: rgba(96, 165, 250, 0.8); }
-                            100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); border-color: rgba(59, 130, 246, 0.3); }
+                            0% { box-shadow: 0 0 0px rgba(236, 72, 153, 0); border-color: rgba(255, 255, 255, 0.1); }
+                            50% { box-shadow: 0 0 25px rgba(236, 72, 153, 0.6), 0 0 10px rgba(236, 72, 153, 0.3); border-color: rgba(236, 72, 153, 0.8); }
+                            100% { box-shadow: 0 0 0px rgba(236, 72, 153, 0); border-color: rgba(255, 255, 255, 0.1); }
                         }
                         .arcade-highlight {
-                            animation: arcade-glow 2s infinite ease-in-out;
+                            animation: arcade-glow 2.5s infinite ease-in-out;
                             position: relative;
                             z-index: 10;
-                            overflow: visible !important; /* Prevent clipping */
+                            border-width: 1px !important;
                         }
-                        .arcade-highlight::after {
-                            content: '¡Pruébalo ahora!';
-                            position: absolute;
-                            top: 15px; /* Centered slightly better for the larger size */
-                            right: 15px;
-                            background: linear-gradient(90deg, #bfd025ff, #10b981);
-                            color: white;
-                            font-size: 0.7rem; /* Increased font-size */
-                            padding: 6px 14px; /* Increased padding */
-                            border-radius: 20px;
-                            font-weight: 800;
-                            text-transform: uppercase;
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-                            z-index: 20;
-                            border: 1px solid rgba(255,255,255,0.2);
-                        }
-                        @media (max-width: 768px) {
-                            .arcade-highlight::after {
-                                font-size: 0.8rem; /* Increased font-size for mobile */
-                                padding: 4px 10px; /* Increased padding for mobile */
-                                top: 15px;
-                                right: 15px;
-                            }
-                        }
+
                     `;
                     document.head.appendChild(style);
                 }

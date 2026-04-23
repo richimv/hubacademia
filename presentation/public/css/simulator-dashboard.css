@@ -13,16 +13,17 @@
     --bg-card:      rgba(255,255,255,0.035);
     --border:       rgba(255,255,255,0.07);
     --border-hover: rgba(255,255,255,0.14);
-    --text-primary: #f1f5f9;
-    --text-secondary: #64748b;
-    --text-muted:   #334155;
-    --blue:   #3b82f6;
-    --blue-glow: rgba(59,130,246,0.2);
+    --text-primary:   #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted:      #94a3b8;
     --pink:   #ec4899;
+    --blue:   #3b82f6;
     --amber:  #f59e0b;
     --emerald:#10b981;
     --violet: #8b5cf6;
-    --radius-card: 20px;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --radius-card: 22px;
     --radius-sm: 12px;
     --transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
@@ -90,168 +91,197 @@
 /* ── Modes Grid ─────────────────────────────────────────── */
 .modes-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, 1fr); /* 4 tarjetas en una sola fila en PC */
     gap: 1rem;
     margin-bottom: 2.5rem;
 }
 
-@media (max-width: 900px) { .modes-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .modes-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 1100px) {
+    .modes-grid { grid-template-columns: repeat(2, 1fr); }
+}
 
-/* ── Mode Card — estructura fija para alineación consistente ── */
+@media (max-width: 520px) {
+    .modes-grid { 
+        grid-template-columns: repeat(2, 1fr); /* 2x2 en celulares */
+        gap: 0.75rem; 
+    }
+}
+
+/* ── Mode Card — FIDELIDAD MOCKUP ── */
 .mode-card {
     position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 1.75rem 1.25rem 1.5rem;
-    background: rgba(255, 255, 255, 0.055);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-card);
+    justify-content: center;
+    padding: 1.5rem 1.75rem;
+    background: #0b1120;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
     text-decoration: none;
     cursor: pointer;
     overflow: hidden;
-    transition: var(--transition);
-    min-height: 240px;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 8px 24px rgba(0,0,0,0.3);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    aspect-ratio: 1 / 1;
+    /* Efecto humo inicial: Sombra interna suave */
+    box-shadow: 
+        0 8px 32px rgba(0,0,0,0.4),
+        inset 0 0 40px rgba(0,0,0,0.6);
 }
 
-/* Ambient glow layer */
-.mode-card::before {
+/* Capa de Humo / Neblina Atmosférica */
+.mode-card::after {
     content: '';
     position: absolute;
     inset: 0;
-    opacity: 0;
-    transition: opacity 0.45s ease;
+    background: radial-gradient(
+        circle at 70% 70%, 
+        rgba(var(--accent-rgb), 0.12) 0%, 
+        transparent 70%
+    );
+    z-index: 2; /* Sobre la imagen (z1) pero bajo el texto (z5) */
     pointer-events: none;
-    z-index: 0;
-    border-radius: var(--radius-card);
+    transition: all 0.5s ease;
+}
+
+.mode-card:hover::after {
+    background: radial-gradient(
+        circle at 70% 70%, 
+        rgba(var(--accent-rgb), 0.2) 0%, 
+        transparent 80%
+    );
+}
+
+/* Línea de acento lateral ultra-fina */
+.mode-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 25%; bottom: 25%;
+    width: 2px;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+    z-index: 2;
+    box-shadow: 0 0 8px var(--accent);
 }
 
 .mode-card:hover {
-    transform: translateY(-6px);
-    border-color: rgba(255, 255, 255, 0.18);
+    transform: scale(1.02);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
-.mode-card:hover::before { opacity: 1; }
+/* Colores de acento */
+#btn-mode-arcade { --accent: #ec4899; --accent-rgb: 236, 72, 153; }
+#btn-mode-study  { --accent: #3b82f6; --accent-rgb: 59, 130, 246; }
+#btn-mode-real   { --accent: #f59e0b; --accent-rgb: 245, 158, 11; }
+#btn-mode-flash  { --accent: #10b981; --accent-rgb: 16, 185, 129; }
 
-/* Per-card ambient colors */
-#btn-mode-arcade::before { background: radial-gradient(ellipse at 50% 0%, rgba(236,72,153,0.18) 0%, transparent 65%); }
-#btn-mode-study::before  { background: radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.18) 0%, transparent 65%); }
-#btn-mode-real::before   { background: radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.18) 0%, transparent 65%); }
-#btn-mode-flash::before  { background: radial-gradient(ellipse at 50% 0%, rgba(16,185,129,0.18) 0%, transparent 65%); }
-
-/* Per-card hover borders */
-#btn-mode-arcade:hover { border-color: rgba(236,72,153,0.4); box-shadow: 0 16px 40px rgba(236,72,153,0.12), 0 1px 0 rgba(255,255,255,0.05) inset; }
-#btn-mode-study:hover  { border-color: rgba(59,130,246,0.4);  box-shadow: 0 16px 40px rgba(59,130,246,0.12),  0 1px 0 rgba(255,255,255,0.05) inset; }
-#btn-mode-real:hover   { border-color: rgba(245,158,11,0.4);  box-shadow: 0 16px 40px rgba(245,158,11,0.12),  0 1px 0 rgba(255,255,255,0.05) inset; }
-#btn-mode-flash:hover  { border-color: rgba(16,185,129,0.4);  box-shadow: 0 16px 40px rgba(16,185,129,0.12),  0 1px 0 rgba(255,255,255,0.05) inset; }
-
-/* Badge (Recomendado / Muy Pronto) */
-.mode-badge {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    font-size: 0.6rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 3px 9px;
-    border-radius: 999px;
-    background: rgba(59,130,246,0.18);
-    color: #93c5fd;
-    border: 1px solid rgba(59,130,246,0.35);
-    z-index: 2;
-}
-
-.badge-soon {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    font-size: 0.6rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 3px 9px;
-    border-radius: 999px;
-    background: rgba(245,158,11,0.12);
-    color: #fcd34d;
-    border: 1px solid rgba(245,158,11,0.3);
-    z-index: 2;
-}
-
-/* Icon bubble — Row 1 (fixed height 80px) */
-.action-icon {
-    position: relative;
-    z-index: 1;
-    width: 52px;
-    height: 52px;
-    min-height: 52px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    margin: 0 0 1.25rem 0; /* Sustituye la fila de 80px del grid por un margen consistente */
-    transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.mode-card:hover .action-icon { transform: scale(1.08); }
-
-#btn-mode-arcade .action-icon { background: rgba(236,72,153,0.14); color: #f472b6; border: 1px solid rgba(236,72,153,0.25); }
-#btn-mode-study  .action-icon { background: rgba(59,130,246,0.14);  color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
-#btn-mode-real   .action-icon { background: rgba(245,158,11,0.14);  color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
-#btn-mode-flash  .action-icon { background: rgba(16,185,129,0.14);  color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
-
-/* Mode title — Row 2 (always same vertical position) */
-.mode-title {
-    position: relative;
-    z-index: 1;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.02em;
-    padding-top: 0;
-    text-align: center;
-    width: 100%;
-}
-
-/* Mode content (wraps title + desc) */
+/* Contenido Minimalista Alineado */
 .mode-content {
+    position: relative;
+    z-index: 5;
     display: flex;
     flex-direction: column;
+    width: 65%; 
+    /* No usamos gap aquí para controlar alturas fijas individualmente */
+}
+
+.mode-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    min-height: 2.6rem; /* Altura fija para alinear inicios de descripción */
+    display: flex;
     align-items: center;
-    width: 100%;
-    flex: 1;
 }
 
-/* Mode description — Row 3 */
 .mode-desc {
-    position: relative;
-    z-index: 1;
-    font-size: 0.78rem;
-    color: #475569;
-    line-height: 1.55;
-    padding-top: 0.5rem;
-    text-align: center;
-    width: 100%;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.5;
+    margin: 0.4rem 0 0.75rem 0; /* Un poco menos de margen inferior */
+    min-height: 3.2rem;
+    display: flex;
+    align-items: flex-start;
 }
 
-/* Disabled card */
-.mode-card--disabled {
-    opacity: 0.4;
-    filter: grayscale(0.8);
-    cursor: not-allowed !important;
-    pointer-events: all;
+/* Botón Minimalista Suave */
+.mode-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem; /* Más compacto */
+    border-radius: 8px;
+    font-size: 0.7rem; /* Un poco más legible pero pequeño */
+    font-weight: 500;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    width: fit-content;
+    white-space: nowrap; /* Evita que el texto salte de línea */
+    text-transform: none; /* Todo en minúsculas/normal */
+    letter-spacing: 0.01em;
 }
-.mode-card--disabled:hover {
-    transform: none !important;
-    border-color: rgba(255,255,255,0.1) !important;
-    box-shadow: none !important;
+
+.mode-card:hover .mode-cta {
+    background: var(--accent);
+    color: #ffffff;
 }
+
+/* Imagen Temática (Fondo Nítido) */
+.mode-img-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 1; /* Imagen nítida al 100% */
+}
+
+.mode-img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: right center; /* Logo a la derecha */
+    /* Ajuste para efecto humo: menos brillo inicial para resaltar neblina */
+    filter: brightness(0.8) contrast(1.1) saturate(1.1);
+    transition: transform 0.8s ease, filter 0.5s ease;
+}
+
+.mode-card:hover .mode-img-container img {
+    transform: scale(1.05);
+    filter: brightness(1.1) contrast(1.2) saturate(1.2);
+}
+
+@media (max-width: 768px) {
+    .mode-card { padding: 1.25rem; }
+    .mode-content { width: 80%; }
+    .mode-title { font-size: 0.95rem; min-height: 2.2rem; }
+    .mode-desc { font-size: 0.65rem; min-height: 2.8rem; margin-bottom: 0.5rem; }
+    .mode-cta { padding: 0.35rem 0.7rem; font-size: 0.6rem; }
+}
+
+/* Badges */
+.badge-soon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 0.55rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 6px;
+    z-index: 3;
+}
+
+.mode-card--disabled { opacity: 0.6; cursor: not-allowed; }
+
+
 
 /* ── Config button (top bar) ────────────────────────────── */
 #btn-start-config {

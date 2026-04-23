@@ -8,9 +8,10 @@ El **Simulador Médico** es el motor de entrenamiento de alto rendimiento de Hub
 ## 2. Arquitectura de Archivos
 
 ### 🖥️ Frontend (Presentation)
-- **`simulator-dashboard.html`**: Tablero de mando con KPIs y analíticas. Presenta un diseño de interfaz de usuario limpia (*Clean UI/Flat Design*) y utiliza gráficas renderizadas de forma nativa (HTML/CSS) sin pesadas librerías externas para visualización en móviles.
+- **`simulator-dashboard.html`**: Tablero de mando con KPIs y analíticas. Presenta un diseño de interfaz de usuario de alta fidelidad (*Premium Sci-Fi UI*) con tarjetas cuadradas en formato 1:1, efectos de "humo" atmosférico e integración de assets visuales temáticos.
 - **`quiz.html`**: Interfaz de ejecución del examen (Motor de Quiz).
 - **Control de Concurrencia (Anti double-tap)**: Bloqueo semafórico (`_isRating`) en el motor de flashcards para prevenir múltiples peticiones.
+- **Filtros de Analítica**: Implementación de filtros por ventana de tiempo (7, 30, 90 días) y áreas clínicas específicas, integrados en el dashboard.
 
 ---
 *Documentación técnica oficial - Actualizada Abril 2026*
@@ -19,8 +20,9 @@ se renderiza usando gráficos **SVG** nativos vectoriales, proporcionando animac
 - **`js/quiz.js`**: Motor de interacción: manejo de estados (pregunta actual, respuestas), cronómetros, y batch loading. Permite la **creación manual e interactiva de Flashcards** desde el panel de revisión de desempeño.
 
 ### ⚙️ Backend (Application & Domain)
-- **`QuizController.js`**: Orquestador de peticiones. Maneja la lógica de inicio, entrega y límites.
-- **`TrainingService.js`**: El "cerebro" del módulo. Implementa la lógica híbrida: Banco -> IA Fallback.
+- **`QuizController.js`**: Orquestador de peticiones. Maneja la lógica de inicio, entrega y límites. Ahora soporta filtrado dinámico por `days` y `areas`.
+- **`TrainingService.js`**: El "cerebro" del módulo. Implementa la lógica híbrida: Banco -> IA Fallback. Gestiona la agregación de estadísticas bajo demanda.
+- **`trainingRepository.js`**: Capa de persistencia. Incluye consultas optimizadas en PostgreSQL para análisis de `jsonb` (estadísticas por área) y series temporales de evolución.
 - **`mlService.js`**: Interface con Gemini 2.5 Flash Lite para generación RAG y análisis de rendimiento.
 
 ### 🗄️ Infraestructura (Persistence)

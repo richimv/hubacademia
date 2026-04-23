@@ -535,9 +535,14 @@ class TrainingService {
         await repository.incrementSimulatorUsage(userId);
     }
 
-    async getUserQuizStats(userId, context, target, limit) {
+    async getUserQuizStats(userId, context, target, limit, days = null, areas = null) {
         let topicFilter = '';
+        let timeFilter = '';
         const params = [userId];
+
+        if (days) {
+            timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
+        }
         
         if (context === 'MEDICINA') {
             if (target) {
@@ -554,7 +559,7 @@ class TrainingService {
             topicFilter += ` AND total_questions = $${params.length}`;
         }
 
-        const qStats = await repository.getBasicQuizStats(userId, topicFilter, params);
+        const qStats = await repository.getBasicQuizStats(userId, topicFilter, params, timeFilter, areas);
 
         let accuracy = 0;
         let avgScore20 = 0;
@@ -575,7 +580,7 @@ class TrainingService {
         let radarData = []; 
 
         try {
-            const topicRes = await repository.getTopicAnalysis(userId, topicFilter, params);
+            const topicRes = await repository.getTopicAnalysis(userId, topicFilter, params, timeFilter, areas);
             if (topicRes.length > 0) {
                 strongest = topicRes[0].subtema;
                 weakest = topicRes[topicRes.length - 1].subtema;

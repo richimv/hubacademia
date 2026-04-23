@@ -263,7 +263,10 @@ class QuizController {
      */
     async getStats(req, res) {
         try {
-            const { context, target, limit } = req.query; // 'MEDICINA', etc.
+            const { context, target, limit, days, areas } = req.query; // 'MEDICINA', etc.
+            
+            // Parse areas if provided as comma-separated string
+            const areaList = areas ? areas.split(',') : null;
 
             // ✅ GUEST MODE: Return example stats if not logged in
             if (!req.user) {
@@ -288,7 +291,7 @@ class QuizController {
                 return res.json({ success: true, kpis: exampleKpis });
             }
 
-            const kpis = await TrainingService.getUserQuizStats(req.user.id, context, target, limit);
+            const kpis = await TrainingService.getUserQuizStats(req.user.id, context, target, limit, days, areaList);
 
             res.json({
                 success: true,
@@ -317,7 +320,9 @@ class QuizController {
      */
     async getEvolution(req, res) {
         try {
-            const { context, target, limit } = req.query;
+            const { context, target, limit, days, areas } = req.query;
+            
+            const areaList = areas ? areas.split(',') : null;
 
             // ✅ GUEST MODE: Return example chart data
             if (!req.user) {
@@ -331,7 +336,12 @@ class QuizController {
             const userId = req.user.id;
             const TrainingRepository = require('../../domain/repositories/trainingRepository');
 
-            const data = await TrainingRepository.getQuizEvolution(userId, context, target, limit);
+            let timeFilter = '';
+            if (days) {
+                timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
+            }
+
+            const data = await TrainingRepository.getQuizEvolution(userId, context, target, limit, timeFilter, areaList);
 
             // Format for Chart.js
             const chartData = {

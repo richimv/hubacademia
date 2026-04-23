@@ -66,61 +66,97 @@
 
             <!-- Active config summary -->
             <div id="active-config-summary"><!-- Filled via JS --></div>
-
             <div class="modes-grid">
-
+                <!-- Simulacro Rápido -->
                 <a href="#" id="btn-mode-arcade" class="mode-card">
-                    <div class="action-icon"><i class="fas fa-rocket"></i></div>
                     <div class="mode-content">
                         <div class="mode-title">Simulacro Rápido</div>
                         <div class="mode-desc">10 preguntas. Ideal para aprovechar tiempos muertos.</div>
+                        <div class="mode-cta">Iniciar simulacro <i class="fas fa-arrow-right"></i></div>
+                    </div>
+                    <div class="mode-img-container">
+                        <img src="/assets/Simulacro Rápido.webp" alt="Reloj representativo de simulacro rápido">
                     </div>
                 </a>
 
+                <!-- Modo Estudio -->
                 <a href="#" id="btn-mode-study" class="mode-card">
-                    <div class="action-icon"><i class="fas fa-brain"></i></div>
                     <div class="mode-content">
                         <div class="mode-title">Modo Estudio</div>
-                        <div class="mode-desc">20 preguntas. Para un aprendizaje profundo con explicacion medica.</div>
+                        <div class="mode-desc">20 preguntas. Para un aprendizaje profundo con explicación médica.</div>
+                        <div class="mode-cta">Iniciar modo estudio <i class="fas fa-arrow-right"></i></div>
+                    </div>
+                    <div class="mode-img-container">
+                        <img src="/assets/Modo Estudio.webp" alt="Cerebro y libro representativos de modo estudio">
                     </div>
                 </a>
 
+                <!-- Simulacro Real -->
                 <a href="#" id="btn-mode-real" class="mode-card mode-card--disabled">
                     <span class="badge-soon">Muy Pronto</span>
-                    <div class="action-icon"><i class="fas fa-clipboard-check"></i></div>
                     <div class="mode-content">
                         <div class="mode-title">Simulacro Real</div>
-                        <div class="mode-desc">100 preguntas con límite de tiempo. Simulación completa del ENAM / SERUMS.</div>
+                        <div class="mode-desc">100 preguntas con límite de tiempo. Simulación completa del ENAM /
+                            SERUMS.</div>
+                        <div class="mode-cta">Muy pronto</div>
+                    </div>
+                    <div class="mode-img-container">
+                        <img src="/assets/Simulacro Real.webp" alt="Estetoscopio representativo de simulacro real">
                     </div>
                 </a>
 
+                <!-- Flashcards -->
                 <a href="#" id="btn-mode-flash" class="mode-card">
-                    <div class="action-icon"><i class="fas fa-layer-group"></i></div>
                     <div class="mode-content">
                         <div class="mode-title">Flashcards</div>
-                        <div class="mode-desc">Tu banco de repaso personal.</div>
+                        <div class="mode-desc">Tu banco de repaso personal. Domina conceptos clave.</div>
+                        <div class="mode-cta">Ir a flashcards <i class="fas fa-arrow-right"></i></div>
+                    </div>
+                    <div class="mode-img-container">
+                        <img src="/assets/Flashcards.webp" alt="Tarjetas representativas de flashcards">
                     </div>
                 </a>
-
             </div>
 
             <!-- 2. KPIs -->
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+            <div
+                style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
                 <p class="section-heading" style="margin:0;"><i class="fas fa-chart-bar"></i> Resumen de Progreso</p>
                 <!-- MEJORA #1: Tabs de Modo -->
-                <div style="display:flex;gap:0.35rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:3px;" role="group" aria-label="Filtrar por modo de examen">
-                    <button class="kpi-mode-tab active" data-mode="all"
-                        style="padding:0.3rem 0.8rem;border:none;border-radius:7px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:rgba(59,130,246,0.2);color:#93c5fd;">
-                        Todos
-                    </button>
-                    <button class="kpi-mode-tab" data-mode="10"
-                        style="padding:0.3rem 0.8rem;border:none;border-radius:7px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
-                        <i class="fas fa-bolt" style="font-size:0.65rem;"></i> Rápido
-                    </button>
-                    <button class="kpi-mode-tab" data-mode="20"
-                        style="padding:0.3rem 0.8rem;border:none;border-radius:7px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
-                        <i class="fas fa-book-reader" style="font-size:0.65rem;"></i> Estudio
-                    </button>
+                <div style="display:flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
+                    <!-- Tabs de Modo (Rápido, Estudio, Todos) -->
+                    <div style="display:flex;gap:0.35rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:3px;"
+                        role="group" aria-label="Filtrar por modo de examen">
+                        <button class="kpi-mode-tab active" data-mode="all"
+                            style="padding:0.3rem 0.8rem;border:none;border-radius:7px;font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:rgba(59,130,246,0.2);color:#93c5fd;">
+                            Modo: Todos
+                        </button>
+                        <button class="kpi-mode-tab" data-mode="10"
+                            style="padding:0.3rem 0.8rem;border:none;border-radius:7px;font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
+                            Rápido
+                        </button>
+                        <button class="kpi-mode-tab" data-mode="20"
+                            style="padding:0.3rem 0.8rem;border:none;border-radius:7px;font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
+                            Estudio
+                        </button>
+                    </div>
+
+                    <!-- NUEVO: Tabs de Tiempo (7d, 30d, Todos) -->
+                    <div style="display:flex;gap:0.35rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:3px;"
+                        role="group" aria-label="Filtrar por rango de tiempo">
+                        <button class="kpi-time-tab active" data-days="all"
+                            style="padding:0.25rem 0.7rem;border:none;border-radius:7px;font-size:0.65rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:rgba(139,92,246,0.2);color:#c4b5fd;">
+                            Histórico
+                        </button>
+                        <button class="kpi-time-tab" data-days="30"
+                            style="padding:0.25rem 0.7rem;border:none;border-radius:7px;font-size:0.65rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
+                            Últimos 30 días
+                        </button>
+                        <button class="kpi-time-tab" data-days="7"
+                            style="padding:0.25rem 0.7rem;border:none;border-radius:7px;font-size:0.65rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
+                            7 días
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="stats-overview">
@@ -137,7 +173,8 @@
                     <div class="stat-sub">De todas tus respuestas</div>
                 </div>
                 <div class="stat-box" style="border-color:rgba(236,72,153,0.15);">
-                    <div class="stat-icon" style="background:rgba(236,72,153,0.1);color:#f472b6;"><i class="fas fa-tasks"></i></div>
+                    <div class="stat-icon" style="background:rgba(236,72,153,0.1);color:#f472b6;"><i
+                            class="fas fa-tasks"></i></div>
                     <div class="stat-label" style="color:#f9a8d4;">Correctas / Incorrectas</div>
                     <div class="stat-value" id="stat-counts-text" style="color:#ec4899;font-size:1.7rem;">-- / --</div>
                     <div class="stat-sub">Preguntas respondidas</div>
@@ -158,13 +195,16 @@
                 <div class="detail-card">
                     <h4>Tendencia Histórica</h4>
                     <div style="height:280px;width:100%;position:relative;">
-                        <div id="evolution-empty-state" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:0.75rem;color:#334155;font-size:0.85rem;text-align:center;">
-                            <div style="width:44px;height:44px;border-radius:12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;color:#3b82f6;font-size:1.2rem;">
+                        <div id="evolution-empty-state"
+                            style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:0.75rem;color:#334155;font-size:0.85rem;text-align:center;">
+                            <div
+                                style="width:44px;height:44px;border-radius:12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;color:#3b82f6;font-size:1.2rem;">
                                 <i class="fas fa-chart-line"></i>
                             </div>
                             <div>
                                 <div style="font-weight:600;color:#475569;margin-bottom:0.25rem;">Sin datos aún</div>
-                                <div style="font-size:0.78rem;color:#334155;">Completa tu primer simulacro para ver tu curva de aprendizaje.</div>
+                                <div style="font-size:0.78rem;color:#334155;">Completa tu primer simulacro para ver tu
+                                    curva de aprendizaje.</div>
                             </div>
                         </div>
                         <canvas id="evolutionChart"></canvas>
@@ -177,13 +217,17 @@
                 <div class="detail-card">
                     <h4>Dominio por Áreas Clínicas</h4>
                     <div id="bar-chart-container" style="min-height:200px;position:relative;">
-                        <div id="radar-empty-state" style="display:flex;flex-direction:column;height:100%;align-items:center;justify-content:center;gap:0.75rem;color:#334155;font-size:0.85rem;text-align:center;min-height:180px;">
-                            <div style="width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;color:#10b981;font-size:1.2rem;">
+                        <div id="radar-empty-state"
+                            style="display:flex;flex-direction:column;height:100%;align-items:center;justify-content:center;gap:0.75rem;color:#334155;font-size:0.85rem;text-align:center;min-height:180px;">
+                            <div
+                                style="width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;color:#10b981;font-size:1.2rem;">
                                 <i class="fas fa-tasks"></i>
                             </div>
                             <div>
-                                <div style="font-weight:600;color:#475569;margin-bottom:0.25rem;">Sin datos por área</div>
-                                <div style="font-size:0.78rem;color:#334155;">Completa simulacros variados para ver tu dominio clínico por especialidad.</div>
+                                <div style="font-weight:600;color:#475569;margin-bottom:0.25rem;">Sin datos por área
+                                </div>
+                                <div style="font-size:0.78rem;color:#334155;">Completa simulacros variados para ver tu
+                                    dominio clínico por especialidad.</div>
                             </div>
                         </div>
                         <div id="native-bars-container" style="display:none;flex-direction:column;gap:1.25rem;"></div>
@@ -195,53 +239,84 @@
             <div class="detailed-row" style="grid-template-columns:1fr;margin-top:1rem;">
                 <div class="detail-card" style="position:relative; overflow:hidden;">
                     <!-- Ambient Glow for AI Card -->
-                    <div style="position:absolute; top:-50px; right:-50px; width:200px; height:200px; background:radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%); filter:blur(20px); border-radius:50%; pointer-events:none;"></div>
-                    
+                    <div
+                        style="position:absolute; top:-50px; right:-50px; width:200px; height:200px; background:radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%); filter:blur(20px); border-radius:50%; pointer-events:none;">
+                    </div>
+
                     <div style="display:flex;gap:1.25rem;align-items:center;margin-bottom:1.5rem;">
-                        <div style="background:linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.2)); padding:14px; border-radius:14px; color:#a78bfa; border:1px solid rgba(139,92,246,0.3); box-shadow: 0 0 15px rgba(139,92,246,0.1) inset;">
-                            <i class="fas fa-brain fa-lg" style="filter: drop-shadow(0 0 8px rgba(167,139,250,0.6));"></i>
+                        <div
+                            style="background:linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.2)); padding:14px; border-radius:14px; color:#a78bfa; border:1px solid rgba(139,92,246,0.3); box-shadow: 0 0 15px rgba(139,92,246,0.1) inset;">
+                            <i class="fas fa-brain fa-lg"
+                                style="filter: drop-shadow(0 0 8px rgba(167,139,250,0.6));"></i>
                         </div>
                         <div>
-                            <h4 style="margin:0;font-size:0.95rem;font-weight:700;letter-spacing:0.04em;color:#e2e8f0;display:flex;align-items:center;gap:0.5rem;">
+                            <h4
+                                style="margin:0;font-size:0.95rem;font-weight:700;letter-spacing:0.04em;color:#e2e8f0;display:flex;align-items:center;gap:0.5rem;">
                                 Análisis de Patrones de Error
-                                <span style="font-size:0.65rem; background:rgba(139,92,246,0.2); color:#c4b5fd; padding:3px 8px; border-radius:10px; border:1px solid rgba(139,92,246,0.3); font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Advanced IA</span>
+                                <span
+                                    style="font-size:0.65rem; background:rgba(139,92,246,0.2); color:#c4b5fd; padding:3px 8px; border-radius:10px; border:1px solid rgba(139,92,246,0.3); font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Advanced
+                                    IA</span>
                             </h4>
-                            <p style="margin:0;color:#94a3b8;font-size:0.8rem;margin-top:0.25rem;">Motor de Inteligencia Artificial Deep Learning</p>
+                            <p style="margin:0;color:#94a3b8;font-size:0.8rem;margin-top:0.25rem;">Motor de Inteligencia
+                                Artificial Deep Learning</p>
                         </div>
                     </div>
 
-                    <div id="ai-initial-state" style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.5rem;padding:1.5rem; background:rgba(15,23,42,0.4); border-radius:16px; border:1px dashed rgba(148,163,184,0.15);">
+                    <div id="ai-initial-state"
+                        style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.5rem;padding:1.5rem; background:rgba(15,23,42,0.4); border-radius:16px; border:1px dashed rgba(148,163,184,0.15);">
                         <p style="color:#94a3b8;font-size:0.9rem;max-width:500px;line-height:1.6;margin:0;">
-                            Utiliza nuestro motor de Inteligencia Artificial para identificar fortalezas ocultas y brechas de conocimiento crítico basándose en tu historial multivariado de simulacros.
+                            Utiliza nuestro motor de Inteligencia Artificial para identificar fortalezas ocultas y
+                            brechas de conocimiento crítico basándose en tu historial multivariado de simulacros.
                         </p>
-                        <button id="btn-analyze-ai" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;padding:0.85rem 2rem;display:flex;align-items:center;gap:0.75rem;border-radius:12px;font-weight:600;font-size:0.95rem;cursor:pointer;transition:all 0.3s;box-shadow:0 10px 25px rgba(99,102,241,0.25), 0 2px 4px rgba(255,255,255,0.1) inset;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 30px rgba(99,102,241,0.35), 0 2px 4px rgba(255,255,255,0.15) inset';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 25px rgba(99,102,241,0.25), 0 2px 4px rgba(255,255,255,0.1) inset';">
+                        <button id="btn-analyze-ai"
+                            style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;padding:0.85rem 2rem;display:flex;align-items:center;gap:0.75rem;border-radius:12px;font-weight:600;font-size:0.95rem;cursor:pointer;transition:all 0.3s;box-shadow:0 10px 25px rgba(99,102,241,0.25), 0 2px 4px rgba(255,255,255,0.1) inset;"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 30px rgba(99,102,241,0.35), 0 2px 4px rgba(255,255,255,0.15) inset';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 25px rgba(99,102,241,0.25), 0 2px 4px rgba(255,255,255,0.1) inset';">
                             <i class="fas fa-magic"></i> Extraer Insights IA
                         </button>
                     </div>
 
-                    <div id="ai-loading-state" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:3rem 1rem;">
+                    <div id="ai-loading-state"
+                        style="display:none;flex-direction:column;align-items:center;text-align:center;padding:3rem 1rem;">
                         <div style="position:relative; width:60px; height:60px; margin-bottom:1.5rem;">
-                            <i class="fas fa-circle-notch fa-spin fa-2x" style="color:#a78bfa; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);"></i>
-                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:30px; height:30px; background:#a78bfa; filter:blur(15px); opacity:0.6; border-radius:50%;"></div>
+                            <i class="fas fa-circle-notch fa-spin fa-2x"
+                                style="color:#a78bfa; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);"></i>
+                            <div
+                                style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:30px; height:30px; background:#a78bfa; filter:blur(15px); opacity:0.6; border-radius:50%;">
+                            </div>
                         </div>
-                        <p style="color:#e2e8f0; font-weight:600; font-size:1rem; margin-bottom:0.25rem;">Procesando matrices de respuesta...</p>
-                        <p style="color:#64748b; font-size:0.85rem;">Correlacionando errores con literatura médica oficial.</p>
+                        <p style="color:#e2e8f0; font-weight:600; font-size:1rem; margin-bottom:0.25rem;">Procesando
+                            matrices de respuesta...</p>
+                        <p style="color:#64748b; font-size:0.85rem;">Correlacionando errores con literatura médica
+                            oficial.</p>
                     </div>
 
-                    <div id="ai-results-state" style="display:none;color:#94a3b8;font-size:0.9rem; animation: fadeIn 0.5s ease;">
-                        <div style="margin-bottom:1.25rem;padding:1.25rem;border-radius:12px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                            <strong style="color:#34d399;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;">
-                                <i class="fas fa-check-circle" style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(52,211,153,0.4));"></i> Dominio Consolidado
+                    <div id="ai-results-state"
+                        style="display:none;color:#94a3b8;font-size:0.9rem; animation: fadeIn 0.5s ease;">
+                        <div
+                            style="margin-bottom:1.25rem;padding:1.25rem;border-radius:12px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                            <strong
+                                style="color:#34d399;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;">
+                                <i class="fas fa-check-circle"
+                                    style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(52,211,153,0.4));"></i>
+                                Dominio Consolidado
                             </strong>
                             <div id="ai-strengths" style="margin:0;line-height:1.6;color:#cbd5e1;">--</div>
                         </div>
-                        <div style="padding:1.25rem;border-radius:12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                            <strong style="color:#fbbf24;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;">
-                                <i class="fas fa-exclamation-triangle" style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(251,191,36,0.4));"></i> Focos de Intervención
+                        <div
+                            style="padding:1.25rem;border-radius:12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                            <strong
+                                style="color:#fbbf24;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;">
+                                <i class="fas fa-exclamation-triangle"
+                                    style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(251,191,36,0.4));"></i>
+                                Focos de Intervención
                             </strong>
                             <div id="ai-weaknesses" style="margin:0;line-height:1.6;color:#cbd5e1;">--</div>
                         </div>
-                        <button id="btn-analyze-again" style="margin-top:1.5rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;padding:0.75rem 1rem;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;width:100%;transition:all 0.2s;display:flex;justify-content:center;align-items:center;gap:0.5rem;" onmouseover="this.style.background='rgba(255,255,255,0.06)'; this.style.color='#cbd5e1';" onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.color='#94a3b8';">
+                        <button id="btn-analyze-again"
+                            style="margin-top:1.5rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;padding:0.75rem 1rem;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;width:100%;transition:all 0.2s;display:flex;justify-content:center;align-items:center;gap:0.5rem;"
+                            onmouseover="this.style.background='rgba(255,255,255,0.06)'; this.style.color='#cbd5e1';"
+                            onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.color='#94a3b8';">
                             <i class="fas fa-sync-alt"></i> Actualizar Diagnóstico
                         </button>
                     </div>
@@ -277,13 +352,12 @@
                 </label>
                 <!-- [DESACTIVADO TEMPORALMENTE] Residentado requiere mayor volumen de preguntas. 
                      Para reactivar: quitar 'disabled' del input y retirar la clase '--disabled' del label. -->
-                <label class="exam-target-option exam-target-option--disabled"
-                    title="Estamos ampliando el banco de preguntas para Residentado.">
-                    <input type="radio" name="examTarget" value="RESIDENTADO" disabled>
+                <label class="exam-target-option">
+                    <input type="radio" name="examTarget" value="RESIDENTADO">
                     <div class="target-card">
                         RESIDENTADO
-                        <span
-                            style="display: block; font-size: 0.6rem; opacity: 0.7; font-weight: 400;">(Trabajando)</span>
+                        <span style="display: block; font-size: 0.6rem; opacity: 0.7; font-weight: 400;">(Beta /
+                            Trabajando)</span>
                     </div>
                 </label>
             </div>
