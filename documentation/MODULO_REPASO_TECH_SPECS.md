@@ -62,3 +62,26 @@ Para evitar que Vercel bloquee peticiones directas a Google Cloud Storage o exis
 1. Durante el estudio, el usuario califica una tarjeta.
 2. `flashcards.js` calcula localmente el progreso y lo envía a `POST /api/training/flashcards/review`.
 3. El backend actualiza los parámetros SRS en la base de datos.
+
+---
+
+## 4. Métricas y Análisis de Actividad
+
+El sistema implementa un motor de analíticas para motivar la constancia del estudiante mediante retroalimentación visual inmediata.
+
+### A. Gráfico de Retención y Constancia (Heatmap)
+- **Alcance**: **Global**. Refleja la actividad del usuario en toda la plataforma, no solo en el mazo actual.
+- **Fuentes de Datos**:
+    - `quiz_history`: Registra la finalización de simulacros (Peso: 2pts).
+    - `user_flashcards`: Registra el campo `last_reviewed_at` durante el estudio (Peso: 1pt).
+- **Visualización**:
+    - **Intensidad**: Los colores varían de azul a púrpura según la densidad de puntos acumulados por día (Normalizado respecto al "Mejor Día" de las últimas 2 semanas).
+    - **Interactividad**: Tooltips HTML con `z-index` máximo para visualización sobre modales, mostrando conteo exacto y fecha.
+
+### B. KPIs de Mazo (Doughnut Chart)
+- **Aprendiendo (Azul)**: Tarjetas con `interval_days` < 1 o recién creadas.
+- **Por Repasar (Rojo)**: Tarjetas donde `next_review_at` <= `NOW()`.
+- **Dominadas (Verde)**: Tarjetas con intervalos de madurez (> 21 días de recordación activa).
+
+### C. Almacenamiento y Persistencia
+Los datos se persisten en PostgreSQL y se sirven a través del endpoint unificado `/api/analytics/heatmap`. Este endpoint requiere autenticación JWT para filtrar la actividad por el `user_id` correspondiente.

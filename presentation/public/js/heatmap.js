@@ -8,6 +8,7 @@ class ActivityHeatmap {
         // Usamos la variable global para apuntar directamente al backend, evitando posibles problemas de proxy en Vercel
         this.apiUrl = `${window.AppConfig.API_URL}/api/analytics/heatmap`;
         this.token = localStorage.getItem('authToken');
+        this.tooltip = null;
     }
 
     async init() {
@@ -34,29 +35,51 @@ class ActivityHeatmap {
         this.container.innerHTML = '';
         data = data || {};
 
-        // Configuración Gráfico de Barras (Últimos 14 días)
+        const isMobile = window.innerWidth <= 480;
         const daysToShow = 14;
-        const maxBarHeight = 120; // px (Altura máxima de la barra visual)
+        const maxBarHeight = isMobile ? 80 : 120; // Más compacto en móviles
 
-        // 1. Encontrar el "Mejor Día" para escalar las barras (Normalización)
-        let maxCount = 1; // Mínimo 1 para evitar división por cero
+        // 1. Encontrar el "Mejor Día" para escalar las barras
+        let maxCount = 1; 
         for (const date in data) {
             if (data[date] > maxCount) maxCount = data[date];
         }
 
-        // 2. Contenedor Principal del Gráfico
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'flex';
-        wrapper.style.alignItems = 'flex-end'; // Alinear todo a la base
-        wrapper.style.justifyContent = 'space-between';
-        wrapper.style.gap = '6px'; // Espacio entre barras
-        wrapper.style.height = `${maxBarHeight + 30}px`; // Altura barras + etiquetas
-        wrapper.style.padding = '10px 0 0 0'; // Padding superior mínimo para el brillo de las barras
-        wrapper.style.width = '100%';
-        wrapper.style.overflowX = 'hidden'; // Evitar scroll innecesario si cabe bien
-        wrapper.style.position = 'relative'; // Para tooltips flotantes si quisieramos inyectar uno global
+        // 2. Gestión de Tooltip único para la instancia
+        if (!this.tooltip) {
+            this.tooltip = document.createElement('div');
+            Object.assign(this.tooltip.style, {
+                position: 'fixed',
+                background: '#0f172a',
+                color: 'white',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                display: 'none',
+                pointerEvents: 'none',
+                zIndex: '2147483647',
+                border: '1px solid #334155',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                fontWeight: '600'
+            });
+            document.body.appendChild(this.tooltip);
+        }
+        const tooltip = this.tooltip;
 
-        // 3. Generar Fechas (Del pasado reciente hacia Hoy)
+        // 3. Contenedor Principal del Gráfico
+        const wrapper = document.createElement('div');
+        Object.assign(wrapper.style, {
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            gap: isMobile ? '3px' : '8px',
+            height: `${maxBarHeight + 30}px`,
+            padding: '10px 0 0 0',
+            width: '100%',
+            position: 'relative'
+        });
+
+        // 4. Generar Fechas
         const today = new Date();
         const startDate = new Date();
         startDate.setDate(today.getDate() - daysToShow + 1);
@@ -65,102 +88,120 @@ class ActivityHeatmap {
             const currentDate = new Date(startDate);
             currentDate.setDate(startDate.getDate() + i);
 
-            // Formato 'YYYY-MM-DD' de la fecha local (para cruzar con la DB sin fallos de TimeZone)
             const year = currentDate.getFullYear();
             const month = String(currentDate.getMonth() + 1).padStart(2, '0');
             const day = String(currentDate.getDate()).padStart(2, '0');
             const dateStr = `${year}-${month}-${day}`;
-
             const count = data[dateStr] || 0;
 
-            // 4. Construir Columna
             const col = document.createElement('div');
-            col.style.display = 'flex';
-            col.style.flexDirection = 'column';
-            col.style.alignItems = 'center';
-            col.style.justifyContent = 'flex-end';
-            col.style.flex = '1';
-            col.style.minWidth = '18px';
-            col.style.maxWidth = '40px'; // Para que no se estiren feo en monitores ultra-wide
-            col.style.position = 'relative';
+            Object.assign(col.style, {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                flex: '1',
+                minWidth: isMobile ? '10px' : '15px',
+                maxWidth: '40px',
+                position: 'relative'
+            });
 
-            // 5. Tooltip Nativo
-            col.title = count === 1 ? `${dateStr}: 1 actividad` : `${dateStr}: ${count} actividades`;
-
-            // 6. Calcular Altura Relativa de la Barra
-            // Si es 0, dejamos 4px como base visible. Si no, calculamos el porcentaje respecto al máximo.
             const heightPx = count === 0 ? 4 : Math.max(10, (count / maxCount) * maxBarHeight);
-
-            // 7. Lógica de Color (Estilo Cyan a Violeta - Cyberpunk/Glass)
-            let color = 'rgba(255, 255, 255, 0.08)'; // Vacío / Sin actividad
+            
+            // Lógica de Color mejorada (Escala de intensidad)
+            let color = 'rgba(255, 255, 255, 0.1)';
             if (count > 0) {
-                // Gradiente simulado por intensidad basada en ratio
                 const ratio = count / maxCount;
-                if (ratio < 0.3) color = '#3b82f6'; // Azul eléctrico
-                else if (ratio < 0.7) color = '#8b5cf6'; // Púrpura
-                else color = '#a855f7'; // Rosa/Violeta Intenso
+                if (ratio < 0.3) color = '#3b82f6'; // Azul
+                else if (ratio < 0.7) color = '#8b5cf6'; // Violeta
+                else color = '#a855f7'; // Púrpura intenso
             }
 
-            // 8. Elemento Barra (El relleno)
             const bar = document.createElement('div');
-            bar.style.width = '100%';
-            bar.style.height = `${heightPx}px`;
-            bar.style.backgroundColor = color;
-            bar.style.borderRadius = '4px 4px 0 0';
-            bar.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-            bar.style.cursor = 'pointer';
+            Object.assign(bar.style, {
+                width: '100%',
+                height: `${heightPx}px`,
+                backgroundColor: color,
+                borderRadius: '4px 4px 2px 2px',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer',
+                boxShadow: count > 0 ? `0 -2px 10px ${color}40` : 'none'
+            });
 
-            // Sombra sutil de neón si hay actividad
-            if (count > 0) {
-                bar.style.boxShadow = `0 -2px 10px ${color}80`; // 80 es la opacidad en HEX
-            }
-
-            // Efecto Hover Interactivo
-            bar.onmouseover = () => {
+            // Eventos Tooltip
+            bar.onmouseenter = (e) => {
                 bar.style.filter = 'brightness(1.3)';
                 bar.style.transform = 'scaleY(1.05)';
-                bar.style.transformOrigin = 'bottom';
+                tooltip.style.display = 'block';
+                const dateLabel = currentDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+                tooltip.innerHTML = `<span style="color:#94a3b8">${dateLabel}:</span> ${count} repasos`;
             };
-            bar.onmouseout = () => {
+            bar.onmousemove = (e) => {
+                tooltip.style.left = (e.clientX + 10) + 'px';
+                tooltip.style.top = (e.clientY - 30) + 'px';
+            };
+            bar.onmouseleave = () => {
                 bar.style.filter = 'brightness(1)';
                 bar.style.transform = 'scaleY(1)';
+                tooltip.style.display = 'none';
             };
 
-            // 9. Etiqueta Inferior del Día (L, M, M, J...)
             const label = document.createElement('span');
-            label.style.fontSize = '0.7rem';
-            label.style.fontWeight = '600';
-            label.style.color = '#94a3b8';
-            label.style.marginTop = '8px';
+            Object.assign(label.style, {
+                fontSize: isMobile ? '0.6rem' : '0.7rem',
+                fontWeight: '700',
+                color: (i === daysToShow - 1) ? '#fff' : '#64748b',
+                marginTop: '8px'
+            });
             const daysArr = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
             label.innerText = daysArr[currentDate.getDay()];
 
-            // Destacar si el día recorrido es 'Hoy'
-            if (i === daysToShow - 1) {
-                label.style.color = 'white';
-            }
-
-            // Ensamblar la Columna
             col.appendChild(bar);
             col.appendChild(label);
-
-            // Añadir al Contenedor Global
             wrapper.appendChild(col);
         }
 
         // Título de la Sección
         const title = document.createElement('div');
         title.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
-                <h3 style="margin:0; font-size:1.1rem; color:#f8fafc; display:flex; align-items:center; gap:8px;">
-                     <i class="fas fa-chart-line" style="color: #3b82f6;"></i> Retención y Constancia
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <h3 style="margin:0; font-size:1rem; color:#f8fafc; display:flex; align-items:center; gap:8px;">
+                     <i class="fas fa-calendar-check" style="color: #a855f7;"></i> Retención y Constancia
                 </h3>
-                <span style="font-size:0.8rem; background: rgba(59, 130, 246, 0.2); color:#60a5fa; padding: 2px 8px; border-radius: 12px; font-weight: 600;">14 Días</span>
+                <span style="font-size:0.7rem; background: rgba(255, 255, 255, 0.08); color:#94a3b8; padding: 2px 10px; border-radius: 12px; font-weight: 700; text-transform: uppercase;">14 Días</span>
+            </div>
+        `;
+
+        // Sección de Info y KPI
+        const info = document.createElement('div');
+        info.style.marginTop = '20px';
+        info.style.paddingTop = '15px';
+        info.style.borderTop = '1px solid rgba(255,255,255,0.05)';
+        info.style.textAlign = 'left';
+
+        info.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:15px;">
+                <div style="flex:1;">
+                    <h4 style="margin:0 0 5px 0; font-size:0.85rem; color:#f1f5f9;">KPI de Constancia Global</h4>
+                    <p style="margin:0; font-size:0.75rem; color:#94a3b8; line-height:1.4;">
+                        Mide tu regularidad de estudio en <strong>todos tus mazos</strong>. Mantener la constancia fortalece la memoria a largo plazo.
+                    </p>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+                    <span style="font-size:0.65rem; color:#64748b; text-transform:uppercase; font-weight:800;">Intensidad</span>
+                    <div style="display:flex; gap:3px;">
+                        <div style="width:10px; height:10px; background:rgba(255,255,255,0.1); border-radius:2px;"></div>
+                        <div style="width:10px; height:10px; background:#3b82f6; border-radius:2px;"></div>
+                        <div style="width:10px; height:10px; background:#8b5cf6; border-radius:2px;"></div>
+                        <div style="width:10px; height:10px; background:#a855f7; border-radius:2px;"></div>
+                    </div>
+                </div>
             </div>
         `;
 
         this.container.appendChild(title);
         this.container.appendChild(wrapper);
+        this.container.appendChild(info);
     }
 }
 
