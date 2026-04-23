@@ -5,7 +5,8 @@
 class ActivityHeatmap {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
-        this.apiUrl = '/api/analytics/heatmap';
+        // Usamos la variable global para apuntar directamente al backend, evitando posibles problemas de proxy en Vercel
+        this.apiUrl = `${window.AppConfig.API_URL}/api/analytics/heatmap`;
         this.token = localStorage.getItem('authToken');
     }
 
