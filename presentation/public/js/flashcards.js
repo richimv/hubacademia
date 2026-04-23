@@ -288,8 +288,9 @@ const FlashcardManager = (() => {
         // Liberar bloqueo inmediatamente después del proceso local (antes de que responda red)
         _isRating = false;
         if (ui.controls) {
-            ui.controls.style.pointerEvents = 'auto';
-            ui.controls.style.opacity = '1';
+            // FIX: Limpiar estilos en lugar de forzarlos a "1", para que CSS controle la visibilidad (.visible)
+            ui.controls.style.pointerEvents = '';
+            ui.controls.style.opacity = '';
         }
 
         // 3. Si estudiábamos una sola tarjeta (cardId), volvemos al mazo inmediatamente
@@ -300,11 +301,21 @@ const FlashcardManager = (() => {
         }
 
         // 4. Show next card IMMEDIATELY (UX fluida)
+        // FIX: Desactivar transición CSS para evitar ver el dorso de la siguiente tarjeta mientras gira de regreso
+        ui.card.style.transition = 'none';
+
         if (queue.length > 0) {
             renderCard(queue[0]);
         } else {
             await loadCards(token);
         }
+
+        // Restaurar la transición CSS en el siguiente frame, para que la nueva tarjeta sí pueda girar
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                ui.card.style.transition = '';
+            });
+        });
     }
 
     /**
