@@ -25,9 +25,9 @@ class MediaController {
     async _optimizeImage(buffer) {
         try {
             return await sharp(buffer)
-                .resize({ width: 1600, withoutEnlargement: true }) // ✅ MEJORA: Aumentado de 1200 a 1600 para mayor detalle
+                .resize({ width: 1000, withoutEnlargement: true }) // Reducido para evitar OOM (Out Of Memory) en Render
                 .webp({
-                    quality: 85, // ✅ MEJORA: Calidad superior a 80
+                    quality: 80,
                     smartSubsampling: true // ✅ MEJORA: Bordes más nítidos para texto y diagramas
                 })
                 .withMetadata() // ✅ MEJORA: Preservar perfiles de color y orientación

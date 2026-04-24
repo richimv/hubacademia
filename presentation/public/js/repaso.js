@@ -1252,7 +1252,14 @@ class RepasoManager {
             body: formData
         });
 
-        const data = await res.json();
+        let data;
+        try {
+            const text = await res.text();
+            data = JSON.parse(text);
+        } catch (e) {
+            throw new Error(`Error del servidor (${res.status}). Es posible que la imagen sea demasiado pesada.`);
+        }
+
         if (res.ok && data.imageUrl) {
             return data.imageUrl;
         } else {
