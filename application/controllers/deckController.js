@@ -55,13 +55,13 @@ class DeckController {
      */
     createDeck = async (req, res) => {
         try {
-            const { name, icon, parentId } = req.body;
+            const { name, icon, parentId, description } = req.body;
             const { userId, isGuest } = this._getUserContext(req);
 
             if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para crear mazos' });
             if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
-            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null);
+            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null, description || null);
             res.json({ success: true, deck });
         } catch (error) {
             console.error('[createDeck] Error:', error);
@@ -75,12 +75,12 @@ class DeckController {
     updateDeck = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const { name, icon } = req.body;
+            const { name, icon, description } = req.body;
             const { userId } = this._getUserContext(req);
 
             if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
-            const deck = await DeckService.updateDeck(userId, deckId, name, icon);
+            const deck = await DeckService.updateDeck(userId, deckId, name, icon, description);
             res.json({ success: true, deck });
         } catch (error) {
             console.error('[updateDeck] Error:', error);

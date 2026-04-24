@@ -83,6 +83,7 @@
     font-weight: 700;
     color: #f8fafc;
     margin-bottom: 0.5rem;
+    line-height: 1.3;
 }
 
 .deck-meta {
@@ -151,6 +152,35 @@
 
     .add-deck-card {
         min-height: auto !important;
+    }
+    
+    /* Responsive Deck Header adjustments */
+    .deck-title {
+        font-size: 1.1rem;
+    }
+    
+    .deck-icon-large {
+        width: 48px;
+        height: 48px;
+        font-size: 1.5rem;
+    }
+    
+    /* Hide button text on mobile to fit all buttons in one row */
+    .btn-premium .btn-text {
+        display: none;
+    }
+    
+    .btn-premium {
+        padding: 0 0.8rem;
+        height: 36px;
+        min-width: 36px;
+    }
+    
+    .action-bar {
+        gap: 0.4rem;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
     }
 }
 
@@ -305,16 +335,16 @@
 }
 
 .btn-premium {
-    height: 42px;
-    padding: 0 1.5rem;
-    border-radius: 12px;
+    height: 38px;
+    padding: 0 1rem;
+    border-radius: 10px;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
     cursor: pointer;
     box-sizing: border-box;
     transition: all 0.2s ease;

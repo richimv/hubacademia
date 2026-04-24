@@ -476,7 +476,7 @@ class TrainingRepository {
             // Guest mode: return unique system decks by name
             const query = `
                 SELECT DISTINCT ON (d.name)
-                    d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
+                    d.id, d.name, d.type, d.icon, d.source_module, d.parent_id, d.description,
                     0 as total_cards, 0 as due_cards, 
                     (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
                     0 as mastery_percentage
@@ -491,7 +491,7 @@ class TrainingRepository {
         // Standard user query
         let query = `
             SELECT 
-                d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
+                d.id, d.name, d.type, d.icon, d.source_module, d.parent_id, d.description,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
                 (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
@@ -517,7 +517,7 @@ class TrainingRepository {
     async getDeckById(userId, deckId) {
         const query = `
             SELECT 
-                d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
+                d.id, d.name, d.type, d.icon, d.source_module, d.parent_id, d.description,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
                 (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
@@ -532,24 +532,24 @@ class TrainingRepository {
         return result.rows[0];
     }
 
-    async createDeck(userId, name, type = 'USER', sourceModule = 'MANUAL', icon = '📚', parentId = null) {
+    async createDeck(userId, name, type = 'USER', sourceModule = 'MANUAL', icon = '📚', parentId = null, description = null) {
         const query = `
-            INSERT INTO decks (user_id, name, type, source_module, icon, parent_id)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, name, icon, parent_id
+            INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, name, icon, parent_id, description
         `;
-        const result = await db.query(query, [userId, name, type, sourceModule, icon, parentId]);
+        const result = await db.query(query, [userId, name, type, sourceModule, icon, parentId, description]);
         return result.rows[0];
     }
 
-    async updateDeck(userId, deckId, name, icon) {
+    async updateDeck(userId, deckId, name, icon, description = null) {
         const query = `
             UPDATE decks 
-            SET name = $3, icon = $4
+            SET name = $3, icon = $4, description = $5
             WHERE id = $2 AND user_id = $1
-            RETURNING id, name, icon
+            RETURNING id, name, icon, description
         `;
-        const result = await db.query(query, [userId, deckId, name, icon]);
+        const result = await db.query(query, [userId, deckId, name, icon, description]);
         return result.rows[0];
     }
 

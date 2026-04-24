@@ -9,9 +9,9 @@ class DeckService {
         return await trainingRepository.getDeckById(userId, deckId);
     }
 
-    async createDeck(userId, name, icon, parentId = null) {
+    async createDeck(userId, name, icon, parentId = null, description = null) {
         // Default to USER created manual deck
-        return await trainingRepository.createDeck(userId, name, 'USER', 'MANUAL', icon, parentId);
+        return await trainingRepository.createDeck(userId, name, 'USER', 'MANUAL', icon, parentId, description);
     }
 
     async getDueCards(userId, deckId) {
@@ -46,8 +46,8 @@ class DeckService {
         return await trainingRepository.deleteBulkFlashcards(userId, cardIds);
     }
 
-    async updateDeck(userId, deckId, name, icon) {
-        return await trainingRepository.updateDeck(userId, deckId, name, icon);
+    async updateDeck(userId, deckId, name, icon, description = null) {
+        return await trainingRepository.updateDeck(userId, deckId, name, icon, description);
     }
 
     async deleteDeck(userId, deckId) {

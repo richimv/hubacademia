@@ -255,6 +255,7 @@ class DeckExplorer {
         document.getElementById('modal-deck-title').innerText = 'Crear Nuevo Mazo';
         document.getElementById('new-deck-parent').value = parentId || '';
         document.getElementById('new-deck-name').value = '';
+        document.getElementById('new-deck-description').value = '';
         const submitBtn = document.getElementById('btn-save-deck');
         if (submitBtn) submitBtn.innerText = 'Crear';
 
@@ -271,6 +272,105 @@ class DeckExplorer {
         document.getElementById('create-deck-modal').classList.remove('active');
         if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
             window.uiManager.popModalState('create-deck-modal');
+        }
+    }
+
+    // --- Guide Modal ---
+    static openGuideModal(deckId, deckName) {
+        const deck = window.repasoManager.currentDeck;
+        if (!deck || deck.id !== deckId) return;
+
+        document.getElementById('deck-guide-title').innerText = `Guía: ${deckName}`;
+        
+        const description = deck.description || '';
+        const contentDiv = document.getElementById('deck-guide-content');
+        
+        if (description.trim() === '') {
+            contentDiv.innerHTML = '<span style="color: #64748b; font-style: italic;">No hay una guía de estudio definida para este mazo.</span>';
+        } else {
+            // Basic markdown-like rendering (could use marked.js later)
+            let formatted = description
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+            contentDiv.innerHTML = formatted;
+        }
+
+        document.getElementById('deck-guide-textarea').value = description;
+        
+        // Show view mode, hide edit mode
+        document.getElementById('deck-guide-view-mode').style.display = 'block';
+        document.getElementById('deck-guide-edit-mode').style.display = 'none';
+
+        // Only allow edit if it's not a SYSTEM deck, or if the user is admin (simplification: hide edit for SYSTEM)
+        const canEdit = deck.type !== 'SYSTEM';
+        document.getElementById('deck-guide-edit-btn-container').style.display = canEdit ? 'flex' : 'none';
+
+        document.getElementById('deck-guide-modal').classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('deck-guide-modal');
+        }
+    }
+
+    static closeGuideModal() {
+        document.getElementById('deck-guide-modal').classList.remove('active');
+        if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+            window.uiManager.popModalState('deck-guide-modal');
+        }
+    }
+
+    static editGuideMode() {
+        document.getElementById('deck-guide-view-mode').style.display = 'none';
+        document.getElementById('deck-guide-edit-mode').style.display = 'block';
+        document.getElementById('deck-guide-textarea').focus();
+    }
+
+    static cancelEditGuide() {
+        document.getElementById('deck-guide-view-mode').style.display = 'block';
+        document.getElementById('deck-guide-edit-mode').style.display = 'none';
+    }
+
+    static async saveGuide() {
+        const deck = window.repasoManager.currentDeck;
+        if (!deck) return;
+
+        const newDescription = document.getElementById('deck-guide-textarea').value;
+        const btn = document.querySelector('#deck-guide-edit-mode .btn-action[style*="background: #10b981"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        btn.disabled = true;
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deck.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: deck.name,
+                    icon: deck.icon,
+                    description: newDescription
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                // Update local state
+                deck.description = newDescription;
+                window.uiManager.showToast('Guía actualizada correctamente', 'success');
+                // Re-render modal in view mode
+                DeckExplorer.openGuideModal(deck.id, deck.name);
+            } else {
+                throw new Error('Error saving guide');
+            }
+        } catch (e) {
+            console.error('Error saving guide', e);
+            window.uiManager.showToast('Error al actualizar la guía', 'error');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
     }
 }

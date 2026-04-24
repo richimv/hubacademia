@@ -293,6 +293,9 @@ class RepasoManager {
                             <button class="btn-premium btn-premium-secondary" onclick="${this.token ? `window.repasoManager.openStatsModal(${total}, ${mastered}, ${pending})` : 'window.uiManager.showAuthPromptModal()'}">
                                 <i class="fas fa-chart-pie"></i> <span class="btn-text">Estadísticas</span>
                             </button>
+                            <button class="btn-premium btn-premium-secondary" onclick="DeckExplorer.openGuideModal('${deck.id}', '${this.escapeHtml(deck.name)}')">
+                                <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -409,8 +412,8 @@ class RepasoManager {
                         </button>
                         ${!isSystem ? `
                             <button class="deck-action-btn" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border: 1px solid rgba(255,255,255,0.1);" 
-                                onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}')" 
-                                title="Editar nombre/icono">
+                                onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}', \`${this.escapeHtml(deck.description || '')}\`)" 
+                                title="Editar nombre/icono/guía">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="deck-action-btn deck-action-btn--delete" 
@@ -1068,6 +1071,7 @@ class RepasoManager {
         const deckId = document.getElementById('new-deck-id').value; // Hidden ID field for Edit
         const name = document.getElementById('new-deck-name').value;
         const parentId = document.getElementById('new-deck-parent').value || null;
+        const description = document.getElementById('new-deck-description') ? document.getElementById('new-deck-description').value : null;
 
         try {
             if (deckId) {
@@ -1077,7 +1081,7 @@ class RepasoManager {
                     method: 'PUT',
                     isRetryable: true,
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ name, icon })
+                    body: JSON.stringify({ name, icon, description })
                 });
 
                 if (res.ok) {
@@ -1099,7 +1103,7 @@ class RepasoManager {
                     method: 'POST',
                     isRetryable: true,
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ name, icon, parentId })
+                    body: JSON.stringify({ name, icon, parentId, description })
                 });
 
                 if (res.ok) {
@@ -1122,13 +1126,21 @@ class RepasoManager {
         }
     }
 
-    openEditDeckModal(id, currentName, currentIcon) {
+    openEditDeckModal(id, currentName, currentIcon, currentDescription = '') {
         // Redundant reset removed, handled by explorer
         DeckExplorer.openCreateModal(null); // Pass null for parent to indicate edit/root
         
         document.getElementById('modal-deck-title').innerText = 'Editar Mazo';
         document.getElementById('new-deck-name').value = currentName;
         document.getElementById('new-deck-id').value = id;
+        
+        const descInput = document.getElementById('new-deck-description');
+        if (descInput) {
+            // Un-escape HTML to display correctly in textarea
+            const temp = document.createElement('textarea');
+            temp.innerHTML = currentDescription;
+            descInput.value = temp.value;
+        }
         
         if (window.DeckExplorer) {
             window.DeckExplorer.renderIconPicker(currentIcon || 'fas fa-layer-group');
