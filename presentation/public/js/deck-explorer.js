@@ -3,6 +3,8 @@
  * Handles the sidebar tree navigation and recursive structure.
  */
 class DeckExplorer {
+    static sessionImages = []; // Tracking images uploaded during the current edit session
+
     constructor(manager) {
         this.manager = manager; // Reference to RepasoManager
         this.treeContainer = document.getElementById('deck-tree');
@@ -250,6 +252,8 @@ class DeckExplorer {
     }
 
     static openCreateModal(parentId = null) {
+        if (window.uiManager && !window.uiManager.validateFreemiumAction(null, 'flashcards')) return;
+
         document.getElementById('create-deck-form').reset();
         document.getElementById('new-deck-id').value = '';
         document.getElementById('modal-deck-title').innerText = 'Crear Nuevo Mazo';
@@ -286,14 +290,10 @@ class DeckExplorer {
         const contentDiv = document.getElementById('deck-guide-content');
         
         if (description.trim() === '') {
-            contentDiv.innerHTML = '<span style="color: #64748b; font-style: italic;">No hay una guía de estudio definida para este mazo.</span>';
+            contentDiv.innerHTML = '<span style="color: #64748b; font-style: italic;">No hay una guía de estudio definida para este mazo. Pulsa "Editar" para empezar.</span>';
         } else {
-            // Basic markdown-like rendering (could use marked.js later)
-            let formatted = description
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/\n/g, '<br>');
-            contentDiv.innerHTML = formatted;
+            // Now storing HTML directly from TinyMCE for best Excel/Word support
+            contentDiv.innerHTML = description;
         }
 
         document.getElementById('deck-guide-textarea').value = description;
@@ -302,9 +302,10 @@ class DeckExplorer {
         document.getElementById('deck-guide-view-mode').style.display = 'block';
         document.getElementById('deck-guide-edit-mode').style.display = 'none';
 
-        // Only allow edit if it's not a SYSTEM deck, or if the user is admin (simplification: hide edit for SYSTEM)
+        // Only allow edit if it's not a SYSTEM deck
         const canEdit = deck.type !== 'SYSTEM';
-        document.getElementById('deck-guide-edit-btn-container').style.display = canEdit ? 'flex' : 'none';
+        const editBtn = document.getElementById('deck-guide-edit-btn');
+        if (editBtn) editBtn.style.display = canEdit ? 'block' : 'none';
 
         document.getElementById('deck-guide-modal').classList.add('active');
         if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
@@ -319,22 +320,123 @@ class DeckExplorer {
         }
     }
 
-    static editGuideMode() {
-        document.getElementById('deck-guide-view-mode').style.display = 'none';
-        document.getElementById('deck-guide-edit-mode').style.display = 'block';
-        document.getElementById('deck-guide-textarea').focus();
+    static copyGuideToClipboard() {
+        const contentDiv = document.getElementById('deck-guide-content');
+        if (!contentDiv) return;
+        
+        // Copiar texto plano para mayor compatibilidad
+        const text = contentDiv.innerText || contentDiv.textContent;
+        if (!text || text.includes('No hay una guía')) return;
+
+        navigator.clipboard.writeText(text).then(() => {
+            if (window.uiManager && window.uiManager.showToast) {
+                window.uiManager.showToast('Texto de la guía copiado', 'success');
+            }
+        }).catch(err => {
+            console.error('Error al copiar:', err);
+        });
     }
 
-    static cancelEditGuide() {
+    static async editGuideMode() {
+        if (window.uiManager && !window.uiManager.validateFreemiumAction(null, 'flashcards')) return;
+
+        DeckExplorer.sessionImages = []; // Reset session tracking
+        document.getElementById('deck-guide-view-mode').style.display = 'none';
+        document.getElementById('deck-guide-edit-mode').style.display = 'block';
+
+        const description = window.repasoManager.currentDeck.description || '';
+
+        // Initialize TinyMCE if not already done
+        if (!window.tinymce.get('deck-guide-textarea')) {
+            await window.tinymce.init({
+                selector: '#deck-guide-textarea',
+                height: 500,
+                menubar: false,
+                skin: 'oxide-dark',
+                content_css: 'dark',
+                plugins: 'lists link table code help wordcount image',
+                toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | table image | code help',
+                images_upload_handler: async (blobInfo) => {
+                    const user = window.sessionManager?.getUser();
+                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                    
+                    const editor = window.tinymce.get('deck-guide-textarea');
+                    if (editor) {
+                        const content = editor.getContent();
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = content;
+                        if (tempDiv.querySelectorAll('img').length >= 2) {
+                            throw new Error('Límite de 2 imágenes por Guía alcanzado.');
+                        }
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                    const token = localStorage.getItem('authToken');
+                    const res = await fetch(`${window.AppConfig.API_URL}/api/cards/upload-image`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    const data = await res.json();
+                    
+                    if (res.status === 403) {
+                        if (window.uiManager) window.uiManager.showPaywallModal(null, 'flashcards');
+                        throw new Error('Créditos agotados. Suscríbete para continuar.');
+                    }
+
+                    if (res.ok && data.imageUrl) {
+                        // Track this image for the current session
+                        DeckExplorer.sessionImages.push(data.imageUrl);
+                        return window.resolveImageUrl ? window.resolveImageUrl(data.imageUrl) : data.imageUrl;
+                    } else {
+                        throw new Error(data.error || 'Error al subir imagen');
+                    }
+                },
+                setup: (editor) => {
+                    editor.on('init', () => {
+                        editor.setContent(description);
+                    });
+                }
+            });
+        } else {
+            window.tinymce.get('deck-guide-textarea').setContent(description);
+        }
+    }
+
+    static async cancelEditGuide() {
+        // Cleanup: delete images uploaded during this session since we are canceling
+        if (DeckExplorer.sessionImages.length > 0) {
+            DeckExplorer._cleanupSessionImages(DeckExplorer.sessionImages);
+        }
+        DeckExplorer.sessionImages = [];
+        
         document.getElementById('deck-guide-view-mode').style.display = 'block';
         document.getElementById('deck-guide-edit-mode').style.display = 'none';
+    }
+
+    static _cleanupSessionImages(urls) {
+        const token = localStorage.getItem('authToken');
+        urls.forEach(url => {
+            fetch(`${window.AppConfig.API_URL}/api/media/delete`, {
+                method: 'DELETE',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ url })
+            }).catch(err => console.error('Error cleaning up session image:', err));
+        });
     }
 
     static async saveGuide() {
         const deck = window.repasoManager.currentDeck;
         if (!deck) return;
 
-        const newDescription = document.getElementById('deck-guide-textarea').value;
+        // Get content from TinyMCE
+        const newDescription = window.tinymce.get('deck-guide-textarea').getContent();
         const btn = document.querySelector('#deck-guide-edit-mode .btn-action[style*="background: #10b981"]');
         const originalText = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
@@ -342,6 +444,22 @@ class DeckExplorer {
 
         try {
             const token = localStorage.getItem('authToken');
+            
+            // Get all images in final HTML
+            const finalImages = [];
+            const imgRegex = /src="([^">]+storage\.googleapis\.com[^">]+)"/g;
+            let match;
+            while ((match = imgRegex.exec(newDescription)) !== null) {
+                finalImages.push(match[1]);
+            }
+
+            // 1. Cleanup images that were uploaded in this session but deleted before saving
+            const sessionOrphans = DeckExplorer.sessionImages.filter(url => !finalImages.includes(url));
+            if (sessionOrphans.length > 0) {
+                DeckExplorer._cleanupSessionImages(sessionOrphans);
+            }
+            DeckExplorer.sessionImages = [];
+
             const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deck.id}`, {
                 method: 'PUT',
                 headers: {
@@ -355,11 +473,17 @@ class DeckExplorer {
                 })
             });
 
+            if (res.status === 403) {
+                if (window.uiManager) window.uiManager.showPaywallModal(null, 'flashcards');
+                return;
+            }
+
             if (res.ok) {
                 const data = await res.json();
                 // Update local state
                 deck.description = newDescription;
                 window.uiManager.showToast('Guía actualizada correctamente', 'success');
+                if (window.sessionManager) await window.sessionManager.refreshUser();
                 // Re-render modal in view mode
                 DeckExplorer.openGuideModal(deck.id, deck.name);
             } else {

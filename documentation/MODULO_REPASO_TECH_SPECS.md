@@ -24,17 +24,6 @@ El **Módulo de Repaso** es el sistema de memorización a largo plazo de Hub Aca
   - Se reparó la inicialización del `ActivityHeatmap` para que consuma datos reales del endpoint `/api/analytics/heatmap`.
   - Se introdujo un **Gráfico de Anillo (Chart.js)** en el modal de estadísticas que desglosa el estado de las tarjetas del mazo actual en tres categorías: "Nuevas/Aprendiendo", "Por Repasar" (Due) y "Dominadas".
 
-## Arquitectura de Medios en Vercel
-Para evitar que Vercel bloquee peticiones directas a Google Cloud Storage o existan problemas de expiración de URLs firmadas, el sistema utiliza:
-1. `window.resolveImageUrl(path)`: Resuelve rutas relativas de GCS a través del proxy del backend.
-2. `MediaController`: Centraliza la subida, validación de tipo MIME y almacenamiento organizado por carpetas (`/flashcards`).
-
-## Futuras Mejoras
-- **IA Agéntica**: Vincular estadísticas de error con recursos específicos de la base de datos IPRESS.
-- **Bulk Import**: Carga masiva de tarjetas desde Excel/CSV con soporte de URLs de imágenes.
-
----
-
 ## 2. Componentes Clave
 
 ### A. Gestión de Mazos (Decks)
@@ -46,11 +35,41 @@ Para evitar que Vercel bloquee peticiones directas a Google Cloud Storage o exis
 - **Formatos Soportados**: Texto plano y Soporte Visual (Imágenes en GCS).
 
 ### C. Generación con IA
-- **IA Assistant**: Integración con modelos de lenguaje para generar flashcards automáticamente a partir de temas médicos específicos. Soporta la creación de hasta **20 tarjetas por intento**, adaptando el contenido a la densidad del tema solicitado.
+- **IA Assistant**: Integración con modelos de lenguaje para generar flashcards automáticamente a partir de temas médicos específicos. Soporta la creación de hasta **20 tarjetas por intento**.
 
 ---
 
-## 3. Flujos de Datos Principales
+## 3. Optimizaciones de Seguridad y Control de Uso (Sprint Final - Mayo 2026)
+
+Se ha implementado un sistema estricto de cuotas y protección de recursos para garantizar la sostenibilidad del almacenamiento y el modelo de negocio.
+
+### A. Límites de Imágenes Universales
+Para evitar el abuso del almacenamiento en Google Cloud Storage (GCS), se han establecido límites globales:
+- **Guía de Estudio**: Máximo de **2 imágenes** por mazo.
+- **Flashcards**: Máximo de **1 imagen por cara** (Anverso/Reverso).
+- **Validación Dual**: El sistema valida estos límites tanto en el frontend (TinyMCE images_upload_handler) como en el backend (`DeckController`) con respuestas 400/403.
+
+### B. Sistema de "Vidas" para Usuarios Free (Tier Pending)
+Los usuarios sin suscripción activa consumen su saldo global de 50 vidas para las siguientes operaciones de gestión:
+- **Operaciones de CRUD**: Crear mazo, editar mazo, añadir tarjetas, editar tarjetas.
+- **Operaciones de IA**: Generación masiva de tarjetas con IA (botón morado).
+- **Carga de Archivos**: Cada subida de imagen consume una vida.
+- **Sincronización en Tiempo Real**: Tras cada acción exitosa, el sistema invoca `sessionManager.refreshUser()` para actualizar el contador de vidas en el header sin recargar la página.
+
+### C. Modernización del Editor (TinyMCE 6)
+- **Editor de Guías**: Integración de TinyMCE con soporte para tablas complejas (importadas de Word/Excel).
+- **Control de Activos**: Seguimiento de imágenes de sesión (`sessionImages`). Si el usuario cancela la edición, el sistema elimina automáticamente de GCS las imágenes subidas durante esa sesión que no fueron persistidas.
+- **Responsive Design**: Modal de guía optimizado para escritorio (1000px) y móviles, con scroll interno y barra de herramientas oscura.
+
+### D. Cascada de Eliminación Progresiva
+El método `deleteDeck` ahora recorre jerárquicamente la estructura de mazos, eliminando imágenes de:
+1. La descripción (Guía) del mazo actual.
+2. Las tarjetas contenidas.
+3. Recursivamente, todos los sub-mazos y sus respectivas tarjetas.
+
+---
+
+## 4. Flujos de Datos Principales
 
 ### Creación de Tarjeta con Imagen
 1. El usuario selecciona un archivo en el modal.
@@ -62,34 +81,3 @@ Para evitar que Vercel bloquee peticiones directas a Google Cloud Storage o exis
 1. Durante el estudio, el usuario califica una tarjeta.
 2. `flashcards.js` calcula localmente el progreso y lo envía a `POST /api/training/flashcards/review`.
 3. El backend actualiza los parámetros SRS en la base de datos.
-
----
-
-## 4. Métricas y Análisis de Actividad
-
-El sistema implementa un motor de analíticas para motivar la constancia del estudiante mediante retroalimentación visual inmediata.
-
-### A. Gráfico de Retención y Constancia (Heatmap)
-- **Alcance**: **Global**. Refleja la actividad del usuario en toda la plataforma, no solo en el mazo actual.
-- **Fuentes de Datos**:
-    - `quiz_history`: Registra la finalización de simulacros (Peso: 2pts).
-    - `user_flashcards`: Registra el campo `last_reviewed_at` durante el estudio (Peso: 1pt).
-- **Visualización**:
-    - **Intensidad**: Los colores varían de azul a púrpura según la densidad de puntos acumulados por día (Normalizado respecto al "Mejor Día" de las últimas 2 semanas).
-    - **Interactividad**: Tooltips HTML con `z-index` máximo para visualización sobre modales, mostrando conteo exacto y fecha.
-
-### B. KPIs de Mazo (Doughnut Chart)
-- **Aprendiendo (Azul)**: Tarjetas con `interval_days` < 1 o recién creadas.
-- **Por Repasar (Rojo)**: Tarjetas donde `next_review_at` <= `NOW()`.
-- **Dominadas (Verde)**: Tarjetas con intervalos de madurez (> 21 días de recordación activa).
-
-### C. Almacenamiento y Persistencia
-Los datos se persisten en PostgreSQL y se sirven a través del endpoint unificado `/api/analytics/heatmap`. Este endpoint requiere autenticación JWT para filtrar la actividad por el `user_id` correspondiente.
-
-
-## 5. Optimizaciones de UX (Abril 2026 - Sprint Final)
-
-1. **Carga Masiva de Flashcards (Excel Engine)**: Integración de un motor de importación basado en SheetJS (XLSX) dentro del módulo de repaso.
-    - **UX Directa**: Permite al usuario descargar una plantilla optimizada y subir cientos de tarjetas en segundos.
-    - **Backend Batching**: Endpoint /api/decks/:deckId/cards/batch con validación de duplicados.
-    - **Feedback Visual**: Contador en tiempo real y spinners de carga.

@@ -854,15 +854,18 @@ class TrainingRepository {
     async getDeckTreeImages(userId, deckId) {
         const query = `
             WITH RECURSIVE deck_tree AS (
-                SELECT id FROM decks WHERE id = $1 AND user_id = $2
+                SELECT id, description FROM decks WHERE id = $1 AND user_id = $2
                 UNION ALL
-                SELECT d.id FROM decks d
+                SELECT d.id, d.description FROM decks d
                 INNER JOIN deck_tree dt ON d.parent_id = dt.id
             )
-            SELECT image_url, explanation_image_url 
-            FROM user_flashcards 
-            WHERE deck_id IN (SELECT id FROM deck_tree) 
-            AND (image_url IS NOT NULL OR explanation_image_url IS NOT NULL);
+            SELECT 
+                uf.image_url, 
+                uf.explanation_image_url,
+                dt.description as deck_description
+            FROM deck_tree dt
+            LEFT JOIN user_flashcards uf ON dt.id = uf.deck_id
+            WHERE (uf.image_url IS NOT NULL OR uf.explanation_image_url IS NOT NULL OR dt.description IS NOT NULL);
         `;
         const { rows } = await db.query(query, [deckId, userId]);
         return rows;

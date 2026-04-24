@@ -199,6 +199,32 @@ class MediaController {
             return null;
         }
     }
+
+    /**
+     * Endpoint Handler: DELETE /api/media/delete
+     * Permite a los usuarios borrar imágenes que subieron (ej: durante edición de guías)
+     */
+    async handleDeleteMedia(req, res) {
+        try {
+            const { url } = req.body;
+            if (!url) return res.status(400).json({ error: 'Falta la URL de la imagen' });
+
+            // Extraer el path de GCS de la URL si es necesario
+            // La URL suele ser algo como https://.../api/media/gcs?file=folder/image.webp
+            let gcsPath = url;
+            if (url.includes('?file=')) {
+                gcsPath = url.split('?file=')[1];
+            } else if (url.includes('?path=')) {
+                gcsPath = url.split('?path=')[1];
+            }
+
+            await this.deleteFile(gcsPath);
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error in handleDeleteMedia:', error);
+            res.status(500).json({ error: 'Error al eliminar el archivo' });
+        }
+    }
 }
 
 module.exports = new MediaController();

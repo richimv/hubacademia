@@ -55,6 +55,7 @@ router.get('/media/explanation/:id', optionalAuth, (req, res) => mediaController
 router.get('/media/resource/:id', optionalAuth, (req, res) => mediaController.serveResourceImage(req, res));
 router.get('/media/preview', auth, adminOnly, (req, res) => mediaController.serveGCSPreview(req, res));
 router.get('/media/gcs', optionalAuth, (req, res) => mediaController.serveGCSGeneral(req, res));
+router.delete('/media/delete', auth, (req, res) => mediaController.handleDeleteMedia(req, res));
 
 // ✅ RUTAS DE BIBLIOTECA (Favoritos/Guardados)
 const libraryRoutes = require('./libraryRoutes');
@@ -166,19 +167,19 @@ const DeckController = require('../../application/controllers/deckController');
 
 router.get('/decks', optionalAuth, DeckController.listDecks);
 router.get('/decks/:deckId', optionalAuth, DeckController.getDeckById); // ✅ NUEVO: Fetch Single Deck
-router.post('/decks', auth, DeckController.createDeck);
+router.post('/decks', auth, checkAILimits('monthly_flashcards'), DeckController.createDeck);
 router.get('/decks/:deckId/cards/due', auth, DeckController.getDueCards);
 router.get('/decks/:deckId/cards/:cardId/study', auth, DeckController.getStudyCard);
 router.get('/decks/:deckId/cards', optionalAuth, DeckController.listCards); // ✅ NUEVO
-router.post('/decks/:deckId/cards', auth, DeckController.addCard); // ✅ NUEVO
-router.post('/decks/:deckId/cards/batch', auth, DeckController.addBulkCards); // ✅ NUEVO: Batch Import
+router.post('/decks/:deckId/cards', auth, checkAILimits('monthly_flashcards'), DeckController.addCard); // ✅ NUEVO
+router.post('/decks/:deckId/cards/batch', auth, checkAILimits('monthly_flashcards'), DeckController.addBulkCards); // ✅ NUEVO: Batch Import
 router.post('/decks/:deckId/generate', auth, checkAILimits('monthly_flashcards'), DeckController.generateCards); // ✅✨ NUEVO: IA Gen
-router.put('/decks/:deckId', auth, DeckController.updateDeck); // ✅ NUEVO: Rename
+router.put('/decks/:deckId', auth, checkAILimits('monthly_flashcards'), DeckController.updateDeck); // ✅ NUEVO: Rename
 router.delete('/decks/:deckId', auth, DeckController.deleteDeck); // ✅ NUEVO
 router.put('/decks/:deckId/cards/reorder', auth, DeckController.reorderCards); // ✅ NUEVO: Reorder
 router.delete('/cards/batch', auth, DeckController.deleteBulkCards); // ✅ NUEVO: Batch Delete
-router.post('/cards/upload-image', auth, upload.single('file'), DeckController.uploadCardImage); // ✅ NUEVO: Flashcard Image Upload
-router.put('/cards/:cardId', auth, DeckController.updateCard); // ✅ NUEVO
+router.post('/cards/upload-image', auth, checkAILimits('monthly_flashcards'), upload.single('file'), DeckController.uploadCardImage); // ✅ NUEVO: Flashcard Image Upload
+router.put('/cards/:cardId', auth, checkAILimits('monthly_flashcards'), DeckController.updateCard); // ✅ NUEVO
 router.delete('/cards/:cardId', auth, DeckController.deleteCard); // ✅ NUEVO
 
 // Legacy/Direct Review Routes (Mantenidos por compatibilidad, pero redirigidos a lógica de mazos si es necesario)

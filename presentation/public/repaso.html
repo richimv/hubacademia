@@ -22,6 +22,36 @@
     <link rel="stylesheet" href="css/repaso.css?v=v_pure_dark_v8">
     <link rel="stylesheet" href="css/modal.css?v=v_pure_dark_v8">
     <link rel="stylesheet" href="css/components.css?v=v_pure_dark_v8">
+    
+    <!-- Rich Text Editor (Mini-Word) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+    <style>
+        /* Estilos para tablas pegadas de Excel/Word */
+        #deck-guide-content table {
+            width: 100% !important;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #deck-guide-content th, #deck-guide-content td {
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+        #deck-guide-content th {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            font-weight: 600;
+        }
+        /* Fix para TinyMCE en modo oscuro */
+        .tox-tinymce {
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            border-radius: 8px !important;
+        }
+    </style>
 </head>
 
 <body class="hero-hidden">
@@ -141,30 +171,36 @@
 
     <!-- Deck Guide Modal -->
     <div class="modal-overlay" id="deck-guide-modal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 1000px; width: 95%;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                 <h2 id="deck-guide-title">Guía de Estudio</h2>
                 <button type="button" class="btn-close" onclick="DeckExplorer.closeGuideModal()" style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
             </div>
             
-            <div id="deck-guide-view-mode">
-                <div id="deck-guide-content" style="background: rgba(30, 41, 59, 0.5); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); min-height: 100px; color: #e2e8f0; line-height: 1.6; white-space: pre-wrap;">
-                    <!-- Markdown content goes here -->
+            <!-- Scrollable Body Wrapper -->
+            <div style="max-height: 70vh; overflow-y: auto; overflow-x: hidden; padding-right: 0.5rem; scrollbar-width: thin; scrollbar-color: #3b82f6 transparent;">
+                
+                <!-- View Mode -->
+                <div id="deck-guide-view-mode">
+                    <div id="deck-guide-content" style="background: rgba(30, 41, 59, 0.5); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); min-height: 100px; color: #e2e8f0; line-height: 1.6; white-space: normal;">
+                        <!-- Content goes here -->
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.5rem;" id="deck-guide-edit-btn-container">
+                        <button type="button" class="btn-action" id="deck-guide-edit-btn" style="background: #3b82f6; color: white; padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="DeckExplorer.editGuideMode()">
+                            <i class="fas fa-edit"></i> Editar Guía
+                        </button>
+                    </div>
                 </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;" id="deck-guide-edit-btn-container">
-                    <button type="button" class="btn-action" style="background: #3b82f6; color: white;" onclick="DeckExplorer.editGuideMode()">
-                        <i class="fas fa-edit"></i> Editar Guía
-                    </button>
-                </div>
-            </div>
 
-            <div id="deck-guide-edit-mode" style="display: none;">
-                <textarea id="deck-guide-textarea" class="form-input" rows="8" style="resize: vertical; font-family: monospace; padding: 1rem;" placeholder="Escribe aquí la guía de estudio (Soporta Markdown)..."></textarea>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                    <button type="button" class="btn-action btn-secondary-action" onclick="DeckExplorer.cancelEditGuide()">Cancelar</button>
-                    <button type="button" class="btn-action" style="background: #10b981; color: white;" onclick="DeckExplorer.saveGuide()">
-                        <i class="fas fa-save"></i> Guardar
-                    </button>
+                <!-- Edit Mode -->
+                <div id="deck-guide-edit-mode" style="display: none;">
+                    <textarea id="deck-guide-textarea" class="form-input" rows="8" style="resize: vertical; font-family: monospace; padding: 1rem;" placeholder="Escribe aquí la guía de estudio..."></textarea>
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                        <button type="button" class="btn-action btn-secondary-action" onclick="DeckExplorer.cancelEditGuide()">Cancelar</button>
+                        <button type="button" class="btn-action" style="background: #10b981; color: white;" onclick="DeckExplorer.saveGuide()">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

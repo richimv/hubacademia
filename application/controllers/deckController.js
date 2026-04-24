@@ -12,6 +12,39 @@ class DeckController {
     }
 
     /**
+     * Helper to extract GCS image URLs from HTML content
+     */
+    _extractImageUrls = (html) => {
+        if (!html || typeof html !== 'string') return [];
+        // Match src="URL" but only for our GCS domain/bucket patterns
+        const regex = /src="([^">]+storage\.googleapis\.com[^">]+)"/g;
+        const urls = [];
+        let match;
+        while ((match = regex.exec(html)) !== null) {
+            urls.push(match[1]);
+        }
+        return urls;
+    }
+
+    /**
+     * Helper to increment usage if middleware detected a quota need
+     */
+    _syncUsage = async (req) => {
+        try {
+            if (req.usageType && req.user && req.user.id) {
+                const db = require('../../infrastructure/database/db');
+                await db.query(
+                    `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                    [req.user.id]
+                );
+                console.log(`📉 Usage ${req.usageType} incremented for user ${req.user.id}`);
+            }
+        } catch (e) {
+            console.error('[DeckController._syncUsage] Error:', e.message);
+        }
+    }
+
+    /**
      * GET /api/decks
      * Query Params: ?parentId=uuid (optional)
      */
@@ -61,7 +94,12 @@ class DeckController {
             if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para crear mazos' });
             if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
+            if (this._extractImageUrls(description).length > 2) {
+                return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
+            }
+
             const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null, description || null);
+            await this._syncUsage(req);
             res.json({ success: true, deck });
         } catch (error) {
             console.error('[createDeck] Error:', error);
@@ -80,7 +118,29 @@ class DeckController {
 
             if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
+            // 1. Get current deck for image cleanup
+            const currentDeck = await DeckService.getDeckById(userId, deckId);
+            if (!currentDeck) return res.status(404).json({ error: 'Mazo no encontrado' });
+
+            if (this._extractImageUrls(description).length > 2) {
+                return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
+            }
+
             const deck = await DeckService.updateDeck(userId, deckId, name, icon, description);
+            await this._syncUsage(req);
+
+            // 2. Cleanup orphaned images in description
+            const oldImages = this._extractImageUrls(currentDeck.description);
+            const newImages = this._extractImageUrls(description);
+            const orphanedImages = oldImages.filter(url => !newImages.includes(url));
+
+            if (orphanedImages.length > 0) {
+                const mediaController = require('./mediaController');
+                for (const url of orphanedImages) {
+                    await mediaController.deleteFile(url);
+                }
+            }
+
             res.json({ success: true, deck });
         } catch (error) {
             console.error('[updateDeck] Error:', error);
@@ -167,6 +227,7 @@ class DeckController {
             }
 
             const card = await DeckService.addCard(userId, deckId, front, back, imageUrl, backImageUrl);
+            await this._syncUsage(req);
             res.json({ success: true, card });
         } catch (error) {
             console.error('[addCard] Error:', error);
@@ -187,6 +248,7 @@ class DeckController {
             if (!cards || !Array.isArray(cards)) return res.status(400).json({ error: 'Se requiere un array de tarjetas.' });
 
             const result = await DeckService.addBulkCards(userId, deckId, cards);
+            await this._syncUsage(req);
             res.json({ success: true, count: result.inserted });
         } catch (error) {
             console.error('[addBulkCards] Error:', error);
@@ -269,6 +331,7 @@ class DeckController {
             if (!currentCard) return res.status(404).json({ error: 'Tarjeta no encontrada' });
 
             const card = await DeckService.updateCard(userId, cardId, front, back, imageUrl, backImageUrl);
+            await this._syncUsage(req);
 
             // 2. Limpieza de GCS (Post-Guardado)
             // Si la URL cambió y la anterior no era null, borrar el archivo viejo
@@ -322,17 +385,35 @@ class DeckController {
             const { deckId } = req.params;
             const { userId } = this._getUserContext(req);
 
-            // 1. Obtener todas las imágenes del árbol de mazos
-            const imagesToDelete = await DeckService.getDeckTreeImages(userId, deckId);
+            // 1. Obtener todas las imágenes del árbol de mazos (Tarjetas + Descripciones)
+            const rawImageData = await DeckService.getDeckTreeImages(userId, deckId);
 
             // 2. Eliminar el mazo y sub-mazos de la BD
             await DeckService.deleteDeck(userId, deckId);
 
             // 3. Limpiar GCS
             const mediaController = require('./mediaController');
-            for (const img of imagesToDelete) {
-                if (img.image_url) await mediaController.deleteFile(img.image_url);
-                if (img.explanation_image_url) await mediaController.deleteFile(img.explanation_image_url);
+            const processedUrls = new Set(); // Evitar duplicados
+
+            for (const row of rawImageData) {
+                if (row.image_url && !processedUrls.has(row.image_url)) {
+                    await mediaController.deleteFile(row.image_url);
+                    processedUrls.add(row.image_url);
+                }
+                if (row.explanation_image_url && !processedUrls.has(row.explanation_image_url)) {
+                    await mediaController.deleteFile(row.explanation_image_url);
+                    processedUrls.add(row.explanation_image_url);
+                }
+                // Extraer imágenes de la descripción del mazo
+                if (row.deck_description) {
+                    const descImages = this._extractImageUrls(row.deck_description);
+                    for (const url of descImages) {
+                        if (!processedUrls.has(url)) {
+                            await mediaController.deleteFile(url);
+                            processedUrls.add(url);
+                        }
+                    }
+                }
             }
 
             res.json({ success: true });
@@ -362,18 +443,8 @@ class DeckController {
                 savedCards.push(saved);
             }
 
-            // Sync Usage Limits
-            try {
-                const db = require('../../infrastructure/database/db');
-                if (req.usageType) {
-                    await db.query(
-                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
-                        [userId]
-                    );
-                }
-            } catch (limitErr) {
-                console.warn("Could not sync AI limits, continuing...", limitErr.message);
-            }
+            // Sync Usage Limits (using helper)
+            await this._syncUsage(req);
 
             res.json({ success: true, count: savedCards.length, cards: savedCards });
         } catch (error) {
@@ -394,6 +465,7 @@ class DeckController {
             const mediaController = require('./mediaController');
             const gcsPath = await mediaController.uploadFile(req.file, 'flashcards');
             
+            await this._syncUsage(req);
             res.json({ success: true, imageUrl: gcsPath });
         } catch (error) {
             console.error('[uploadCardImage] Error:', error);

@@ -286,7 +286,7 @@ class RepasoManager {
                                 <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
                             </button>
                             <button class="btn-premium btn-premium-ia" onclick="window.repasoManager.openAiModal()">
-                                <i class="fas fa-magic"></i> <span class="btn-text">Con IA</span>
+                                <i class="fas fa-magic"></i> <span class="btn-text">Crear con IA</span>
                             </button>
                             ` : ''}
                             
@@ -315,7 +315,7 @@ class RepasoManager {
         }
 
         container.style.display = 'block'; // Changed to block to contain header + grid
-        
+
         const count = decks.length;
         const title = count > 0 ? `Sub-mazos (${count})` : 'Sub-mazos';
         const icon = this.subDecksCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
@@ -338,10 +338,10 @@ class RepasoManager {
     toggleSubDecks() {
         this.subDecksCollapsed = !this.subDecksCollapsed;
         localStorage.setItem('subDecksCollapsed', this.subDecksCollapsed);
-        
+
         const grid = document.getElementById('subdecks-grid');
         const icon = document.querySelector('.subdecks-header .toggle-icon');
-        
+
         if (this.subDecksCollapsed) {
             grid?.classList.add('collapsed');
             if (icon) {
@@ -835,6 +835,8 @@ class RepasoManager {
     // --- Actions ---
 
     openAddCardModal() {
+        if (window.uiManager && !window.uiManager.validateFreemiumAction(null, 'flashcards')) return;
+
         document.getElementById('card-form').reset();
         document.getElementById('card-deck-id').value = this.currentDeck.id;
         document.getElementById('card-id').value = ''; // Clear ID for new
@@ -1084,6 +1086,11 @@ class RepasoManager {
                     body: JSON.stringify({ name, icon, description })
                 });
 
+                if (res.status === 403) {
+                    if (window.uiManager) window.uiManager.showPaywallModal(null, 'flashcards');
+                    return;
+                }
+
                 if (res.ok) {
                     DeckExplorer.closeCreateModal();
                     await this.explorer.loadTree();
@@ -1093,6 +1100,7 @@ class RepasoManager {
                     } else {
                         await this.refreshView();
                     }
+                    if (window.sessionManager) await window.sessionManager.refreshUser();
                 } else {
                     alert('Error al actualizar mazo');
                 }
@@ -1106,11 +1114,17 @@ class RepasoManager {
                     body: JSON.stringify({ name, icon, parentId, description })
                 });
 
+                if (res.status === 403) {
+                    if (window.uiManager) window.uiManager.showPaywallModal(null, 'flashcards');
+                    return;
+                }
+
                 if (res.ok) {
                     DeckExplorer.closeCreateModal();
                     await this.explorer.loadTree();
                     if (parentId) await this.loadFolder(parentId);
                     else await this.loadDashboard();
+                    if (window.sessionManager) await window.sessionManager.refreshUser();
                 } else {
                     alert('Error al crear mazo');
                 }
@@ -1129,11 +1143,11 @@ class RepasoManager {
     openEditDeckModal(id, currentName, currentIcon, currentDescription = '') {
         // Redundant reset removed, handled by explorer
         DeckExplorer.openCreateModal(null); // Pass null for parent to indicate edit/root
-        
+
         document.getElementById('modal-deck-title').innerText = 'Editar Mazo';
         document.getElementById('new-deck-name').value = currentName;
         document.getElementById('new-deck-id').value = id;
-        
+
         const descInput = document.getElementById('new-deck-description');
         if (descInput) {
             // Un-escape HTML to display correctly in textarea
@@ -1141,7 +1155,7 @@ class RepasoManager {
             temp.innerHTML = currentDescription;
             descInput.value = temp.value;
         }
-        
+
         if (window.DeckExplorer) {
             window.DeckExplorer.renderIconPicker(currentIcon || 'fas fa-layer-group');
         }
@@ -1154,7 +1168,7 @@ class RepasoManager {
     async handleSaveCard(e) {
         e.preventDefault();
         const deckId = document.getElementById('card-deck-id').value;
-        const cardId = document.getElementById('card-id').value; 
+        const cardId = document.getElementById('card-id').value;
         const front = document.getElementById('card-front').value.trim();
         const back = document.getElementById('card-back').value.trim();
         const imageUrl = document.getElementById('card-image-url-front').value || null;
@@ -1204,7 +1218,7 @@ class RepasoManager {
 
             const payload = { front, back, imageUrl: finalImageUrl, backImageUrl: finalBackImageUrl };
             let res;
-            
+
             if (cardId) {
                 res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/cards/${cardId}`, {
                     method: 'PUT',
@@ -1221,9 +1235,16 @@ class RepasoManager {
                 });
             }
 
+            if (res.status === 403) {
+                if (window.uiManager) window.uiManager.showPaywallModal(null, 'flashcards');
+                return;
+            }
+
             if (res.ok) {
                 this.closeCardModal();
                 this.loadFolder(deckId);
+                this._pendingBulkCards = [];
+                if (window.sessionManager) await window.sessionManager.refreshUser();
             } else {
                 const errorData = await res.json().catch(() => ({}));
                 alert(`Error al guardar tarjeta: ${errorData.error || res.statusText}`);
@@ -1245,7 +1266,7 @@ class RepasoManager {
     async _uploadFileToGCS(file, folder) {
         const formData = new FormData();
         formData.append('file', file);
-        
+
         const res = await fetch(`${window.AppConfig.API_URL}/api/cards/upload-image`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${this.token}` },
@@ -1260,6 +1281,11 @@ class RepasoManager {
             throw new Error(`Error del servidor (${res.status}). Es posible que la imagen sea demasiado pesada.`);
         }
 
+        if (res.status === 403) {
+            if (window.uiManager) window.uiManager.showPaywallModal(null, 'flashcards');
+            throw new Error('Créditos agotados');
+        }
+
         if (res.ok && data.imageUrl) {
             return data.imageUrl;
         } else {
@@ -1270,7 +1296,7 @@ class RepasoManager {
     openEditCardModal(id, front, back, imageUrl = '', backImageUrl = '') {
         document.getElementById('card-form').reset();
         this._pendingFiles = { front: null, back: null }; // Reset pending
-        
+
         document.getElementById('card-deck-id').value = this.currentDeck.id;
         document.getElementById('card-id').value = id;
         document.getElementById('card-front').value = front;
@@ -1331,7 +1357,7 @@ class RepasoManager {
         this._pendingFiles[side] = file;
         const localUrl = URL.createObjectURL(file);
         this._updateImagePreview(side, localUrl);
-        input.value = ''; 
+        input.value = '';
     }
 
     removeImage(side) {
@@ -1340,7 +1366,7 @@ class RepasoManager {
         if (currentUrl.startsWith('blob:')) {
             URL.revokeObjectURL(currentUrl);
         }
-        
+
         this._pendingFiles[side] = null;
         this._updateImagePreview(side, '');
     }
@@ -1349,7 +1375,7 @@ class RepasoManager {
 
     downloadFlashcardTemplate() {
         if (typeof window.XLSX === 'undefined') return alert('Error: Cargando motor de Excel...');
-        
+
         const ws_data = [
             ["Frente", "Dorso"],
             ["¿Cuál es la capital de Perú?", "Lima"],
@@ -1398,7 +1424,7 @@ class RepasoManager {
                 }
 
                 this._pendingBulkCards = newCards;
-                
+
                 // UI Feedback
                 const preview = document.getElementById('bulk-upload-preview');
                 const text = document.getElementById('bulk-count-text');
@@ -1418,7 +1444,7 @@ class RepasoManager {
     async _saveBulkCards(deckId) {
         const submitBtn = document.querySelector('#card-form button[type="submit"]');
         const originalText = submitBtn ? submitBtn.innerHTML : '';
-        
+
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Subiendo mazo...';
@@ -1428,9 +1454,9 @@ class RepasoManager {
             const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards/batch`, {
                 method: 'POST',
                 isRetryable: true,
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${this.token}` 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
                 },
                 body: JSON.stringify({ cards: this._pendingBulkCards })
             });
@@ -1439,6 +1465,7 @@ class RepasoManager {
                 this._pendingBulkCards = [];
                 this.closeCardModal();
                 this.loadFolder(deckId);
+                if (window.sessionManager) await window.sessionManager.refreshUser();
                 if (window.uiManager.showToast) window.uiManager.showToast('¡Carga masiva completada con éxito!', 'success');
             } else {
                 const data = await res.json();
@@ -1470,10 +1497,17 @@ class RepasoManager {
                 body: JSON.stringify({ topic, amount: 5 })
             });
 
+            if (res.status === 403) {
+                if (window.uiManager) window.uiManager.showPaywallModal(null, 'flashcards');
+                document.getElementById('ai-loading').style.display = 'none';
+                return;
+            }
+
             if (res.ok) {
                 const data = await res.json().catch(() => ({ count: 5 }));
                 this.closeAiModal();
                 this.loadFolder(this.currentDeck.id);
+                if (window.sessionManager) await window.sessionManager.refreshUser();
 
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -1618,10 +1652,10 @@ class RepasoManager {
 
         try {
             // DELETE /api/decks/:id
-            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, { 
-                method: 'DELETE', 
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, {
+                method: 'DELETE',
                 isRetryable: true,
-                headers: { 'Authorization': `Bearer ${this.token}` } 
+                headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
             if (res.ok) {
@@ -1637,6 +1671,7 @@ class RepasoManager {
                 } else {
                     this.loadDashboard();
                 }
+                if (window.sessionManager) await window.sessionManager.refreshUser();
             } else {
                 alert('No se pudo eliminar el mazo');
             }
