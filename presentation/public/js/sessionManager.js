@@ -16,28 +16,36 @@ class SessionManager {
 
                 if (event === 'SIGNED_IN' && session) {
                     // 🛡️ BLOQUEO ATÓMICO: Evitar doble sincronización (One Tap vs Listener)
-                    if (window._isGlobalSyncing) {
-                        console.log('⏳ Sincronización en curso, ignorando evento duplicado.');
+                    if (window._isGlobalSyncing || this.isSyncing) {
+                        console.log('⏳ Sincronización en curso o bloqueada por throttle, ignorando evento.');
                         return;
                     }
 
-                    // 🛡️ THROTTLING: Evitar re-sincronizar por refrescos automáticos (Token Refreshed)
+                    // 🛡️ THROTTLING AGRESIVO: Evitar ráfagas de Supabase (especialmente en init)
                     const now = Date.now();
-                    if (now - this.lastSyncTime < 60000) { // Bloqueo de 60 segundos
-                        console.log('📡 [SessionGate] Re-sincronización ignorada por seguridad (Throttling 60s).');
+                    const throttleWindow = 5000; // 5 segundos de gracia entre intentos
+                    if (now - this.lastSyncTime < throttleWindow) {
+                        console.log('📡 [SessionGate] Sync bloqueado por ráfaga (5s throttle).');
                         return;
                     }
 
-                    // Si ya tenemos el mismo usuario cargado, no re-sincronizar (evitar parpadeo)
-                    if (this.currentUser && this.currentUser.id === session.user.id) return;
+                    // Si ya tenemos el mismo usuario cargado y el token es igual, no re-sincronizar
+                    if (this.currentUser && this.currentUser.id === session.user.id && localStorage.getItem('authToken') === session.access_token) {
+                        console.log('📡 [SessionGate] Usuario y token ya vigentes, omitiendo sync.');
+                        return;
+                    }
 
                     try {
                         window._isGlobalSyncing = true;
                         window._isAuthenticating = true; 
 
-                        // console.log('🚀 Iniciando Sincronización Atómica...');
-                        
                         // Sincronizar unificada
+                        // ✅ NUEVO: Verificar si ya tenemos el mismo email sincronizado para evitar 429
+                        if (this.currentUser && this.currentUser.email === session.user.email) {
+                            console.log('📡 [SessionGate] Usuario ya sincronizado (Match por Email).');
+                            return;
+                        }
+
                         const syncResponse = await AuthApiService.syncGoogleUser(session.user);
                         
                         if (syncResponse && syncResponse.user) {
@@ -109,10 +117,16 @@ class SessionManager {
         try {
             console.log('🔄 Refrescando sesión de usuario en segundo plano...');
             const updatedUser = await AuthApiService.getMe();
-            if (updatedUser) {
+                if (updatedUser) {
+                // Solo notificar si cambió el conteo de uso o el tier (ahorro de renders)
+                const usageChanged = this.currentUser.usageCount !== updatedUser.usageCount;
+                const tierChanged = this.currentUser.subscriptionTier !== updatedUser.subscriptionTier;
+                
                 this.currentUser = updatedUser;
-                this.notifyStateChange();
-                console.log('✅ Sesión refrescada. Vidas actualizadas:', updatedUser.usageCount);
+                if (usageChanged || tierChanged) {
+                    this.notifyStateChange();
+                }
+                console.log('✅ Sesión refrescada. Vidas:', updatedUser.usageCount);
             }
         } catch (error) {
             console.warn('⚠️ Falló el refresco silencioso de sesión:', error);

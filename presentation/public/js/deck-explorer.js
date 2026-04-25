@@ -8,13 +8,34 @@ class DeckExplorer {
     constructor(manager) {
         this.manager = manager; // Reference to RepasoManager
         this.treeContainer = document.getElementById('deck-tree');
-        this.expandedNodes = new Set(); // Store open folder IDs
+        this.expandedNodes = this._loadExpandedState(); // Restore from storage
         this.activeNodeId = null; // Current selection
         this.api = `${window.AppConfig.API_URL}/api/decks`;
         this.token = localStorage.getItem('authToken');
     }
 
+    _loadExpandedState() {
+        try {
+            const saved = localStorage.getItem('repaso_explorer_expanded');
+            return saved ? new Set(JSON.parse(saved)) : new Set();
+        } catch (e) {
+            return new Set();
+        }
+    }
+
+    _saveExpandedState() {
+        localStorage.setItem('repaso_explorer_expanded', JSON.stringify([...this.expandedNodes]));
+        if (this.treeContainer) {
+            localStorage.setItem('repaso_explorer_scroll', this.treeContainer.scrollTop);
+        }
+    }
+
     async init() {
+        if (this.treeContainer) {
+            this.treeContainer.addEventListener('scroll', () => {
+                localStorage.setItem('repaso_explorer_scroll', this.treeContainer.scrollTop);
+            });
+        }
         await this.loadTree();
     }
 
@@ -32,6 +53,19 @@ class DeckExplorer {
 
             // Fetch Roots first
             await this.renderRootLevel();
+
+            // Restore expanded nodes recursively
+            if (this.expandedNodes.size > 0) {
+                await this.restoreExpandedState();
+            }
+
+            // Restore Scroll Position
+            const savedScroll = localStorage.getItem('repaso_explorer_scroll');
+            if (savedScroll && this.treeContainer) {
+                setTimeout(() => {
+                    this.treeContainer.scrollTop = parseInt(savedScroll);
+                }, 100); // Small delay to ensure rendering finished
+            }
 
         } catch (e) {
             console.error(e);
@@ -144,49 +178,77 @@ class DeckExplorer {
         return container;
     }
 
-    async toggleNode(deckId, nodeElement) {
-        if (!nodeElement) return; // Prevention
+    async toggleNode(deckId, nodeElement, forceExpand = null) {
+        if (!nodeElement) return;
         const childrenDiv = nodeElement.querySelector('.tree-children');
         const toggleIcon = nodeElement.querySelector('.tree-toggle i');
 
-        if (this.expandedNodes.has(deckId)) {
-            // Collapse
+        // Determine if we should expand or collapse
+        const currentlyExpanded = this.expandedNodes.has(deckId);
+        const shouldExpand = forceExpand !== null ? forceExpand : !currentlyExpanded;
+
+        if (!shouldExpand) {
+            // --- Collapse ---
             childrenDiv.style.display = 'none';
             if (toggleIcon) toggleIcon.className = 'fas fa-chevron-right';
             this.expandedNodes.delete(deckId);
+            this._saveExpandedState();
         } else {
-            // Expand — show container FIRST so spinner is visible
+            // --- Expand ---
             childrenDiv.style.display = 'block';
             if (toggleIcon) toggleIcon.className = 'fas fa-chevron-down';
 
             if (!childrenDiv.hasChildNodes()) {
-                // Lazy Load with Visual Feedback
+                // Lazy Load
                 const currentLevel = parseInt(nodeElement.dataset.level || 0);
                 const loadingIndicator = document.createElement('div');
                 loadingIndicator.style.cssText = `padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #64748b; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;`;
-                loadingIndicator.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Cargando...';
+                loadingIndicator.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
                 childrenDiv.appendChild(loadingIndicator);
 
                 try {
                     const kids = await this.fetchDecks(deckId);
                     childrenDiv.innerHTML = ''; // Clear loading
 
-                    if (kids.length === 0) {
-                        const emptyState = document.createElement('div');
-                        emptyState.style.cssText = `padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #475569; font-size: 0.85rem; font-style: italic;`;
-                        emptyState.innerHTML = 'Sin sub-mazos';
-                        childrenDiv.appendChild(emptyState);
-                    } else {
+                    if (kids.length > 0) {
                         kids.forEach(k => {
                             const childNode = this.createTreeItem(k, currentLevel + 1);
                             childrenDiv.appendChild(childNode);
                         });
+                    } else {
+                        const emptyState = document.createElement('div');
+                        emptyState.style.cssText = `padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #475569; font-size: 0.85rem; font-style: italic;`;
+                        emptyState.innerHTML = 'Sin sub-mazos';
+                        childrenDiv.appendChild(emptyState);
                     }
                 } catch (err) {
-                    childrenDiv.innerHTML = `<div style="padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #ef4444; font-size: 0.85rem;">Error al cargar</div>`;
+                    childrenDiv.innerHTML = `<div style="padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #ef4444; font-size: 0.85rem;">Error</div>`;
                 }
             }
+
+            // Always add to Set when expanding
             this.expandedNodes.add(deckId);
+            this._saveExpandedState();
+
+            // --- RECURSIVE RESTORATION ---
+            // If we just loaded/expanded, check if any of these children were also expanded
+            const kidsNodes = childrenDiv.querySelectorAll('.tree-node');
+            for (const kid of kidsNodes) {
+                const kidId = kid.dataset.id;
+                if (this.expandedNodes.has(kidId)) {
+                    await this.toggleNode(kidId, kid, true); // Force expand recursively
+                }
+            }
+        }
+    }
+
+    async restoreExpandedState() {
+        const roots = this.treeContainer.querySelectorAll('.tree-node');
+        for (const node of roots) {
+            const id = node.dataset.id;
+            if (this.expandedNodes.has(id)) {
+                await this.toggleNode(id, node, true); // Force expand root levels
+            }
         }
     }
 
@@ -483,7 +545,13 @@ class DeckExplorer {
                 // Update local state
                 deck.description = newDescription;
                 window.uiManager.showToast('Guía actualizada correctamente', 'success');
-                if (window.sessionManager) await window.sessionManager.refreshUser();
+                if (window.sessionManager) {
+                    const user = window.sessionManager.getUser();
+                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                    if (tier === 'free' || tier === 'pending') {
+                        await window.sessionManager.refreshUser();
+                    }
+                }
                 // Re-render modal in view mode
                 DeckExplorer.openGuideModal(deck.id, deck.name);
             } else {

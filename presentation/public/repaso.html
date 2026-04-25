@@ -51,6 +51,52 @@
             border: 1px solid rgba(255,255,255,0.1) !important;
             border-radius: 8px !important;
         }
+
+        /* Formateo de Contenido de Guía (TinyMCE Output) */
+        #deck-guide-content {
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+        #deck-guide-content table {
+            display: block;
+            overflow-x: auto;
+            width: 100%;
+            scrollbar-width: thin;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #deck-guide-content p {
+            margin-bottom: 1.2rem;
+        }
+        #deck-guide-content ul, #deck-guide-content ol {
+            margin-bottom: 1.2rem;
+            padding-left: 2rem;
+        }
+        #deck-guide-content li {
+            margin-bottom: 0.5rem;
+        }
+        #deck-guide-content h1, #deck-guide-content h2, #deck-guide-content h3 {
+            color: #93c5fd;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        #deck-guide-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #deck-guide-content blockquote {
+            border-left: 4px solid #3b82f6;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: #94a3b8;
+            font-style: italic;
+        }
     </style>
 </head>
 
@@ -505,8 +551,8 @@
     </script>
 
     <script src="js/heatmap.js?v=v_pure_dark_v9"></script> <!-- Optional for Stats -->
-    <script src="js/deck-explorer.js"></script> <!-- NEW -->
-    <script src="js/repaso.js?v=v_bulk_v1"></script>
+    <script src="js/deck-explorer.js?v=v11"></script> <!-- NEW -->
+    <script src="js/repaso.js?v=v11"></script>
 </body>
 
 </html>

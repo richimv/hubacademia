@@ -81,3 +81,27 @@ El método `deleteDeck` ahora recorre jerárquicamente la estructura de mazos, e
 1. Durante el estudio, el usuario califica una tarjeta.
 2. `flashcards.js` calcula localmente el progreso y lo envía a `POST /api/training/flashcards/review`.
 3. El backend actualiza los parámetros SRS en la base de datos.
+
+---
+
+## 5. UX, Persistencia y Estabilidad (Mayo 2026 - Actualización Crítica)
+
+Se ha realizado una reingeniería del flujo de navegación y persistencia para soportar estructuras de datos complejas y mejorar la resiliencia del sistema.
+
+### A. Persistencia de Explorador Multinivel (8+ Niveles)
+- **Restauración Recursiva**: Refactorización de `DeckExplorer` para soportar la reapertura automática de carpetas anidadas sin límite de profundidad. Se utiliza un `Set` en `localStorage` (`repaso_explorer_expanded`) para rastrear nodos abiertos.
+- **Lazy Loading Sincronizado**: El sistema ahora espera la carga de hijos antes de intentar expandir niveles inferiores, garantizando que el árbol se reconstruya perfectamente tras un refresco de página.
+
+### B. Navegación Inteligente (Smart Navigation)
+- **Estrategia Push vs Replace**: `RepasoManager` ahora decide dinámicamente si añadir una entrada al historial (`pushState`) o sustituir la actual (`replaceState`).
+  - **Navegación entre Hermanos**: Si el usuario salta entre mazos del mismo nivel, se usa `replace`.
+  - **Navegación Profunda**: Si entra en una subcarpeta, se usa `push`.
+- **Botón Atrás Optimizado**: Esta lógica permite que el botón "Atrás" del dispositivo funcione como un botón de "Subir un Nivel", evitando que el usuario tenga que retroceder uno a uno por todos los mazos visitados.
+
+### C. Estabilidad y Blindaje de Red
+- **Mitigación de Error 429**: Implementación de un **Throttling Atómico de 5 segundos** en `sessionManager.js`. Se bloquean ráfagas de peticiones de sincronización de Supabase/Google Auth, protegiendo al usuario de bloqueos por IP.
+- **Integridad de Sesión de Estudio**:
+  - Salida de flashcards mediante `window.location.replace()` para eliminar la página de estudio de la pila del historial, previniendo bucles infinitos al retroceder.
+  - Resolución de errores de referencia global (`deckId` -> `currentDeckId`) para garantizar que el endpoint de estudio siempre sea válido.
+  - Invalidadación de caché mediante versionamiento agresivo de scripts (`?v=v12`) en el HTML.
+

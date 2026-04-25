@@ -140,9 +140,9 @@ class RepasoManager {
 
         // Force refresh when returning from flashcard study via browser back button
         window.addEventListener('pageshow', (event) => {
+            // event.persisted is true if coming from BFCache
             if (event.persisted && this.currentDeck) {
-                // If loaded from back-forward cache, refresh stats silently
-                this.loadFolder(this.currentDeck.id);
+                this.loadFolder(this.currentDeck.id, false);
             }
         });
     }
@@ -172,20 +172,14 @@ class RepasoManager {
         document.getElementById('dashboard-view').style.display = 'none';
         document.getElementById('folder-view').style.display = 'block';
 
-        // Sync URL: If navigatived internally, push state
-        if (pushState && window.history.pushState) {
-            const url = new URL(window.location.href);
-            if (url.searchParams.get('deckId') !== deckId) {
-                url.searchParams.set('deckId', deckId);
-                window.history.pushState({ view: 'folder', deckId }, `Mazo ${deckId}`, url.toString());
-            }
-        }
-
-        // Show loading state in the content area if possible
+        // Show loading state in the content area
         const container = document.getElementById('folder-header');
         if (container) container.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>';
 
         try {
+            // Store previous deck for navigation logic
+            const previousDeck = this.currentDeck;
+
             const [deck, children, cards] = await Promise.all([
                 this.fetchDeck(deckId),
                 this.fetchDecks(deckId),
@@ -199,6 +193,32 @@ class RepasoManager {
                 }
                 this.loadDashboard();
                 return;
+            }
+
+            // --- SMART HISTORY NAVIGATION ---
+            if (pushState && window.history.pushState) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('deckId', deckId);
+                
+                let navigationType = 'push'; // Default
+                
+                if (previousDeck) {
+                    // Logic: 
+                    // 1. If same parent -> SIBLING -> REPLACE
+                    // 2. If we are moving UP to a parent -> REPLACE
+                    // 3. Otherwise (deeper or different branch) -> PUSH
+                    if (String(deck.parent_id) === String(previousDeck.parent_id)) {
+                        navigationType = 'replace';
+                    } else if (String(deck.id) === String(previousDeck.parent_id)) {
+                        navigationType = 'replace';
+                    }
+                }
+
+                if (navigationType === 'replace') {
+                    window.history.replaceState({ view: 'folder', deckId }, `Mazo ${deck.name}`, url.toString());
+                } else {
+                    window.history.pushState({ view: 'folder', deckId }, `Mazo ${deck.name}`, url.toString());
+                }
             }
 
             this.currentDeck = deck;
@@ -700,27 +720,30 @@ class RepasoManager {
         }
     }
 
-    // ✅ NUEVO: Interceptor de navegación y botón físico "Atrás"
+    /**
+     * Interceptor for browser navigation (Back/Forward) and selection mode.
+     */
     handlePopState(e) {
-        // 1. Manejo de Selección (Mobile UI)
+        // 1. UI Selection Overrides
         if (this.isSelectionMode && (!e.state || !e.state.selectionMode)) {
-            console.log('🔙 Deseleccionando tarjetas...');
             this.toggleSelectAllCards(false);
         } else {
             this._lastSelectionState = false;
         }
 
-        // 2. Manejo de Navegación de URL (Refrescos / Back / Deep Links)
+        // 2. State-Based Routing
         const params = new URLSearchParams(window.location.search);
         const deckId = params.get('deckId');
 
         if (deckId) {
-            if (!this.currentDeck || this.currentDeck.id !== deckId) {
-                this.loadFolder(deckId, false); // false to avoid recursive pushState
+            // Avoid reloading same folder if already active
+            if (!this.currentDeck || String(this.currentDeck.id) !== String(deckId)) {
+                this.loadFolder(deckId, false); 
             }
         } else {
+            // Return to dashboard if no deck specified
             if (this.currentDeck) {
-                this.loadDashboard(false); // false to avoid recursive pushState
+                this.loadDashboard(false); 
             }
         }
     }
@@ -959,19 +982,23 @@ class RepasoManager {
      * Inicia el modo de estudio real para un mazo específico.
      * Solo para usuarios registrados con tarjetas.
      */
+    /**
+     * Starts a study session for a specific deck.
+     */
     async startStudy(deckId, deckNameParam = null, cardCount = null) {
-        // Validar si el mazo tiene tarjetas antes de intentar estudiar (solo si conocemos el count)
+        // Validation Guard
         if (cardCount !== null && cardCount === 0) {
-            if (window.uiManager && window.uiManager.showToast) {
-                window.uiManager.showToast('Este mazo no tiene tarjetas. ¡Crea o genera algunas primero!', 'warning');
-            } else {
-                alert('Este mazo no tiene tarjetas para estudiar.');
-            }
+            const msg = 'Este mazo no tiene tarjetas. ¡Crea o genera algunas primero!';
+            if (window.uiManager && window.uiManager.showToast) window.uiManager.showToast(msg, 'warning');
+            else alert(msg);
             return;
         }
 
-        const deckName = deckNameParam || this.currentDeck?.name || document.querySelector('.deck-title')?.textContent || 'Mazo';
-        window.location.href = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
+        const deckName = deckNameParam || this.currentDeck?.name || 'Mazo';
+        
+        // Navigation: Transfer to flashcards.html with context
+        const studyUrl = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
+        window.location.href = studyUrl;
     }
 
     // --- API Helpers ---
@@ -1100,7 +1127,13 @@ class RepasoManager {
                     } else {
                         await this.refreshView();
                     }
-                    if (window.sessionManager) await window.sessionManager.refreshUser();
+                    if (window.sessionManager) {
+                    const user = window.sessionManager.getUser();
+                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                    if (tier === 'free' || tier === 'pending') {
+                        await window.sessionManager.refreshUser();
+                    }
+                }
                 } else {
                     alert('Error al actualizar mazo');
                 }
@@ -1124,7 +1157,13 @@ class RepasoManager {
                     await this.explorer.loadTree();
                     if (parentId) await this.loadFolder(parentId);
                     else await this.loadDashboard();
-                    if (window.sessionManager) await window.sessionManager.refreshUser();
+                    if (window.sessionManager) {
+                    const user = window.sessionManager.getUser();
+                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                    if (tier === 'free' || tier === 'pending') {
+                        await window.sessionManager.refreshUser();
+                    }
+                }
                 } else {
                     alert('Error al crear mazo');
                 }
@@ -1236,7 +1275,8 @@ class RepasoManager {
             }
 
             if (res.status === 403) {
-                if (window.uiManager) window.uiManager.showPaywallModal(null, 'flashcards');
+                const errorData = await res.json().catch(() => ({}));
+                if (window.uiManager) window.uiManager.showPaywallModal(errorData.error, 'flashcards');
                 return;
             }
 
@@ -1244,7 +1284,13 @@ class RepasoManager {
                 this.closeCardModal();
                 this.loadFolder(deckId);
                 this._pendingBulkCards = [];
-                if (window.sessionManager) await window.sessionManager.refreshUser();
+                if (window.sessionManager) {
+                    const user = window.sessionManager.getUser();
+                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                    if (tier === 'free' || tier === 'pending') {
+                        await window.sessionManager.refreshUser();
+                    }
+                }
             } else {
                 const errorData = await res.json().catch(() => ({}));
                 alert(`Error al guardar tarjeta: ${errorData.error || res.statusText}`);
@@ -1465,7 +1511,13 @@ class RepasoManager {
                 this._pendingBulkCards = [];
                 this.closeCardModal();
                 this.loadFolder(deckId);
-                if (window.sessionManager) await window.sessionManager.refreshUser();
+                if (window.sessionManager) {
+                    const user = window.sessionManager.getUser();
+                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                    if (tier === 'free' || tier === 'pending') {
+                        await window.sessionManager.refreshUser();
+                    }
+                }
                 if (window.uiManager.showToast) window.uiManager.showToast('¡Carga masiva completada con éxito!', 'success');
             } else {
                 const data = await res.json();
@@ -1498,7 +1550,8 @@ class RepasoManager {
             });
 
             if (res.status === 403) {
-                if (window.uiManager) window.uiManager.showPaywallModal(null, 'flashcards');
+                const errorData = await res.json().catch(() => ({}));
+                if (window.uiManager) window.uiManager.showPaywallModal(errorData.error, 'flashcards');
                 document.getElementById('ai-loading').style.display = 'none';
                 return;
             }
@@ -1507,7 +1560,13 @@ class RepasoManager {
                 const data = await res.json().catch(() => ({ count: 5 }));
                 this.closeAiModal();
                 this.loadFolder(this.currentDeck.id);
-                if (window.sessionManager) await window.sessionManager.refreshUser();
+                if (window.sessionManager) {
+                    const user = window.sessionManager.getUser();
+                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                    if (tier === 'free' || tier === 'pending') {
+                        await window.sessionManager.refreshUser();
+                    }
+                }
 
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -1520,11 +1579,6 @@ class RepasoManager {
                 } else {
                     alert(`✨ ¡Éxito! Se generaron tarjetas sobre "${topic}".`);
                 }
-            } else if (res.status === 403) {
-                // Interceptar Límites Agotados Visualmente
-                const data = await res.json().catch(() => ({}));
-                this.closeAiModal();
-                this._showLimitModal(data.error || 'Has agotado tus tarjetas mensuales. Mejora tu plan.');
             } else {
                 const errorData = await res.json().catch(() => ({}));
                 this.closeAiModal();
@@ -1600,14 +1654,10 @@ class RepasoManager {
                 return true;
             } else if (res.status === 403) {
                 // Bifurcación Inteligente UI: Vida de Prueba vs Límite Básico/Avanzado
-                if (data.reason === 'FREE_LIVES_EXHAUSTED') {
-                    if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                        window.uiManager.showPaywallModal();
-                    } else {
-                        alert(data.error || 'Has agotado tus vidas. Suscríbete para continuar.');
-                    }
+                if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                    window.uiManager.showPaywallModal(data.error, 'flashcards');
                 } else {
-                    this._showLimitModal(data.error || 'Has agotado tus tarjetas mensuales. Mejora tu plan.');
+                    alert(data.error || 'Has agotado tus límites. Mejora tu plan para continuar.');
                 }
                 return false;
             } else {
@@ -1671,7 +1721,13 @@ class RepasoManager {
                 } else {
                     this.loadDashboard();
                 }
-                if (window.sessionManager) await window.sessionManager.refreshUser();
+                if (window.sessionManager) {
+                    const user = window.sessionManager.getUser();
+                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                    if (tier === 'free' || tier === 'pending') {
+                        await window.sessionManager.refreshUser();
+                    }
+                }
             } else {
                 alert('No se pudo eliminar el mazo');
             }

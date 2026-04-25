@@ -9,7 +9,8 @@ const FlashcardManager = (() => {
     let queue = [];
     let currentCard = null;
     let isFlipped = false;
-    let syncQueue = []; // ✅ NUEVO: Cola de sincronización local
+    let syncQueue = []; 
+    let currentDeckId = null; // ✅ Persist deckId at module level
 
     // --- DOM Elements ---
     const views = {
@@ -100,35 +101,37 @@ const FlashcardManager = (() => {
     // --- Logic ---
     async function loadCards(token) {
         const urlParams = new URLSearchParams(window.location.search);
-        const deckId = urlParams.get('deckId');
+        currentDeckId = urlParams.get('deckId');
 
         // Modificar el botón de "Progreso/Salir" según el contexto
         const progressBtn = document.getElementById('btn-progress');
-        if (progressBtn) {
-            if (deckId) {
-                progressBtn.href = `/repaso?deckId=${deckId}`;
+        if (progressBtn && !progressBtn.dataset.bound) {
+            progressBtn.dataset.bound = "true";
+            progressBtn.addEventListener('click', () => handleExit());
+            
+            if (currentDeckId) {
                 progressBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Volver al Mazo';
             } else {
-                progressBtn.href = '/simulators';
                 progressBtn.innerHTML = '<i class="fas fa-home"></i> Ir al Hub';
             }
         }
 
         // Also update the 'Todo al día' modal button
         const backDeckBtn = document.getElementById('btn-back-deck');
-        if (backDeckBtn && deckId) {
-            backDeckBtn.href = `/repaso?deckId=${deckId}`;
+        if (backDeckBtn && !backDeckBtn.dataset.bound) {
+            backDeckBtn.dataset.bound = "true";
+            backDeckBtn.addEventListener('click', () => handleExit());
         }
 
         // 2. Build URL based on context (Deck vs Global vs Single Card)
         const cardId = urlParams.get('cardId');
         let endpoint = `${API_URL}/due`; // Default Legacy Global
-        if (deckId) {
-            endpoint = `${window.AppConfig.API_URL}/api/decks/${deckId}/cards/due`;
+        if (currentDeckId) {
+            endpoint = `${window.AppConfig.API_URL}/api/decks/${currentDeckId}/cards/due`;
         }
         if (cardId) {
             // Si hay cardId, usamos el nuevo endpoint de estudio individual
-            endpoint = `${window.AppConfig.API_URL}/api/decks/${deckId || 'all'}/cards/${cardId}/study`;
+            endpoint = `${window.AppConfig.API_URL}/api/decks/${currentDeckId || 'all'}/cards/${cardId}/study`;
         }
 
 
@@ -196,20 +199,20 @@ const FlashcardManager = (() => {
         // 🟢 FIX: Adjust Font Size to fit container (Prevent Overflow)
         const adjustFontSize = (element, text, hasImage) => {
             // ✅ Algoritmo Dinámico: Escalar según longitud y presencia de imagen
-            let baseSize = 1.6; // Valor base
+            let baseSize = 1.8; // Valor base aumentado
             const length = text.length;
 
-            if (length > 250) baseSize = 0.95;
-            else if (length > 150) baseSize = 1.1;
-            else if (length > 100) baseSize = 1.25;
-            else if (length > 50) baseSize = 1.45;
-            else if (length > 0 && length <= 20) baseSize = 2.8; // ✅ ULTRA BIG para textos cortos (test, términos únicos)
-            else if (length > 20 && length <= 50) baseSize = 2.0;
+            if (length > 300) baseSize = 1.0;
+            else if (length > 200) baseSize = 1.25;
+            else if (length > 100) baseSize = 1.45;
+            else if (length > 60) baseSize = 1.7; // ✅ Más grande para textos medianos
+            else if (length > 0 && length <= 25) baseSize = 2.8; // ✅ ULTRA BIG para términos únicos
+            else if (length > 25 && length <= 60) baseSize = 2.2; // ✅ Grande para frases cortas
 
-            // ✅ Si hay imagen, reducimos proporcionalmente para que no colisionen
+            // ✅ Si hay imagen, reducimos proporcionalmente
             if (hasImage) {
-                if (length <= 20) baseSize = 1.8; // Ajuste moderado si hay imagen
-                else baseSize *= 0.8; 
+                if (length <= 30) baseSize = 1.9; // Ajuste si hay imagen
+                else baseSize *= 0.85; 
             }
 
             element.style.fontSize = `${baseSize}rem`;
@@ -363,13 +366,28 @@ const FlashcardManager = (() => {
         }
     }
 
+    function handleExit() {
+        console.log("Exiting study session...", { currentDeckId });
+        
+        // Usar replace para evitar que "atrás" vuelva a la pantalla de sesión terminada
+        if (currentDeckId) {
+            const targetUrl = `/repaso?deckId=${currentDeckId}`;
+            console.log("Navigating to:", targetUrl);
+            window.location.replace(targetUrl);
+        } else {
+            console.warn("No currentDeckId found, falling back to dashboard.");
+            window.location.replace('/repaso');
+        }
+    }
+
     // --- Event Listeners ---
     ui.card.addEventListener('click', toggleFlip);
 
     // --- Public API ---
     return {
         init,
-        rate
+        rate,
+        handleExit
     };
 
 })();

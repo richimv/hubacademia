@@ -152,15 +152,25 @@ const checkAILimits = (type) => {
             else if (type === 'monthly_flashcards') {
                 if (!isActiveAccount) {
                     if (hasGlobalLives) {
-                        req.usageType = 'usage_count'; // Permite generar flashcards a costa de su vida global
+                        req.usageType = 'usage_count'; // Permite gestionar flashcards a costa de su vida global
                     } else {
                         return res.status(403).json({ error: 'Se han agotado tus vidas de Prueba. Mejora tu plan para crear más tarjetas inteligentes.', reason: 'FREE_LIVES_EXHAUSTED' });
                     }
                 } else {
-                    if ((user.monthly_flashcards_usage || 0) >= userLimits.monthly_flashcards) {
-                        return res.status(403).json({ error: `Límite mensual de generación de flashcards alcanzado (${userLimits.monthly_flashcards} intentos). Mejora tu plan.`, reason: 'MONTHLY_LIMIT_EXHAUSTED' });
+                    // ✅ LÓGICA REFINADA: Solo limitamos la GENERACIÓN CON IA para usuarios con plan.
+                    // El CRUD manual (crear, editar, subir imagen) es ILIMITADO para ellos.
+                    // También incluimos el endpoint de chequeo pasivo.
+                    const isAiGeneration = req.path.includes('/generate') || req.path.includes('check-ai-limits');
+                    
+                    if (isAiGeneration) {
+                        if ((user.monthly_flashcards_usage || 0) >= userLimits.monthly_flashcards) {
+                            return res.status(403).json({ error: `Límite mensual de generación de flashcards alcanzado (${userLimits.monthly_flashcards} intentos). Mejora tu plan.`, reason: 'MONTHLY_LIMIT_EXHAUSTED' });
+                        }
+                        req.usageType = 'monthly_flashcards_usage';
+                    } else {
+                        // CRUD Manual: Sin límite para usuarios de pago
+                        req.usageType = null;
                     }
-                    req.usageType = 'monthly_flashcards_usage';
                 }
             }
             else if (type === 'simulator') {

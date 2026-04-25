@@ -19,7 +19,7 @@ class UIManager {
         // ✅ NUEVO: Monitor de Conectividad
         this.isOnline = navigator.onLine;
         this.injectStatusPillHTML();
-        
+
         // Sincronizar estado inicial inmediatamente
         this.handleConnectivityChange(this.isOnline);
 
@@ -79,7 +79,7 @@ class UIManager {
                 }
 
                 const response = await fetch(url, options);
-                
+
                 // Si la respuesta es OK o no es reintentable (ej. 401, 400), salir
                 if (response.ok || response.status < 500) return response;
 
@@ -88,7 +88,7 @@ class UIManager {
 
             } catch (err) {
                 const isNetworkError = err.name === 'TypeError' || err.message.includes('fetch');
-                
+
                 // Si no es reintentable o es el último intento, propagar el error
                 if (!canRetry || i === retries - 1 || (!isNetworkError && i === 0)) {
                     // Si falló por red definitiva, avisar
@@ -895,6 +895,14 @@ class UIManager {
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';
             }
+        } else if (context === 'flashcards' || context === 'monthly_flashcards') {
+            const isMonthly = customMsg && (customMsg.includes('mensual') || customMsg.includes('IA'));
+            config.title = isMonthly ? '¡Cuota Mensual Alcanzada!' : '¡Prueba Gratuita Agotada!';
+            config.message = customMsg || (isMonthly
+                ? 'Has alcanzado tu límite mensual de <strong>Generación con IA</strong>. Mejora tu plan para seguir dominando temas complejos.'
+                : 'Se han agotado tus vidas de prueba. Suscríbete ahora para obtener <strong>Acceso Ilimitado</strong>.');
+            config.btnText = 'Ver Planes 🚀';
+            config.icon = isMonthly ? 'fa-magic' : 'fa-heart-crack';
         } else {
             // Contexto Arena (Default)
             if (userTier === 'basic') {
@@ -1053,7 +1061,7 @@ class UIManager {
                         <button class="btn-primary" onclick="window.triggerGoogleLogin(this)" style="
                             width: 100%; 
                             background: #60a5fa; /* Usamos un color sólido para mejor contraste vs glass */
-                            color: #0f172a; 
+                            color: #000000ff; 
                             font-weight: 800; 
                             border: none;
                             padding: 16px; 
@@ -1079,7 +1087,7 @@ class UIManager {
     renderGuestBanner(containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
-        
+
         if (document.getElementById('guest-mode-banner-premium')) return;
 
         const banner = document.createElement('div');
@@ -1096,7 +1104,7 @@ class UIManager {
                     <p style="color: #94a3b8; margin: 0.3rem 0 0 0; font-size: 0.9rem; line-height: 1.4;">Regístrate para guardar tu progreso académico y acceder a todas las funciones.</p>
                 </div>
             </div>
-            <button id="banner-auth-trigger" class="btn-action" style="background: #f8fafc; color: #0f172a; padding: 0.8rem 1.8rem; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1); transition: all 0.2s;" 
+            <button id="banner-auth-trigger" class="btn-action" style="background: #f8fafc; color: #110d15ff; padding: 0.8rem 1.8rem; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1); transition: all 0.2s;" 
                 onclick="window.triggerGoogleLogin(this)"
                 onmouseover="this.style.transform='scale(1.05)'; this.style.background='#fff'" onmouseout="this.style.transform='scale(1)'; this.style.background='#f8fafc'">
                 <i class="fab fa-google"></i> Continuar con Google
@@ -1113,7 +1121,7 @@ class UIManager {
         const barHTML = `
             <style>
                 .freemium-status-bar {
-                    background: #1e293b;
+                    background: #272727ff;
                     border-bottom: 1px solid #334155;
                     color: white;
                     padding: 8px 16px;
