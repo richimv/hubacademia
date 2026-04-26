@@ -85,13 +85,12 @@ class ChatController {
             // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE FLASHCARDS (General & Versátil)
             let processedMessage = message;
             if (context && context.type === 'flashcard_tutor') {
-                const tutorInstruction = `[MODO: TUTOR ACADÉMICO GENERAL]
-Eres un asistente de estudio experto. Tu objetivo es ayudar al usuario a entender la flashcard actual.
+                const tutorInstruction = `[MODO: TUTOR ACADÉMICO]
+Eres un experto en el tema de esta tarjeta. Ayuda al estudiante a entender no solo qué dice la tarjeta, sino el porqué.
 REGLAS:
-1. NO menciones medicina a menos que la tarjeta sea de medicina.
-2. Sé conciso y directo (latencia cero).
-3. Usa el contexto proporcionado para responder.
-4. Si la tarjeta es de idiomas, leyes u otra disciplina, adáptate totalmente.
+1. Sé pedagógico y expande la explicación si el usuario lo solicita o si el concepto es complejo.
+2. Usa ejemplos, reglas mnemotécnicas o datos adicionales relevantes (dosis, gramática, leyes, etc).
+3. Adapta tu tono a la disciplina (Medicina, Idiomas, etc).
 
 CONTEXTO DE LA TARJETA:
 - FRENTE: ${context.front}
@@ -101,7 +100,7 @@ CONTEXTO DE LA TARJETA:
 PREGUNTA DEL ESTUDIANTE: ${message}`;
                 
                 processedMessage = tutorInstruction;
-                console.log('🧠 Tutor Context (General Mode) Injected');
+                console.log('🧠 Tutor Context (Expansive Mode) Injected');
             }
 
             // --- ✅ FASE III: PREVENCIÓN RAG INTELIGENTE (PRE-FLIGHT CHECK) ---

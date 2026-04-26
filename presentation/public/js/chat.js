@@ -105,14 +105,14 @@ class ChatComponent {
                     </div>
 
                     <div class="chatbot-input-container">
+                        <div class="chatbot-suggestions" id="chatbot-suggestions">
+                            <!-- Sugerencias se cargarán dinámicamente -->
+                        </div>
                         <div class="chatbot-input">
                             <textarea id="chatbot-input" placeholder="Escribe tu pregunta aquí..." maxlength="5000" rows="1"></textarea>
                             <button id="chatbot-send" class="chatbot-send">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
-                        </div>
-                        <div class="chatbot-suggestions" id="chatbot-suggestions">
-                            <!-- Sugerencias se cargarán dinámicamente -->
                         </div>
                     </div>
                 </div>

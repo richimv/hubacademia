@@ -107,9 +107,10 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 
 ### D. Asistencia IA: Tutor Contextual (Modo Efímero)
 - **Motor**: Gemini 2.5 Flash Lite para latencia mínima.
-- **Contexto Dinámico**: El sistema inyecta automáticamente el contenido de la tarjeta actual (frente/dorso/tema) en cada consulta.
-- **Memoria de Sesión**: Implementación de un historial volátil gestionado por el frontend que se resetea al cambiar de flashcard, asegurando que la IA siempre se enfoque en el concepto actual.
-- **Bypass de RAG**: Se desactiva el RAG médico para permitir que el tutor funcione como un asistente académico general (Inglés, Leyes, etc.) sin sesgos clínicos.
+- **Personalidad de Mentor**: Evolución de "asistente conciso" a "tutor proactivo". El sistema ahora permite explicaciones extensas, ejemplos prácticos y expansión de conocimientos (gramática, dosis, etimología, etc.) aunque no estén en la tarjeta.
+- **Contexto Dinámico**: El sistema inyecta el contenido de la tarjeta como punto de partida, pero el tutor utiliza su conocimiento interno completo para resolver dudas laterales.
+- **Memoria de Sesión**: Historial volátil gestionado por el frontend que se resetea al cambiar de flashcard, manteniendo el enfoque en el tema actual.
+- **Versatilidad Disciplinaria**: El tutor adapta su lenguaje y rigor técnico según la materia (Medicina, Idiomas, Leyes, etc.).
 
 ### E. Visualización Adaptativa y Escena 3D
 - **Layout de Seguridad**: Introducción del `study-header` para separar la navegación (Volver/Pendientes) del área de estudio, evitando colisiones en móviles.
@@ -121,6 +122,10 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Ventana de Exclusión**: Se inyectan las últimas **40 tarjetas** como contexto negativo (blacklist) en el prompt de la IA.
 - **Sanitización de Contexto**: El backend limpia automáticamente etiquetas HTML de los frentes existentes antes de enviarlos a la IA para maximizar la comprensión del modelo.
 - **Control de Cantidad**: Parámetro `count` dinámico (estándar: 10 tarjetas por intento) para asegurar un crecimiento balanceado del mazo.
+
+### G. Interfaz Conversacional (Chat General)
+- **Sugerencias Inteligentes (Pills)**: Las preguntas de seguimiento ahora se renderizan dinámicamente sobre la barra de entrada, facilitando la interacción continua.
+- **Deduplicación de Texto**: Se ha prohibido a la IA incluir sugerencias dentro del cuerpo del mensaje para evitar redundancia visual.
 
 ---
 

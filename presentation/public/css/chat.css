@@ -711,7 +711,7 @@
 .chatbot-suggestions {
     display: flex;
     gap: 0.5rem;
-    padding: 0.75rem 0 0;
+    padding: 0 0 0.75rem;
     overflow-x: auto;
     /* ✅ FIX: Forzar que no haya salto de línea y scroll funcione */
     flex-wrap: nowrap;
