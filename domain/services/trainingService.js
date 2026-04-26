@@ -411,18 +411,28 @@ class TrainingService {
      * Genera Flashcards a partir de un tema o texto (Para Custom Decks).
      * @param {string} topic - Tema o texto corto.
      * @param {number} count - Número sugerido (Default 20, adaptable).
+     * @param {Array} existingFronts - Lista de frentes existentes para evitar repeticiones.
      */
-    async generateFlashcardsFromTopic(topic, count = 20) {
+    async generateFlashcardsFromTopic(topic, count = 20, existingFronts = []) {
         try {
+            // Limpiar HTML de los frentes existentes para un prompt más limpio
+            const cleanFronts = existingFronts.map(f => String(f).replace(/<[^>]*>/g, '').trim()).filter(f => f.length > 0);
+
+            // Limitar la lista de existentes para no saturar el prompt (últimas 40 para contexto suficiente)
+            const exclusionList = cleanFronts.length > 0 
+                ? `\n🚨 REGLA DE EXCLUSIÓN (NO REPETIR ESTO):\n${cleanFronts.slice(-40).join('\n')}`
+                : "";
+
             const prompt = `
             Actúa como un experto pedagogogía y diseño instruccional.
-            Crea entre 1 y 20 Flashcards educativas sobre el tema: "${topic}".
+            Crea EXACTAMENTE ${count} Flashcards educativas sobre el tema: "${topic}".
+            ${exclusionList}
             
             🚨 REGLA DE INTELIGENCIA ADAPTATIVA:
-            - Si el usuario solicita EXPLÍCITAMENTE una cantidad en el tema (ej: "3 tarjetas"), cumple con esa cantidad exacta SIEMPRE QUE esté entre 1 y 20.
-            - Si no hay una cantidad explícita, sé proporcional a la densidad del tema. Si el tema es simple o muy específico, genera lo necesario (aunque sea 1 o 2 tarjetas).
-            - Si el tema es complejo o extenso, genera el máximo de 20 tarjetas críticas.
-            - No intentes meter todo un libro en 20 tarjetas; prioriza lo que un estudiante NECESITA memorizar primero.
+            - Genera exactamente ${count} tarjetas. No más, no menos.
+            - Si el tema es demasiado simple para ${count} tarjetas, busca ángulos laterales o curiosidades relacionadas para completar la cantidad.
+            - Prioriza lo que un estudiante NECESITA memorizar primero.
+            - ⚠️ NO REPITAS conceptos, términos o definiciones que ya estén en la LISTA DE EXCLUSIÓN superior. Busca ángulos diferentes o temas complementarios.
 
             FORMATO JSON ESTRICTO:
             [{ "front": "Pregunta o Concepto", "back": "Respuesta o Definición Breve" }]

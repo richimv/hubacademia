@@ -58,19 +58,13 @@ class FlashcardTutor {
         };
     }
 
-    clearHistory() {
-        this.history = [];
-        this.dom.messages.innerHTML = '';
-        console.log('🧹 Tutor: Historial de sesión limpiado.');
-    }
-
     toggle(forceState, context = null) {
         this.isOpen = forceState !== undefined ? forceState : !this.isOpen;
         this.dom.panel.classList.toggle('active', this.isOpen);
 
+        // Actualizar contexto si se provee, pero NO limpiar chat aquí
         if (context) {
             this.cardContext = context;
-            this.clearChat(); // Volatilidad: Nuevo contexto, nueva charla
         }
 
         if (this.isOpen) {
@@ -80,6 +74,7 @@ class FlashcardTutor {
 
     clearChat() {
         this.messages = [];
+        this.history = []; // Limpiar historial interno para el backend
         this.dom.messages.innerHTML = `
             <div class="tutor-message tutor-message-bot">Hola, soy tu tutor de apoyo. ¿Hay algo en esta tarjeta que no te haya quedado claro?</div>
         `;

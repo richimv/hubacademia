@@ -167,7 +167,7 @@ const FlashcardManager = (() => {
         if (oldTutorBtn) oldTutorBtn.remove();
         if (window.flashcardTutor) {
             window.flashcardTutor.toggle(false);
-            window.flashcardTutor.clearHistory();
+            window.flashcardTutor.clearChat();
         }
 
         // ✅ Ocultar chat global para evitar estorbos

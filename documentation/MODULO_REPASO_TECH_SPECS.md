@@ -116,6 +116,12 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Escalado Inteligente (Fitting)**: Algoritmo en `flashcards.js` que ajusta el tamaño de fuente (0.9rem a 2.8rem) basándose en la densidad de caracteres y la presencia de imágenes 9:16.
 - **Scroll de Alta Accesibilidad**: Configuración de Flexbox para garantizar que el texto largo siempre sea legible desde el inicio en celulares, manteniendo el centrado vertical en textos cortos.
 
+### F. Generación Inteligente y Deduplicada (IA)
+- **Lógica de No-Repetición**: El sistema recupera automáticamente los frentes (`front_content`) de las tarjetas existentes en el mazo antes de cada generación.
+- **Ventana de Exclusión**: Se inyectan las últimas **40 tarjetas** como contexto negativo (blacklist) en el prompt de la IA.
+- **Sanitización de Contexto**: El backend limpia automáticamente etiquetas HTML de los frentes existentes antes de enviarlos a la IA para maximizar la comprensión del modelo.
+- **Control de Cantidad**: Parámetro `count` dinámico (estándar: 10 tarjetas por intento) para asegurar un crecimiento balanceado del mazo.
+
 ---
 
 **Documentación Técnica Actualizada - 26 de Abril, 2026.**

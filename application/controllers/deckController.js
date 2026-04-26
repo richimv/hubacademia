@@ -434,8 +434,12 @@ class DeckController {
 
             if (!topic) return res.status(400).json({ error: 'El tema es obligatorio' });
 
+            // 🔍 REGLA DE ORO: Obtener tarjetas existentes para evitar duplicados
+            const existingCards = await DeckService.getDeckCards(deckId);
+            const existingFronts = existingCards.map(c => c.front_content);
+
             const TrainingService = require('../../domain/services/trainingService');
-            const cards = await TrainingService.generateFlashcardsFromTopic(topic, 5);
+            const cards = await TrainingService.generateFlashcardsFromTopic(topic, 10, existingFronts);
 
             const savedCards = [];
             for (const card of cards) {
