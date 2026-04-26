@@ -162,6 +162,18 @@ const FlashcardManager = (() => {
         ui.card.classList.remove('is-flipped');
         ui.controls.classList.remove('visible');
 
+        // ✅ Limpiar botón de tutor anterior y ocultar chat si está abierto
+        const oldTutorBtn = document.getElementById('flashcard-tutor-trigger');
+        if (oldTutorBtn) oldTutorBtn.remove();
+        if (window.flashcardTutor) {
+            window.flashcardTutor.toggle(false);
+            window.flashcardTutor.clearHistory();
+        }
+
+        // ✅ Ocultar chat global para evitar estorbos
+        const globalChat = document.querySelector('.chatbot-toggle');
+        if (globalChat) globalChat.style.display = 'none';
+
         // Content (Prevent XSS safely via textContent)
         // Logic: Use card topic if available (system decks), otherwise use Deck Name from URL, otherwise 'GENERAL'
         const urlParams = new URLSearchParams(window.location.search);
@@ -198,20 +210,20 @@ const FlashcardManager = (() => {
 
         // 🟢 FIX: Adjust Font Size to fit container (Prevent Overflow)
         const adjustFontSize = (element, text, hasImage) => {
-            // ✅ Algoritmo Dinámico: Escalar según longitud y presencia de imagen
-            let baseSize = 1.8; // Valor base aumentado
+            let baseSize = 1.8;
             const length = text.length;
 
-            if (length > 300) baseSize = 1.0;
-            else if (length > 200) baseSize = 1.25;
-            else if (length > 100) baseSize = 1.45;
-            else if (length > 60) baseSize = 1.7; // ✅ Más grande para textos medianos
-            else if (length > 0 && length <= 25) baseSize = 2.8; // ✅ ULTRA BIG para términos únicos
-            else if (length > 25 && length <= 60) baseSize = 2.2; // ✅ Grande para frases cortas
-
-            // ✅ Si hay imagen, reducimos proporcionalmente
+            if (length > 400) baseSize = 0.9;
+            else if (length > 300) baseSize = 1.0;
+            else if (length > 200) baseSize = 1.2;
+            else if (length > 100) baseSize = 1.4;
+            else if (length > 60) baseSize = 1.6;
+            else if (length > 0 && length <= 25) baseSize = 2.8;
+            else if (length > 25 && length <= 60) baseSize = 2.2;
+            
             if (hasImage) {
-                if (length <= 30) baseSize = 1.9; // Ajuste si hay imagen
+                if (length > 200) baseSize *= 0.75; 
+                else if (length <= 30) baseSize = 1.8;
                 else baseSize *= 0.85; 
             }
 
@@ -227,9 +239,35 @@ const FlashcardManager = (() => {
         if (isFlipped) {
             ui.card.classList.add('is-flipped');
             ui.controls.classList.add('visible'); // Show controls when answer is revealed
+            
+            // ✅ INYECTAR BOTÓN HERMOSO DEL TUTOR
+            if (!document.getElementById('flashcard-tutor-trigger')) {
+                const tutorBtn = document.createElement('button');
+                tutorBtn.id = 'flashcard-tutor-trigger';
+                tutorBtn.className = 'flashcard-tutor-btn';
+                tutorBtn.innerHTML = `
+                    <i class="fas fa-robot tutor-robot-icon"></i>
+                    <span>¿Dudas con esta respuesta?</span>
+                `;
+                tutorBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (window.flashcardTutor) {
+                        window.flashcardTutor.toggle(true, {
+                            front: currentCard.front_content,
+                            back: currentCard.back_content,
+                            topic: currentCard.topic || ui.topic.textContent,
+                            deck: currentDeckId
+                        });
+                    }
+                };
+                // Inyectar DENTRO de ui.controls al final
+                ui.controls.appendChild(tutorBtn);
+            }
         } else {
             ui.card.classList.remove('is-flipped');
             ui.controls.classList.remove('visible');
+            const tutorBtn = document.getElementById('flashcard-tutor-trigger');
+            if (tutorBtn) tutorBtn.remove();
         }
     }
 

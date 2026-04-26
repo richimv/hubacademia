@@ -36,7 +36,8 @@
     display: flex;
     flex-direction: row;
     /* Sidebar + Main */
-    z-index: 9990; /* Bajado de MAX_INT para no solapar modales supremos (Visor UI) */
+    z-index: 9990;
+    /* Bajado de MAX_INT para no solapar modales supremos (Visor UI) */
     font-family: var(--chat-font);
     overflow: hidden;
     transform: translateY(20px) scale(0.95);
@@ -56,8 +57,8 @@
 /* --- Sidebar (History) --- */
 .chatbot-history-panel {
     width: 260px;
-    background-color: rgba(10, 10, 10, 0.95);
-    /* Nearly opaque matte black */
+    background-color: rgba(15, 15, 15, 0.85); /* ✅ Glassmorphism */
+    backdrop-filter: blur(10px);
     border-right: 1px solid var(--chat-border);
     display: flex;
     flex-direction: column;
@@ -68,7 +69,7 @@
     left: 0;
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 20;
+    z-index: 200; /* ✅ Fix: Siempre por encima de la cabecera (110) */
 }
 
 /* Show sidebar if 'history-open' class is present on container */
@@ -199,20 +200,36 @@
     justify-content: space-between;
     align-items: center;
     backdrop-filter: blur(8px);
+    position: relative;
+    z-index: 110;
+    /* 🔥 CRÍTICO: Por encima de los mensajes */
+    overflow: visible;
+    /* Permitir tooltips */
 }
 
 .chatbot-title {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 10px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    white-space: nowrap;
 }
 
 .chatbot-icon-svg {
-    font-size: 1.25rem;
+    font-size: 1rem;
     color: var(--chat-primary);
-    background: rgba(59, 130, 246, 0.1);
-    padding: 8px;
+    background: rgba(59, 130, 246, 0.2);
+    padding: 6px;
     border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .chatbot-title h3 {
@@ -222,13 +239,189 @@
     color: var(--chat-text);
 }
 
-.chatbot-status {
-    font-size: 0.7rem;
-    background-color: rgba(16, 185, 129, 0.15);
-    color: #34d399;
-    padding: 2px 8px;
-    border-radius: 9999px;
+/* ✅ NUEVO: Estilos para el Selector de Especialidad (Dropdown Premium) */
+.chatbot-title-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.chatbot-title-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chatbot-title-heading {
+    margin: 0;
+    font-size: 0.85rem; /* ✅ Mismo tamaño que el selector */
+    font-weight: 700;
+    color: var(--chat-text);
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+}
+
+.chatbot-spec-container {
+    display: flex;
+    align-items: center;
+}
+
+.chatbot-spec-select {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--chat-primary);
+    font-size: 0.85rem; /* ✅ Mismo tamaño que el título */
     font-weight: 500;
+    padding: 1px 18px 1px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%233b82f6'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 2px center;
+    background-size: 10px;
+    transition: all 0.2s;
+    max-width: 100px;
+}
+
+.chatbot-spec-select:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--chat-primary);
+}
+
+.chatbot-spec-select option {
+    background-color: rgba(25, 25, 25, 0.95); /* ✅ Fondo Oscuro */
+    color: var(--chat-text);
+    padding: 8px;
+}
+
+/* ✅ RESTAURADO: Tooltip Informativo (Ícono 'i') */
+.chatbot-spec-info {
+    font-size: 0.8rem;
+    color: var(--chat-text-muted);
+    cursor: help;
+    position: relative;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    margin-left: 2px;
+}
+
+.chatbot-spec-info:hover {
+    opacity: 1;
+    color: var(--chat-primary);
+}
+
+/* Tooltip Premium para el icono 'i' */
+.chatbot-spec-info::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 260px;
+    background: rgba(10, 10, 10, 0.98);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    text-align: left;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10000;
+    backdrop-filter: blur(15px);
+    pointer-events: none;
+    
+    /* ✅ FIX: Evitar desbordamiento de texto */
+    white-space: normal;
+    word-wrap: break-word;
+    display: block;
+    
+    /* ✅ REQUERIMIENTOS DE DISEÑO PROFESIONAL */
+    font-family: 'Inter', 'Outfit', 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: 0.01em;
+    font-weight: 400;
+}
+
+.chatbot-spec-info:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Color dinámico del Icono del Robot */
+.chatbot-icon-svg {
+    font-size: 1rem;
+    padding: 5px;
+    border-radius: 7px;
+    transition: all 0.5s ease;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chatbot-icon-svg[data-persona="medicine"] {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.chatbot-icon-svg[data-persona="education"] {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.chatbot-icon-svg[data-persona="languages"] {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.2);
+}
+
+.chatbot-icon-svg[data-persona="neutral"] {
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.2);
+}
+
+/* ✅ AJUSTES RESPONSIVOS PRO */
+@media (max-width: 600px) {
+    .chatbot-header {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .chatbot-title {
+        gap: 6px;
+    }
+
+    .chatbot-title-heading {
+        font-size: 0.8rem; /* ✅ Mismo tamaño */
+    }
+    
+    .chatbot-spec-select {
+        max-width: 100px;
+        font-size: 0.8rem; /* ✅ Mismo tamaño */
+        padding: 1px 18px 1px 4px;
+    }
+
+    .chatbot-icon-svg {
+        width: 26px;
+        height: 26px;
+        font-size: 0.9rem;
+    }
+
+    .chatbot-spec-info::after {
+        width: 200px; /* Un poco más estrecho en móvil */
+        right: -30px; 
+    }
+}
+
+.chatbot-status {
+    display: none;
+    /* Reemplazado por el selector */
 }
 
 .chatbot-close,
@@ -251,12 +444,14 @@
 .chatbot-history-toggle:hover,
 .chatbot-expand:hover {
     background-color: var(--chat-surface);
-    color: var(--chat-primary); /* Hover azul para toggle y expand */
+    color: var(--chat-primary);
+    /* Hover azul para toggle y expand */
 }
 
 .chatbot-close:hover {
     background-color: var(--chat-surface);
-    color: #ef4444; /* Hover rojo para cerrar */
+    color: #ef4444;
+    /* Hover rojo para cerrar */
 }
 
 /* Messages Area */
@@ -268,7 +463,8 @@
     flex-direction: column;
     gap: 1.25rem;
     scroll-behavior: smooth;
-    overscroll-behavior: contain; /* 🛑 FIX: Evitar el scroll bleed hacia el body */
+    overscroll-behavior: contain;
+    /* 🛑 FIX: Evitar el scroll bleed hacia el body */
     background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
 }
 
@@ -280,7 +476,8 @@
     font-size: 0.95rem;
     position: relative;
     word-wrap: break-word;
-    white-space: pre-wrap; /* ✅ FIX: Preservar saltos de línea del Shift+Enter */
+    white-space: pre-wrap;
+    /* ✅ FIX: Preservar saltos de línea del Shift+Enter */
     animation: messageEnter 0.3s ease-out both;
 }
 
@@ -564,7 +761,8 @@
     align-items: center;
     justify-content: center;
     font-size: 1.6rem;
-    z-index: 9900; /* 🛑 BAJADO: de 2147483640 a 9900 para no tapar en modo Full Screen */
+    z-index: 9900;
+    /* 🛑 BAJADO: de 2147483640 a 9900 para no tapar en modo Full Screen */
     transition: transform 0.2s;
 }
 
@@ -591,11 +789,12 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 15;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 190; /* ✅ Fix: Justo debajo del panel (200) */
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s;
+    transition: all 0.3s ease;
 }
 
 .chatbot-container.history-open .chatbot-history-overlay {
@@ -613,7 +812,8 @@
         border-radius: 0;
         transform: translateY(100%);
         /* Ensure z-index is high enough to cover everything, including library-toggle (10001) */
-        z-index: 10100; /* Ajustado para cubrir librería */
+        z-index: 10100;
+        /* Ajustado para cubrir librería */
         border: none;
     }
 
@@ -623,8 +823,9 @@
 
     .chatbot-history-panel {
         width: 85%;
-        max-width: 320px;
-        z-index: 100; /* Bajado para no competir con modales globales */
+        max-width: 300px;
+        z-index: 200; /* ✅ Fix Mobile: Por encima de la cabecera */
+        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
     }
 
     /* ✅ CORRECCIÓN: Mostrar iconos de edición/borrado siempre en móvil 
@@ -635,7 +836,8 @@
     }
 
     .conversation-actions button {
-        padding: 8px; /* Target táctil más grande */
+        padding: 8px;
+        /* Target táctil más grande */
         font-size: 1rem;
     }
 
@@ -658,9 +860,17 @@
         padding-bottom: env(safe-area-inset-bottom, 1rem);
         /* iPhone X+ safe area */
     }
-    
+
     .chatbot-expand {
-        display: none !important; /* El chat ya es Full Screen en móviles */
+        display: none !important;
+        /* El chat ya es Full Screen en móviles */
+    }
+
+    /* Ajuste para Tooltips en Móvil */
+    .persona-pill::after {
+        width: 80vw;
+        max-width: 280px;
+        font-size: 0.8rem;
     }
 }
 
@@ -677,19 +887,22 @@
     border-radius: 0;
     transform: translateY(0) scale(1) !important;
     border: none;
-    z-index: 15000 !important; /* 🔥 CRÍTICO: Cubre library-toggle (10001) y chatbot-toggle (9900) pero respeta media-viewer (999999) */
+    z-index: 15000 !important;
+    /* 🔥 CRÍTICO: Cubre library-toggle (10001) y chatbot-toggle (9900) pero respeta media-viewer (999999) */
 }
 
 /* Comportamiento de Fullscreen en Desktop (Estilo Gemini/ChatGPT) */
 @media (min-width: 769px) {
     .chatbot-container.chat-fullscreen .chatbot-history-panel {
-        position: relative; /* Lo anclamos permanentemente a la izquierda */
+        position: relative;
+        /* Lo anclamos permanentemente a la izquierda */
         transform: translateX(0);
         width: 300px;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
     }
-    
+
     .chatbot-container.chat-fullscreen .chatbot-history-toggle {
-        display: none; /* Ocultar hamburguesa porque el panel ya está fijo visible */
+        display: none;
+        /* Ocultar hamburguesa porque el panel ya está fijo visible */
     }
 }

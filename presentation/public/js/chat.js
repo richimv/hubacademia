@@ -6,6 +6,7 @@ class ChatComponent {
         this.messages = [];
         this.conversations = [];
         this.messageIdCounter = 0;
+        this.specialization = localStorage.getItem('chatbot_specialization') || 'neutral'; // ✅ Por defecto Neutro
 
         // Fase IV: Opciones de Modularidad
         this.targetSelector = options.targetSelector || 'body'; // Dónde se inyecta
@@ -21,6 +22,8 @@ class ChatComponent {
     async init() {
         this.createChatInterface();
         this.setupEventListeners();
+        // ✅ Aplicar estilos iniciales según la especialidad
+        this.updatePersonaUI();
         // ✅ FASE III: Cargar el historial de conversaciones desde la API al iniciar.
         await this.loadConversations();
 
@@ -63,9 +66,21 @@ class ChatComponent {
                             <i class="fas fa-bars"></i>
                         </button>
                         <div class="chatbot-title">
-                            <i class="fas fa-robot chatbot-icon-svg"></i>
-                            <h3 id="chatbot-title-heading">Asistente Hub</h3>
-                            <span class="chatbot-status">En línea</span>
+                            <i id="chatbot-icon" class="fas fa-robot chatbot-icon-svg" data-persona="${this.specialization}"></i>
+                            <div class="chatbot-title-content">
+                                <div class="chatbot-title-top">
+                                    <h3 id="chatbot-title-heading">Asistente</h3>
+                                    <div class="chatbot-spec-container">
+                                        <select id="chatbot-spec-select" class="chatbot-spec-select">
+                                            <option value="neutral" ${this.specialization === 'neutral' ? 'selected' : ''}>neutro</option>
+                                            <option value="medicine" ${this.specialization === 'medicine' ? 'selected' : ''}>médico</option>
+                                            <option value="education" ${this.specialization === 'education' ? 'selected' : ''}>educación</option>
+                                            <option value="languages" ${this.specialization === 'languages' ? 'selected' : ''}>idiomas</option>
+                                        </select>
+                                        <i class="fas fa-info-circle chatbot-spec-info" id="chatbot-spec-info" data-tooltip="${this.getPersonaInfo(this.specialization)}"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="chatbot-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
                             <!-- Botón Pantalla Completa (Mejorado) -->
@@ -125,6 +140,40 @@ class ChatComponent {
         console.log('🎨 Estilos del chat cargados desde CSS centralizado.');
     }
 
+    /**
+     * ✅ NUEVO: Actualiza la interfaz según la persona activa.
+     */
+    updatePersonaUI() {
+        const icon = document.getElementById('chatbot-icon');
+        const specSelect = document.getElementById('chatbot-spec-select');
+        const infoIcon = document.getElementById('chatbot-spec-info');
+        
+        if (icon) {
+            icon.dataset.persona = this.specialization;
+        }
+
+        if (specSelect) {
+            specSelect.value = this.specialization;
+        }
+
+        if (infoIcon) {
+            infoIcon.dataset.tooltip = this.getPersonaInfo(this.specialization);
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Obtener la descripción corta del modo (Creativo y técnico).
+     */
+    getPersonaInfo(persona) {
+        const infos = {
+            medicine: "Asistente clínico experto para consultas sobre farmacología, diagnósticos y protocolos médicos. utiliza tecnología rag y vectorización para basar cada respuesta en evidencia científica de alto nivel.",
+            education: "Guía pedagógica diseñada para el fortalecimiento docente, diseño curricular y metodologías de aprendizaje. emplea ia contextualizada para elevar el estándar educativo.",
+            languages: "Soporte lingüístico avanzado para práctica conversacional inmersiva y perfeccionamiento gramatical. optimizado para el dominio fluido de nuevos idiomas mediante modelos dinámicos.",
+            neutral: "Asistente de propósito general para consultas de cultura, ciencia y productividad cotidiana. configurado para brindar soporte rápido y versátil en múltiples áreas."
+        };
+        return infos[persona] || "Asistente Hub";
+    }
+
     addWelcomeMessage() {
         // ✅ CORRECCIÓN: Solo añadir el mensaje de bienvenida si no hay una conversación activa.
         if (this.messages.length === 0) {
@@ -180,6 +229,30 @@ class ChatComponent {
             expandBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.toggleFullScreen();
+            });
+        }
+
+        // ✅ NUEVO: Listener para el selector de especialidad (Dropdown)
+        const specSelect = document.getElementById('chatbot-spec-select');
+        const modeDesc = document.getElementById('chatbot-mode-desc');
+
+        if (specSelect) {
+            specSelect.addEventListener('change', (e) => {
+                const newValue = e.target.value;
+                if (this.specialization === newValue) return;
+
+                this.specialization = newValue;
+                localStorage.setItem('chatbot_specialization', this.specialization);
+                
+                // Actualizar UI visualmente
+                this.updatePersonaUI();
+
+                console.log(`🎯 Especialidad cambiada a: ${this.specialization}`);
+                
+                if (window.uiManager && window.uiManager.showToast) {
+                    const names = { neutral: 'Neutro', medicine: 'Médico', education: 'Educación', languages: 'Idiomas' };
+                    window.uiManager.showToast(`Modo: Experto ${names[this.specialization]}`, 'info');
+                }
             });
         }
 
@@ -507,7 +580,8 @@ class ChatComponent {
             // ✅ FASE III: El historial ya no se envía, solo el ID de la conversación activa.
             const requestData = {
                 message: message,
-                conversationId: this.activeConversationId
+                conversationId: this.activeConversationId,
+                specialization: this.specialization // ✅ Pasamos la especialidad actual
             };
 
             console.log('📦 Datos enviados:', requestData);

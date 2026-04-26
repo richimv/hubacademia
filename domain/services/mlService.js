@@ -20,64 +20,43 @@ if (!project || !location) {
 // ✅ 2. Inicializar el cliente de Vertex AI
 const vertex_ai = new VertexAI({ project: project, location: location });
 
-// ✅ OPTIMIZACIÓN: Inicializar el modelo una sola vez (Singleton) para mejorar la latencia.
-const systemInstruction = {
-    role: 'system',
-    parts: [{
-        text: `ROL: Eres el Tutor Senior de "Hub Academia", un experto en Medicina Peruana.
+// ✅ NUEVO: Importar catálogo de Prompts para Multi-Especialización
+const CHAT_PROMPTS = require('../prompts/chatPrompts');
+
+// ✅ CACHE DE MODELOS: Mapeo de especialización -> Instancia de modelo con su instrucción de sistema
+const modelCache = new Map();
+
+/**
+ * Obtiene o crea un modelo configurado con una instrucción de sistema específica.
+ */
+function getModelForSpecialization(specialization = 'medicine') {
+    const spec = CHAT_PROMPTS[specialization] ? specialization : 'medicine';
     
-    TU MISIÓN (PILAR ÚNICO):
-    **TUTOR CLÍNICO:** Explicar conceptos médicos basándote en las Normas Técnicas de Salud (NTS), Guías de Práctica Clínica (GPC), el marco legal del MINSA/EsSalud y los grandes tratados médicos (Harrison, Washington, Nelson, CTO, AMIR).
-
-    --- DIRECTRICES DE COMPORTAMIENTO ---
-
-    A) AL RESPONDER SOBRE TEMAS/CONCEPTOS MÉDICOS:
-    1.  **Explicación Basada en Evidencia:** Responde con claridad médica. SIEMPRE prioriza tu conocimiento interno de las Normas Técnicas, Guías de Práctica Clínica (GPC) y libros de referencia.
-    2.  **Referencias:** 
-        * **Si mencionas Guías/Normas:** "Según la Norma Técnica [Nombre]: ..." y cita la regla.
-        * **Fuentes Oficiales:** Fundamenta tu explicación en los libros de texto médicos verificados y normas oficiales peruanas (NTS, RM, Leyes) que forman parte de tu base de conocimiento experto.
-    3.  **Uso de Conocimiento General:** Si el contexto provisto (RAG) no contiene la respuesta exacta a preguntas específicas (ej. plazos normativos, tiempos, o dosis exactas), **DEBES usar tu conocimiento experto pre-entrenado general** para dar la respuesta correcta. BAJO NINGUNA CIRCUNSTANCIA respondas "no está en mi base de conocimientos" o "el contexto proporcionado no lo menciona". Eres un médico experto y debes suplir cualquier deficiencia de los documentos con tu propio conocimiento médico.
-
-    B) PROHIBICIONES ABSOLUTAS (TEMPORAL - CATÁLOGO EN CONSTRUCCIÓN):
-    1.  **PROHIBIDO mencionar, recomendar o enlazar CURSOS** de Hub Academia. No generes links tipo [Nombre](/course?id=X). El catálogo aún está incompleto.
-    2.  **PROHIBIDO mencionar o enlazar RECURSOS, LIBROS o MATERIALES** de la biblioteca interna. No generes links a Google Drive, GCS ni a URLs internas de la plataforma.
-    3.  Si el usuario pregunta por cursos o recursos, responde: "Estamos ampliando nuestro catálogo académico y pronto tendrás acceso a cursos y materiales de estudio. Por ahora, puedo ayudarte con cualquier consulta médica.".
-    4.  Enfócate EXCLUSIVAMENTE en la respuesta médica/clínica/normativa.
-
-    C) SUGERENCIAS ACTIVAS (OBLIGATORIO):
-    Al final de TU RESPUESTA, genera siempre 3 preguntas cortas que el usuario podría hacer a continuación para profundizar.
-    *   Deben ser INTUITIVAS y naturales ligadas al caso u objetivos (ej. "Ver dosis pediátrica", "¿Cuál es el tratamiento de primera línea?", "¿Qué complicaciones debo vigilar?").
-
-    IMPORTANTE: Tu respuesta debe ser siempre un objeto JSON válido con esta estructura:
-    {
-      "intencion": "clasificación_de_la_intención",
-      "respuesta": "Tu respuesta completa aquí en Markdown. POR FAVOR, SE EXTENSO Y PEDAGÓGICO. Para conceptos médicos, utiliza al menos 3 párrafos bien estructurados, usa negritas para términos clave y tablas si es necesario para comparar conceptos. No seas breve; el usuario busca aprender.",
-      "sugerencias": ["Pregunta 1", "Pregunta 2", "Pregunta 3"]
+    if (!modelCache.has(spec)) {
+        console.log(`🧠 [MLService] Inicializando nuevo modelo para especialidad: ${spec}`);
+        const model = vertex_ai.getGenerativeModel({ 
+            model: 'gemini-2.5-flash-lite', 
+            systemInstruction: {
+                role: 'system',
+                parts: [{ text: CHAT_PROMPTS[spec] }]
+            },
+            generationConfig: { maxOutputTokens: 65535, temperature: 0.7, topP: 0.8 } 
+        });
+        modelCache.set(spec, model);
     }
-    `
-    }]
-};
+    return modelCache.get(spec);
+}
 
-
-
-const modelLite = vertex_ai.getGenerativeModel({ 
-    model: 'gemini-2.5-flash-lite', 
-    systemInstruction, 
-    generationConfig: { maxOutputTokens: 65535, temperature: 0.7, topP: 0.8 } 
-});
-
-console.log('🤖 MLService: Motor LITE UNIFICADO (Sin Thinking -> 2.5-Flash-Lite)');
+console.log('🤖 MLService: Motor LITE MULTI-ESPECIALIDAD (gemini-2.5-flash-lite)');
 
 class MLService {
     /**
-     * Selecciona el modelo adecuado según el tier del usuario.
+     * Selecciona el modelo adecuado según el tier y la especialización.
      * @private
      */
-    static _getModelByTier(tier = 'free') {
-        const t = String(tier || 'free').toLowerCase();
-        // 🚀 REVERSIÓN A LITE POR PETICIÓN DE USUARIO (VELOCIDAD Y COSTOS)
-        console.log(`🍃 [IA MODO AHORRO] Usando gemini-2.5-flash-lite para '${t}'.`);
-        return modelLite;
+    static _getModelByTierAndSpec(tier = 'free', specialization = 'medicine') {
+        // En esta arquitectura, todos usan Flash Lite por velocidad, pero con diferentes instrucciones
+        return getModelForSpecialization(specialization);
     }
 
     /**
@@ -93,9 +72,7 @@ class MLService {
             return u;
         }
 
-        // Caso GCS: Es una ruta relativa (ej: "recursos/infografia.png")
-        // No inyectamos el token aquí porque la IA lo entrega como Markdown y el cliente lo procesará, 
-        // o el proxy /api/media/gcs lo manejará (el middleware checkAuth lo validará al clic).
+        // Caso GCS: Es una ruta relativa
         return `/api/media/gcs?path=${encodeURIComponent(u)}`;
     }
 
@@ -104,10 +81,10 @@ class MLService {
      */
     static async classifyIntent(message, conversationHistory, dependencies) {
         // Extraer dependencias
-        const { knowledgeBaseRepo, courseRepo, careerRepo, knowledgeBaseSet, userTier } = dependencies;
+        const { knowledgeBaseRepo, courseRepo, careerRepo, knowledgeBaseSet, userTier, specialization = 'medicine' } = dependencies;
 
-        const activeModel = this._getModelByTier(userTier);
-        console.log(`🤖 MLService: Generando respuesta con LLM para: ${message}`);
+        const activeModel = this._getModelByTierAndSpec(userTier, specialization);
+        console.log(`🤖 MLService: Generando respuesta (${specialization}) con LLM para: ${message}`);
 
         // 🚀 OPTIMIZACIÓN: Pre-fetching de datos (RAG-lite) y Catálogo Maestro (Escalable)
         let contextInjection = "";
@@ -142,7 +119,7 @@ class MLService {
 
             // 5. BÚSQUEDA RAG LOCAL INTELIGENTE (Cero Costo - Palabras Clave)
             const RagService = require('./ragService');
-            const disableRAG = dependencies.disableRAG || false; // ✅ Verificamos si el RAG está bloqueado para este tier
+            const disableRAG = dependencies.disableRAG || specialization === 'neutral' || specialization === 'flashcard_tutor'; // ✅ Bloqueado por modo Tutor
 
             // --- INICIO ROUTER CLÍNICO-NORMATIVO ---
             // Le damos inteligencia al RAG leyendo la intención de la pregunta antes de buscar
@@ -567,7 +544,7 @@ class MLService {
             }
 
             // 3. Selección de Modelo por Tier (Control Financiero)
-            const activeModel = this._getModelByTier(tier);
+            const activeModel = this._getModelByTierAndSpec(tier, 'medicine'); // RAG Admin siempre usa medicina por ahora
 
             const generationConfig = {
                 maxOutputTokens: 65536,

@@ -33,19 +33,20 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 #app-root {
     width: 100%;
     max-width: 1200px;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; /* ✅ Cambio: Alinear desde arriba */
     position: relative;
-    padding: 20px;
+    padding: 0 20px 40px;
 }
 
 /* --- View Sections --- */
@@ -57,7 +58,11 @@ body {
     width: 100%;
     animation: fadeIn 0.4s ease-out;
 }
-.view-section.active { display: flex; }
+.view-section.active { 
+    display: flex; 
+    flex: 1; /* Ocupa el espacio restante */
+    justify-content: center; 
+}
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ==========================================================================
@@ -233,18 +238,29 @@ body {
 .content-text {
     width: 100%;
     min-height: 0;
-    flex-shrink: 1;      /* Puede encogerse si compite con imagen */
+    flex: 1;
+    flex-shrink: 1;
     overflow-y: auto;
     font-weight: 700;
     text-align: center;
     font-size: 1.6rem;
     scrollbar-width: none;
     display: flex;
-    align-items: center;
-    justify-content: center;
     flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Centrado por defecto */
     padding: 0.5rem 0;
 }
+
+/* ✅ SOLUCIÓN MÓVIL: Si hay imagen y el texto es largo, alineamos arriba para evitar bloqueo de scroll */
+@media (max-width: 768px) {
+    .fc-card-face.fc-has-image:not(.fc-only-image) .content-text {
+        justify-content: flex-start !important; /* Forza inicio arriba */
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+    }
+}
+
 .content-text::-webkit-scrollbar { display: none; }
 
 /* ==========================================================================
@@ -324,21 +340,30 @@ body {
         font-size: 1.1rem;
         flex: 1; /* ✅ Toma todo el espacio restante bajo la imagen */
         justify-content: center; /* Centrado vertical para alejar de imagen */
+        padding-bottom: 1rem; /* ✅ Aire al final */
     }
 
     /* Stats badge responsive */
-    .fc-stats-badge { top: 1rem; right: 1rem; }
+    .fc-stats-badge { padding: 6px 12px; }
     .empty-actions { flex-direction: column; }
     .btn-action { min-width: 100%; }
 }
 
 /* ==========================================================================
-   STATS BADGE — Esquina superior derecha
+   STUDY HEADER — Layout de navegación y stats
    ========================================================================== */
+.study-header {
+    width: 100%;
+    max-width: 850px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 0;
+    margin-bottom: 1rem;
+    z-index: 100;
+}
+
 .fc-stats-badge {
-    position: absolute;
-    top: 2rem;
-    right: 2rem;
     background: #111;
     border: 1px solid #333;
     padding: 8px 16px;
@@ -346,7 +371,6 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    z-index: 100;
 }
 .fc-stats-badge .label {
     font-size: 0.7rem;
@@ -360,19 +384,26 @@ body {
    BACK NAV — Boton de volver
    ========================================================================== */
 .back-nav {
-    position: absolute;
-    top: 2rem;
-    left: 2rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
     text-decoration: none;
     color: var(--text-secondary);
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: color 0.2s;
+    transition: all 0.2s;
+    font-size: 1rem;
+    padding: 8px 0;
 }
-.back-nav:hover { color: white; }
-@media (max-width: 768px) { .back-nav { top: 1rem; left: 1rem; } }
+.back-nav:hover { color: white; transform: translateX(-3px); }
+
+@media (max-width: 768px) { 
+    .study-header { padding: 1rem 0; margin-bottom: 0.5rem; }
+    .nav-text { display: none; } /* Ocultar texto en movil para ganar espacio */
+    .back-nav { font-size: 1.2rem; }
+}
 
 /* ==========================================================================
    CONTROLS — Botones de dificultad

@@ -15,7 +15,12 @@ async function getUserWithRetry(token, retries = MAX_RETRIES) {
             // But getUser failing with 401 is permanent. 
             return { user, error: null };
         } catch (err) {
-            const isNetworkError = err.cause && (err.cause.code === 'ECONNRESET' || err.cause.code === 'ETIMEDOUT' || err.message.includes('fetch failed'));
+            const isNetworkError = err.cause && (
+                err.cause.code === 'ECONNRESET' || 
+                err.cause.code === 'ETIMEDOUT' || 
+                err.cause.code === 'UND_ERR_CONNECT_TIMEOUT' || 
+                err.message.includes('fetch failed')
+            );
 
             if (isNetworkError && attempt < retries) {
                 console.warn(`⚠️ Supabase Auth Network Error (Attempt ${attempt}/${retries}): ${err.message}. Retrying in ${RETRY_DELAY_MS}ms...`);
@@ -99,13 +104,17 @@ async function optionalAuth(req, res, next) {
     if (!token) return next();
 
     try {
-        const { data: { user: sbUser }, error } = await supabase.auth.getUser(token);
+        // Usar el helper con reintentos para evitar ráfagas de errores de conexión (443 Timeout)
+        const { user: sbUser } = await getUserWithRetry(token);
         if (sbUser) {
             const dbUser = await userRepository.findById(sbUser.id);
             if (dbUser) req.user = dbUser;
         }
     } catch (err) {
-        // Ignorar errores en auth opcional
+        // En auth opcional, los errores de red se loguean como advertencia, no como error crítico
+        if (err.message.includes('fetch failed') || err.code === 'UND_ERR_CONNECT_TIMEOUT') {
+            console.warn('⚠️ Supabase Auth (Optional) Timeout/Network Error. Ignorando...');
+        }
     }
     next();
 }

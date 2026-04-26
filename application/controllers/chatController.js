@@ -39,7 +39,7 @@ class ChatController {
             });
 
             // ✅ FASE II: Extraer datos del request.
-            const { message } = req.body;
+            const { message, specialization = 'medicine', context, ephemeral = false } = req.body;
             let { conversationId } = req.body; // 'let' porque puede ser creado.
             const userId = req.user.id; // Obtenido del token JWT.
 
@@ -47,7 +47,7 @@ class ChatController {
                 return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
             }
 
-            console.log('💬 Procesando mensaje:', message);
+            console.log(`💬 Procesando mensaje (${specialization}):`, message);
 
             if (!this.mlService) {
                 console.error('❌ ERROR CRÍTICO: mlService no está disponible');
@@ -58,19 +58,51 @@ class ChatController {
                 console.error('❌ ERROR CRÍTICO: analyticsService no está disponible');
             }
 
-            // --- ✅ FASE II: LÓGICA DE PERSISTENCIA DEL CHAT ---
-            // 1. Si es un mensaje nuevo, crear la conversación en la BD.
-            if (!conversationId) {
-                const title = message.substring(0, 50) + (message.length > 50 ? '...' : '');
-                const newConversation = await this.chatService.chatRepository.createConversation(userId, title);
-                conversationId = newConversation.id;
+            // ✅ SOPORTE PARA CHAT VOLÁTIL (EFÍMERO)
+            const isEphemeral = ephemeral || (context && context.type === 'flashcard_tutor');
+            let conversationHistory = [];
+
+            if (!isEphemeral) {
+                // --- ✅ FASE II: LÓGICA DE PERSISTENCIA DEL CHAT ---
+                // 1. Si es un mensaje nuevo, crear la conversación en la BD.
+                if (!conversationId) {
+                    const title = message.substring(0, 50) + (message.length > 50 ? '...' : '');
+                    const newConversation = await this.chatService.chatRepository.createConversation(userId, title);
+                    conversationId = newConversation.id;
+                }
+
+                // 2. Guardar el mensaje del usuario en la BD.
+                await this.chatService.chatRepository.addMessage(conversationId, 'user', message);
+
+                // 3. Obtener el historial COMPLETO desde la BD para dar contexto a la IA.
+                conversationHistory = await this.chatService.chatRepository.getMessagesByConversationId(conversationId, userId);
+            } else {
+                console.log('⚡ MODO EFÍMERO: Usando historial de sesión enviado por el cliente.');
+                conversationId = 'ephemeral';
+                conversationHistory = req.body.history || [];
             }
 
-            // 2. Guardar el mensaje del usuario en la BD.
-            await this.chatService.chatRepository.addMessage(conversationId, 'user', message);
+            // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE FLASHCARDS (General & Versátil)
+            let processedMessage = message;
+            if (context && context.type === 'flashcard_tutor') {
+                const tutorInstruction = `[MODO: TUTOR ACADÉMICO GENERAL]
+Eres un asistente de estudio experto. Tu objetivo es ayudar al usuario a entender la flashcard actual.
+REGLAS:
+1. NO menciones medicina a menos que la tarjeta sea de medicina.
+2. Sé conciso y directo (latencia cero).
+3. Usa el contexto proporcionado para responder.
+4. Si la tarjeta es de idiomas, leyes u otra disciplina, adáptate totalmente.
 
-            // 3. Obtener el historial COMPLETO desde la BD para dar contexto a la IA.
-            const conversationHistory = await this.chatService.chatRepository.getMessagesByConversationId(conversationId, userId);
+CONTEXTO DE LA TARJETA:
+- FRENTE: ${context.front}
+- DORSO: ${context.back}
+- TEMA: ${context.topic}
+---
+PREGUNTA DEL ESTUDIANTE: ${message}`;
+                
+                processedMessage = tutorInstruction;
+                console.log('🧠 Tutor Context (General Mode) Injected');
+            }
 
             // --- ✅ FASE III: PREVENCIÓN RAG INTELIGENTE (PRE-FLIGHT CHECK) ---
             // Los usuarios Basic, Advanced y Admin tienen acceso a la Biblioteca Médica (RAG) en el Chat
@@ -81,16 +113,17 @@ class ChatController {
             try {
                 const loadedKBSet = await this.knowledgeBaseRepo.load();
 
-                console.log(`🤖 Intentando generar respuesta con LLM. Acceso Biblioteca RAG: ${hasRAGAccess}. Tier: ${req.userTier}.`);
+                console.log(`🤖 Intentando generar respuesta con LLM. Acceso Biblioteca RAG: ${hasRAGAccess}. Tier: ${req.userTier}. Spec: ${specialization}`);
                 // Se pasa el historial obtenido de la base de datos.
-                classification = await this.mlService.classifyIntent(message, conversationHistory, {
+                classification = await this.mlService.classifyIntent(processedMessage, conversationHistory, {
                     knowledgeBaseRepo: this.knowledgeBaseRepo,
                     courseRepo: new CourseRepository(),
                     careerRepo: new CareerRepository(),
                     bookRepo: new BookRepository(),
                     knowledgeBaseSet: loadedKBSet,
                     userTier: req.userTier || 'free',
-                    disableRAG: !hasRAGAccess // Bloquea silenciosamente RAG si no es avanzado, degradando la IA a memoria general
+                    specialization,
+                    disableRAG: isEphemeral || !hasRAGAccess // ✅ BLOQUEO TOTAL DE RAG EN MODO TUTOR/EFÍMERO
                 });
 
                 if (classification.usedRAG) {
@@ -105,8 +138,11 @@ class ChatController {
 
             const response = await this.enrichResponse(message, classification);
 
-            // 4. Guardar la respuesta del bot en la BD.
-            const botMessage = await this.chatService.chatRepository.addMessage(conversationId, 'bot', response.respuesta);
+            // 4. Guardar la respuesta del bot en la BD (Solo si no es efímero).
+            let botMessage = { id: 'temp' };
+            if (!isEphemeral) {
+                botMessage = await this.chatService.chatRepository.addMessage(conversationId, 'bot', response.respuesta);
+            }
 
             // 5. REGISTRAR EN ANALYTICS (Lógica original)
             if (this.analyticsService) {
@@ -121,18 +157,17 @@ class ChatController {
                 );
             }
 
-            // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro Estándar Diario)
+            // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro Estándar Diario) - Solo si no es efímero (o según política)
             try {
-                const pool = require('../../infrastructure/database/db');
-                
-                // El RAG ya no consume una cuota especial mensual (Thinking), consume una interacción del chat normal
-
-                if (req.usageType) {
-                    await pool.query(
-                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
-                        [userId]
-                    );
-                    console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}.`);
+                if (!isEphemeral) {
+                    const pool = require('../../infrastructure/database/db');
+                    if (req.usageType) {
+                        await pool.query(
+                            `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                            [userId]
+                        );
+                        console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}.`);
+                    }
                 }
             } catch (limitErr) {
                 console.error("⚠️ No se pudo actualizar el límite del usuario. Continuando igualmente...", limitErr);

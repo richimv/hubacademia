@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/flashcards.css?v=v_pure_dark_v9">
     <link rel="stylesheet" href="css/modal.css?v=v_pure_dark_v9">
     <link rel="stylesheet" href="css/components.css?v=v_pure_dark_v9">
+    <link rel="stylesheet" href="css/tutor.css?v=v_pure_dark_v11">
 </head>
 
 <body>
@@ -22,16 +23,17 @@
     <div id="app-root">
 
         <!-- HEADER / STATS -->
-        <!-- HEADER / STATS -->
-        <button id="btn-progress" class="btn-back" title="Volver"
-            style="position: absolute; top: 2rem; left: 2rem; width: auto; padding: 0.5rem 1rem; gap: 0.5rem; color: #94a3b8; background: transparent; border: none; font-size: 1rem; cursor: pointer;">
-            <i class="fas fa-arrow-left"></i> Volver a Mazos
-        </button>
+        <header class="study-header">
+            <button id="btn-progress" class="back-nav" title="Volver">
+                <i class="fas fa-arrow-left"></i> 
+                <span class="nav-text">Volver a Mazos</span>
+            </button>
 
-        <div class="fc-stats-badge">
-            <span class="label">Pendientes</span>
-            <span class="count" id="pending-count">--</span>
-        </div>
+            <div class="fc-stats-badge">
+                <span class="label">Pendientes</span>
+                <span class="count" id="pending-count">--</span>
+            </div>
+        </header>
 
         <!-- VIEW: LOADING -->
         <div id="view-loading" class="view-section active">
@@ -132,6 +134,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/flashcards.js?v=v_pure_dark_v11"></script>
+    <script src="js/tutor-chat.js?v=v_pure_dark_v11"></script>
 
 </body>
 

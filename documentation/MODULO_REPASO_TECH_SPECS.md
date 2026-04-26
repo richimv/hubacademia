@@ -105,3 +105,18 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
   - Resolución de errores de referencia global (`deckId` -> `currentDeckId`) para garantizar que el endpoint de estudio siempre sea válido.
   - Invalidadación de caché mediante versionamiento agresivo de scripts (`?v=v12`) en el HTML.
 
+### D. Asistencia IA: Tutor Contextual (Modo Efímero)
+- **Motor**: Gemini 2.5 Flash Lite para latencia mínima.
+- **Contexto Dinámico**: El sistema inyecta automáticamente el contenido de la tarjeta actual (frente/dorso/tema) en cada consulta.
+- **Memoria de Sesión**: Implementación de un historial volátil gestionado por el frontend que se resetea al cambiar de flashcard, asegurando que la IA siempre se enfoque en el concepto actual.
+- **Bypass de RAG**: Se desactiva el RAG médico para permitir que el tutor funcione como un asistente académico general (Inglés, Leyes, etc.) sin sesgos clínicos.
+
+### E. Visualización Adaptativa y Escena 3D
+- **Layout de Seguridad**: Introducción del `study-header` para separar la navegación (Volver/Pendientes) del área de estudio, evitando colisiones en móviles.
+- **Escalado Inteligente (Fitting)**: Algoritmo en `flashcards.js` que ajusta el tamaño de fuente (0.9rem a 2.8rem) basándose en la densidad de caracteres y la presencia de imágenes 9:16.
+- **Scroll de Alta Accesibilidad**: Configuración de Flexbox para garantizar que el texto largo siempre sea legible desde el inicio en celulares, manteniendo el centrado vertical en textos cortos.
+
+---
+
+**Documentación Técnica Actualizada - 26 de Abril, 2026.**
+

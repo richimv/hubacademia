@@ -68,6 +68,34 @@ El sistema ha sido diseñado para ser transparente en su ejecución. A través d
 ## 6. Generación de Flashcards Adaptativa
 El motor de Repaso ahora soporta una generación de hasta **20 tarjetas por pedido**, optimizada para temas densos. El sistema valida este límite tanto en el prompt maestro de la IA como en la lógica de control del backend, asegurando que el estudiante obtenga un set completo de estudio sin degradar la precisión clínica.
 
+## 7. Arquitectura Multi-Especialidad (Personas IA)
+A partir del 25 de Abril de 2026, el chat ha evolucionado de ser exclusivamente un Tutor Clínico a un sistema de **Multi-Persona Inteligente**. Esto permite que el mismo motor de IA se adapte a diferentes ramas académicas.
+
+### 7.1. Especialidades Soportadas
+| Especialidad | Identificador | Enfoque | RAG Status | Memoria |
+| :--- | :--- | :--- | :--- | :--- |
+| **Médico** | `medicine` | Normativas MINSA, GPC y tratados clínicos. | **ACTIVO** | Base de Datos |
+| **Tutor Flashcard** | `flashcard_tutor` | Apoyo académico contextual para tarjetas de estudio. | **DESACTIVADO** | Efímera (Sesión) |
+| **Neutro** | `neutral` | Consultas generales sin sesgo de carrera. | **DESACTIVADO** | Base de Datos |
+
+### 7.2. Mecanismo de Cambio (Backend)
+El cliente envía el parámetro `specialization` en el cuerpo del `POST /api/chat`. 
+1. El `ChatController` captura este parámetro y lo transfiere al `MLService`.
+2. `MLService` utiliza una **Factoría de Modelos con Caché** que instancia un modelo configurado con la `systemInstruction` correspondiente de `chatPrompts.js`.
+3. Si la especialidad es `neutral` o `flashcard_tutor`, el sistema fuerza el flag `disableRAG: true` para optimizar costos y evitar ruido documental.
+
+## 8. Memoria Efímera (Tutor de Repaso)
+Para el módulo de flashcards, se implementó una arquitectura de **Memoria Volátil**:
+- **Sin Persistencia**: Los mensajes del tutor no se guardan en PostgreSQL para ahorrar espacio y mantener la sesión limpia.
+- **Historial del Cliente**: El frontend (`tutor-chat.js`) mantiene un array local con el historial de la sesión actual y lo envía en cada petición bajo el campo `history`.
+- **Inyección de Contexto**: En cada mensaje, se envía automáticamente el contenido del frente y dorso de la tarjeta actual, permitiendo que la IA responda frases como "explícame mejor esto".
+
+## 9. Optimizaciones de UI y Layout (Pure Dark v11)
+Se realizaron ajustes críticos para garantizar una experiencia premium:
+- **Z-Index Management**: Los paneles laterales (historial) y overlays ahora operan en capas superiores (z-index 200) para evitar colisiones con cabeceras fijas.
+- **Escalado Dinámico de Texto**: Las flashcards ajustan su `font-size` agresivamente (de 2.8rem a 0.9rem) basándose en la longitud del texto y presencia de imágenes.
+- **Scroll de Seguridad**: Uso de técnicas de Flexbox avanzado para asegurar que el scroll de texto siempre inicie desde la primera línea en dispositivos móviles, evitando recortes de contenido.
+
 ---
 
-**Documentación Finalizada y Auditada - 22 de Abril, 2026.**
+**Documentación Actualizada y Auditada - 25 de Abril, 2026.**
