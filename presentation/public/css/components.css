@@ -1258,16 +1258,15 @@
 .library-drawer {
     position: fixed;
     top: 0;
-    left: -320px;
+    left: -380px;
     /* ✅ OCULTO A LA IZQUIERDA */
     right: auto;
-    width: 320px;
+    width: 380px;
     height: 100vh;
     background: var(--bg-secondary);
     box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
-    /* Sombra hacia la derecha */
     z-index: 10000;
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
 }
@@ -1280,7 +1279,7 @@
 
 /* ✅ MUY IMPORTANTE: Mover el botón cuando el drawer se abre */
 .library-drawer.open~.library-toggle {
-    left: 320px !important;
+    left: 380px !important;
     /* Se desplaza junto al panel */
     background: var(--bg-secondary);
     color: var(--text-muted);
@@ -1436,6 +1435,404 @@
     font-size: 0.75rem;
     color: var(--text-muted);
     text-transform: uppercase;
+}
+
+/* =========================================
+   LIBRARY ENHANCEMENTS V2 (Categories, Notes, Fullscreen)
+   ========================================= */
+
+/* Category Filter Pills */
+.library-category-filters {
+    display: flex;
+    gap: 8px;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+
+.library-category-filters::-webkit-scrollbar {
+    height: 4px;
+}
+
+.library-category-filters::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+    opacity: 0.5;
+}
+
+.library-cat-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.library-cat-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.library-cat-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.library-cat-btn .cat-count {
+    font-size: 0.65rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 1px 5px;
+    border-radius: 10px;
+}
+
+/* Note Card (in library list) */
+.library-item.note-item {
+    border-left: 3px solid #f59e0b;
+}
+
+.library-item.note-item .note-preview {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.library-item .note-source {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+.library-item .note-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.library-item .note-action-btn {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.library-item .note-action-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.library-item .note-action-btn.delete:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+/* Note Viewer Modal */
+.note-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 10010;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+}
+
+.note-modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.note-modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    transform: translateY(20px) scale(0.95);
+    transition: transform 0.3s;
+}
+
+.note-modal-overlay.open .note-modal {
+    transform: translateY(0) scale(1);
+}
+
+.note-modal-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.note-modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.note-modal-header h3 i {
+    color: #f59e0b;
+}
+
+.note-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.note-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+.note-modal-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+    flex: 1;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+/* Editor Styles */
+.note-editor-title {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-main);
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 8px 0;
+    margin-bottom: 1rem;
+    outline: none;
+}
+
+.note-editor-title:focus {
+    border-color: var(--primary);
+}
+
+.note-editor-toolbar {
+    display: flex;
+    gap: 5px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+}
+
+.note-toolbar-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.note-toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+.note-editor-textarea {
+    width: 100%;
+    height: 300px;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    padding: 5px;
+}
+
+.note-modal-body strong { color: #60a5fa; }
+.note-modal-body h2 { font-size: 1rem; color: #93c5fd; margin: 0.75rem 0 0.3rem; border-bottom: 1px solid rgba(99,102,241,0.2); padding-bottom: 0.2rem; }
+.note-modal-body h3 { font-size: 0.95rem; color: #a5b4fc; margin: 0.5rem 0 0.2rem; }
+.note-modal-body li { margin-bottom: 0.2rem; }
+.note-modal-body li::marker { color: var(--primary); }
+.note-modal-body blockquote { border-left: 3px solid var(--primary); padding: 0.4rem 0.6rem; background: rgba(59,130,246,0.05); border-radius: 0 6px 6px 0; font-style: italic; }
+
+.note-modal-footer {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.note-modal-footer button {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+}
+
+.note-modal-footer button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.note-modal-footer .note-delete-btn:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+/* Fullscreen Mode — Ocupa toda la pantalla */
+.library-drawer.fullscreen {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    left: 0 !important;
+    top: 0;
+    height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+    z-index: 10002;
+}
+
+.library-drawer.fullscreen .library-content {
+    padding: 1.5rem 2rem;
+}
+
+.library-drawer.fullscreen .library-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.library-drawer.fullscreen .library-item {
+    margin-bottom: 0;
+}
+
+.library-drawer.fullscreen ~ .library-toggle {
+    display: none !important;
+}
+
+.library-expand-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    margin-right: 4px;
+}
+
+.library-expand-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+/* Add Note Button */
+.library-add-note-btn {
+    width: 100%;
+    padding: 0.6rem;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px dashed rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.library-add-note-btn:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    opacity: 0.5;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .library-drawer.fullscreen .library-list {
+        grid-template-columns: 1fr;
+    }
+
+    .library-drawer.fullscreen .library-content {
+        padding: 1rem;
+    }
+
+    .note-modal {
+        width: 95%;
+        max-height: 85vh;
+    }
 }
 
 /* =========================================

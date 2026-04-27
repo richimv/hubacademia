@@ -4,7 +4,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const AnalyticsService = require('../../domain/services/analyticsService');
 const trainingRepository = require('../../domain/repositories/trainingRepository');
-const MLService = require('../../domain/services/mlService');
+const adminAiService = require('../../domain/services/adminAiService');
 const adminService = require('../../domain/services/adminService'); // ✅ IMPORTANTE: Se inyecta capa de Negocio
 const mediaController = require('./mediaController'); 
 
@@ -137,7 +137,7 @@ class AdminController {
             const resolvedDomain = domain || 'medicine'; 
             console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
 
-            const generatedQuestions = await MLService.generateRAGQuestions(target, difficulty, studyAreas, career, 5, 'lite', resolvedDomain);
+            const generatedQuestions = await adminAiService.generateRAGQuestions(target, studyAreas, career, 5, resolvedDomain);
 
             if (!generatedQuestions || !Array.isArray(generatedQuestions)) {
                 throw new Error("El formato devuelto por la IA no corresponde a un Array válido.");

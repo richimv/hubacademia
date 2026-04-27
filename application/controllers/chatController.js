@@ -1,4 +1,3 @@
-const MLService = require('../../domain/services/mlService');
 const AnalyticsService = require('../../domain/services/analyticsService');
 const KnowledgeBaseRepository = require('../../domain/repositories/knowledgeBaseRepository');
 const CourseRepository = require('../../domain/repositories/courseRepository');
@@ -6,13 +5,13 @@ const CareerRepository = require('../../domain/repositories/careerRepository');
 const BookRepository = require('../../domain/repositories/bookRepository');
 // ✅ FASE II: Importar el nuevo servicio de chat para manejar el historial.
 const ChatService = require('../../domain/services/chatService');
+const TutorAiService = require('../../domain/services/tutorAiService');
 
 class ChatController {
-    constructor(chatService, analyticsService, usageService) { // ✅ usageService inyectado
+    constructor(chatService, analyticsService, usageService) {
         console.log('🔄 Inicializando ChatController...');
-        this.mlService = MLService;
         this.analyticsService = analyticsService;
-        this.usageService = usageService; // ✅ Guardar referencia
+        this.usageService = usageService;
         this.knowledgeBaseRepo = new KnowledgeBaseRepository();
         this.chatService = chatService;
         console.log('✅ ChatController inicializado correctamente');
@@ -33,10 +32,7 @@ class ChatController {
      */
     async processMessage(req, res) {
         try {
-            console.log('💬 ChatController.processMessage: this context:', {
-                hasMlService: !!this.mlService,
-                hasAnalyticsService: !!this.analyticsService,
-            });
+            console.log('💬 ChatController.processMessage iniciado');
 
             // ✅ FASE II: Extraer datos del request.
             const { message, specialization = 'medicine', context, ephemeral = false } = req.body;
@@ -47,12 +43,7 @@ class ChatController {
                 return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
             }
 
-            console.log(`💬 Procesando mensaje (${specialization}):`, message);
-
-            if (!this.mlService) {
-                console.error('❌ ERROR CRÍTICO: mlService no está disponible');
-                throw new Error('Servicio ML no disponible');
-            }
+            console.log(`💬 Procesando mensaje (${specialization}):`, message.substring(0, 60));
 
             if (!this.analyticsService) {
                 console.error('❌ ERROR CRÍTICO: analyticsService no está disponible');
@@ -103,39 +94,29 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
                 console.log('🧠 Tutor Context (Expansive Mode) Injected');
             }
 
-            // --- ✅ FASE III: PREVENCIÓN RAG INTELIGENTE (PRE-FLIGHT CHECK) ---
-            // Los usuarios Basic, Advanced y Admin tienen acceso a la Biblioteca Médica (RAG) en el Chat
             const hasRAGAccess = (req.userTier === 'advanced' || req.userTier === 'basic' || req.userTier === 'admin');
 
-            // --- LÓGICA ORIGINAL DE IA (MODIFICADA PARA USAR EL HISTORIAL Y FILTROS) ---
-            let classification;
+            // --- ✅ FASE III: PROCESAMIENTO IA (V6 - TutorAiService) ---
+            let aiResult;
             try {
-                const loadedKBSet = await this.knowledgeBaseRepo.load();
-
-                console.log(`🤖 Intentando generar respuesta con LLM. Acceso Biblioteca RAG: ${hasRAGAccess}. Tier: ${req.userTier}. Spec: ${specialization}`);
-                // Se pasa el historial obtenido de la base de datos.
-                classification = await this.mlService.classifyIntent(processedMessage, conversationHistory, {
-                    knowledgeBaseRepo: this.knowledgeBaseRepo,
-                    courseRepo: new CourseRepository(),
-                    careerRepo: new CareerRepository(),
-                    bookRepo: new BookRepository(),
-                    knowledgeBaseSet: loadedKBSet,
-                    userTier: req.userTier || 'free',
+                console.log(`🤖 Generando respuesta V6. RAG: ${hasRAGAccess}. Tier: ${req.userTier}. Spec: ${specialization}`);
+                
+                // Llamada al servicio especializado con el mensaje procesado (incluye contexto flashcard si aplica)
+                aiResult = await TutorAiService.handleChat(processedMessage, conversationHistory, {
+                    target: req.userTarget || 'ENAM',
                     specialization,
-                    disableRAG: isEphemeral || !hasRAGAccess // ✅ BLOQUEO TOTAL DE RAG EN MODO TUTOR/EFÍMERO
+                    userTier: req.userTier,
+                    namespace: specialization === 'medicine' ? 'medicine' : 'general'
                 });
 
-                if (classification.usedRAG) {
-                    console.log(`📚 RAG EXITOSO: La IA utilizó fragmentos de la base documental.`);
-                } else if (!hasRAGAccess) {
-                    console.log(`🚫 RAG SKIPPED: Usuario no tiene acceso a Biblioteca (Tier: ${req.userTier}).`);
-                }
-            } catch (mlError) {
-                console.error('❌ ERROR CRÍTICO llamando a mlService:', mlError);
+                // TutorAiService ya devuelve { intencion, respuesta, sugerencias } parseados
+
+            } catch (aiError) {
+                console.error('❌ ERROR CRÍTICO llamando a TutorAiService:', aiError);
                 return res.status(500).json({ error: 'El servicio de IA no está disponible' });
             }
 
-            const response = await this.enrichResponse(message, classification);
+            const response = await this.enrichResponse(message, aiResult);
 
             // 4. Guardar la respuesta del bot en la BD (Solo si no es efímero).
             let botMessage = { id: 'temp' };
@@ -173,6 +154,19 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
             }
 
             console.log('✅ Respuesta generada exitosamente');
+
+            // ✅ NUEVO: Generación de título inteligente para conversaciones nuevas
+            if (!conversationId && !isEphemeral) {
+                // (Ya se creó arriba con un placeholder)
+            } else if (!req.body.conversationId && !isEphemeral) { 
+                // Detectamos que era una conversación nueva por la ausencia de ID en el request original
+                TutorAiService.generateConversationTitle(message, response.respuesta)
+                    .then(newTitle => {
+                        console.log(`✨ Nuevo título generado: ${newTitle}`);
+                        this.chatService.chatRepository.updateTitle(conversationId, newTitle, userId);
+                    })
+                    .catch(err => console.warn("⚠️ Fallo al generar título inteligente:", err));
+            }
 
             res.json({
                 ...response,
@@ -324,10 +318,8 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
     async trainModel(req, res) {
         try {
             console.log('🎯 Solicitado re-entrenamiento del modelo...');
-            if (!this.mlService) {
-                throw new Error('Servicio ML no disponible');
-            }
-            const result = await this.mlService.trainModel();
+            const MLService = require('../../domain/services/mlService');
+            const result = await MLService.trainModel();
             res.json(result);
         } catch (error) {
             console.error('❌ Error entrenando modelo:', error);

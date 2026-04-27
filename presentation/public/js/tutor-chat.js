@@ -138,6 +138,9 @@ class FlashcardTutor {
     }
 
     _addMessage(text, role) {
+        const msgContainer = document.createElement('div');
+        msgContainer.className = `tutor-message-wrapper ${role}`;
+
         const msg = document.createElement('div');
         msg.className = `tutor-message tutor-message-${role}`;
         
@@ -147,8 +150,63 @@ class FlashcardTutor {
             .replace(/\n/g, '<br>'); // Saltos de línea
             
         msg.innerHTML = formattedText;
-        this.dom.messages.appendChild(msg);
+        msgContainer.appendChild(msg);
+
+        // ✅ AGREGAR BOTÓN DE GUARDADO SOLO PARA EL BOT
+        if (role === 'bot') {
+            const actions = document.createElement('div');
+            actions.className = 'tutor-message-actions';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'tutor-save-note-btn';
+            saveBtn.innerHTML = '<i class="far fa-bookmark"></i>';
+            saveBtn.title = 'Guardar como nota';
+            saveBtn.onclick = () => this.saveAsNote(text, saveBtn);
+            
+            actions.appendChild(saveBtn);
+            msgContainer.appendChild(actions);
+        }
+
+        this.dom.messages.appendChild(msgContainer);
         this.dom.messages.scrollTop = this.dom.messages.scrollHeight;
+    }
+
+    async saveAsNote(content, btn) {
+        const icon = btn.querySelector('i');
+        const originalClass = icon.className;
+        
+        try {
+            icon.className = 'fas fa-spinner fa-spin';
+            
+            const title = `Nota de Repaso: ${this.cardContext?.topic || 'Flashcard'}`;
+            
+            const response = await fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify({
+                    title: title,
+                    content: content,
+                    sourceType: 'flashcard'
+                })
+            });
+
+            if (!response.ok) throw new Error("Error al guardar");
+
+            // Feedback visual exitoso
+            icon.className = 'fas fa-bookmark';
+            btn.style.color = '#f59e0b'; // Dorado
+            btn.classList.add('saved');
+            
+            if (window.libraryService) window.libraryService.loadFullLibrary();
+            
+        } catch (error) {
+            console.error("Error saving tutor note:", error);
+            icon.className = 'fas fa-exclamation-triangle';
+            setTimeout(() => icon.className = originalClass, 2000);
+        }
     }
 
     _setTyping(state) {

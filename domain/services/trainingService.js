@@ -1,6 +1,6 @@
 const { VertexAI } = require('@google-cloud/vertexai');
 const repository = require('../repositories/trainingRepository');
-const MLService = require('./mlService');
+const adminAiService = require('./adminAiService');
 const UserAiService = require('./userAiService');
 
 // CONFIGURACIÓN VERTEX AI
@@ -201,8 +201,8 @@ class TrainingService {
                 const isAdmin = subscriptionTier === 'admin';
 
                 if (isAdmin) {
-                    console.log(`🚀 [Replenish-Admin] Calling MLService (RAG) for ${target}`);
-                    aiQuestions = await MLService.generateRAGQuestions(target, areaPrompt, career, 5, subscriptionTier);
+                    console.log(`🚀 [Replenish-Admin] Calling AdminAiService (RAG) for ${target}`);
+                    aiQuestions = await adminAiService.generateRAGQuestions(target, areaPrompt, career, 5, subscriptionTier);
                 } else {
                     console.log(`⚡ [Replenish-User] Calling UserAiService (Fast) for ${target}`);
                     aiQuestions = await UserAiService.generateQuestions(target, areaPrompt, career, 5, subscriptionTier);

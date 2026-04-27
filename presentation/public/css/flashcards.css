@@ -178,6 +178,13 @@ body {
     font-weight: 800;
     text-transform: uppercase;
     color: var(--text-secondary);
+    
+    /* ✅ MEJORA: Truncar nombres largos */
+    max-width: 280px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
 }
 
 /* --- Fila 2: Content Area (toma todo el espacio restante) --- */

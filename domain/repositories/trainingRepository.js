@@ -550,6 +550,17 @@ class TrainingRepository {
             RETURNING id, name, icon, description
         `;
         const result = await db.query(query, [userId, deckId, name, icon, description]);
+
+        // ✅ Consistencia: Si se cambia el nombre del mazo, actualizamos el topic de sus tarjetas
+        if (result.rows.length > 0) {
+            const updateCardsQuery = `
+                UPDATE user_flashcards 
+                SET topic = $1 
+                WHERE deck_id = $2 AND user_id = $3
+            `;
+            await db.query(updateCardsQuery, [name, deckId, userId]);
+        }
+
         return result.rows[0];
     }
 
@@ -640,7 +651,12 @@ class TrainingRepository {
     async createFlashcardsManualBatch(userId, deckId, cards) {
         if (!cards || cards.length === 0) return { inserted: 0 };
 
-        // 1. Evitar duplicados exactos en el mismo mazo
+        // 1. Obtener nombre del mazo para el topic
+        const deckQuery = `SELECT name FROM decks WHERE id = $1`;
+        const deckRes = await db.query(deckQuery, [deckId]);
+        const deckName = deckRes.rows[0]?.name || 'Manual Import';
+
+        // 2. Evitar duplicados exactos en el mismo mazo
         const existingQuery = `
             SELECT front_content FROM user_flashcards 
             WHERE user_id = $1 AND deck_id = $2
@@ -660,7 +676,7 @@ class TrainingRepository {
 
             const offset = insertCount * 6;
             placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`);
-            values.push(userId, deckId, front, back, 'Manual Import', new Date());
+            values.push(userId, deckId, front, back, deckName, new Date());
             insertCount++;
         });
 

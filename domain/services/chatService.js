@@ -1,4 +1,4 @@
-const GeminiService = require('../../domain/services/mlService');
+const TutorAiService = require('../../domain/services/tutorAiService');
 const ChatRepository = require('../../domain/repositories/chatRepository');
 
 class ChatService {
@@ -30,17 +30,18 @@ class ChatService {
         // 3. Obtener el historial de la conversación para dar contexto a la IA.
         const history = await this.chatRepository.getMessagesByConversationId(convId, userId);
 
-        // 4. Llamar al servicio de IA para obtener una respuesta.
-        const botResponse = await GeminiService.getChatResponse(messageText, history);
+        // 4. Llamar al servicio de IA para obtener una respuesta (Motor de Tutoría Especializado)
+        const chatResponse = await TutorAiService.handleChat(messageText, history);
 
         // 5. Guardar la respuesta del bot en la base de datos.
-        const savedBotMessage = await this.chatRepository.addMessage(convId, 'bot', botResponse.respuesta);
+        const savedBotMessage = await this.chatRepository.addMessage(convId, 'bot', chatResponse.response);
 
-        // 6. Devolver la respuesta y el ID de la conversación (importante si era nueva).
+        // 6. Devolver la respuesta y el ID de la conversación.
         return {
-            ...botResponse,
+            respuesta: chatResponse.response,
+            usedRAG: chatResponse.contextUsed,
             conversationId: convId,
-            messageId: savedBotMessage.id // ✅ NUEVO: Devolver el ID del mensaje del bot
+            messageId: savedBotMessage.id
         };
     }
 

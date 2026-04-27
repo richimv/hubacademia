@@ -193,6 +193,55 @@
     border: 1px solid var(--tutor-border);
 }
 
+/* Acciones de Mensaje (Guardar Nota) */
+.tutor-message-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.tutor-message-wrapper.user {
+    align-items: flex-end;
+}
+
+.tutor-message-wrapper.bot {
+    align-items: flex-start;
+}
+
+.tutor-message-actions {
+    margin-top: 4px;
+    display: flex;
+    gap: 8px;
+    padding-left: 8px;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.tutor-message-wrapper:hover .tutor-message-actions {
+    opacity: 1;
+}
+
+.tutor-save-note-btn {
+    background: transparent;
+    border: none;
+    color: var(--tutor-text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.tutor-save-note-btn:hover {
+    color: #f59e0b; /* Dorado */
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tutor-save-note-btn.saved {
+    color: #f59e0b;
+    opacity: 1;
+}
+
 .tutor-input-area {
     padding: 20px;
     background: rgba(255, 255, 255, 0.02);

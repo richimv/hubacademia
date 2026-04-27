@@ -179,7 +179,11 @@ const FlashcardManager = (() => {
         const urlParams = new URLSearchParams(window.location.search);
         const deckName = urlParams.get('deckName');
 
-        ui.topic.textContent = card.topic || deckName || 'GENERAL';
+        let displayTopic = card.topic || deckName || 'GENERAL';
+        if (displayTopic === 'Manual Import') {
+            displayTopic = deckName || 'GENERAL';
+        }
+        ui.topic.textContent = displayTopic;
         ui.frontText.innerHTML = card.front_content.replace(/\n/g, '<br>');
         ui.backText.innerHTML = card.back_content.replace(/\n/g, '<br>');
 

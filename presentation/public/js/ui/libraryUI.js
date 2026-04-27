@@ -1,101 +1,80 @@
 /**
- * libraryUI.js
+ * libraryUI.js — V2.1 Premium Editor
  * Controlador de Interfaz para "Mi Biblioteca"
- * 
- * Responsabilidades:
- * 1. Escuchar eventos de `libraryService`.
- * 2. Actualizar AUTOMÁTICAMENTE todos los botones en pantalla.
- * 3. Manejar clics usando delegación de eventos (sin onclicks inline).
- * 4. Renderizar el Drawer (Panel lateral).
  */
 class LibraryUI {
     constructor() {
         this.service = window.libraryService;
         this.selectors = {
-            btn: '.js-library-btn', // Clase clave para los botones
+            btn: '.js-library-btn',
             drawer: '.library-drawer',
             listContainer: '#library-list-container'
         };
 
-        this.currentTab = 'saved'; // 'saved' | 'favorites'
+        this.currentTab = 'saved'; 
+        this.currentFilter = 'all';
+        this.isFullscreen = false;
+        this.editingNoteId = null; // ID de la nota que se está editando
+
+        this.typeLabels = {
+            all: 'Todo',
+            book: 'Libros',
+            paper: 'Papers',
+            norma: 'Normas',
+            guia: 'Guías',
+            video: 'Videos',
+            course: 'Cursos',
+            other: 'Otros'
+        };
     }
 
     init() {
-        console.log('🎨 LibraryUI: Iniciando...');
+        console.log('🎨 LibraryUI V2.1: Iniciando...');
 
-        // 1. Suscribirse a cambios de estado del servicio
         window.addEventListener('library:state-changed', () => {
             this.updateAllButtons();
-            if (this.isDrawerOpen()) {
-                this.renderDrawerList();
-            }
+            if (this.isDrawerOpen()) this.renderDrawerList();
         });
 
-        // 2. Delegación Global de Clics (El reemplazo de onclick="")
         document.body.addEventListener('click', (e) => this._handleBodyClick(e));
-
-        // 3. Renderizar Estructura del Drawer (Lazy load)
         this._renderDrawerStructure();
 
-        // 4. Botón Flotante
         if (localStorage.getItem('authToken')) {
             this._renderFloatingButton();
         }
 
-        // 5. OBSERVER: La pieza clave para SPAs y contenido dinámico
-        // Observa cambios en el DOM y actualiza automáticamente los botones nuevos
         this._initObserver();
-
-        // 6. Primera actualización
         this.updateAllButtons();
+        this._renderNoteModal();
     }
 
     _initObserver() {
         const observer = new MutationObserver((mutations) => {
             let shouldUpdate = false;
-
             for (const mutation of mutations) {
                 if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    // Verificar si alguno de los nodos añadidos contiene botones de librería
                     for (const node of mutation.addedNodes) {
-                        if (node.nodeType === 1) { // Element node
-                            if (node.classList.contains('js-library-btn') || node.querySelector(this.selectors.btn)) {
-                                shouldUpdate = true;
-                                break;
-                            }
+                        if (node.nodeType === 1 && (node.classList.contains('js-library-btn') || node.querySelector(this.selectors.btn))) {
+                            shouldUpdate = true;
+                            break;
                         }
                     }
                 }
                 if (shouldUpdate) break;
             }
-
-            if (shouldUpdate) {
-                this.updateAllButtons();
-            }
+            if (shouldUpdate) this.updateAllButtons();
         });
 
-        // Apuntar solo al contenedor principal reduce la carga de CPU
         const mainContainer = document.getElementById('content-container') || document.body;
-        observer.observe(mainContainer, {
-            childList: true,
-            subtree: true
-        });
-
-        console.log('👀 LibraryUI: Observador del DOM activado.');
+        observer.observe(mainContainer, { childList: true, subtree: true });
     }
 
-    /**
-     * Escanea todo el DOM buscando botones .js-library-btn y actualiza su estado visual
-     */
     updateAllButtons() {
-        const buttons = document.querySelectorAll(this.selectors.btn);
-
-        buttons.forEach(btn => {
-            const { type, id, action } = btn.dataset; // data-type, data-id, data-action
+        document.querySelectorAll(this.selectors.btn).forEach(btn => {
+            const { type, id, action } = btn.dataset;
             if (!type || !id || !action) return;
 
             let isActive = false;
-
             if (action === 'save') {
                 isActive = this.service.isSaved(type, id);
                 this._updateIcon(btn, isActive, 'fa-bookmark');
@@ -104,129 +83,201 @@ class LibraryUI {
                 this._updateIcon(btn, isActive, 'fa-heart');
             }
 
-            // Toggle clase active
-            if (isActive) btn.classList.add('active');
-            else btn.classList.remove('active');
+            btn.classList.toggle('active', isActive);
         });
     }
 
     _updateIcon(btn, isActive, iconName) {
         const icon = btn.querySelector('i');
         if (!icon) return;
-
-        // FAS = Solid (Activo), FAR = Regular (Inactivo)
-        const prefix = isActive ? 'fas' : 'far';
-        icon.className = `${prefix} ${iconName}`;
+        icon.className = `${isActive ? 'fas' : 'far'} ${iconName}`;
     }
 
     _handleBodyClick(e) {
-        // A. Clic en Botón de Acción (Guardar/Fav)
         const btn = e.target.closest(this.selectors.btn);
         if (btn) {
             e.preventDefault();
-            e.stopPropagation(); // Evitar abrir la tarjeta
-
-            // Validaciones externas (Freemium, Auth)
+            e.stopPropagation();
             if (window.uiManager) {
                 if (!window.uiManager.validateFreemiumAction(e)) return;
-
                 window.uiManager.checkAuthAndExecute(() => {
-                    const { type, id, action } = btn.dataset;
-                    // Animación simple de feedback clic
                     btn.style.transform = "scale(1.2)";
                     setTimeout(() => btn.style.transform = "scale(1)", 200);
-
-                    this.service.toggleItem(type, id, action);
+                    this.service.toggleItem(btn.dataset.type, btn.dataset.id, btn.dataset.action);
                 });
             }
             return;
         }
 
-        // B. Clic fuera del drawer para cerrar
         if (e.target.classList.contains('library-drawer-overlay')) {
             this.toggleDrawer(false);
         }
     }
 
-    // --- DRAWER LOGIC ---
+    // --- DRAWER ---
 
     toggleDrawer(forceState) {
         const drawer = document.querySelector(this.selectors.drawer);
         if (!drawer) return;
 
         const isOpen = typeof forceState === 'boolean' ? forceState : !drawer.classList.contains('open');
-
         drawer.classList.toggle('open', isOpen);
 
         if (isOpen) {
-            this.service.loadFullLibrary(); // Pedir data fresca
+            this.service.loadFullLibrary();
             this.renderDrawerList();
+        } else {
+            if (this.isFullscreen) this.toggleFullscreen();
         }
+    }
+
+    toggleFullscreen() {
+        const drawer = document.querySelector(this.selectors.drawer);
+        if (!drawer) return;
+
+        this.isFullscreen = !this.isFullscreen;
+        drawer.classList.toggle('fullscreen', this.isFullscreen);
+
+        const expandIcon = drawer.querySelector('.library-expand-btn i');
+        if (expandIcon) expandIcon.className = this.isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
+
+        const toggleBtn = document.querySelector('.library-toggle');
+        if (toggleBtn) toggleBtn.style.display = this.isFullscreen ? 'none' : '';
+
+        document.body.style.overflow = this.isFullscreen ? 'hidden' : '';
+
+        this.renderDrawerList();
     }
 
     switchTab(tabName) {
         this.currentTab = tabName;
-        // Update tabs UI
+        this.currentFilter = 'all';
         document.querySelectorAll('.library-tab').forEach(t =>
             t.classList.toggle('active', t.dataset.tab === tabName)
         );
         this.renderDrawerList();
     }
 
-    renderDrawerList() {
-        const container = document.querySelector(this.selectors.listContainer);
-        if (!container) return;
+    switchFilter(filter) {
+        this.currentFilter = filter;
+        document.querySelectorAll('.library-cat-btn').forEach(btn =>
+            btn.classList.toggle('active', btn.dataset.category === filter)
+        );
+        this._renderList(); 
+    }
 
-        const data = this.service.getLibraryData(); // { courses: [], books: [] }
+    renderDrawerList() {
+        if (this.currentTab === 'notes') {
+            this._renderNotesList();
+            return;
+        }
+
+        const data = this.service.getLibraryData();
         const items = [];
 
-        // Filtrar y unificar
-        const process = (list, itemType) => {
+        const processItems = (list, itemType) => {
             list.forEach(item => {
                 const isSaved = this.service.isSaved(itemType, item.id);
                 const isFav = this.service.isFavorite(itemType, item.id);
-
-                // Si estamos en tab 'saved', debe estar guardado. Si 'favorites', debe ser fav.
                 const show = this.currentTab === 'saved' ? isSaved : isFav;
-
                 if (show) {
-                    items.push({ ...item, _uiType: itemType });
+                    items.push({ ...item, _uiType: itemType, _resourceType: item.resource_type || itemType });
                 }
             });
         };
 
-        process(data.courses || [], 'course');
-        process(data.books || [], 'book');
+        processItems(data.courses || [], 'course');
+        processItems(data.books || [], 'book');
 
-        // Render
+        this._allItems = items;
+        this._renderFilters(items);
+        this._renderList();
+    }
+
+    _renderFilters(items) {
+        const filterContainer = document.querySelector('.library-category-filters');
+        if (!filterContainer) return;
+
+        if (this.currentTab === 'notes') {
+            filterContainer.style.display = 'none';
+            return;
+        }
+        filterContainer.style.display = '';
+
+        const counts = {};
+        items.forEach(item => {
+            const t = item._resourceType || 'other';
+            counts[t] = (counts[t] || 0) + 1;
+        });
+
+        let filtersHTML = `<button class="library-cat-btn ${this.currentFilter === 'all' ? 'active' : ''}" data-category="all" onclick="window.libraryUI.switchFilter('all')">Todo <span class="cat-count">${items.length}</span></button>`;
+
+        Object.entries(counts).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+            const label = this.typeLabels[type] || type;
+            filtersHTML += `<button class="library-cat-btn ${this.currentFilter === type ? 'active' : ''}" data-category="${type}" onclick="window.libraryUI.switchFilter('${type}')">${label} <span class="cat-count">${count}</span></button>`;
+        });
+
+        filterContainer.innerHTML = filtersHTML;
+
+        // Soporte para scroll horizontal con rueda del ratón en PC
+        filterContainer.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                filterContainer.scrollLeft += e.deltaY;
+            }
+        });
+    }
+
+    _renderList() {
+        const container = document.querySelector(this.selectors.listContainer);
+        if (!container) return;
+
+        let items = this._allItems || [];
+        if (this.currentFilter !== 'all') {
+            items = items.filter(i => i._resourceType === this.currentFilter);
+        }
+
         if (items.length === 0) {
             const icon = this.currentTab === 'saved' ? 'fa-bookmark' : 'fa-heart';
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="far ${icon}"></i>
-                    <p>No tienes items en esta lista aún.</p>
-                </div>
-            `;
+            container.innerHTML = `<div class="empty-state"><i class="far ${icon}"></i><p>No tienes items aquí aún.</p></div>`;
             return;
         }
 
         container.innerHTML = items.map(item => this._createDrawerItemHTML(item)).join('');
     }
 
+    _renderNotesList() {
+        const filterContainer = document.querySelector('.library-category-filters');
+        if (filterContainer) filterContainer.style.display = 'none';
+
+        const container = document.querySelector(this.selectors.listContainer);
+        if (!container) return;
+
+        const data = this.service.getLibraryData();
+        const notes = data.notes || [];
+
+        let html = `<button class="library-add-note-btn" onclick="window.libraryUI.openNoteEditor()"><i class="fas fa-plus"></i> Crear nota</button>`;
+
+        if (notes.length === 0) {
+            html += `<div class="empty-state"><i class="far fa-sticky-note"></i><p>No tienes notas guardadas.<br>Usa el ícono 🔖 en el chat para guardar respuestas.</p></div>`;
+        } else {
+            html += notes.map(note => this._createNoteItemHTML(note)).join('');
+        }
+
+        container.innerHTML = html;
+    }
+
     _createDrawerItemHTML(item) {
-        const typeLabel = item._uiType === 'course' ? 'Curso' : 'Recurso';
+        const typeLabel = item._uiType === 'course' ? 'Curso' : (item.resource_type || 'Recurso');
         const title = item.title || item.name || 'Sin título';
-        
-        // Resolver imagen con fallback a ui-avatars
+
         const resolvedImg = item.image_url ? window.resolveImageUrl(item.image_url) : `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=random&color=fff`;
         const fallbackImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=6366f1&color=fff`;
 
-        // Acción al hacer clic en el item del drawer
         let clickAttr = '';
         if (item._uiType === 'course') {
             clickAttr = `onclick="window.location.href='course?id=${item.id}'"`;
         } else {
-            // Recurso (Libro, Paper, Otro) -> Usar UIManager para manejo inteligente (Visor vs Link)
             const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
             const titleEscaped = title.replace(/'/g, "\\'");
             clickAttr = `onclick="window.uiManager.unlockResource('${item.id}', '${item.type || 'book'}', ${isPremium}, '${titleEscaped}')"`;
@@ -243,6 +294,25 @@ class LibraryUI {
         `;
     }
 
+    _createNoteItemHTML(note) {
+        const preview = (note.content || '').substring(0, 120).replace(/[*#>\-\[\]]/g, '').trim();
+        const sourceLabel = note.source_type === 'chat' ? 'Chat' : (note.source_type === 'flashcard' ? 'Flashcard' : 'Manual');
+        const dateStr = new Date(note.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        return `
+            <div class="library-item note-item" data-note-id="${note.id}" onclick="window.libraryUI.openNoteEditor('${note.id}')">
+                <div style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;background:rgba(245,158,11,0.1);border-radius:10px;flex-shrink:0;font-size:1.2rem;color:#f59e0b;">
+                    <i class="fas fa-sticky-note"></i>
+                </div>
+                <div class="library-item-info">
+                    <div class="library-item-title">${note.title}</div>
+                    <div class="note-preview">${preview}...</div>
+                    <div class="note-source">${sourceLabel} · ${dateStr}</div>
+                </div>
+            </div>
+        `;
+    }
+
     _renderDrawerStructure() {
         if (document.querySelector(this.selectors.drawer)) return;
 
@@ -251,17 +321,20 @@ class LibraryUI {
         div.innerHTML = `
             <div class="library-header">
                 <span class="library-title">Mis Recursos</span>
-                <button class="close-drawer-btn" onclick="window.libraryUI.toggleDrawer(false)"><i class="fas fa-times"></i></button>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <button class="library-expand-btn" onclick="window.libraryUI.toggleFullscreen()" title="Pantalla completa"><i class="fas fa-expand"></i></button>
+                    <button class="close-drawer-btn" onclick="window.libraryUI.toggleDrawer(false)"><i class="fas fa-times"></i></button>
+                </div>
             </div>
             <div class="library-tabs">
                 <button class="library-tab active" data-tab="saved" onclick="window.libraryUI.switchTab('saved')">Guardados</button>
                 <button class="library-tab" data-tab="favorites" onclick="window.libraryUI.switchTab('favorites')">Favoritos</button>
+                <button class="library-tab" data-tab="notes" onclick="window.libraryUI.switchTab('notes')">Notas</button>
             </div>
+            <div class="library-category-filters"></div>
             <div class="library-content">
                 <div class="library-list" id="library-list-container">
-                    <div class="empty-state">
-                        <i class="fas fa-spinner fa-spin"></i> Cargando...
-                    </div>
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
                 </div>
             </div>
         `;
@@ -277,15 +350,189 @@ class LibraryUI {
         document.body.appendChild(btn);
     }
 
+    // --- NOTE MODAL / EDITOR ---
+
+    _renderNoteModal() {
+        if (document.querySelector('.note-modal-overlay')) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'note-modal-overlay';
+        modal.id = 'note-modal-overlay';
+        modal.innerHTML = `
+            <div class="note-modal">
+                <div class="note-modal-header">
+                    <h3 id="note-modal-header-text"><i class="fas fa-sticky-note"></i> Ver Nota</h3>
+                    <button class="note-modal-close" onclick="window.libraryUI.closeNoteModal()"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div class="note-modal-body" id="note-modal-viewer" style="display:block;">
+                </div>
+
+                <div class="note-modal-body" id="note-modal-editor" style="display:none;">
+                    <input type="text" id="note-editor-title" class="note-editor-title" placeholder="Título de la nota">
+                    <div class="note-editor-toolbar">
+                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('**', '**')" title="Negrita"><i class="fas fa-bold"></i></button>
+                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('*', '*')" title="Cursiva"><i class="fas fa-italic"></i></button>
+                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('### ', '')" title="Título"><i class="fas fa-heading"></i></button>
+                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('- ', '')" title="Lista"><i class="fas fa-list-ul"></i></button>
+                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('> ', '')" title="Cita"><i class="fas fa-quote-left"></i></button>
+                    </div>
+                    <textarea id="note-editor-textarea" class="note-editor-textarea" placeholder="Escribe aquí tu nota..."></textarea>
+                </div>
+
+                <div class="note-modal-footer">
+                    <div id="note-view-actions">
+                        <button class="note-delete-btn" id="note-modal-delete" onclick="window.libraryUI.deleteNote(window.libraryUI.editingNoteId)"><i class="fas fa-trash"></i> Eliminar</button>
+                        <button onclick="window.libraryUI.switchToEditor()"><i class="fas fa-edit"></i> Editar</button>
+                    </div>
+                    <div id="note-edit-actions" style="display:none;">
+                        <button onclick="window.libraryUI.switchToViewer()">Cancelar</button>
+                        <button class="active" style="background:var(--primary); color:white; border:none;" onclick="window.libraryUI.saveNote()">Guardar Cambios</button>
+                    </div>
+                    <button onclick="window.libraryUI.closeNoteModal()">Cerrar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) this.closeNoteModal(); });
+    }
+
+    openNoteEditor(noteId = null) {
+        this.editingNoteId = noteId;
+        const viewer = document.getElementById('note-modal-viewer');
+        const editor = document.getElementById('note-modal-editor');
+        const viewActions = document.getElementById('note-view-actions');
+        const editActions = document.getElementById('note-edit-actions');
+        const headerText = document.getElementById('note-modal-header-text');
+
+        if (noteId) {
+            const data = this.service.getLibraryData();
+            const note = (data.notes || []).find(n => n.id == noteId);
+            if (!note) return;
+
+            document.getElementById('note-editor-title').value = note.title;
+            document.getElementById('note-editor-textarea').value = note.content;
+            viewer.innerHTML = this._renderMarkdown(note.content);
+            headerText.innerHTML = `<i class="fas fa-sticky-note"></i> Ver Nota`;
+            
+            this.switchToViewer();
+        } else {
+            document.getElementById('note-editor-title').value = '';
+            document.getElementById('note-editor-textarea').value = '';
+            headerText.innerHTML = `<i class="fas fa-plus"></i> Nueva Nota`;
+            
+            this.switchToEditor();
+        }
+
+        document.getElementById('note-modal-overlay').classList.add('open');
+    }
+
+    switchToEditor() {
+        document.getElementById('note-modal-viewer').style.display = 'none';
+        document.getElementById('note-modal-editor').style.display = 'block';
+        document.getElementById('note-view-actions').style.display = 'none';
+        document.getElementById('note-edit-actions').style.display = 'block';
+    }
+
+    switchToViewer() {
+        if (!this.editingNoteId) {
+            this.closeNoteModal();
+            return;
+        }
+        document.getElementById('note-modal-viewer').style.display = 'block';
+        document.getElementById('note-modal-editor').style.display = 'none';
+        document.getElementById('note-view-actions').style.display = 'block';
+        document.getElementById('note-edit-actions').style.display = 'none';
+    }
+
+    insertFormat(prefix, suffix) {
+        const textarea = document.getElementById('note-editor-textarea');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const selected = text.substring(start, end);
+        
+        textarea.value = text.substring(0, start) + prefix + selected + suffix + text.substring(end);
+        textarea.focus();
+        textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+    }
+
+    async saveNote() {
+        const title = document.getElementById('note-editor-title').value.trim() || 'Nota sin título';
+        const content = document.getElementById('note-editor-textarea').value.trim();
+
+        if (!content) {
+            alert('El contenido no puede estar vacío.');
+            return;
+        }
+
+        try {
+            const method = this.editingNoteId ? 'PUT' : 'POST';
+            const url = this.editingNoteId ? 
+                `${window.AppConfig.API_URL}/api/library/notes/${this.editingNoteId}` : 
+                `${window.AppConfig.API_URL}/api/library/notes`;
+
+            const res = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify({ title, content, sourceType: this.editingNoteId ? undefined : 'manual' })
+            });
+
+            if (res.ok) {
+                await this.service.loadFullLibrary();
+                this.closeNoteModal();
+            } else {
+                alert('Error al guardar la nota. ¿Ejecutaste el script SQL?');
+            }
+        } catch (err) {
+            console.error('Error guardando nota:', err);
+        }
+    }
+
+    closeNoteModal() {
+        document.getElementById('note-modal-overlay').classList.remove('open');
+        this.editingNoteId = null;
+    }
+
+    _renderMarkdown(text) {
+        if (!text) return '';
+        return text
+            .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+            .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+            .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
+            .replace(/^---$/gm, '<hr>')
+            .replace(/^[\*\-] (.*)$/gm, '<li>$1</li>')
+            .replace(/((?:<li>[\s\S]*?<\/li>(?:\n)?)+)/g, '<ul>$1</ul>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    async deleteNote(noteId) {
+        if (!confirm('¿Eliminar esta nota?')) return;
+
+        try {
+            await fetch(`${window.AppConfig.API_URL}/api/library/notes/${noteId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+            });
+            this.service.loadFullLibrary();
+            this.closeNoteModal();
+        } catch (err) {
+            console.error('Error eliminando nota:', err);
+        }
+    }
+
     isDrawerOpen() {
         const d = document.querySelector(this.selectors.drawer);
         return d && d.classList.contains('open');
     }
 }
 
-// Inicialización
 document.addEventListener('DOMContentLoaded', () => {
-    // Esperar a que el servicio exista
     if (window.libraryService) {
         window.libraryUI = new LibraryUI();
         window.libraryService.init().then(() => {

@@ -185,3 +185,42 @@ Tras la última actualización, se certifica el cumplimiento del estándar **MIN
 ---
 
 **Documentación Finalizada y Auditada - 18 de Marzo, 2026.**
+
+---
+
+## 10. Arquitectura V6: Motor Híbrido (Semántico + FTS) — Abril 2026
+
+La V6 introduce un motor de doble ruta que combina Pinecone (búsqueda semántica en la nube) con el FTS local existente:
+
+### 10.1 Distribución de RAG por Servicio
+
+| Servicio | Función | ¿Usa RAG? | Motor | Costo |
+| :--- | :--- | :--- | :--- | :--- |
+| **TutorAiService** (Chat) | Responde consultas del alumno en el chat | ✅ SÍ | Pinecone (SEMANTIC) | Micro-costo (Embedding + Read Unit) |
+| **AdminAiService** (Panel Admin) | Genera preguntas oficiales para el banco | ✅ SÍ | PostgreSQL (FTS) | **$0** |
+| **UserAiService** (Simulador Alumno) | Genera preguntas de emergencia cuando se agota el stock | ❌ NO | Conocimiento interno de Gemini + Historial de 30 preguntas | **$0** |
+
+### 10.2 Lógica de Decisión
+- **¿Por qué el Alumno NO usa RAG?** Porque la generación de emergencia debe ser rápida y sin costo. El alumno ya paga por la suscripción para acceder al chat con RAG, no por el simulador.
+- **¿Por qué el Admin SÍ usa RAG?** Porque las preguntas que genera el administrador se quedan permanentemente en el banco (`question_bank`). Requieren el máximo rigor y sustento bibliográfico.
+- **¿Por qué el Chat usa Pinecone y no FTS?** Porque la búsqueda semántica entiende la intención clínica del alumno (ej: "me duele la cabeza" → "cefalea tensional"), mientras que FTS solo busca coincidencias textuales.
+
+### 10.3 Namespaces en Pinecone
+El índice `hub-academia-index` está dividido en compartimentos aislados:
+- `medicine`: Harrison, NTS MINSA, GPC, exámenes pasados.
+- `languages`, `education`, `general`: Preparados para futuras carreras.
+
+### 10.4 Despliegue en Producción (Render)
+Para que Pinecone funcione en producción, se deben agregar las siguientes variables de entorno en el panel de Render:
+- `PINECONE_API_KEY`: La API Key del proyecto en Pinecone.
+- `PINECONE_HOST`: El host del índice (ej: `hub-academia-index-xxxxx.svc.aped-xxxx-xxxx.pinecone.io`).
+
+### 10.5 Seguridad Post-Migración
+Tras eliminar la tabla `documents` de Supabase para liberar espacio (ocupaba ~90% de los 500MB):
+- `RagService._executeFtsSearch()` verifica la existencia de la tabla antes de consultarla.
+- `RagService.getStyleExamples()` también incluye esta verificación.
+- Si la tabla no existe, el sistema omite el fallback FTS sin errores y confía en Pinecone o el conocimiento experto de Gemini.
+
+---
+
+**Actualización V6 - 27 de Abril, 2026.**

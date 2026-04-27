@@ -514,16 +514,62 @@
     border: 1px solid var(--chat-primary);
 }
 
-/* Markdown Styling */
-.message strong {
+/* Markdown Styling (Premium Medical) */
+.message.bot strong {
+    font-weight: 700;
+    color: #60a5fa; /* Acento azul para fármacos, dosis, signos vitales */
+}
+
+.message.bot h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #93c5fd; /* Azul claro para subtítulos */
+    margin: 1rem 0 0.4rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.message.bot h3 {
+    font-size: 0.95rem;
     font-weight: 600;
-    color: inherit;
+    color: #a5b4fc; /* Indigo suave */
+    margin: 0.75rem 0 0.3rem;
+}
+
+.message.bot p {
+    margin: 0.5rem 0;
+    line-height: 1.7;
 }
 
 .message ul,
 .message ol {
     padding-left: 1.25rem;
     margin: 0.5rem 0;
+}
+
+.message.bot li {
+    margin-bottom: 0.3rem;
+    line-height: 1.6;
+}
+
+.message.bot li::marker {
+    color: var(--chat-primary);
+}
+
+.message.bot blockquote {
+    border-left: 3px solid var(--chat-primary);
+    padding: 0.5rem 0.75rem;
+    margin: 0.5rem 0;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
+    color: #cbd5e1;
+}
+
+.message.bot hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 0.75rem 0;
 }
 
 .message code {
@@ -613,6 +659,34 @@
     color: var(--chat-primary);
     border-color: var(--chat-primary);
     background: rgba(59, 130, 246, 0.1);
+}
+
+/* Save Note Button (Bookmark) */
+.save-note-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--chat-border);
+    background: transparent;
+    color: var(--chat-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 2px;
+}
+
+.save-note-btn:hover {
+    color: #f59e0b;
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.save-note-btn:disabled {
+    cursor: default;
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
 }
 
 /* Typing Indicator */

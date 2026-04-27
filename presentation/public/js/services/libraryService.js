@@ -12,7 +12,7 @@ class LibraryService {
         this.state = {
             saved: new Set(),     // IDs de items guardados: "type-id" (ej: "course-1")
             favorites: new Set(), // IDs de items favoritos: "type-id"
-            data: { courses: [], books: [] } // Cache de datos completos
+            data: { courses: [], books: [], notes: [] } // Cache de datos completos
         };
         this.CONSTANTS = {
             EVENT_CHANGE: 'library:state-changed',
@@ -100,11 +100,13 @@ class LibraryService {
             const response = await fetch(`${window.AppConfig.API_URL}/api/library/my-library`, {
                 headers: { 'Authorization': `Bearer ${this._getToken()}` }
             });
+            if (!response.ok) {
+                console.warn('📚 LibraryService: Error cargando biblioteca (HTTP ' + response.status + ')');
+                return;
+            }
             const data = await response.json();
             this.state.data = data;
-            // Podríamos emitir otro evento específico si fuera necesario, 
-            // pero state-changed suele ser suficiente si la UI lee this.state.data
-            this.shouldReloadData = true; // Flag para saber que ya se cargó una vez
+            this.shouldReloadData = true;
             this._dispatchChange();
         } catch (error) {
             console.error('Error cargando biblioteca completa:', error);
@@ -121,6 +123,12 @@ class LibraryService {
         const response = await fetch(`${window.AppConfig.API_URL}/api/library/status`, {
             headers: { 'Authorization': `Bearer ${this._getToken()}` }
         });
+
+        if (!response.ok) {
+            console.warn('📚 LibraryService: No se pudo cargar status (HTTP ' + response.status + ')');
+            return;
+        }
+
         const data = await response.json();
 
         // Limpiar y llenar sets

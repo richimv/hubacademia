@@ -98,6 +98,60 @@ class LibraryRepository {
         const { rows } = await db.query(query, [userId]);
         return rows;
     }
+
+    // ==========================================
+    // NOTAS DEL USUARIO (CRUD Completo)
+    // ==========================================
+
+    /**
+     * Guarda una nota nueva (desde chat, flashcard o manual).
+     */
+    async saveNote(userId, { title, content, sourceType = 'manual', sourceConversationId = null }) {
+        const query = `
+            INSERT INTO user_notes (user_id, title, content, source_type, source_conversation_id)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *;
+        `;
+        const { rows } = await db.query(query, [userId, title, content, sourceType, sourceConversationId]);
+        return rows[0];
+    }
+
+    /**
+     * Obtiene todas las notas del usuario.
+     */
+    async getUserNotes(userId) {
+        const query = `
+            SELECT id, title, content, source_type, source_conversation_id, created_at, updated_at
+            FROM user_notes
+            WHERE user_id = $1
+            ORDER BY updated_at DESC;
+        `;
+        const { rows } = await db.query(query, [userId]);
+        return rows;
+    }
+
+    /**
+     * Actualiza una nota existente.
+     */
+    async updateNote(userId, noteId, { title, content }) {
+        const query = `
+            UPDATE user_notes
+            SET title = COALESCE($3, title), content = COALESCE($4, content), updated_at = NOW()
+            WHERE id = $1 AND user_id = $2
+            RETURNING *;
+        `;
+        const { rows } = await db.query(query, [noteId, userId, title, content]);
+        return rows[0];
+    }
+
+    /**
+     * Elimina una nota.
+     */
+    async deleteNote(userId, noteId) {
+        const query = `DELETE FROM user_notes WHERE id = $1 AND user_id = $2 RETURNING id;`;
+        const { rows } = await db.query(query, [noteId, userId]);
+        return rows.length > 0;
+    }
 }
 
 module.exports = LibraryRepository;

@@ -380,6 +380,55 @@ class ChatComponent {
                     return;
                 }
 
+                // 1.5 ✅ NUEVO: Manejo de Guardar como Nota
+                const saveNoteBtn = e.target.closest('.save-note-btn');
+                if (saveNoteBtn && !saveNoteBtn.disabled) {
+                    e.preventDefault();
+                    const parentMessage = saveNoteBtn.closest('.message');
+                    const responseText = parentMessage.dataset.response || parentMessage.textContent;
+
+                    // Obtener título del chat activo o generar uno
+                    const activeConv = this.conversations?.find(c => c.id == this.activeConversationId);
+                    const noteTitle = activeConv?.title || 'Nota del Chat';
+
+                    // Feedback visual inmediato
+                    const icon = saveNoteBtn.querySelector('i');
+                    saveNoteBtn.disabled = true;
+                    icon.className = 'fas fa-bookmark';
+                    icon.style.color = '#f59e0b';
+
+                    // Llamar al API
+                    fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        },
+                        body: JSON.stringify({
+                            title: noteTitle,
+                            content: responseText,
+                            sourceType: 'chat',
+                            sourceConversationId: this.activeConversationId
+                        })
+                    }).then(res => {
+                        if (res.ok) {
+                            saveNoteBtn.title = '¡Guardado!';
+                            // Actualizar biblioteca si está abierta
+                            if (window.libraryService) window.libraryService.loadFullLibrary();
+                        } else {
+                            icon.className = 'far fa-bookmark';
+                            icon.style.color = '';
+                            saveNoteBtn.disabled = false;
+                            saveNoteBtn.title = 'Error al guardar';
+                        }
+                    }).catch(() => {
+                        icon.className = 'far fa-bookmark';
+                        icon.style.color = '';
+                        saveNoteBtn.disabled = false;
+                    });
+                    return;
+                }
+
                 // 2. ✅ INTERCEPTOR DE CLICS DE SEGURIDAD (Freemium Bypass Fix)
                 const link = e.target.closest('a');
                 if (link && messagesContainer.contains(link)) {
@@ -797,6 +846,7 @@ class ChatComponent {
                     <div class="feedback-container" data-message-id="${currentMessageId}">
                         <button class="feedback-btn" data-helpful="true" title="Respuesta útil">👍</button>
                         <button class="feedback-btn" data-helpful="false" title="Respuesta no útil">👎</button>
+                        <button class="save-note-btn" title="Guardar como nota" data-msg-id="${currentMessageId}"><i class="far fa-bookmark"></i></button>
                     </div>`;
             }
         }
@@ -851,8 +901,14 @@ class ChatComponent {
 
                 return `<button class="chat-nav-button" onclick="${functionCall}">${trimmedText}</button>`;
             })
-            .replace(/^- (.*)$/gm, '<li>$1</li>') // Listas
+            .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+            .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+            .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
+            .replace(/^---$/gm, '<hr>')
+            .replace(/^[\*\-] (.*)$/gm, '<li>$1</li>')
+            .replace(/((?:<li>[\s\S]*?<\/li>(?:<br>)?)+)/g, '<ul>$1</ul>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/\n/g, '<br>');
     }
 
