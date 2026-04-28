@@ -874,7 +874,9 @@ class ChatComponent {
         // Soporta: [career:1], [course:2], [topic:3]
         const navRegex = /\*?\s*\[(career|course|topic):(\d+)\]\s*([^\n<]+)/g;
 
-        return text
+        const formatted = window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
+
+        return formatted
             // ✅ MEJORA: Convertir URLs en enlaces clickeables (Soporta absolutas y relativas).
             .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${linkText}</a>`)
             // ✅ NUEVO: Convertir enlaces de navegación internos en botones.
@@ -900,16 +902,7 @@ class ChatComponent {
                 }
 
                 return `<button class="chat-nav-button" onclick="${functionCall}">${trimmedText}</button>`;
-            })
-            .replace(/^## (.*)$/gm, '<h2>$1</h2>')
-            .replace(/^### (.*)$/gm, '<h3>$1</h3>')
-            .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
-            .replace(/^---$/gm, '<hr>')
-            .replace(/^[\*\-] (.*)$/gm, '<li>$1</li>')
-            .replace(/((?:<li>[\s\S]*?<\/li>(?:<br>)?)+)/g, '<ul>$1</ul>')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
+            });
     }
 
     showTypingIndicator() {

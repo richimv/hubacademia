@@ -1649,6 +1649,137 @@
     outline: none;
 }
 
+/* ✅ Estilos del Visor de Notas y Chats Unificados (Markdown Rico) */
+.note-modal-body h2, .tutor-message h2, .chatbot-message h2, .audio-response-content h3 {
+    font-size: 1.2rem;
+    color: var(--primary);
+    margin: 1.2rem 0 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 4px;
+}
+
+.note-modal-body h3, .tutor-message h3, .chatbot-message h3, .audio-response-content h4 {
+    font-size: 1.05rem;
+    color: var(--text-main);
+    margin: 1rem 0 0.4rem;
+}
+
+/* ✅ Texto en Negrita con Degradado Premium */
+.note-modal-body strong, 
+.tutor-message strong, 
+.chatbot-message strong, 
+.audio-response-content strong {
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-light) 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent; /* Fallback */
+    display: inline; /* Asegura que no rompa la línea */
+}
+
+/* Sistema de Listas Unificado (Shared) */
+.ul-l1, .ul-l2, .ul-l3, .audio-list, .audio-list-l2 {
+    margin: 0.5rem 0 1rem 0;
+    padding: 0;
+    list-style: none;
+}
+
+.li-l1, .li-l2, .li-l3, .audio-li-l1, .audio-li-l2, .note-li-l1, .note-li-l2 {
+    line-height: 1.6;
+    position: relative;
+    list-style: none;
+}
+
+/* Nivel 1 */
+.li-l1, .audio-li-l1, .note-li-l1 {
+    margin-bottom: 0.6rem;
+    padding-left: 20px;
+    font-size: 0.95rem;
+}
+
+.li-l1::before, .audio-li-l1::before, .note-li-l1::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 8px; /* Subido para centrar mejor con la primera línea */
+    width: 7px;
+    height: 7px;
+    background-color: var(--primary);
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+}
+
+/* Nivel 2 (Anidado) */
+.ul-l2, .audio-list-l2, .note-ul-l2 {
+    margin: 0.4rem 0 0.8rem 1.5rem !important;
+}
+
+.li-l2, .audio-li-l2, .note-li-l2 {
+    font-size: 0.9rem;
+    color: #e2e8f0; /* Mucho más claro (Slate 200) */
+    margin-bottom: 0.4rem;
+    padding-left: 18px;
+}
+
+.li-l2::before, .audio-li-l2::before, .note-li-l2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 5px;
+    height: 5px;
+    border: 1.5px solid var(--primary-light);
+    background-color: transparent;
+    border-radius: 50%;
+    opacity: 1;
+}
+
+/* Nivel 3 (Profundo) */
+.ul-l3 {
+    margin: 0.3rem 0 0.5rem 1.5rem !important;
+}
+
+.li-l3 {
+    font-size: 0.85rem;
+    color: #cbd5e1; /* Más claro (Slate 300) */
+    margin-bottom: 0.3rem;
+    padding-left: 16px;
+}
+
+.li-l3::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 7px; /* Ajuste fino altura cuadrado */
+    width: 4px;
+    height: 4px;
+    background-color: var(--primary-light); /* Azul clarito en lugar de gris oscuro */
+    border-radius: 1px;
+    box-shadow: 0 0 3px rgba(96, 165, 250, 0.4);
+}
+
+.note-modal-body blockquote {
+    border-left: 3px solid var(--primary);
+    background: rgba(59, 130, 246, 0.05);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: var(--text-muted);
+    border-radius: 0 8px 8px 0;
+}
+
+.note-modal-body strong {
+    color: var(--primary-light);
+    font-weight: 700;
+}
+
+.note-modal-body hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+}
+
 .note-editor-title:focus {
     border-color: var(--primary);
 }

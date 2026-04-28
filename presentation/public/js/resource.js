@@ -159,6 +159,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // MEJORA PROFESIONAL: Envolver todas las tablas en un contenedor responsivo dinámicamente
         // Esto evita que las tablas de 10+ columnas rompan el layout sin usar el hack de 'display: block' en la tabla.
         setTimeout(() => {
+            // ✅ Notificar al AudioAssistant que el contenido ya está en el DOM
+            if (window.audioAssistant) window.audioAssistant.refreshContext();
+
             const contentBody = document.getElementById('resource-content-body');
             if (contentBody) {
                 // MEJORA 1: Tablas Responsivas

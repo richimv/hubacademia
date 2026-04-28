@@ -36,6 +36,19 @@ class LibraryUI {
             if (this.isDrawerOpen()) this.renderDrawerList();
         });
 
+        // ✅ NUEVO: Escuchar cambios de sesión para mostrar/ocultar el botón flotante dinámicamente
+        if (window.sessionManager) {
+            window.sessionManager.onStateChange((user) => {
+                if (user) {
+                    this._renderFloatingButton();
+                } else {
+                    const toggleBtn = document.querySelector('.library-toggle');
+                    if (toggleBtn) toggleBtn.remove();
+                    this.toggleDrawer(false);
+                }
+            });
+        }
+
         document.body.addEventListener('click', (e) => this._handleBodyClick(e));
         this._renderDrawerStructure();
 
@@ -499,16 +512,9 @@ class LibraryUI {
 
     _renderMarkdown(text) {
         if (!text) return '';
-        return text
-            .replace(/^### (.*)$/gm, '<h3>$1</h3>')
-            .replace(/^## (.*)$/gm, '<h2>$1</h2>')
-            .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
-            .replace(/^---$/gm, '<hr>')
-            .replace(/^[\*\-] (.*)$/gm, '<li>$1</li>')
-            .replace(/((?:<li>[\s\S]*?<\/li>(?:\n)?)+)/g, '<ul>$1</ul>')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
+        
+        // ✅ USAR RENDERIZADOR UNIFICADO
+        return window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
     }
 
     async deleteNote(noteId) {

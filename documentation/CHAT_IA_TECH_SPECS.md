@@ -60,6 +60,31 @@ Esta es la gran mejora de la V6. El sistema llama a `RagService.searchContextSma
 ## 6. Evolución Técnica: De FTS a Pinecone
 El sistema migró de una búsqueda basada en palabras clave (FTS) a una búsqueda basada en **contexto clínico (Pinecone)**. Esto permite que el chat entienda sinónimos médicos y relaciones patológicas complejas que el FTS tradicional pasaba por alto.
 
+## 7. Modalidades de Chat (Ecosistema Unificado)
+El sistema ahora opera bajo un ecosistema de interfaces especializadas que comparten el mismo cerebro (Gemini + Pinecone) pero optimizan la experiencia según el contexto del usuario:
+
+### 7.1. Chat General (Navegador Académico)
+- **Frontend:** `chat.js`.
+- **Alcance:** Resolución de dudas clínicas extensas, búsqueda en biblioteca y navegación.
+- **Key Features:** Historial persistente en PostgreSQL, botones de navegación interna dinámica (`[career:id]`, `[course:id]`) y sugerencias de seguimiento inteligentes.
+
+### 7.2. Flashcard Tutor (Asistente de Estudio)
+- **Frontend:** `tutor-chat.js`.
+- **Contexto:** Se activa exclusivamente dentro de las sesiones de repaso de flashcards.
+- **Especialización:** Diseñado para explicar el "por qué" de una tarjeta. Utiliza un panel lateral (Sidebar) responsivo que permite al alumno consultar dudas sin interrumpir el flujo de estudio.
+
+### 7.3. Asistente de Audio (Hands-Free Assistant)
+- **Frontend:** `audio-assistant.js`.
+- **Propósito:** Aprendizaje auditivo interactivo para situaciones de movilidad.
+- **Tecnología:** Integración nativa con Web Speech API para reconocimiento y síntesis de voz (TTS).
+- **Modo Reproductor:** Interfaz dual que incluye una ventana completa para lectura y un **Modo Minimizado** (tipo Spotify) que permite mantener la conversación activa mientras se navega por otras secciones de la plataforma.
+
+## 8. Motor de Renderizado Universal (`MarkdownRenderer`)
+Se ha centralizado la lógica de visualización en `markdown-renderer.js` para eliminar inconsistencias entre módulos:
+- **Jerarquía de Listas:** Soporte nativo para 3 niveles de anidación con viñetas geométricas de alta definición (L1: Disco azul, L2: Círculo hueco, L3: Cuadrado).
+- **Estética Premium:** Aplicación de degradados Indigo-Púrpura en textos destacados (`**bold**`) compartida en todo el sitio.
+- **Optimización Móvil:** Ajuste de espaciados y alineación óptica de precisión en listas para máxima legibilidad en pantallas pequeñas.
+
 ---
 
-**Documentación Actualizada y Auditada - 27 de Abril, 2026.**
+**Documentación Actualizada y Auditada - 28 de Abril, 2026.**

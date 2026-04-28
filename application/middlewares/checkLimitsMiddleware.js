@@ -187,6 +187,19 @@ const checkAILimits = (type) => {
                     req.usageType = 'daily_simulator_usage';
                 }
             }
+            // ✅ AUDIO ASSISTANT: Solo Basic y Advanced (Free bloqueado siempre, sin importar vidas)
+            else if (type === 'audio_assistant') {
+                if (!isActiveAccount || tier === 'free') {
+                    // Paywall duro: ni las vidas del free pueden usarlo
+                    return res.status(403).json({
+                        error: 'El Asistente de Voz es una función Premium. Actualiza a Basic o Advanced para acceder.',
+                        reason: 'PREMIUM_FEATURE',
+                        paywall: true
+                    });
+                }
+                // Para Basic/Advanced: es efímero, no se cobra uso de BD pero sí cuota de IA
+                req.usageType = 'daily_ai_usage';
+            }
             // Todo Ok. Se le pasa el control a la ruta. Luego el controlador DEBE sumar +1 al req.usageType
             next();
 

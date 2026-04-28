@@ -144,16 +144,8 @@ class FlashcardTutor {
         const msg = document.createElement('div');
         msg.className = `tutor-message tutor-message-${role}`;
         
-        // ✅ MEJORA: Formateador Markdown Completo para el Tutor
-        let formattedText = text
-            .replace(/^### (.*)$/gm, '<h3>$1</h3>')
-            .replace(/^## (.*)$/gm, '<h2>$1</h2>')
-            .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
-            .replace(/^[\*\-] (.*)$/gm, '<li>$1</li>')
-            .replace(/((?:<li>[\s\S]*?<\/li>(?:<br>)?)+)/g, '<ul>$1</ul>')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negritas (con estilo degradado en CSS)
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>'); // Saltos de línea
+        // ✅ MEJORA: Formateador Markdown Unificado
+        let formattedText = window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
             
         msg.innerHTML = formattedText;
         msgContainer.appendChild(msg);
