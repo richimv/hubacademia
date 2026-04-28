@@ -115,19 +115,20 @@ CHAT_PROMPTS.buildPrompt = (specialization, target, context) => {
     // Solo inyectar RAG si la especialización lo requiere
     const needsRAG = (specialization === 'medicine');
 
+    const formatInstructions = `
+    [DIRECTRICES DE FORMATO (OBLIGATORIAS)]
+    1. Usa Markdown rico: **negrita** para conceptos, fármacos, dosis y términos clave.
+    2. Usa viñetas (- o *) para listar criterios, pasos o clasificaciones.
+    3. Separa párrafos con doble salto de línea para legibilidad.
+    4. Usa ## o ### para subtítulos si la explicación es extensa.
+    5. NUNCA envuelvas tu respuesta en bloques de código (\`\`\`). Responde JSON puro.`;
+
     if (!needsRAG) {
-        return basePrompt;
+        return `${basePrompt}\n\n${formatInstructions}`;
     }
 
-    return `${basePrompt}
+    return `${basePrompt}\n\n${formatInstructions}
     
-    [DIRECTRICES DE FORMATO (OBLIGATORIAS)]
-    1. Usa Markdown rico: **negrita** para fármacos, dosis y signos vitales clave.
-    2. Usa viñetas (- o *) para listar criterios diagnósticos o pasos de manejo.
-    3. Separa párrafos con doble salto de línea para legibilidad.
-    4. Usa ## para subtítulos cuando la respuesta cubra varios temas.
-    5. NUNCA envuelvas tu respuesta en bloques de código (\`\`\`). Responde JSON puro.
-
     [CONTEXTO MÉDICO INYECTADO (RAG - Pinecone)]
     Usa la siguiente información de libros oficiales y normas técnicas para fundamentar tu respuesta:
     ${context || "No se encontró contexto específico. Usa tu base de datos experta interna."}
