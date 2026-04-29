@@ -104,6 +104,12 @@ Basado en el análisis de viabilidad técnica para producción:
 - **Análisis Avanzado (GCS/Vision AI)**: Integración con **Google Cloud Vision AI** para casos de alta complejidad, como interpretación de hallazgos en radiografías o segmentación anatómica.
 - **Fase de Despliegue**: Se priorizará el pre-procesamiento en el backend para garantizar privacidad y optimizar la precisión de los modelos de Deep Learning.
 
+## 10. Protección de IP y Estrategia de Citación (Split Citation Strategy)
+Para garantizar la seguridad legal de la plataforma frente a derechos de autor de libros comerciales, se ha implementado una política estricta de citación en el prompt maestro:
+
+- **Fuentes Gubernamentales/Públicas (MINSA, EsSalud, OMS)**: Se citan con nombre y apellido para otorgar autoridad científica a la respuesta.
+- **Fuentes Comerciales (Harrison, Manuales CTO/AMIR, etc.)**: La IA tiene prohibido mencionar el nombre del libro, autor o editorial. En su lugar, debe utilizar frases sombrilla como "De acuerdo con la literatura médica estándar" para camuflar la fuente vectorizada en Pinecone.
+
 ---
 
-**Documentación Actualizada y Auditada - 28 de Abril, 2026.**
+**Documentación Actualizada y Auditada - 29 de Abril, 2026.**
