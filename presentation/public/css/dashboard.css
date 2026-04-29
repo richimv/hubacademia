@@ -555,6 +555,8 @@ body {
     border-radius: 16px;
     width: 90%;
     max-width: 500px;
+    max-height: 90vh; /* Permite que el modal no exceda la pantalla */
+    overflow-y: auto; /* Permite scrollear si el contenido es muy largo */
     border: 1px solid var(--border-color);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     transform: translateY(20px);

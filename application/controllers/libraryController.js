@@ -60,17 +60,27 @@ exports.checkStatus = async (req, res) => {
 exports.saveNote = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { title, content, sourceType, sourceConversationId } = req.body;
+        const { title, content, sourceType, sourceConversationId, color } = req.body;
 
         if (!content || content.trim() === '') {
             return res.status(400).json({ error: 'El contenido de la nota no puede estar vacío.' });
         }
 
+        const type = sourceType || 'manual';
+        let finalColor = color;
+        if (!finalColor) {
+            if (type === 'chat') finalColor = '#3b82f6'; // Bright Blue
+            else if (type === 'audio_assistant') finalColor = '#8b5cf6'; // Bright Purple
+            else if (type === 'flashcard') finalColor = '#10b981'; // Emerald Green
+            else finalColor = '#64748b'; // Slate
+        }
+
         const note = await libraryRepo.saveNote(userId, {
             title: title || 'Nota sin título',
             content: content.trim(),
-            sourceType: sourceType || 'manual',
-            sourceConversationId: sourceConversationId || null
+            sourceType: type,
+            sourceConversationId: sourceConversationId || null,
+            color: finalColor
         });
 
         res.status(201).json({ success: true, note });
@@ -95,9 +105,9 @@ exports.updateNote = async (req, res) => {
     try {
         const userId = req.user.id;
         const noteId = parseInt(req.params.id, 10);
-        const { title, content } = req.body;
+        const { title, content, color } = req.body;
 
-        const updated = await libraryRepo.updateNote(userId, noteId, { title, content });
+        const updated = await libraryRepo.updateNote(userId, noteId, { title, content, color });
         if (!updated) {
             return res.status(404).json({ error: 'Nota no encontrada.' });
         }

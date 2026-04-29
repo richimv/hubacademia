@@ -98,6 +98,13 @@ class RepasoManager {
         return colorMap[faClass] || '#60a5fa';
     }
 
+    static renderDeckIconHtml(deck, fallbackFA = 'fas fa-folder') {
+        const resolved = RepasoManager._resolveIcon(deck.icon, fallbackFA);
+        const finalColor = resolved.color;
+        if (resolved.html) return `<span style="color:${finalColor}">${resolved.html}</span>`;
+        return `<i class="${resolved.faClass}" style="color:${finalColor}"></i>`;
+    }
+
 
     async init() {
         // No longer enforcing redirect here.
@@ -152,6 +159,8 @@ class RepasoManager {
     loadDashboard(pushState = true) {
         document.getElementById('dashboard-view').style.display = 'block';
         document.getElementById('folder-view').style.display = 'none';
+        const commView = document.getElementById('community-view');
+        if (commView) commView.style.display = 'none';
         this.currentDeck = null;
 
         // Sync URL: If we go to Dashboard, clear deckId
@@ -171,6 +180,8 @@ class RepasoManager {
     async loadFolder(deckId, pushState = true) {
         document.getElementById('dashboard-view').style.display = 'none';
         document.getElementById('folder-view').style.display = 'block';
+        const commView = document.getElementById('community-view');
+        if (commView) commView.style.display = 'none';
 
         // Show loading state in the content area
         const container = document.getElementById('folder-header');
@@ -244,6 +255,24 @@ class RepasoManager {
         }
     }
 
+    loadCommunity(pushState = true) {
+        document.getElementById('dashboard-view').style.display = 'none';
+        document.getElementById('folder-view').style.display = 'none';
+        const commView = document.getElementById('community-view');
+        if (commView) commView.style.display = 'block';
+        
+        this.currentDeck = null;
+
+        if (pushState && window.history.pushState) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('view', 'community');
+            url.searchParams.delete('deckId');
+            window.history.pushState({ view: 'community' }, 'Comunidad', url.toString());
+        }
+
+        this.renderCommunityDecks();
+    }
+
     // --- Renderers ---
 
     renderRootDecks() {
@@ -258,6 +287,160 @@ class RepasoManager {
         });
     }
 
+    async renderCommunityDecks(page = 1) {
+        const container = document.getElementById('community-view');
+        container.innerHTML = `
+            <div style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1)); padding: 2rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.8rem;">
+                    <i class="fas fa-globe" style="color: #60a5fa;"></i> Comunidad
+                </h1>
+                <p style="color: #94a3b8; font-size: 0.95rem;">Explora mazos públicos creados por otros estudiantes. Clónalos a tu biblioteca personal para estudiarlos y modificarlos a tu ritmo.</p>
+            </div>
+            <div id="community-decks-grid" class="decks-grid">
+                <div style="text-align:center; padding:2rem; grid-column: 1 / -1;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#60a5fa"></i></div>
+            </div>
+        `;
+
+        try {
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/public?page=${page}&limit=20`);
+            const data = await res.json();
+            
+            const grid = document.getElementById('community-decks-grid');
+            grid.innerHTML = '';
+            
+            if (!data.decks || data.decks.length === 0) {
+                grid.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center; background:rgba(255,255,255,0.02); border-radius:16px; grid-column: 1 / -1;">Aún no hay mazos públicos. ¡Sé el primero en compartir uno!</div>';
+                return;
+            }
+
+            data.decks.forEach(deck => {
+                const card = document.createElement('div');
+                card.className = 'deck-card';
+                card.style.padding = '1rem';
+                card.style.cursor = 'pointer'; // Changed to pointer since it's clickable
+
+                if (deck.color) {
+                    card.style.background = `linear-gradient(135deg, ${deck.color}2A, ${deck.color}10)`;
+                    card.style.borderColor = `${deck.color}66`;
+                    card.style.boxShadow = `0 4px 20px ${deck.color}15`;
+                }
+
+                const iconHtml = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder');
+                
+                card.innerHTML = `
+                    <div class="deck-card-desktop" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${this.escapeHtml(deck.name)}')">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                            <span class="deck-badge badge-system" style="font-size:0.6rem; padding:0.15rem 0.5rem; background: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.2);"><i class="fas fa-users"></i> PÚBLICO</span>
+                            <div style="color: #94a3b8; font-size: 0.75rem;"><i class="fas fa-download"></i> ${deck.saves_count || 0}</div>
+                        </div>
+                        <div style="font-size:1.5rem; margin-bottom:0.5rem;">${iconHtml}</div>
+                        <h3 style="font-size:0.9rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${this.escapeHtml(deck.name)}">${deck.name}</h3>
+                        <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem;">
+                            ${deck.total_cards || 0} tarjetas
+                        </div>
+                        <div style="font-size:0.7rem; color:#64748b; margin-bottom:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            Por: <span style="color:#cbd5e1">${deck.author_name || 'Estudiante'}</span>
+                        </div>
+                        <div style="margin-top:auto; width:100%;">
+                            <button class="btn-action" style="width: 100%; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.8rem; justify-content: center; padding: 0.5rem;" onclick="event.stopPropagation(); window.repasoManager.cloneDeck('${deck.id}')">
+                                <i class="fas fa-clone"></i> Clonar Mazo
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        } catch (e) {
+            console.error('Error loading community decks:', e);
+            document.getElementById('community-decks-grid').innerHTML = '<div style="color:#ef4444; padding:2rem; text-align:center; grid-column: 1 / -1;">Error al cargar la comunidad.</div>';
+        }
+    }
+
+    async previewPublicDeck(deckId, deckName) {
+        if (!this.token) {
+            window.uiManager.showAuthPrompt('Para previsualizar tarjetas necesitas iniciar sesión.');
+            return;
+        }
+
+        const modal = document.getElementById('preview-deck-modal');
+        const content = document.getElementById('preview-deck-content');
+        document.getElementById('preview-deck-title').textContent = deckName;
+        
+        // Asignar acción al botón de clonar
+        const cloneBtn = document.getElementById('btn-preview-clone');
+        cloneBtn.onclick = () => {
+            modal.classList.remove('active');
+            this.cloneDeck(deckId);
+        };
+
+        modal.classList.add('active');
+        content.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#60a5fa"></i></div>';
+
+        try {
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            const data = await res.json();
+            
+            if (!data.success || !data.cards || data.cards.length === 0) {
+                content.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center;">Este mazo no tiene tarjetas o no se pudieron cargar.</div>';
+                return;
+            }
+
+            let html = `<div style="display:flex; flex-direction:column; gap:1rem;">`;
+            data.cards.forEach((c, index) => {
+                let imageHtml = c.image_url ? `<div style="margin-top: 0.5rem; text-align: center;"><img src="${window.resolveImageUrl ? window.resolveImageUrl(c.image_url) : c.image_url}" style="max-height: 150px; border-radius: 8px; max-width: 100%; border: 1px solid rgba(255,255,255,0.1);"></div>` : '';
+                let expImageHtml = c.explanation_image_url ? `<div style="margin-top: 0.5rem; text-align: center;"><img src="${window.resolveImageUrl ? window.resolveImageUrl(c.explanation_image_url) : c.explanation_image_url}" style="max-height: 150px; border-radius: 8px; max-width: 100%; border: 1px solid rgba(255,255,255,0.1);"></div>` : '';
+
+                html += `
+                    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem;">
+                        <div style="color: var(--accent-primary); font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase;">Tarjeta ${index + 1}</div>
+                        <div style="color: white; font-size: 0.95rem; margin-bottom: 0.5rem; line-height: 1.4;">
+                            ${window.MarkdownRenderer.render(c.front_content || '')}
+                            ${imageHtml}
+                        </div>
+                        <div style="color: #94a3b8; font-size: 0.9rem; padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.1); line-height: 1.4;">
+                            ${window.MarkdownRenderer.render(c.back_content || '')}
+                            ${expImageHtml}
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            content.innerHTML = html;
+        } catch (e) {
+            console.error('Error previewing deck:', e);
+            content.innerHTML = '<div style="color:#ef4444; padding:2rem; text-align:center;">Error al cargar las tarjetas.</div>';
+        }
+    }
+
+    async cloneDeck(deckId) {
+        if (!this.token) {
+            window.uiManager.showAuthPromptModal();
+            return;
+        }
+
+        try {
+            window.uiManager.showToast('Clonando mazo a tu biblioteca...', 'info');
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/clone`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+
+            if (res.ok) {
+                window.uiManager.showToast('¡Mazo clonado con éxito!', 'success');
+                // Reload explorer to show new deck
+                this.explorer.loadTree();
+            } else {
+                const err = await res.json();
+                window.uiManager.showToast(err.error || 'Error al clonar el mazo', 'error');
+            }
+        } catch (e) {
+            console.error('Error cloning deck', e);
+            window.uiManager.showToast('Error de conexión', 'error');
+        }
+    }
+
     renderDeckHeader(deck, cards = []) {
         if (!deck) return;
 
@@ -270,7 +453,7 @@ class RepasoManager {
             <div class="deck-header-info">
                 <div style="display: flex; gap: 1rem; align-items: flex-start;">
                     <div class="deck-icon-large">
-                        ${RepasoManager.renderColoredIcon(deck?.icon, 'fas fa-layer-group')}
+                        ${RepasoManager.renderDeckIconHtml(deck, 'fas fa-layer-group')}
                     </div>
 
                     <div style="flex-grow: 1; min-width: 0;">
@@ -316,11 +499,87 @@ class RepasoManager {
                             <button class="btn-premium btn-premium-secondary" onclick="DeckExplorer.openGuideModal('${deck.id}', '${this.escapeHtml(deck.name)}')">
                                 <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
                             </button>
+                            ${this.token && deck.type !== 'SYSTEM' ? `
+                            <button class="btn-premium ${deck.is_public ? 'btn-premium-primary' : 'btn-premium-secondary'}" onclick="window.repasoManager.toggleDeckVisibility('${deck.id}', ${!deck.is_public})">
+                                <i class="fas ${deck.is_public ? 'fa-globe' : 'fa-lock'}"></i> <span class="btn-text">${deck.is_public ? 'Hacer Privado' : 'Hacer Público'}</span>
+                            </button>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
             </div>
         `;
+    }
+
+    async toggleDeckVisibility(deckId, makePublic) {
+        if (!this.token) return;
+        
+        if (makePublic) {
+            const modalHtml = `
+            <div id="confirm-publish-modal" style="position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(5px); z-index:99999; display:flex; justify-content:center; align-items:center; opacity:0; transition:opacity 0.2s;">
+                <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:16px; width:90%; max-width:360px; padding:1.5rem; text-align:center; transform:scale(0.95); transition:transform 0.2s;">
+                    <i class="fas fa-globe" style="font-size:2.5rem; color:#3b82f6; margin-bottom:1rem;"></i>
+                    <h3 style="color:#f8fafc; font-size:1.2rem; margin:0 0 0.5rem 0; font-weight:600;">¿Publicar en Comunidad?</h3>
+                    <p style="color:#94a3b8; font-size:0.85rem; line-height:1.5; margin-bottom:1.5rem;">
+                        Se publicará este mazo, su guía y sus tarjetas directas.<br><br>
+                        <span style="color:#ef4444; font-size:0.8rem;"><i class="fas fa-info-circle"></i> Los sub-mazos anidados no se publicarán.</span>
+                    </p>
+                    <div style="display:flex; gap:0.8rem; justify-content:center;">
+                        <button id="btn-cancel-publish" class="btn-action btn-secondary-action" style="flex:1; justify-content:center; padding:0.6rem;">Cancelar</button>
+                        <button id="btn-confirm-publish" class="btn-action" style="flex:1; justify-content:center; padding:0.6rem; background:#3b82f6; color:white; border:none;">Publicar</button>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            const modal = document.getElementById('confirm-publish-modal');
+            const content = modal.querySelector('div');
+            
+            requestAnimationFrame(() => {
+                modal.style.opacity = '1';
+                content.style.transform = 'scale(1)';
+            });
+
+            const closeModal = (confirmed) => {
+                modal.style.opacity = '0';
+                content.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    modal.remove();
+                    if (confirmed) this._executeToggleVisibility(deckId, true);
+                }, 200);
+            };
+
+            document.getElementById('btn-cancel-publish').onclick = () => closeModal(false);
+            document.getElementById('btn-confirm-publish').onclick = () => closeModal(true);
+            return;
+        }
+
+        return this._executeToggleVisibility(deckId, makePublic);
+    }
+
+    async _executeToggleVisibility(deckId, makePublic) {
+        try {
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/visibility`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify({ is_public: makePublic })
+            });
+
+            if (res.ok) {
+                window.uiManager.showToast(makePublic ? 'Mazo publicado en la comunidad' : 'Mazo hecho privado', 'success');
+                // Actualizamos la vista actual
+                this.loadFolder(deckId, false);
+            } else {
+                const data = await res.json();
+                window.uiManager.showToast(data.error || 'Error al cambiar visibilidad', 'error');
+            }
+        } catch (e) {
+            console.error('Error toggling visibility:', e);
+            window.uiManager.showToast('Error de red', 'error');
+        }
     }
 
     renderSubDecks(decks = []) {
@@ -411,10 +670,16 @@ class RepasoManager {
             card.className = 'deck-card';
             card.style.padding = '1rem';
             card.style.cursor = 'pointer';
+            
+            if (deck.color) {
+                card.style.background = `linear-gradient(135deg, ${deck.color}2A, ${deck.color}10)`;
+                card.style.borderColor = `${deck.color}66`;
+                card.style.boxShadow = `0 4px 20px ${deck.color}15`;
+            }
 
             const isSystem = deck.type === 'SYSTEM';
             const mastery = deck.mastery_percentage || 0;
-            const iconHtml = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder-open');
+            const iconHtml = RepasoManager.renderDeckIconHtml(deck, 'fas fa-folder-open');
             const hasDue = parseInt(deck.due_cards) > 0;
             const badgeClass = isSystem ? 'badge-system' : 'badge-user';
             const badgeText = isSystem ? 'AUTOMÁTICO' : 'PERSONAL';
@@ -432,8 +697,8 @@ class RepasoManager {
                         </button>
                         ${!isSystem ? `
                             <button class="deck-action-btn" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border: 1px solid rgba(255,255,255,0.1);" 
-                                onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}', \`${this.escapeHtml(deck.description || '')}\`)" 
-                                title="Editar nombre/icono/guía">
+                                onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}', \`${this.escapeHtml(deck.description || '')}\`, '${deck.color || ''}')" 
+                                title="Editar nombre/icono/color/guía">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="deck-action-btn deck-action-btn--delete" 
@@ -1106,11 +1371,13 @@ class RepasoManager {
             if (deckId) {
                 // EDIT MODE
                 const icon = document.getElementById('new-deck-icon') ? document.getElementById('new-deck-icon').value : null;
+                const colorInput = document.getElementById('new-deck-color');
+                const color = colorInput ? colorInput.value : null;
                 const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, {
                     method: 'PUT',
                     isRetryable: true,
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ name, icon, description })
+                    body: JSON.stringify({ name, icon, description, color })
                 });
 
                 if (res.status === 403) {
@@ -1140,11 +1407,13 @@ class RepasoManager {
             } else {
                 // CREATE MODE
                 const icon = document.getElementById('new-deck-icon') ? document.getElementById('new-deck-icon').value : null;
+                const colorInput = document.getElementById('new-deck-color');
+                const color = colorInput ? colorInput.value : null;
                 const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks`, {
                     method: 'POST',
                     isRetryable: true,
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ name, icon, parentId, description })
+                    body: JSON.stringify({ name, icon, parentId, description, color })
                 });
 
                 if (res.status === 403) {
@@ -1179,7 +1448,7 @@ class RepasoManager {
         }
     }
 
-    openEditDeckModal(id, currentName, currentIcon, currentDescription = '') {
+    openEditDeckModal(id, currentName, currentIcon, currentDescription = '', currentColor = '') {
         // Redundant reset removed, handled by explorer
         DeckExplorer.openCreateModal(null); // Pass null for parent to indicate edit/root
 
@@ -1197,6 +1466,9 @@ class RepasoManager {
 
         if (window.DeckExplorer) {
             window.DeckExplorer.renderIconPicker(currentIcon || 'fas fa-layer-group');
+            if (window.DeckExplorer.renderColorPicker) {
+                window.DeckExplorer.renderColorPicker(currentColor || '');
+            }
         }
 
         const submitBtn = document.getElementById('btn-save-deck');

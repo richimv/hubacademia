@@ -491,7 +491,8 @@ class TrainingRepository {
         // Standard user query
         let query = `
             SELECT 
-                d.id, d.name, d.type, d.icon, d.source_module, d.parent_id, d.description,
+                d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id, d.description,
+                d.is_public, d.saves_count, d.likes_count, d.cloned_from_id,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
                 (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
@@ -517,7 +518,8 @@ class TrainingRepository {
     async getDeckById(userId, deckId) {
         const query = `
             SELECT 
-                d.id, d.name, d.type, d.icon, d.source_module, d.parent_id, d.description,
+                d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id, d.description,
+                d.is_public, d.saves_count, d.likes_count, d.cloned_from_id,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
                 (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
@@ -532,24 +534,24 @@ class TrainingRepository {
         return result.rows[0];
     }
 
-    async createDeck(userId, name, type = 'USER', sourceModule = 'MANUAL', icon = '📚', parentId = null, description = null) {
+    async createDeck(userId, name, type = 'USER', sourceModule = 'MANUAL', icon = '📚', parentId = null, description = null, color = null) {
         const query = `
-            INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, name, icon, parent_id, description
+            INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description, color)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, name, icon, color, parent_id, description
         `;
-        const result = await db.query(query, [userId, name, type, sourceModule, icon, parentId, description]);
+        const result = await db.query(query, [userId, name, type, sourceModule, icon, parentId, description, color]);
         return result.rows[0];
     }
 
-    async updateDeck(userId, deckId, name, icon, description = null) {
+    async updateDeck(userId, deckId, name, icon, description = null, color = null) {
         const query = `
             UPDATE decks 
-            SET name = $3, icon = $4, description = $5
+            SET name = $3, icon = $4, description = $5, color = $6
             WHERE id = $2 AND user_id = $1
-            RETURNING id, name, icon, description
+            RETURNING id, name, icon, color, description
         `;
-        const result = await db.query(query, [userId, deckId, name, icon, description]);
+        const result = await db.query(query, [userId, deckId, name, icon, description, color]);
 
         // ✅ Consistencia: Si se cambia el nombre del mazo, actualizamos el topic de sus tarjetas
         if (result.rows.length > 0) {
@@ -562,6 +564,39 @@ class TrainingRepository {
         }
 
         return result.rows[0];
+    }
+
+    async updateDeckVisibility(userId, deckId, isPublic) {
+        const query = `
+            UPDATE decks 
+            SET is_public = $3
+            WHERE id = $2 AND user_id = $1
+            RETURNING id, is_public
+        `;
+        const result = await db.query(query, [userId, deckId, isPublic]);
+        return result.rows[0];
+    }
+
+    async getPublicDecks(page = 1, limit = 20) {
+        const offset = (page - 1) * limit;
+        const query = `
+            SELECT 
+                d.id, d.name, d.icon, d.description, d.color, d.saves_count, d.likes_count, d.created_at,
+                u.name as author_name,
+                (SELECT COUNT(*) FROM user_flashcards uf WHERE uf.deck_id = d.id) as total_cards
+            FROM decks d
+            LEFT JOIN users u ON d.user_id = u.id
+            WHERE d.is_public = true
+            ORDER BY d.saves_count DESC, d.created_at DESC
+            LIMIT $1 OFFSET $2
+        `;
+        const result = await db.query(query, [limit, offset]);
+        return result.rows;
+    }
+
+    async incrementDeckSaves(deckId) {
+        const query = `UPDATE decks SET saves_count = saves_count + 1 WHERE id = $1`;
+        await db.query(query, [deckId]);
     }
 
     // Helper to find or create a system deck for a module
@@ -674,16 +709,16 @@ class TrainingRepository {
 
             if (existingFronts.has(front)) return;
 
-            const offset = insertCount * 6;
-            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`);
-            values.push(userId, deckId, front, back, deckName, new Date());
+            const offset = insertCount * 8;
+            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`);
+            values.push(userId, deckId, front, back, deckName, new Date(), c.image_url || null, c.explanation_image_url || null);
             insertCount++;
         });
 
         if (insertCount === 0) return { inserted: 0 };
 
         const query = `
-            INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, created_at)
+            INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, created_at, image_url, explanation_image_url)
             VALUES ${placeholders.join(', ')}
         `;
 

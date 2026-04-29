@@ -123,6 +123,14 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Sanitización de Contexto**: El backend limpia automáticamente etiquetas HTML de los frentes existentes antes de enviarlos a la IA para maximizar la comprensión del modelo.
 - **Control de Cantidad**: Parámetro `count` dinámico (estándar: 10 tarjetas por intento) para asegurar un crecimiento balanceado del mazo.
 
+### G. Comunidad, Clonación y Gestión de Medios
+- **Galería de Comunidad Dinámica**: Los mazos públicos ahora se renderizan con los colores y estéticas definidas por sus autores originales, utilizando gradientes HSL y efectos de resplandor (glow) dinámicos.
+- **Clonación Inteligente (Shallow Clone)**: Permite a los usuarios copiar mazos públicos (incluyendo sub-mazos de cualquier nivel) a su biblioteca personal. El proceso clona metadatos (color, icono, guía) y tarjetas, manteniendo la independencia de los datos originales.
+- **Protección de Integridad de Medios (GCS)**: Implementación de la lógica `isImageInUse`. Antes de eliminar un archivo físico en Google Cloud Storage (al editar o borrar), el sistema verifica si la URL está siendo referenciada por otros mazos clonados o tarjetas compartidas, evitando "imágenes rotas" en la comunidad.
+- **Previsualización de Solo Lectura**: Modal de exploración que permite ver el contenido completo de un mazo (texto con Markdown e imágenes) antes de clonarlo, sin generar sesiones de estudio ni afectar las estadísticas del usuario.
+- **UX de Publicación**: Confirmación personalizada y minimalista para la publicación de mazos, advirtiendo sobre el alcance de la compartición (mazo principal + tarjetas directas).
+- **Optimización de Sincronización**: Uso de políticas de caché `no-cache` en las peticiones de biblioteca para garantizar que los elementos guardados o favoritos aparezcan instantáneamente en el panel de "Mis Recursos" sin recargar la página.
+
 ### G. Interfaz Conversacional (Chat General)
 - **Sugerencias Inteligentes (Pills)**: Las preguntas de seguimiento ahora se renderizan dinámicamente sobre la barra de entrada, facilitando la interacción continua.
 - **Deduplicación de Texto**: Se ha prohibido a la IA incluir sugerencias dentro del cuerpo del mensaje para evitar redundancia visual.

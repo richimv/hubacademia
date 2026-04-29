@@ -98,7 +98,8 @@ class LibraryService {
     async loadFullLibrary() {
         try {
             const response = await fetch(`${window.AppConfig.API_URL}/api/library/my-library`, {
-                headers: { 'Authorization': `Bearer ${this._getToken()}` }
+                headers: { 'Authorization': `Bearer ${this._getToken()}` },
+                cache: 'no-cache'
             });
             if (!response.ok) {
                 console.warn('📚 LibraryService: Error cargando biblioteca (HTTP ' + response.status + ')');
@@ -121,7 +122,8 @@ class LibraryService {
 
     async _loadStatus() {
         const response = await fetch(`${window.AppConfig.API_URL}/api/library/status`, {
-            headers: { 'Authorization': `Bearer ${this._getToken()}` }
+            headers: { 'Authorization': `Bearer ${this._getToken()}` },
+            cache: 'no-cache'
         });
 
         if (!response.ok) {

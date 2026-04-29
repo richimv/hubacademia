@@ -161,12 +161,12 @@ router.get('/quiz/leaderboard', auth, quizController.getLeaderboard);
 
 // --- DECKS & FLASHCARDS ---
 const DeckController = require('../../application/controllers/deckController');
-// The original `quizController` from the main import is used for quiz routes.
-// This `QuizController` import is specifically for legacy/review routes.
-// const QuizController = require('../../application/controllers/quizController'); // Legacy for review
 
+router.get('/decks/public', optionalAuth, DeckController.getPublicDecks); // ✅ NUEVO: Explorador de Comunidad
 router.get('/decks', optionalAuth, DeckController.listDecks);
 router.get('/decks/:deckId', optionalAuth, DeckController.getDeckById); // ✅ NUEVO: Fetch Single Deck
+router.put('/decks/:deckId/visibility', auth, DeckController.toggleVisibility); // ✅ NUEVO: Toggle Privacidad
+router.post('/decks/:deckId/clone', auth, checkAILimits('monthly_flashcards'), DeckController.cloneDeck); // ✅ NUEVO: Clonar a librería
 router.post('/decks', auth, checkAILimits('monthly_flashcards'), DeckController.createDeck);
 router.get('/decks/:deckId/cards/due', auth, DeckController.getDueCards);
 router.get('/decks/:deckId/cards/:cardId/study', auth, DeckController.getStudyCard);

@@ -88,7 +88,7 @@ class DeckController {
      */
     createDeck = async (req, res) => {
         try {
-            const { name, icon, parentId, description } = req.body;
+            const { name, icon, parentId, description, color } = req.body;
             const { userId, isGuest } = this._getUserContext(req);
 
             if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para crear mazos' });
@@ -98,7 +98,7 @@ class DeckController {
                 return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
             }
 
-            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null, description || null);
+            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null, description || null, color || null);
             await this._syncUsage(req);
             res.json({ success: true, deck });
         } catch (error) {
@@ -113,7 +113,7 @@ class DeckController {
     updateDeck = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const { name, icon, description } = req.body;
+            const { name, icon, description, color } = req.body;
             const { userId } = this._getUserContext(req);
 
             if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
@@ -126,7 +126,7 @@ class DeckController {
                 return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
             }
 
-            const deck = await DeckService.updateDeck(userId, deckId, name, icon, description);
+            const deck = await DeckService.updateDeck(userId, deckId, name, icon, description, color || null);
             await this._syncUsage(req);
 
             // 2. Cleanup orphaned images in description
@@ -137,7 +137,9 @@ class DeckController {
             if (orphanedImages.length > 0) {
                 const mediaController = require('./mediaController');
                 for (const url of orphanedImages) {
-                    await mediaController.deleteFile(url);
+                    if (!(await DeckService.isImageInUse(url))) {
+                        await mediaController.deleteFile(url);
+                    }
                 }
             }
 
@@ -338,10 +340,14 @@ class DeckController {
             const mediaController = require('./mediaController');
             
             if (currentCard.image_url && currentCard.image_url !== imageUrl) {
-                await mediaController.deleteFile(currentCard.image_url);
+                if (!(await DeckService.isImageInUse(currentCard.image_url))) {
+                    await mediaController.deleteFile(currentCard.image_url);
+                }
             }
             if (currentCard.explanation_image_url && currentCard.explanation_image_url !== backImageUrl) {
-                await mediaController.deleteFile(currentCard.explanation_image_url);
+                if (!(await DeckService.isImageInUse(currentCard.explanation_image_url))) {
+                    await mediaController.deleteFile(currentCard.explanation_image_url);
+                }
             }
 
             res.json({ success: true, card });
@@ -365,10 +371,14 @@ class DeckController {
 
             await DeckService.deleteCard(userId, cardId);
 
-            // 2. Limpiar GCS
+            // 2. Limpiar GCS solo si nadie mas usa la imagen
             const mediaController = require('./mediaController');
-            if (card.image_url) await mediaController.deleteFile(card.image_url);
-            if (card.explanation_image_url) await mediaController.deleteFile(card.explanation_image_url);
+            if (card.image_url && !(await DeckService.isImageInUse(card.image_url))) {
+                await mediaController.deleteFile(card.image_url);
+            }
+            if (card.explanation_image_url && !(await DeckService.isImageInUse(card.explanation_image_url))) {
+                await mediaController.deleteFile(card.explanation_image_url);
+            }
 
             res.json({ success: true });
         } catch (error) {
@@ -397,11 +407,15 @@ class DeckController {
 
             for (const row of rawImageData) {
                 if (row.image_url && !processedUrls.has(row.image_url)) {
-                    await mediaController.deleteFile(row.image_url);
+                    if (!(await DeckService.isImageInUse(row.image_url))) {
+                        await mediaController.deleteFile(row.image_url);
+                    }
                     processedUrls.add(row.image_url);
                 }
                 if (row.explanation_image_url && !processedUrls.has(row.explanation_image_url)) {
-                    await mediaController.deleteFile(row.explanation_image_url);
+                    if (!(await DeckService.isImageInUse(row.explanation_image_url))) {
+                        await mediaController.deleteFile(row.explanation_image_url);
+                    }
                     processedUrls.add(row.explanation_image_url);
                 }
                 // Extraer imágenes de la descripción del mazo
@@ -409,7 +423,9 @@ class DeckController {
                     const descImages = this._extractImageUrls(row.deck_description);
                     for (const url of descImages) {
                         if (!processedUrls.has(url)) {
-                            await mediaController.deleteFile(url);
+                            if (!(await DeckService.isImageInUse(url))) {
+                                await mediaController.deleteFile(url);
+                            }
                             processedUrls.add(url);
                         }
                     }
@@ -474,6 +490,60 @@ class DeckController {
         } catch (error) {
             console.error('[uploadCardImage] Error:', error);
             res.status(500).json({ error: 'Error al subir imagen de tarjeta' });
+        }
+    }
+    /**
+     * GET /api/decks/public
+     */
+    getPublicDecks = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20;
+            const decks = await DeckService.getPublicDecks(page, limit);
+            res.json({ success: true, decks });
+        } catch (error) {
+            console.error('[getPublicDecks] Error:', error);
+            res.status(500).json({ error: 'Error al obtener mazos públicos' });
+        }
+    }
+
+    /**
+     * PUT /api/decks/:deckId/visibility
+     */
+    toggleVisibility = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { is_public } = req.body;
+            const { userId, isGuest } = this._getUserContext(req);
+
+            if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión' });
+            if (typeof is_public !== 'boolean') return res.status(400).json({ error: 'Estado de visibilidad inválido' });
+
+            const updated = await DeckService.updateDeckVisibility(userId, deckId, is_public);
+            res.json({ success: true, deck: updated });
+        } catch (error) {
+            console.error('[toggleVisibility] Error:', error);
+            res.status(500).json({ error: 'Error al cambiar visibilidad' });
+        }
+    }
+
+    /**
+     * POST /api/decks/:deckId/clone
+     */
+    cloneDeck = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { userId, isGuest } = this._getUserContext(req);
+
+            if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para clonar' });
+
+            const newDeck = await DeckService.cloneDeck(userId, deckId);
+            await this._syncUsage(req);
+            
+            res.json({ success: true, deck: newDeck });
+        } catch (error) {
+            console.error('[cloneDeck] Error:', error);
+            res.status(500).json({ error: error.message || 'Error al clonar el mazo' });
         }
     }
 }

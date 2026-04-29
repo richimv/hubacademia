@@ -375,8 +375,26 @@ class ChatComponent {
 
                     AnalyticsApiService.recordFeedback(query, response, isHelpful, messageId);
 
-                    const feedbackContainer = feedbackBtn.parentElement;
-                    feedbackContainer.innerHTML = '<span class="feedback-thanks">¡Gracias por tu feedback!</span>';
+                    const feedbackContainer = feedbackBtn.closest('.feedback-container');
+                    const feedbackBtns = feedbackContainer.querySelectorAll('.feedback-btn');
+                    feedbackBtns.forEach(btn => btn.remove());
+                    
+                    const thanksSpan = document.createElement('span');
+                    thanksSpan.className = 'feedback-thanks';
+                    thanksSpan.textContent = '¡Gracias!';
+                    thanksSpan.style.marginRight = 'auto';
+                    thanksSpan.style.fontSize = '0.85rem';
+                    thanksSpan.style.color = 'var(--chat-primary)';
+                    thanksSpan.style.alignSelf = 'center';
+                    thanksSpan.style.opacity = '1';
+                    feedbackContainer.prepend(thanksSpan);
+
+                    setTimeout(() => {
+                        thanksSpan.style.transition = 'opacity 0.5s ease';
+                        thanksSpan.style.opacity = '0';
+                        setTimeout(() => thanksSpan.remove(), 500);
+                    }, 3000);
+                    
                     return;
                 }
 
@@ -844,20 +862,25 @@ class ChatComponent {
         }
 
         // ✅ NUEVO: Añadir botones de feedback a los mensajes del bot (excepto el de bienvenida).
-        // ✅ SOLUCIÓN DEFINITIVA: La decisión ahora se basa en la propiedad `feedbackGiven`
-        // que debería venir del servidor en el objeto `metadata`.
         if (sender === 'bot' && !metadata.isWelcome && currentMessageId) {
             // ✅ SOLUCIÓN: La decisión ahora se basa en la propiedad `is_helpful` que viene del servidor.
             // Esta puede ser true, false, o null.
+            const actionButtons = `
+                <button class="copy-msg-btn" title="Copiar texto" onclick="window.chatbot.copyToClipboard(this)"><i class="far fa-copy"></i></button>
+                <button class="save-note-btn" title="Guardar como nota" data-msg-id="${currentMessageId}"><i class="far fa-bookmark"></i></button>
+            `;
+
             if (metadata.is_helpful !== null && metadata.is_helpful !== undefined) { // Si el feedback ya fue dado (no es null/undefined)
-                messageHTML += `<div class="feedback-container"><span class="feedback-thanks">¡Gracias por tu feedback!</span></div>`;
+                messageHTML += `
+                    <div class="feedback-container" data-message-id="${currentMessageId}">
+                        ${actionButtons}
+                    </div>`;
             } else {
                 messageHTML += `
                     <div class="feedback-container" data-message-id="${currentMessageId}">
                         <button class="feedback-btn" data-helpful="true" title="Respuesta útil">👍</button>
                         <button class="feedback-btn" data-helpful="false" title="Respuesta no útil">👎</button>
-                        <button class="copy-msg-btn" title="Copiar texto" onclick="window.chatbot.copyToClipboard(this)"><i class="far fa-copy"></i></button>
-                        <button class="save-note-btn" title="Guardar como nota" data-msg-id="${currentMessageId}"><i class="far fa-bookmark"></i></button>
+                        ${actionButtons}
                     </div>`;
             }
         }

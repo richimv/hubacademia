@@ -106,13 +106,13 @@ class LibraryRepository {
     /**
      * Guarda una nota nueva (desde chat, flashcard o manual).
      */
-    async saveNote(userId, { title, content, sourceType = 'manual', sourceConversationId = null }) {
+    async saveNote(userId, { title, content, sourceType = 'manual', sourceConversationId = null, color = null }) {
         const query = `
-            INSERT INTO user_notes (user_id, title, content, source_type, source_conversation_id)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO user_notes (user_id, title, content, source_type, source_conversation_id, color)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *;
         `;
-        const { rows } = await db.query(query, [userId, title, content, sourceType, sourceConversationId]);
+        const { rows } = await db.query(query, [userId, title, content, sourceType, sourceConversationId, color]);
         return rows[0];
     }
 
@@ -121,7 +121,7 @@ class LibraryRepository {
      */
     async getUserNotes(userId) {
         const query = `
-            SELECT id, title, content, source_type, source_conversation_id, created_at, updated_at
+            SELECT id, title, content, source_type, source_conversation_id, color, created_at, updated_at
             FROM user_notes
             WHERE user_id = $1
             ORDER BY updated_at DESC;
@@ -133,14 +133,14 @@ class LibraryRepository {
     /**
      * Actualiza una nota existente.
      */
-    async updateNote(userId, noteId, { title, content }) {
+    async updateNote(userId, noteId, { title, content, color }) {
         const query = `
             UPDATE user_notes
-            SET title = COALESCE($3, title), content = COALESCE($4, content), updated_at = NOW()
+            SET title = COALESCE($3, title), content = COALESCE($4, content), color = COALESCE($5, color), updated_at = NOW()
             WHERE id = $1 AND user_id = $2
             RETURNING *;
         `;
-        const { rows } = await db.query(query, [noteId, userId, title, content]);
+        const { rows } = await db.query(query, [noteId, userId, title, content, color]);
         return rows[0];
     }
 

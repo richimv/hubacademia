@@ -93,8 +93,12 @@ class DeckExplorer {
         this.treeContainer.innerHTML = '';
 
         // 1. "Inicio" / All
-        const rootItem = this.createTreeItem({ id: 'ROOT', name: 'Inicio', icon: 'fas fa-home', children_count: 0 }, 0, true);
+        const rootItem = this.createTreeItem({ id: 'ROOT', name: 'Mis Mazos', icon: 'fas fa-home', children_count: 0 }, 0, true);
         this.treeContainer.appendChild(rootItem);
+
+        // 1.5 "Comunidad" / Explorador Público
+        const communityItem = this.createTreeItem({ id: 'COMMUNITY', name: 'Comunidad', icon: 'fas fa-globe', children_count: 0 }, 0, true);
+        this.treeContainer.appendChild(communityItem);
 
         // 2. Fetch API Roots
         const decks = await this.fetchDecks(null);
@@ -148,7 +152,13 @@ class DeckExplorer {
         // Click Action -> Set Active & Load View
         content.onclick = () => {
             this.setActive(deck.id);
-            if (isRootLink) this.manager.loadDashboard();
+            if (isRootLink) {
+                if (deck.id === 'COMMUNITY') {
+                    this.manager.loadCommunity();
+                } else {
+                    this.manager.loadDashboard();
+                }
+            }
             else this.manager.loadFolder(deck.id);
         };
 
@@ -313,6 +323,56 @@ class DeckExplorer {
         });
     }
 
+    static COLOR_OPTIONS = [
+        '#60a5fa', '#34d399', '#f472b6', '#22d3ee', '#a78bfa',
+        '#fbbf24', '#818cf8', '#2dd4bf', '#fb923c', '#c084fc',
+        '#f87171', '#fda4af', '#d4d4d8', '#67e8f9', '#94a3b8'
+    ];
+
+    static renderColorPicker(selectedColor) {
+        const grid = document.getElementById('color-picker-grid');
+        const colorInput = document.getElementById('new-deck-color');
+        colorInput.value = selectedColor || ''; // Si es nulo, usará el del icono
+        grid.innerHTML = '';
+
+        // Opcion Default (Auto)
+        const btnAuto = document.createElement('button');
+        btnAuto.type = 'button';
+        btnAuto.title = 'Color automático (basado en icono)';
+        btnAuto.dataset.color = '';
+        const isAutoSelected = colorInput.value === '';
+        btnAuto.style.cssText = `width:30px; height:30px; border-radius:50%; border:2px solid ${isAutoSelected ? 'white' : 'transparent'}; background: linear-gradient(135deg, #60a5fa, #f472b6); cursor:pointer; transition:all 0.2s; position:relative;`;
+        if (isAutoSelected) btnAuto.innerHTML = '<i class="fas fa-check" style="color:white; font-size:0.7rem; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-shadow: 0 0 2px black;"></i>';
+        
+        btnAuto.onclick = () => updateColorSelection('');
+        grid.appendChild(btnAuto);
+
+        DeckExplorer.COLOR_OPTIONS.forEach(color => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.color = color;
+            const isSelected = color === colorInput.value;
+            btn.style.cssText = `width:30px; height:30px; border-radius:50%; border:2px solid ${isSelected ? 'white' : 'transparent'}; background:${color}; cursor:pointer; transition:all 0.2s; position:relative; box-shadow: 0 2px 4px rgba(0,0,0,0.2);`;
+            if (isSelected) btn.innerHTML = '<i class="fas fa-check" style="color:white; font-size:0.7rem; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-shadow: 0 0 2px black;"></i>';
+
+            btn.onclick = () => updateColorSelection(color);
+            grid.appendChild(btn);
+        });
+
+        function updateColorSelection(color) {
+            colorInput.value = color;
+            grid.querySelectorAll('button').forEach(b => {
+                const isSel = b.dataset.color === color;
+                b.style.borderColor = isSel ? 'white' : 'transparent';
+                if (isSel) {
+                    b.innerHTML = '<i class="fas fa-check" style="color:white; font-size:0.7rem; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-shadow: 0 0 2px black;"></i>';
+                } else {
+                    b.innerHTML = '';
+                }
+            });
+        }
+    }
+
     static openCreateModal(parentId = null) {
         if (window.uiManager && !window.uiManager.validateFreemiumAction(null, 'flashcards')) return;
 
@@ -325,8 +385,9 @@ class DeckExplorer {
         const submitBtn = document.getElementById('btn-save-deck');
         if (submitBtn) submitBtn.innerText = 'Crear';
 
-        // Populate Icon Picker
+        // Populate Pickers
         DeckExplorer.renderIconPicker('fas fa-layer-group');
+        DeckExplorer.renderColorPicker('');
 
         document.getElementById('create-deck-modal').classList.add('active');
         if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {

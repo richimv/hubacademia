@@ -311,16 +311,24 @@ class LibraryUI {
         const preview = (note.content || '').substring(0, 120).replace(/[*#>\-\[\]]/g, '').trim();
         const sourceLabel = note.source_type === 'chat' ? 'Chat' : (note.source_type === 'flashcard' ? 'Flashcard' : 'Manual');
         const dateStr = new Date(note.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+        
+        let color = note.color || '#f59e0b';
+        if (!note.color) {
+            if (note.source_type === 'chat') color = '#3b82f6';
+            else if (note.source_type === 'audio_assistant') color = '#8b5cf6';
+            else if (note.source_type === 'flashcard') color = '#10b981';
+            else color = '#64748b';
+        }
 
         return `
-            <div class="library-item note-item" data-note-id="${note.id}" onclick="window.libraryUI.openNoteEditor('${note.id}')">
-                <div style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;background:rgba(245,158,11,0.1);border-radius:10px;flex-shrink:0;font-size:1.2rem;color:#f59e0b;">
+            <div class="library-item note-item" data-note-id="${note.id}" onclick="window.libraryUI.openNoteEditor('${note.id}')" style="border-left: 4px solid ${color};">
+                <div style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;background:${color}22;border-radius:10px;flex-shrink:0;font-size:1.2rem;color:${color};">
                     <i class="fas fa-sticky-note"></i>
                 </div>
                 <div class="library-item-info">
                     <div class="library-item-title">${note.title}</div>
                     <div class="note-preview">${preview}...</div>
-                    <div class="note-source">${sourceLabel} · ${dateStr}</div>
+                    <div class="note-source" style="color:${color}; font-weight:600;">${sourceLabel} <span style="color:#94a3b8; font-weight:normal;">· ${dateStr}</span></div>
                 </div>
             </div>
         `;
@@ -383,12 +391,17 @@ class LibraryUI {
 
                 <div class="note-modal-body" id="note-modal-editor" style="display:none;">
                     <input type="text" id="note-editor-title" class="note-editor-title" placeholder="Título de la nota">
-                    <div class="note-editor-toolbar">
+                    <div class="note-editor-toolbar" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
                         <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('**', '**')" title="Negrita"><i class="fas fa-bold"></i></button>
                         <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('*', '*')" title="Cursiva"><i class="fas fa-italic"></i></button>
                         <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('### ', '')" title="Título"><i class="fas fa-heading"></i></button>
                         <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('- ', '')" title="Lista"><i class="fas fa-list-ul"></i></button>
                         <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('> ', '')" title="Cita"><i class="fas fa-quote-left"></i></button>
+                        
+                        <!-- Color Selector -->
+                        <div style="margin-left:auto; display:flex; gap:0.3rem;" id="note-color-picker">
+                            <input type="hidden" id="note-editor-color" value="">
+                        </div>
                     </div>
                     <textarea id="note-editor-textarea" class="note-editor-textarea" placeholder="Escribe aquí tu nota..."></textarea>
                 </div>
@@ -425,6 +438,7 @@ class LibraryUI {
 
             document.getElementById('note-editor-title').value = note.title;
             document.getElementById('note-editor-textarea').value = note.content;
+            this._renderColorOptions(note.color || '');
             viewer.innerHTML = this._renderMarkdown(note.content);
             headerText.innerHTML = `<i class="fas fa-sticky-note"></i> Ver Nota`;
             
@@ -432,12 +446,38 @@ class LibraryUI {
         } else {
             document.getElementById('note-editor-title').value = '';
             document.getElementById('note-editor-textarea').value = '';
+            const defaultNewColor = '#64748b'; // Lighter Slate for new notes
+            this._renderColorOptions(defaultNewColor);
             headerText.innerHTML = `<i class="fas fa-plus"></i> Nueva Nota`;
             
             this.switchToEditor();
         }
 
         document.getElementById('note-modal-overlay').classList.add('open');
+    }
+
+    _renderColorOptions(selectedColor) {
+        const picker = document.getElementById('note-color-picker');
+        if (!picker) return;
+        const colorInput = document.getElementById('note-editor-color');
+        colorInput.value = selectedColor;
+
+        const options = ['#3b82f6', '#8b5cf6', '#10b981', '#64748b', '#f43f5e', '#f59e0b', '#0ea5e9', '#d946ef', '#14b8a6'];
+        picker.innerHTML = `<input type="hidden" id="note-editor-color" value="${selectedColor}">`;
+        
+        options.forEach(color => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.style.cssText = `width:20px; height:20px; border-radius:50%; border:2px solid ${color === colorInput.value ? 'white' : 'transparent'}; background:${color}; cursor:pointer;`;
+            btn.onclick = () => {
+                colorInput.value = color;
+                Array.from(picker.children).forEach(c => {
+                    if (c.tagName === 'BUTTON') c.style.borderColor = 'transparent';
+                });
+                btn.style.borderColor = 'white';
+            };
+            picker.appendChild(btn);
+        });
     }
 
     switchToEditor() {
@@ -491,7 +531,12 @@ class LibraryUI {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 },
-                body: JSON.stringify({ title, content, sourceType: this.editingNoteId ? undefined : 'manual' })
+                body: JSON.stringify({ 
+                    title, 
+                    content, 
+                    color: document.getElementById('note-editor-color') ? document.getElementById('note-editor-color').value : undefined,
+                    sourceType: this.editingNoteId ? undefined : 'manual' 
+                })
             });
 
             if (res.ok) {
