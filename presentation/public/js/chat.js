@@ -808,12 +808,14 @@ class ChatComponent {
             }
         }
 
-        // ✅ NUEVO: Guardar la consulta y la respuesta en el elemento para el feedback.
+        // ✅ NUEVO: Guardar la consulta y la respuesta en el elemento para el portapapeles.
+        messageDiv.dataset.response = text;
         if (sender === 'bot' && !metadata.isWelcome) {
             messageDiv.dataset.query = this.messages.find(m => m.sender === 'user')?.content || 'N/A';
-            messageDiv.dataset.response = text;
         }
-        let messageHTML = this.formatMessage(text);
+
+        const formattedText = this.formatMessage(text);
+        let messageHTML = `<div class="message-body">${formattedText}</div>`;
 
         // Agregar información de metadata para mensajes del bot
         // Intención/Confianza removed from UI as per user request.
@@ -823,6 +825,14 @@ class ChatComponent {
             messageHTML += `<div class="message-info">Intención: ${metadata.intencion} • Confianza: ${confidencePercent}%</div>`;
         }
         */
+
+        // ✅ AÑADIR BOTÓN DE COPIADO PARA EL USUARIO
+        if (sender === 'user') {
+            messageHTML += `
+                <div class="user-message-actions">
+                    <button class="copy-msg-btn user-copy" title="Copiar mi mensaje" onclick="window.chatbot.copyToClipboard(this)"><i class="far fa-copy"></i></button>
+                </div>`;
+        }
 
         // ✅ AÑADIR BOTÓN DE REDIRECCIÓN SI EXISTE LA URL
         if (sender === 'bot' && metadata.redirectUrl) {
@@ -846,6 +856,7 @@ class ChatComponent {
                     <div class="feedback-container" data-message-id="${currentMessageId}">
                         <button class="feedback-btn" data-helpful="true" title="Respuesta útil">👍</button>
                         <button class="feedback-btn" data-helpful="false" title="Respuesta no útil">👎</button>
+                        <button class="copy-msg-btn" title="Copiar texto" onclick="window.chatbot.copyToClipboard(this)"><i class="far fa-copy"></i></button>
                         <button class="save-note-btn" title="Guardar como nota" data-msg-id="${currentMessageId}"><i class="far fa-bookmark"></i></button>
                     </div>`;
             }
@@ -1132,6 +1143,25 @@ class ChatComponent {
         this.addWelcomeMessage();
         this.renderConversationList(); // Re-renderizar para desmarcar la activa
         document.getElementById('chatbot-input').focus();
+    }
+
+    async copyToClipboard(btn) {
+        try {
+            const container = btn.closest('.message');
+            const textToCopy = container.dataset.response || '';
+            await navigator.clipboard.writeText(textToCopy);
+            
+            const icon = btn.querySelector('i');
+            icon.className = 'fas fa-check';
+            btn.style.color = '#10b981'; // Success Green
+            
+            setTimeout(() => {
+                icon.className = 'far fa-copy';
+                btn.style.color = '';
+            }, 2000);
+        } catch (err) {
+            console.error('Error al copiar:', err);
+        }
     }
 }
 

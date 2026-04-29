@@ -85,6 +85,25 @@ Se ha centralizado la lógica de visualización en `markdown-renderer.js` para e
 - **Estética Premium:** Aplicación de degradados Indigo-Púrpura en textos destacados (`**bold**`) compartida en todo el sitio.
 - **Optimización Móvil:** Ajuste de espaciados y alineación óptica de precisión en listas para máxima legibilidad en pantallas pequeñas.
 
+## 9. Funcionalidades de Interacción y Escalabilidad
+Para mejorar la productividad del estudiante, se han implementado utilidades de respuesta consistentes:
+
+### 9.1. Utilidades de Respuesta (Productividad)
+- **Botón de Copiado**: Implementado en el Chat General y Tutor de Flashcards. Utiliza la `Clipboard API` para permitir el copiado rápido de explicaciones íntegras al portapapeles con feedback visual instantáneo.
+- **Guardado de Notas**: Integración directa con el servicio de biblioteca para convertir respuestas de IA en notas persistentes.
+
+### 9.2. Roadmap de Escalabilidad (Arquitectura Preparada)
+El sistema está diseñado para escalar hacia un modelo de "Asistente Multimodal" sin rediseñar el núcleo:
+- **Tablas de Datos**: El `MarkdownRenderer` está preparado para detectar sintaxis de tablas y renderizar componentes `<table>` premium (ideal para comparativas farmacológicas o cuadros sinópticos).
+- **Soporte Multimedia (GCS)**: El motor de renderizado se expandirá para procesar URLs de Google Cloud Storage. Esto permitirá que la IA incluya imágenes, diagramas clínicos y esquemas visuales directamente en el chat.
+- **Componentes Interactivos**: La arquitectura permite inyectar micro-componentes (ej. calculadoras de dosis, cronómetros de estudio) dentro de los contenedores de mensaje del bot.
+
+### 9.3. Procesamiento de Imágenes Médicas (Visión Artificial)
+Basado en el análisis de viabilidad técnica para producción:
+- **OCR de Bajo Costo**: Implementación híbrida de **OpenCV** (pre-procesamiento) + **Tesseract OCR** (extracción) para lectura de informes y etiquetas en imágenes sin costos por API.
+- **Análisis Avanzado (GCS/Vision AI)**: Integración con **Google Cloud Vision AI** para casos de alta complejidad, como interpretación de hallazgos en radiografías o segmentación anatómica.
+- **Fase de Despliegue**: Se priorizará el pre-procesamiento en el backend para garantizar privacidad y optimizar la precisión de los modelos de Deep Learning.
+
 ---
 
 **Documentación Actualizada y Auditada - 28 de Abril, 2026.**

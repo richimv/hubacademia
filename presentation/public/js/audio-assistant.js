@@ -125,7 +125,7 @@ class AudioAssistant {
         const resourceContentEl = document.getElementById('resource-content-body');
         if (resourceContentEl) {
             const rawText = resourceContentEl.innerText?.trim() || '';
-            context.text = rawText.substring(0, 3000);
+            context.text = rawText.substring(0, 10000); // ✅ Captura ampliada para análisis profundo
             context.type = 'resource';
             const titleEl = document.querySelector('.resource-info h1');
             context.label = titleEl ? `Recurso: ${titleEl.innerText}` : 'Recurso académico';
@@ -373,9 +373,9 @@ class AudioAssistant {
 
         let contextInjection = '';
         if (this.pageContext?.text) {
-            contextInjection = `\n\n[CONTEXTO DE LA PÁGINA - "${this.pageContext.label}"]\nEl siguiente es el resumen completo del recurso que el usuario está leyendo:\n---\n${this.pageContext.text}\n---\nINSTRUCCIONES: Usa TODO este resumen como fuente principal para responder las dudas del usuario. Sé detallado y no omitas información relevante del texto. Si el usuario pregunta algo que excede el resumen, complementa con tu conocimiento general, pero siempre prioriza los datos del recurso. Responde en español usando Markdown (negritas, viñetas). La respuesta será leída en voz alta.`;
+            contextInjection = `\n\n[CONTEXTO COMPLETO DEL RECURSO - "${this.pageContext.label}"]\n---\n${this.pageContext.text}\n---\nINSTRUCCIONES DE ANÁLISIS PROFUNDO:\n1. ANALIZA TODO: Lee y comprende la totalidad del contexto proporcionado arriba (incluso si es extenso).\n2. SALIDA CONCISA: Aunque hayas analizado todo, tu respuesta hablada/escrita debe ser un resumen EJECUTIVO, BRILLANTE y CONCISO. No menciones todo de golpe.\n3. MEMORIA ACTIVA: Mantén todos los detalles técnicos en tu "memoria" para responder preguntas específicas, rebuscadas o complejas del usuario más adelante.\n4. REFUERZO EXTERNO: Si el usuario hace una pregunta muy técnica que no está en el resumen, utiliza tu conocimiento experto de fuentes oficiales (según la especialidad: medicina, ingeniería, idiomas, educación, etc.) para dar una respuesta completa y veraz.\n5. INTERACCIÓN: Termina siempre invitando al usuario a profundizar en temas específicos del recurso.`;
         } else {
-            contextInjection = `\n\n[CONTEXTO] El usuario se encuentra en ${this.pageContext?.label || 'Hub Academia'}. Responde sus dudas usando tu conocimiento general. Sé claro, detallado y estructurado usando Markdown (negritas, viñetas). La respuesta será leída en voz alta.`;
+            contextInjection = `\n\n[CONTEXTO] El usuario se encuentra en ${this.pageContext?.label || 'Hub Academia'}. Responde de forma clara, directa y estructurada. Invita a seguir conversando.`;
         }
 
         this.sessionHistory.push({ role: 'user', content: userMessage });
@@ -392,7 +392,7 @@ class AudioAssistant {
                     message: userMessage + contextInjection,
                     specialization: 'neutral',
                     ephemeral: true,
-                    history: this.sessionHistory.slice(-6)
+                    history: this.sessionHistory.slice(-10)
                 })
             });
 
@@ -409,7 +409,7 @@ class AudioAssistant {
 
             this.lastResponseText = aiText;
             this.sessionHistory.push({ role: 'bot', content: aiText });
-            if (this.sessionHistory.length > 12) this.sessionHistory.splice(0, 2);
+            if (this.sessionHistory.length > 20) this.sessionHistory.splice(0, 2);
 
             this._setResponseHTML(aiText);
             this._setStatus('');
@@ -445,7 +445,7 @@ class AudioAssistant {
             .replace(/^[\*\-] /gm, '')
             .replace(/\n/g, '. ')
             .replace(/\.\.\./g, '.')
-            .substring(0, 1000);
+            .substring(0, 3000);
 
         this.currentUtterance = new SpeechSynthesisUtterance(cleanText);
         this.currentUtterance.lang = 'es-PE';

@@ -33,7 +33,7 @@ class FlashcardTutor {
                 <div class="tutor-message tutor-message-bot">Hola, soy tu tutor de apoyo. ¿Hay algo en esta tarjeta que no te haya quedado claro?</div>
             </div>
             <div class="tutor-input-area">
-                <input type="text" id="tutor-input" class="tutor-input-field" placeholder="Escribe tu duda aquí...">
+                <textarea id="tutor-input" class="tutor-input-field" placeholder="Escribe tu duda aquí..." rows="1"></textarea>
                 <button id="tutor-send" class="tutor-send-btn">
                     <i class="fas fa-paper-plane"></i>
                 </button>
@@ -53,9 +53,21 @@ class FlashcardTutor {
     _bindEvents() {
         this.dom.close.onclick = () => this.toggle(false);
         this.dom.send.onclick = () => this.sendMessage();
-        this.dom.input.onkeypress = (e) => {
-            if (e.key === 'Enter') this.sendMessage();
-        };
+        
+        // ✅ MEJORA: Soporte para multi-línea (Solo Shift + Enter)
+        this.dom.input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+                this.dom.input.style.height = 'auto';
+            }
+        });
+
+        // ✅ MEJORA: Auto-resize del textarea
+        this.dom.input.addEventListener('input', () => {
+            this.dom.input.style.height = 'auto';
+            this.dom.input.style.height = (this.dom.input.scrollHeight) + 'px';
+        });
     }
 
     toggle(forceState, context = null) {
@@ -157,16 +169,49 @@ class FlashcardTutor {
             
             const saveBtn = document.createElement('button');
             saveBtn.className = 'tutor-save-note-btn';
-            saveBtn.innerHTML = '<i class="far fa-bookmark"></i>';
+            saveBtn.innerHTML = '<i class="far fa-bookmark"></i> Guardar nota';
             saveBtn.title = 'Guardar como nota';
             saveBtn.onclick = () => this.saveAsNote(text, saveBtn);
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'tutor-save-note-btn'; // Reutilizamos clase para consistencia
+            copyBtn.innerHTML = '<i class="far fa-copy"></i> Copiar';
+            copyBtn.title = 'Copiar respuesta';
+            copyBtn.onclick = () => this.copyToClipboard(text, copyBtn);
             
             actions.appendChild(saveBtn);
+            actions.appendChild(copyBtn);
+            msgContainer.appendChild(actions);
+        } else if (role === 'user') {
+            // ✅ Botón de copiado para el usuario (útil en móvil)
+            const actions = document.createElement('div');
+            actions.className = 'tutor-message-actions user-actions';
+            
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'tutor-save-note-btn';
+            copyBtn.innerHTML = '<i class="far fa-copy"></i> Copiar';
+            copyBtn.onclick = () => this.copyToClipboard(text, copyBtn);
+            
+            actions.appendChild(copyBtn);
             msgContainer.appendChild(actions);
         }
 
         this.dom.messages.appendChild(msgContainer);
         this.dom.messages.scrollTop = this.dom.messages.scrollHeight;
+    }
+
+    async copyToClipboard(text, btn) {
+        try {
+            await navigator.clipboard.writeText(text);
+            const icon = btn.querySelector('i');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+            }, 2000);
+        } catch (err) {
+            console.error('Error al copiar:', err);
+        }
     }
 
     async saveAsNote(content, btn) {
