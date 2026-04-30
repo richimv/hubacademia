@@ -83,8 +83,13 @@ class AuthController {
             const { passwordHash, ...userWithoutPassword } = updatedUser;
             res.json({ message: 'Perfil actualizado con éxito', user: userWithoutPassword });
         } catch (error) {
-            console.error('Error en updateProfile:', error);
-            res.status(500).json({ error: error.message || 'Error interno al actualizar perfil' });
+            // 🛡️ Filtro de errores de validación (Business Rules)
+            if (error.message.includes('Solo puedes cambiar tu nombre')) {
+                return res.status(400).json({ error: error.message });
+            }
+            
+            console.error('❌ Error interno en updateProfile:', error);
+            res.status(500).json({ error: 'Error interno al actualizar perfil' });
         }
     }
 }

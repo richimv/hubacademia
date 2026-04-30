@@ -300,6 +300,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     daily_simulator_usage INTEGER DEFAULT 0, -- [NEW] For Safety Caps
     monthly_flashcards_usage INTEGER DEFAULT 0,
     last_usage_reset DATE,
+    last_name_change_at TIMESTAMP WITH TIME ZONE, -- [NEW] Para restricción de cambios
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     CONSTRAINT users_pkey PRIMARY KEY (id)

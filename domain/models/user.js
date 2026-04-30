@@ -1,7 +1,7 @@
 class User {
     // Constructor estandarizado
     // ✅ ESCALABILIDAD: Si cambias el límite gratuito global en el futuro, actualiza este default (50).
-    constructor(id, email, passwordHash, role, name, subscriptionStatus = 'pending', paymentId = null, usageCount = 0, maxFreeLimit = 50, subscriptionTier = 'free', subscriptionExpiresAt = null, dailySimulatorUsage = 0, dailyAiUsage = 0, dailyArenaUsage = 0, lastUsageReset = null) {
+    constructor(id, email, passwordHash, role, name, subscriptionStatus = 'pending', paymentId = null, usageCount = 0, maxFreeLimit = 50, subscriptionTier = 'free', subscriptionExpiresAt = null, dailySimulatorUsage = 0, dailyAiUsage = 0, dailyArenaUsage = 0, lastUsageReset = null, lastNameChangeAt = null) {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -19,6 +19,7 @@ class User {
         this.dailyAiUsage = dailyAiUsage;
         this.dailyArenaUsage = dailyArenaUsage;
         this.lastUsageReset = lastUsageReset;
+        this.lastNameChangeAt = lastNameChangeAt;
     }
 }
 

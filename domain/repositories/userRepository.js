@@ -22,7 +22,8 @@ class UserRepository {
             row.daily_simulator_usage,
             row.daily_ai_usage,
             row.daily_arena_usage,
-            row.last_usage_reset
+            row.last_usage_reset,
+            row.last_name_change_at
         );
     }
 
@@ -71,7 +72,6 @@ class UserRepository {
                     ON CONFLICT (email) 
                     DO UPDATE SET 
                         id = EXCLUDED.id,
-                        name = EXCLUDED.name,
                         updated_at = NOW()
                     RETURNING id, email, password_hash, role, name, subscription_status, payment_id, usage_count, max_free_limit, subscription_tier, subscription_expires_at, daily_simulator_usage, daily_ai_usage, daily_arena_usage, last_usage_reset;
                 `;
@@ -84,12 +84,13 @@ class UserRepository {
                   // console.log(`✨ [Identity] Sincronización exitosa: Perfil vinculado para ${email.toLowerCase()}`);
                   const updateQuery = `
                     UPDATE public.users 
-                    SET id = $1, name = $2, updated_at = NOW() 
-                    WHERE lower(email) = $3 
+                    SET id = $1, updated_at = NOW() 
+                    WHERE lower(email) = $2
                     RETURNING id, email, password_hash, role, name, subscription_status, payment_id, usage_count, max_free_limit, subscription_tier, subscription_expires_at, daily_simulator_usage, daily_ai_usage, daily_arena_usage, last_usage_reset;
                   `;
-                  const res = await db.query(updateQuery, [id, name, email.toLowerCase()]);
-                  return this._mapRowToUser(res.rows[0]);
+                  // Pasamos solo ID y Email (el nombre ya no se toca si hay conflicto)
+                  const updateRes = await db.query(updateQuery, [id, email.toLowerCase()]);
+                  return this._mapRowToUser(updateRes.rows[0]);
              }
 
             console.error('❌ Error crítico en persistencia de usuario:', dbError.message);
@@ -145,6 +146,9 @@ class UserRepository {
 
         const lastReset = userData.lastUsageReset !== undefined ? userData.lastUsageReset : userData.last_usage_reset;
         if (lastReset !== undefined) { fields.push(`last_usage_reset = $${idx++}`); values.push(lastReset); }
+
+        const lastNameChange = userData.lastNameChangeAt !== undefined ? userData.lastNameChangeAt : userData.last_name_change_at;
+        if (lastNameChange !== undefined) { fields.push(`last_name_change_at = $${idx++}`); values.push(lastNameChange); }
 
         if (fields.length === 0) return this.findById(id);
 

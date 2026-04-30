@@ -304,7 +304,9 @@ chatbot-tutor-uc/
 
 ## 9. ðŸ›¡ï¸ Seguridad y ProtecciÃ³n de Datos
 
-La seguridad ha sido una prioridad desde el diseÃ±o inicial ("Security by Design"). A continuaciÃ³n, se detallan las medidas implementadas para proteger la integridad del sistema y los datos de los usuarios.
+La seguridad ha sido una prioridad desde el diseño inicial ("Security by Design"). Para un análisis exhaustivo de todas las capas de protección, protocolos de cifrado y normativas de ciberseguridad aplicadas, consulte el documento: [SECURITY_STANDARDS.md](./SECURITY_STANDARDS.md).
+
+A continuación, se resumen las medidas clave:
 
 ### 8.1. AutenticaciÃ³n y GestiÃ³n de Identidad (Google-Only v2.0)
 *   **Proveedor Ãšnico:** Se utiliza **Google como Ãºnico proveedor de identidad**, eliminando formularios de registro/login con contraseÃ±a. Esto simplifica la UX y delega la seguridad de credenciales a Google.

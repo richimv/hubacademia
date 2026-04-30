@@ -124,10 +124,28 @@ class AuthService {
 
     async updateProfile(userId, { name }) {
         try {
-            const updatedUser = await this.userRepository.update(userId, { name });
+            const user = await this.userRepository.findById(userId);
+            if (!user) throw new Error('Usuario no encontrado');
+
+            // 🛡️ RESTRICCIÓN: Cambio de nombre solo 1 vez por semana
+            if (user.lastNameChangeAt) {
+                const lastChange = new Date(user.lastNameChangeAt);
+                const now = new Date();
+                const diffTime = Math.abs(now - lastChange);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays <= 7 && user.role !== 'admin') {
+                    const remainingDays = 7 - Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    throw new Error(`Solo puedes cambiar tu nombre una vez por semana. Faltan ${remainingDays} días.`);
+                }
+            }
+
+            const updatedUser = await this.userRepository.update(userId, { 
+                name,
+                last_name_change_at: new Date() 
+            });
             return updatedUser;
         } catch (error) {
-            console.error('Error updating profile:', error);
             throw error;
         }
     }

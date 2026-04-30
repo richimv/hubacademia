@@ -12,17 +12,22 @@ class AuthApiService {
     static async getValidToken() {
         if (window.supabaseClient) {
             try {
-                const { data } = await window.supabaseClient.auth.getSession();
-                if (data && data.session) {
-                    const freshToken = data.session.access_token;
+                // Intentar recuperar la sesión actual de la SDK de Supabase (Fuente de verdad)
+                const { data: { session }, error } = await window.supabaseClient.auth.getSession();
+                if (session && session.access_token) {
+                    const freshToken = session.access_token;
                     localStorage.setItem('authToken', freshToken);
                     return freshToken;
                 }
             } catch (e) {
-                console.warn("AuthApiService: Error refreshing ui token via Supabase", e);
+                console.warn("AuthApiService: Error recuperando sesión de Supabase", e);
             }
         }
-        return localStorage.getItem('authToken');
+        
+        // Fallback: Si no hay SDK o falló, usar localStorage pero validar que no sea basura
+        const localToken = localStorage.getItem('authToken');
+        if (!localToken || localToken === 'undefined' || localToken === 'null') return null;
+        return localToken;
     }
 
     // ✅ ÚNICO MÉTODO DE ACCESO: Sincronización Google OAuth

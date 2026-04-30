@@ -159,6 +159,11 @@ class SessionManager {
         this.notifyStateChange();
     }
 
+    setUser(user) {
+        this.currentUser = user;
+        this.notifyStateChange();
+    }
+
     async logout() {
         try {
             // 1. Limpiar estado local de Supabase (y revocar si es posible)
