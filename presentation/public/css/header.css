@@ -18,12 +18,9 @@ body.has-trial-mode {
 /* --- Estructura Principal y Header --- */
 .main-header {
     position: fixed;
-    /* ✅ FIXED: Anchored strictly */
     top: var(--trial-bar-height);
-    /* ✅ PUSH DOWN if trial bar exists */
     left: 0;
     width: 100%;
-    /* ✅ Layout original: 100% width with 4% padding */
     padding: 0 4%;
     display: flex;
     justify-content: space-between;
@@ -31,16 +28,11 @@ body.has-trial-mode {
     transition: top 0.3s ease;
     z-index: var(--header-z-index);
     height: var(--header-height-desktop);
-    /* ✅ Explicit Height */
-    /* ✅ EXTREME DARK MATTE AESTHETIC */
-    background: rgba(20, 20, 20, 0.85);
-    /* #141414 semi-transparent */
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(5, 5, 5, 0.8); /* Deep Black Glass */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    /* Frosted subtle border */
     overflow: visible !important;
-    /* Force visible just in case */
 }
 
 /* ✅ SPACER: Compensate for fixed header */
@@ -173,17 +165,15 @@ body {
 
 /* ✅ NUEVO DISEÑO: Botón "Registrarse" (Gradient Premium) */
 #user-session-controls .btn-primary {
-    background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
-    /* Blue 600 -> Sky 500 */
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
     color: white !important;
-    font-weight: 600;
-    padding: 0.6rem 1.5rem;
-    border-radius: var(--radius-md);
-    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3), 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+    font-weight: 700;
+    padding: 0.6rem 1.6rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    /* Sutil borde interno */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
 }
 
 #user-session-controls .btn-primary:hover {
@@ -225,14 +215,15 @@ body {
     display: none;
     position: absolute;
     right: 0;
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
     background: #0a0a0a;
-    min-width: 240px;
+    min-width: 260px;
     z-index: 2147483647;
-    border-radius: var(--radius-lg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    border: 1px solid var(--border-glow);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
     overflow: hidden;
+    padding: 8px;
 }
 
 .user-menu-dropdown.show {

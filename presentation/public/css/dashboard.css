@@ -1,22 +1,14 @@
 :root {
     --bg-page: #050505;
-    /* Main Base Match */
-    --bg-card: #1f1f1f;
-    /* Elevated Match */
+    --bg-card: #0a0a0a;
     --text-main: #f8fafc;
-    /* Slate 50 */
     --text-muted: #94a3b8;
-    /* Slate 400 */
     --accent-primary: #3b82f6;
-    /* Blue 500 */
     --accent-success: #10b981;
-    /* Emerald 500 */
     --accent-warning: #f59e0b;
-    /* Amber 500 */
     --accent-purple: #8b5cf6;
-    /* Violet 500 */
-    --border-color: #334155;
-    /* Slate 700 */
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-glow: rgba(59, 130, 246, 0.2);
 }
 
 * {
@@ -128,18 +120,20 @@ body {
 
 .kpi-card {
     background: var(--bg-card);
-    border-radius: 1rem;
+    border-radius: 20px;
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
     border: 1px solid var(--border-color);
-    transition: transform 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .kpi-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px);
+    border-color: var(--border-glow);
+    box-shadow: 0 25px 30px -10px rgba(0, 0, 0, 0.6);
 }
 
 .kpi-icon {
@@ -241,14 +235,13 @@ body {
 
 /* AI Insights Card */
 .ai-card {
-    background: linear-gradient(135deg, #141414 0%, #0a0a0a 100%);
-    border: 1px solid #6366f1;
-    /* Color Indigo */
-    border-radius: 12px;
+    background: linear-gradient(135deg, #0a0a0a 0%, #050505 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 20px;
     padding: 1.5rem;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
 .ai-card::before {
@@ -582,7 +575,7 @@ body {
 .form-input {
     width: 100%;
     padding: 0.75rem;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(10, 10, 10, 0.8);
     /* Fondo más oscuro para contrastar con el modal */
     border: 1px solid rgba(255, 255, 255, 0.15);
     /* Borde más visible */
@@ -603,7 +596,7 @@ textarea.form-input {
 .form-input:focus {
     outline: none;
     border-color: var(--accent-primary, #3b82f6);
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(10, 10, 10, 0.8);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 

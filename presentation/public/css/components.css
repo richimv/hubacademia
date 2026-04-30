@@ -155,9 +155,8 @@
     animation: fadeInUp 0.5s ease;
 }
 
-.no-results-container::before,
-.empty-state::before {
-    content: '\\f002';
+.no-results-container::before {
+    content: '\f002';
     /* FontAwesome Magnifying Glass */
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
@@ -1077,7 +1076,7 @@
 
     /* Ajuste de fondo para los botones ahora que no tienen blur */
     .urc-action-btn {
-        background: rgba(30, 41, 59, 0.95) !important;
+        background: rgba(10, 10, 10, 0.8) !important;
     }
 
     /* 🚨 Texto minimalista: menos padding y fuentes más pequeñas para que respire */

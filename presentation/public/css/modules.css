@@ -117,7 +117,7 @@
     height: 200px;
     position: relative;
     overflow: hidden;
-    background: #111827;
+    background: #0a0a0a;
     flex-shrink: 0;
 }
 
@@ -212,7 +212,7 @@
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.1);
     /* Fondo más oscuro para mayor contraste */
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(10, 10, 10, 0.8);
     color: #ffffff;
     font-size: 1.2rem;
     cursor: pointer;
@@ -235,7 +235,7 @@
 }
 
 .carousel-nav:hover {
-    background: #1e293b;
+    background: #0a0a0a;
     border-color: #60a5fa;
     color: #60a5fa;
     transform: translateY(-50%) scale(1.1);
@@ -273,7 +273,7 @@
         width: 40px;
         height: 40px;
         font-size: 1rem;
-        background: rgba(15, 23, 42, 0.8);
+        background: rgba(10, 10, 10, 0.8);
     }
 
     /* 🔥 En móvil, pegamos las flechas al borde de la pantalla */

@@ -18,20 +18,19 @@
 
 /* --- REDISEÑO COMPLETO DE MODALES --- */
 .modal-content {
-    background: var(--surface-alt, #1f1f1f);
-    border-radius: 16px;
+    background: #0a0a0a;
+    border-radius: 24px;
     width: 90%;
     max-width: 550px;
-    /* Un poco más ancho para los checkboxes */
     color: var(--text-main);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-    animation: fadeIn 0.3s ease;
+    border: 1px solid var(--border-glow);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
     max-height: 90vh;
-    /* Altura máxima */
     overflow: hidden;
-    margin: 10px; /* Margen de seguridad para móviles */
+    margin: 10px;
 }
 
 /* Optimización móvil para modales */
@@ -47,8 +46,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .modal-header h2 {
@@ -126,7 +125,7 @@
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     /* Borde más visible */
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(10, 10, 10, 0.8);
     /* Fondo más oscuro para contraste */
     color: var(--text-main);
     outline: none;
@@ -138,18 +137,18 @@
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
-    border-color: var(--accent);
-    background: rgba(15, 23, 42, 0.9);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    border-color: var(--primary-light);
+    background: rgba(10, 10, 10, 0.8);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
 }
 
 .modal-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border);
-    background: var(--surface-alt);
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.02);
     display: flex;
     justify-content: flex-end;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 /* ✅ CORRECCIÓN: Normalizar tamaño de botones en el footer del modal */
@@ -186,16 +185,16 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(2, 6, 23, 0.7); /* Deep Darker Overlay */
+    background: rgba(0, 0, 0, 0.85); /* Pure Black Overlay */
     z-index: 2147483647;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .premium-glass-dark {
-    background: rgba(15, 23, 42, 0.6) !important;
+    background: rgba(10, 10, 10, 0.8) !important;
     backdrop-filter: blur(24px) saturate(200%) !important;
     -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -203,11 +202,11 @@
 }
 
 .auth-prompt-modal .modal-content {
-    background: rgba(15, 23, 42, 0.65) !important;
+    background: #0a0a0a !important;
     backdrop-filter: blur(28px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid var(--border-glow) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9) !important;
     width: 92% !important;
     max-width: 420px !important;
     border-radius: 24px !important;

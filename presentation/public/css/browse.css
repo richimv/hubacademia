@@ -619,9 +619,9 @@
 
     .game-promo-overlay {
         background: linear-gradient(to top,
-                rgba(15, 23, 42, 1) 0%,
-                rgba(15, 23, 42, 0.9) 40%,
-                rgba(15, 23, 42, 0) 100%);
+                rgba(10, 10, 10, 0.8) 0%,
+                rgba(10, 10, 10, 0.8) 40%,
+                rgba(10, 10, 10, 0.8) 100%);
     }
 
     .game-promo-content {
@@ -753,7 +753,7 @@
 
 /* --- 1. ENCUADRE INTELIGENTE DE IMÁGENES (LETTERBOXING) --- */
 .unified-resource-card.has-bg-image .urc-visual-zone {
-    background-color: rgba(15, 23, 42, 0.85) !important;
+    background-color: rgba(10, 10, 10, 0.8) !important;
     /* Fondo oscuro elegante */
 }
 
@@ -786,7 +786,7 @@
 
     /* Ajuste de fondo para los botones sin blur */
     .urc-action-btn {
-        background: rgba(30, 41, 59, 0.9) !important;
+        background: rgba(10, 10, 10, 0.8) !important;
     }
 
     /* Textos e interiores Minimalistas (Para que no se vea apretado) */
