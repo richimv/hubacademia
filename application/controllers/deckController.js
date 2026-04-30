@@ -71,8 +71,8 @@ class DeckController {
 
             if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
 
-            // Security: Guests only for SYSTEM decks
-            if (isGuest && deck.type !== 'SYSTEM') {
+            // Security: Guests only for SYSTEM or PUBLIC decks
+            if (isGuest && deck.type !== 'SYSTEM' && !deck.is_public) {
                 return res.status(403).json({ error: 'Acceso denegado: Inicia sesión para ver este mazo' });
             }
 
@@ -195,10 +195,10 @@ class DeckController {
             const { deckId } = req.params;
             const { userId, isGuest } = this._getUserContext(req);
 
-            // Security: If Guest, ensure it's a SYSTEM deck
+            // Security: If Guest, ensure it's a SYSTEM deck OR a PUBLIC deck
             if (isGuest) {
                 const deck = await DeckService.getDeckById('GUEST', deckId);
-                if (!deck || deck.type !== 'SYSTEM') {
+                if (!deck || (deck.type !== 'SYSTEM' && !deck.is_public)) {
                     return res.status(403).json({ error: 'Acceso denegado: No puedes ver estas tarjetas' });
                 }
             }

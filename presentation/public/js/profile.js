@@ -137,3 +137,59 @@ document.getElementById('confirm-delete-btn').addEventListener('click', async ()
         btn.disabled = false;
     }
 });
+
+// Modal de edición de nombre
+const editNameModal = document.getElementById('edit-name-modal');
+const newNameInput = document.getElementById('new-name-input');
+const editNameError = document.getElementById('edit-name-error');
+
+function openEditNameModal() {
+    editNameModal.style.display = 'flex';
+    const currentName = document.getElementById('user-name').textContent;
+    newNameInput.value = currentName !== 'Cargando...' ? currentName : '';
+    editNameError.style.display = 'none';
+    newNameInput.focus();
+}
+
+function closeEditNameModal() {
+    editNameModal.style.display = 'none';
+}
+
+editNameModal.addEventListener('click', (e) => {
+    if (e.target === editNameModal) closeEditNameModal();
+});
+
+async function submitNameChange() {
+    const newName = newNameInput.value.trim();
+    if (newName.length < 2) {
+        editNameError.textContent = 'El nombre debe tener al menos 2 caracteres.';
+        editNameError.style.display = 'block';
+        return;
+    }
+
+    const btn = document.getElementById('confirm-edit-name-btn');
+    btn.textContent = 'Guardando...';
+    btn.disabled = true;
+
+    try {
+        const result = await AuthApiService.updateProfile(newName);
+        // Actualizar UI
+        document.getElementById('user-name').textContent = newName;
+        // Actualizar sesión local
+        if (window.sessionManager) {
+            const user = window.sessionManager.getUser();
+            if (user) {
+                user.name = newName;
+                window.sessionManager.setUser(user);
+            }
+        }
+        closeEditNameModal();
+    } catch (error) {
+        console.error(error);
+        editNameError.textContent = error.message || 'Error al actualizar el nombre.';
+        editNameError.style.display = 'block';
+    } finally {
+        btn.textContent = 'Guardar Cambios';
+        btn.disabled = false;
+    }
+}

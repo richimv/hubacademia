@@ -526,7 +526,7 @@ class TrainingRepository {
                 ROUND((COUNT(uf.id) FILTER (WHERE uf.interval_days > 21)::float / NULLIF(COUNT(uf.id), 0)) * 100) as mastery_percentage
             FROM decks d
             LEFT JOIN user_flashcards uf ON d.id = uf.deck_id
-            WHERE ${userId === 'GUEST' ? "d.type = 'SYSTEM'" : "d.user_id = $1"} AND d.id = ${userId === 'GUEST' ? '$1' : '$2'}
+            WHERE ${userId === 'GUEST' ? "(d.type = 'SYSTEM' OR d.is_public = true)" : "d.user_id = $1"} AND d.id = ${userId === 'GUEST' ? '$1' : '$2'}
             GROUP BY d.id
         `;
         const params = userId === 'GUEST' ? [deckId] : [userId, deckId];

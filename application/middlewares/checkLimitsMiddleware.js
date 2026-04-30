@@ -120,7 +120,13 @@ const checkAILimits = (type) => {
             const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 50);
 
             // 5. CHEQUEO DE LA OPERACIÓN SOLICITADA
-            if (type === 'chat_standard') {
+            // ✅ DETECCIÓN DINÁMICA: Si el chat viene con flag de audio, cambiar el tipo internamente
+            let effectiveType = type;
+            if (type === 'chat_standard' && req.body && req.body.isAudio) {
+                effectiveType = 'audio_assistant';
+            }
+
+            if (effectiveType === 'chat_standard') {
                 if (!isActiveAccount) {
                     if (hasGlobalLives) {
                         req.usageType = 'usage_count'; // Gasta la vida dorada
@@ -135,7 +141,7 @@ const checkAILimits = (type) => {
                 }
             }
             // El tipo 'chat_thinking' ha sido retirado. Los diagnósticos/chat usarán chat_standard o rutas sin límite.
-            else if (type === 'quiz_arena') {
+            else if (effectiveType === 'quiz_arena') {
                 if (!isActiveAccount) {
                     if (hasGlobalLives) {
                         req.usageType = 'usage_count'; // Gasta la vida dorada Global
@@ -149,7 +155,7 @@ const checkAILimits = (type) => {
                     req.usageType = 'daily_arena_usage';
                 }
             }
-            else if (type === 'monthly_flashcards') {
+            else if (effectiveType === 'monthly_flashcards') {
                 if (!isActiveAccount) {
                     if (hasGlobalLives) {
                         req.usageType = 'usage_count'; // Permite gestionar flashcards a costa de su vida global
@@ -173,7 +179,7 @@ const checkAILimits = (type) => {
                     }
                 }
             }
-            else if (type === 'simulator') {
+            else if (effectiveType === 'simulator') {
                 if (!isActiveAccount) {
                     if (hasGlobalLives) {
                         req.usageType = 'usage_count';
@@ -187,18 +193,22 @@ const checkAILimits = (type) => {
                     req.usageType = 'daily_simulator_usage';
                 }
             }
-            // ✅ AUDIO ASSISTANT: Solo Basic y Advanced (Free bloqueado siempre, sin importar vidas)
-            else if (type === 'audio_assistant') {
-                if (!isActiveAccount || tier === 'free') {
-                    // Paywall duro: ni las vidas del free pueden usarlo
-                    return res.status(403).json({
-                        error: 'El Asistente de Voz es una función Premium. Actualiza a Basic o Advanced para acceder.',
-                        reason: 'PREMIUM_FEATURE',
-                        paywall: true
-                    });
+            // ✅ AUDIO ASSISTANT: Acceso para todos, pero Free consume vidas globales
+            else if (effectiveType === 'audio_assistant') {
+                if (!isActiveAccount) {
+                    if (hasGlobalLives) {
+                        req.usageType = 'usage_count';
+                    } else {
+                        return res.status(403).json({ 
+                            error: 'Límite de mensajes de voz agotado. Mejora tu plan para continuar.', 
+                            reason: 'FREE_LIVES_EXHAUSTED',
+                            paywall: true
+                        });
+                    }
+                } else {
+                    // Para Basic/Advanced: es efímero, no se cobra uso de BD pero sí cuota de IA
+                    req.usageType = 'daily_ai_usage';
                 }
-                // Para Basic/Advanced: es efímero, no se cobra uso de BD pero sí cuota de IA
-                req.usageType = 'daily_ai_usage';
             }
             // Todo Ok. Se le pasa el control a la ruta. Luego el controlador DEBE sumar +1 al req.usageType
             next();

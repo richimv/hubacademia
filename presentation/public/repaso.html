@@ -230,11 +230,14 @@
     </div>
 
     <!-- Preview Deck Modal -->
-    <div class="modal-overlay" id="preview-deck-modal">
-        <div class="modal-content" style="max-width: 600px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2 id="preview-deck-title" style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin:0;">Previsualizar Mazo</h2>
-                <button type="button" class="btn-action btn-secondary-action" onclick="document.getElementById('preview-deck-modal').classList.remove('active')" style="padding: 0.5rem;"><i class="fas fa-times"></i></button>
+    <div class="modal-overlay" id="preview-deck-modal" onclick="if(event.target === this) window.repasoManager.closePreviewModal()">
+        <div class="modal-content" style="max-width: 600px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;" onclick="event.stopPropagation()">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem;">
+                <h2 id="preview-deck-title" style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin:0; line-height: 1.3; flex: 1;">Previsualizar Mazo</h2>
+                <button type="button" onclick="window.repasoManager.closePreviewModal()" 
+                    style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; padding: 0.5rem; line-height: 1; flex-shrink: 0;">
+                    &times;
+                </button>
             </div>
             
             <div id="preview-deck-content" style="overflow-y: auto; flex: 1; padding-right: 0.5rem; margin-bottom: 1rem;">
@@ -586,8 +589,8 @@
     </script>
 
     <script src="js/heatmap.js?v=v_pure_dark_v9"></script> <!-- Optional for Stats -->
-    <script src="js/deck-explorer.js?v=v11"></script> <!-- NEW -->
-    <script src="js/repaso.js?v=v11"></script>
+    <script src="js/deck-explorer.js?v=v12"></script> <!-- NEW -->
+    <script src="js/repaso.js?v=v13"></script>
 </body>
 
 </html>

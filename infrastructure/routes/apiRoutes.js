@@ -75,6 +75,7 @@ router.post('/users/preferences', auth, (req, res) => userPreferencesController.
 // --- Rutas de Autenticación (Exclusivo Google OAuth) ---
 router.get('/auth/me', auth, authController.getMe);
 router.post('/auth/sync', authLimiter, authController.syncUser); 
+router.put('/auth/profile', auth, authController.updateProfile);
 router.delete('/auth/delete-account', auth, authController.deleteAccount);
 
 // --- Rutas de Chat (Prefijo /api/chat) ---

@@ -121,6 +121,16 @@ class AuthService {
 
         return { success: true };
     }
+
+    async updateProfile(userId, { name }) {
+        try {
+            const updatedUser = await this.userRepository.update(userId, { name });
+            return updatedUser;
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = AuthService;

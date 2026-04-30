@@ -65,7 +65,7 @@ function markCurrentPlan(planId) {
         badge.innerHTML = '<i class="fas fa-check-circle"></i> Tu Plan Actual';
         badge.style.cssText = `
             position: absolute;
-            top: -12px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             background: #fbbf24;
@@ -145,7 +145,8 @@ document.querySelectorAll('.plan-select-btn').forEach(button => {
 
         // Si no hay token, intentar obtenerlo de supabase (caso borde) u obligar a login
         if (!token) {
-            window.location.href = 'login?redirect=pricing';
+            if (window.uiManager) window.uiManager.showAuthPromptModal();
+            else window.location.href = 'login?redirect=pricing';
             return;
         }
 

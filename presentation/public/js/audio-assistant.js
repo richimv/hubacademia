@@ -208,7 +208,12 @@ class AudioAssistant {
 
         const tier = user.subscriptionTier || 'free';
         const isActive = user.subscriptionStatus === 'active';
-        if (!isActive || tier === 'free') {
+        
+        // Si es free, dejamos entrar si tiene vidas (el backend controlará el cobro)
+        const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
+        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
+
+        if (!isActive && usage >= limit) {
             this._showPaywall();
             return;
         }
@@ -392,6 +397,7 @@ class AudioAssistant {
                     message: userMessage + contextInjection,
                     specialization: 'neutral',
                     ephemeral: true,
+                    isAudio: true, // ✅ Identificador para el middleware de límites
                     history: this.sessionHistory.slice(-10)
                 })
             });

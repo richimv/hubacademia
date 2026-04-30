@@ -12,8 +12,10 @@ class FlashcardTutor {
     }
 
     init() {
+        if (this.initialized) return;
         this._renderPanel();
         this._bindEvents();
+        this.initialized = true;
         console.log("🧠 Tutor IA Initialized (Gemini 2.5 Flash Lite Mode)");
     }
 
@@ -71,6 +73,14 @@ class FlashcardTutor {
     }
 
     toggle(forceState, context = null) {
+        // ✅ GUARD: Si el panel aún no se ha renderizado, intentamos inicializar
+        if (!this.dom.panel) {
+            this.init();
+        }
+        
+        // Si después de init sigue sin haber panel (ej. error en DOM), abortamos suavemente
+        if (!this.dom.panel) return;
+
         this.isOpen = forceState !== undefined ? forceState : !this.isOpen;
         this.dom.panel.classList.toggle('active', this.isOpen);
 
@@ -85,6 +95,11 @@ class FlashcardTutor {
     }
 
     clearChat() {
+        if (!this.dom.messages) {
+            this.init();
+        }
+        if (!this.dom.messages) return;
+
         this.messages = [];
         this.history = []; // Limpiar historial interno para el backend
         this.dom.messages.innerHTML = `

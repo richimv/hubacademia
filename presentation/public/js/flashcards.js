@@ -49,6 +49,9 @@ const FlashcardManager = (() => {
         setView('loading');
 
         const urlParams = new URLSearchParams(window.location.search);
+        currentDeckId = urlParams.get('deckId');
+        setupNavigationButtons();
+
         const isDemo = urlParams.get('demo') === 'true';
 
         if (!isDemo) {
@@ -66,6 +69,14 @@ const FlashcardManager = (() => {
             }
         } else {
             // --- GUEST DEMO MODE ---
+            const hasCompletedDemo = localStorage.getItem('hasCompletedDemo') === 'true';
+            if (hasCompletedDemo) {
+                console.log("🔒 Demo ya completada anteriormente. Mostrando bloqueo.");
+                setView('empty');
+                if (window.uiManager) window.uiManager.showAuthPromptModal();
+                return;
+            }
+
             console.log("🌟 MODO DEMO: Cargando tarjetas de ejemplo...");
             loadDemoCards();
         }
@@ -90,6 +101,30 @@ const FlashcardManager = (() => {
                 front_content: "¿Cuál es el signo clínico clásico de la apendicitis aguda caracterizado por dolor en fosa ilíaca derecha al presionar la fosa ilíaca izquierda?",
                 back_content: "Signo de Rovsing",
                 topic: "Cirugía General"
+            },
+            {
+                id: 'demo-fc-4',
+                front_content: "¿Cuál es el tratamiento de elección para la fibrilación auricular en un paciente inestable hemodinámicamente?",
+                back_content: "Cardioversión eléctrica sincronizada",
+                topic: "Cardiología"
+            },
+            {
+                id: 'demo-fc-5',
+                front_content: "¿Cuál es la causa más común de hipertiroidismo a nivel mundial?",
+                back_content: "Enfermedad de Graves",
+                topic: "Endocrinología"
+            },
+            {
+                id: 'demo-fc-6',
+                front_content: "Signo característico de la colecistitis aguda que consiste en el cese de la inspiración profunda al palpar el hipocondrio derecho.",
+                back_content: "Signo de Murphy",
+                topic: "Cirugía General"
+            },
+            {
+                id: 'demo-fc-7',
+                front_content: "¿Cuál es el agente etiológico más frecuente de la neumonía adquirida en la comunidad?",
+                back_content: "Streptococcus pneumoniae (Neumococo)",
+                topic: "Neumología"
             }
         ];
         updatePendingCount();
@@ -97,12 +132,7 @@ const FlashcardManager = (() => {
         setView('card');
     }
 
-    // --- Logic ---
-    // --- Logic ---
-    async function loadCards(token) {
-        const urlParams = new URLSearchParams(window.location.search);
-        currentDeckId = urlParams.get('deckId');
-
+    function setupNavigationButtons() {
         // Modificar el botón de "Progreso/Salir" según el contexto
         const progressBtn = document.getElementById('btn-progress');
         if (progressBtn && !progressBtn.dataset.bound) {
@@ -122,7 +152,11 @@ const FlashcardManager = (() => {
             backDeckBtn.dataset.bound = "true";
             backDeckBtn.addEventListener('click', () => handleExit());
         }
+    }
 
+    // --- Logic ---
+    async function loadCards(token) {
+        const urlParams = new URLSearchParams(window.location.search);
         // 2. Build URL based on context (Deck vs Global vs Single Card)
         const cardId = urlParams.get('cardId');
         let endpoint = `${API_URL}/due`; // Default Legacy Global
@@ -293,24 +327,46 @@ const FlashcardManager = (() => {
 
         // 1. Remove card from local queue
         const processedCard = queue.shift();
+        if (!processedCard) {
+            _isRating = false;
+            if (ui.controls) {
+                ui.controls.style.pointerEvents = '';
+                ui.controls.style.opacity = '';
+            }
+            return;
+        }
         updatePendingCount();
 
         if (isDemo) {
             console.log(`Demo card ${processedCard.id} rated with ${quality}`);
-            // Show toast if possible
-            if (window.uiManager && window.uiManager.showToast) {
-                window.uiManager.showToast('¡Buen progreso! Los usuarios registrados guardan esto en su curva de aprendizaje.', 'info');
+            // Reset block and UI for next card
+            _isRating = false;
+            if (ui.controls) {
+                ui.controls.style.pointerEvents = '';
+                ui.controls.style.opacity = '';
             }
 
             if (queue.length > 0) {
+                // UX: Evitar ver el dorso de la siguiente tarjeta
+                ui.card.style.transition = 'none';
                 renderCard(queue[0]);
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        ui.card.style.transition = '';
+                    });
+                });
             } else {
-                // End of demo — prompt to join
+                currentCard = null;
+                setView('empty');
+                
+                // ✅ PERSISTIR ESTADO: El usuario ya completó su demo
+                localStorage.setItem('hasCompletedDemo', 'true');
+
+                // ✅ USAR MODAL DE AUTENTICACIÓN NATIVO (EL DE SIEMPRE)
                 if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
-                    window.uiManager.showAuthPromptModal("¡Demo Finalizada! Únete gratis para crear tus propios mazos y dominar miles de tarjetas.");
+                    window.uiManager.showAuthPromptModal();
                 } else {
-                    alert("¡Has completado la demo! Regístrate para continuar.");
-                    window.location.href = '/register';
+                    handleExit();
                 }
             }
             return;

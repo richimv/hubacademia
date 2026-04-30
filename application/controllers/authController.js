@@ -6,6 +6,7 @@ class AuthController {
         this.getMe = this.getMe.bind(this);
         this.syncUser = this.syncUser.bind(this);
         this.deleteAccount = this.deleteAccount.bind(this);
+        this.updateProfile = this.updateProfile.bind(this);
     }
 
     /**
@@ -65,6 +66,25 @@ class AuthController {
         } catch (error) {
             console.error('Error en deleteAccount:', error);
             res.status(500).json({ error: 'Error al eliminar la cuenta.' });
+        }
+    }
+
+    /**
+     * Actualizar perfil de usuario
+     */
+    async updateProfile(req, res) {
+        try {
+            const { name } = req.body;
+            if (!name || name.trim().length < 2) {
+                return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres.' });
+            }
+            
+            const updatedUser = await this.authService.updateProfile(req.user.id, { name: name.trim() });
+            const { passwordHash, ...userWithoutPassword } = updatedUser;
+            res.json({ message: 'Perfil actualizado con éxito', user: userWithoutPassword });
+        } catch (error) {
+            console.error('Error en updateProfile:', error);
+            res.status(500).json({ error: error.message || 'Error interno al actualizar perfil' });
         }
     }
 }

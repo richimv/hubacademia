@@ -5,7 +5,8 @@
 class RepasoManager {
     constructor() {
         this.currentCards = [];
-        this.token = localStorage.getItem('authToken');
+        const rawToken = localStorage.getItem('authToken');
+        this.token = (rawToken && rawToken !== 'null' && rawToken !== 'undefined') ? rawToken : null;
         this._isCreatingDeck = false;
         this._pendingFiles = { front: null, back: null }; // ✅ NUEVO: Cola de archivos para subir al guardar
         this._pendingBulkCards = []; // ✅ NUEVO: Cola de tarjetas detectadas en Excel
@@ -328,6 +329,7 @@ class RepasoManager {
                 const iconHtml = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder');
                 
                 card.innerHTML = `
+                    <!-- Desktop layout -->
                     <div class="deck-card-desktop" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${this.escapeHtml(deck.name)}')">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                             <span class="deck-badge badge-system" style="font-size:0.6rem; padding:0.15rem 0.5rem; background: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.2);"><i class="fas fa-users"></i> PÚBLICO</span>
@@ -347,6 +349,25 @@ class RepasoManager {
                             </button>
                         </div>
                     </div>
+
+                    <!-- Mobile layout -->
+                    <div class="deck-card-mobile" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${this.escapeHtml(deck.name)}')">
+                        <div style="font-size:1.2rem; flex-shrink:0;">${iconHtml}</div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
+                            <div style="font-size:0.7rem; color:#94a3b8;">
+                                ${deck.total_cards || 0} tarj. • <i class="fas fa-download"></i> ${deck.saves_count || 0}
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; flex-shrink:0;">
+                             <button class="deck-action-btn" style="background:rgba(59,130,246,0.15); color:#60a5fa; border: 1px solid rgba(59,130,246,0.2); width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" 
+                                onclick="event.stopPropagation(); window.repasoManager.cloneDeck('${deck.id}')" 
+                                title="Clonar Mazo">
+                                <i class="fas fa-clone"></i>
+                            </button>
+                            <span class="deck-badge badge-system" style="font-size:0.5rem; padding:0.1rem 0.4rem;">PÚBLICO</span>
+                        </div>
+                    </div>
                 `;
                 grid.appendChild(card);
             });
@@ -357,11 +378,6 @@ class RepasoManager {
     }
 
     async previewPublicDeck(deckId, deckName) {
-        if (!this.token) {
-            window.uiManager.showAuthPrompt('Para previsualizar tarjetas necesitas iniciar sesión.');
-            return;
-        }
-
         const modal = document.getElementById('preview-deck-modal');
         const content = document.getElementById('preview-deck-content');
         document.getElementById('preview-deck-title').textContent = deckName;
@@ -369,17 +385,29 @@ class RepasoManager {
         // Asignar acción al botón de clonar
         const cloneBtn = document.getElementById('btn-preview-clone');
         cloneBtn.onclick = () => {
-            modal.classList.remove('active');
+            if (!this.token) {
+                window.uiManager.showAuthPromptModal();
+                return;
+            }
+            this.closePreviewModal();
             this.cloneDeck(deckId);
         };
+
+        // ✅ REGISTRAR ESTADO DEL MODAL (Bloquear scroll)
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('preview-deck-modal');
+        }
 
         modal.classList.add('active');
         content.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#60a5fa"></i></div>';
 
         try {
-            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
+            const fetchOptions = {};
+            if (this.token) {
+                fetchOptions.headers = { 'Authorization': `Bearer ${this.token}` };
+            }
+
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, fetchOptions);
             const data = await res.json();
             
             if (!data.success || !data.cards || data.cards.length === 0) {
@@ -427,12 +455,21 @@ class RepasoManager {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
+            if (res.status === 403) {
+                const err = await res.json().catch(() => ({}));
+                if (window.uiManager) window.uiManager.showPaywallModal(err.error, 'flashcards');
+                return;
+            }
+
             if (res.ok) {
                 window.uiManager.showToast('¡Mazo clonado con éxito!', 'success');
                 // Reload explorer to show new deck
                 this.explorer.loadTree();
+                if (window.sessionManager) {
+                    await window.sessionManager.refreshUser(); // Refrescar vidas en UI
+                }
             } else {
-                const err = await res.json();
+                const err = await res.json().catch(() => ({}));
                 window.uiManager.showToast(err.error || 'Error al clonar el mazo', 'error');
             }
         } catch (e) {
@@ -496,9 +533,13 @@ class RepasoManager {
                             <button class="btn-premium btn-premium-secondary" onclick="${this.token ? `window.repasoManager.openStatsModal(${total}, ${mastered}, ${pending})` : 'window.uiManager.showAuthPromptModal()'}">
                                 <i class="fas fa-chart-pie"></i> <span class="btn-text">Estadísticas</span>
                             </button>
+
+                            ${this.token ? `
                             <button class="btn-premium btn-premium-secondary" onclick="DeckExplorer.openGuideModal('${deck.id}', '${this.escapeHtml(deck.name)}')">
                                 <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
                             </button>
+                            ` : ''}
+
                             ${this.token && deck.type !== 'SYSTEM' ? `
                             <button class="btn-premium ${deck.is_public ? 'btn-premium-primary' : 'btn-premium-secondary'}" onclick="window.repasoManager.toggleDeckVisibility('${deck.id}', ${!deck.is_public})">
                                 <i class="fas ${deck.is_public ? 'fa-globe' : 'fa-lock'}"></i> <span class="btn-text">${deck.is_public ? 'Hacer Privado' : 'Hacer Público'}</span>
@@ -508,6 +549,9 @@ class RepasoManager {
                     </div>
                 </div>
             </div>
+
+            <!-- Espaciador para evitar solapamiento -->
+            <div style="margin-bottom: 2.5rem;"></div>
         `;
     }
 
@@ -830,15 +874,17 @@ class RepasoManager {
                     ${this.escapeHtml(c.back_content)}
                 </div>
                 <div class="card-row-actions">
-                    <button class="deck-action-btn deck-action-btn--play" title="Estudiar esta tarjeta" onclick="event.stopPropagation(); window.location.href='/flashcards?deckId=${c.deck_id}&cardId=${c.id}'">
+                    <button class="deck-action-btn deck-action-btn--play" title="Estudiar esta tarjeta" onclick="event.stopPropagation(); ${this.token ? `window.location.href='/flashcards?deckId=${c.deck_id}&cardId=${c.id}'` : `window.uiManager.showAuthPromptModal()`}">
                         <i class="fas fa-play" style="color: #60a5fa;"></i>
                     </button>
+                    ${this.token ? `
                     <button class="deck-action-btn" title="Editar" onclick="event.stopPropagation(); window.repasoManager.onEditCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`, \`${this.escapeHtml(c.back_content)}\`, '${c.image_url || ''}', '${c.explanation_image_url || ''}')">
                         <i class="fas fa-pen"></i>
                     </button>
                     <button class="deck-action-btn deck-action-btn--delete" title="Eliminar" onclick="event.stopPropagation(); window.repasoManager.onDeleteCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`)">
                         <i class="fas fa-trash"></i>
                     </button>
+                    ` : ''}
                 </div>
             `;
 
@@ -1312,8 +1358,7 @@ class RepasoManager {
             if (parentId) return []; // No subdecks for demo root yet
             // Return root guest decks
             return [
-                { id: 'demo-system-1', name: 'Repaso Medicina', icon: '🩺', type: 'SYSTEM', total_cards: 3, due_cards: 3, mastery_percentage: 10 },
-                { id: 'demo-user-1', name: 'Mis Tarjetas', icon: '👶', type: 'USER', total_cards: 3, due_cards: 3, mastery_percentage: 0 }
+                { id: 'demo-system-1', name: 'Repaso Medicina', icon: '🩺', type: 'SYSTEM', total_cards: 7, due_cards: 7, mastery_percentage: 10 }
             ];
         }
 
@@ -1332,9 +1377,12 @@ class RepasoManager {
             const demoDeck = [
                 { id: 'demo-fc-1', front_content: '¿Cuál es la tríada de Charcot para la Colangitis Aguda?', back_content: '1. Fiebre\n2. Ictericia\n3. Dolor en hipocondrio derecho', next_review_at: new Date(Date.now() - 10000).toISOString(), interval_days: 0, last_quality: null, topic: 'Gastroenterología' },
                 { id: 'demo-fc-2', front_content: 'Mujer de 30 años con exoftalmos, bocio y taquicardia. TSH disminuida y T4 libre elevada. Diagnóstico más probable.', back_content: 'Enfermedad de Graves-Basedow', next_review_at: new Date(Date.now() + 86400000).toISOString(), interval_days: 5, last_quality: 3, topic: 'Endocrinología' },
-                { id: 'demo-fc-3', front_content: '¿Cuál es el signo clínico clásico de la apendicitis aguda caracterizado por dolor en fosa ilíaca derecha al presionar la fosa ilíaca izquierda?', back_content: 'Signo de Rovsing', next_review_at: new Date(Date.now() - 50000).toISOString(), interval_days: 1, last_quality: 1, topic: 'Cirugía General' }
+                { id: 'demo-fc-3', front_content: '¿Cuál es el signo clínico clásico de la apendicitis aguda caracterizado por dolor en fosa ilíaca derecha al presionar la fosa ilíaca izquierda?', back_content: 'Signo de Rovsing', next_review_at: new Date(Date.now() - 50000).toISOString(), interval_days: 1, last_quality: 1, topic: 'Cirugía General' },
+                { id: 'demo-fc-4', front_content: '¿Cuál es el tratamiento de elección para la fibrilación auricular en un paciente inestable hemodinámicamente?', back_content: 'Cardioversión eléctrica sincronizada', next_review_at: new Date(Date.now() - 10000).toISOString(), interval_days: 0, last_quality: null, topic: 'Cardiología' },
+                { id: 'demo-fc-5', front_content: '¿Cuál es la causa más común de hipertiroidismo a nivel mundial?', back_content: 'Enfermedad de Graves', next_review_at: new Date(Date.now() - 10000).toISOString(), interval_days: 0, last_quality: null, topic: 'Endocrinología' },
+                { id: 'demo-fc-6', front_content: 'Signo característico de la colecistitis aguda que consiste en el cese de la inspiración profunda al palpar el hipocondrio derecho.', back_content: 'Signo de Murphy', next_review_at: new Date(Date.now() - 10000).toISOString(), interval_days: 0, last_quality: null, topic: 'Cirugía General' },
+                { id: 'demo-fc-7', front_content: '¿Cuál es el agente etiológico más frecuente de la neumonía adquirida en la comunidad?', back_content: 'Streptococcus pneumoniae (Neumococo)', next_review_at: new Date(Date.now() - 10000).toISOString(), interval_days: 0, last_quality: null, topic: 'Neumología' }
             ];
-            // Para huéspedes, siempre retornamos las 3 tarjetas de ejemplo sin importar el ID del mazo de demo
             return demoDeck;
         }
 
@@ -2073,6 +2121,14 @@ class RepasoManager {
      * Uses dummy data and triggers the Join Modal at the end.
      */
     startStudyDemo(deckId) {
+        // ✅ GUARD: Si ya completó la demo, bloqueamos antes de salir de la página
+        if (localStorage.getItem('hasCompletedDemo') === 'true') {
+            if (window.uiManager) {
+                window.uiManager.showAuthPromptModal();
+            }
+            return;
+        }
+
         if (typeof window.uiManager !== 'undefined' && window.uiManager.showToast) {
             window.uiManager.showToast('Iniciando modo demostración...', 'info');
         }
@@ -2083,6 +2139,15 @@ class RepasoManager {
     renderGuestBanner() {
         if (window.uiManager) {
             window.uiManager.renderGuestBanner('main-content');
+        }
+    }
+    closePreviewModal() {
+        const modal = document.getElementById('preview-deck-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+                window.uiManager.popModalState('preview-deck-modal');
+            }
         }
     }
 }

@@ -908,5 +908,41 @@ Para que las imágenes y recursos de GCS funcionen en el servidor de producción
 1. **GCS_BUCKET_NAME**: El nombre del bucket de producción (ej: chatbot-tutor-medical-images).
 2. **GCS_SERVICE_ACCOUNT_JSON**: Pega el contenido íntegro del archivo JSON de tu Service Account de Google Cloud. El sistema ahora lo parseará automáticamente para autenticarse sin necesidad del archivo físico en el servidor.
 
-> [!TIP]
 > Si tras configurar estas variables el error 404 persiste, verifica que la Service Account tenga el rol 'Storage Object Viewer' en el bucket correspondiente.
+
+---
+
+### [29/04/2026] Actualización: Gestión de Sesiones, Perfil y Estabilización
+
+**Gestión de Perfil de Usuario (UX/UI):**
+- **Modal de Edición de Nombre:** Se implementó la UI interactiva (`profile.html` y `profile.js`) permitiendo al usuario modificar su nombre visual. Los cambios se actualizan instantáneamente en la interfaz y en el backend mediante el método asíncrono `updateProfile`.
+- **Invalidación de Caché:** Se configuraron incrementos de versión en la cadena de consulta (query string `?v=X`) al cargar scripts vitales como `profile.js`, `repaso.js` y `flashcards.js`, previniendo errores de "Uncaught ReferenceError" tras la integración de nuevos métodos.
+
+**Estabilización del Flujo de Autenticación (Auth & Session):**
+- **Sintaxis Crítica (Error Domino):** Se resolvió un error de sintaxis en `authApiService.js` que colapsaba al `SessionManager`, paralizando todo el sistema de sesión.
+- **Inyección Transversal CSS (UI Manager):** Se corrigió la importación faltante de `modal.css` y `components.css` en `pricing.html`. Esto evitaba que la modal "Únete a Hub Academia" inyectada por el `uiManager` apareciera como un bloque de texto no formateado rompiendo la estructura inferior de la página web.
+- **Seguridad en Modo Invitado (Null checks):** Se implementó un control de tipo riguroso sobre `localStorage.getItem('authToken')` en `repaso.js` comprobando los literales de cadena `'null'` o `'undefined'`. Esto previene a los usuarios invitados visualizar opciones destructivas exclusivas (Edición/Eliminación) en los mazos demo o saltarse la conversión (Paywall/Auth Prompt) al momento de iniciar tarjetas individuales.
+- **Limpieza de Recursos Muertos (404 Not Found):** Se podaron dependencias de scripts no existentes (`aiApiService`, `courseApiService`, `bookApiService`) desde la cabecera del Admin Dashboard (`dashboard.html`), evitando interrupciones asíncronas perjudiciales para la carga del DOM en administradores.
+
+---
+
+### [30/04/2026] Actualización: Unificación de Diseño y Branding (Manta Black v3.0)
+
+Se ejecutó una reingeniería estética total para transicionar de un esquema de grises azulados (Slate) a una identidad **Dark Mode Premium** basada en negro puro y acentos de luz neón.
+
+**Infraestructura de Diseño (Source of Truth):**
+- **DESIGN_SYSTEM.md:** Se creó el manifiesto de diseño oficial que centraliza la paleta de colores, tipografía y comportamientos de componentes.
+- **Estandarización de Modales:** Se rediseñó el sistema de ventanas emergentes en `modal.css` siguiendo el patrón del "Modal de Edición de Perfil": fondo `#0a0a0a`, bordes con brillo azul (`var(--border-glow)`), radio de 24px y desenfoque de fondo de 12px.
+
+**Purga Estética Global:**
+- **Erradicación del Azulado Residual:** Se realizó una sustitución masiva en todo el directorio `/css/` eliminando colores como `#1e293b`, `#15172a` y similares. Fueron reemplazados por una escala de negros mate: `#050505` (Fondo), `#0a0a0a` (Superficie) y `#121212` (Elevación).
+- **Refinamiento de Botones:** Los botones primarios ahora ostentan un gradiente de 135 grados de Azul a Púrpura, alineándose con la estética de "Hub Académico Inteligente".
+
+**Aplicación en Páginas Críticas:**
+- **Perfil de Usuario:** Se eliminaron los estilos inline antiguos y se actualizaron las tarjetas de configuración para usar el nuevo sistema de cristal (Glassmorphism) oscuro.
+- **Admin Dashboard:** Se actualizaron las tarjetas KPI y el panel de IA para mejorar la legibilidad y el contraste sobre el fondo negro puro.
+- **Precios y Autenticación:** Se unificaron los contenedores de planes y formularios de login para reflejar la robustez y modernidad de la plataforma.
+
+**Correcciones de Estabilidad Post-Lanzamiento:**
+- **Sincronización Reactiva de Biblioteca:** Se corrigió un error donde los "Favoritos" y "Guardados" no se cargaban inmediatamente tras iniciar sesión sin recargar la página. Ahora, el `LibraryUI` escucha activamente al `sessionManager` para disparar una re-inicialización del `LibraryService` apenas se detecta un usuario activo.
+- **Renderizado de Iconos CSS:** Se eliminó un conflicto de renderizado en el estado vacío de la biblioteca que mostraba el código Unicode `\F002` en lugar del icono correspondiente, y se suprimió la duplicidad de iconos mediante pseudo-elementos CSS.

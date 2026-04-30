@@ -41,6 +41,10 @@ class LibraryUI {
             window.sessionManager.onStateChange((user) => {
                 if (user) {
                     this._renderFloatingButton();
+                    // ✅ RECARGA CRÍTICA: Sincronizar estado de biblioteca con el nuevo usuario
+                    this.service.init().then(() => {
+                        if (this.isDrawerOpen()) this.renderDrawerList();
+                    });
                 } else {
                     const toggleBtn = document.querySelector('.library-toggle');
                     if (toggleBtn) toggleBtn.remove();

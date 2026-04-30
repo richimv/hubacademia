@@ -97,4 +97,26 @@ class AuthApiService {
         }
         return data;
     }
+
+    static async updateProfile(name) {
+        const token = await this.getValidToken();
+        if (!token) throw new Error('No hay sesión activa.');
+
+        const API_URL = this.getApiUrl();
+        const response = await fetch(`${API_URL}/api/auth/profile`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ name })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || `Error del servidor (${response.status})`);
+        }
+        return data;
+    }
 }
