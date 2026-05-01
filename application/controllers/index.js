@@ -40,5 +40,6 @@ module.exports = {
     adminController: require('./adminController'), // ✅ NUEVO: Importar la instancia singleton directamente
     quizController: require('./quizController'), // ✅ NUEVO: QuizController
     userPreferencesController: require('./userPreferencesController'), // ✅ NUEVO: Multi-Domain Simulator
-    mediaController: require('./mediaController') // ✅ NUEVO: Proxy de imágenes GCS
+    mediaController: require('./mediaController'), // ✅ NUEVO: Proxy de imágenes GCS
+    speechController: require('./speechController') // ✅ NUEVO: Motor de Voz (ES, EN, IT)
 };

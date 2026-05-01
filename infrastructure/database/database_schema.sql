@@ -256,9 +256,10 @@ CREATE TABLE IF NOT EXISTS public.user_flashcards (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     deck_id UUID,
     sort_order INTEGER DEFAULT 0,
-    last_quality INTEGER DEFAULT 0,
     image_url TEXT,
     explanation_image_url TEXT,
+    audio_url_frente TEXT, -- ✅ NUEVO: Voz para el frente
+    audio_url_dorso TEXT,  -- ✅ NUEVO: Voz para el dorso
     is_template BOOLEAN DEFAULT false,
     CONSTRAINT user_flashcards_pkey PRIMARY KEY (id)
 );

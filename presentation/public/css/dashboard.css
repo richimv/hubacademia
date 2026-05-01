@@ -79,8 +79,8 @@ body {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     margin-bottom: 2rem;
     position: relative;
-    z-index: 2147483647;
-    /* Ensure stacking context is the highest */
+    z-index: 2000000;
+    /* Ensure stacking context is very high but below toasts */
 }
 
 .btn-back {
@@ -529,8 +529,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 2147483647;
-    /* Garantizar sobreponerse al Header */
+    z-index: 2000000;
+    /* Garantizar sobreponerse al resto de la UI */
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;

@@ -27,6 +27,29 @@ class DeckController {
     }
 
     /**
+     * ✅ NUEVO: Helper para procesar la síntesis de voz y subir a GCS.
+     */
+    _processAudioTts = async (text, side = 'front', lang = 'es-ES') => {
+        if (!text || text.trim().length < 2) return null;
+        try {
+            const TtsService = require('../../domain/services/ttsService');
+            const mediaController = require('./mediaController');
+
+            // 1. Sintetizar
+            const audioBuffer = await TtsService.synthesize(text, lang);
+
+            // 2. Subir a GCS
+            const fileName = `tts_${side}_${Date.now()}.mp3`;
+            const gcsPath = await mediaController.uploadRawBuffer(audioBuffer, fileName, 'audio/mpeg', 'audio-cards');
+
+            return gcsPath;
+        } catch (e) {
+            console.error(`⚠️ [TTS Error] No se pudo generar audio para: ${text.substring(0, 20)}...`, e.message);
+            return null; // Fallback: Tarjeta sin audio pero creada
+        }
+    }
+
+    /**
      * Helper to increment usage if middleware detected a quota need
      */
     _syncUsage = async (req) => {
@@ -137,7 +160,7 @@ class DeckController {
             if (orphanedImages.length > 0) {
                 const mediaController = require('./mediaController');
                 for (const url of orphanedImages) {
-                    if (!(await DeckService.isImageInUse(url))) {
+                    if (!(await DeckService.isMediaInUse(url))) {
                         await mediaController.deleteFile(url);
                     }
                 }
@@ -217,7 +240,7 @@ class DeckController {
     addCard = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const { front, back, imageUrl, backImageUrl } = req.body;
+            const { front, back, imageUrl, backImageUrl, generateTtsFront, generateTtsBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack } = req.body;
             const { userId } = this._getUserContext(req);
 
             // Validar que al menos haya texto o imagen en ambos lados
@@ -228,7 +251,18 @@ class DeckController {
                 return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
             }
 
-            const card = await DeckService.addCard(userId, deckId, front, back, imageUrl, backImageUrl);
+            // ✅ NUEVO: Generación de Audio TTS Individual
+            let audioUrlFront = null;
+            let audioUrlBack = null;
+
+            if (generateTtsFront && front) {
+                audioUrlFront = await this._processAudioTts(front, 'front', ttsLangFront || 'es-ES');
+            }
+            if (generateTtsBack && back) {
+                audioUrlBack = await this._processAudioTts(back, 'back', ttsLangBack || 'es-ES');
+            }
+
+            const card = await DeckService.addCard(userId, deckId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
             await this._syncUsage(req);
             res.json({ success: true, card });
         } catch (error) {
@@ -249,7 +283,29 @@ class DeckController {
             if (isGuest) return res.status(403).json({ error: 'Inicia sesión para subir tarjetas.' });
             if (!cards || !Array.isArray(cards)) return res.status(400).json({ error: 'Se requiere un array de tarjetas.' });
 
-            const result = await DeckService.addBulkCards(userId, deckId, cards);
+            const { generateTtsFront, generateTtsBack, ttsLang } = req.body;
+
+            // LÍMITE DE SEGURIDAD (Backend Enforcement)
+            if (cards.length > 50) {
+                return res.status(400).json({ error: 'Límite de 50 tarjetas excedido para carga masiva.' });
+            }
+
+            // ✅ NUEVO: Procesamiento por lotes (Batch) para TTS con idioma correcto
+            const processedCards = await Promise.all(cards.map(async (c) => {
+                let audioUrlFront = null;
+                let audioUrlBack = null;
+
+                if (generateTtsFront && c.front) {
+                    audioUrlFront = await this._processAudioTts(c.front, 'front', ttsLang || 'es-ES');
+                }
+                if (generateTtsBack && c.back) {
+                    audioUrlBack = await this._processAudioTts(c.back, 'back', ttsLang || 'es-ES');
+                }
+
+                return { ...c, audioUrlFront, audioUrlBack };
+            }));
+
+            const result = await DeckService.addBulkCards(userId, deckId, processedCards);
             await this._syncUsage(req);
             res.json({ success: true, count: result.inserted });
         } catch (error) {
@@ -297,11 +353,21 @@ class DeckController {
             // 2. Eliminar tarjetas de la BD
             await DeckService.deleteBulkCards(userId, cardIds);
 
-            // 3. Limpiar GCS
+            // 3. Limpiar GCS (solo si no están en uso)
             const mediaController = require('./mediaController');
             for (const img of imagesToDelete) {
-                if (img.image_url) await mediaController.deleteFile(img.image_url);
-                if (img.explanation_image_url) await mediaController.deleteFile(img.explanation_image_url);
+                if (img.image_url && !(await DeckService.isMediaInUse(img.image_url))) {
+                    await mediaController.deleteFile(img.image_url);
+                }
+                if (img.explanation_image_url && !(await DeckService.isMediaInUse(img.explanation_image_url))) {
+                    await mediaController.deleteFile(img.explanation_image_url);
+                }
+                if (img.audio_url_frente && !(await DeckService.isMediaInUse(img.audio_url_frente))) {
+                    await mediaController.deleteFile(img.audio_url_frente);
+                }
+                if (img.audio_url_dorso && !(await DeckService.isMediaInUse(img.audio_url_dorso))) {
+                    await mediaController.deleteFile(img.audio_url_dorso);
+                }
             }
 
             res.json({ success: true, deletedCount: cardIds.length });
@@ -317,7 +383,7 @@ class DeckController {
     updateCard = async (req, res) => {
         try {
             const { cardId } = req.params;
-            const { front, back, imageUrl, backImageUrl } = req.body;
+            const { front, back, imageUrl, backImageUrl, generateTtsFront, generateTtsBack, deleteAudioFront, deleteAudioBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack } = req.body;
             const { userId } = this._getUserContext(req);
 
             // Validar que al menos haya texto o imagen en ambos lados
@@ -328,11 +394,36 @@ class DeckController {
                 return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
             }
 
-            // 1. Obtener la tarjeta actual para comparar imágenes
+            // 1. Obtener la tarjeta actual para comparar imágenes y audios
             const currentCard = await DeckService.getCardById(cardId);
             if (!currentCard) return res.status(404).json({ error: 'Tarjeta no encontrada' });
 
-            const card = await DeckService.updateCard(userId, cardId, front, back, imageUrl, backImageUrl);
+            // ✅ NUEVO: Actualización de Audio TTS
+            let audioUrlFront = currentCard.audio_url_frente;
+            let audioUrlBack = currentCard.audio_url_dorso;
+
+            // Procesar borrado manual desde la UI
+            if (deleteAudioFront && audioUrlFront) {
+                await require('./mediaController').deleteFile(audioUrlFront);
+                audioUrlFront = null;
+            }
+            if (deleteAudioBack && audioUrlBack) {
+                await require('./mediaController').deleteFile(audioUrlBack);
+                audioUrlBack = null;
+            }
+
+            if (generateTtsFront && front) {
+                // Borrar audio viejo si existía y no se borró ya manualmente
+                if (audioUrlFront) await require('./mediaController').deleteFile(audioUrlFront);
+                audioUrlFront = await this._processAudioTts(front, 'front', ttsLangFront || 'es-ES');
+            }
+            if (generateTtsBack && back) {
+                // Borrar audio viejo si existía y no se borró ya manualmente
+                if (audioUrlBack) await require('./mediaController').deleteFile(audioUrlBack);
+                audioUrlBack = await this._processAudioTts(back, 'back', ttsLangBack || 'es-ES');
+            }
+
+            const card = await DeckService.updateCard(userId, cardId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
             await this._syncUsage(req);
 
             // 2. Limpieza de GCS (Post-Guardado)
@@ -340,12 +431,12 @@ class DeckController {
             const mediaController = require('./mediaController');
             
             if (currentCard.image_url && currentCard.image_url !== imageUrl) {
-                if (!(await DeckService.isImageInUse(currentCard.image_url))) {
+                if (!(await DeckService.isMediaInUse(currentCard.image_url))) {
                     await mediaController.deleteFile(currentCard.image_url);
                 }
             }
             if (currentCard.explanation_image_url && currentCard.explanation_image_url !== backImageUrl) {
-                if (!(await DeckService.isImageInUse(currentCard.explanation_image_url))) {
+                if (!(await DeckService.isMediaInUse(currentCard.explanation_image_url))) {
                     await mediaController.deleteFile(currentCard.explanation_image_url);
                 }
             }
@@ -371,13 +462,19 @@ class DeckController {
 
             await DeckService.deleteCard(userId, cardId);
 
-            // 2. Limpiar GCS solo si nadie mas usa la imagen
+            // 2. Limpiar GCS solo si nadie mas usa la imagen/audio
             const mediaController = require('./mediaController');
-            if (card.image_url && !(await DeckService.isImageInUse(card.image_url))) {
+            if (card.image_url && !(await DeckService.isMediaInUse(card.image_url))) {
                 await mediaController.deleteFile(card.image_url);
             }
-            if (card.explanation_image_url && !(await DeckService.isImageInUse(card.explanation_image_url))) {
+            if (card.explanation_image_url && !(await DeckService.isMediaInUse(card.explanation_image_url))) {
                 await mediaController.deleteFile(card.explanation_image_url);
+            }
+            if (card.audio_url_frente && !(await DeckService.isMediaInUse(card.audio_url_frente))) {
+                await mediaController.deleteFile(card.audio_url_frente);
+            }
+            if (card.audio_url_dorso && !(await DeckService.isMediaInUse(card.audio_url_dorso))) {
+                await mediaController.deleteFile(card.audio_url_dorso);
             }
 
             res.json({ success: true });
@@ -407,23 +504,35 @@ class DeckController {
 
             for (const row of rawImageData) {
                 if (row.image_url && !processedUrls.has(row.image_url)) {
-                    if (!(await DeckService.isImageInUse(row.image_url))) {
+                    if (!(await DeckService.isMediaInUse(row.image_url))) {
                         await mediaController.deleteFile(row.image_url);
                     }
                     processedUrls.add(row.image_url);
                 }
                 if (row.explanation_image_url && !processedUrls.has(row.explanation_image_url)) {
-                    if (!(await DeckService.isImageInUse(row.explanation_image_url))) {
+                    if (!(await DeckService.isMediaInUse(row.explanation_image_url))) {
                         await mediaController.deleteFile(row.explanation_image_url);
                     }
                     processedUrls.add(row.explanation_image_url);
+                }
+                if (row.audio_url_frente && !processedUrls.has(row.audio_url_frente)) {
+                    if (!(await DeckService.isMediaInUse(row.audio_url_frente))) {
+                        await mediaController.deleteFile(row.audio_url_frente);
+                    }
+                    processedUrls.add(row.audio_url_frente);
+                }
+                if (row.audio_url_dorso && !processedUrls.has(row.audio_url_dorso)) {
+                    if (!(await DeckService.isMediaInUse(row.audio_url_dorso))) {
+                        await mediaController.deleteFile(row.audio_url_dorso);
+                    }
+                    processedUrls.add(row.audio_url_dorso);
                 }
                 // Extraer imágenes de la descripción del mazo
                 if (row.deck_description) {
                     const descImages = this._extractImageUrls(row.deck_description);
                     for (const url of descImages) {
                         if (!processedUrls.has(url)) {
-                            if (!(await DeckService.isImageInUse(url))) {
+                            if (!(await DeckService.isMediaInUse(url))) {
                                 await mediaController.deleteFile(url);
                             }
                             processedUrls.add(url);
@@ -445,21 +554,34 @@ class DeckController {
     generateCards = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const { topic } = req.body;
+            const { topic, amount, generateTtsFront, generateTtsBack, ttsLang } = req.body;
             const { userId } = this._getUserContext(req);
 
             if (!topic) return res.status(400).json({ error: 'El tema es obligatorio' });
+
+            // LÍMITE DE SEGURIDAD IA
+            const requestedAmount = Math.min(Math.max(parseInt(amount) || 5, 1), 20);
 
             // 🔍 REGLA DE ORO: Obtener tarjetas existentes para evitar duplicados
             const existingCards = await DeckService.getDeckCards(deckId);
             const existingFronts = existingCards.map(c => c.front_content);
 
             const TrainingService = require('../../domain/services/trainingService');
-            const cards = await TrainingService.generateFlashcardsFromTopic(topic, 10, existingFronts);
+            const cards = await TrainingService.generateFlashcardsFromTopic(topic, requestedAmount, existingFronts);
 
             const savedCards = [];
             for (const card of cards) {
-                const saved = await DeckService.addCard(userId, deckId, card.front, card.back);
+                let audioUrlFront = null;
+                let audioUrlBack = null;
+
+                if (generateTtsFront) {
+                    audioUrlFront = await this._processAudioTts(card.front, 'front', ttsLang || 'es-ES');
+                }
+                if (generateTtsBack) {
+                    audioUrlBack = await this._processAudioTts(card.back, 'back', ttsLang || 'es-ES');
+                }
+
+                const saved = await DeckService.addCard(userId, deckId, card.front, card.back, null, null, audioUrlFront, audioUrlBack);
                 savedCards.push(saved);
             }
 

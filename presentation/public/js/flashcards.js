@@ -11,6 +11,7 @@ const FlashcardManager = (() => {
     let isFlipped = false;
     let syncQueue = []; 
     let currentDeckId = null; // ✅ Persist deckId at module level
+    let currentAudio = null; // ✅ Manejo de audio global para detener si se cambia de tarjeta
 
     // --- DOM Elements ---
     const views = {
@@ -221,6 +222,14 @@ const FlashcardManager = (() => {
         ui.frontText.innerHTML = card.front_content.replace(/\n/g, '<br>');
         ui.backText.innerHTML = card.back_content.replace(/\n/g, '<br>');
 
+        // ✅ NUEVO: Lógica de Ocultación (Modo Listening/Speaking)
+        // Usamos visibility:hidden para mantener el layout intacto pero forzar el oído
+        ui.frontText.style.visibility = card.hide_text_frente ? 'hidden' : 'visible';
+        ui.backText.style.visibility = card.hide_text_dorso ? 'hidden' : 'visible';
+
+        if (ui.frontImage) ui.frontImage.style.visibility = card.hide_text_frente ? 'hidden' : 'visible';
+        if (ui.backImage) ui.backImage.style.visibility = card.hide_text_dorso ? 'hidden' : 'visible';
+
         // --- Render Images if they exist ---
         const hasFrontImage = !!card.image_url;
         const hasBackImage = !!card.explanation_image_url;
@@ -270,6 +279,63 @@ const FlashcardManager = (() => {
 
         adjustFontSize(ui.frontText, card.front_content || '', hasFrontImage);
         adjustFontSize(ui.backText, card.back_content || '', hasBackImage);
+
+        // ✅ NUEVO: Renderizar Botones de Audio Premium
+        renderAudioButton(frontFace, card.audio_url_frente, 'front', !!card.hide_text_frente);
+        renderAudioButton(backFace, card.audio_url_dorso, 'back', !!card.hide_text_dorso);
+    }
+
+    /**
+     * ✅ NUEVO: Renderiza un botón de audio minimalista con glassmorphism
+     */
+    function renderAudioButton(parent, audioUrl, side, isCentered = false) {
+        // Eliminar botones previos si existen en TODA la cara de la tarjeta
+        const rootFace = parent.closest('.fc-card-face') || parent;
+        rootFace.querySelectorAll('.fc-audio-btn').forEach(b => b.remove());
+
+        if (!audioUrl) return;
+
+        const btn = document.createElement('button');
+        btn.className = `fc-audio-btn fc-audio-btn--${side}`;
+        if (isCentered) btn.classList.add('fc-audio-btn--centered');
+
+        btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+        btn.title = isCentered ? "Reproducir audio (Modo Escucha)" : "Reproducir pronunciación premium";
+        
+        // Importante: stopPropagation para que la tarjeta no se de vuelta al clickear el audio
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            playAudio(audioUrl);
+        };
+
+        parent.appendChild(btn);
+    }
+
+    /**
+     * ✅ NUEVO: Lógica de reproducción de audio
+     */
+    let _audioDebounce = false;
+    function playAudio(url) {
+        if (_audioDebounce) return;
+        _audioDebounce = true;
+        setTimeout(() => { _audioDebounce = false; }, 800); // 800ms de bloqueo
+
+        try {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            const fullUrl = window.resolveImageUrl(url);
+            currentAudio = new Audio(fullUrl);
+            currentAudio.play().catch(e => {
+                console.error("Audio playback failed:", e);
+                _audioDebounce = false;
+            });
+        } catch (e) {
+            console.error("Error playing audio:", e);
+            _audioDebounce = false;
+        }
     }
 
     function toggleFlip() {
@@ -277,6 +343,9 @@ const FlashcardManager = (() => {
         if (isFlipped) {
             ui.card.classList.add('is-flipped');
             ui.controls.classList.add('visible'); // Show controls when answer is revealed
+            
+            // ✅ NUEVO: Lanzar efecto de descubrimiento del Tutor (Aura + Partículas)
+            triggerDiscoveryEffect();
             
             // ✅ INYECTAR BOTÓN HERMOSO DEL TUTOR
             if (!document.getElementById('flashcard-tutor-trigger')) {
@@ -481,11 +550,53 @@ const FlashcardManager = (() => {
     // --- Event Listeners ---
     ui.card.addEventListener('click', toggleFlip);
 
+    /**
+     * ✅ EFECTO DE DESCUBRIMIENTO DEL TUTOR
+     * Lanza un aura y partículas que suben desde el fondo para avisar que hay algo nuevo (el chat).
+     */
+    function triggerDiscoveryEffect() {
+        // 1. Crear el Aura base
+        const aura = document.createElement('div');
+        aura.className = 'tutor-discovery-aura';
+        document.body.appendChild(aura);
+
+        // 2. Crear Partículas (Burbujas de Plasma)
+        const particleCount = 12;
+        for (let i = 0; i < particleCount; i++) {
+            setTimeout(() => {
+                const p = document.createElement('div');
+                p.className = 'tutor-particle';
+                
+                // Posición aleatoria horizontal
+                const x = Math.random() * 100;
+                p.style.left = `${x}%`;
+                
+                // Tamaño aleatorio
+                const size = 4 + Math.random() * 8;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                
+                // Retraso de animación aleatorio
+                p.style.animationDelay = `${Math.random() * 0.5}s`;
+                
+                document.body.appendChild(p);
+                
+                // Limpiar partícula
+                setTimeout(() => p.remove(), 2500);
+            }, i * 100);
+        }
+
+        // 3. Limpiar Aura
+        setTimeout(() => aura.remove(), 3000);
+    }
+
     // --- Public API ---
     return {
         init,
+        playAudio,
         rate,
-        handleExit
+        handleExit,
+        triggerDiscoveryEffect
     };
 
 })();

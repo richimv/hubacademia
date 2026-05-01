@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController, userPreferencesController, mediaController
+const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController, userPreferencesController, mediaController, speechController
 } = require('../../application/controllers');
 
 // --- Importar Middleware ---
@@ -56,6 +56,9 @@ router.get('/media/resource/:id', optionalAuth, (req, res) => mediaController.se
 router.get('/media/preview', auth, adminOnly, (req, res) => mediaController.serveGCSPreview(req, res));
 router.get('/media/gcs', optionalAuth, (req, res) => mediaController.serveGCSGeneral(req, res));
 router.delete('/media/delete', auth, (req, res) => mediaController.handleDeleteMedia(req, res));
+
+// ✅ NUEVO: SÍNTESIS DE VOZ (Multi-idioma)
+router.post('/tts', optionalAuth, speechController.synthesize);
 
 // ✅ RUTAS DE BIBLIOTECA (Favoritos/Guardados)
 const libraryRoutes = require('./libraryRoutes');

@@ -26,12 +26,12 @@ class DeckService {
         return await trainingRepository.getFlashcardById(cardId);
     }
 
-    async addCard(userId, deckId, front, back, imageUrl = null, backImageUrl = null) {
-        return await trainingRepository.createFlashcard(userId, deckId, front, back, imageUrl, backImageUrl);
+    async addCard(userId, deckId, front, back, imageUrl = null, backImageUrl = null, audioUrlFront = null, audioUrlBack = null, ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
+        return await trainingRepository.createFlashcard(userId, deckId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
     }
 
-    async updateCard(userId, cardId, front, back, imageUrl = null, backImageUrl = null) {
-        return await trainingRepository.updateFlashcardContent(userId, cardId, front, back, imageUrl, backImageUrl);
+    async updateCard(userId, cardId, front, back, imageUrl = null, backImageUrl = null, audioUrlFront = null, audioUrlBack = null, ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
+        return await trainingRepository.updateFlashcardContent(userId, cardId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
     }
 
     async deleteCard(userId, cardId) {
@@ -105,7 +105,9 @@ class DeckService {
                 front: c.front_content,
                 back: c.back_content,
                 image_url: c.image_url,
-                explanation_image_url: c.explanation_image_url
+                explanation_image_url: c.explanation_image_url,
+                audioUrlFront: c.audio_url_frente,
+                audioUrlBack: c.audio_url_dorso
             }));
             
             await this.addBulkCards(userId, newDeck.id, mappedCards);
@@ -117,9 +119,9 @@ class DeckService {
         return newDeck;
     }
 
-    async isImageInUse(url) {
+    async isMediaInUse(url) {
         const db = require('../../infrastructure/database/db');
-        const cardsQuery = `SELECT count(*) FROM user_flashcards WHERE image_url = $1 OR explanation_image_url = $1`;
+        const cardsQuery = `SELECT count(*) FROM user_flashcards WHERE image_url = $1 OR explanation_image_url = $1 OR audio_url_frente = $1 OR audio_url_dorso = $1`;
         const decksQuery = `SELECT count(*) FROM decks WHERE description LIKE '%' || $1 || '%'`;
         
         const [cardsRes, decksRes] = await Promise.all([

@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     confirmButtonText: 'Genial, gracias'
                 });
             } else {
-                alert('¡Pago procesado con éxito! Tu cuenta ahora es Premium.');
+                window.uiManager.showToast('✅ ¡Pago procesado con éxito! Tu cuenta ahora es Premium.');
             }
         }, 1200); // Pequeño delay de 1.2s para dar tiempo al Webhook a escribir en la DB
     }
@@ -270,7 +270,7 @@ window.triggerGoogleLogin = async (buttonElement = null) => {
     console.log('🖱️ [AuthManager] Iniciando flujo Google OAuth...');
 
     if (!window.supabaseClient) {
-        alert('El servicio de autenticación se está preparando. Por favor, reintenta en un momento.');
+        window.uiManager.showToast('⏳ El servicio de autenticación se está preparando. Reintenta en breve.');
         return;
     }
 
@@ -354,7 +354,7 @@ function setupStaticModalListeners() {
         
         if (!window.supabaseClient) {
             console.error('❌ Supabase no inicializado en el momento del click.');
-            alert('Error: El servicio de autenticación no está listo. Por favor, refresca la página.');
+            window.uiManager.showToast('❌ Error: El servicio de autenticación no está listo. Refresca la página.');
             return;
         }
 
@@ -383,7 +383,7 @@ function setupStaticModalListeners() {
             googleBtn.style.pointerEvents = 'auto';
             googleBtn.style.opacity = '1';
             console.error('❌ Error OAuth Manual:', err.message);
-            alert('Error al conectar con Google. Por favor, intente de nuevo.');
+            window.uiManager.showToast('❌ Error al conectar con Google. Por favor, intente de nuevo.');
         }
     });
 }

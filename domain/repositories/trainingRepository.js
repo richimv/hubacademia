@@ -656,10 +656,10 @@ class TrainingRepository {
             const correctOption = q.options[q.correct_option_index];
             const back = `💡 ${correctOption}`;
 
-            // ($1, $2, $3, $4, $5, $6, $7, $8) ...
-            const offset = insertCount * 8;
-            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`);
-            values.push(userId, front, back, q.topic || topic, attemptId, deckId, q.image_url || null, q.explanation_image_url || null);
+            // ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ...
+            const offset = insertCount * 10;
+            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10})`);
+            values.push(userId, front, back, q.topic || topic, attemptId, deckId, q.image_url || null, q.explanation_image_url || null, q.audio_url_frente || null, q.audio_url_dorso || null);
             insertCount++;
         });
 
@@ -669,7 +669,7 @@ class TrainingRepository {
         }
 
         const query = `
-            INSERT INTO user_flashcards (user_id, front_content, back_content, topic, source_quiz_id, deck_id, image_url, explanation_image_url)
+            INSERT INTO user_flashcards (user_id, front_content, back_content, topic, source_quiz_id, deck_id, image_url, explanation_image_url, audio_url_frente, audio_url_dorso)
             VALUES ${placeholders.join(', ')}
         `;
 
@@ -709,16 +709,16 @@ class TrainingRepository {
 
             if (existingFronts.has(front)) return;
 
-            const offset = insertCount * 8;
-            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`);
-            values.push(userId, deckId, front, back, deckName, new Date(), c.image_url || null, c.explanation_image_url || null);
+            const offset = insertCount * 10;
+            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10})`);
+            values.push(userId, deckId, front, back, deckName, new Date(), c.image_url || null, c.explanation_image_url || null, c.audioUrlFront || null, c.audioUrlBack || null);
             insertCount++;
         });
 
         if (insertCount === 0) return { inserted: 0 };
 
         const query = `
-            INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, created_at, image_url, explanation_image_url)
+            INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, created_at, image_url, explanation_image_url, audio_url_frente, audio_url_dorso)
             VALUES ${placeholders.join(', ')}
         `;
 
@@ -794,7 +794,7 @@ class TrainingRepository {
         return result.rows;
     }
 
-    async createFlashcard(userId, deckId, front, back, imageUrl = null, backImageUrl = null) {
+    async createFlashcard(userId, deckId, front, back, imageUrl = null, backImageUrl = null, audioUrlFront = null, audioUrlBack = null, ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
         // 1. Fetch Deck Name for Topic Strategy
         const deckQuery = `SELECT name FROM decks WHERE id = $1`;
         const deckRes = await db.query(deckQuery, [deckId]);
@@ -802,22 +802,22 @@ class TrainingRepository {
 
         // 2. Insert Card
         const query = `
-            INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, interval_days, easiness_factor, repetition_number, next_review_at, image_url, explanation_image_url)
-            VALUES ($1, $2, $3, $4, $5, 0, 2.5, 0, NOW(), $6, $7)
-            RETURNING id, front_content, back_content, topic, image_url, explanation_image_url
+            INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, interval_days, easiness_factor, repetition_number, next_review_at, image_url, explanation_image_url, audio_url_frente, audio_url_dorso, tts_lang_frente, tts_lang_dorso, hide_text_frente, hide_text_dorso)
+            VALUES ($1, $2, $3, $4, $5, 0, 2.5, 0, NOW(), $6, $7, $8, $9, $10, $11, $12, $13)
+            RETURNING id, front_content, back_content, topic, image_url, explanation_image_url, audio_url_frente, audio_url_dorso, tts_lang_frente, tts_lang_dorso, hide_text_frente, hide_text_dorso
         `;
-        const result = await db.query(query, [userId, deckId, front, back, topic, imageUrl, backImageUrl]);
+        const result = await db.query(query, [userId, deckId, front, back, topic, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack]);
         return result.rows[0];
     }
 
-    async updateFlashcardContent(userId, cardId, front, back, imageUrl = null, backImageUrl = null) {
+    async updateFlashcardContent(userId, cardId, front, back, imageUrl = null, backImageUrl = null, audioUrlFront = null, audioUrlBack = null, ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
         const query = `
             UPDATE user_flashcards 
-            SET front_content = $3, back_content = $4, image_url = $5, explanation_image_url = $6
+            SET front_content = $3, back_content = $4, image_url = $5, explanation_image_url = $6, audio_url_frente = $7, audio_url_dorso = $8, tts_lang_frente = $9, tts_lang_dorso = $10, hide_text_frente = $11, hide_text_dorso = $12
             WHERE id = $2 AND user_id = $1
-            RETURNING id, front_content, back_content, image_url, explanation_image_url
+            RETURNING id, front_content, back_content, image_url, explanation_image_url, audio_url_frente, audio_url_dorso, tts_lang_frente, tts_lang_dorso, hide_text_frente, hide_text_dorso
         `;
-        const result = await db.query(query, [userId, cardId, front, back, imageUrl, backImageUrl]);
+        const result = await db.query(query, [userId, cardId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack]);
         return result.rows[0];
     }
 
@@ -893,10 +893,10 @@ class TrainingRepository {
     async getCardsImages(userId, cardIds) {
         if (!cardIds || cardIds.length === 0) return [];
         const query = `
-            SELECT image_url, explanation_image_url 
+            SELECT image_url, explanation_image_url, audio_url_frente, audio_url_dorso 
             FROM user_flashcards 
             WHERE id = ANY($1::uuid[]) AND user_id = $2
-            AND (image_url IS NOT NULL OR explanation_image_url IS NOT NULL);
+            AND (image_url IS NOT NULL OR explanation_image_url IS NOT NULL OR audio_url_frente IS NOT NULL OR audio_url_dorso IS NOT NULL);
         `;
         const { rows } = await db.query(query, [cardIds, userId]);
         return rows;
@@ -913,10 +913,12 @@ class TrainingRepository {
             SELECT 
                 uf.image_url, 
                 uf.explanation_image_url,
+                uf.audio_url_frente,
+                uf.audio_url_dorso,
                 dt.description as deck_description
             FROM deck_tree dt
             LEFT JOIN user_flashcards uf ON dt.id = uf.deck_id
-            WHERE (uf.image_url IS NOT NULL OR uf.explanation_image_url IS NOT NULL OR dt.description IS NOT NULL);
+            WHERE (uf.image_url IS NOT NULL OR uf.explanation_image_url IS NOT NULL OR uf.audio_url_frente IS NOT NULL OR uf.audio_url_dorso IS NOT NULL OR dt.description IS NOT NULL);
         `;
         const { rows } = await db.query(query, [deckId, userId]);
         return rows;

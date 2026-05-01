@@ -1220,7 +1220,7 @@ class UIManager {
                     padding: 12px 24px;
                     border-radius: 8px;
                     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                    z-index: 10000; /* Toast Z-Index Supremo */
+                    z-index: 2147483647; /* MAX Z-INDEX: Absolutamente sobre todo */
                     display: flex;
                     align-items: center;
                     gap: 10px;
@@ -1253,11 +1253,11 @@ class UIManager {
         `;
 
         if (document.body) {
-            document.body.insertAdjacentHTML('afterbegin', barHTML);
+            document.body.insertAdjacentHTML('beforeend', barHTML);
         } else {
             // Fallback si corre en head
             document.addEventListener('DOMContentLoaded', () => {
-                document.body.insertAdjacentHTML('afterbegin', barHTML);
+                document.body.insertAdjacentHTML('beforeend', barHTML);
             });
         }
     }

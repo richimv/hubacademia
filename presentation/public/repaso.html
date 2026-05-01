@@ -10,7 +10,7 @@
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Excel Parsing Library -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/repaso.css?v=v_pure_dark_v8">
     <link rel="stylesheet" href="css/modal.css?v=v_pure_dark_v8">
     <link rel="stylesheet" href="css/components.css?v=v_pure_dark_v8">
-    
+
     <!-- Rich Text Editor (Mini-Word) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
     <style>
@@ -36,19 +36,23 @@
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        #deck-guide-content th, #deck-guide-content td {
+
+        #deck-guide-content th,
+        #deck-guide-content td {
             padding: 0.75rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #e2e8f0;
         }
+
         #deck-guide-content th {
             background: rgba(59, 130, 246, 0.2);
             color: #93c5fd;
             font-weight: 600;
         }
+
         /* Fix para TinyMCE en modo oscuro */
         .tox-tinymce {
-            border: 1px solid rgba(255,255,255,0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
             border-radius: 8px !important;
         }
 
@@ -57,6 +61,7 @@
             font-size: 1.05rem;
             line-height: 1.7;
         }
+
         #deck-guide-content table {
             display: block;
             overflow-x: auto;
@@ -68,34 +73,74 @@
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
         #deck-guide-content p {
             margin-bottom: 1.2rem;
         }
-        #deck-guide-content ul, #deck-guide-content ol {
+
+        #deck-guide-content ul,
+        #deck-guide-content ol {
             margin-bottom: 1.2rem;
             padding-left: 2rem;
         }
+
         #deck-guide-content li {
             margin-bottom: 0.5rem;
         }
-        #deck-guide-content h1, #deck-guide-content h2, #deck-guide-content h3 {
+
+        #deck-guide-content h1,
+        #deck-guide-content h2,
+        #deck-guide-content h3 {
             color: #93c5fd;
             margin-top: 1.5rem;
             margin-bottom: 1rem;
         }
+
         #deck-guide-content img {
             max-width: 100%;
             height: auto;
             border-radius: 8px;
             margin: 1rem 0;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
         #deck-guide-content blockquote {
             border-left: 4px solid #3b82f6;
             padding-left: 1rem;
             margin: 1rem 0;
             color: #94a3b8;
             font-style: italic;
+        }
+
+        /* Estilo para selectores de idioma personalizados */
+        select.form-input-premium {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+            color: #e2e8f0 !important;
+            border-radius: 8px !important;
+            padding: 0.5rem 1rem !important;
+            font-size: 0.85rem !important;
+            outline: none !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            appearance: none !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360a5fa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 0.7rem center !important;
+            background-size: 1rem !important;
+            padding-right: 2.5rem !important;
+        }
+
+        select.form-input-premium:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+            background: rgba(30, 41, 59, 0.9) !important;
+        }
+
+        select.form-input-premium option {
+            background: #0f172a !important;
+            color: #f1f5f9 !important;
+            padding: 10px !important;
         }
     </style>
 </head>
@@ -195,7 +240,9 @@
 
                 <div class="form-group">
                     <label class="form-label">Descripción / Guía de Estudio (Opcional)</label>
-                    <textarea class="form-input" id="new-deck-description" rows="3" placeholder="Ej: Basado en Harrison 21ed. Cubre fisiopatología y manejo agudo." style="resize: vertical; min-height: 80px;"></textarea>
+                    <textarea class="form-input" id="new-deck-description" rows="3"
+                        placeholder="Ej: Basado en Harrison 21ed. Cubre fisiopatología y manejo agudo."
+                        style="resize: vertical; min-height: 80px;"></textarea>
                 </div>
 
                 <!-- Icon Picker -->
@@ -219,7 +266,8 @@
                 <input type="hidden" id="new-deck-id">
                 <input type="hidden" id="new-deck-parent">
 
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-bottom: 0.5rem;">
+                <div
+                    style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-bottom: 0.5rem;">
                     <button type="button" class="btn-action btn-secondary-action"
                         onclick="DeckExplorer.closeCreateModal()">Cancelar</button>
                     <button type="submit" id="btn-save-deck" class="btn-action"
@@ -230,22 +278,32 @@
     </div>
 
     <!-- Preview Deck Modal -->
-    <div class="modal-overlay" id="preview-deck-modal" onclick="if(event.target === this) window.repasoManager.closePreviewModal()">
-        <div class="modal-content" style="max-width: 600px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;" onclick="event.stopPropagation()">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem;">
-                <h2 id="preview-deck-title" style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin:0; line-height: 1.3; flex: 1;">Previsualizar Mazo</h2>
-                <button type="button" onclick="window.repasoManager.closePreviewModal()" 
+    <div class="modal-overlay" id="preview-deck-modal"
+        onclick="if(event.target === this) window.repasoManager.closePreviewModal()">
+        <div class="modal-content"
+            style="max-width: 600px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;"
+            onclick="event.stopPropagation()">
+            <div
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem;">
+                <h2 id="preview-deck-title"
+                    style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin:0; line-height: 1.3; flex: 1;">
+                    Previsualizar Mazo</h2>
+                <button type="button" onclick="window.repasoManager.closePreviewModal()"
                     style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; padding: 0.5rem; line-height: 1; flex-shrink: 0;">
                     &times;
                 </button>
             </div>
-            
-            <div id="preview-deck-content" style="overflow-y: auto; flex: 1; padding-right: 0.5rem; margin-bottom: 1rem;">
-                <div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#60a5fa"></i></div>
+
+            <div id="preview-deck-content"
+                style="overflow-y: auto; flex: 1; padding-right: 0.5rem; margin-bottom: 1rem;">
+                <div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"
+                        style="color:#60a5fa"></i></div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                <button type="button" id="btn-preview-clone" class="btn-action" style="background: var(--accent-primary); color: white; width: 100%;">
+            <div
+                style="display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <button type="button" id="btn-preview-clone" class="btn-action"
+                    style="background: var(--accent-primary); color: white; width: 100%;">
                     <i class="fas fa-clone"></i> Clonar a mi Biblioteca
                 </button>
             </div>
@@ -257,19 +315,25 @@
         <div class="modal-content" style="max-width: 1000px; width: 95%;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                 <h2 id="deck-guide-title">Guía de Estudio</h2>
-                <button type="button" class="btn-close" onclick="DeckExplorer.closeGuideModal()" style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
+                <button type="button" class="btn-close" onclick="DeckExplorer.closeGuideModal()"
+                    style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
             </div>
-            
+
             <!-- Scrollable Body Wrapper -->
-            <div style="max-height: 70vh; overflow-y: auto; overflow-x: hidden; padding-right: 0.5rem; scrollbar-width: thin; scrollbar-color: #3b82f6 transparent;">
-                
+            <div
+                style="max-height: 70vh; overflow-y: auto; overflow-x: hidden; padding-right: 0.5rem; scrollbar-width: thin; scrollbar-color: #3b82f6 transparent;">
+
                 <!-- View Mode -->
                 <div id="deck-guide-view-mode">
-                    <div id="deck-guide-content" style="background: rgba(30, 41, 59, 0.5); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); min-height: 100px; color: #e2e8f0; line-height: 1.6; white-space: normal;">
+                    <div id="deck-guide-content"
+                        style="background: rgba(30, 41, 59, 0.5); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); min-height: 100px; color: #e2e8f0; line-height: 1.6; white-space: normal;">
                         <!-- Content goes here -->
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.5rem;" id="deck-guide-edit-btn-container">
-                        <button type="button" class="btn-action" id="deck-guide-edit-btn" style="background: #3b82f6; color: white; padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="DeckExplorer.editGuideMode()">
+                    <div style="display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.5rem;"
+                        id="deck-guide-edit-btn-container">
+                        <button type="button" class="btn-action" id="deck-guide-edit-btn"
+                            style="background: #3b82f6; color: white; padding: 0.5rem 1rem; font-size: 0.85rem;"
+                            onclick="DeckExplorer.editGuideMode()">
                             <i class="fas fa-edit"></i> Editar Guía
                         </button>
                     </div>
@@ -277,10 +341,14 @@
 
                 <!-- Edit Mode -->
                 <div id="deck-guide-edit-mode" style="display: none;">
-                    <textarea id="deck-guide-textarea" class="form-input" rows="8" style="resize: vertical; font-family: monospace; padding: 1rem;" placeholder="Escribe aquí la guía de estudio..."></textarea>
+                    <textarea id="deck-guide-textarea" class="form-input" rows="8"
+                        style="resize: vertical; font-family: monospace; padding: 1rem;"
+                        placeholder="Escribe aquí la guía de estudio..."></textarea>
                     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                        <button type="button" class="btn-action btn-secondary-action" onclick="DeckExplorer.cancelEditGuide()">Cancelar</button>
-                        <button type="button" class="btn-action" style="background: #10b981; color: white;" onclick="DeckExplorer.saveGuide()">
+                        <button type="button" class="btn-action btn-secondary-action"
+                            onclick="DeckExplorer.cancelEditGuide()">Cancelar</button>
+                        <button type="button" class="btn-action" style="background: #10b981; color: white;"
+                            onclick="DeckExplorer.saveGuide()">
                             <i class="fas fa-save"></i> Guardar
                         </button>
                     </div>
@@ -309,112 +377,195 @@
         </div>
     </div>
 
-    <!-- Modal Add/Edit Card -->
     <div class="modal-overlay" id="card-modal">
-        <div class="modal-content">
-            <h2 id="modal-title" style="margin-bottom: 2rem;">Añadir Tarjeta</h2>
+        <div class="modal-content" style="max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 id="modal-title" style="margin-bottom: 0;">Añadir Tarjeta</h2>
+                <button type="button" class="note-modal-close" onclick="window.repasoManager.closeCardModal()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- Tab System -->
+            <div id="card-modal-tabs" class="library-tabs" style="margin-bottom: 1.5rem; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 4px;">
+                <button type="button" class="library-tab active" id="tab-card-individual" onclick="window.repasoManager.switchCardMode('individual')" style="flex: 1; padding: 0.6rem;">
+                    <i class="fas fa-user-edit" style="margin-right: 8px;"></i> Individual
+                </button>
+                <button type="button" class="library-tab" id="tab-card-bulk" onclick="window.repasoManager.switchCardMode('bulk')" style="flex: 1; padding: 0.6rem;">
+                    <i class="fas fa-file-excel" style="margin-right: 8px;"></i> Carga Masiva
+                </button>
+            </div>
+
             <form id="card-form">
                 <input type="hidden" id="card-deck-id">
                 <input type="hidden" id="card-id">
 
-                <!-- Scrollable Content Wrapper -->
-                <div
-                    style="max-height: 65vh; overflow-y: auto; overflow-x: hidden; padding: 0.5rem; margin-bottom: 1rem; scrollbar-width: thin; scrollbar-color: #3b82f6 transparent;">
-                    <!-- CARA FRONTAL (ANVERSO) -->
-                    <div class="form-group" style="margin-bottom: 1.5rem;">
-                        <label class="form-label"
-                            style="display:flex; justify-content:space-between; align-items:center;">
-                            <span>Frente (Pregunta)</span>
-                            <span style="font-size:0.7rem; color:#64748b; font-weight:normal;">Texto e/o Imagen</span>
-                        </label>
-                        <textarea class="form-input" id="card-front" placeholder="Ej: ¿Qué es el mitocondria?"
-                            style="min-height: 80px;"></textarea>
-
-                        <!-- Upload Anverso -->
-                        <div class="card-upload-area" style="margin-top: 0.8rem;">
-                            <input type="file" id="card-image-input-front" accept="image/*" style="display: none;"
-                                onchange="window.repasoManager.handleImageUpload(this, 'front')">
-                            <input type="hidden" id="card-image-url-front">
-
-                            <div id="preview-front" class="image-preview-box" style="display: none;">
-                                <img id="img-front" src=""
-                                    style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
-                                <button type="button" onclick="window.repasoManager.removeImage('front')"
-                                    class="btn-remove-img"><i class="fas fa-times"></i></button>
-                            </div>
-
-                            <button type="button" id="btn-trigger-front"
-                                onclick="document.getElementById('card-image-input-front').click()"
-                                class="btn-upload-minimal">
-                                <i class="fas fa-image"></i> <span>Añadir Imagen al Frente</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- CARA TRASERA (REVERSO) -->
-                    <div class="form-group" style="margin-bottom: 1.5rem;">
-                        <label class="form-label"
-                            style="display:flex; justify-content:space-between; align-items:center;">
-                            <span>Dorso (Respuesta)</span>
-                            <span style="font-size:0.7rem; color:#64748b; font-weight:normal;">Texto e/o Imagen</span>
-                        </label>
-                        <textarea class="form-input" id="card-back"
-                            placeholder="Ej: La central energética de la célula." style="min-height: 80px;"></textarea>
-
-                        <!-- Upload Reverso -->
-                        <div class="card-upload-area" style="margin-top: 0.8rem;">
-                            <input type="file" id="card-image-input-back" accept="image/*" style="display: none;"
-                                onchange="window.repasoManager.handleImageUpload(this, 'back')">
-                            <input type="hidden" id="card-image-url-back">
-
-                            <div id="preview-back" class="image-preview-box" style="display: none;">
-                                <img id="img-back" src=""
-                                    style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
-                                <button type="button" onclick="window.repasoManager.removeImage('back')"
-                                    class="btn-remove-img"><i class="fas fa-times"></i></button>
-                            </div>
-
-                            <button type="button" id="btn-trigger-back"
-                                onclick="document.getElementById('card-image-input-back').click()"
-                                class="btn-upload-minimal">
-                                <i class="fas fa-image"></i> <span>Añadir Imagen al Dorso</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Spinner Global Carga -->
-                    <div id="card-upload-spinner"
-                        style="display: none; text-align: center; margin-bottom: 1.5rem; background: rgba(59,130,246,0.1); padding: 0.8rem; border-radius: 8px;">
-                        <i class="fas fa-circle-notch fa-spin" style="color: #60a5fa;"></i>
-                        <span style="margin-left: 8px; color: #94a3b8; font-size: 0.85rem;">Procesando imagen...</span>
-                    </div>
-
-                    <!-- CARGA MASIVA (NUEVO) -->
-                    <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px dashed rgba(255,255,255,0.1);">
-                        <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #60a5fa;"><i class="fas fa-file-excel"></i> Carga Masiva</h4>
-                        <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 1rem;">Sube un archivo Excel con dos columnas: <b>Frente</b> y <b>Dorso</b> para crear tarjetas rápidamente.</p>
-                        
-                        <div style="display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap;">
-                            <button type="button" class="btn-upload-minimal" onclick="window.repasoManager.downloadFlashcardTemplate()" style="flex: 1; min-width: 150px; justify-content: center; background: rgba(255,255,255,0.05);">
-                                <i class="fas fa-download"></i> Plantilla Excel
-                            </button>
-                            
-                            <label class="btn-upload-minimal" style="flex: 2; min-width: 200px; justify-content: center; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981; cursor: pointer;">
-                                <i class="fas fa-file-upload"></i> <span>Seleccionar Archivo</span>
-                                <input type="file" id="bulk-flashcard-input" accept=".xlsx, .xls, .csv" style="display: none;" onchange="window.repasoManager.handleBulkFlashcardUpload(this)">
+                <!-- SECCIÓN INDIVIDUAL -->
+                <div id="section-card-individual" class="card-mode-section active">
+                    <!-- Scrollable Content Wrapper -->
+                    <div style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding: 0.5rem; margin-bottom: 1rem; scrollbar-width: thin; scrollbar-color: #3b82f6 transparent;">
+                        <!-- CARA FRONTAL (ANVERSO) -->
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Frente (Pregunta)</span>
+                                <span style="font-size:0.7rem; color:#64748b; font-weight:normal;">Texto y/o Imagen</span>
                             </label>
+                            <textarea class="form-input" id="card-front" placeholder="Ej: ¿Qué es el mitocondria?" style="min-height: 80px;"></textarea>
+
+                            <!-- Checkbox TTS Frente -->
+                            <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <input type="checkbox" id="card-tts-front" style="width: 14px; height: 14px; cursor: pointer;">
+                                    <label for="card-tts-front" style="font-size: 0.75rem; color: #94a3b8; cursor: pointer;">Generar audio TTS</label>
+                                </div>
+
+                                <select id="card-tts-lang-front" class="form-input-premium" style="padding: 2px 2rem 2px 8px !important; font-size: 0.75rem !important;">
+                                    <option value="es-ES">🇪🇸 Español (ES)</option>
+                                    <option value="es-US">🇲🇽 Español (US-LAT)</option>
+                                    <option value="en-US">🇺🇸 Inglés (US)</option>
+                                    <option value="en-GB">🇬🇧 Inglés (UK)</option>
+                                    <option value="it-IT">🇮🇹 Italiano</option>
+                                    <option value="fr-FR">🇫🇷 Francés</option>
+                                    <option value="de-DE">🇩🇪 Alemán</option>
+                                    <option value="pt-BR">🇧🇷 Portugués</option>
+                                </select>
+
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <input type="checkbox" id="card-hide-text-front" style="width: 13px; height: 13px; cursor: pointer;">
+                                    <label for="card-hide-text-front" style="font-size: 0.7rem; color: #64748b; cursor: pointer;">Ocultar texto</label>
+                                </div>
+                            </div>
+
+                            <!-- Indicador de Audio Existente -->
+                            <div id="audio-status-front" style="display: none; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.75rem; color: #10b981;">
+                                <i class="fas fa-volume-up"></i> <span>Audio premium activo</span>
+                                <button type="button" onclick="window.repasoManager.removeAudio('front')" style="background: none; border: none; color: #f43f5e; cursor: pointer; text-decoration: underline; font-size: 0.7rem; margin-left: 0.5rem;">Eliminar</button>
+                            </div>
+                            <input type="hidden" id="card-delete-audio-front" value="false">
+
+                            <!-- Upload Anverso -->
+                            <div class="card-upload-area" style="margin-top: 0.8rem;">
+                                <input type="file" id="card-image-input-front" accept="image/*" style="display: none;" onchange="window.repasoManager.handleImageUpload(this, 'front')">
+                                <input type="hidden" id="card-image-url-front">
+                                <div id="preview-front" class="image-preview-box" style="display: none;">
+                                    <img id="img-front" src="" style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
+                                    <button type="button" onclick="window.repasoManager.removeImage('front')" class="btn-remove-img"><i class="fas fa-times"></i></button>
+                                </div>
+                                <button type="button" id="btn-trigger-front" onclick="document.getElementById('card-image-input-front').click()" class="btn-upload-minimal">
+                                    <i class="fas fa-image"></i> <span>Añadir Imagen al Frente</span>
+                                </button>
+                            </div>
                         </div>
-                        <div id="bulk-upload-preview" style="display: none; margin-top: 1rem; font-size: 0.8rem; color: #34d399; text-align: center; background: rgba(16, 185, 129, 0.05); padding: 0.5rem; border-radius: 6px;">
-                            <i class="fas fa-check-circle"></i> <span id="bulk-count-text">0 tarjetas detectadas</span>
+
+                        <!-- CARA TRASERA (REVERSO) -->
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Dorso (Respuesta)</span>
+                                <span style="font-size:0.7rem; color:#64748b; font-weight:normal;">Texto e/o Imagen</span>
+                            </label>
+                            <textarea class="form-input" id="card-back" placeholder="Ej: La central energética de la célula." style="min-height: 80px;"></textarea>
+
+                            <!-- Checkbox TTS Dorso -->
+                            <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <input type="checkbox" id="card-tts-back" style="width: 14px; height: 14px; cursor: pointer;">
+                                    <label for="card-tts-back" style="font-size: 0.75rem; color: #94a3b8; cursor: pointer;">Generar audio TTS</label>
+                                </div>
+
+                                <select id="card-tts-lang-back" class="form-input-premium" style="padding: 2px 2rem 2px 8px !important; font-size: 0.75rem !important;">
+                                    <option value="es-ES">🇪🇸 Español (ES)</option>
+                                    <option value="es-US">🇲🇽 Español (US-LAT)</option>
+                                    <option value="en-US">🇺🇸 Inglés (US)</option>
+                                    <option value="en-GB">🇬🇧 Inglés (UK)</option>
+                                    <option value="it-IT">🇮🇹 Italiano</option>
+                                    <option value="fr-FR">🇫🇷 Francés</option>
+                                    <option value="de-DE">🇩🇪 Alemán</option>
+                                    <option value="pt-BR">🇧🇷 Portugués</option>
+                                </select>
+
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <input type="checkbox" id="card-hide-text-back" style="width: 13px; height: 13px; cursor: pointer;">
+                                    <label for="card-hide-text-back" style="font-size: 0.7rem; color: #64748b; cursor: pointer;">Ocultar texto</label>
+                                </div>
+                            </div>
+
+                            <!-- Indicador de Audio Existente -->
+                            <div id="audio-status-back" style="display: none; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.75rem; color: #10b981;">
+                                <i class="fas fa-volume-up"></i> <span>Audio premium activo</span>
+                                <button type="button" onclick="window.repasoManager.removeAudio('back')" style="background: none; border: none; color: #f43f5e; cursor: pointer; text-decoration: underline; font-size: 0.7rem; margin-left: 0.5rem;">Eliminar</button>
+                            </div>
+                            <input type="hidden" id="card-delete-audio-back" value="false">
+
+                            <!-- Upload Reverso -->
+                            <div class="card-upload-area" style="margin-top: 0.8rem;">
+                                <input type="file" id="card-image-input-back" accept="image/*" style="display: none;" onchange="window.repasoManager.handleImageUpload(this, 'back')">
+                                <input type="hidden" id="card-image-url-back">
+                                <div id="preview-back" class="image-preview-box" style="display: none;">
+                                    <img id="img-back" src="" style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
+                                    <button type="button" onclick="window.repasoManager.removeImage('back')" class="btn-remove-img"><i class="fas fa-times"></i></button>
+                                </div>
+                                <button type="button" id="btn-trigger-back" onclick="document.getElementById('card-image-input-back').click()" class="btn-upload-minimal">
+                                    <i class="fas fa-image"></i> <span>Añadir Imagen al Dorso</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" class="btn-action btn-secondary-action"
-                        onclick="window.repasoManager.closeCardModal()">Cancelar</button>
-                    <button type="submit" class="btn-action btn-study"
-                        style="background: #3b82f6; color: white; padding: 0.8rem 2rem;">Guardar Tarjeta</button>
+                <!-- SECCIÓN CARGA MASIVA -->
+                <div id="section-card-bulk" class="card-mode-section" style="display: none; padding: 1rem 0;">
+                    <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #60a5fa;"><i class="fas fa-info-circle"></i> Instrucciones</h4>
+                        <p style="font-size: 0.8rem; color: #94a3b8; line-height: 1.4;">Sube un archivo Excel con las columnas <b>Frente</b> y <b>Dorso</b>. <br>Límite máximo por carga: <b>50 tarjetas</b>.</p>
+                    </div>
+
+                    <!-- Configuración Global TTS Masivo -->
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #f8fafc;">Configuración de Audio (Opcional)</span>
+                        <select id="bulk-tts-lang" class="form-input-premium" style="padding: 4px 2rem 4px 8px; font-size: 0.75rem; background: rgba(255,255,255,0.1);">
+                            <option value="es-ES">🇪🇸 Español (ES)</option>
+                            <option value="es-US">🇲🇽 Español (US-LAT)</option>
+                            <option value="en-US">🇺🇸 Inglés (US)</option>
+                            <option value="en-GB">🇬🇧 Inglés (UK)</option>
+                            <option value="it-IT">🇮🇹 Italiano</option>
+                            <option value="fr-FR">🇫🇷 Francés</option>
+                            <option value="de-DE">🇩🇪 Alemán</option>
+                            <option value="pt-BR">🇧🇷 Portugués</option>
+                        </select>
+                        </div>
+                        <div style="display: flex; gap: 1.2rem;">
+                            <label style="font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                <input type="checkbox" id="bulk-tts-front"> Generar para Frente
+                            </label>
+                            <label style="font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                <input type="checkbox" id="bulk-tts-back"> Generar para Dorso
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <button type="button" class="btn-upload-minimal" onclick="window.repasoManager.downloadFlashcardTemplate()" style="flex: 1; background: rgba(255,255,255,0.05); height: 50px;">
+                            <i class="fas fa-download"></i> Plantilla Excel
+                        </button>
+
+                        <label class="btn-upload-minimal" style="flex: 2; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981; cursor: pointer; height: 50px;">
+                            <i class="fas fa-file-upload"></i> <span id="bulk-file-label">Seleccionar Archivo</span>
+                            <input type="file" id="bulk-flashcard-input" accept=".xlsx, .xls, .csv" style="display: none;" onchange="window.repasoManager.handleBulkFlashcardUpload(this)">
+                        </label>
+                    </div>
+                    
+                    <div id="bulk-upload-preview" style="display: none; margin-top: 1rem; font-size: 0.85rem; color: #34d399; text-align: center; background: rgba(16, 185, 129, 0.05); padding: 0.8rem; border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.3);">
+                        <i class="fas fa-check-circle"></i> <span id="bulk-count-text">0 tarjetas detectadas</span>
+                    </div>
+                </div>
+
+                <div id="card-upload-spinner" style="display: none; text-align: center; margin-bottom: 1rem; background: rgba(59,130,246,0.1); padding: 0.8rem; border-radius: 8px;">
+                    <i class="fas fa-circle-notch fa-spin" style="color: #60a5fa;"></i>
+                    <span style="margin-left: 8px; color: #94a3b8; font-size: 0.85rem;">Procesando...</span>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button type="button" class="btn-action btn-secondary-action" onclick="window.repasoManager.closeCardModal()">Cancelar</button>
+                    <button type="submit" id="btn-save-card-submit" class="btn-action btn-study" style="background: #3b82f6; color: white; padding: 0.8rem 2.5rem;">Guardar Tarjeta</button>
                 </div>
             </form>
         </div>
@@ -424,15 +575,47 @@
     <div class="modal-overlay" id="ai-modal">
         <div class="modal-content">
             <h2 style="margin-bottom: 1rem;"><i class="fas fa-magic" style="color: #a855f7;"></i> Generar con IA</h2>
-            <p style="color: #94a3b8; margin-bottom: 0.5rem;">Escribe un tema o concepto, y la IA creará de <b>1 a 20
-                    flashcards</b> inteligentemente.</p>
-            <p style="color: #64748b; font-size: 0.8rem; margin-bottom: 1.5rem;"><i>Tip: Si deseas una cantidad exacta,
-                    especifícalo (Ej: "3 tarjetas"). Máx: 20.</i></p>
+            <p style="color: #94a3b8; margin-bottom: 0.5rem;">Escribe un tema o concepto, y la IA creará flashcards inteligentemente.</p>
+            <p style="color: #64748b; font-size: 0.8rem; margin-bottom: 1.5rem;"><i>Selecciona la cantidad exacta de tarjetas que deseas generar (Máx: 20).</i></p>
 
-            <div class="form-group">
-                <label class="form-label">Tema o Concepto</label>
-                <input type="text" class="form-input" id="ai-topic"
-                    placeholder="Ej: Histología del Riñón, Revolución Francesa...">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Tema o Concepto</label>
+                    <input type="text" class="form-input" id="ai-topic"
+                        placeholder="Ej: Histología del Riñón, Revolución Francesa...">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" class="form-input" id="ai-amount" value="5" min="1" max="20" style="text-align: center;">
+                </div>
+            </div>
+
+            <!-- Selector Global TTS IA -->
+            <div
+                style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem; background: rgba(168, 85, 247, 0.05); padding: 1rem; border-radius: 12px; border: 1px solid rgba(168, 85, 247, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #f8fafc;">Configuración de Audio</span>
+                    <select id="ai-tts-lang" class="form-input-premium" style="padding: 4px 2rem 4px 8px; font-size: 0.75rem; border-color: rgba(168, 85, 247, 0.3);">
+                        <option value="es-ES">🇪🇸 Español (ES)</option>
+                        <option value="es-US">🇲🇽 Español (US-LAT)</option>
+                        <option value="en-US">🇺🇸 Inglés (US)</option>
+                        <option value="en-GB">🇬🇧 Inglés (UK)</option>
+                        <option value="it-IT">🇮🇹 Italiano</option>
+                        <option value="fr-FR">🇫🇷 Francés</option>
+                        <option value="de-DE">🇩🇪 Alemán</option>
+                        <option value="pt-BR">🇧🇷 Portugués</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1.5rem;">
+                    <label
+                        style="font-size: 0.75rem; color: #d8b4fe; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                        <input type="checkbox" id="ai-tts-front"> Frente
+                    </label>
+                    <label
+                        style="font-size: 0.75rem; color: #d8b4fe; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                        <input type="checkbox" id="ai-tts-back"> Dorso
+                    </label>
+                </div>
             </div>
 
             <div id="ai-loading" style="display: none; text-align: center; margin: 2rem 0;">
@@ -571,7 +754,7 @@
     <script src="js/services/authApiService.js"></script>
     <script src="js/services/analyticsApiService.js"></script>
     <script src="js/sessionManager.js"></script>
-    <script src="js/ui/uiManager.js?v=20240410"></script>
+    <script src="js/ui/uiManager.js?v=v_premium_toast_v1"></script>
     <script src="js/ui/components.js?v=20240410"></script>
     <script src="js/app.js?v=20240410"></script>
 
@@ -590,7 +773,7 @@
 
     <script src="js/heatmap.js?v=v_pure_dark_v9"></script> <!-- Optional for Stats -->
     <script src="js/deck-explorer.js?v=v12"></script> <!-- NEW -->
-    <script src="js/repaso.js?v=v13"></script>
+    <script src="js/repaso.js?v=v14_no_alerts"></script>
 </body>
 
 </html>

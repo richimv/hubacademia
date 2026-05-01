@@ -201,6 +201,31 @@ class MediaController {
     }
 
     /**
+     * ✅ NUEVO: Sube un buffer crudo a GCS (ej: Audio, PDF, etc) sin optimización.
+     */
+    async uploadRawBuffer(buffer, fileName, contentType, folder = 'audio') {
+        try {
+            const bucket = this.storage.bucket(this.bucketName);
+            const safeName = fileName.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+            const finalPath = `${folder}/${Date.now()}-${safeName}`;
+            const gcsFile = bucket.file(finalPath);
+
+            await gcsFile.save(buffer, {
+                metadata: {
+                    contentType,
+                    cacheControl: 'public, max-age=31536000'
+                }
+            });
+
+            console.log(`✅ Buffer crudo subido a GCS: ${finalPath}`);
+            return finalPath;
+        } catch (error) {
+            console.error('❌ Error subiendo raw buffer a GCS:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Endpoint Handler: DELETE /api/media/delete
      * Permite a los usuarios borrar imágenes que subieron (ej: durante edición de guías)
      */

@@ -30,11 +30,12 @@ El **Módulo de Repaso** es el sistema de memorización a largo plazo de Hub Aca
 - **DeckExplorer**: Componente lateral que gestiona la navegación en árbol. Implementa carga perezosa (lazy loading) para sub-mazos.
 - **RepasoManager**: Controlador principal de la vista de contenido. Maneja el renderizado de cabeceras, cuadrículas de mazos y listas de tarjetas.
 
-### B. Sistema de Tarjetas (Cards)
-- **SRS Algorithm**: Implementación de SuperMemo-2 (SM-2) para calcular los próximos intervalos de repaso basados en la calidad de la respuesta (1-4).
-- **Formatos Soportados**: Texto plano y Soporte Visual (Imágenes en GCS).
+### C. Sistema de Audio Premium (TTS Neural)
+- **Motor de Voz**: Integración con **Google Cloud Text-to-Speech (Neural Voices)** para generar pronunciaciones de alta fidelidad en múltiples idiomas (ES, EN, IT, FR, DE).
+- **Consumo Inteligente**: Los audios se generan una sola vez, se optimizan en el backend y se sirven desde GCS para minimizar la latencia.
+- **Modo Escucha (Listening)**: Permite ocultar el texto de la tarjeta para forzar el entrenamiento auditivo, centrando automáticamente el botón de audio.
 
-### C. Generación con IA
+### D. Generación con IA
 - **IA Assistant**: Integración con modelos de lenguaje para generar flashcards automáticamente a partir de temas médicos específicos. Soporta la creación de hasta **20 tarjetas por intento**.
 
 ---
@@ -111,6 +112,7 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Contexto Dinámico**: El sistema inyecta el contenido de la tarjeta como punto de partida, pero el tutor utiliza su conocimiento interno completo para resolver dudas laterales.
 - **Memoria de Sesión**: Historial volátil gestionado por el frontend que se resetea al cambiar de flashcard, manteniendo el enfoque en el tema actual.
 - **Versatilidad Disciplinaria**: El tutor adapta su lenguaje y rigor técnico según la materia (Medicina, Idiomas, Leyes, etc.).
+- **Descubrimiento de UX (Plasma Discovery)**: Sistema de partículas ascendentes que emergen desde el fondo de la pantalla al revelar la respuesta, guiando al usuario hacia el chat del Tutor incluso si este requiere scroll.
 
 ### E. Visualización Adaptativa y Escena 3D
 - **Layout de Seguridad**: Introducción del `study-header` para separar la navegación (Volver/Pendientes) del área de estudio, evitando colisiones en móviles.

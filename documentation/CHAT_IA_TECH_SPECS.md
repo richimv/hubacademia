@@ -76,7 +76,7 @@ El sistema ahora opera bajo un ecosistema de interfaces especializadas que compa
 ### 7.3. Asistente de Audio (Hands-Free Assistant)
 - **Frontend:** `audio-assistant.js`.
 - **Propósito:** Aprendizaje auditivo interactivo para situaciones de movilidad.
-- **Tecnología:** Integración nativa con Web Speech API para reconocimiento y síntesis de voz (TTS).
+- **Tecnología:** Integración nativa con **Web Speech API** para reconocimiento y síntesis de voz (TTS). Se utiliza exclusivamente el motor de voz nativo del navegador (voces locales) para garantizar escalabilidad ilimitada sin costes operativos.
 - **Modo Reproductor:** Interfaz dual que incluye una ventana completa para lectura y un **Modo Minimizado** (tipo Spotify) que permite mantener la conversación activa mientras se navega por otras secciones de la plataforma.
 
 ## 8. Motor de Renderizado Universal (`MarkdownRenderer`)

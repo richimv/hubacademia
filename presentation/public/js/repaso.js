@@ -8,8 +8,9 @@ class RepasoManager {
         const rawToken = localStorage.getItem('authToken');
         this.token = (rawToken && rawToken !== 'null' && rawToken !== 'undefined') ? rawToken : null;
         this._isCreatingDeck = false;
-        this._pendingFiles = { front: null, back: null }; // ✅ NUEVO: Cola de archivos para subir al guardar
-        this._pendingBulkCards = []; // ✅ NUEVO: Cola de tarjetas detectadas en Excel
+        this.currentCardMode = 'individual'; // 'individual' o 'bulk'
+        this._pendingFiles = { front: null, back: null };
+        this._pendingBulkCards = [];
 
         this.explorer = new DeckExplorer(this);
 
@@ -420,9 +421,15 @@ class RepasoManager {
                 let imageHtml = c.image_url ? `<div style="margin-top: 0.5rem; text-align: center;"><img src="${window.resolveImageUrl ? window.resolveImageUrl(c.image_url) : c.image_url}" style="max-height: 150px; border-radius: 8px; max-width: 100%; border: 1px solid rgba(255,255,255,0.1);"></div>` : '';
                 let expImageHtml = c.explanation_image_url ? `<div style="margin-top: 0.5rem; text-align: center;"><img src="${window.resolveImageUrl ? window.resolveImageUrl(c.explanation_image_url) : c.explanation_image_url}" style="max-height: 150px; border-radius: 8px; max-width: 100%; border: 1px solid rgba(255,255,255,0.1);"></div>` : '';
 
+                const hasAudio = c.audio_url_frente || c.audio_url_dorso;
+                const audioBadge = hasAudio ? `<span style="font-size: 0.6rem; background: rgba(59, 130, 246, 0.1); color: #60a5fa; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2);"><i class="fas fa-volume-up"></i> Audio Premium</span>` : '';
+
                 html += `
                     <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem;">
-                        <div style="color: var(--accent-primary); font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase;">Tarjeta ${index + 1}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                            <div style="color: var(--accent-primary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Tarjeta ${index + 1}</div>
+                            ${audioBadge}
+                        </div>
                         <div style="color: white; font-size: 0.95rem; margin-bottom: 0.5rem; line-height: 1.4;">
                             ${window.MarkdownRenderer.render(c.front_content || '')}
                             ${imageHtml}
@@ -878,7 +885,7 @@ class RepasoManager {
                         <i class="fas fa-play" style="color: #60a5fa;"></i>
                     </button>
                     ${this.token ? `
-                    <button class="deck-action-btn" title="Editar" onclick="event.stopPropagation(); window.repasoManager.onEditCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`, \`${this.escapeHtml(c.back_content)}\`, '${c.image_url || ''}', '${c.explanation_image_url || ''}')">
+                    <button class="deck-action-btn" title="Editar" onclick="event.stopPropagation(); window.repasoManager.onEditCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`, \`${this.escapeHtml(c.back_content)}\`, '${c.image_url || ''}', '${c.explanation_image_url || ''}', '${c.audio_url_frente || ''}', '${c.audio_url_dorso || ''}', '${c.tts_lang_frente || 'es-ES'}', '${c.tts_lang_dorso || 'es-ES'}', ${c.hide_text_frente || false}, ${c.hide_text_dorso || false})">
                         <i class="fas fa-pen"></i>
                     </button>
                     <button class="deck-action-btn deck-action-btn--delete" title="Eliminar" onclick="event.stopPropagation(); window.repasoManager.onDeleteCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`)">
@@ -957,8 +964,8 @@ class RepasoManager {
         });
     }
 
-    onEditCardClick(id, front, back, imageUrl = '', backImageUrl = '') {
-        if (this.token) this.openEditCardModal(id, front, back, imageUrl, backImageUrl);
+    onEditCardClick(id, front, back, imageUrl = '', backImageUrl = '', audioUrlFront = '', audioUrlBack = '', ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
+        if (this.token) this.openEditCardModal(id, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
         else window.uiManager.showAuthPromptModal();
     }
 
@@ -1104,7 +1111,7 @@ class RepasoManager {
             if (res.ok) {
                 if (this.currentDeck) this.loadFolder(this.currentDeck.id);
             } else {
-                alert('No se pudieron eliminar las tarjetas masivamente.');
+                window.uiManager.showToast('No se pudieron eliminar las tarjetas masivamente.');
             }
         } catch (err) {
             console.error(err);
@@ -1168,14 +1175,72 @@ class RepasoManager {
 
     // --- Actions ---
 
+    _clearCardModal() {
+        const form = document.getElementById('card-form');
+        if (form) form.reset();
+
+        // Reset IDs y estados internos
+        document.getElementById('card-id').value = '';
+        this._pendingFiles = { front: null, back: null };
+        this._pendingBulkCards = [];
+
+        // Reset Previsualizaciones de Imágenes
+        this._updateImagePreview('front', '');
+        this._updateImagePreview('back', '');
+        
+        // Reset URLs ocultas de imágenes
+        const imgUrlFront = document.getElementById('card-image-url-front');
+        const imgUrlBack = document.getElementById('card-image-url-back');
+        if (imgUrlFront) imgUrlFront.value = '';
+        if (imgUrlBack) imgUrlBack.value = '';
+
+        // Reset Audio UI
+        const ttsFrontLabel = document.querySelector('label[for="card-tts-front"]');
+        const ttsBackLabel = document.querySelector('label[for="card-tts-back"]');
+        if (ttsFrontLabel) ttsFrontLabel.innerText = 'Generar audio TTS';
+        if (ttsBackLabel) ttsBackLabel.innerText = 'Generar audio TTS';
+
+        const statusFront = document.getElementById('audio-status-front');
+        const statusBack = document.getElementById('audio-status-back');
+        if (statusFront) statusFront.style.display = 'none';
+        if (statusBack) statusBack.style.display = 'none';
+
+        document.getElementById('card-delete-audio-front').value = 'false';
+        document.getElementById('card-delete-audio-back').value = 'false';
+
+        // Reset Checkboxes de visibilidad e idioma
+        const langFront = document.getElementById('card-tts-lang-front');
+        const langBack = document.getElementById('card-tts-lang-back');
+        if (langFront) langFront.value = 'es-ES';
+        if (langBack) langBack.value = 'es-ES';
+
+        const hideFront = document.getElementById('card-hide-text-front');
+        const hideBack = document.getElementById('card-hide-text-back');
+        if (hideFront) hideFront.checked = false;
+        if (hideBack) hideBack.checked = false;
+        
+        // Reset Bulk UI si existe
+        const preview = document.getElementById('bulk-upload-preview');
+        if (preview) preview.style.display = 'none';
+        const fileInput = document.getElementById('bulk-flashcard-input');
+        if (fileInput) fileInput.value = '';
+    }
+
     openAddCardModal() {
         if (window.uiManager && !window.uiManager.validateFreemiumAction(null, 'flashcards')) return;
 
-        document.getElementById('card-form').reset();
+        this._clearCardModal(); // 🧹 Limpieza atómica
+        
         document.getElementById('card-deck-id').value = this.currentDeck.id;
-        document.getElementById('card-id').value = ''; // Clear ID for new
         document.getElementById('modal-title').innerText = 'Añadir Tarjeta';
+        
+        // Mostrar pestañas y resetear a modo individual
+        const tabs = document.getElementById('card-modal-tabs');
+        if (tabs) tabs.style.display = 'flex';
+        this.switchCardMode('individual');
+
         document.getElementById('card-modal').classList.add('active');
+
         if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
             window.uiManager.pushModalState('card-modal');
         }
@@ -1301,7 +1366,7 @@ class RepasoManager {
         if (cardCount !== null && cardCount === 0) {
             const msg = 'Este mazo no tiene tarjetas. ¡Crea o genera algunas primero!';
             if (window.uiManager && window.uiManager.showToast) window.uiManager.showToast(msg, 'warning');
-            else alert(msg);
+            else window.uiManager.showToast(msg);
             return;
         }
 
@@ -1450,7 +1515,7 @@ class RepasoManager {
                     }
                 }
                 } else {
-                    alert('Error al actualizar mazo');
+                    window.uiManager.showToast('❌ Error al actualizar mazo');
                 }
             } else {
                 // CREATE MODE
@@ -1482,7 +1547,7 @@ class RepasoManager {
                     }
                 }
                 } else {
-                    alert('Error al crear mazo');
+                    window.uiManager.showToast('❌ Error al crear mazo');
                 }
             }
         } catch (err) {
@@ -1532,20 +1597,44 @@ class RepasoManager {
         const back = document.getElementById('card-back').value.trim();
         const imageUrl = document.getElementById('card-image-url-front').value || null;
         const backImageUrl = document.getElementById('card-image-url-back').value || null;
+        
+        // ✅ NUEVO: Capturar preferencias de Audio TTS
+        const generateTtsFront = (document.getElementById('card-tts-front')?.checked && front.length >= 2) || false;
+        const generateTtsBack = (document.getElementById('card-tts-back')?.checked && back.length >= 2) || false;
+        
+        if (document.getElementById('card-tts-front')?.checked && front.length < 2) {
+            window.uiManager.showToast('El frente debe tener texto para generar audio.', 'warning');
+            return;
+        }
+        if (document.getElementById('card-tts-back')?.checked && back.length < 2) {
+            window.uiManager.showToast('El dorso debe tener texto para generar audio.', 'warning');
+            return;
+        }
+        const ttsLangFront = document.getElementById('card-tts-lang-front')?.value || 'es-ES';
+        const ttsLangBack = document.getElementById('card-tts-lang-back')?.value || 'es-ES';
+        const hideTextFront = document.getElementById('card-hide-text-front')?.checked || false;
+        const hideTextBack = document.getElementById('card-hide-text-back')?.checked || false;
+        
+        const deleteAudioFront = document.getElementById('card-delete-audio-front')?.value === 'true';
+        const deleteAudioBack = document.getElementById('card-delete-audio-back')?.value === 'true';
 
-        // ✅ NUEVO: Manejo de Carga Masiva si existe archivo procesado
-        if (this._pendingBulkCards && this._pendingBulkCards.length > 0) {
+        // ✅ NUEVO: Manejo según el Modo Activo
+        if (this.currentCardMode === 'bulk') {
+            if (!this._pendingBulkCards || this._pendingBulkCards.length === 0) {
+                window.uiManager.showToast('⚠️ Primero selecciona un archivo Excel válido.', 'warning');
+                return;
+            }
             await this._saveBulkCards(deckId);
             return;
         }
 
-        // Validaciones UX
+        // VALIDACIÓN INDIVIDUAL
         if (!front && !imageUrl) {
-            alert('El frente de la tarjeta no puede estar vacío. Añade texto o una imagen.');
+            window.uiManager.showToast('⚠️ El frente de la tarjeta no puede estar vacío.');
             return;
         }
         if (!back && !backImageUrl) {
-            alert('El dorso de la tarjeta no puede estar vacío. Añade texto o una imagen.');
+            window.uiManager.showToast('⚠️ El dorso de la tarjeta no puede estar vacío.');
             return;
         }
 
@@ -1575,7 +1664,20 @@ class RepasoManager {
                 finalBackImageUrl = await this._uploadFileToGCS(this._pendingFiles.back, 'flashcards');
             }
 
-            const payload = { front, back, imageUrl: finalImageUrl, backImageUrl: finalBackImageUrl };
+            const payload = { 
+                front, 
+                back, 
+                imageUrl: finalImageUrl, 
+                backImageUrl: finalBackImageUrl,
+                generateTtsFront,
+                generateTtsBack,
+                ttsLangFront,
+                ttsLangBack,
+                hideTextFront,
+                hideTextBack,
+                deleteAudioFront,
+                deleteAudioBack
+            };
             let res;
 
             if (cardId) {
@@ -1613,11 +1715,11 @@ class RepasoManager {
                 }
             } else {
                 const errorData = await res.json().catch(() => ({}));
-                alert(`Error al guardar tarjeta: ${errorData.error || res.statusText}`);
+                window.uiManager.showToast(`❌ Error al guardar tarjeta: ${errorData.error || res.statusText}`);
             }
         } catch (err) {
             console.error('Save card network error:', err);
-            alert('Error de red al guardar tarjeta.');
+            window.uiManager.showToast('❌ Error de red al guardar tarjeta.');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -1659,9 +1761,8 @@ class RepasoManager {
         }
     }
 
-    openEditCardModal(id, front, back, imageUrl = '', backImageUrl = '') {
-        document.getElementById('card-form').reset();
-        this._pendingFiles = { front: null, back: null }; // Reset pending
+    openEditCardModal(id, front, back, imageUrl = '', backImageUrl = '', audioUrlFront = '', audioUrlBack = '', ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
+        this._clearCardModal(); // 🧹 Limpieza atómica antes de cargar datos nuevos
 
         document.getElementById('card-deck-id').value = this.currentDeck.id;
         document.getElementById('card-id').value = id;
@@ -1669,21 +1770,66 @@ class RepasoManager {
         document.getElementById('card-back').value = back;
         document.getElementById('modal-title').innerText = 'Editar Tarjeta';
 
-        // Reset Bulk UI
-        this._pendingBulkCards = [];
-        const preview = document.getElementById('bulk-upload-preview');
-        if (preview) preview.style.display = 'none';
-        const fileInput = document.getElementById('bulk-flashcard-input');
-        if (fileInput) fileInput.value = '';
+        // ✅ Cargar idiomas y visibilidad
+        const langFront = document.getElementById('card-tts-lang-front');
+        const langBack = document.getElementById('card-tts-lang-back');
+        if (langFront) langFront.value = ttsLangFront || 'es-ES';
+        if (langBack) langBack.value = ttsLangBack || 'es-ES';
+
+        const hideFront = document.getElementById('card-hide-text-front');
+        const hideBack = document.getElementById('card-hide-text-back');
+        if (hideFront) hideFront.checked = hideTextFront || false;
+        if (hideBack) hideBack.checked = hideTextBack || false;
+
+        // ✅ UI Dinámica para Audio
+        const ttsFrontLabel = document.querySelector('label[for="card-tts-front"]');
+        const ttsBackLabel = document.querySelector('label[for="card-tts-back"]');
+        
+        if (ttsFrontLabel) ttsFrontLabel.innerText = audioUrlFront ? 'Actualizar/Regenerar audio' : 'Generar audio TTS';
+        if (ttsBackLabel) ttsBackLabel.innerText = audioUrlBack ? 'Actualizar/Regenerar audio' : 'Generar audio TTS';
+
+        const statusFront = document.getElementById('audio-status-front');
+        const statusBack = document.getElementById('audio-status-back');
+        if (statusFront) statusFront.style.display = audioUrlFront ? 'flex' : 'none';
+        if (statusBack) statusBack.style.display = audioUrlBack ? 'flex' : 'none';
 
         // Previews Anverso
         this._updateImagePreview('front', imageUrl);
+        const imgUrlFront = document.getElementById('card-image-url-front');
+        if (imgUrlFront) imgUrlFront.value = imageUrl || '';
+
         // Previews Reverso
         this._updateImagePreview('back', backImageUrl);
+        const imgUrlBack = document.getElementById('card-image-url-back');
+        if (imgUrlBack) imgUrlBack.value = backImageUrl || '';
 
         document.getElementById('card-modal').classList.add('active');
+        
+        // Ocultar pestañas al editar y forzar modo individual
+        const tabs = document.getElementById('card-modal-tabs');
+        if (tabs) tabs.style.display = 'none';
+        this.switchCardMode('individual');
+
         if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
             window.uiManager.pushModalState('card-modal');
+        }
+    }
+
+    switchCardMode(mode) {
+        this.currentCardMode = mode;
+        
+        // UI Tabs
+        document.getElementById('tab-card-individual').classList.toggle('active', mode === 'individual');
+        document.getElementById('tab-card-bulk').classList.toggle('active', mode === 'bulk');
+        
+        // UI Sections
+        document.getElementById('section-card-individual').style.display = mode === 'individual' ? 'block' : 'none';
+        document.getElementById('section-card-bulk').style.display = mode === 'bulk' ? 'block' : 'none';
+        
+        // Reset bulk if switching back to individual to avoid accidental bulk saves
+        if (mode === 'individual') {
+            // No reseteamos _pendingBulkCards aquí para permitir que el usuario vea la preview si vuelve, 
+            // pero el handleSaveCard ya discrimina por currentCardMode.
         }
     }
 
@@ -1715,7 +1861,7 @@ class RepasoManager {
 
         // Validar tamaño (ej: 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            alert('La imagen es demasiado grande (máx 5MB)');
+            window.uiManager.showToast('⚠️ La imagen es demasiado grande (máx 5MB)');
             input.value = '';
             return;
         }
@@ -1724,6 +1870,13 @@ class RepasoManager {
         const localUrl = URL.createObjectURL(file);
         this._updateImagePreview(side, localUrl);
         input.value = '';
+    }
+
+    removeAudio(side) {
+        const status = document.getElementById(`audio-status-${side}`);
+        if (status) status.style.display = 'none';
+        const deleteInput = document.getElementById(`card-delete-audio-${side}`);
+        if (deleteInput) deleteInput.value = 'true';
     }
 
     removeImage(side) {
@@ -1740,7 +1893,7 @@ class RepasoManager {
     // --- CARGA MASIVA EXCEL (NUEVO) ---
 
     downloadFlashcardTemplate() {
-        if (typeof window.XLSX === 'undefined') return alert('Error: Cargando motor de Excel...');
+        if (typeof window.XLSX === 'undefined') return window.uiManager.showToast('Error: Cargando motor de Excel...');
 
         const ws_data = [
             ["Frente", "Dorso"],
@@ -1760,7 +1913,7 @@ class RepasoManager {
         if (!file) return;
 
         if (typeof window.XLSX === 'undefined') {
-            alert('El procesador de Excel no está listo. Intenta en unos segundos.');
+            window.uiManager.showToast('⏳ El procesador de Excel no está listo. Reintenta en breve.');
             return;
         }
 
@@ -1775,16 +1928,35 @@ class RepasoManager {
 
                 // Procesar filas (omitir encabezado)
                 const newCards = [];
+                const headers = rows[0] || [];
+                
+                // Validación estricta de encabezados
+                const frontIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('frente'));
+                const backIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('dorso'));
+
+                if (frontIdx === -1 || backIdx === -1) {
+                    window.uiManager.showToast('❌ El Excel no tiene las columnas "Frente" y "Dorso".', 'error');
+                    input.value = '';
+                    return;
+                }
+
                 for (let i = 1; i < rows.length; i++) {
-                    const front = rows[i][0]?.toString().trim();
-                    const back = rows[i][1]?.toString().trim();
+                    const front = rows[i][frontIdx]?.toString().trim();
+                    const back = rows[i][backIdx]?.toString().trim();
                     if (front && back) {
                         newCards.push({ front, back });
                     }
                 }
 
+                // LÍMITE SENIOR: 50 tarjetas
+                if (newCards.length > 50) {
+                    window.uiManager.showToast(`⚠️ Máximo 50 tarjetas por carga (Detectadas: ${newCards.length}). Por favor, reduce el archivo.`);
+                    input.value = '';
+                    return;
+                }
+
                 if (newCards.length === 0) {
-                    alert('No se detectaron tarjetas válidas en el archivo. Asegúrate de usar las columnas "Frente" y "Dorso".');
+                    window.uiManager.showToast('⚠️ No se detectaron tarjetas válidas en el archivo.', 'warning');
                     input.value = '';
                     return;
                 }
@@ -1794,6 +1966,10 @@ class RepasoManager {
                 // UI Feedback
                 const preview = document.getElementById('bulk-upload-preview');
                 const text = document.getElementById('bulk-count-text');
+                const fileLabel = document.getElementById('bulk-file-label');
+                
+                if (fileLabel) fileLabel.textContent = file.name;
+
                 if (preview && text) {
                     text.textContent = `${newCards.length} tarjetas detectadas listas para guardar.`;
                     preview.style.display = 'block';
@@ -1801,7 +1977,7 @@ class RepasoManager {
 
             } catch (err) {
                 console.error(err);
-                alert('Error al leer el archivo Excel.');
+                window.uiManager.showToast('❌ Error al leer el archivo Excel.');
             }
         };
         reader.readAsArrayBuffer(file);
@@ -1824,7 +2000,12 @@ class RepasoManager {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.token}`
                 },
-                body: JSON.stringify({ cards: this._pendingBulkCards })
+                body: JSON.stringify({ 
+                    cards: this._pendingBulkCards,
+                    generateTtsFront: document.getElementById('bulk-tts-front')?.checked || false,
+                    generateTtsBack: document.getElementById('bulk-tts-back')?.checked || false,
+                    ttsLang: document.getElementById('bulk-tts-lang')?.value || 'es-ES'
+                })
             });
 
             if (res.ok) {
@@ -1841,11 +2022,11 @@ class RepasoManager {
                 if (window.uiManager.showToast) window.uiManager.showToast('¡Carga masiva completada con éxito!', 'success');
             } else {
                 const data = await res.json();
-                alert('Error en carga masiva: ' + (data.error || 'Fallo desconocido'));
+                window.uiManager.showToast('❌ Error en carga masiva: ' + (data.error || 'Fallo desconocido'));
             }
         } catch (err) {
             console.error(err);
-            alert('Error de red en la carga masiva.');
+            window.uiManager.showToast('❌ Error de red en la carga masiva.');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -1856,8 +2037,9 @@ class RepasoManager {
 
     // AI Generation
     async generateAiCards() {
-        const topic = document.getElementById('ai-topic').value;
-        if (!topic) return alert('Escribe un tema');
+        const topic = document.getElementById('ai-topic')?.value;
+        const amount = document.getElementById('ai-amount')?.value || 5;
+        if (!topic) return window.uiManager.showToast('✍️ Escribe un tema para la IA');
 
         document.getElementById('ai-loading').style.display = 'block';
 
@@ -1866,7 +2048,13 @@ class RepasoManager {
                 method: 'POST',
                 isRetryable: true,
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                body: JSON.stringify({ topic, amount: 5 })
+                body: JSON.stringify({ 
+                    topic, 
+                    amount,
+                    generateTtsFront: document.getElementById('ai-tts-front')?.checked || false,
+                    generateTtsBack: document.getElementById('ai-tts-back')?.checked || false,
+                    ttsLang: document.getElementById('ai-tts-lang')?.value || 'es-ES'
+                })
             });
 
             if (res.status === 403) {
@@ -1897,7 +2085,7 @@ class RepasoManager {
                         confirmButtonText: 'A estudiar'
                     });
                 } else {
-                    alert(`✨ ¡Éxito! Se generaron tarjetas sobre "${topic}".`);
+                    window.uiManager.showToast(`✅ ¡Éxito! Se generaron tarjetas sobre "${topic}".`);
                 }
             } else {
                 const errorData = await res.json().catch(() => ({}));
@@ -1905,7 +2093,7 @@ class RepasoManager {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire('Error del Servidor', errorData.error || 'Hubo un fallo generando las tarjetas. Intenta de nuevo.', 'error');
                 } else {
-                    alert('Error al generar tarjetas: ' + (errorData.error || 'Fallo desconocido'));
+                    window.uiManager.showToast('❌ Error al generar tarjetas: ' + (errorData.error || 'Fallo desconocido'));
                 }
             }
         } catch (err) {
@@ -1914,7 +2102,7 @@ class RepasoManager {
             if (typeof Swal !== 'undefined') {
                 Swal.fire('Error de Conexión', 'No se pudo contactar con el servidor. Revisa tu internet.', 'error');
             } else {
-                alert('Error de conexión al generar la IA.');
+                window.uiManager.showToast('❌ Error de conexión al generar con IA.');
             }
         } finally {
             document.getElementById('ai-loading').style.display = 'none';
@@ -1977,7 +2165,7 @@ class RepasoManager {
                 if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                     window.uiManager.showPaywallModal(data.error, 'flashcards');
                 } else {
-                    alert(data.error || 'Has agotado tus límites. Mejora tu plan para continuar.');
+                    window.uiManager.showToast('⚠️ ' + (data.error || 'Has agotado tus límites. Mejora tu plan para continuar.'));
                 }
                 return false;
             } else {
@@ -2049,7 +2237,7 @@ class RepasoManager {
                     }
                 }
             } else {
-                alert('No se pudo eliminar el mazo');
+                window.uiManager.showToast('❌ No se pudo eliminar el mazo');
             }
         } catch (err) {
             console.error(err);
@@ -2099,7 +2287,7 @@ class RepasoManager {
                     this.loadFolder(this.currentDeck.id);
                 }
             } else {
-                alert('No se pudo eliminar la tarjeta');
+                window.uiManager.showToast('❌ No se pudo eliminar la tarjeta');
             }
         } catch (err) {
             console.error(err);

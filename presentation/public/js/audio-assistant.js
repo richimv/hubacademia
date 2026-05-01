@@ -22,10 +22,11 @@ class AudioAssistant {
         this.currentUtterance = null;
         this.lastResponseText = ''; // Para guardar como nota
 
-        // Web Speech APIs
+        // Web Speech APIs (Gratis e Ilimitado para el chat)
         this.synth = window.speechSynthesis || null;
         this.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
         this.recognition = null;
+        this.currentUtterance = null;
 
         this.init();
     }
@@ -119,20 +120,35 @@ class AudioAssistant {
     // 2. CAPTURA DE CONTEXTO DE LA PÁGINA
     // ─────────────────────────────────────────────────────────
     _capturePageContext() {
-        const path = window.location.pathname;
-        let context = { type: 'general', text: '', label: 'Contexto general' };
+        const path = window.location.pathname.toLowerCase();
+        let context = { type: 'general', text: '', label: 'Contexto general', lang: 'es' };
+
+        // 🟢 Detección de Idioma Basada en Contexto
+        if (path.includes('ingles') || path.includes('english')) context.lang = 'en';
+        else if (path.includes('italiano') || path.includes('italian')) context.lang = 'it';
 
         const resourceContentEl = document.getElementById('resource-content-body');
         if (resourceContentEl) {
             const rawText = resourceContentEl.innerText?.trim() || '';
-            context.text = rawText.substring(0, 10000); // ✅ Captura ampliada para análisis profundo
+            context.text = rawText.substring(0, 10000); 
             context.type = 'resource';
             const titleEl = document.querySelector('.resource-info h1');
             context.label = titleEl ? `Recurso: ${titleEl.innerText}` : 'Recurso académico';
+            
+            // Refinar idioma por título si es necesario
+            const lowerTitle = context.label.toLowerCase();
+            if (lowerTitle.includes('inglés') || lowerTitle.includes('english')) context.lang = 'en';
+            if (lowerTitle.includes('italiano') || lowerTitle.includes('italian')) context.lang = 'it';
+            
         } else if (path.includes('course')) {
             const titleEl = document.querySelector('.course-title, h1');
             context.type = 'course';
             context.label = titleEl ? `Curso: ${titleEl.innerText}` : 'Curso académico';
+            
+            const lowerTitle = context.label.toLowerCase();
+            if (lowerTitle.includes('inglés') || lowerTitle.includes('english')) context.lang = 'en';
+            if (lowerTitle.includes('italiano') || lowerTitle.includes('italian')) context.lang = 'it';
+
         } else if (path.includes('flashcards') || path.includes('repaso')) {
             context.type = 'study';
             context.label = 'Sesión de estudio';
@@ -143,6 +159,7 @@ class AudioAssistant {
         this.pageContext = context;
         const labelEl = document.getElementById('audio-context-label');
         if (labelEl) labelEl.textContent = context.label;
+        console.log(`🎙️ Contexto de audio actualizado: ${context.label} [Idioma: ${context.lang}]`);
     }
 
     // ─────────────────────────────────────────────────────────
@@ -444,6 +461,9 @@ class AudioAssistant {
         if (!this.synth) return;
         this.synth.cancel();
 
+        if (!text) return;
+
+        // Limpieza de Markdown
         const cleanText = text
             .replace(/\*\*(.*?)\*\*/g, '$1')
             .replace(/\*(.*?)\*/g, '$1')
@@ -454,28 +474,29 @@ class AudioAssistant {
             .substring(0, 3000);
 
         this.currentUtterance = new SpeechSynthesisUtterance(cleanText);
-        this.currentUtterance.lang = 'es-PE';
-        this.currentUtterance.rate = 1.05;
+        
+        // Mapeo de idiomas para voces nativas
+        const langMap = { 'es': 'es-PE', 'en': 'en-US', 'it': 'it-IT' };
+        this.currentUtterance.lang = langMap[this.pageContext?.lang] || 'es-PE';
+        
+        this.currentUtterance.rate = 1.0;
         this.currentUtterance.pitch = 1.0;
 
+        // Intentar seleccionar una voz de calidad en el navegador
         const voices = this.synth.getVoices();
-        // ✅ Priorizar voces "Naturales" (Edge) o "Google" (Chrome) que suenan mucho mejor
-        const spanishVoice = voices.find(v => v.lang.startsWith('es') && v.name.includes('Natural')) // Edge Natural
-            || voices.find(v => v.lang.startsWith('es') && v.name.includes('Google')) // Google
-            || voices.find(v => v.lang.startsWith('es') && v.name.toLowerCase().includes('female'))
-            || voices.find(v => v.lang.startsWith('es'))
+        const preferredVoice = voices.find(v => v.lang.startsWith(this.currentUtterance.lang.split('-')[0]) && (v.name.includes('Natural') || v.name.includes('Google')))
+            || voices.find(v => v.lang.startsWith(this.currentUtterance.lang.split('-')[0]))
             || null;
         
-        if (spanishVoice) this.currentUtterance.voice = spanishVoice;
+        if (preferredVoice) this.currentUtterance.voice = preferredVoice;
 
         this.currentUtterance.onstart = () => {
             this.isSpeaking = true;
             this._setWaveformState('speaking');
-            this._setStatus('Hablando...');
+            this._setStatus('Hablando (Voz local)...');
             document.getElementById('audio-stop-btn').style.display = 'flex';
             document.getElementById('audio-mic-btn').style.display = 'none';
             document.getElementById('audio-assistant-btn')?.classList.add('speaking');
-            // Sync mini player
             if (this.isMinimized) this._updateMiniPlayerStatus();
         };
 
@@ -487,6 +508,11 @@ class AudioAssistant {
             document.getElementById('audio-mic-btn').style.display = 'flex';
             document.getElementById('audio-assistant-btn')?.classList.remove('speaking');
             if (this.isMinimized) this._updateMiniPlayerStatus();
+        };
+
+        this.currentUtterance.onerror = (e) => {
+            console.error('❌ Error en SpeechSynthesis:', e);
+            this._stopSpeaking();
         };
 
         this.synth.speak(this.currentUtterance);

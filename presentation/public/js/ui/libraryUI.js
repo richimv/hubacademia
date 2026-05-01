@@ -519,7 +519,7 @@ class LibraryUI {
         const content = document.getElementById('note-editor-textarea').value.trim();
 
         if (!content) {
-            alert('El contenido no puede estar vacío.');
+            window.uiManager.showToast('⚠️ El contenido de la nota no puede estar vacío.');
             return;
         }
 
@@ -547,7 +547,7 @@ class LibraryUI {
                 await this.service.loadFullLibrary();
                 this.closeNoteModal();
             } else {
-                alert('Error al guardar la nota. ¿Ejecutaste el script SQL?');
+                window.uiManager.showToast('❌ Error al guardar la nota. Verifica tu conexión.');
             }
         } catch (err) {
             console.error('Error guardando nota:', err);
@@ -567,7 +567,8 @@ class LibraryUI {
     }
 
     async deleteNote(noteId) {
-        if (!confirm('¿Eliminar esta nota?')) return;
+        const confirmed = await window.confirmationModal.show('¿Estás seguro de eliminar esta nota?', 'Eliminar Nota', 'Eliminar', 'Cancelar');
+        if (!confirmed) return;
 
         try {
             await fetch(`${window.AppConfig.API_URL}/api/library/notes/${noteId}`, {
