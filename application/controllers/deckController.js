@@ -1,5 +1,13 @@
 const DeckService = require('../../domain/services/deckService');
 
+// 🛡️ CONSTANTES DE SEGURIDAD Y CONTROL DE COSTOS
+const SECURITY_LIMITS = {
+    MAX_TEXT_LENGTH: 400,      // Límite para guardar en BD (Reducido para brevedad)
+    MAX_TTS_LENGTH: 500,       // Límite para enviar a Google TTS (Ahorro de cuota)
+    MIN_TEXT_LENGTH: 2,        // Evitar basura
+    MAX_BATCH_SIZE: 50         // Tarjetas por lote
+};
+
 class DeckController {
     /**
      * Helper to get common user context.
@@ -30,13 +38,17 @@ class DeckController {
      * ✅ NUEVO: Helper para procesar la síntesis de voz y subir a GCS.
      */
     _processAudioTts = async (text, side = 'front', lang = 'es-ES') => {
-        if (!text || text.trim().length < 2) return null;
+        if (!text || text.trim().length < SECURITY_LIMITS.MIN_TEXT_LENGTH) return null;
+        
+        // 🛡️ RECORTAR TEXTO PARA TTS (Protección de presupuesto)
+        const cleanText = text.substring(0, SECURITY_LIMITS.MAX_TTS_LENGTH);
+        
         try {
             const TtsService = require('../../domain/services/ttsService');
             const mediaController = require('./mediaController');
 
             // 1. Sintetizar
-            const audioBuffer = await TtsService.synthesize(text, lang);
+            const audioBuffer = await TtsService.synthesize(cleanText, lang);
 
             // 2. Subir a GCS
             const fileName = `tts_${side}_${Date.now()}.mp3`;
@@ -251,6 +263,11 @@ class DeckController {
                 return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
             }
 
+            // 🛡️ VALIDACIÓN DE LONGITUD
+            if ((front && front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (back && back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH)) {
+                return res.status(400).json({ error: `El texto de la tarjeta es demasiado largo (Máx: ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres).` });
+            }
+
             // ✅ NUEVO: Generación de Audio TTS Individual
             let audioUrlFront = null;
             let audioUrlBack = null;
@@ -286,8 +303,14 @@ class DeckController {
             const { generateTtsFront, generateTtsBack, ttsLang } = req.body;
 
             // LÍMITE DE SEGURIDAD (Backend Enforcement)
-            if (cards.length > 50) {
-                return res.status(400).json({ error: 'Límite de 50 tarjetas excedido para carga masiva.' });
+            if (cards.length > SECURITY_LIMITS.MAX_BATCH_SIZE) {
+                return res.status(400).json({ error: `Límite de ${SECURITY_LIMITS.MAX_BATCH_SIZE} tarjetas excedido para carga masiva.` });
+            }
+
+            // 🛡️ VALIDACIÓN DE LONGITUD EN LOTE
+            const hasOverlength = cards.some(c => (c.front && c.front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (c.back && c.back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH));
+            if (hasOverlength) {
+                return res.status(400).json({ error: `Una o más tarjetas en el lote exceden el límite de ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres.` });
             }
 
             // ✅ NUEVO: Procesamiento por lotes (Batch) para TTS con idioma correcto
@@ -392,6 +415,11 @@ class DeckController {
 
             if (!hasFront || !hasBack) {
                 return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
+            }
+
+            // 🛡️ VALIDACIÓN DE LONGITUD
+            if ((front && front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (back && back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH)) {
+                return res.status(400).json({ error: `El texto de la tarjeta es demasiado largo (Máx: ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres).` });
             }
 
             // 1. Obtener la tarjeta actual para comparar imágenes y audios

@@ -112,32 +112,39 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Contexto Dinámico**: El sistema inyecta el contenido de la tarjeta como punto de partida, pero el tutor utiliza su conocimiento interno completo para resolver dudas laterales.
 - **Memoria de Sesión**: Historial volátil gestionado por el frontend que se resetea al cambiar de flashcard, manteniendo el enfoque en el tema actual.
 - **Versatilidad Disciplinaria**: El tutor adapta su lenguaje y rigor técnico según la materia (Medicina, Idiomas, Leyes, etc.).
-- **Descubrimiento de UX (Plasma Discovery)**: Sistema de partículas ascendentes que emergen desde el fondo de la pantalla al revelar la respuesta, guiando al usuario hacia el chat del Tutor incluso si este requiere scroll.
+- **Descubrimiento de UX (Neon Glow Pulse)**: Animación sutil de borde neón (tonos azul/púrpura) y pulsación de brillo en el botón flotante al revelar la respuesta. Este diseño minimalista reemplaza al antiguo sistema de partículas, garantizando un TTI (Time To Interactive) óptimo en dispositivos móviles y guiando el ojo del usuario de manera no intrusiva.
 
 ### E. Visualización Adaptativa y Escena 3D
 - **Layout de Seguridad**: Introducción del `study-header` para separar la navegación (Volver/Pendientes) del área de estudio, evitando colisiones en móviles.
 - **Escalado Inteligente (Fitting)**: Algoritmo en `flashcards.js` que ajusta el tamaño de fuente (0.9rem a 2.8rem) basándose en la densidad de caracteres y la presencia de imágenes 9:16.
 - **Scroll de Alta Accesibilidad**: Configuración de Flexbox para garantizar que el texto largo siempre sea legible desde el inicio en celulares, manteniendo el centrado vertical en textos cortos.
 
-### F. Generación Inteligente y Deduplicada (IA)
-- **Lógica de No-Repetición**: El sistema recupera automáticamente los frentes (`front_content`) de las tarjetas existentes en el mazo antes de cada generación.
-- **Ventana de Exclusión**: Se inyectan las últimas **40 tarjetas** como contexto negativo (blacklist) en el prompt de la IA.
-- **Sanitización de Contexto**: El backend limpia automáticamente etiquetas HTML de los frentes existentes antes de enviarlos a la IA para maximizar la comprensión del modelo.
-- **Control de Cantidad**: Parámetro `count` dinámico (estándar: 10 tarjetas por intento) para asegurar un crecimiento balanceado del mazo.
+### F. Generación Multidisciplinar Adaptativa
+- **Motor de IA Multidominio**: El prompt maestro en `trainingService.js` ha sido refactorizado para aplicar estrategias pedagógicas específicas según el área:
+    - **Medicina**: Enfoque en razonamiento clínico, síntomas y diagnósticos diferenciales (Juicio clínico vs. Definición).
+    - **Educación**: Enfoque en teorías del aprendizaje, gestión de aula y estrategias aplicadas para docentes.
+    - **Idiomas (Listening/Speaking)**: Regla de "Pureza Lingüística" que obliga a un anverso 100% puro en el idioma objetivo para una síntesis de voz (TTS) impecable, con traducción aislada en el reverso.
+- **Active Recall Reforzado**: Todas las generaciones fuerzan el formato "Disparador Mental" -> "Respuesta Atómica", optimizando la retención a largo plazo.
 
-### G. Comunidad, Clonación y Gestión de Medios
-- **Galería de Comunidad Dinámica**: Los mazos públicos ahora se renderizan con los colores y estéticas definidas por sus autores originales, utilizando gradientes HSL y efectos de resplandor (glow) dinámicos.
-- **Clonación Inteligente (Shallow Clone)**: Permite a los usuarios copiar mazos públicos (incluyendo sub-mazos de cualquier nivel) a su biblioteca personal. El proceso clona metadatos (color, icono, guía) y tarjetas, manteniendo la independencia de los datos originales.
-- **Protección de Integridad de Medios (GCS)**: Implementación de la lógica `isImageInUse`. Antes de eliminar un archivo físico en Google Cloud Storage (al editar o borrar), el sistema verifica si la URL está siendo referenciada por otros mazos clonados o tarjetas compartidas, evitando "imágenes rotas" en la comunidad.
-- **Previsualización de Solo Lectura**: Modal de exploración que permite ver el contenido completo de un mazo (texto con Markdown e imágenes) antes de clonarlo, sin generar sesiones de estudio ni afectar las estadísticas del usuario.
-- **UX de Publicación**: Confirmación personalizada y minimalista para la publicación de mazos, advirtiendo sobre el alcance de la compartición (mazo principal + tarjetas directas).
-- **Optimización de Sincronización**: Uso de políticas de caché `no-cache` en las peticiones de biblioteca para garantizar que los elementos guardados o favoritos aparezcan instantáneamente en el panel de "Mis Recursos" sin recargar la página.
+### G. Seguridad, FinOps y Control de Cuotas
+- **Escudos de Caracteres (Safety Caps)**:
+    - **Límite de Texto**: Restricción estricta de **400 caracteres** por cara para garantizar tarjetas atómicas y evitar el almacenamiento de documentos extensos.
+    - **Límite de Síntesis (TTS)**: Para optimizar costos de Google Cloud, el audio premium solo procesa los primeros **500 caracteres** de cada cara.
+- **Cuotas de Importación Diaria (Excel)**:
+    - **Usuarios Free**: Máximo **1 carga masiva** por día.
+    - **Usuarios Premium (Básico/Avanzado)**: Máximo **10 cargas masivas** por día.
+- **Validación Preventiva**: El frontend (`repaso.js`) audita el archivo Excel antes de la subida, proporcionando feedback inmediato sobre filas excedidas o columnas faltantes.
 
-### G. Interfaz Conversacional (Chat General)
-- **Sugerencias Inteligentes (Pills)**: Las preguntas de seguimiento ahora se renderizan dinámicamente sobre la barra de entrada, facilitando la interacción continua.
-- **Deduplicación de Texto**: Se ha prohibido a la IA incluir sugerencias dentro del cuerpo del mensaje para evitar redundancia visual.
+### H. UX Discovery y Micro-interacciones (Tutor IA)
+- **Efecto Neon Glow Pulse**: Animación optimizada por hardware (CSS keyframes) que aplica un resplandor de neón vibrante al botón del Tutor al girar la flashcard. Se eliminó la inyección de partículas en el DOM para favorecer la fluidez de renderizado a 60fps en smartphones, manteniendo la alta visibilidad requerida.
+- **Efecto Shimmer**: Animación de resplandor sutil en la interfaz de chat para indicar actividad y guiar el enfoque del usuario hacia las herramientas de soporte.
+
+### I. Optimizaciones de Alto Rendimiento y Ruteo (V15 - Mayo 2026)
+- **Higiene de Enrutamiento (Client-Side Routing)**: Se ha corregido la contaminación del historial de navegación que ocurría durante el arranque de la aplicación (Deep Linking y restauraciones BFCache). La función `init()` y las ediciones de tarjetas ahora utilizan cargas silenciosas (`pushState=false`), evitando inyectar estados basura.
+- **Salida de Sesión Nativa**: La función de salida en el modo estudio (`handleExit`) ha abandonado las redirecciones duras. Ahora evalúa el `document.referrer` y utiliza un `window.history.back()` nativo, garantizando que el usuario regrese impecablemente al nivel exacto del mazo sin duplicar páginas en el historial.
+- **Resolución de Condición de Carrera (Última Tarjeta)**: Se implementó una barrera asíncrona (`await syncPromise`) en la calificación de la última flashcard de la cola. Esto fuerza al sistema a esperar que la base de datos confirme la revisión antes de pedir la siguiente tanda, erradicando el bug de repetición de tarjetas.
+- **Renderizado por Lotes (DocumentFragment)**: Las cuadrículas de mazos masivos (`renderDeckCards` y `renderCommunityDecks`) fueron refactorizadas para ensamblar las tarjetas en memoria temporal (`DocumentFragment`) antes de inyectarlas al DOM en una sola operación. Esto elimina el bloqueo del hilo principal y reduce los costosos cálculos de *reflow/repaint* del navegador al mínimo.
 
 ---
 
-**Documentación Técnica Actualizada - 26 de Abril, 2026.**
-
+**Documentación Técnica Actualizada - 04 de Mayo, 2026.**

@@ -11,10 +11,16 @@ class RepasoManager {
         this.currentCardMode = 'individual'; // 'individual' o 'bulk'
         this._pendingFiles = { front: null, back: null };
         this._pendingBulkCards = [];
+        
+        // ✅ NUEVO: Caché para optimizar navegación
+        this._cache = {
+            decks: {}, // { parentId: [decks] }
+            folderData: {}, // { deckId: { deck, children, cards } }
+            cards: {}
+        };
 
         this.explorer = new DeckExplorer(this);
 
-        // Callback para interceptar el botón Atrás del móvil cuando hay tarjetas seleccionadas
         this.handlePopState = this.handlePopState.bind(this);
         window.addEventListener('popstate', this.handlePopState);
 
@@ -120,9 +126,9 @@ class RepasoManager {
         const deckId = urlParams.get('deckId');
 
         if (deckId) {
-            this.loadFolder(deckId); // Deep link
+            this.loadFolder(deckId, false); // Deep link (ya está en la URL, no hacer push)
         } else {
-            this.loadDashboard(); // Start at Home
+            this.loadDashboard(false); // Start at Home (ya está en la URL, no hacer push)
         }
 
         // --- NEW: Guest Banner for Repaso ---
@@ -185,12 +191,25 @@ class RepasoManager {
         const commView = document.getElementById('community-view');
         if (commView) commView.style.display = 'none';
 
-        // Show loading state in the content area
+        // --- 1. INTENTAR CARGAR DESDE CACHÉ (INSTANTÁNEO) ---
+        if (this._cache.folderData[deckId]) {
+            const cached = this._cache.folderData[deckId];
+            this.currentDeck = cached.deck;
+            this.currentCards = cached.cards;
+            this.renderDeckHeader(cached.deck, cached.cards);
+            this.renderSubDecks(cached.children);
+            this.renderCards(cached.cards);
+        }
+
+        // Show loading state SOLO si no hay caché y NO estamos viendo ya este mazo
         const container = document.getElementById('folder-header');
-        if (container) container.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>';
+        const isCurrentlyViewing = this.currentDeck && String(this.currentDeck.id) === String(deckId);
+        
+        if (container && !this._cache.folderData[deckId] && !isCurrentlyViewing) {
+            container.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>';
+        }
 
         try {
-            // Store previous deck for navigation logic
             const previousDeck = this.currentDeck;
 
             const [deck, children, cards] = await Promise.all([
@@ -208,25 +227,21 @@ class RepasoManager {
                 return;
             }
 
+            // --- 2. ACTUALIZAR CACHÉ ---
+            this._cache.folderData[deckId] = { deck, children, cards };
+
             // --- SMART HISTORY NAVIGATION ---
             if (pushState && window.history.pushState) {
                 const url = new URL(window.location.href);
                 url.searchParams.set('deckId', deckId);
-                
-                let navigationType = 'push'; // Default
-                
+                let navigationType = 'push';
                 if (previousDeck) {
-                    // Logic: 
-                    // 1. If same parent -> SIBLING -> REPLACE
-                    // 2. If we are moving UP to a parent -> REPLACE
-                    // 3. Otherwise (deeper or different branch) -> PUSH
                     if (String(deck.parent_id) === String(previousDeck.parent_id)) {
                         navigationType = 'replace';
                     } else if (String(deck.id) === String(previousDeck.parent_id)) {
                         navigationType = 'replace';
                     }
                 }
-
                 if (navigationType === 'replace') {
                     window.history.replaceState({ view: 'folder', deckId }, `Mazo ${deck.name}`, url.toString());
                 } else {
@@ -242,7 +257,18 @@ class RepasoManager {
 
         } catch (e) {
             console.error('Error in loadFolder:', e);
-            this.loadDashboard();
+            if (!this._cache.folderData[deckId]) this.loadDashboard();
+        }
+    }
+
+    invalidateCache(deckId = null) {
+        if (deckId) {
+            delete this._cache.folderData[deckId];
+            const deck = this.currentDeck;
+            if (deck && deck.parent_id) delete this._cache.folderData[deck.parent_id];
+            else this._cache.decks = {}; // Clear root cache
+        } else {
+            this._cache = { decks: {}, folderData: {}, cards: {} };
         }
     }
 
@@ -315,6 +341,8 @@ class RepasoManager {
                 return;
             }
 
+            const fragment = document.createDocumentFragment();
+
             data.decks.forEach(deck => {
                 const card = document.createElement('div');
                 card.className = 'deck-card';
@@ -370,8 +398,10 @@ class RepasoManager {
                         </div>
                     </div>
                 `;
-                grid.appendChild(card);
+                fragment.appendChild(card);
             });
+            
+            grid.appendChild(fragment);
         } catch (e) {
             console.error('Error loading community decks:', e);
             document.getElementById('community-decks-grid').innerHTML = '<div style="color:#ef4444; padding:2rem; text-align:center; grid-column: 1 / -1;">Error al cargar la comunidad.</div>';
@@ -689,6 +719,7 @@ class RepasoManager {
 
     renderDeckCards(decks, container, parentId = null) {
         container.innerHTML = '';
+        const fragment = document.createDocumentFragment();
 
         // --- 1. NEW: Add "Create Deck" Card (Only for Logged Users) ---
         if (this.token) {
@@ -712,7 +743,7 @@ class RepasoManager {
                     <div style="font-size: 0.85rem; font-weight: 600;">Crear Mazo</div>
                 </div>
             `;
-            container.appendChild(addCard);
+            fragment.appendChild(addCard);
         }
 
         // --- 2. Render Decks ---
@@ -820,8 +851,10 @@ class RepasoManager {
                 }
                 this.loadFolder(deck.id);
             }
-            container.appendChild(card);
+            fragment.appendChild(card);
         });
+        
+        container.appendChild(fragment);
     }
 
     renderCards(cards = this.currentCards) {
@@ -835,6 +868,7 @@ class RepasoManager {
 
         this.isSelectionMode = false;
 
+        // Render Header & Search once
         container.innerHTML = `
             <div style="display:flex; justify-content:space-between; margin-bottom:1rem; align-items:center; flex-wrap:wrap; gap:1rem;">
                 <h3 style="margin:0; font-size:1.2rem; font-weight:600;">Tarjetas (${cards.length})</h3>
@@ -858,7 +892,17 @@ class RepasoManager {
         const listContainer = document.getElementById('cards-list-container');
         const fragment = document.createDocumentFragment();
 
-        cards.forEach((c, index) => {
+        // ✅ EVENT DELEGATION: Una sola escucha para todo el contenedor
+        if (!listContainer.dataset.delegated) {
+            listContainer.dataset.delegated = "true";
+            listContainer.addEventListener('click', (e) => this._handleCardListClick(e));
+        }
+
+        // Limit initial render to 50 for performance, then could add Load More
+        const limit = 50;
+        const toRender = cards.slice(0, limit);
+
+        toRender.forEach((c, index) => {
             const srsClass = this._getSrsClass(c);
             const isDue = new Date(c.next_review_at) <= new Date();
             const row = document.createElement('div');
@@ -870,10 +914,10 @@ class RepasoManager {
             row.innerHTML = `
                 <div style="display:flex; align-items:center; gap:0.5rem; color:#64748b;">
                     <i class="fas fa-grip-vertical drag-handle"></i>
-                    <input type="checkbox" class="card-checkbox card-item-checkbox" value="${c.id}" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="card-checkbox card-item-checkbox" value="${c.id}" data-id="${c.id}">
                 </div>
                 <div class="card-row-front">
-                    ${c.image_url ? `<img src="${window.resolveImageUrl(c.image_url)}" style="width:24px; height:24px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;">` : ''}
+                    ${c.image_url ? `<img src="${window.resolveImageUrl(c.image_url)}" style="width:24px; height:24px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;" loading="lazy">` : ''}
                     ${this.escapeHtml(c.front_content)}
                 </div>
                 <div class="card-row-back">
@@ -881,32 +925,123 @@ class RepasoManager {
                     ${this.escapeHtml(c.back_content)}
                 </div>
                 <div class="card-row-actions">
-                    <button class="deck-action-btn deck-action-btn--play" title="Estudiar esta tarjeta" onclick="event.stopPropagation(); ${this.token ? `window.location.href='/flashcards?deckId=${c.deck_id}&cardId=${c.id}'` : `window.uiManager.showAuthPromptModal()`}">
+                    <button class="deck-action-btn deck-action-btn--play" title="Estudiar" data-action="play">
                         <i class="fas fa-play" style="color: #60a5fa;"></i>
                     </button>
                     ${this.token ? `
-                    <button class="deck-action-btn" title="Editar" onclick="event.stopPropagation(); window.repasoManager.onEditCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`, \`${this.escapeHtml(c.back_content)}\`, '${c.image_url || ''}', '${c.explanation_image_url || ''}', '${c.audio_url_frente || ''}', '${c.audio_url_dorso || ''}', '${c.tts_lang_frente || 'es-ES'}', '${c.tts_lang_dorso || 'es-ES'}', ${c.hide_text_frente || false}, ${c.hide_text_dorso || false})">
+                    <button class="deck-action-btn" title="Editar" data-action="edit">
                         <i class="fas fa-pen"></i>
                     </button>
-                    <button class="deck-action-btn deck-action-btn--delete" title="Eliminar" onclick="event.stopPropagation(); window.repasoManager.onDeleteCardClick('${c.id}', \`${this.escapeHtml(c.front_content)}\`)">
+                    <button class="deck-action-btn deck-action-btn--delete" title="Eliminar" data-action="delete">
                         <i class="fas fa-trash"></i>
                     </button>
                     ` : ''}
                 </div>
             `;
 
-            // Row Events
-            this._bindCardRowEvents(row);
+            this._bindCardRowDragEvents(row);
             fragment.appendChild(row);
         });
 
         listContainer.appendChild(fragment);
 
-        // UI Restore
+        if (cards.length > limit) {
+            const moreBtn = document.createElement('button');
+            moreBtn.className = 'btn-action';
+            moreBtn.style.cssText = 'width:100%; margin-top:1rem; justify-content:center; background:rgba(255,255,255,0.05); color:#94a3b8; border:1px dashed rgba(255,255,255,0.1);';
+            moreBtn.innerHTML = `<i class="fas fa-plus"></i> Ver todas las tarjetas (${cards.length - limit} más)`;
+            moreBtn.onclick = () => {
+                moreBtn.remove();
+                this._renderRemainingCards(cards.slice(limit));
+            };
+            listContainer.appendChild(moreBtn);
+        }
+
+        // UI Restore Search
         if (this._lastSearchQuery) {
             const input = document.getElementById('card-search-input');
-            if (input) { input.value = this._lastSearchQuery; input.focus(); }
+            if (input) { input.value = this._lastSearchQuery; }
         }
+    }
+
+    _renderRemainingCards(remainingCards) {
+        const listContainer = document.getElementById('cards-list-container');
+        const fragment = document.createDocumentFragment();
+        remainingCards.forEach((c, index) => {
+            const srsClass = this._getSrsClass(c);
+            const isDue = new Date(c.next_review_at) <= new Date();
+            const row = document.createElement('div');
+            row.className = `card-row-item ${srsClass} ${isDue ? 'is-due-glow' : ''}`;
+            row.dataset.id = c.id;
+            row.dataset.index = index + 50;
+            row.draggable = true;
+            row.innerHTML = `
+                <div style="display:flex; align-items:center; gap:0.5rem; color:#64748b;">
+                    <i class="fas fa-grip-vertical drag-handle"></i>
+                    <input type="checkbox" class="card-checkbox card-item-checkbox" value="${c.id}" data-id="${c.id}">
+                </div>
+                <div class="card-row-front">${c.image_url ? `<img src="${window.resolveImageUrl(c.image_url)}" style="width:24px; height:24px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;" loading="lazy">` : ''}${this.escapeHtml(c.front_content)}</div>
+                <div class="card-row-back">${c.explanation_image_url ? '<i class="fas fa-image" style="color:#94a3b8; margin-right:4px;"></i>' : ''}${this.escapeHtml(c.back_content)}</div>
+                <div class="card-row-actions">
+                    <button class="deck-action-btn deck-action-btn--play" data-action="play"><i class="fas fa-play" style="color:#60a5fa;"></i></button>
+                    ${this.token ? `<button class="deck-action-btn" data-action="edit"><i class="fas fa-pen"></i></button><button class="deck-action-btn deck-action-btn--delete" data-action="delete"><i class="fas fa-trash"></i></button>` : ''}
+                </div>
+            `;
+            this._bindCardRowDragEvents(row);
+            fragment.appendChild(row);
+        });
+        listContainer.appendChild(fragment);
+    }
+
+    _handleCardListClick(e) {
+        const row = e.target.closest('.card-row-item');
+        if (!row) return;
+        const id = row.dataset.id;
+        const card = this.currentCards.find(c => c.id === id);
+        if (!card) return;
+
+        const actionBtn = e.target.closest('button[data-action]');
+        if (actionBtn) {
+            e.stopPropagation();
+            const action = actionBtn.dataset.action;
+            if (action === 'play') {
+                if (this.token) window.location.href = `/flashcards?deckId=${card.deck_id}&cardId=${card.id}`;
+                else window.uiManager.showAuthPromptModal();
+            } else if (action === 'edit') {
+                this.onEditCardClick(card.id, card.front_content, card.back_content, card.image_url, card.explanation_image_url, card.audio_url_frente, card.audio_url_dorso, card.tts_lang_frente, card.tts_lang_dorso, card.hide_text_frente, card.hide_text_dorso);
+            } else if (action === 'delete') {
+                this.onDeleteCardClick(card.id, card.front_content);
+            }
+            return;
+        }
+
+        const checkbox = e.target.closest('.card-item-checkbox');
+        if (checkbox) {
+            e.stopPropagation();
+            this.updateBulkDeleteButton();
+            return;
+        }
+
+        // Row click logic (Selection Mode)
+        if (this.isSelectionMode) {
+            const cb = row.querySelector('.card-item-checkbox');
+            if (cb) {
+                cb.checked = !cb.checked;
+                this.updateBulkDeleteButton();
+            }
+        }
+    }
+
+    _bindCardRowDragEvents(row) {
+        row.addEventListener('dragstart', (e) => this.handleDragStart(e, row));
+        row.addEventListener('dragover', (e) => this.handleDragOver(e, row));
+        row.addEventListener('drop', (e) => this.handleDrop(e, row));
+        row.addEventListener('dragenter', () => row.style.borderTop = '2px solid #3b82f6');
+        row.addEventListener('dragleave', () => row.style.borderTop = '');
+        row.addEventListener('dragend', () => {
+            row.style.opacity = '1';
+            document.querySelectorAll('.card-row-item').forEach(r => r.style.borderTop = '');
+        });
     }
 
     _getSrsClass(c) {
@@ -921,48 +1056,6 @@ class RepasoManager {
         return c.interval_days > 10 ? 'srs-status-easy' : 'srs-status-good';
     }
 
-    _bindCardRowEvents(row) {
-        row.addEventListener('dragstart', (e) => this.handleDragStart(e, row));
-        row.addEventListener('dragover', (e) => this.handleDragOver(e, row));
-        row.addEventListener('drop', (e) => this.handleDrop(e, row));
-        row.addEventListener('dragenter', () => row.style.borderTop = '2px solid #3b82f6');
-        row.addEventListener('dragleave', () => row.style.borderTop = '');
-        row.addEventListener('dragend', () => {
-            row.style.opacity = '1';
-            document.querySelectorAll('.card-row-item').forEach(r => r.style.borderTop = '');
-        });
-
-        // Checkbox change
-        const cb = row.querySelector('.card-item-checkbox');
-        cb.addEventListener('change', () => this.updateBulkDeleteButton());
-
-        // Mobile Selection (Long Press)
-        let pressTimer = null;
-        let longPressed = false;
-
-        row.addEventListener('touchstart', (e) => {
-            if (e.target.closest('button, input, .drag-handle')) return;
-            longPressed = false;
-            pressTimer = setTimeout(() => {
-                longPressed = true;
-                cb.checked = !cb.checked;
-                this.updateBulkDeleteButton();
-                if (navigator.vibrate) navigator.vibrate(50);
-            }, 500);
-        }, { passive: true });
-
-        row.addEventListener('touchend', () => clearTimeout(pressTimer));
-        row.addEventListener('touchmove', () => clearTimeout(pressTimer));
-
-        row.addEventListener('click', (e) => {
-            if (e.target.closest('button, input, .drag-handle')) return;
-            if (longPressed) { longPressed = false; return; }
-            if (this.isSelectionMode) {
-                cb.checked = !cb.checked;
-                this.updateBulkDeleteButton();
-            }
-        });
-    }
 
     onEditCardClick(id, front, back, imageUrl = '', backImageUrl = '', audioUrlFront = '', audioUrlBack = '', ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
         if (this.token) this.openEditCardModal(id, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
@@ -980,16 +1073,21 @@ class RepasoManager {
     filterCards(query) {
         if (!this.currentCards) return;
         this._lastSearchQuery = query;
-        const q = query.toLowerCase().trim();
-        if (!q) {
-            this.renderCards(this.currentCards);
-            return;
-        }
-        const filtered = this.currentCards.filter(c =>
-            c.front_content.toLowerCase().includes(q) ||
-            c.back_content.toLowerCase().includes(q)
-        );
-        this.renderCards(filtered);
+        
+        // ✅ OPTIMIZACIÓN: Debounce simple para evitar re-renders excesivos
+        clearTimeout(this._filterTimeout);
+        this._filterTimeout = setTimeout(() => {
+            const q = query.toLowerCase().trim();
+            if (!q) {
+                this.renderCards(this.currentCards);
+                return;
+            }
+            const filtered = this.currentCards.filter(c =>
+                c.front_content.toLowerCase().includes(q) ||
+                c.back_content.toLowerCase().includes(q)
+            );
+            this.renderCards(filtered);
+        }, 250); // 250ms de calma
     }
 
     toggleSelectAllCards(isChecked) {
@@ -1109,7 +1207,8 @@ class RepasoManager {
             });
 
             if (res.ok) {
-                if (this.currentDeck) this.loadFolder(this.currentDeck.id);
+                this.invalidateCache(this.currentDeck?.id);
+                if (this.currentDeck) this.loadFolder(this.currentDeck.id, false);
             } else {
                 window.uiManager.showToast('No se pudieron eliminar las tarjetas masivamente.');
             }
@@ -1358,9 +1457,6 @@ class RepasoManager {
      * Inicia el modo de estudio real para un mazo específico.
      * Solo para usuarios registrados con tarjetas.
      */
-    /**
-     * Starts a study session for a specific deck.
-     */
     async startStudy(deckId, deckNameParam = null, cardCount = null) {
         // Validation Guard
         if (cardCount !== null && cardCount === 0) {
@@ -1501,9 +1597,9 @@ class RepasoManager {
                 if (res.ok) {
                     DeckExplorer.closeCreateModal();
                     await this.explorer.loadTree();
-                    // ✅ FIXED: Instead of loadDashboard(), refresh current view
+                    this.invalidateCache(deckId);
                     if (this.currentDeck && this.currentDeck.id === deckId) {
-                        await this.loadFolder(deckId);
+                        await this.loadFolder(deckId, false);
                     } else {
                         await this.refreshView();
                     }
@@ -1536,9 +1632,9 @@ class RepasoManager {
 
                 if (res.ok) {
                     DeckExplorer.closeCreateModal();
-                    await this.explorer.loadTree();
-                    if (parentId) await this.loadFolder(parentId);
-                    else await this.loadDashboard();
+                    this.invalidateCache(parentId);
+                    if (parentId) await this.loadFolder(parentId, false);
+                    else await this.loadDashboard(false);
                     if (window.sessionManager) {
                     const user = window.sessionManager.getUser();
                     const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
@@ -1595,6 +1691,13 @@ class RepasoManager {
         const cardId = document.getElementById('card-id').value;
         const front = document.getElementById('card-front').value.trim();
         const back = document.getElementById('card-back').value.trim();
+
+        // 🛡️ VALIDACIÓN DE SEGURIDAD (INDIVIDUAL)
+        if (front.length > 400 || back.length > 400) {
+            window.uiManager.showToast('⚠️ El texto es demasiado largo (Máx: 400 caracteres).', 'warning');
+            return;
+        }
+
         const imageUrl = document.getElementById('card-image-url-front').value || null;
         const backImageUrl = document.getElementById('card-image-url-back').value || null;
         
@@ -1703,8 +1806,9 @@ class RepasoManager {
             }
 
             if (res.ok) {
+                this.invalidateCache(deckId);
                 this.closeCardModal();
-                this.loadFolder(deckId);
+                this.loadFolder(deckId, false);
                 this._pendingBulkCards = [];
                 if (window.sessionManager) {
                     const user = window.sessionManager.getUser();
@@ -1944,6 +2048,11 @@ class RepasoManager {
                     const front = rows[i][frontIdx]?.toString().trim();
                     const back = rows[i][backIdx]?.toString().trim();
                     if (front && back) {
+                        // 🛡️ VALIDACIÓN DE LONGITUD (FRONTEND - Reducido a 400)
+                        if (front.length > 400 || back.length > 400) {
+                            window.uiManager.showToast(`⚠️ Fila ${i + 1} ignorada: Máximo 400 caracteres permitidos.`, 'warning');
+                            continue;
+                        }
                         newCards.push({ front, back });
                     }
                 }
@@ -2009,6 +2118,7 @@ class RepasoManager {
             });
 
             if (res.ok) {
+                this.invalidateCache(deckId);
                 this._pendingBulkCards = [];
                 this.closeCardModal();
                 this.loadFolder(deckId);
@@ -2282,9 +2392,9 @@ class RepasoManager {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
             if (res.ok) {
-                // Reload current folder to refresh card list
                 if (this.currentDeck) {
-                    this.loadFolder(this.currentDeck.id);
+                    this.invalidateCache(this.currentDeck.id);
+                    this.loadFolder(this.currentDeck.id, false);
                 }
             } else {
                 window.uiManager.showToast('❌ No se pudo eliminar la tarjeta');

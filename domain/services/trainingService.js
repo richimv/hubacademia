@@ -424,24 +424,38 @@ class TrainingService {
                 : "";
 
             const prompt = `
-            Actúa como un experto pedagogogía y diseño instruccional.
-            Crea EXACTAMENTE ${count} Flashcards educativas sobre el tema: "${topic}".
+            Actúa como un experto en diseño instruccional y pedagogía de vanguardia (especialista en Active Recall y Spaced Repetition).
+            Crea EXACTAMENTE ${count} Flashcards de nivel profesional sobre el tema: "${topic}".
             ${exclusionList}
-            
-            🚨 REGLA DE INTELIGENCIA ADAPTATIVA:
-            - Genera exactamente ${count} tarjetas. No más, no menos.
-            - Si el tema es demasiado simple para ${count} tarjetas, busca ángulos laterales o curiosidades relacionadas para completar la cantidad.
-            - Prioriza lo que un estudiante NECESITA memorizar primero.
-            - ⚠️ NO REPITAS conceptos, términos o definiciones que ya estén en la LISTA DE EXCLUSIÓN superior. Busca ángulos diferentes o temas complementarios.
 
-            FORMATO JSON ESTRICTO:
-            [{ "front": "Pregunta o Concepto", "back": "Respuesta o Definición Breve" }]
+            🚨 ESTRATEGIAS DE GENERACIÓN POR DOMINIO (CRÍTICO):
 
-            REGLAS DE CALIDAD:
-            1. Idioma: Español.
-            2. "front": Debe ser claro y provocar recuerdo activo (Active Recall).
-            3. "back": Debe ser conciso (< 50 palabras). Evita respuestas de una sola palabra si el concepto requiere matiz.
-            4. Evita preguntas de verdadero/falso o sí/no.
+            1. IDIOMAS (Listening/Speaking):
+               - ANVERSO ("front"): 100% en el idioma extranjero. ABSOLUTAMENTE PROHIBIDO el español aquí (Sin instrucciones como "¿Cómo se dice...?").
+               - REVERSO ("back"): Línea 1: Frase limpia en el idioma extranjero (para referencia auditiva). Línea 2+: Traducción y notas gramaticales.
+               - Propósito: El "front" debe ser puro para que el TTS lo pronuncie perfectamente.
+
+            2. MEDICINA Y SALUD:
+               - ANVERSO ("front"): Presenta hallazgos clínicos, signos, síntomas o un caso breve (Ej: "Paciente con dolor en FID y signo de Blumberg +").
+               - REVERSO ("back"): Diagnóstico, fármaco de elección o fisiopatología. Usa terminología técnica precisa.
+               - Propósito: Fomentar el diagnóstico diferencial y el juicio clínico.
+
+            3. EDUCACIÓN (DOCENTES):
+               - ANVERSO ("front"): Teorías del aprendizaje, desafíos de aula o conceptos de diseño curricular (Ej: "¿Cómo aplicaría el constructivismo en...?").
+               - REVERSO ("back"): Estrategia pedagógica, autor clave o solución basada en evidencia educativa.
+               - Propósito: Herramientas prácticas para la gestión docente.
+
+            4. OTROS TEMAS:
+               - Aplica el método de "Pregunta de Disparo" -> "Respuesta Atómica".
+
+            🚨 REGLAS DE CALIDAD Y ADAPTACIÓN:
+            - Cantidad: Exactamente ${count} tarjetas.
+            - Active Recall: El "front" debe ser un reto mental, no una lectura pasiva.
+            - Concisión: El "back" debe ser directo (< 50 palabras).
+            - ⚠️ NO REPITAS conceptos de la LISTA DE EXCLUSIÓN superior.
+
+            FORMATO JSON ESTRICTO (No incluyas texto fuera del JSON):
+            [{ "front": "Contenido del anverso", "back": "Contenido del reverso" }]
             `;
 
             console.log(`🧠 AI Adaptive Flashcards: Procesando '${topic}' (Margen 5-20)...`);

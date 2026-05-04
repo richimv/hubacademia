@@ -474,10 +474,12 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-.fc-audio-btn:hover {
-    background: var(--accent-color);
-    transform: scale(1.1) rotate(12deg);
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+@media (hover: hover) {
+    .fc-audio-btn:hover {
+        background: var(--accent-color);
+        transform: scale(1.1) rotate(12deg);
+        box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    }
 }
 
 .fc-audio-btn:active {
@@ -505,43 +507,62 @@ body {
 /* ✅ EFECTO DE DESCUBRIMIENTO DEL TUTOR (Partículas ascendentes) */
 .tutor-discovery-aura {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100px;
-    background: linear-gradient(to top, rgba(168, 85, 247, 0.2), transparent);
     pointer-events: none;
-    z-index: 999;
+    z-index: 9999;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(168, 85, 247, 0.1) 40%, transparent 70%);
+    border-radius: 50%;
     opacity: 0;
-    animation: auraFade 2s ease-out forwards;
+    filter: blur(8px);
+    animation: auraFade 1.2s ease-out forwards;
 }
 
-.tutor-particle {
-    position: fixed;
-    bottom: -20px;
-    width: 8px;
-    height: 8px;
-    background: #a855f7;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 1000;
-    filter: blur(2px);
-    box-shadow: 0 0 10px #a855f7;
-    opacity: 0;
-    animation: particleRise 2s ease-out forwards;
+@media screen and (max-width: 768px) {
+    .tutor-discovery-aura {
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 60%);
+        filter: blur(5px);
+    }
+}
+
+/* ✅ EFECTO NEÓN PARA EL BOTÓN DEL TUTOR */
+.flashcard-tutor-btn.neon-glow-pulse {
+    animation: neonPulse 1.2s ease-in-out infinite alternate;
+    border-color: #3b82f6 !important;
+    box-shadow: 
+        0 0 4px #3b82f6,
+        0 0 8px #a855f7,
+        inset 0 0 6px rgba(59, 130, 246, 0.4) !important;
+    transform: scale(1.015);
+}
+
+@keyframes neonPulse {
+    from {
+        box-shadow: 0 0 3px #3b82f6, 0 0 6px #a855f7, inset 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    to {
+        box-shadow: 0 0 8px #3b82f6, 0 0 15px #a855f7, inset 0 0 10px rgba(59, 130, 246, 0.5);
+        transform: scale(1.03);
+    }
+}
+
+/* Reducción extra en móviles */
+@media screen and (max-width: 768px) {
+    .flashcard-tutor-btn.neon-glow-pulse {
+        animation-duration: 1.5s;
+        box-shadow: 0 0 4px #3b82f6, 0 0 8px #a855f7 !important;
+    }
+    @keyframes neonPulse {
+        from { box-shadow: 0 0 2px #3b82f6, 0 0 4px #a855f7; }
+        to { box-shadow: 0 0 6px #3b82f6, 0 0 10px #a855f7; transform: scale(1.02); }
+    }
 }
 
 @keyframes auraFade {
-    0% { opacity: 0; transform: translateY(20px); }
-    30% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; }
+    0% { opacity: 0; transform: scale(0.5); }
+    30% { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0; transform: scale(1.5); }
 }
 
-@keyframes particleRise {
-    0% { transform: translateY(0) scale(1); opacity: 0; }
-    20% { opacity: 0.8; }
-    100% { transform: translateY(-120px) scale(0.5); opacity: 0; }
-}
+/* Cleanup de partículas previas */
 
 /* Modificar el shimmer previo para que no sea necesario */
 .flashcard-tutor-btn::after { display: none; }
@@ -567,8 +588,10 @@ body {
     border-radius: 50% !important;
 }
 
-.fc-audio-btn--centered:hover {
-    transform: translate(-50%, -50%) scale(1.1) !important;
+@media (hover: hover) {
+    .fc-audio-btn--centered:hover {
+        transform: translate(-50%, -50%) scale(1.1) !important;
+    }
 }
 
 @media (max-width: 768px) {

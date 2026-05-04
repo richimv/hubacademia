@@ -344,9 +344,6 @@ const FlashcardManager = (() => {
             ui.card.classList.add('is-flipped');
             ui.controls.classList.add('visible'); // Show controls when answer is revealed
             
-            // ✅ NUEVO: Lanzar efecto de descubrimiento del Tutor (Aura + Partículas)
-            triggerDiscoveryEffect();
-            
             // ✅ INYECTAR BOTÓN HERMOSO DEL TUTOR
             if (!document.getElementById('flashcard-tutor-trigger')) {
                 const tutorBtn = document.createElement('button');
@@ -370,6 +367,10 @@ const FlashcardManager = (() => {
                 // Inyectar DENTRO de ui.controls al final
                 ui.controls.appendChild(tutorBtn);
             }
+
+            // ✅ NUEVO: Lanzar efecto de descubrimiento del Tutor (Aura + Partículas)
+            // IMPORTANTE: Llamar DESPUÉS de que el botón existe en el DOM
+            triggerDiscoveryEffect();
         } else {
             ui.card.classList.remove('is-flipped');
             ui.controls.classList.remove('visible');
@@ -453,7 +454,7 @@ const FlashcardManager = (() => {
             currentReps: processedCard.repetition_number
         };
 
-        syncReview(reviewData, token); // Fire and forget (Asíncrono)
+        const syncPromise = syncReview(reviewData, token); // Asíncrono, pero guardamos la promesa
 
         // Liberar bloqueo inmediatamente después del proceso local (antes de que responda red)
         _isRating = false;
@@ -465,8 +466,8 @@ const FlashcardManager = (() => {
 
         // 3. Si estudiábamos una sola tarjeta (cardId), volvemos al mazo inmediatamente
         if (urlParams.has('cardId')) {
-            const currentDeckId = urlParams.get('deckId') || '';
-            window.location.href = `/repaso?deckId=${currentDeckId}`;
+            await syncPromise;
+            handleExit();
             return;
         }
 
@@ -477,6 +478,7 @@ const FlashcardManager = (() => {
         if (queue.length > 0) {
             renderCard(queue[0]);
         } else {
+            await syncPromise; // Esperar a que la última tarjeta se guarde antes de pedir más
             await loadCards(token);
         }
 
@@ -536,14 +538,13 @@ const FlashcardManager = (() => {
     function handleExit() {
         console.log("Exiting study session...", { currentDeckId });
         
-        // Usar replace para evitar que "atrás" vuelva a la pantalla de sesión terminada
-        if (currentDeckId) {
-            const targetUrl = `/repaso?deckId=${currentDeckId}`;
-            console.log("Navigating to:", targetUrl);
-            window.location.replace(targetUrl);
+        // Si venimos de nuestra propia web, usamos el botón atrás nativo para no ensuciar el historial
+        if (document.referrer.includes(window.location.host)) {
+            window.history.back();
         } else {
-            console.warn("No currentDeckId found, falling back to dashboard.");
-            window.location.replace('/repaso');
+            // Fallback si entraron a las flashcards directo desde un marcador/URL
+            const targetUrl = currentDeckId ? `/repaso?deckId=${currentDeckId}` : '/repaso';
+            window.location.replace(targetUrl);
         }
     }
 
@@ -555,39 +556,31 @@ const FlashcardManager = (() => {
      * Lanza un aura y partículas que suben desde el fondo para avisar que hay algo nuevo (el chat).
      */
     function triggerDiscoveryEffect() {
-        // 1. Crear el Aura base
+        console.log("🚀 Lanza efecto Neon Discovery...");
+        const btn = document.getElementById('flashcard-tutor-trigger');
+        if (!btn) return;
+
+        const rect = btn.getBoundingClientRect();
+        
+        // 1. Crear el Aura base sutil (centrada en el botón)
         const aura = document.createElement('div');
         aura.className = 'tutor-discovery-aura';
+        const auraSize = Math.max(rect.width, rect.height) * 2;
+        aura.style.left = `${rect.left + rect.width / 2 - auraSize / 2}px`;
+        aura.style.top = `${rect.top + rect.height / 2 - auraSize / 2}px`;
+        aura.style.width = `${auraSize}px`;
+        aura.style.height = `${auraSize}px`;
         document.body.appendChild(aura);
 
-        // 2. Crear Partículas (Burbujas de Plasma)
-        const particleCount = 12;
-        for (let i = 0; i < particleCount; i++) {
-            setTimeout(() => {
-                const p = document.createElement('div');
-                p.className = 'tutor-particle';
-                
-                // Posición aleatoria horizontal
-                const x = Math.random() * 100;
-                p.style.left = `${x}%`;
-                
-                // Tamaño aleatorio
-                const size = 4 + Math.random() * 8;
-                p.style.width = `${size}px`;
-                p.style.height = `${size}px`;
-                
-                // Retraso de animación aleatorio
-                p.style.animationDelay = `${Math.random() * 0.5}s`;
-                
-                document.body.appendChild(p);
-                
-                // Limpiar partícula
-                setTimeout(() => p.remove(), 2500);
-            }, i * 100);
-        }
-
-        // 3. Limpiar Aura
-        setTimeout(() => aura.remove(), 3000);
+        // 2. Activar efecto NEÓN en el botón mismo
+        btn.classList.add('neon-glow-pulse');
+        
+        // Cleanup Aura y remover pulso después de un tiempo
+        setTimeout(() => {
+            aura.remove();
+            // No quitamos el neón inmediatamente para que el usuario lo vea
+            setTimeout(() => btn.classList.remove('neon-glow-pulse'), 3000);
+        }, 2000);
     }
 
     // --- Public API ---

@@ -22,6 +22,7 @@ const checkAILimits = (type) => {
                     monthly_flashcards_usage,
                     daily_arena_usage, 
                     daily_simulator_usage,
+                    daily_import_usage,
                     last_usage_reset
                 FROM users 
                 WHERE id = $1
@@ -79,20 +80,24 @@ const checkAILimits = (type) => {
                             daily_ai_usage = 0, 
                             daily_arena_usage = 0, 
                             daily_simulator_usage = 0,
+                            daily_import_usage = 0,
                             monthly_flashcards_usage = 0,
                             last_usage_reset = $1 
                         WHERE id = $2
                     `, [todayDate, userId]);
                     user.monthly_flashcards_usage = 0;
+                    user.daily_import_usage = 0;
                 } else {
                     await pool.query(`
                         UPDATE users SET 
                             daily_ai_usage = 0, 
                             daily_arena_usage = 0, 
                             daily_simulator_usage = 0,
+                            daily_import_usage = 0,
                             last_usage_reset = $1 
                         WHERE id = $2
                     `, [todayDate, userId]);
+                    user.daily_import_usage = 0;
                 }
 
                 user.daily_ai_usage = 0;
@@ -106,9 +111,9 @@ const checkAILimits = (type) => {
             // - Básico: 10 intentos/mes.
             // - Avanzado: 30 intentos/mes.
             const LIMITS = {
-                free: { chat_standard: 5, quiz_arena: 3, monthly_flashcards: 1, simulator: 0 },
-                basic: { chat_standard: 20, quiz_arena: 5, monthly_flashcards: 10, simulator: 15 },
-                advanced: { chat_standard: 30, quiz_arena: 10, monthly_flashcards: 30, simulator: 40 }
+                free: { chat_standard: 5, quiz_arena: 3, monthly_flashcards: 1, simulator: 0, batch_import: 1 },
+                basic: { chat_standard: 20, quiz_arena: 5, monthly_flashcards: 10, simulator: 15, batch_import: 10 },
+                advanced: { chat_standard: 30, quiz_arena: 10, monthly_flashcards: 30, simulator: 40, batch_import: 10 }
             };
 
             const userLimits = LIMITS[user.subscription_tier] || LIMITS.free;
@@ -165,14 +170,20 @@ const checkAILimits = (type) => {
                 } else {
                     // ✅ LÓGICA REFINADA: Solo limitamos la GENERACIÓN CON IA para usuarios con plan.
                     // El CRUD manual (crear, editar, subir imagen) es ILIMITADO para ellos.
-                    // También incluimos el endpoint de chequeo pasivo.
                     const isAiGeneration = req.path.includes('/generate') || req.path.includes('check-ai-limits');
+                    const isBatchImport = req.path.includes('/batch');
                     
                     if (isAiGeneration) {
                         if ((user.monthly_flashcards_usage || 0) >= userLimits.monthly_flashcards) {
                             return res.status(403).json({ error: `Límite mensual de generación de flashcards alcanzado (${userLimits.monthly_flashcards} intentos). Mejora tu plan.`, reason: 'MONTHLY_LIMIT_EXHAUSTED' });
                         }
                         req.usageType = 'monthly_flashcards_usage';
+                    } else if (isBatchImport) {
+                        // 🛡️ Límite diario para importaciones masivas (Excel)
+                        if ((user.daily_import_usage || 0) >= userLimits.batch_import) {
+                            return res.status(403).json({ error: `Límite diario de importación masiva alcanzado (${userLimits.batch_import}). Vuelve mañana o mejora tu plan.`, reason: 'DAILY_LIMIT_EXHAUSTED' });
+                        }
+                        req.usageType = 'daily_import_usage';
                     } else {
                         // CRUD Manual: Sin límite para usuarios de pago
                         req.usageType = null;
