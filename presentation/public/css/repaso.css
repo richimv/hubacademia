@@ -49,7 +49,7 @@
 }
 
 .deck-card {
-    background: #0a0a0a;
+    background: rgba(10, 13, 18, 0.2);
     border: 1px solid var(--border-glow);
     border-radius: 20px;
     padding: 1.5rem;
@@ -74,7 +74,7 @@
 .deck-card:hover {
     transform: translateY(-5px);
     border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
 }
 
 .deck-icon {
@@ -433,7 +433,7 @@
 }
 
 .card-row-item:hover {
-    filter: brightness(1.3);
+    filter: brightness(1.15);
     background: rgba(255, 255, 255, 0.02);
 }
 

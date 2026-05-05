@@ -82,24 +82,18 @@
 
 /* Background Images */
 .sim-card.card-med {
-    background: linear-gradient(to bottom, rgba(7, 11, 21, 0.1) 0%, rgba(7, 11, 21, 0.95) 80%),
+    background: linear-gradient(to bottom, rgba(7, 11, 21, 0.05) 0%, rgba(7, 11, 21, 0.5) 80%),
         url('../assets/bg-sim-health.png');
     background-size: cover;
     background-position: center;
 }
 
 .sim-card.card-img-sim {
-    background: linear-gradient(to bottom, rgba(7, 11, 21, 0.1) 0%, rgba(7, 11, 21, 0.95) 80%),
-        url('../assets/bg-sim-img.png');
-    background-size: cover;
-    background-position: center;
+    background: rgba(31, 31, 31, 0.6);
 }
 
 .sim-card.card-dx-sim {
-    background: linear-gradient(to bottom, rgba(7, 11, 21, 0.1) 0%, rgba(7, 11, 21, 0.95) 80%),
-        url('../assets/custom-sim-bg.png');
-    background-size: cover;
-    background-position: center;
+    background: rgba(31, 31, 31, 0.6);
 }
 
 /* Hover States */

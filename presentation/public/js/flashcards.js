@@ -12,6 +12,7 @@ const FlashcardManager = (() => {
     let syncQueue = []; 
     let currentDeckId = null; // ✅ Persist deckId at module level
     let currentAudio = null; // ✅ Manejo de audio global para detener si se cambia de tarjeta
+    let isGuest = false; // ✅ Track guest status for feature gating
 
     // --- DOM Elements ---
     const views = {
@@ -54,6 +55,7 @@ const FlashcardManager = (() => {
         setupNavigationButtons();
 
         const isDemo = urlParams.get('demo') === 'true';
+        isGuest = isDemo || !localStorage.getItem('authToken');
 
         if (!isDemo) {
             const token = localStorage.getItem('authToken');
@@ -355,6 +357,15 @@ const FlashcardManager = (() => {
                 `;
                 tutorBtn.onclick = (e) => {
                     e.stopPropagation();
+
+                    // 🛡️ Senior Protection: Guests cannot access AI Tutor
+                    if (isGuest) {
+                        if (window.uiManager && window.uiManager.showAuthPromptModal) {
+                            window.uiManager.showAuthPromptModal();
+                        }
+                        return;
+                    }
+
                     if (window.flashcardTutor) {
                         window.flashcardTutor.toggle(true, {
                             front: currentCard.front_content,

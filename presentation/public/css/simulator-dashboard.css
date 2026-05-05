@@ -10,7 +10,7 @@
     --bg-base:      #0a0d12;
     --bg-surface:   #0f1219;
     --bg-elevated:  #151b24;
-    --bg-card:      rgba(255,255,255,0.035);
+    --bg-card:      rgba(255, 255, 255, 0.01);
     --border:       rgba(255,255,255,0.07);
     --border-hover: rgba(255,255,255,0.14);
     --text-primary:   #f8fafc;
@@ -109,7 +109,7 @@
     aspect-ratio: 1 / 1;
     /* Efecto humo inicial: Sombra interna suave */
     box-shadow: 
-        0 8px 32px rgba(0,0,0,0.4);
+        0 8px 32px rgba(0,0,0,0.25);
 }
 
 /* Capa de Humo / Neblina Atmosférica */
@@ -117,7 +117,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.2) 0%, rgba(10, 13, 18, 0.75) 100%);
+    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.02) 0%, rgba(10, 13, 18, 0.4) 100%);
     z-index: 2; /* Sobre la imagen (z1) pero bajo el texto (z5) */
     pointer-events: none;
     transition: all 0.5s ease;
@@ -126,7 +126,7 @@
 .mode-card:hover::after {
     background: radial-gradient(
         circle at 70% 70%, 
-        rgba(var(--accent-rgb), 0.2) 0%, 
+        rgba(var(--accent-rgb), 0.12) 0%, 
         transparent 80%
     );
 }
@@ -140,7 +140,7 @@
     background: var(--accent);
     border-radius: 0 2px 2px 0;
     z-index: 2;
-    box-shadow: 0 0 8px var(--accent);
+    box-shadow: 0 0 6px var(--accent);
 }
 
 .mode-card:hover {
@@ -226,13 +226,13 @@
     object-fit: cover;
     object-position: right center; /* Logo a la derecha */
     /* Ajuste para efecto humo: más brillo para que se vea el arte */
-    filter: brightness(0.95) contrast(1.1) saturate(1.1);
+    filter: brightness(1.25) contrast(1.25) saturate(1.2);
     transition: transform 0.8s ease, filter 0.5s ease;
 }
 
 .mode-card:hover .mode-img-container img {
     transform: scale(1.05);
-    filter: brightness(1.2) contrast(1.2) saturate(1.2);
+    filter: brightness(1.1) contrast(1.1) saturate(1.1);
 }
 
 @media (max-width: 768px) {
@@ -332,25 +332,25 @@
     border-radius: 0 2px 2px 0;
 }
 .stat-box--score {
-    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.2) 0%, rgba(10, 13, 18, 0.75) 100%), 
+    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.05) 0%, rgba(10, 13, 18, 0.35) 100%), 
                 url('../assets/puntuación-promedio.png');
     background-size: cover;
     background-position: center;
 }
 .stat-box--accuracy {
-    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.2) 0%, rgba(10, 13, 18, 0.75) 100%), 
+    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.05) 0%, rgba(10, 13, 18, 0.35) 100%), 
                 url('../assets/presición-global.png');
     background-size: cover;
     background-position: center;
 }
 .stat-box--counts {
-    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.2) 0%, rgba(10, 13, 18, 0.75) 100%), 
+    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.05) 0%, rgba(10, 13, 18, 0.35) 100%), 
                 url('../assets/correctas-incorrectas.png');
     background-size: cover;
     background-position: center;
 }
 .stat-box--mastery {
-    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.2) 0%, rgba(10, 13, 18, 0.75) 100%), 
+    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.05) 0%, rgba(10, 13, 18, 0.35) 100%), 
                 url('../assets/tarjetas-dominadas.png');
     background-size: cover;
     background-position: center;
