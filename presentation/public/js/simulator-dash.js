@@ -5,66 +5,57 @@
 
 const SimulatorDash = (() => {
 
-    // Config
+    // Configuración Extendida de Dominios (v3.0)
     const contexts = {
         'MEDICINA': {
             title: 'Ciencias de la Salud',
-            quizParams: '?target=SERUMS&career=Medicina%20Humana'
+            heroTitle: 'Ciencias de la Salud',
+            quizParams: '?target=SERUMS&career=Medicina%20Humana',
+            studyDesc: '20 preguntas. Para un aprendizaje profundo con explicación médica.',
+            realDesc: '100 preguntas con límite de tiempo. Simulación completa del ENAM / SERUMS.',
+            areas: [
+                { label: 'Ciencias Básicas', areas: ['Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308' },
+                { label: 'Las 4 Grandes', areas: ['Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6' },
+                { label: 'Especialidades Clínicas', areas: ['Cardiología', 'Gastroenterología', 'Neurología', 'Nefrología', 'Neumología', 'Endocrinología', 'Infectología', 'Reumatología', 'Traumatología'], bg: 'rgba(99, 102, 241, 0.7)', border: '#6366f1' },
+                { label: 'Salud Pública y Gestión', areas: ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981' }
+            ]
         },
-        'INGLES': {
-            title: 'Inglés Técnico',
-            icon: '<i class="fas fa-language"></i>',
-            quizParams: '?topic=Medical%20English' // Future
+        'EDUCACION': {
+            title: 'Docente Pro',
+            heroTitle: 'Preparación Magisterial',
+            quizParams: '?target=NOMBRAMIENTO&career=Primaria',
+            studyDesc: '20 preguntas. Enfoque en rúbricas y casos pedagógicos reales.',
+            realDesc: '100 preguntas. Simulación exacta del examen de Nombramiento Docente.',
+            areas: [
+                { label: 'Habilidades Generales', areas: ['Comprensión Lectora', 'Razonamiento Lógico'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308' },
+                { label: 'Pedagogía', areas: ['Teorías del Aprendizaje', 'Planificación Curricular', 'Evaluación Formativa', 'Gestión de Aula'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6' },
+                { label: 'Especialidad', areas: ['Conocimientos de la Especialidad', 'Didáctica Específica'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981' }
+            ]
+        },
+        'IDIOMAS': {
+            title: 'Language Hub',
+            heroTitle: 'Mastery & Fluency',
+            quizParams: '?target=MCER&level=B2',
+            studyDesc: '20 topics. Deep grammar analysis and vocabulary immersion.',
+            realDesc: '80 questions. Mock exam following international certification standards (B1, B2, C1).',
+            areas: [
+                { label: 'Core Skills', areas: ['Grammar', 'Vocabulary', 'Use of English'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6' },
+                { label: 'Communication', areas: ['Listening Comprehension', 'Reading Analysis', 'Writing Structures'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981' },
+                { label: 'Soft Skills', areas: ['Idioms & Phrasal Verbs', 'Business Communication'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308' }
+            ]
         }
     };
 
-    let currentContext = 'MEDICINA'; // Default
-    let activeConfig = null; // Stores user custom exam configuration
-    let activeMode = null;   // null = Todos | 10 = Rápido | 20 = Estudio
-    let activeDays = null;   // null = Histórico | 30 = 30d | 7 = 7d
+    let currentContext = 'MEDICINA'; 
+    let activeConfig = null; 
+    let activeMode = null;   
+    let activeDays = null;   
     let lineChartInst = null;
     let radarChartInst = null;
 
-    // Exam Areas Data — Grouped by category (identical for all targets)
-    const examAreasGrouped = [
-        {
-            label: 'Ciencias Básicas',
-            areas: ['Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología'],
-            bg: 'rgba(234, 179, 8, 0.7)',
-            border: '#eab308'
-        },
-        {
-            label: 'Las 4 Grandes',
-            areas: ['Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General'],
-            bg: 'rgba(59, 130, 246, 0.7)',
-            border: '#3b82f6'
-        },
-        {
-            label: 'Especialidades Clínicas',
-            areas: ['Cardiología', 'Gastroenterología', 'Neurología', 'Nefrología', 'Neumología', 'Endocrinología', 'Infectología', 'Reumatología', 'Traumatología'],
-            bg: 'rgba(99, 102, 241, 0.7)',
-            border: '#6366f1'
-        },
-        {
-            label: 'Salud Pública y Gestión',
-            areas: ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'],
-            bg: 'rgba(16, 185, 129, 0.7)',
-            border: '#10b981'
-        }
-    ];
-
-    // Build lookup map for O(1) mapping of areas back to their parent group configuration
-    const areaToGroupMap = {};
-    examAreasGrouped.forEach((g, gIndex) => {
-        g.areas.forEach(a => {
-            areaToGroupMap[a] = {
-                groupLabel: g.label,
-                bg: g.bg,
-                border: g.border,
-                order: gIndex
-            };
-        });
-    });
+    // Se inicializará dinámicamente según el contexto
+    let examAreasGrouped = [];
+    let areaToGroupMap = {};
 
     function renderBarChart(cleanRadarMap) {
         // Obsolete Chart.js fallback support (just in case)
@@ -228,15 +219,34 @@ const SimulatorDash = (() => {
 
     async function init() {
         const urlParams = new URLSearchParams(window.location.search);
-        currentContext = urlParams.get('context') || 'MEDICINA';
+        currentContext = (urlParams.get('context') || 'MEDICINA').toUpperCase();
+
+        // 0. Initialize Context-Aware Data Structures
+        const ctxConfig = contexts[currentContext] || contexts['MEDICINA'];
+        examAreasGrouped = ctxConfig.areas || [];
+        areaToGroupMap = {};
+        examAreasGrouped.forEach((g, gIndex) => {
+            g.areas.forEach(a => {
+                areaToGroupMap[a] = {
+                    groupLabel: g.label,
+                    bg: g.bg,
+                    border: g.border,
+                    order: gIndex
+                };
+            });
+        });
 
         // 1. Setup UI Context
-        const ctxConfig = contexts[currentContext] || contexts['MEDICINA'];
         const titleEl = document.getElementById('ctx-title');
         const iconEl = document.getElementById('ctx-icon');
 
         if (titleEl) titleEl.textContent = ctxConfig.title;
-        // Icon removed per user request for a cleaner UI
+
+        // Update card descriptions
+        const studyDescEl = document.querySelector('#btn-mode-study .mode-desc');
+        const realDescEl = document.querySelector('#btn-mode-real .mode-desc');
+        if (studyDescEl) studyDescEl.textContent = ctxConfig.studyDesc;
+        if (realDescEl) realDescEl.textContent = ctxConfig.realDesc;
 
         // 2. Setup Config Modal Logic & Load Persistent Config
         setupConfigModal();
@@ -598,9 +608,10 @@ const SimulatorDash = (() => {
                         // Grupos B, C, D
                         defaultAreas = examAreasGrouped.filter(g => g.label !== 'Ciencias Básicas').flatMap(g => g.areas);
                     } else if (t === 'SERUMS') {
-                        // Solo Grupo D
-                        defaultAreas = examAreasGrouped.find(g => g.label === 'Salud Pública y Gestión').areas;
-                    } else if (t === 'RESIDENTADO') {
+                        // Salud Pública o Primer grupo de pedagogía etc.
+                        const healthGroup = examAreasGrouped.find(g => g.label.includes('Salud Pública') || g.label.includes('Pedagogía'));
+                        defaultAreas = healthGroup ? healthGroup.areas : examAreasGrouped[0].areas;
+                    } else {
                         defaultAreas = examAreasGrouped.flatMap(g => g.areas);
                     }
 

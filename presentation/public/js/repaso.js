@@ -919,6 +919,7 @@ class RepasoManager {
                 <div class="card-row-front">
                     ${c.image_url ? `<img src="${window.resolveImageUrl(c.image_url)}" style="width:24px; height:24px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;" loading="lazy">` : ''}
                     ${this.escapeHtml(c.front_content)}
+                    ${c.interval_days > 21 ? `<span class="badge-mastered" title="Tarjeta Dominada"><i class="fas fa-star"></i> Dominada</span>` : ''}
                 </div>
                 <div class="card-row-back">
                     ${c.explanation_image_url ? '<i class="fas fa-image" style="color:#94a3b8; margin-right:4px;"></i>' : ''}
@@ -1053,13 +1054,15 @@ class RepasoManager {
         if (c.repetition_number === 0) return '';
         if (c.interval_days === 0) return 'srs-status-forgot';
         if (c.ease_factor < 2.0) return 'srs-status-hard';
-        return c.interval_days > 10 ? 'srs-status-easy' : 'srs-status-good';
+        return c.interval_days > 21 ? 'srs-status-easy' : 'srs-status-good';
     }
 
-
     onEditCardClick(id, front, back, imageUrl = '', backImageUrl = '', audioUrlFront = '', audioUrlBack = '', ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
-        if (this.token) this.openEditCardModal(id, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
-        else window.uiManager.showAuthPromptModal();
+        if (this.token) {
+            this.openEditCardModal(id, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
+        } else {
+            window.uiManager.showAuthPromptModal();
+        }
     }
 
     onDeleteCardClick(id, front) {

@@ -317,6 +317,26 @@
     background: linear-gradient(90deg, rgba(52, 211, 153, 0.1) 0%, transparent 100%);
 }
 
+.badge-mastered {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 99px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.badge-mastered i {
+    font-size: 0.6rem;
+}
+
 /* --- Efecto Pendiente (Due) --- */
 .is-due-glow {
     animation: duePulseGlow 2.5s infinite;

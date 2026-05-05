@@ -79,8 +79,9 @@
     --accent-hover: var(--primary-hover);
     --accent-dark: rgba(59, 130, 246, 0.1);
 
-    /* ✅ Manta-style Edge-to-Edge Layout */
+    /* ✅ Layout Config */
     --page-padding-x: 1rem;
+    --max-width: 1440px;
 }
 
 @media (min-width: 768px) {
@@ -256,7 +257,7 @@ h6 {
 
 /* Container principal (Unified Layout) */
 .main-container {
-    max-width: 1200px;
+    max-width: var(--max-width);
     margin: 0 auto;
     padding: var(--spacing-md) var(--page-padding-x);
 }

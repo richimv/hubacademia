@@ -48,48 +48,42 @@
 
         <div class="simulators-grid">
 
-            <!-- Medicina Humana -->
+            <!-- Simulacro de Exámenes -->
             <a href="/simulator-dashboard?context=MEDICINA" class="sim-card card-med">
-                <div class="sim-icon color-med">
-                    <i class="fas fa-heartbeat"></i>
-                </div>
                 <div>
-                    <h3 class="sim-title">Ciencias de la Salud</h3>
+                    <h3 class="sim-title">Simulacro de Exámenes</h3>
                     <p class="sim-desc">
-                        Entrenamiento para exámenes ENAM, SERUMS, y RESIDENTADO.
+                        Preparación intensiva para ENAM, SERUMS y Residentado Médico con bancos oficiales.
                     </p>
                 </div>
-                <div
-                    style="display: flex; align-items: center; gap: 0.5rem; color: #60a5fa; font-size: 0.9rem; font-weight: 600; margin-top: auto;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: #3b82f6; font-size: 0.9rem; font-weight: 600; margin-top: auto;">
                     Ingresar <i class="fas fa-arrow-right"></i>
                 </div>
             </a>
 
-            <!-- Diagnóstico por Imagen (Demo) -->
-            <a href="#" class="sim-card card-img" style="opacity: 0.85; cursor: not-allowed;">
-                <span class="sim-badge">Próximamente</span>
-                <div class="sim-icon color-img">
-                    <i class="fas fa-x-ray"></i>
-                </div>
+            <!-- Diagnóstico por Imágenes -->
+            <a href="#" class="sim-card card-img-sim" style="opacity: 0.8; cursor: not-allowed;" onclick="event.preventDefault(); window.uiManager.showToast('Próximamente: Entrenamiento con Radiografías, TC y RM')">
                 <div>
-                    <h3 class="sim-title">Diagnóstico por Imagen</h3>
+                    <h3 class="sim-title">Diagnóstico por Imágenes</h3>
                     <p class="sim-desc">
-                        Interpretación de Radiografías, Tomografías y Resonancias.
+                        Entrenamiento visual avanzado con casos reales de Radiografía, TC y Resonancia.
                     </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: #eab308; font-size: 0.9rem; font-weight: 600; margin-top: auto;">
+                    Próximamente <i class="fas fa-lock"></i>
                 </div>
             </a>
 
-            <!-- Inglés Médico (Demo) -->
-            <a href="#" class="sim-card card-eng" style="opacity: 0.85; cursor: not-allowed;">
-                <span class="sim-badge">Próximamente</span>
-                <div class="sim-icon color-eng">
-                    <i class="fas fa-language"></i>
-                </div>
+            <!-- Diagnóstico Médico (IA) -->
+            <a href="#" class="sim-card card-dx-sim" style="opacity: 0.8; cursor: not-allowed;" onclick="event.preventDefault(); window.uiManager.showToast('Próximamente: Casos Clínicos Interactivos con IA')">
                 <div>
-                    <h3 class="sim-title">Inglés Técnico</h3>
+                    <h3 class="sim-title">Diagnóstico Médico</h3>
                     <p class="sim-desc">
-                        Terminología médica bilingüe y comprensión lectora de papers.
+                        Casos clínicos interactivos guiados por IA para perfeccionar el razonamiento diagnóstico.
                     </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: #10b981; font-size: 0.9rem; font-weight: 600; margin-top: auto;">
+                    Próximamente <i class="fas fa-lock"></i>
                 </div>
             </a>
 
@@ -117,7 +111,7 @@
                 <ul class="footer-links-list">
                     <li><a href="/" class="footer-link">Inicio</a></li>
                     <li><a href="course" class="footer-link">Cursos</a></li>
-                    <li><a href="/" class="footer-link">Recursos</a></li>
+                    <li><a href="/" class="footer-link">Biblioteca</a></li>
                     <li><a href="pricing" class="footer-link">Precios</a></li>
                 </ul>
             </div>

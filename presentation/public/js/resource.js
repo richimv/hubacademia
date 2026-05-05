@@ -23,17 +23,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.title = `${resource.title} - Hub Academia`;
 
         // Determine cover logic
-        const rawImage = resource.image_url;
-        let coverImage = null;
-
-        if (rawImage && rawImage.trim() !== '') {
-            coverImage = window.resolveImageUrl ? window.resolveImageUrl(rawImage) : rawImage;
-        } else if (resource.url && window.uiManager && window.uiManager.isDriveLink(resource.url)) {
-            coverImage = window.resolveImageUrl ? window.resolveImageUrl(resource.url) : null;
-        }
+        const rType = resource.resource_type || 'other';
+        let coverImage = window.resolveImageUrl(resource.image_url, rType);
 
         const isVideo = resource.resource_type === 'video' || (window.uiManager && window.uiManager.isVideo(resource.url));
-        if (isVideo && resource.url && resource.url.includes('youtu') && (!rawImage || rawImage.includes('unsplash'))) {
+        if (isVideo && resource.url && resource.url.includes('youtu') && (!resource.image_url || resource.image_url.includes('unsplash'))) {
             const match = resource.url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
             const videoId = (match && match[2].length === 11) ? match[2] : null;
             if (videoId) {
@@ -41,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // Definir clases e iconos basados en el tipo de recurso (igual que components.js)
+        // Definir clases e iconos basados en el tipo de recurso
         const typeConfigs = {
             'book': { icon: 'fa-book', colorClass: 'urc-color-book' },
             'guia': { icon: 'fa-file-medical', colorClass: 'urc-color-guia' },
@@ -50,17 +44,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             'video': { icon: 'fa-play-circle', colorClass: 'urc-color-other' },
             'other': { icon: 'fa-image', colorClass: 'urc-color-other' }
         };
-        const config = typeConfigs[resource.resource_type] || typeConfigs['other'];
+        const config = typeConfigs[rType] || typeConfigs['other'];
+        const fallbackImg = window.getDefaultResourceImage(rType);
 
-        // Si tenemos imagen, usar img con fallback nativo que muestra el bloque de color si falla.
-        // Si no hay imagen, mostrar directamente el bloque de color hermoso.
-        let visualHTML = '';
-        if (coverImage) {
-            visualHTML = `<img src="${coverImage}" alt="Portada de ${resource.title}" class="resource-cover" onerror="this.style.display='none'; document.getElementById('resource-cover-fallback').style.cssText='display:flex !important;';">
-                          <div id="resource-cover-fallback" class="resource-cover resource-cover-fallback urc-icon-fallback ${config.colorClass}" style="display:none;"><i class="fas ${config.icon}"></i></div>`;
-        } else {
-            visualHTML = `<div id="resource-cover-fallback" class="resource-cover resource-cover-fallback urc-icon-fallback ${config.colorClass}" style="display:flex !important;"><i class="fas ${config.icon}"></i></div>`;
-        }
+        // Usar la imagen resuelta con fallback a la imagen artística por defecto
+        let visualHTML = `<img src="${coverImage}" alt="Portada de ${resource.title}" class="resource-cover" onerror="this.src='${fallbackImg}'">`;
 
         if (isVideo) {
             visualHTML = `
@@ -96,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(safeHTML, 'text/html');
                 const images = doc.querySelectorAll('img');
-                
+
                 images.forEach(img => {
                     const src = img.getAttribute('src');
                     if (src && src.includes('/api/media/')) {
@@ -227,62 +215,62 @@ document.addEventListener('DOMContentLoaded', async () => {
      * Ayudante para extraer el ID de video de YouTube desde diversas URLs
      */
     function _extractYoutubeId(url) {
-    if (!url) return null;
-    try {
-        const urlObj = new URL(url);
-        if (urlObj.hostname.includes('youtube.com')) {
-            const v = urlObj.searchParams.get('v');
-            if (v) return v;
-            if (urlObj.pathname.includes('/embed/')) {
-                return urlObj.pathname.split('/embed/')[1].split('?')[0];
+        if (!url) return null;
+        try {
+            const urlObj = new URL(url);
+            if (urlObj.hostname.includes('youtube.com')) {
+                const v = urlObj.searchParams.get('v');
+                if (v) return v;
+                if (urlObj.pathname.includes('/embed/')) {
+                    return urlObj.pathname.split('/embed/')[1].split('?')[0];
+                }
+            } else if (urlObj.hostname.includes('youtu.be')) {
+                return urlObj.pathname.slice(1).split('?')[0];
             }
-        } else if (urlObj.hostname.includes('youtu.be')) {
-            return urlObj.pathname.slice(1).split('?')[0];
+        } catch (e) {
+            // Si no es una URL válida, intentar regex simple
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
         }
-    } catch (e) {
-        // Si no es una URL válida, intentar regex simple
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
+        return null;
     }
-    return null;
-}
 
-window.openResourceLink = function(id, url, isPremium, type = 'book') {
-    if (!url) return;
-    if (window.uiManager) {
-        window.uiManager.registerMaterial(id, url);
-        window.uiManager.unlockResource(id, type, isPremium, `Recurso ${id}`);
-    } else {
-        window.open(url, '_blank');
-    }
-}
-
-// Mock function for saving resources (Library integration)
-async function saveResource(id, btn) {
-    if (!window.LibraryService) {
-        alert("El servicio de biblioteca no está disponible o requiere inicio de sesión.");
-        return;
-    }
-    const isSaved = btn.classList.contains('saved');
-    try {
-        if (isSaved) {
-            await window.LibraryService.removeResource(id);
-            btn.classList.remove('saved');
-            btn.innerHTML = '<i class="far fa-bookmark"></i> Guardar a Biblioteca';
+    window.openResourceLink = function (id, url, isPremium, type = 'book') {
+        if (!url) return;
+        if (window.uiManager) {
+            window.uiManager.registerMaterial(id, url);
+            window.uiManager.unlockResource(id, type, isPremium, `Recurso ${id}`);
         } else {
-            await window.LibraryService.saveResource(id);
-            btn.classList.add('saved');
-            btn.innerHTML = '<i class="fas fa-bookmark" style="color:var(--primary-color)"></i> Guardado';
+            window.open(url, '_blank');
         }
-    } catch (err) {
-        console.error(err);
-        alert("Error al guardar en la biblioteca.");
     }
-}
 
-// Exponer funciones globales
-window.openResourceLink = openResourceLink;
-window.saveResource = saveResource;
+    // Mock function for saving resources (Library integration)
+    async function saveResource(id, btn) {
+        if (!window.LibraryService) {
+            alert("El servicio de biblioteca no está disponible o requiere inicio de sesión.");
+            return;
+        }
+        const isSaved = btn.classList.contains('saved');
+        try {
+            if (isSaved) {
+                await window.LibraryService.removeResource(id);
+                btn.classList.remove('saved');
+                btn.innerHTML = '<i class="far fa-bookmark"></i> Guardar a Biblioteca';
+            } else {
+                await window.LibraryService.saveResource(id);
+                btn.classList.add('saved');
+                btn.innerHTML = '<i class="fas fa-bookmark" style="color:var(--primary-color)"></i> Guardado';
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error al guardar en la biblioteca.");
+        }
+    }
+
+    // Exponer funciones globales
+    window.openResourceLink = openResourceLink;
+    window.saveResource = saveResource;
 
 });

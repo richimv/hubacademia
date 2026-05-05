@@ -26,7 +26,7 @@ body {
 
 /* Layout Grid */
 .dashboard-container {
-    max-width: 1200px;
+    max-width: var(--max-width, 1440px);
     margin: 0 auto;
     padding: 2rem var(--page-padding-x);
     display: grid;

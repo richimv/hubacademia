@@ -43,9 +43,10 @@
      * Resolutor Universal de URLs de Imagen (GCS / Externo)
      * Detecta si una URL es una ruta relativa de GCS y la redirige al proxy del backend.
      */
-    window.resolveImageUrl = function (url) {
+    window.resolveImageUrl = function (url, resourceType = 'other') {
         if (!url || url.trim() === '') {
-            return 'https://placehold.co/400x300/1e293b/ffffff?text=Material';
+            // ✅ MEJORA SENIOR: Si no hay imagen, usar el Sistema de Portadas por Defecto
+            return window.getDefaultResourceImage(resourceType);
         }
 
         // Si ya es una URL absoluta o relativa local conocida, no tocar
@@ -57,6 +58,24 @@
         const token = localStorage.getItem('authToken');
         const tokenParam = token ? `&token=${token}` : '';
         return `${window.AppConfig.API_URL}/api/media/gcs?file=${encodeURIComponent(url)}${tokenParam}`;
+    };
+
+    /**
+     * ✅ NUEVO: Retorna la ruta de la portada artística por defecto según el tipo de recurso.
+     * Estos archivos deben existir en /assets (formato WebP optimizado).
+     */
+    window.getDefaultResourceImage = function (type) {
+        const base = 'assets/';
+        const map = {
+            'book': 'book.webp',
+            'paper': 'paper.webp',
+            'guia': 'guia.webp',
+            'norma': 'norma.webp',
+            'other': 'other.webp',
+            'article': 'paper.webp'
+        };
+        const fileName = map[type] || map['other'];
+        return base + fileName;
     };
 
     console.log('✅ Configuración Cargada Exitosamente.');

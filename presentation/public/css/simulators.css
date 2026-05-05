@@ -82,46 +82,33 @@
 
 /* Background Images */
 .sim-card.card-med {
-    background: linear-gradient(to bottom, rgba(20, 20, 20, 0.5), rgba(20, 20, 20, 0.9)),
+    background: linear-gradient(to bottom, rgba(7, 11, 21, 0.1) 0%, rgba(7, 11, 21, 0.95) 80%),
         url('../assets/bg-sim-health.png');
     background-size: cover;
     background-position: center;
 }
 
-.sim-card.card-img {
-    background: linear-gradient(to bottom, rgba(20, 20, 20, 0.6), rgba(20, 20, 20, 0.9)),
+.sim-card.card-img-sim {
+    background: linear-gradient(to bottom, rgba(7, 11, 21, 0.1) 0%, rgba(7, 11, 21, 0.95) 80%),
         url('../assets/bg-sim-img.png');
     background-size: cover;
     background-position: center;
 }
 
-.sim-card.card-eng {
-    background: linear-gradient(to bottom, rgba(20, 20, 20, 0.6), rgba(20, 20, 20, 0.9)),
-        url('../assets/bg-sim-eng.png');
+.sim-card.card-dx-sim {
+    background: linear-gradient(to bottom, rgba(7, 11, 21, 0.1) 0%, rgba(7, 11, 21, 0.95) 80%),
+        url('../assets/custom-sim-bg.png');
     background-size: cover;
     background-position: center;
 }
 
 /* Hover States */
-.sim-card:hover.card-med {
-    background: linear-gradient(to bottom, rgba(20, 20, 20, 0.4), rgba(20, 20, 20, 0.85)),
-        url('../assets/bg-sim-health.png');
-    background-size: cover;
-    background-position: center;
-}
-
-.sim-card:hover.card-img {
-    background: linear-gradient(to bottom, rgba(20, 20, 20, 0.4), rgba(20, 20, 20, 0.85)),
-        url('../assets/bg-sim-img.png');
-    background-size: cover;
-    background-position: center;
-}
-
-.sim-card:hover.card-eng {
-    background: linear-gradient(to bottom, rgba(20, 20, 20, 0.4), rgba(20, 20, 20, 0.85)),
-        url('../assets/bg-sim-eng.png');
-    background-size: cover;
-    background-position: center;
+.sim-card:hover.card-med,
+.sim-card:hover.card-img-sim,
+.sim-card:hover.card-dx-sim {
+    background-blend-mode: overlay;
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
 

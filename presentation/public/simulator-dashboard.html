@@ -169,7 +169,7 @@
                     <div class="stat-value" id="stat-accuracy">--%</div>
                     <div class="stat-sub">De todas tus respuestas</div>
                 </div>
-                <div class="stat-box" style="border-color:rgba(236,72,153,0.15);">
+                <div class="stat-box stat-box--counts" style="border-color:rgba(236,72,153,0.15);">
                     <div class="stat-icon" style="background:rgba(236,72,153,0.1);color:#f472b6;"><i
                             class="fas fa-tasks"></i></div>
                     <div class="stat-label" style="color:#f9a8d4;">Correctas / Incorrectas</div>
@@ -326,18 +326,17 @@
     <!-- Custom Exam Builder Modal -->
     <div id="config-modal-overlay" class="modal-overlay">
         <div class="config-modal">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-sliders-h" style="color: #60a5fa;"></i> Configurar Simulacro
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-sliders-h"></i> Configurar Simulacro
                 </h3>
-                <button id="btn-close-config"
-                    style="background: none; border: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer;">
+                <button id="btn-close-config" class="modal-close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
             <!-- Examen Objetivo (Target) -->
-            <h4 style="color: #cbd5e1; margin-bottom: 0.5rem; font-size: 0.9rem;">Examen Objetivo</h4>
+            <h4 class="modal-section-title">Examen Objetivo</h4>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 0.5rem;">
                 <label class="exam-target-option">
                     <input type="radio" name="examTarget" value="ENAM" checked>
@@ -358,8 +357,7 @@
                     </div>
                 </label>
             </div>
-            <div id="serums-info-alert"
-                style="display:none; margin-bottom: 1.5rem; font-size: 0.8rem; color: #94a3b8; background: rgba(56, 189, 248, 0.05); padding: 10px; border-left: 3px solid #38bdf8; border-radius: 4px;">
+            <div id="serums-info-alert" class="info-alert" style="display:none;">
                 <strong>Evaluación (ENCAPS) - MINSA:</strong> Las preguntas para esta evaluación están estrictamente
                 calibradas en base a nuestras guías, normas técnicas y libros oficiales (RAG) para las profesiones de:
                 medicina humana, enfermería y obstetricia.
@@ -367,9 +365,8 @@
 
             <!-- Contenedor Carrera SERUMS -->
             <div id="serums-career-container" style="display:none; margin-bottom: 1.5rem;">
-                <h4 style="color: #cbd5e1; margin-bottom: 0.5rem; font-size: 0.9rem;">Carrera Profesional (SERUMS)</h4>
-                <select id="config-career"
-                    style="width: 100%; padding: 0.75rem; border-radius: 8px; background: #1f1f1f; border: 1px solid rgba(255,255,255,0.1); color: white; outline: none;">
+                <h4 class="modal-section-title">Carrera Profesional (SERUMS)</h4>
+                <select id="config-career">
                     <option value="Medicina Humana">Medicina Humana</option>
                     <option value="Enfermería">Enfermería</option>
                     <option value="Obstetricia">Obstetricia</option>
@@ -379,14 +376,13 @@
             <!-- Dificultad Eliminada - Estándar Profesional Senior Activo -->
 
             <!-- Áreas Clínicas -->
-            <h4 style="color: #cbd5e1; margin-bottom: 0.5rem; font-size: 0.9rem;">Áreas de Estudio</h4>
+            <h4 class="modal-section-title">Áreas de Estudio</h4>
             <div id="config-areas-grid"
                 style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 2rem;">
                 <!-- Rendered dynamically via JS based on Target -->
             </div>
 
-            <button id="btn-save-config"
-                style="width: 100%; padding: 1rem; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+            <button id="btn-save-config">
                 Aplicar Configuración
             </button>
         </div>
@@ -412,7 +408,7 @@
                 <ul class="footer-links-list">
                     <li><a href="/" class="footer-link">Inicio</a></li>
                     <li><a href="course" class="footer-link">Cursos</a></li>
-                    <li><a href="/" class="footer-link">Recursos</a></li>
+                    <li><a href="/" class="footer-link">Biblioteca</a></li>
                     <li><a href="pricing" class="footer-link">Precios</a></li>
                 </ul>
             </div>

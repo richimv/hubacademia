@@ -43,6 +43,11 @@
             </button>
         </div>
         <div class="header-nav">
+            <div class="nav-links desktop-only" style="display: flex; gap: 1.5rem; margin-right: 1.5rem;">
+                <a href="/simulators" class="nav-link">Simuladores Médicos</a>
+                <a href="/repaso" class="nav-link">Flashcards</a>
+                <a href="/arena" class="nav-link">Arena</a>
+            </div>
             <div id="user-session-controls">
                 <span class="loading-user">Cargando...</span>
             </div>
@@ -54,7 +59,7 @@
             <div class="slider-container">
                 <div class="slide active">
                     <img src="assets/portada.png" alt="Hub Background" class="slide-bg desktop-only">
-                    <img src="assets/hero-bg-mobile.png" alt="Hub Background" class="slide-bg mobile-only">
+                    <img src="assets/portada.png" alt="Hub Background" class="slide-bg mobile-only">
                     <div class="slide-overlay"></div>
                     <div class="hero-content">
                         <h1 class="hero-title">Tu Hub Académico <span class="highlight-text">Inteligente</span></h1>
@@ -69,7 +74,8 @@
                     <img src="assets/simuladormedicoportada.png" alt="Simulador Médico Background" class="slide-bg">
                     <div class="slide-overlay"></div>
                     <div class="hero-content">
-                        <h1 class="hero-title">Simulador <span class="highlight-text" style="color: #60a5fa;">Médico Pro</span></h1>
+                        <h1 class="hero-title">Simulador <span class="highlight-text" style="color: #60a5fa;">Médico
+                                Pro</span></h1>
                         <p class="hero-subtitle">Simulacros exactos para ENAM, SERUMS y Residentado.</p>
                         <div class="hero-actions">
                             <a href="/simulator-dashboard?context=MEDICINA" class="btn-gamified"
@@ -114,13 +120,14 @@
                 <div class="carousel-scene">
                     <div class="carousel-cylinder">
                         <a href="/simulators" class="carousel-card card-sim">
-                            <span class="module-badge badge-popular">Más Usado</span>
                             <div class="card-img-container">
-                                <img src="/assets/custom-sim-bg.png" alt="Centro de Simulación">
+                                <img src="/assets/custom-sim-bg.png" alt="Simuladores Médicos">
+                                <div class="card-overlay"></div>
                             </div>
                             <div class="module-info">
-                                <h3>Centro de Simulación</h3>
-                                <p>Módulo de entrenamiento: Exámenes médicos ENAM, SERUMS, RESIDENTADO. Y otros especializados.</p>
+                                <h3>Simuladores Médicos</h3>
+                                <p>Domina el ENAM, SERUMS y Residentado con simulacros de alta fidelidad, diagnóstico
+                                    por imágenes y casos clínicos.</p>
                             </div>
                             <div class="module-action action-med">
                                 Entrar al Simulador <i class="fas fa-arrow-right"></i>
@@ -128,24 +135,27 @@
                         </a>
                         <a href="/repaso" class="carousel-card card-repaso">
                             <div class="card-img-container">
-                                <img src="/assets/custom-repaso-bg.png" alt="Repaso Inteligente">
+                                <img src="/assets/custom-repaso-bg.png" alt="Flashcards">
+                                <div class="card-overlay"></div>
                             </div>
                             <div class="module-info">
-                                <h3>Repaso Inteligente</h3>
-                                <p>Módulo de creación de FLASHCARDS. Optimiza tu retención con Repetición Espaciada (SM-2)</p>
+                                <h3>Flashcards</h3>
+                                <p>Potencia tu memoria con tarjetas inteligentes y repetición espaciada (SM-2), para
+                                    dominar cualquier materia o idioma.</p>
                             </div>
                             <div class="module-action action-flash">
                                 Comenzar Repaso <i class="fas fa-arrow-right"></i>
                             </div>
                         </a>
                         <a href="/arena" class="carousel-card card-arena">
-                            <span class="module-badge badge-new">Nuevo</span>
                             <div class="card-img-container">
                                 <img src="/assets/custom-arena-bg.png" alt="Quiz Battle Arena">
+                                <div class="card-overlay"></div>
                             </div>
                             <div class="module-info">
                                 <h3>Quiz Battle Arena</h3>
-                                <p>Responde rápido, gana puntos y sube en el ranking global.</p>
+                                <p>Mide tus conocimientos frente a otros usuarios y escala en el ranking global mientras
+                                    te diviertes aprendiendo.</p>
                             </div>
                             <div class="module-action action-battle">
                                 Jugar Ahora <i class="fas fa-arrow-right"></i>
@@ -153,8 +163,10 @@
                         </a>
                     </div>
                 </div>
-                <button class="carousel-nav carousel-prev" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
-                <button class="carousel-nav carousel-next" aria-label="Siguiente"><i class="fas fa-chevron-right"></i></button>
+                <button class="carousel-nav carousel-prev" aria-label="Anterior"><i
+                        class="fas fa-chevron-left"></i></button>
+                <button class="carousel-nav carousel-next" aria-label="Siguiente"><i
+                        class="fas fa-chevron-right"></i></button>
             </div>
             <div class="carousel-indicators"></div>
         </section>
@@ -203,14 +215,15 @@
                     <img src="assets/logo.png" alt="Hub Academia Logo">
                     Hub Academia
                 </a>
-                <p class="footer-slogan">Tu plataforma de entrenamiento médico. Simulacros, flashcards y asistente inteligente.</p>
+                <p class="footer-slogan">Tu plataforma de entrenamiento médico. Simulacros, flashcards y asistente
+                    inteligente.</p>
             </div>
             <div class="footer-links-col">
                 <h4 class="footer-heading">Explorar</h4>
                 <ul class="footer-links-list">
                     <li><a href="/" class="footer-link">Inicio</a></li>
                     <li><a href="course" class="footer-link">Cursos</a></li>
-                    <li><a href="/" class="footer-link">Recursos</a></li>
+                    <li><a href="/" class="footer-link">Mi biblioteca</a></li>
                     <li><a href="pricing" class="footer-link">Precios</a></li>
                 </ul>
             </div>
@@ -231,8 +244,6 @@
                 <a href="" target="_blank" class="social-link"><i class="fab fa-tiktok"></i></a>
             </div>
         </div>
-    </footer>
-
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -291,8 +302,6 @@
 
                 if (data.session) {
                     console.log('✅ Auth exitosa via One Tap. Delegando sincronización al SessionManager...');
-                    // No hace falta reload ni sync manual. 
-                    // SessionManager ya tiene un listener que detectará el cambio de estado.
                 }
             } catch (err) {
                 window._isAuthenticating = false;
@@ -330,4 +339,5 @@
     <script src="js/app.js?v=38dc494d"></script>
 
 </body>
+
 </html>

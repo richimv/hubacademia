@@ -21,7 +21,7 @@ body.has-trial-mode {
     top: var(--trial-bar-height);
     left: 0;
     width: 100%;
-    padding: 0 4%;
+    padding: 0 var(--page-padding-x);
     display: flex;
     justify-content: space-between;
     align-items: center;

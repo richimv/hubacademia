@@ -2,10 +2,10 @@
 #hero-slider {
     position: relative;
     width: 100%;
-    /* Height logic: Reduced to 60vh/550px to show content below */
-    height: 60vh;
-    max-height: 550px;
-    min-height: 400px;
+    /* Height logic: Increased for premium cinematic feel and full image view */
+    height: 75vh;
+    max-height: 850px;
+    min-height: 500px;
     overflow: hidden;
     background: #0a0a0a;
     /* Fallback */

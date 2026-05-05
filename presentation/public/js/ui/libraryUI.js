@@ -11,7 +11,7 @@ class LibraryUI {
             listContainer: '#library-list-container'
         };
 
-        this.currentTab = 'saved'; 
+        this.currentTab = 'saved';
         this.currentFilter = 'all';
         this.isFullscreen = false;
         this.editingNoteId = null; // ID de la nota que se está editando
@@ -180,7 +180,7 @@ class LibraryUI {
         document.querySelectorAll('.library-cat-btn').forEach(btn =>
             btn.classList.toggle('active', btn.dataset.category === filter)
         );
-        this._renderList(); 
+        this._renderList();
     }
 
     renderDrawerList() {
@@ -288,8 +288,9 @@ class LibraryUI {
         const typeLabel = item._uiType === 'course' ? 'Curso' : (item.resource_type || 'Recurso');
         const title = item.title || item.name || 'Sin título';
 
-        const resolvedImg = item.image_url ? window.resolveImageUrl(item.image_url) : `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=random&color=fff`;
-        const fallbackImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=6366f1&color=fff`;
+        const rType = item.resource_type || item._uiType || 'other';
+        const coverImage = window.resolveImageUrl(item.image_url, rType);
+        const fallbackImg = window.getDefaultResourceImage(rType);
 
         let clickAttr = '';
         if (item._uiType === 'course') {
@@ -302,7 +303,7 @@ class LibraryUI {
 
         return `
             <div class="library-item" ${clickAttr}>
-                <img src="${resolvedImg}" alt="${title}" onerror="this.src='${fallbackImg}'">
+                <img src="${coverImage}" alt="${title}" class="resource-cover" onerror="this.src='${fallbackImg}'">
                 <div class="library-item-info">
                     <div class="library-item-title">${title}</div>
                     <div class="library-item-type">${typeLabel}</div>
@@ -315,7 +316,7 @@ class LibraryUI {
         const preview = (note.content || '').substring(0, 120).replace(/[*#>\-\[\]]/g, '').trim();
         const sourceLabel = note.source_type === 'chat' ? 'Chat' : (note.source_type === 'flashcard' ? 'Flashcard' : 'Manual');
         const dateStr = new Date(note.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
-        
+
         let color = note.color || '#f59e0b';
         if (!note.color) {
             if (note.source_type === 'chat') color = '#3b82f6';
@@ -345,7 +346,7 @@ class LibraryUI {
         div.className = 'library-drawer';
         div.innerHTML = `
             <div class="library-header">
-                <span class="library-title">Mis Recursos</span>
+                <span class="library-title">Mi Biblioteca</span>
                 <div style="display:flex;align-items:center;gap:4px;">
                     <button class="library-expand-btn" onclick="window.libraryUI.toggleFullscreen()" title="Pantalla completa"><i class="fas fa-expand"></i></button>
                     <button class="close-drawer-btn" onclick="window.libraryUI.toggleDrawer(false)"><i class="fas fa-times"></i></button>
@@ -445,7 +446,7 @@ class LibraryUI {
             this._renderColorOptions(note.color || '');
             viewer.innerHTML = this._renderMarkdown(note.content);
             headerText.innerHTML = `<i class="fas fa-sticky-note"></i> Ver Nota`;
-            
+
             this.switchToViewer();
         } else {
             document.getElementById('note-editor-title').value = '';
@@ -453,7 +454,7 @@ class LibraryUI {
             const defaultNewColor = '#64748b'; // Lighter Slate for new notes
             this._renderColorOptions(defaultNewColor);
             headerText.innerHTML = `<i class="fas fa-plus"></i> Nueva Nota`;
-            
+
             this.switchToEditor();
         }
 
@@ -468,7 +469,7 @@ class LibraryUI {
 
         const options = ['#3b82f6', '#8b5cf6', '#10b981', '#64748b', '#f43f5e', '#f59e0b', '#0ea5e9', '#d946ef', '#14b8a6'];
         picker.innerHTML = `<input type="hidden" id="note-editor-color" value="${selectedColor}">`;
-        
+
         options.forEach(color => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -508,7 +509,7 @@ class LibraryUI {
         const end = textarea.selectionEnd;
         const text = textarea.value;
         const selected = text.substring(start, end);
-        
+
         textarea.value = text.substring(0, start) + prefix + selected + suffix + text.substring(end);
         textarea.focus();
         textarea.setSelectionRange(start + prefix.length, end + prefix.length);
@@ -525,8 +526,8 @@ class LibraryUI {
 
         try {
             const method = this.editingNoteId ? 'PUT' : 'POST';
-            const url = this.editingNoteId ? 
-                `${window.AppConfig.API_URL}/api/library/notes/${this.editingNoteId}` : 
+            const url = this.editingNoteId ?
+                `${window.AppConfig.API_URL}/api/library/notes/${this.editingNoteId}` :
                 `${window.AppConfig.API_URL}/api/library/notes`;
 
             const res = await fetch(url, {
@@ -535,11 +536,11 @@ class LibraryUI {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 },
-                body: JSON.stringify({ 
-                    title, 
-                    content, 
+                body: JSON.stringify({
+                    title,
+                    content,
                     color: document.getElementById('note-editor-color') ? document.getElementById('note-editor-color').value : undefined,
-                    sourceType: this.editingNoteId ? undefined : 'manual' 
+                    sourceType: this.editingNoteId ? undefined : 'manual'
                 })
             });
 
@@ -561,7 +562,7 @@ class LibraryUI {
 
     _renderMarkdown(text) {
         if (!text) return '';
-        
+
         // ✅ USAR RENDERIZADOR UNIFICADO
         return window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
     }

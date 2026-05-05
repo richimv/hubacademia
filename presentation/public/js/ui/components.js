@@ -586,38 +586,20 @@ function createUnifiedResourceCardHTML(item) {
 
     // 5. Layout Híbrido Senior: Resolución de Imagen Inteligente (Smart Cover)
     const rawImage = item.image_url || item.coverUrl;
-    const hasManualImage = Boolean(rawImage && rawImage.trim() !== '');
-    const isDrive = window.uiManager.isDriveLink(url);
+    
+    // ✅ RESOLUCIÓN UNIVERSAL: resolveImageUrl ahora maneja los fallbacks artísticos internamente
+    const displayImage = window.resolveImageUrl(rawImage, type);
 
-    let visualHTML = '';
-    let displayImage = null;
+    // Siempre renderizamos la imagen (ya sea la del recurso o la artística por defecto)
+    let visualHTML = `<img src="${displayImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.src='${window.getDefaultResourceImage(type)}'">`;
 
-    if (hasManualImage) {
-        // Prioridad 1: Imagen manual definida por el admin
-        displayImage = window.resolveImageUrl(rawImage);
-    } else if (isDrive) {
-        // Prioridad 2: Miniatura dinámica de Google Drive (Vía Proxy Seguro)
-        displayImage = window.resolveImageUrl(url);
-    }
-
-    if (displayImage) {
-        // CORRECCIÓN SENIOR: Búsqueda relativa (parentElement.querySelector) para asegurar disponibilidad
-        // del nodo, impidiendo que el onerror crashee intentando invocar document.getElementById
-        const fallbackId = `fb-${type}-${item.id}`;
-        visualHTML = `<img src="${displayImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.style.display='none'; const fb = this.parentElement.querySelector('.urc-icon-fallback'); if(fb) fb.style.display='flex';">`;
-    }
-
-    // El fallback ahora tiene un ID único y su visibilidad depende de 'displayImage'
-    const fallbackId = `fb-${type}-${item.id}`;
+    // El fallback de icono ahora es solo decorativo o para estados de error crítico,
+    // pero por defecto lo mantenemos oculto ya que la imagen siempre debería cubrir el fondo.
     const fallbackHTML = `
-        <div id="${fallbackId}" class="urc-icon-fallback ${typeColorClass} fallback-trigger" style="${displayImage ? 'display:none;' : 'display:flex;'}">
+        <div class="urc-icon-fallback ${typeColorClass} fallback-trigger" style="display:none;">
             <i class="fas ${iconClass}"></i>
         </div>
     `;
-
-    if (!displayImage) {
-        visualHTML = fallbackHTML;
-    }
 
     // 6. Ensamblaje del Componente Universal
     return `
