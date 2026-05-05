@@ -50,12 +50,32 @@ Una vez pagado el plan en la pasarela, Mercado Pago redirige automáticamente al
   2. Dispara el reinicio del JWT de la máquina local (`sessionManager.validateSession()`) forzando al navegador a darse cuenta inmediatamente que ya no es un Trial, sino un VIP.
   3. Ejecuta una alerta mágica de Gratitud (SweetAlert) confirmándole al alumno que sus límites han sido destrabados con éxito, entregándole control absoluto al instante sin tener que volver a Iniciar Sesión.
 
-## FASE 5: Vida Diaria del 'Advanced' (El Middleware Cerbero)
-A partir de este momento, todos y cada uno de los clics que el alumno haga por la web al chat y otros servicios son auditados por el guardián `checkLimitsMiddleware.js`.
-- El middleware antes de darle acceso al Chat/Simulator hace 3 preguntas relámpago a la BD:
-  1. **"¿Este loco ya venció?"**: Extrae su fecha de vencimiento. Si `Date.now() > FechaEnBD` en tiempo real... rebaja su fila en Base de Datos de vuelta a Tier: `'free'`. Y lo expulsa.
-  2. **"¿Cambió el Sol de día?"**: Compara la columna silenciosa `last_usage_reset` con hoy. Si no son iguales, le resetea los disparos de Chat y Arena a Cero `0`.
-  3. **"¿Qué funciones especiales le corresponden por plan?"**: Al intentar usar en el Simulador el boton de "Diagnóstico Clínico AI", la ruta pasa la validación de suscripción limitando su acceso a 'Advanced' o 'Elite'. Si califica, consume un token de su masivo total `chat_standard` (Ej. 50/día).
-     - **El Fallback Elegante:** Siendo un plan menor (Basic o Free), el backend bloquea la petición a IA arrojando 403. El Frontend JavaScript cacha el 403, oculta la alerta de Paywall, dibuja velozmente un mensaje puramente estadístico pre-cocinado del Banco Local usando JavaScript, sin gastar nada y entregando un servicio degradado pero funcional como un campeón.
+## FASE 5: Vida Diaria y Control de Expiración
+A partir de este momento, cada acción es auditada por `checkLimitsMiddleware.js`.
+- **Detección de Expiración**: Si `Date.now() > subscription_expires_at`:
+    1. Se rebaja el usuario a `subscription_tier: 'free'`.
+    2. Se cambia el status a `subscription_status: 'expired'`.
+    3. **Reseteo de Vidas (usage_count = 0)**: Como beneficio por haber sido cliente, al regresar a la capa gratuita se le otorgan **50 nuevas vidas** para garantizar que pueda seguir usando la plataforma de forma limitada.
+
+---
+
+## FASE 6: Modelo de "Pase de Acceso" y Jerarquía de Tiers
+A diferencia de otros SaaS, Hub Academia utiliza un modelo de **Acceso por Tiempo Fijo** (Pago Único), evitando cobros recurrentes inesperados.
+
+### 1. Jerarquía de Poder
+- **FREE < BASIC < ADVANCED**
+- Un plan de nivel superior **incluye y supera** todos los beneficios del nivel inferior.
+
+### 2. Reglas de Compra y Renovación (Pricing UI)
+- **Bloqueo Descendente**: Un usuario con **Advanced Activo** tiene bloqueada la compra de **Basic**. La UI debe mostrarlo como "Incluido" o "Bloqueado por Plan Superior".
+- **Renovación del Mismo Tier**: Para evitar duplicidad de pagos, el usuario debe esperar a que su plan actual expire para comprar exactamente el mismo tier nuevamente.
+- **Mejora de Tier (Upgrade - El Regalo)**: 
+    - Un usuario con **Basic Activo** puede comprar **Advanced** en cualquier momento.
+    - **Lógica de Tiempo**: El sistema sumará el tiempo restante del plan Basic al nuevo plan Advanced. 
+    - **Resultado**: El usuario se convierte en Advanced inmediatamente y "gana" meses extra de Advanced por el tiempo que ya había pagado en Basic.
+
+### 3. Comunicación al Usuario
+- La UI no debe usar el término "Suscripción Mensual".
+- Debe usar: **"Acceso por 2 meses"** o **"Acceso por 6 meses"** (Pago Único). Esto elimina la ansiedad por cobros automáticos.
 
 ---

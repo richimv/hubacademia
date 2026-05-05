@@ -38,7 +38,8 @@ class QuizController {
             // 1. Lógica FREEMIUM: Verificar Límite Global de Vidas (Solo en Ronda 1)
             // ✅ CORRECCIÓN: Basado en Tiers oficiales (Case-Insensitive)
             const tier = String(user.subscriptionTier || 'free').toLowerCase();
-            const isPremium = ['basic', 'advanced'].includes(tier) || user.role === 'admin';
+            const status = (user.subscriptionStatus || 'pending').toLowerCase();
+            const isPremium = (['basic', 'advanced'].includes(tier) && status === 'active') || user.role === 'admin';
 
             if (round === 1 && !isPremium) {
                 const usageCheck = await usageService.checkAndIncrementUsage(user.id);

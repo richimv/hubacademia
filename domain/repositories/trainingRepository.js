@@ -78,7 +78,7 @@ class TrainingRepository {
         // 2. Construcción Dinámica de Cláusulas WHERE
         let whereClauses = `WHERE domain = $2 AND unaccent(UPPER(topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))
                             AND ($3::text IS NULL OR target = $3)`;
-        
+
         const params = [topics, domain, target];
         let paramIdx = 4;
 
@@ -138,7 +138,7 @@ class TrainingRepository {
             explanation: row.explanation,
             explanation_image_url: row.explanation_image_url,
             image_url: row.image_url, // ✅ NUEVO
-            topic: row.topic 
+            topic: row.topic
         }));
     }
 
@@ -457,9 +457,9 @@ class TrainingRepository {
             quizData.score,
             quizData.totalQuestions,
             weakPoints,
-            quizData.areaStats || '{}', 
-            quizData.target || 'ENAM',  
-            quizData.career || null     
+            quizData.areaStats || '{}',
+            quizData.target || 'ENAM',
+            quizData.career || null
         ];
 
         const res = await db.query(query, values);

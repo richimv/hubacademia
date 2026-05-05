@@ -89,7 +89,7 @@ CONTEXTO DE LA TARJETA:
 - TEMA: ${context.topic}
 ---
 PREGUNTA DEL ESTUDIANTE: ${message}`;
-                
+
                 processedMessage = tutorInstruction;
                 console.log('🧠 Tutor Context (Expansive Mode) Injected');
             }
@@ -100,7 +100,7 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
             let aiResult;
             try {
                 console.log(`🤖 Generando respuesta V6. RAG: ${hasRAGAccess}. Tier: ${req.userTier}. Spec: ${specialization}`);
-                
+
                 // Llamada al servicio especializado con el mensaje procesado (incluye contexto flashcard si aplica)
                 aiResult = await TutorAiService.handleChat(processedMessage, conversationHistory, {
                     target: req.userTarget || 'ENAM',
@@ -137,20 +137,19 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
                 );
             }
 
-            // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro Estándar Diario) - Solo si no es efímero (o según política)
+            // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro de 2 Vidas por RAG)
             try {
-                if (!isEphemeral) {
+                if (!isEphemeral && req.usageType === 'usage_count') {
+                    // ✅ NUEVA REGLA: El Chat con RAG cuesta 2 vidas
+                    await this.usageService.checkAndIncrementUsage(userId, 'usage_count', 2);
+                    console.log(`📉 Límite de usage_count incrementado (+2) para usuario ${userId}.`);
+                } else if (!isEphemeral && req.usageType) {
+                    // Para otros límites (daily_ai_usage), cobro normal de 1
                     const pool = require('../../infrastructure/database/db');
-                    if (req.usageType) {
-                        await pool.query(
-                            `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
-                            [userId]
-                        );
-                        console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}.`);
-                    }
+                    await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);
                 }
             } catch (limitErr) {
-                console.error("⚠️ No se pudo actualizar el límite del usuario. Continuando igualmente...", limitErr);
+                console.error("⚠️ No se pudo actualizar el límite del usuario:", limitErr.message);
             }
 
             console.log('✅ Respuesta generada exitosamente');
@@ -158,7 +157,7 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
             // ✅ NUEVO: Generación de título inteligente para conversaciones nuevas
             if (!conversationId && !isEphemeral) {
                 // (Ya se creó arriba con un placeholder)
-            } else if (!req.body.conversationId && !isEphemeral) { 
+            } else if (!req.body.conversationId && !isEphemeral) {
                 // Detectamos que era una conversación nueva por la ausencia de ID en el request original
                 TutorAiService.generateConversationTitle(message, response.respuesta)
                     .then(newTitle => {

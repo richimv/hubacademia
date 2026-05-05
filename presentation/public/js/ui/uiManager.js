@@ -883,9 +883,10 @@ class UIManager {
 
         // BIFURCACIÓN POR CONTEXTO Y TIER
         if (context === 'simulator') {
+            config.icon = 'fa-stethoscope';
             if (userTier === 'basic') {
                 config.title = '¡Cuota Diaria Completada!';
-                config.message = customMsg || 'Has alcanzado tu límite de <strong>15 simulacros diarios</strong>.<br>Mejora a <strong>Advanced</strong> para obtener 40 simulacros e IA Clínica.';
+                config.message = customMsg || 'Has alcanzado tu límite de <strong>15 simulacros diarios</strong>.<br>Mejora a <strong>Advanced</strong> para obtener 40 simulacros.';
                 config.btnText = 'Mejorar Plan 🚀';
                 config.btnUrl = '/pricing';
             } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
@@ -894,20 +895,27 @@ class UIManager {
                 config.btnText = 'Volver al Inicio 🏠';
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';
+            } else {
+                // Tier FREE o EXPIRED
+                config.title = '¡Simulacro Finalizado!';
+                config.message = customMsg || 'Has agotado tus <strong>Vidas de Prueba</strong> en el simulador.<br>Suscríbete para obtener acceso ilimitado y guardar tu progreso.';
+                config.btnText = 'Ver Planes Premium 💎';
+                config.btnUrl = '/pricing';
             }
         } else if (context === 'flashcards' || context === 'monthly_flashcards') {
-            const isMonthly = customMsg && (customMsg.includes('mensual') || customMsg.includes('IA'));
-            config.title = isMonthly ? '¡Cuota Mensual Alcanzada!' : '¡Prueba Gratuita Agotada!';
+            const isMonthly = customMsg && (customMsg.includes('mensual') || customMsg.includes('intentos'));
+            config.title = isMonthly ? '¡Cuota de Generación Alcanzada!' : '¡Prueba Gratuita Agotada!';
             config.message = customMsg || (isMonthly
-                ? 'Has alcanzado tu límite mensual de <strong>Generación con IA</strong>. Mejora tu plan para seguir dominando temas complejos.'
+                ? 'Has alcanzado tu límite de <strong>Generación</strong>. Mejora tu plan para seguir creando tarjetas inteligentes.'
                 : 'Se han agotado tus vidas de prueba. Suscríbete ahora para obtener <strong>Acceso Ilimitado</strong>.');
             config.btnText = 'Ver Planes 🚀';
+            config.btnUrl = '/pricing';
             config.icon = isMonthly ? 'fa-magic' : 'fa-heart-crack';
         } else {
             // Contexto Arena (Default)
             if (userTier === 'basic') {
                 config.title = '¡Cuota Diaria Completada!';
-                config.message = customMsg || 'Has alcanzado tu límite de 5 partidas diarias en Arena.<br>Mejora a <strong>Advanced</strong> para duplicar tu cuota y tener IA ilimitada.';
+                config.message = customMsg || 'Has alcanzado tu límite de 5 partidas diarias en Arena.<br>Mejora a <strong>Advanced</strong> para duplicar tu cuota.';
                 config.btnText = 'Mejorar Plan 🚀';
                 config.btnUrl = '/pricing';
             } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {

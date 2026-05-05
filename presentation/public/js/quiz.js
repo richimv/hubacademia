@@ -251,7 +251,8 @@ function saveSession() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
         ...state,
         savedAt: Date.now(), // ✅ Expiración tracker
-        quizId: state.quizId
+        quizId: state.quizId,
+        timeLeft: state.timeLeft // ✅ Persistencia del cronómetro
     }));
 }
 
@@ -260,10 +261,10 @@ function loadSession() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return null;
         const data = JSON.parse(stored);
-        // Regla 1: Expiración por tiempo (2 horas = 7200000 ms)
+        // Regla 1: Expiración por tiempo (1 hora = 3600000 ms)
         const ageInMs = Date.now() - (data.savedAt || 0);
-        if (ageInMs > 7200000) {
-            console.log("♻️ Sesión expirada por antigüedad (> 2hrs).");
+        if (ageInMs > 3600000) {
+            console.log("♻️ Sesión expirada por antigüedad (> 1hr).");
             clearSession();
             return null;
         }
@@ -753,13 +754,15 @@ function handleAnswer(selectedIndex, btnElement) {
 // 5. Temporizador Real Mock (Maestro)
 let timerInterval;
 function startMockTimer() {
-    let timeLeft = 7200; // 120 minutos en segundos (2 horas)
+    // 🔄 RECURSO DE PERSISTENCIA: Si hay tiempo guardado en el estado, lo usamos.
+    // De lo contrario, iniciamos en 2 horas (7200s).
+    let timeLeft = (state.timeLeft !== undefined && state.timeLeft !== null) ? state.timeLeft : 7200;
 
     // Función para formatear MM:SS
     const updateDisplay = () => {
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
         const s = (timeLeft % 60).toString().padStart(2, '0');
-        elements.timerDisplay.textContent = `${m}:${s}`;
+        if (elements.timerDisplay) elements.timerDisplay.textContent = `${m}:${s}`;
     };
 
     updateDisplay(); // Mostrar inicial
@@ -767,6 +770,11 @@ function startMockTimer() {
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         timeLeft--;
+        state.timeLeft = timeLeft; // Sincronizar con el estado global
+        
+        // Auto-save periódico (cada 10 segundos para no saturar storage, o en cada cambio si prefieres)
+        if (timeLeft % 10 === 0) saveSession();
+
         updateDisplay();
 
         // Alerta visual de los últimos 5 minutos

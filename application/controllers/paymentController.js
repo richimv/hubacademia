@@ -95,22 +95,33 @@ exports.handleWebhook = async (req, res) => {
 
                 if (paidAmount >= plan.price - 0.1) { // Tolerancia decimal
                     const todayDate = new Date().toISOString().split('T')[0];
-                    await pool.query(
-                        `UPDATE users SET 
+                    
+                    // 🔄 LÓGICA DE ACTIVACIÓN / UPGRADE:
+                    // 1. Si el usuario ya es Basic y compra Advanced -> SUMAR tiempo (Upgrade con regalo).
+                    // 2. Si es una compra inicial o tras expiración -> NOW() + Intervalo.
+                    // Nota: La UI ya bloquea comprar el mismo tier o uno inferior.
+                    const updateQuery = `
+                        UPDATE users SET 
                             subscription_status = 'active',
                             subscription_tier = $1,
-                            subscription_expires_at = NOW() + INTERVAL '${plan.months} months',
+                            subscription_expires_at = CASE 
+                                WHEN subscription_tier = 'basic' AND $1 = 'advanced' THEN GREATEST(subscription_expires_at, NOW()) + INTERVAL '${plan.months} months'
+                                ELSE NOW() + INTERVAL '${plan.months} months'
+                            END,
+                            usage_count = 0, -- Resetear vidas globales al pagar (Fidelización)
                             daily_ai_usage = 0,
                             monthly_flashcards_usage = 0,
                             daily_arena_usage = 0,
                             daily_simulator_usage = 0,
                             last_usage_reset = $4,
                             payment_id = $2
-                         WHERE id = $3`,
-                        [planId, paymentId, userId, todayDate]
-                    );
+                        WHERE id = $3
+                    `;
+
+                    await pool.query(updateQuery, [planId, paymentId, userId, todayDate]);
                     console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado en Plan ${planId.toUpperCase()}`);
-                } else {
+                }
+ else {
                     console.warn(`⚠️ Alerta: Pago aprobado pero monto sospechoso (${paidAmount}) para usuario ${userId}, Plan esperado: ${plan.price}`);
                 }
             }

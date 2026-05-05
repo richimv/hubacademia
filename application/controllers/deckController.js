@@ -39,10 +39,10 @@ class DeckController {
      */
     _processAudioTts = async (text, side = 'front', lang = 'es-ES') => {
         if (!text || text.trim().length < SECURITY_LIMITS.MIN_TEXT_LENGTH) return null;
-        
+
         // 🛡️ RECORTAR TEXTO PARA TTS (Protección de presupuesto)
         const cleanText = text.substring(0, SECURITY_LIMITS.MAX_TTS_LENGTH);
-        
+
         try {
             const TtsService = require('../../domain/services/ttsService');
             const mediaController = require('./mediaController');
@@ -207,9 +207,9 @@ class DeckController {
         try {
             const { cardId } = req.params;
             const { userId } = this._getUserContext(req);
-            
+
             const card = await DeckService.getCardById(cardId);
-            
+
             // Validar propiedad de la tarjeta (seguridad básica)
             if (!card || card.user_id !== userId) {
                 return res.status(403).json({ error: 'Tarjeta no encontrada o sin acceso' });
@@ -457,7 +457,7 @@ class DeckController {
             // 2. Limpieza de GCS (Post-Guardado)
             // Si la URL cambió y la anterior no era null, borrar el archivo viejo
             const mediaController = require('./mediaController');
-            
+
             if (currentCard.image_url && currentCard.image_url !== imageUrl) {
                 if (!(await DeckService.isMediaInUse(currentCard.image_url))) {
                     await mediaController.deleteFile(currentCard.image_url);
@@ -634,7 +634,7 @@ class DeckController {
 
             const mediaController = require('./mediaController');
             const gcsPath = await mediaController.uploadFile(req.file, 'flashcards');
-            
+
             await this._syncUsage(req);
             res.json({ success: true, imageUrl: gcsPath });
         } catch (error) {
@@ -689,7 +689,7 @@ class DeckController {
 
             const newDeck = await DeckService.cloneDeck(userId, deckId);
             await this._syncUsage(req);
-            
+
             res.json({ success: true, deck: newDeck });
         } catch (error) {
             console.error('[cloneDeck] Error:', error);

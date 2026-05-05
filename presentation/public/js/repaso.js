@@ -11,7 +11,7 @@ class RepasoManager {
         this.currentCardMode = 'individual'; // 'individual' o 'bulk'
         this._pendingFiles = { front: null, back: null };
         this._pendingBulkCards = [];
-        
+
         // ✅ NUEVO: Caché para optimizar navegación
         this._cache = {
             decks: {}, // { parentId: [decks] }
@@ -204,7 +204,7 @@ class RepasoManager {
         // Show loading state SOLO si no hay caché y NO estamos viendo ya este mazo
         const container = document.getElementById('folder-header');
         const isCurrentlyViewing = this.currentDeck && String(this.currentDeck.id) === String(deckId);
-        
+
         if (container && !this._cache.folderData[deckId] && !isCurrentlyViewing) {
             container.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>';
         }
@@ -288,7 +288,7 @@ class RepasoManager {
         document.getElementById('folder-view').style.display = 'none';
         const commView = document.getElementById('community-view');
         if (commView) commView.style.display = 'block';
-        
+
         this.currentDeck = null;
 
         if (pushState && window.history.pushState) {
@@ -332,10 +332,10 @@ class RepasoManager {
         try {
             const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/public?page=${page}&limit=20`);
             const data = await res.json();
-            
+
             const grid = document.getElementById('community-decks-grid');
             grid.innerHTML = '';
-            
+
             if (!data.decks || data.decks.length === 0) {
                 grid.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center; background:rgba(255,255,255,0.02); border-radius:16px; grid-column: 1 / -1;">Aún no hay mazos públicos. ¡Sé el primero en compartir uno!</div>';
                 return;
@@ -356,7 +356,7 @@ class RepasoManager {
                 }
 
                 const iconHtml = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder');
-                
+
                 card.innerHTML = `
                     <!-- Desktop layout -->
                     <div class="deck-card-desktop" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${this.escapeHtml(deck.name)}')">
@@ -400,7 +400,7 @@ class RepasoManager {
                 `;
                 fragment.appendChild(card);
             });
-            
+
             grid.appendChild(fragment);
         } catch (e) {
             console.error('Error loading community decks:', e);
@@ -412,7 +412,7 @@ class RepasoManager {
         const modal = document.getElementById('preview-deck-modal');
         const content = document.getElementById('preview-deck-content');
         document.getElementById('preview-deck-title').textContent = deckName;
-        
+
         // Asignar acción al botón de clonar
         const cloneBtn = document.getElementById('btn-preview-clone');
         cloneBtn.onclick = () => {
@@ -440,7 +440,7 @@ class RepasoManager {
 
             const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`, fetchOptions);
             const data = await res.json();
-            
+
             if (!data.success || !data.cards || data.cards.length === 0) {
                 content.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center;">Este mazo no tiene tarjetas o no se pudieron cargar.</div>';
                 return;
@@ -594,7 +594,7 @@ class RepasoManager {
 
     async toggleDeckVisibility(deckId, makePublic) {
         if (!this.token) return;
-        
+
         if (makePublic) {
             const modalHtml = `
             <div id="confirm-publish-modal" style="position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(5px); z-index:99999; display:flex; justify-content:center; align-items:center; opacity:0; transition:opacity 0.2s;">
@@ -612,10 +612,10 @@ class RepasoManager {
                 </div>
             </div>`;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
+
             const modal = document.getElementById('confirm-publish-modal');
             const content = modal.querySelector('div');
-            
+
             requestAnimationFrame(() => {
                 modal.style.opacity = '1';
                 content.style.transform = 'scale(1)';
@@ -752,7 +752,7 @@ class RepasoManager {
             card.className = 'deck-card';
             card.style.padding = '1rem';
             card.style.cursor = 'pointer';
-            
+
             if (deck.color) {
                 card.style.background = `linear-gradient(135deg, ${deck.color}2A, ${deck.color}10)`;
                 card.style.borderColor = `${deck.color}66`;
@@ -853,7 +853,7 @@ class RepasoManager {
             }
             fragment.appendChild(card);
         });
-        
+
         container.appendChild(fragment);
     }
 
@@ -1076,7 +1076,7 @@ class RepasoManager {
     filterCards(query) {
         if (!this.currentCards) return;
         this._lastSearchQuery = query;
-        
+
         // ✅ OPTIMIZACIÓN: Debounce simple para evitar re-renders excesivos
         clearTimeout(this._filterTimeout);
         this._filterTimeout = setTimeout(() => {
@@ -1157,12 +1157,12 @@ class RepasoManager {
         if (deckId) {
             // Avoid reloading same folder if already active
             if (!this.currentDeck || String(this.currentDeck.id) !== String(deckId)) {
-                this.loadFolder(deckId, false); 
+                this.loadFolder(deckId, false);
             }
         } else {
             // Return to dashboard if no deck specified
             if (this.currentDeck) {
-                this.loadDashboard(false); 
+                this.loadDashboard(false);
             }
         }
     }
@@ -1289,7 +1289,7 @@ class RepasoManager {
         // Reset Previsualizaciones de Imágenes
         this._updateImagePreview('front', '');
         this._updateImagePreview('back', '');
-        
+
         // Reset URLs ocultas de imágenes
         const imgUrlFront = document.getElementById('card-image-url-front');
         const imgUrlBack = document.getElementById('card-image-url-back');
@@ -1320,7 +1320,7 @@ class RepasoManager {
         const hideBack = document.getElementById('card-hide-text-back');
         if (hideFront) hideFront.checked = false;
         if (hideBack) hideBack.checked = false;
-        
+
         // Reset Bulk UI si existe
         const preview = document.getElementById('bulk-upload-preview');
         if (preview) preview.style.display = 'none';
@@ -1332,10 +1332,10 @@ class RepasoManager {
         if (window.uiManager && !window.uiManager.validateFreemiumAction(null, 'flashcards')) return;
 
         this._clearCardModal(); // 🧹 Limpieza atómica
-        
+
         document.getElementById('card-deck-id').value = this.currentDeck.id;
         document.getElementById('modal-title').innerText = 'Añadir Tarjeta';
-        
+
         // Mostrar pestañas y resetear a modo individual
         const tabs = document.getElementById('card-modal-tabs');
         if (tabs) tabs.style.display = 'flex';
@@ -1470,7 +1470,7 @@ class RepasoManager {
         }
 
         const deckName = deckNameParam || this.currentDeck?.name || 'Mazo';
-        
+
         // Navigation: Transfer to flashcards.html with context
         const studyUrl = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
         window.location.href = studyUrl;
@@ -1607,12 +1607,12 @@ class RepasoManager {
                         await this.refreshView();
                     }
                     if (window.sessionManager) {
-                    const user = window.sessionManager.getUser();
-                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
-                    if (tier === 'free' || tier === 'pending') {
-                        await window.sessionManager.refreshUser();
+                        const user = window.sessionManager.getUser();
+                        const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                        if (tier === 'free' || tier === 'pending') {
+                            await window.sessionManager.refreshUser();
+                        }
                     }
-                }
                 } else {
                     window.uiManager.showToast('❌ Error al actualizar mazo');
                 }
@@ -1639,12 +1639,12 @@ class RepasoManager {
                     if (parentId) await this.loadFolder(parentId, false);
                     else await this.loadDashboard(false);
                     if (window.sessionManager) {
-                    const user = window.sessionManager.getUser();
-                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
-                    if (tier === 'free' || tier === 'pending') {
-                        await window.sessionManager.refreshUser();
+                        const user = window.sessionManager.getUser();
+                        const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                        if (tier === 'free' || tier === 'pending') {
+                            await window.sessionManager.refreshUser();
+                        }
                     }
-                }
                 } else {
                     window.uiManager.showToast('❌ Error al crear mazo');
                 }
@@ -1703,11 +1703,11 @@ class RepasoManager {
 
         const imageUrl = document.getElementById('card-image-url-front').value || null;
         const backImageUrl = document.getElementById('card-image-url-back').value || null;
-        
+
         // ✅ NUEVO: Capturar preferencias de Audio TTS
         const generateTtsFront = (document.getElementById('card-tts-front')?.checked && front.length >= 2) || false;
         const generateTtsBack = (document.getElementById('card-tts-back')?.checked && back.length >= 2) || false;
-        
+
         if (document.getElementById('card-tts-front')?.checked && front.length < 2) {
             window.uiManager.showToast('El frente debe tener texto para generar audio.', 'warning');
             return;
@@ -1720,7 +1720,7 @@ class RepasoManager {
         const ttsLangBack = document.getElementById('card-tts-lang-back')?.value || 'es-ES';
         const hideTextFront = document.getElementById('card-hide-text-front')?.checked || false;
         const hideTextBack = document.getElementById('card-hide-text-back')?.checked || false;
-        
+
         const deleteAudioFront = document.getElementById('card-delete-audio-front')?.value === 'true';
         const deleteAudioBack = document.getElementById('card-delete-audio-back')?.value === 'true';
 
@@ -1770,10 +1770,10 @@ class RepasoManager {
                 finalBackImageUrl = await this._uploadFileToGCS(this._pendingFiles.back, 'flashcards');
             }
 
-            const payload = { 
-                front, 
-                back, 
-                imageUrl: finalImageUrl, 
+            const payload = {
+                front,
+                back,
+                imageUrl: finalImageUrl,
                 backImageUrl: finalBackImageUrl,
                 generateTtsFront,
                 generateTtsBack,
@@ -1891,7 +1891,7 @@ class RepasoManager {
         // ✅ UI Dinámica para Audio
         const ttsFrontLabel = document.querySelector('label[for="card-tts-front"]');
         const ttsBackLabel = document.querySelector('label[for="card-tts-back"]');
-        
+
         if (ttsFrontLabel) ttsFrontLabel.innerText = audioUrlFront ? 'Actualizar/Regenerar audio' : 'Generar audio TTS';
         if (ttsBackLabel) ttsBackLabel.innerText = audioUrlBack ? 'Actualizar/Regenerar audio' : 'Generar audio TTS';
 
@@ -1911,7 +1911,7 @@ class RepasoManager {
         if (imgUrlBack) imgUrlBack.value = backImageUrl || '';
 
         document.getElementById('card-modal').classList.add('active');
-        
+
         // Ocultar pestañas al editar y forzar modo individual
         const tabs = document.getElementById('card-modal-tabs');
         if (tabs) tabs.style.display = 'none';
@@ -1924,15 +1924,15 @@ class RepasoManager {
 
     switchCardMode(mode) {
         this.currentCardMode = mode;
-        
+
         // UI Tabs
         document.getElementById('tab-card-individual').classList.toggle('active', mode === 'individual');
         document.getElementById('tab-card-bulk').classList.toggle('active', mode === 'bulk');
-        
+
         // UI Sections
         document.getElementById('section-card-individual').style.display = mode === 'individual' ? 'block' : 'none';
         document.getElementById('section-card-bulk').style.display = mode === 'bulk' ? 'block' : 'none';
-        
+
         // Reset bulk if switching back to individual to avoid accidental bulk saves
         if (mode === 'individual') {
             // No reseteamos _pendingBulkCards aquí para permitir que el usuario vea la preview si vuelve, 
@@ -2036,7 +2036,7 @@ class RepasoManager {
                 // Procesar filas (omitir encabezado)
                 const newCards = [];
                 const headers = rows[0] || [];
-                
+
                 // Validación estricta de encabezados
                 const frontIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('frente'));
                 const backIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('dorso'));
@@ -2079,7 +2079,7 @@ class RepasoManager {
                 const preview = document.getElementById('bulk-upload-preview');
                 const text = document.getElementById('bulk-count-text');
                 const fileLabel = document.getElementById('bulk-file-label');
-                
+
                 if (fileLabel) fileLabel.textContent = file.name;
 
                 if (preview && text) {
@@ -2112,7 +2112,7 @@ class RepasoManager {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.token}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     cards: this._pendingBulkCards,
                     generateTtsFront: document.getElementById('bulk-tts-front')?.checked || false,
                     generateTtsBack: document.getElementById('bulk-tts-back')?.checked || false,
@@ -2161,8 +2161,8 @@ class RepasoManager {
                 method: 'POST',
                 isRetryable: true,
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                body: JSON.stringify({ 
-                    topic, 
+                body: JSON.stringify({
+                    topic,
                     amount,
                     generateTtsFront: document.getElementById('ai-tts-front')?.checked || false,
                     generateTtsBack: document.getElementById('ai-tts-back')?.checked || false,
@@ -2405,6 +2405,7 @@ class RepasoManager {
         } catch (err) {
             console.error(err);
         }
+
     }
 
     escapeHtml(text) {

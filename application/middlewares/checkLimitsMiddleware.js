@@ -53,8 +53,11 @@ const checkAILimits = (type) => {
                 if (user.subscription_expires_at) {
                     const expiresAt = new Date(user.subscription_expires_at);
                     if (Date.now() > expiresAt.getTime()) {
-                        await pool.query("UPDATE users SET subscription_tier = 'free' WHERE id = $1", [userId]);
+                        // ✅ CORRECCIÓN CRÍTICA: Rebajar Tier Y Status, y resetear vidas como beneficio de fidelización
+                        await pool.query("UPDATE users SET subscription_tier = 'free', subscription_status = 'expired', usage_count = 0 WHERE id = $1", [userId]);
                         user.subscription_tier = 'free';
+                        user.subscription_status = 'expired';
+                        user.usage_count = 0;
                     }
                 }
             }
@@ -119,9 +122,8 @@ const checkAILimits = (type) => {
             const userLimits = LIMITS[user.subscription_tier] || LIMITS.free;
 
             // 4. BIFURCACIÓN MAESTRA DE SUBSCRIPCIÓN
-            // Por regla de negocio, los límites "Diarios" solo aplican a los usuarios activos (Planes pagados).
-            // Los usuarios "Pending" o Inactivos están gobernados puramente por sus Vidas Globales.
-            const isActiveAccount = user.subscription_status === 'active';
+            // ✅ MEJORA: Un usuario solo es "Active" si tiene plan premium y status activo.
+            const isActiveAccount = user.subscription_status === 'active' && user.subscription_tier !== 'free';
             const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 50);
 
             // 5. CHEQUEO DE LA OPERACIÓN SOLICITADA
@@ -199,7 +201,7 @@ const checkAILimits = (type) => {
                     }
                 } else {
                     if ((user.daily_simulator_usage || 0) >= userLimits.simulator) {
-                        return res.status(403).json({ error: 'Límite diario de simulacros con IA alcanzado. Vuelve mañana.', reason: 'DAILY_LIMIT_EXHAUSTED' });
+                        return res.status(403).json({ error: 'Límite diario de simulacros alcanzado. Vuelve mañana.', reason: 'DAILY_LIMIT_EXHAUSTED' });
                     }
                     req.usageType = 'daily_simulator_usage';
                 }

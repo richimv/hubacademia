@@ -16,7 +16,7 @@ El sistema ahora soporta matemática rígida (Planes y Tokens).
 | **Tutor IA (Chat)** | Estándar + Lite (20 msg/día) | Biblioteca RAG + Lite (30 msg/día) |
 | **Quiz Arena (IA)** | 5 partidas/día (Modelo Lite) | 10 partidas/día (Modelo Lite) |
 | **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico (Modelo Lite) |
-| **Flashcards (IA)** | 10 intentos / mes (1-15 tjs/int) | 30 intentos / mes (1-15 tjs/int) |
+| **Flashcards (IA)** | 10 intentos / mes (1-20 tjs/int) | 30 intentos / mes (1-20 tjs/int) |
 | **Simulador Médico (Completados)** | **CAP 15/Día (Lite)** | **CAP 40/Día (Lite)** |
 
 ---

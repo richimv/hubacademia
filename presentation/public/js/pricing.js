@@ -36,12 +36,19 @@ function checkPremiumStatus(user) {
         const premiumContent = document.getElementById('premium-content');
         if (premiumContent) premiumContent.style.display = 'none';
 
-        // 2. Resaltar Plan Actual if existe
+        // 2. Resaltar Plan Actual y Bloquear Tiers Inferiores
         if (isPremium) {
             if (tier === 'advanced') {
-                markCurrentPlan('advanced');
+                markCurrentPlan('advanced', true); // Bloqueado total
+                markCurrentPlan('basic', false, true);  // Bloqueado por superior
             } else if (tier === 'basic') {
-                markCurrentPlan('basic');
+                markCurrentPlan('basic', true); // Bloqueado (ya lo tiene)
+                // El Advanced se queda disponible para UPGRADE
+                const advBtn = document.getElementById('btn-plan-advanced');
+                if (advBtn) {
+                    advBtn.innerHTML = '<i class="fas fa-arrow-up"></i> Mejorar a Advanced';
+                    advBtn.classList.add('upgrade-btn');
+                }
             }
         }
     } catch (e) {
@@ -50,13 +57,13 @@ function checkPremiumStatus(user) {
 }
 
 /**
- * Ajusta el UI para indicar cuál es el plan que el usuario ya posee.
+ * Ajusta el UI para indicar cuál es el plan que el usuario ya posee o si está bloqueado.
  */
-function markCurrentPlan(planId) {
+function markCurrentPlan(planId, isActive = false, isLower = false) {
     const card = document.getElementById(`plan-card-${planId}`);
     const btn = document.getElementById(`btn-plan-${planId}`);
 
-    if (card) {
+    if (card && isActive) {
         card.style.border = '2px solid #fbbf24';
         card.style.position = 'relative';
         
@@ -76,12 +83,18 @@ function markCurrentPlan(planId) {
             font-weight: 800;
             white-space: nowrap;
             box-shadow: 0 4px 10px rgba(251, 191, 36, 0.3);
+            z-index: 10;
         `;
         card.appendChild(badge);
     }
 
     if (btn) {
-        btn.innerHTML = '<i class="fas fa-certificate"></i> Plan Activo';
+        if (isActive) {
+            btn.innerHTML = '<i class="fas fa-certificate"></i> Plan Activo';
+        } else if (isLower) {
+            btn.innerHTML = '<i class="fas fa-lock"></i> Incluido en Advanced';
+        }
+        
         btn.disabled = true;
         btn.style.background = 'rgba(255,255,255,0.05)';
         btn.style.color = '#94a3b8';

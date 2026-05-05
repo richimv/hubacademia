@@ -79,18 +79,18 @@ class DeckService {
         // Using 'GUEST' role to bypass user ownership check but we must ensure it's public.
         // Actually, we'll fetch it using a raw or direct DB call if needed, or getDeckById if we adapt it.
         // Let's adapt trainingRepository.getDeckById to allow fetching if public.
-        const originalDeck = await trainingRepository.getDeckById('GUEST', publicDeckId); 
+        const originalDeck = await trainingRepository.getDeckById('GUEST', publicDeckId);
         // Note: Our GUEST logic in getDeckById only allows 'SYSTEM' decks. 
         // We need a specific fetch for public cloning. Let's do it directly here or adjust repo.
         // For safety, let's use the DB pool directly or add a new repo method.
         const db = require('../../infrastructure/database/db');
         const deckQuery = `SELECT * FROM decks WHERE id = $1 AND is_public = true`;
         const deckRes = await db.query(deckQuery, [publicDeckId]);
-        
+
         if (deckRes.rows.length === 0) {
             throw new Error('Mazo público no encontrado o no está disponible.');
         }
-        
+
         const deck = deckRes.rows[0];
 
         // 2. Create the cloned deck for the new user
@@ -98,7 +98,7 @@ class DeckService {
 
         // 3. Fetch original cards
         const cards = await this.getDeckCards(publicDeckId);
-        
+
         // 4. Bulk insert cards for the new user
         if (cards && cards.length > 0) {
             const mappedCards = cards.map(c => ({
@@ -109,7 +109,7 @@ class DeckService {
                 audioUrlFront: c.audio_url_frente,
                 audioUrlBack: c.audio_url_dorso
             }));
-            
+
             await this.addBulkCards(userId, newDeck.id, mappedCards);
         }
 
@@ -123,12 +123,12 @@ class DeckService {
         const db = require('../../infrastructure/database/db');
         const cardsQuery = `SELECT count(*) FROM user_flashcards WHERE image_url = $1 OR explanation_image_url = $1 OR audio_url_frente = $1 OR audio_url_dorso = $1`;
         const decksQuery = `SELECT count(*) FROM decks WHERE description LIKE '%' || $1 || '%'`;
-        
+
         const [cardsRes, decksRes] = await Promise.all([
             db.query(cardsQuery, [url]),
             db.query(decksQuery, [url])
         ]);
-        
+
         return (parseInt(cardsRes.rows[0].count) + parseInt(decksRes.rows[0].count)) > 0;
     }
 }
