@@ -19,13 +19,13 @@
 
 <body class="quiz-body">
 
-    <!-- Pantalla de Carga -->
+    <!-- Pantalla de Carga (Glassmorphism UI) -->
     <div id="loadingOverlay" class="loading-overlay">
-        <div class="medical-pulse"></div>
-        <h2 id="loadingTitle" style="margin-top: 1.5rem; font-weight: 600; text-align: center;">Analizando Biblioteca
-            Médica...</h2>
-        <p id="loadingSubtitle" style="color: #94a3b8; font-size: 0.9rem; text-align: center; margin-top: 0.5rem;">
-            Consultando fuentes y generando preguntas...</p>
+        <div class="glass-loader">
+            <div class="loader-pulse"></div>
+            <h2 id="loadingTitle" class="loading-title">Preparando simulacro...</h2>
+            <p id="loadingSubtitle" class="loading-subtitle">Consultando fuentes oficiales y configurando preguntas...</p>
+        </div>
     </div>
 
     <!-- NEW: Back Button -->
@@ -67,10 +67,10 @@
         </div>
 
         <div id="feedbackBox" class="feedback-box">
-            <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: #60a5fa;">
+            <h5 id="explanation-title" class="mb-3" style="color: #60a5fa; font-weight: 700; letter-spacing: -0.02em;">
                 <i class="fas fa-info-circle"></i> Explicación Médica
-            </h4>
-            <p id="explanationText" style="font-size: 1.15rem; line-height: 1.6; color: #93c5fd; margin-bottom: 1.5rem;"></p>
+            </h5>
+            <div id="explanationText" style="font-size: 1.15rem; line-height: 1.6; color: #93c5fd; margin-bottom: 1.5rem;"></div>
             <div id="explanationImageContainer" class="hidden q-explanation-image-container-premium">
                 <img id="explanationImage" src="" alt="Imagen explicativa" loading="lazy">
             </div>
@@ -124,20 +124,78 @@
                 </div>
             </div>
         </div>
+        <style>
+        /* 🌑 Unified Dark Loader System */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 3.5rem;
+            border-radius: 2.5rem;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 1);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .premium-spinner {
+            width: 70px;
+            height: 70px;
+            border: 3px solid rgba(255, 255, 255, 0.05);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            margin: 0 auto 2.5rem;
+            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 1rem;
+            letter-spacing: -0.03em;
+        }
+
+        .loading-subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+    </style>
     </div>
 
     <!-- Scripts -->
     <script src="js/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/services/authApiService.js"></script>
     <script src="js/services/analyticsApiService.js"></script>
     <script src="js/sessionManager.js"></script>
-    <script src="js/ui/components.js?v=20260420"></script>
-    <script src="js/ui/uiManager.js?v=20260420"></script>
-    <script src="js/app.js?v=20260420"></script>
+    <script src="js/ui/components.js?v=20260508_v2"></script>
+    <script src="js/ui/uiManager.js?v=20260508_v2"></script>
+    <script src="js/app.js?v=20260508_v2"></script>
     <script src="js/demoData.js"></script>
-    <script type="module" src="js/quiz.js?v=20260420_v2"></script>
+    <script type="module" src="js/quiz.js?v=20260508_v3"></script>
 </body>
 
 </html>

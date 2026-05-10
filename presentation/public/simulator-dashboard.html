@@ -335,56 +335,58 @@
                 </button>
             </div>
 
-            <!-- Examen Objetivo (Target) -->
-            <h4 class="modal-section-title">Examen Objetivo</h4>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 0.5rem;">
-                <label class="exam-target-option">
-                    <input type="radio" name="examTarget" value="ENAM" checked>
-                    <div class="target-card">ENAM</div>
-                </label>
-                <label class="exam-target-option">
-                    <input type="radio" name="examTarget" value="SERUMS">
-                    <div class="target-card">SERUMS</div>
-                </label>
-                <!-- [DESACTIVADO TEMPORALMENTE] Residentado requiere mayor volumen de preguntas. 
-                     Para reactivar: quitar 'disabled' del input y retirar la clase '--disabled' del label. -->
-                <label class="exam-target-option">
-                    <input type="radio" name="examTarget" value="RESIDENTADO">
-                    <div class="target-card">
-                        RESIDENTADO
-                        <span style="display: block; font-size: 0.6rem; opacity: 0.7; font-weight: 400;">(Beta /
-                            Trabajando)</span>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem 0;">
+                <!-- Examen Objetivo (Target) -->
+                <div class="config-section">
+                    <h4 class="modal-section-title">Examen Objetivo</h4>
+                    <div class="exam-target-grid">
+                        <label class="exam-target-option">
+                            <input type="radio" name="examTarget" value="ENAM" checked>
+                            <div class="target-card">ENAM</div>
+                        </label>
+                        <label class="exam-target-option">
+                            <input type="radio" name="examTarget" value="SERUMS">
+                            <div class="target-card">SERUMS</div>
+                        </label>
+                        <label class="exam-target-option">
+                            <input type="radio" name="examTarget" value="RESIDENTADO">
+                            <div class="target-card">
+                                RESIDENTADO
+                                <span style="display: block; font-size: 0.6rem; opacity: 0.7; font-weight: 400;">(Beta / Trabajando)</span>
+                            </div>
+                        </label>
                     </div>
-                </label>
-            </div>
-            <div id="serums-info-alert" class="info-alert" style="display:none;">
-                <strong>Evaluación (ENCAPS) - MINSA:</strong> Las preguntas para esta evaluación están estrictamente
-                calibradas en base a nuestras guías, normas técnicas y libros oficiales (RAG) para las profesiones de:
-                medicina humana, enfermería y obstetricia.
+                </div>
+
+                <div id="serums-info-alert" class="info-alert" style="display:none;">
+                    <strong>Evaluación (ENCAPS) - MINSA:</strong> Las preguntas para esta evaluación están estrictamente
+                    calibradas en base a nuestras guías, normas técnicas y libros oficiales (RAG) para las profesiones de:
+                    medicina humana y enfermería.
+                </div>
+
+                <!-- Contenedor Carrera SERUMS -->
+                <div id="serums-career-container" style="display:none;">
+                    <h4 class="modal-section-title">Carrera Profesional (SERUMS)</h4>
+                    <select id="config-career">
+                        <option value="Medicina Humana">Medicina Humana</option>
+                        <option value="Enfermería">Enfermería</option>
+                    </select>
+                </div>
+
+                <!-- Áreas Clínicas -->
+                <div id="areas-config-container">
+                    <h4 class="modal-section-title">Áreas de Estudio</h4>
+                    <div id="config-areas-grid" class="area-selection-grid">
+                        <!-- Rendered dynamically via JS -->
+                    </div>
+                </div>
             </div>
 
-            <!-- Contenedor Carrera SERUMS -->
-            <div id="serums-career-container" style="display:none; margin-bottom: 1.5rem;">
-                <h4 class="modal-section-title">Carrera Profesional (SERUMS)</h4>
-                <select id="config-career">
-                    <option value="Medicina Humana">Medicina Humana</option>
-                    <option value="Enfermería">Enfermería</option>
-                    <option value="Obstetricia">Obstetricia</option>
-                </select>
+            <div class="modal-footer" style="padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                <button id="btn-save-config">
+                    Aplicar Configuración
+                </button>
             </div>
-
-            <!-- Dificultad Eliminada - Estándar Profesional Senior Activo -->
-
-            <!-- Áreas Clínicas -->
-            <h4 class="modal-section-title">Áreas de Estudio</h4>
-            <div id="config-areas-grid"
-                style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 2rem;">
-                <!-- Rendered dynamically via JS based on Target -->
-            </div>
-
-            <button id="btn-save-config">
-                Aplicar Configuración
-            </button>
         </div>
     </div>
 

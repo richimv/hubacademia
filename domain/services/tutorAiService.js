@@ -5,7 +5,7 @@ const chatPrompts = require('../prompts/chatPrompts');
 /**
  * 🎓 TUTOR AI SERVICE V6: El Cerebro del Chat y Tutoría.
  * - Routing inteligente por especialización (medicine, education, neutral, flashcard_tutor).
- * - RAG Semántico (Pinecone) solo para medicina.
+ * - RAG Semántico (Pinecone) para medicina y educación.
  * - JSON estructurado nativo (responseMimeType).
  */
 class TutorAiService {
@@ -28,7 +28,7 @@ class TutorAiService {
 
     /**
      * Maneja la conversación del usuario con el Tutor.
-     * @param {string} message - El mensaje del usuario (o processedMessage con contexto de flashcard).
+     * @param {string} message - El mensaje del usuario.
      * @param {Array} history - Historial de la conversación.
      * @param {Object} filters - { target, specialization, namespace, userTier }
      */
@@ -40,9 +40,11 @@ class TutorAiService {
         console.log(`🎓 [TutorAiService] Consulta (${specialization} | NS: ${namespace}): "${message.substring(0, 40)}..."`);
 
         try {
-            // 1. Solo buscar en Pinecone si la especialización lo requiere
+            // 1. Buscar en Pinecone según la especialización (RAG Activo para Medicina y Educación)
             let context = "";
-            if (specialization === 'medicine') {
+            const activeRAG = ['medicine', 'education'].includes(specialization);
+
+            if (activeRAG) {
                 context = await RagService.searchContextSmart(message, 8, { 
                     mode: 'SEMANTIC', 
                     target,
@@ -50,7 +52,7 @@ class TutorAiService {
                 });
             }
 
-            // 2. Construir prompt según la especialización (medicina inyecta RAG, otros no)
+            // 2. Construir prompt según la especialización
             const systemPrompt = chatPrompts.buildPrompt(specialization, target, context);
             
             // 3. Formatear historial para Gemini
@@ -68,28 +70,33 @@ class TutorAiService {
 
             const rawText = result.response.candidates[0].content.parts[0].text;
 
-            // 5. Parsear la respuesta JSON (el modelo devuelve JSON nativo gracias a responseMimeType)
+            // 5. Parsear la respuesta JSON
             let parsed;
             try {
                 parsed = JSON.parse(rawText);
             } catch (e) {
-                // Fallback: limpiar backticks si el modelo los añadió de todas formas
                 const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
                 try {
                     parsed = JSON.parse(cleaned);
                 } catch (e2) {
-                    // Último recurso: devolver como texto plano
                     parsed = { intencion: 'respuesta_general', respuesta: rawText, sugerencias: [] };
                 }
             }
 
+            // Mapeo de fuentes según el dominio
+            const sourcesMap = {
+                'medicine': 'Biblioteca Médica Digital (NTS, GPC, Harrison)',
+                'education': 'Biblioteca Magisterial (CNEB, Normas MINEDU, Pruebas de Ascenso)',
+                'languages': 'Language Hub (Gramática y Modismos)'
+            };
+
             return {
-                intencion: parsed.intencion || 'consulta_medica',
+                intencion: parsed.intencion || `consulta_${specialization}`,
                 respuesta: parsed.respuesta || rawText,
                 sugerencias: parsed.sugerencias || [],
                 confianza: 0.9,
                 contextUsed: !!context,
-                sources: context ? "Biblioteca Médica Digital (Pinecone)" : "Conocimiento General"
+                sources: context ? (sourcesMap[specialization] || "Biblioteca Especializada") : "Conocimiento General"
             };
 
         } catch (error) {
@@ -99,7 +106,7 @@ class TutorAiService {
     }
 
     /**
-     * Genera un título corto para una conversación basada en el primer intercambio.
+     * Genera un título corto para una conversación.
      */
     async generateConversationTitle(userMessage, botResponse) {
         try {

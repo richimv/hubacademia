@@ -199,7 +199,7 @@ class CoursesController {
             // ✅ CORRECCIÓN PROFESIONAL: 
             // En lugar de adivinar carreras individuales (Enfermería, Medicina, etc.),
             // filtramos directamente por el ÁREA DE ESTUDIO "Ciencias de la Salud".
-            // Esto incluye automáticamente Obstetricia, Nutrición, etc.
+            // Esto incluye automáticamente todas las carreras médicas (Medicina, Enfermería, etc.).
             const areaKeywords = ['Ciencias de la Salud'];
 
             // ✅ Aumento de límite para mostrar todo el catálogo actual (36+) y futuro cercano.

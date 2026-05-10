@@ -12,7 +12,13 @@ const SimulatorDash = (() => {
             heroTitle: 'Ciencias de la Salud',
             quizParams: '?target=SERUMS&career=Medicina%20Humana',
             studyDesc: '20 preguntas. Para un aprendizaje profundo con explicación médica.',
-            realDesc: '100 preguntas con límite de tiempo. Simulación completa del ENAM / SERUMS.',
+            realDesc: '100 preguntas con límite de tiempo. Simulación completa del SERUMS.',
+            sectionIcon: 'fa-stethoscope',
+            targets: [
+                { value: 'ENAM', label: 'ENAM', disabled: true, subtitle: '(Próximamente)' },
+                { value: 'SERUMS', label: 'SERUMS', checked: true },
+                { value: 'RESIDENTADO', label: 'RESIDENTADO', disabled: true, subtitle: '(Beta / Trabajando)' }
+            ],
             areas: [
                 { label: 'Ciencias Básicas', areas: ['Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308' },
                 { label: 'Las 4 Grandes', areas: ['Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6' },
@@ -23,13 +29,39 @@ const SimulatorDash = (() => {
         'EDUCACION': {
             title: 'Docente Pro',
             heroTitle: 'Preparación Magisterial',
-            quizParams: '?target=NOMBRAMIENTO&career=Primaria',
+            quizParams: '?target=ASCENSO&career=EBR%20-%20Primaria',
             studyDesc: '20 preguntas. Enfoque en rúbricas y casos pedagógicos reales.',
-            realDesc: '100 preguntas. Simulación exacta del examen de Nombramiento Docente.',
+            realDesc: '60 preguntas integradas. Simulación exacta del examen de Ascenso Docente.',
+            sectionIcon: 'fa-chalkboard-teacher',
+            images: {
+                study: '/assets/Modo Estudio-v2.webp',
+                flashcards: '/assets/Flashcards-v2.webp',
+                real: '/assets/Simulacro Real-v2.webp'
+            },
+            targets: [
+                { value: 'NOMBRAMIENTO', label: 'NOMBRAMIENTO', disabled: true, subtitle: '(Próximamente)' },
+                { value: 'ASCENSO', label: 'ASCENSO', checked: true, subtitle: 'Escala Magisterial' },
+                { value: 'ACCESO_CARGOS', label: 'ACCESO A CARGOS', disabled: true, subtitle: 'Directivos (Beta)' }
+            ],
+            careerOptions: [
+                { value: 'EBR - Inicial', label: 'EBR - Nivel Inicial' },
+                { value: 'EBR - Primaria', label: 'EBR - Nivel Primaria' },
+                { value: 'EBR - Secundaria', label: 'EBR - Nivel Secundaria' }
+            ],
+            primarySpecialties: [
+                'General', 'Profesor de Innovación Pedagógica', 'Educación Física'
+            ],
+            secondarySpecialties: [
+                'Arte y Cultura', 'Ciencias Sociales', 'Ciencia y Tecnología', 'Comunicación',
+                'Desarrollo Personal, Ciudadanía y Cívica', 'Educación Física',
+                'Educación Religiosa', 'Educación para el Trabajo',
+                'Inglés como Lengua Extranjera', 'Matemática', 'Profesor de Innovación Pedagógica'
+            ],
             areas: [
-                { label: 'Habilidades Generales', areas: ['Comprensión Lectora', 'Razonamiento Lógico'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308' },
-                { label: 'Pedagogía', areas: ['Teorías del Aprendizaje', 'Planificación Curricular', 'Evaluación Formativa', 'Gestión de Aula'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6' },
-                { label: 'Especialidad', areas: ['Conocimientos de la Especialidad', 'Didáctica Específica'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981' }
+                { label: 'Habilidades Generales', areas: ['Comprensión Lectora', 'Razonamiento Lógico'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308', conditionalTarget: 'NOMBRAMIENTO' },
+                { label: 'Prueba Nacional Integrada', areas: ['Conocimientos Pedagógicos y de la Especialidad'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6', conditionalTarget: 'ASCENSO' },
+                { label: 'Conocimientos Pedagógicos y Curriculares', areas: ['Teorías del Aprendizaje y Desarrollo', 'Principios del Currículo Nacional (CNEB)', 'Planificación Curricular (PCI, PCA, Unidades)', 'Evaluación Formativa y Retroalimentación', 'Convivencia Escolar y Clima de Aula', 'Principios de la Educación Peruana'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6', conditionalTarget: 'NOMBRAMIENTO' },
+                { label: 'Gestión Institucional', areas: ['Liderazgo Pedagógico', 'Planificación Estratégica (PEI, PAT)', 'Gestión del Riesgo de Desastres', 'Monitoreo y Acompañamiento'], bg: 'rgba(249, 115, 22, 0.7)', border: '#f97316', conditionalTarget: 'ACCESO_CARGOS' }
             ]
         },
         'IDIOMAS': {
@@ -38,6 +70,10 @@ const SimulatorDash = (() => {
             quizParams: '?target=MCER&level=B2',
             studyDesc: '20 topics. Deep grammar analysis and vocabulary immersion.',
             realDesc: '80 questions. Mock exam following international certification standards (B1, B2, C1).',
+            sectionIcon: 'fa-language',
+            targets: [
+                { value: 'MCER', label: 'MCER (B1-C1)', checked: true }
+            ],
             areas: [
                 { label: 'Core Skills', areas: ['Grammar', 'Vocabulary', 'Use of English'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6' },
                 { label: 'Communication', areas: ['Listening Comprehension', 'Reading Analysis', 'Writing Structures'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981' },
@@ -242,6 +278,106 @@ const SimulatorDash = (() => {
 
         if (titleEl) titleEl.textContent = ctxConfig.title;
 
+        // Update analytics section icon based on domain
+        const sectionHeading = document.querySelector('.section-heading');
+        if (sectionHeading && ctxConfig.sectionIcon) {
+            const icon = sectionHeading.querySelector('i');
+            if (icon) {
+                icon.className = `fas ${ctxConfig.sectionIcon}`;
+            }
+        }
+
+        // ✅ UPDATE MODE IMAGES IF DEFINED IN CONTEXT
+        if (ctxConfig.images) {
+            const studyImg = document.querySelector('#btn-mode-study img');
+            const flashImg = document.querySelector('#btn-mode-flash img');
+            const realImg = document.querySelector('#btn-mode-real img');
+
+            if (studyImg && ctxConfig.images.study) studyImg.src = ctxConfig.images.study;
+            if (flashImg && ctxConfig.images.flashcards) flashImg.src = ctxConfig.images.flashcards;
+            if (realImg && ctxConfig.images.real) realImg.src = ctxConfig.images.real;
+        }
+
+        // Dynamically render exam target radio buttons
+        if (ctxConfig.targets) {
+            const targetContainer = document.querySelector('#config-modal-overlay .modal-section-title + div');
+            if (targetContainer) {
+                targetContainer.style.gridTemplateColumns = `repeat(${ctxConfig.targets.length}, 1fr)`;
+                targetContainer.innerHTML = '';
+                ctxConfig.targets.forEach(t => {
+                    const label = document.createElement('label');
+                    label.className = `exam-target-option ${t.disabled ? 'target-option--disabled' : ''}`;
+                    const subtitleHtml = t.subtitle
+                        ? `<span style="display:block;font-size:0.6rem;opacity:0.7;font-weight:400;">${t.subtitle}</span>`
+                        : '';
+                    label.innerHTML = `
+                        <input type="radio" name="examTarget" value="${t.value}" ${t.checked ? 'checked' : ''} ${t.disabled ? 'disabled' : ''}>
+                        <div class="target-card" style="${t.disabled ? 'opacity: 0.4; cursor: not-allowed; border-color: rgba(255,255,255,0.05);' : ''}">${t.label}${subtitleHtml}</div>
+                    `;
+                    targetContainer.appendChild(label);
+                });
+            }
+
+            // Hide SERUMS-specific UI if not a medical context
+            if (currentContext !== 'MEDICINA') {
+                const serumsInfo = document.getElementById('serums-info-alert');
+                const careerBox = document.getElementById('serums-career-container');
+                if (serumsInfo) serumsInfo.style.display = 'none';
+                if (careerBox) careerBox.style.display = 'none';
+            }
+
+            // Render Modalidad/Nivel selector for Education context
+            if (ctxConfig.careerOptions) {
+                const careerBox = document.getElementById('serums-career-container');
+                if (careerBox) {
+                    careerBox.style.display = 'block';
+                    const careerTitle = careerBox.querySelector('.modal-section-title');
+                    if (careerTitle) careerTitle.textContent = 'Modalidad / Nivel';
+
+                    const selectEl = document.getElementById('config-career');
+                    if (selectEl) {
+                        selectEl.innerHTML = '';
+                        ctxConfig.careerOptions.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.label;
+                            selectEl.appendChild(option);
+                        });
+
+                        // Dynamic Specialty Selector - Defined globally within setupConfigModal or init to be accessible
+                        window._updateEduSpecialties = (preselectedSpecialty = null) => {
+                            const level = selectEl.value;
+                            let specialtyContainer = document.getElementById('edu-specialty-container');
+                            
+                            if (!specialtyContainer) {
+                                specialtyContainer = document.createElement('div');
+                                specialtyContainer.id = 'edu-specialty-container';
+                                specialtyContainer.style.marginTop = '0.75rem';
+                                careerBox.appendChild(specialtyContainer);
+                            }
+
+                            if (level === 'EBR - Inicial') {
+                                specialtyContainer.style.display = 'none';
+                                specialtyContainer.innerHTML = '';
+                            } else {
+                                specialtyContainer.style.display = 'block';
+                                const specs = (level === 'EBR - Primaria') ? ctxConfig.primarySpecialties : ctxConfig.secondarySpecialties;
+                                specialtyContainer.innerHTML = `
+                                    <h4 class="modal-section-title" style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem;">Especialidad (${level.replace('EBR - ', '')})</h4>
+                                    <select id="config-specialty">
+                                        ${specs.map(s => `<option value="${s}" ${s === preselectedSpecialty ? 'selected' : ''}>${s}</option>`).join('')}
+                                    </select>
+                                `;
+                            }
+                        };
+
+                        selectEl.addEventListener('change', () => window._updateEduSpecialties());
+                        // Initial call will be handled by setupConfigModal to ensure consistency with loaded config
+                    }
+                }
+            }
+        }
+
         // Update card descriptions
         const studyDescEl = document.querySelector('#btn-mode-study .mode-desc');
         const realDescEl = document.querySelector('#btn-mode-real .mode-desc');
@@ -274,7 +410,7 @@ const SimulatorDash = (() => {
                 const summaryBox = document.getElementById('active-config-summary');
                 if (summaryBox && activeConfig) {
                     summaryBox.style.display = 'flex';
-                    const targetDisplay = activeConfig.target === 'SERUMS' && activeConfig.career
+                    const targetDisplay = activeConfig.career
                         ? `${activeConfig.target} (${activeConfig.career})`
                         : activeConfig.target;
 
@@ -374,7 +510,7 @@ const SimulatorDash = (() => {
                 }
             </style>
             <i class="fas fa-lightbulb tip-icon"></i>
-            <strong>Tip:</strong> Tu simulador está configurado por defecto para el SERUMS. Personaliza tu meta y áreas clínicas aquí.
+            <strong>Tip:</strong> Tu simulador está configurado por defecto. Personaliza tu meta y áreas de estudio aquí.
         `;
 
         btn.parentElement.style.position = 'relative';
@@ -493,18 +629,35 @@ const SimulatorDash = (() => {
         // Render grouped checkboxes with sub-headers
         const renderAreas = (target) => {
             areasGrid.innerHTML = '';
+            
+            // For ASCENSO: It's an integrated exam, so we hide the grid and select the integrated area
+            if (target === 'ASCENSO') {
+                areasGrid.style.display = 'none';
+                return;
+            }
+
             areasGrid.style.display = 'flex';
             areasGrid.style.flexDirection = 'column';
             areasGrid.style.gap = '1rem';
 
-            const groupsToRender = target === 'SERUMS'
-                ? examAreasGrouped.filter(g => g.label === 'Salud Pública y Gestión')
-                : examAreasGrouped;
+            // Filter groups: SERUMS shows only its group for non-MD careers, conditional groups depend on target
+            let groupsToRender = examAreasGrouped.filter(g => {
+                if (g.conditionalTarget && g.conditionalTarget !== target) return false;
+                
+                // 🛡️ REGLA SERUMS: Solo Medicina Humana ve las áreas clínicas.
+                // 🛡️ REGLA SERUMS: Solo se muestra el Grupo D (Salud Pública y Gestión) para TODOS.
+                if (currentContext === 'MEDICINA' && target === 'SERUMS') {
+                    if (!g.label.includes('Salud Pública')) return false;
+                }
+                
+                return true;
+            });
 
             groupsToRender.forEach(group => {
                 // Group header
                 const header = document.createElement('div');
-                header.style.cssText = 'font-size:0.75rem; color:#60a5fa; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; margin-top:0.25rem; padding-bottom:0.3rem; border-bottom:1px solid rgba(96,165,250,0.15);';
+                const accentColor = currentContext === 'EDUCACION' ? '#f97316' : '#60a5fa';
+                header.style.cssText = `font-size:0.75rem; color:${accentColor}; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; margin-top:0.25rem; padding-bottom:0.3rem; border-bottom:1px solid ${accentColor}26;`;
                 header.textContent = group.label;
                 areasGrid.appendChild(header);
 
@@ -553,9 +706,11 @@ const SimulatorDash = (() => {
                 }
 
                 // Trigger initial render safely
-                let activeTarget = 'ENAM';
+                const ctxConfig = contexts[currentContext] || contexts['MEDICINA'];
+                const defaultTarget = (ctxConfig.targets && ctxConfig.targets.find(t => t.checked)) ? ctxConfig.targets.find(t => t.checked).value : 'ENAM';
+                let activeTarget = defaultTarget;
                 if (activeConfig) {
-                    activeTarget = activeConfig.target || 'ENAM';
+                    activeTarget = activeConfig.target || defaultTarget;
 
                     const targetRadio = document.querySelector(`.exam-target-option input[value="${activeTarget}"]`);
                     if (targetRadio) targetRadio.checked = true;
@@ -564,15 +719,45 @@ const SimulatorDash = (() => {
                     if (checkedEl) activeTarget = checkedEl.value;
                 }
 
-                const serumsInfo = document.getElementById('serums-info-alert');
-                if (serumsInfo) serumsInfo.style.display = activeTarget === 'SERUMS' ? 'block' : 'none';
+                // Show/hide SERUMS-specific UI (only for medicine)
+                if (currentContext === 'MEDICINA') {
+                    const serumsInfo = document.getElementById('serums-info-alert');
+                    if (serumsInfo) serumsInfo.style.display = activeTarget === 'SERUMS' ? 'block' : 'none';
+                    const careerBox = document.getElementById('serums-career-container');
+                    if (careerBox) careerBox.style.display = activeTarget === 'SERUMS' ? 'block' : 'none';
+                }
 
-                const careerBox = document.getElementById('serums-career-container');
-                if (careerBox) careerBox.style.display = activeTarget === 'SERUMS' ? 'block' : 'none';
+                // For education: career selector is always visible, managed by init()
+                if (currentContext === 'EDUCACION') {
+                    const careerBox = document.getElementById('serums-career-container');
+                    if (careerBox) careerBox.style.display = 'block';
+                }
 
                 const careerSelect = document.getElementById('config-career');
                 if (activeConfig && activeConfig.career && careerSelect) {
-                    careerSelect.value = activeConfig.career;
+                    const careerParts = activeConfig.career.split(' - ');
+                    const level = (careerParts[0] && careerParts[1]) ? `${careerParts[0]} - ${careerParts[1]}` : careerParts[0];
+                    const specialty = careerParts[2] || null;
+
+                    careerSelect.value = level;
+                    if (window._updateEduSpecialties) {
+                        window._updateEduSpecialties(specialty);
+                    }
+                } else if (window._updateEduSpecialties) {
+                    // Default for first time or no config
+                    if (careerSelect) careerSelect.value = 'EBR - Primaria';
+                    window._updateEduSpecialties();
+                }
+
+                // 🔄 Medicina: Listener para cambio de carrera (Afecta áreas SERUMS)
+                if (currentContext === 'MEDICINA') {
+                    const careerSelect = document.getElementById('config-career');
+                    if (careerSelect) {
+                        careerSelect.addEventListener('change', () => {
+                            const activeTargetEl = document.querySelector('.exam-target-option input:checked');
+                            if (activeTargetEl) renderAreas(activeTargetEl.value);
+                        });
+                    }
                 }
 
                 renderAreas(activeTarget);
@@ -597,22 +782,27 @@ const SimulatorDash = (() => {
             radio.addEventListener('change', (e) => {
                 if (e.target.checked) {
                     const t = e.target.value;
-                    const serumsInfo = document.getElementById('serums-info-alert');
-                    if (serumsInfo) serumsInfo.style.display = t === 'SERUMS' ? 'block' : 'none';
-                    const careerBox = document.getElementById('serums-career-container');
-                    if (careerBox) careerBox.style.display = t === 'SERUMS' ? 'block' : 'none';
 
-                    // Lógica Automática de Selección
+                    // Toggle SERUMS-specific UI (medicine only)
+                    if (currentContext === 'MEDICINA') {
+                        const serumsInfo = document.getElementById('serums-info-alert');
+                        if (serumsInfo) serumsInfo.style.display = t === 'SERUMS' ? 'block' : 'none';
+                        const careerBox = document.getElementById('serums-career-container');
+                        if (careerBox) careerBox.style.display = t === 'SERUMS' ? 'block' : 'none';
+                    }
+
+                    // Default area selection logic
                     let defaultAreas = [];
                     if (t === 'ENAM') {
-                        // Grupos B, C, D
-                        defaultAreas = examAreasGrouped.filter(g => g.label !== 'Ciencias Básicas').flatMap(g => g.areas);
+                        defaultAreas = examAreasGrouped.filter(g => g.label !== 'Ciencias Básicas' && !g.conditionalTarget).flatMap(g => g.areas);
                     } else if (t === 'SERUMS') {
-                        // Salud Pública o Primer grupo de pedagogía etc.
-                        const healthGroup = examAreasGrouped.find(g => g.label.includes('Salud Pública') || g.label.includes('Pedagogía'));
+                        const healthGroup = examAreasGrouped.find(g => g.label.includes('Salud Pública'));
                         defaultAreas = healthGroup ? healthGroup.areas : examAreasGrouped[0].areas;
                     } else {
-                        defaultAreas = examAreasGrouped.flatMap(g => g.areas);
+                        // For education and other targets: select all non-conditional + matching conditional
+                        defaultAreas = examAreasGrouped
+                            .filter(g => !g.conditionalTarget || g.conditionalTarget === t)
+                            .flatMap(g => g.areas);
                     }
 
                     if (activeConfig) {
@@ -630,9 +820,27 @@ const SimulatorDash = (() => {
         if (btnSave) {
             btnSave.onclick = async () => {
                 const target = document.querySelector('.exam-target-option input:checked').value;
-                const selectedAreas = Array.from(areasGrid.querySelectorAll('input:checked')).map(cb => cb.value);
+                let selectedAreas = Array.from(areasGrid.querySelectorAll('input:checked')).map(cb => cb.value);
+                
+                // For ASCENSO: Force the integrated area
+                if (target === 'ASCENSO') {
+                    selectedAreas = ['Conocimientos Pedagógicos y de la Especialidad'];
+                }
+
                 const careerSelectEl = document.getElementById('config-career');
-                const career = target === 'SERUMS' && careerSelectEl ? careerSelectEl.value : null;
+                const ctxCfg = contexts[currentContext] || contexts['MEDICINA'];
+                let career = null;
+
+                if (currentContext === 'MEDICINA' && target === 'SERUMS' && careerSelectEl) {
+                    career = careerSelectEl.value;
+                } else if (ctxCfg.careerOptions && careerSelectEl) {
+                    career = careerSelectEl.value;
+                    // Append specialty for Primaria (if not General) or Secundaria
+                    const specSelect = document.getElementById('config-specialty');
+                    if (specSelect && specSelect.value && specSelect.value !== 'General') {
+                        career = `${career} - ${specSelect.value}`;
+                    }
+                }
 
                 if (selectedAreas.length === 0) {
                     alert('Debes seleccionar al menos un área de estudio.');
@@ -672,7 +880,7 @@ const SimulatorDash = (() => {
 
                 // Update UI Summary
                 summaryBox.style.display = 'flex';
-                const targetDisplay = target === 'SERUMS' && career
+                const targetDisplay = career
                     ? `${target} (${career})`
                     : target;
 
@@ -1228,9 +1436,15 @@ const SimulatorDash = (() => {
             });
         }
 
-        // 3. Bar Chart Demo
-        // 3. Bar Chart Demo
-        const demoAreasMap = {
+        // 3. Bar Chart Demo (Context-Aware)
+        const demoAreasMap = currentContext === 'EDUCACION' ? {
+            'Comprensión Lectora': { correct: 88, total: 100 },
+            'Razonamiento Lógico': { correct: 75, total: 100 },
+            'Evaluación Formativa y Retroalimentación': { correct: 68, total: 100 },
+            'Principios del Currículo Nacional (CNEB)': { correct: 62, total: 100 },
+            'Convivencia Escolar y Clima de Aula': { correct: 55, total: 100 },
+            'Estrategias de Enseñanza': { correct: 50, total: 100 }
+        } : {
             'Ginecología y Obstetricia': { correct: 90, total: 100 },
             'Medicina Interna': { correct: 85, total: 100 },
             'Pediatría': { correct: 75, total: 100 },

@@ -1,226 +1,72 @@
-# Guía Maestro: Arquitectura RAG Local y Generación de Preguntas
+# 🌲 Guía Maestro: Arquitectura RAG Vectorial (V6.1)
 
-Este documento es la referencia definitiva del motor de IA implementado en **Hub Academia**. Detalla el flujo de datos desde que un administrador solicita preguntas hasta que estas se validan y guardan, garantizando un sistema **100% Local en búsqueda, seguro y de bajo costo**.
-
----
-
-## 1. Filosofía del Sistema (Cero Costo de Infraestructura)
-
-Para proteger la economía del proyecto, el sistema ha sido auditado y re-estructurado para eliminar dependencias costosas de Google Cloud:
-*   **Búsqueda Sin Embeddings:** No se usa la IA de Google para "buscar" (ahorro de cuota de `text-embedding-004`).
-*   **Deduplicación Local:** Se comparan preguntas nuevas contra las antiguas usando SQL directo.
-*   **RAG FTS (Full Text Search - V3):** Se ha migrado de `ILIKE` a una arquitectura de búsqueda vectorial nativa de PostgreSQL usando `tsvector` y `tsquery`.
-    - **Indexación Bilingüe:** Soporte nativo para términos en Español e Inglés (crítico en medicina).
-    - **Salva-vidas Médico:** Los acrónimos cortos (TB, VIH, NTS, GPC) no se ignoran, se protegen en la búsqueda.
-    - **Ranking por Relevancia:** Usa `ts_rank` para ordenar fragmentos por qué tan bien coinciden con la consulta, además de la prioridad por "carpetas de negocio" (Normas > Guías > Libros).
-    - **Costo $0:** Todo ocurre dentro de la base de datos local sin llamar a APIs externas.
+Este documento define el funcionamiento del motor de Inteligencia Artificial de **Hub Academia**. Detalla cómo el sistema utiliza la búsqueda semántica en la nube para garantizar que cada respuesta y cada pregunta generada tenga un sustento técnico irrefutable (Médico o Pedagógico).
 
 ---
 
-## 🏗️ Flujo de Generación (FTS Edition)
- Paso a Paso
-
-### Paso 1: Solicitud desde el Chat / Admin
-El usuario define los parámetros en el frontend o vía chat:
-- **Estilo de Generación**: Evaluación integral centrada en el rigor clínico-normativo. Explicación de **3 párrafos analíticos** con sustento bibliográfico detallado.
-
-### Paso 2: Escaneo de Duplicidad (SQL Local)
-En `mlService.js`, antes de llamar a la IA, el sistema ejecuta:
-```sql
-SELECT topic, question_text FROM question_bank 
-WHERE target = $1 AND domain = $2 ... 
-LIMIT 200;
-```
-Esto recupera los últimos 200 temas generados. El sistema inyecta esta lista en el prompt como **"RESTRICCIÓN DE DUPLICIDAD"**, obligando a la IA a no repetir conceptos.
-
-### Paso 3: Motor de Búsqueda RAG Local — Agentic Rewriter (V4)
-El archivo `ragService.js` implementa un sistema de **búsqueda inteligente con doble ruta**:
-
-#### Ruta A: Preguntas Cortas (<80 caracteres) — Mecánica Clásica
-- **Comportamiento:** Extracción por regex (idéntico a V3). Filtra conectores, salva acrónimos, inyecta fuentes por target.
-- **Velocidad:** Instantánea (0ms extra).
-
-#### Ruta B: Preguntas Extensas (≥80 caracteres) — Agentic Rewriter
-- **Paso 3.1:** La función `_extractSmartTerms()` envía la pregunta completa a `gemini-2.5-flash-lite` con un prompt ultra-liviano (256 tokens max, temperature 0.1).
-- **Paso 3.2:** La IA analiza la pregunta clínica y devuelve un JSON con 3-10 **términos médicos puros** (enfermedades, fármacos, signos, normas).
-- **Paso 3.3:** Los términos limpios se pasan directamente a `_buildFtsQuery()` como un array, omitiendo el filtrado mecánico.
-- **Fallback:** Si la IA falla (timeout, error de cuota, JSON inválido), el sistema **automáticamente** usa la ruta mecánica clásica. **Cero riesgo de interrupción.**
-- **Log de Verificación:** Verás en consola: `🧠 Rewriter IA: Extraídos X términos clínicos → [colecistitis, murphy, ecografía, ...]`.
-
-#### Capacidad de Términos (AUMENTADA)
-- **V3 (Anterior):** Máximo 6 términos por búsqueda.
-- **V4 (Actual):** Máximo **10 términos** por búsqueda (tanto ruta inteligente como mecánica).
-- **Razón:** La IA selecciona términos de alta calidad, por lo que más términos = más cobertura sin ruido.
-
-### Paso 4: Inyección de Contexto y Procesamiento IA
-La IA (Gemini) recibe un "Prompt Maestro" que contiene:
-1.  **Reglas de Oro** (Jerarquía de fuentes, extensiones, cantidad de opciones).
-2.  **Restricción de Duplicidad** (Preguntas que ya existen).
-3.  **Datos de Apoyo RAG Local** (Los fragmentos reales encontrados en el paso anterior).
-4.  **Regla de Oro de Opciones:** Las opciones deben tener longitud similar para evitar sesgo visual (la correcta no debe resaltar).
-5.  **Cantidad de Opciones (MANDATORIO):** 
-    - **ENAM / SERUMS:** 4 opciones.
-    - **RESIDENTADO:** 5 opciones.
-6.  **Sin Prefijos:** Las opciones NO deben incluir "A)", "B)", etc. Solo el texto en el array.
-7.  **Explicación Robusta (SINTETIZADA):** Cada explicación DEBE integrar y citar explícitamente al menos **DOS (2) fuentes** médicas oficiales basándose en la jerarquía del perfil.
-
-### Paso 5: Generación de la Pregunta (JSON)
-La IA actúa como un redactor experto. Lee los fragmentos y redacta la pregunta citando la fuente exacta. La respuesta se devuelve en un formato JSON estricto:
-
-```json
-{
-  "topic": "Área de estudio",
-  "difficulty": "Senior",
-  "question_text": "Cuerpo de la pregunta...",
-  "options": ["Opción A", "Opción B", ...],
-  "correct_option_index": 0,
-  "explanation": "2-3 párrafos según nivel, citando fuentes locales y externas.",
-  "domain": "medicine",
-  "target": "El tipo de Examen (SERUMS, ENAM, RESIDENTADO)",
-  "career": "La carrera profesional (para SERUMS)",
-  "subtopic": "Sub temas (Opcional)"
-}
-```
+## 1. Filosofía V6.1: Precisión sobre Volumen
+Tras la migración a **Pinecone**, el sistema ha priorizado la **calidad del fragmento** sobre el costo. 
+- **Búsqueda Semántica**: Entiende la intención, no solo palabras clave.
+- **Namespaces Estancos**: Separación total entre la biblioteca médica (`medicine`) y la magisterial (`education`).
+- **Aislamiento de Errores**: Si el motor vectorial falla, el sistema recurre al conocimiento experto interno de Gemini (V6.1 Safety Mode).
 
 ---
 
-## 3. Jerarquía de Fuentes por Examen
+## 2. Roles del RAG por Servicio
 
-El motor de IA prioriza las fuentes según el "Target" solicitado para asegurar que la fundamentación sea válida para el examen específico:
+El RAG no se aplica igual a todos, para optimizar el rendimiento y la experiencia de usuario:
 
-| Examen | Perfil y Enfoque | Jerarquía de Fuentes (ESTRICTA) |
-| :--- | :--- | :--- |
-| **ENAM** | Clínica general, diagnóstico diferencial y manejo inicial. | 1. GPC Oficiales > 2. Libros Clínicos > 3. Manuales Especialidad > 4. NTS/RM/Leyes. |
-| **SERUMS** | Salud Pública y Gestión Comunitaria (**ENCAPS**). Contexto: Primer nivel de atención (I-1 al I-4). | 1. LEY: NTS y RM (Cadena de Frío, Dengue, PAI, etc) > 2. OFICIAL: GPC Minsa > 3. SOPORTE: Libros/Manuales. |
-| **RESIDENTADO** | Especialidad, libros y evidencia clínica. | 1. LIBROS (Harrison, Nelson, etc) + GPC Clínicas > 2. Manuales Especialidad > 3. NTS/RM/Leyes. |
-
----
-
-## 4. Casos de Prueba (Auditoría Exitosa)
-
-A continuación, se documentan los ejercicios de prueba que validaron esta arquitectura:
-
-### Caso A: SERUMS (Gestión de Salud)
-*   **Fragmentos RAG**: Se recuperaron guías de Salud Ambiental.
-*   **Resultado**: Pregunta sobre intoxicación por plomo. Citó el **Harrison (Cap. 458)** y el **Manual CTO de Salud Pública**, cumpliendo con los 2 párrafos de explicación requeridos para el nivel Intermedio.
-
-### Caso B: ENAM (Obstetricia)
-*   **Fragmentos RAG**: Información sobre Esteatosis Hepática Aguda.
-*   **Resultado**: Pregunta de caso clínico complejo. Citó el **Manual de Gastroenterología 2020** y el **Harrison 21 Edición**, diferenciando el Síndrome HELLP de la AFLP mediante datos técnicos inyectados.
-
-### Caso C: RESIDENTADO (Anatomía/Fisiología)
-*   **Fragmentos RAG**: Mecanismos de motilidad gástrica.
-*   **Resultado**: Pregunta de 5 opciones (Nivel Especialidad). Explicación profunda citando a **Maldonado Valdés** y el **Washington**, fundamentando el control intrínseco vs extrínseco del estómago.
+| Servicio | Uso del RAG | Motor | Objetivo |
+| :--- | :--- | :--- | :--- |
+| **`TutorAiService` (Chat)** | ✅ **Activo** | Pinecone (Semantic) | Responder dudas con citas exactas de NTS/CNEB. |
+| **`AdminAiService` (Banco)** | ✅ **Activo** | Pinecone (Semantic) | Generar preguntas con mimetismo de exámenes reales. |
+| **`UserAiService` (Emergencia)** | ❌ **Inactivo** | Interno (Zero-Shot) | Generar preguntas rápidas cuando el banco se agota. |
 
 ---
 
-## 5. Mantenimiento y "Modo Candado"
-*   **Seguridad:** El `usedRAG` ahora es `true` solo cuando el motor local inyecta fragmentos reales.
-*   **Estabilidad:** El modo `thinking: { disable: true }` es obligatorio para todas las llamadas de generación masiva.
-*   **Inviolabilidad:** No se deben reactivar las APIs de `text-embedding` para evitar romper el esquema de cero costo.
+## 3. El Flujo "Smart Search" (Paso a Paso)
 
-## 6. Recomendaciones de Uso y Escalabilidad (Puntaje de Oro)
+### Paso 1: Agentic Rewriter
+Antes de buscar en Pinecone, el sistema utiliza un sub-proceso de Gemini para traducir la consulta del usuario en **términos técnicos puros**.
+- **Ejemplo Médico**: "dolor de barriga fuerte" -> `apendicitis aguda, signos peritoneales, ecografía`.
+- **Ejemplo Pedagógico**: "evaluar en inicial" -> `evaluación formativa, retroalimentación, RVM 094-2020`.
 
-Para mantener el sistema como un **Gold Standard** (Máxima Calidad), se deben seguir las siguientes recomendaciones al generar lotes de preguntas:
+### Paso 2: Vectorización (Embeddings)
+Los términos limpios se convierten en un vector de **768 dimensiones** usando el modelo `text-multilingual-embedding-002` de Google Vertex AI.
 
-### 6.1 Límite de Áreas por Lote
-*   **Recomendación:** Seleccionar un máximo de **3 a 5 áreas** simultáneas.
-*   **Razón Técnica:** El motor RAG recupera 8 fragmentos por búsqueda. Si seleccionas 23 áreas, la mayoría no tendrá apoyo documental real, provocando que la IA alucine o generalice sin citar. Al limitar las áreas, nos aseguramos de que cada una tenga fragmentos técnicos dedicados.
+### Paso 3: Búsqueda en Namespace
+Se consulta a Pinecone filtrando por el namespace correspondiente. El sistema recupera los **8 fragmentos más relevantes**.
 
-### 6.2 Agrupamiento de Áreas Relacionadas
-Es óptimo agrupar áreas que comparten bibliografía para que los fragmentos recuperados se refuercen entre sí:
-*   **Grupo Salud Pública:** Gestión + Bioestadística + Medicina Legal + Epidemiología. (Inyecta automáticamente NTS/Leyes).
-*   **Grupo Clínico Adulto:** Medicina Interna + Farmacología + Fisiología. (Inyecta automáticamente GPC/Harrison).
-*   **Grupo Especialidades:** Pediatría + Obstetricia + Cirugía. (Inyecta automáticamente GPC/Guías).
-
-*   **Sustento de Citas**: Exigencia obligatoria de citar al menos **DOS (2) fuentes** oficiales (NTS, GPC o Tratados) por cada pregunta, con análisis profundo de la casuística.
-
-### 6.4 Escenarios de Búsqueda y Palabras Clave
-Para entender cómo el sistema "piensa" al buscar fragmentos, aquí tienes los tres escenarios principales basados en el motor de inyección automática:
-
-#### **Escenario A: SERUMS (Básico)**
-*   **Palabras Clave Generadas:** `salud`, `pública`, `nts`, `norma`, `ley`, `resolución`, `rm`.
-*   **Resultado:** El sistema barre las **NTS** (Normas Técnicas de Salud) y Leyes Generales simultáneamente.
-
-#### **Escenario B: ENAM (Intermedio)**
-*   **Palabras Clave Generadas:** `medicina`, `interna`, `gpc`, `guía`, `clínica`, `nts`.
-*   **Resultado:** Se priorizan las **Guías de Práctica Clínica (GPC)** y fragmentos de libros de especialidad.
-
-#### **Escenario C: RESIDENTADO (Intermedio)**
-*   **Palabras Clave Generadas:** `anatomía`, `fisiología`, `farmacología`, `microbiología`.
-*   **Resultado:** El motor se enfoca exclusivamente en **Tratados de Referencia** para evitar "ruido" legal o administrativo.
-
-## 7. Resultados de Auditoría y Verificación Final
-
-Tras las pruebas de fuego realizadas el **09 de Marzo de 2026**, se certifica que el sistema cumple con los siguientes estándares:
-
-## 8. Mimetización de Estilo Real (Few-Shot v2.0)
-
-Para lograr que la IA genere preguntas idénticas a los exámenes reales del MINSA, se ha implementado un sistema de **Mimetización Orgánica**:
-
-### 8.1 Extracción de Ejemplos Reales (`getStyleExamples`)
-El motor RAG ahora posee una función especializada que busca en la tabla `documents` fragmentos de exámenes pasados específicos:
--   **Criterio de Selección (CRÍTICO):** La selección del patrón de estilo se basa en la **Carrera Profesional** (parámetro `career`) y NO en el área de estudio. Esto garantiza que si un enfermero solicita "Salud Pública", la IA emule exámenes de Enfermería y no de Medicina.
--   **Patrones de búsqueda:** `%SERUMS-medicina%`, `%SERUMS-enfermeria%`, `%SERUMS-obstetricia%`.
--   **Inyección:** Se extraen 4 preguntas reales aleatorias y se inyectan en el prompt bajo la sección `[EJEMPLOS DE ESTILO REAL]`. Esto permite que la IA "copie" el tono, la brevedad y la estructura sin necesidad de reglas rígidas.
-
-### 8.2 Reglas de Redacción "Telegrama"
-Se han establecido restricciones inviolables en el prompt maestro:
-*   **Opciones (1 a 15 palabras):** Prohibido el uso de párrafos o explicaciones dentro de la opción.
-*   **Formato Híbrido:** La IA debe alternar obligatoriamente entre Casos Clínicos, Definiciones Directas y **Completar Espacios ( _____ )**.
-*   **Geografía Real:** Uso de distritos y departamentos reales de Perú (Loreto, Cusco, Puno, Huancavelica) para inmersión total.
+### Paso 4: Inyección Contextual (Few-Shot)
+La IA recibe un prompt que contiene:
+1.  **Reglas de Dominio**: (Ej: No repetir opciones, estilo pedagógico).
+2.  **Fragmentos RAG**: Información técnica recuperada.
+3.  **Ejemplos de Estilo**: 2-3 preguntas reales recuperadas de Pinecone para que la IA "copie" el tono del examen (Nombramiento, ENAM, etc.).
 
 ---
 
-## 9. Resultados de Auditoría Final (18 de Marzo, 2026)
+## 4. Jerarquía de Fuentes (Estructura de Autoridad)
 
-Tras la última actualización, se certifica el cumplimiento del estándar **MINSA 2025**:
+El sistema obliga a la IA a priorizar la información según el Target:
 
-### 9.1 Auditoría SERUMS (Medicina Humana)
-*   **Resultado:** Generación de preguntas sobre **Gestión de Brotes** y **Medicina Legal**.
-*   **Estilo:** Opciones breves (ej: "Inmediata (menos de 24 horas)").
-*   **Precisión:** Cita exacta de la **Ley 26842** y **NTS 161**.
-*   **Mimetización:** Estructura idéntica al examen real aplicado el 24 de agosto de 2025.
+### 🏥 Dominio Médico (MINSA)
+1. **Leyes y NTS**: Normas Técnicas de Salud y Resoluciones Ministeriales.
+2. **GPC**: Guías de Práctica Clínica oficiales.
+3. **Tratados**: Harrison, Nelson, Williams (Uso como soporte clínico).
 
----
-
-**Documentación Finalizada y Auditada - 18 de Marzo, 2026.**
-
----
-
-## 10. Arquitectura V6: Motor Híbrido (Semántico + FTS) — Abril 2026
-
-La V6 introduce un motor de doble ruta que combina Pinecone (búsqueda semántica en la nube) con el FTS local existente:
-
-### 10.1 Distribución de RAG por Servicio
-
-| Servicio | Función | ¿Usa RAG? | Motor | Costo |
-| :--- | :--- | :--- | :--- | :--- |
-| **TutorAiService** (Chat) | Responde consultas del alumno en el chat | ✅ SÍ | Pinecone (SEMANTIC) | Micro-costo (Embedding + Read Unit) |
-| **AdminAiService** (Panel Admin) | Genera preguntas oficiales para el banco | ✅ SÍ | PostgreSQL (FTS) | **$0** |
-| **UserAiService** (Simulador Alumno) | Genera preguntas de emergencia cuando se agota el stock | ❌ NO | Conocimiento interno de Gemini + Historial de 30 preguntas | **$0** |
-
-### 10.2 Lógica de Decisión
-- **¿Por qué el Alumno NO usa RAG?** Porque la generación de emergencia debe ser rápida y sin costo. El alumno ya paga por la suscripción para acceder al chat con RAG, no por el simulador.
-- **¿Por qué el Admin SÍ usa RAG?** Porque las preguntas que genera el administrador se quedan permanentemente en el banco (`question_bank`). Requieren el máximo rigor y sustento bibliográfico.
-- **¿Por qué el Chat usa Pinecone y no FTS?** Porque la búsqueda semántica entiende la intención clínica del alumno (ej: "me duele la cabeza" → "cefalea tensional"), mientras que FTS solo busca coincidencias textuales.
-
-### 10.3 Namespaces en Pinecone
-El índice `hub-academia-index` está dividido en compartimentos aislados:
-- `medicine`: Harrison, NTS MINSA, GPC, exámenes pasados.
-- `languages`, `education`, `general`: Preparados para futuras carreras.
-
-### 10.4 Despliegue en Producción (Render)
-Para que Pinecone funcione en producción, se deben agregar las siguientes variables de entorno en el panel de Render:
-- `PINECONE_API_KEY`: La API Key del proyecto en Pinecone.
-- `PINECONE_HOST`: El host del índice (ej: `hub-academia-index-xxxxx.svc.aped-xxxx-xxxx.pinecone.io`).
-
-### 10.5 Seguridad Post-Migración
-Tras eliminar la tabla `documents` de Supabase para liberar espacio (ocupaba ~90% de los 500MB):
-- `RagService._executeFtsSearch()` verifica la existencia de la tabla antes de consultarla.
-- `RagService.getStyleExamples()` también incluye esta verificación.
-- Si la tabla no existe, el sistema omite el fallback FTS sin errores y confía en Pinecone o el conocimiento experto de Gemini.
+### 🍎 Dominio Educativo (MINEDU)
+1. **CNEB**: Currículo Nacional de la Educación Básica.
+2. **Leyes**: Ley de Reforma Magisterial (29944), Ley General de Educación.
+3. **RVM**: Resoluciones Viceministeriales (Ej: RVM 094-2020 para evaluación).
+4. **Pruebas de Ascenso**: Usadas como base para el estilo de casuística.
 
 ---
 
-**Actualización V6 - 27 de Abril, 2026.**
+## 5. Auditoría de Calidad
+Cada pregunta generada por el `AdminAiService` debe cumplir:
+- **Explicación Robusta**: Mínimo 2 párrafos analíticos.
+- **Cita Directa**: Referencia al documento y, si es posible, a la página.
+- **Opciones Balanceadas**: Longitud similar para evitar sesgos de extensión.
+
+---
+**Documentación Actualizada: Mayo 2026 - Versión 6.1 (Pure Vector Architecture)**

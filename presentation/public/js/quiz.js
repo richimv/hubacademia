@@ -227,19 +227,22 @@ async function init() {
     try {
         // ✅ NUEVO: Intentar recuperar sesión previa
         const recovered = loadSession();
-        if (recovered) {
+        if (recovered && recovered.questions && recovered.questions.length > 0) {
             console.log("♻️ Sesión recuperada de localStorage.");
             Object.assign(state, recovered);
             renderQuestion();
             if (state.maxQuestions === 100) startMockTimer();
         } else {
+            console.log("🆕 Iniciando sesión nueva (sin estado previo).");
             // Inicialización limpia
             state.quizId = Date.now().toString(36); // Generar ID único
             await startQuiz();
         }
     } catch (error) {
-        console.error("Error iniciando quiz:", error);
-        alert("Error iniciando el simulacro. Revisa la consola.");
+        console.error('Error iniciando quiz:', error);
+        localStorage.removeItem(STORAGE_KEY); // Auto-Recuperación con la clave correcta
+        alert('Se detectó un examen dañado en memoria. Hemos limpiado el caché de seguridad de tu navegador. Por favor, intenta iniciar el simulacro nuevamente y ya debería funcionar.');
+        window.location.href = 'index.html';
     }
 }
 
@@ -314,7 +317,11 @@ async function getValidToken() {
 
 // 2. Iniciar Quiz (Llamada al Backend)
 async function startQuiz() {
-    // Mostrar Loading
+    // Mostrar Loading Dinámico
+    const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam);
+    if (elements.loadingTitle) {
+        elements.loadingTitle.innerText = isEducation ? 'Analizando Casuística Pedagógica...' : 'Analizando Biblioteca Médica...';
+    }
     elements.loadingOverlay.classList.remove('hidden');
 
     let data;
@@ -446,26 +453,36 @@ async function startQuiz() {
     if (!data.success) {
         elements.loadingOverlay.classList.add('hidden');
 
+        // 🚦 Error 404: Banco Agotado Real (Ya se intentó IA y falló)
         if (response && response.status === 404 && data.noQuestions) {
             if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                window.uiManager.showPaywallModal('Has completado las preguntas disponibles en este banco.', 'simulator');
+                window.uiManager.showPaywallModal('Has abarcado todas las preguntas oficiales y de IA disponibles para este tema.', 'simulator');
             } else {
-                alert('¡Banco Agotado!\\n\\nHas abarcado todas las preguntas de este tema y dificultad. Intenta cambiar tu configuración en el dashboard para acceder a más casos clínicos.');
+                alert('¡Banco Agotado!\n\nHas completado todas las preguntas de este tema. Intenta cambiar de área o dificultad.');
                 window.location.href = `simulator-dashboard?context=${state.context || 'MEDICINA'}`;
             }
             return;
         }
 
-        if (response && response.status === 500) {
-            alert("Error del servidor al cargar preguntas. Revisa tu conexión o intenta más tarde.");
+        // 🛠 Error Técnico de IA (500 con flag)
+        if (data.technicalError) {
+            alert(data.error || "Hubo un problema técnico al generar preguntas. Por favor, intenta de nuevo.");
             return;
         }
 
-        if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function' && response && response.status === 403) {
-            window.uiManager.showPaywallModal(data.error || 'No hay más preguntas disponibles en el Banco para este tema. Cambia de configuración o mejora tu plan para acceder a funciones avanzadas.');
-        } else {
-            alert(data.error || 'Hubo un error cargando el simulacro.');
+        // 🛡️ Error 403: Límite de Suscripción (Vidas / Cuota Diaria)
+        if (response && response.status === 403) {
+            if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal(data.error, 'simulator');
+            } else {
+                alert(data.error || "Límite alcanzado.");
+                window.location.href = '/pricing';
+            }
+            return;
         }
+
+        // Fallback genérico para otros errores
+        alert(data.error || 'Hubo un error cargando el simulacro.');
         return;
     }
 
@@ -580,6 +597,15 @@ async function fetchNextBatch() {
         }
     } finally {
         state.isLoadingBatch = false;
+        // 🛠️ FIX SENIOR: Eliminar cargador y disparar renderizado de la pregunta que estaba esperando
+        const manualOverlay = document.getElementById('loading-overlay');
+        if (manualOverlay) manualOverlay.remove();
+        if (elements.loadingOverlay) elements.loadingOverlay.classList.add('hidden');
+        
+        // Si estábamos esperando el lote para mostrar la siguiente pregunta, renderizarla ahora
+        if (state.questions[state.currentQuestionIndex]) {
+            renderQuestion();
+        }
     }
 }
 
@@ -590,18 +616,61 @@ function renderQuestion() {
         return finishQuiz();
     }
 
+    // 🛠️ Función Helper para eliminar overlays de carga (Global y Manual)
+    function hideLoadingOverlay() {
+        const manualOverlay = document.getElementById('loading-overlay');
+        if (manualOverlay) manualOverlay.remove();
+        if (elements.loadingOverlay) {
+            elements.loadingOverlay.classList.add('hidden');
+            elements.loadingOverlay.classList.remove('flex');
+        }
+    }
+
     const q = state.questions[state.currentQuestionIndex];
 
     // If we ran out of questions but haven't hit maxQuestions yet (wait for batch?)
     if (!q) {
         if (state.isLoadingBatch) {
-            if (elements.loadingTitle && elements.loadingSubtitle) {
-                elements.loadingTitle.textContent = "Cargando próximas preguntas...";
-                elements.loadingSubtitle.textContent = `Consultando banco de ${state.targetExam || state.topic}...`;
-            }
-            elements.loadingOverlay.classList.remove('hidden');
-            setTimeout(renderQuestion, 500); // Retry
-            return;
+            hideLoadingOverlay();
+
+            // Crear overlay glassmorphism premium siguiendo el DESIGN_SYSTEM (Negro Puro)
+            const overlay = document.createElement('div');
+            overlay.id = 'loading-overlay';
+            Object.assign(overlay.style, {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.85)', // NEGRO PURO
+                backdropFilter: 'blur(20px)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: '10000',
+                color: 'white',
+                textAlign: 'center',
+                transition: 'opacity 0.4s ease'
+            });
+
+            const subMessage = state.targetExam === 'MEDICINA' ? 'Sincronizando con Biblioteca Médica...' : 'Analizando Casuística de ASCENSO...';
+            
+            overlay.innerHTML = `
+                <div class="loader-content" style="padding: 3.5rem; border-radius: 2.5rem; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 1);">
+                    <div class="spinner-box" style="position: relative; width: 70px; height: 70px; margin: 0 auto 2.5rem;">
+                        <div style="position: absolute; width: 100%; height: 100%; border: 3px solid rgba(255,255,255,0.05); border-radius: 50%;"></div>
+                        <div style="position: absolute; width: 100%; height: 100%; border: 3px solid transparent; border-top: 3px solid #fff; border-radius: 50%; animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
+                    </div>
+                    <h3 style="margin-bottom: 1rem; font-size: 1.75rem; font-weight: 800; color: #fff; letter-spacing: -0.03em;">Preparando tu entrenamiento</h3>
+                    <p style="color: #64748b; font-size: 1.1rem; font-weight: 400; max-width: 300px; margin: 0 auto;">${subMessage}</p>
+                </div>
+                <style>
+                    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                </style>
+            `;
+            document.body.appendChild(overlay);
+            return; // Detenemos el renderizado de la pregunta hasta que cargue
         } else {
             // No more questions available, but we haven't hit maxQuestions.
             // Adjust maxQuestions to current length to show accurate results
@@ -639,7 +708,11 @@ function renderQuestion() {
     }
 
     // Texto Pregunta
-    elements.questionText.textContent = q.question_text;
+    if (window.marked && window.marked.parse) {
+        elements.questionText.innerHTML = window.marked.parse(q.question_text || '');
+    } else {
+        elements.questionText.textContent = q.question_text;
+    }
 
     // Reset UI
     elements.optionsGrid.innerHTML = '';
@@ -647,6 +720,10 @@ function renderQuestion() {
     elements.feedbackBox.classList.remove('error');
 
     // Render Opciones
+    if (!q.options || !Array.isArray(q.options)) {
+        throw new Error("Pregunta recibida sin opciones válidas (Corrupción de datos). Abortando renderizado.");
+    }
+    
     const letters = ['A', 'B', 'C', 'D', 'E'];
     q.options.forEach((opt, index) => {
         const btn = document.createElement('button');
@@ -658,7 +735,12 @@ function renderQuestion() {
 
         const textSpan = document.createElement('span');
         textSpan.className = 'option-text';
-        textSpan.textContent = opt;
+        // También procesar Markdown en opciones por si acaso (aunque menos común)
+        if (window.marked && window.marked.parse) {
+            textSpan.innerHTML = window.marked.parse(opt).replace(/^<p>|<\/p>$/g, '');
+        } else {
+            textSpan.textContent = opt;
+        }
 
         btn.appendChild(letterSpan);
         btn.appendChild(textSpan);
@@ -728,7 +810,19 @@ function handleAnswer(selectedIndex, btnElement) {
     // Mostrar explicación y caja de feedback en Modos de Aprendizaje (20qs +)
 
     // 📚 MODO ESTUDIO (20qs): Comportamiento de Aprendizaje Profundo
-    elements.explanationText.innerHTML = (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.").replace(/\n/g, '<br>');
+    if (window.marked && window.marked.parse) {
+        elements.explanationText.innerHTML = window.marked.parse(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
+    } else {
+        // 🎯 DINAMISMO: Cambiar título según dominio
+        const isEducation = state.targetExam === 'ASCENSO' || state.targetExam === 'NOMBRAMIENTO';
+        if (elements.explanationTitle) {
+            elements.explanationTitle.innerHTML = isEducation 
+                ? '<i class="fas fa-graduation-cap"></i> Fundamentación Pedagógica' 
+                : '<i class="fas fa-info-circle"></i> Explicación Médica';
+        }
+
+        elements.explanationText.innerText = q.explanation || "No hay explicación disponible.";
+    }
     
     if (q.explanation_image_url) {
         elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);

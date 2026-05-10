@@ -8,14 +8,15 @@ Este documento describe el motor de inteligencia de Hub Academia para la gestió
 
 Antes de activar la IA, el sistema intenta completar el lote de 5 preguntas usando el contenido existente en la base de datos para **todas** las áreas seleccionadas por el usuario en su configuración de examen.
 
-### 🔝 Caso A: Muchas Áreas seleccionadas (> 5 áreas de los 4 grupos)
-**Configuración:** ENAM - [15 áreas seleccionadas entre Básicas, Clínicas, Especialidades y Gestión].
+### 🔝 Caso A: Muchas Áreas seleccionadas (> 5 áreas)
+**Escenario Medicina:** ENAM - [15 áreas seleccionadas entre Básicas, Clínicas, Especialidades y Gestión].
+**Escenario Educación:** NOMBRAMIENTO - [10 áreas seleccionadas entre Habilidades Generales, Pedagogía y Didáctica].
 
-1.  **Escaneo Global**: El sistema busca en el banco preguntas para las **15 áreas** simultáneamente.
+1.  **Escaneo Global**: El sistema busca en el banco preguntas para las áreas seleccionadas simultáneamente.
 2.  **Identificación de Stock**: Identifica cuáles de esas áreas tienen preguntas disponibles (no vistas por el usuario).
-3.  **Swapping Inteligente**: Si hay stock suficiente en el conjunto de las 15 áreas:
+3.  **Swapping Inteligente**: Si hay stock suficiente en el conjunto de áreas:
     - Selecciona 5 preguntas priorizando la diversidad (1 de cada área con stock).
-    - Si una área tiene mucho stock y otras poco, intenta balancear para cubrir los 4 grupos.
+    - En **Educación**, se asegura de incluir al menos una de "Habilidades Generales" y una de "Didáctica".
 4.  **Entrega**: Entrega 5 preguntas del banco.
 5.  **Resultado**: **IA NO SE ACTIVA**.
 
@@ -26,11 +27,12 @@ Antes de activar la IA, el sistema intenta completar el lote de 5 preguntas usan
 Solo cuando el Escaneo Global detecta que el banco local es insuficiente para completar el lote de 5 preguntas según la configuración aplicada, se activa la IA mediante el servicio `userAiService.js`.
 
 ### 🔝 Escenario 1: Reposición con Muchas Áreas (> 5 áreas)
-**Configuración:** Usuario elige 15 áreas, pero el banco está agotado.
+**Escenario Medicina:** Usuario elige 15 áreas, pero el banco está agotado.
+**Escenario Educación:** Usuario elige 8 áreas de Didáctica y CNEB, banco agotado.
 
-1.  **Muestreo para IA**: El sistema elige **5 áreas aleatorias de las 15 originales** (respetando la representatividad de los bloques).
+1.  **Muestreo para IA**: El sistema elige **5 áreas aleatorias** de las originales (respetando la representatividad de los bloques/grupos).
 2.  **Generación Determinista**: Se le ordena a la IA generar **exactamente 1 pregunta por cada una** de esas 5 áreas.
-3.  **Resultado**: Lote de 5 preguntas de alta calidad con 5 tópicos distintos, inyectados al banco para futuras sesiones.
+3.  **Resultado**: Lote de 5 preguntas de alta calidad con 5 tópicos distintos.
 
 ### 📊 Escenario 2: Reposición con Exactamente 5 Áreas
 1.  **Muestreo Fiel**: Se toman las 5 áreas.
@@ -60,4 +62,16 @@ El sistema activa la IA de reposición **SOLO** en los siguientes casos:
 
 ---
 
-**Documentación Restaurada y Actualizada - 27 de Abril, 2026.**
+## 🎓 Convenciones de Metadatos: Educación (Docente Pro)
+
+Para garantizar que el filtrado del simulador funcione correctamente, se aplican las siguientes reglas de almacenamiento:
+
+1.  **Campo `target`**: Almacena el tipo de examen en mayúsculas (ej: `NOMBRAMIENTO`, `ASCENSO`, `ACCESO_CARGOS`).
+2.  **Campo `career`**: Almacena la combinación de **Modalidad/Nivel + Especialidad**.
+    - *Formato:* `EBR - Nivel Primaria` o `EBR - Nivel Secundaria (Matemática)`.
+    - **IMPORTANTE**: La IA ya no puede alterar este texto; el sistema lo sobrescribe con el valor exacto de la configuración del usuario.
+3.  **Campo `difficulty`**: Siempre se guarda como **`Senior`** para mantener la paridad con el nivel de examen oficial.
+
+---
+
+**Documentación Integrada (Medicina + Educación) - 06 de Mayo, 2026.**

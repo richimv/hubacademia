@@ -96,6 +96,19 @@
     background: rgba(31, 31, 31, 0.6);
 }
 
+/* Education Domain Cards */
+.sim-card.card-edu-nom {
+    background: rgba(31, 31, 31, 0.6);
+}
+
+.sim-card.card-edu-sesion {
+    background: rgba(31, 31, 31, 0.6);
+}
+
+.sim-card.card-edu-rubrica {
+    background: rgba(31, 31, 31, 0.6);
+}
+
 /* Hover States */
 .sim-card:hover.card-med,
 .sim-card:hover.card-img-sim,
@@ -103,6 +116,14 @@
     background-blend-mode: overlay;
     transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.sim-card:hover.card-edu-nom,
+.sim-card:hover.card-edu-sesion,
+.sim-card:hover.card-edu-rubrica {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    border-color: rgba(249, 115, 22, 0.5);
 }
 
 

@@ -1,5 +1,5 @@
 -- Database Schema Dump (Consolidated & Synchronized)
--- Updated: 2026-03-25
+-- Updated: 2026-05-05
 
 -- Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -316,6 +316,18 @@ CREATE TABLE IF NOT EXISTS public.web_traffic (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Table: user_notes
+CREATE TABLE IF NOT EXISTS public.user_notes (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    source_type TEXT DEFAULT 'manual', -- 'chat', 'flashcard', 'manual'
+    source_conversation_id BIGINT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
 -- Foreign Keys
 ALTER TABLE ONLY public.course_topics ADD CONSTRAINT course_topics_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id);
 ALTER TABLE ONLY public.course_topics ADD CONSTRAINT course_topics_topic_id_fkey FOREIGN KEY (topic_id) REFERENCES public.topics(id);
@@ -342,6 +354,7 @@ ALTER TABLE ONLY public.decks ADD CONSTRAINT decks_user_id_fkey FOREIGN KEY (use
 ALTER TABLE ONLY public.user_flashcards ADD CONSTRAINT user_flashcards_deck_id_fkey FOREIGN KEY (deck_id) REFERENCES public.decks(id);
 ALTER TABLE ONLY public.user_simulator_preferences ADD CONSTRAINT user_simulator_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 ALTER TABLE ONLY public.arena_scores ADD CONSTRAINT arena_scores_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.user_notes ADD CONSTRAINT user_notes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 -- Row Level Security (RLS)
 ALTER TABLE public.quiz_scores ENABLE ROW LEVEL SECURITY;
@@ -368,9 +381,30 @@ CREATE POLICY "Users insert own arena score" ON public.arena_scores FOR INSERT W
 ALTER TABLE public.user_simulator_preferences ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users manage own preferences" ON public.user_simulator_preferences FOR ALL USING (auth.uid() = user_id);
 
+ALTER TABLE public.user_notes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own notes" ON public.user_notes FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own notes" ON public.user_notes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can edit own notes" ON public.user_notes FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own notes" ON public.user_notes FOR DELETE USING (auth.uid() = user_id);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_flashcards_user_review ON public.user_flashcards(user_id, next_review_at);
 CREATE INDEX IF NOT EXISTS idx_quiz_history_user_date ON public.quiz_history(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_arena_scores_score ON public.arena_scores (score DESC);
+CREATE INDEX IF NOT EXISTS idx_question_bank_domain_target ON public.question_bank(domain, target);
+CREATE INDEX IF NOT EXISTS idx_question_bank_hash ON public.question_bank(question_hash);
+CREATE INDEX IF NOT EXISTS idx_user_notes_user_id ON public.user_notes(user_id);
 
+-- Auto-update trigger for user_notes
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
 
+CREATE TRIGGER update_user_notes_updated_at
+    BEFORE UPDATE ON public.user_notes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

@@ -21,48 +21,64 @@ body.quiz-body {
     overflow: hidden;
 }
 
-/* Loading State */
+/* Loading State (Glassmorphism Refactor) */
 .loading-overlay {
-    position: absolute;
+    position: fixed; /* Asegura cobertura total */
     inset: 0;
-    background: rgba(20, 20, 20, 0.98);
-    backdrop-filter: blur(10px);
+    background: rgba(10, 10, 10, 0.4); /* Transparencia para efecto Glass */
+    backdrop-filter: blur(15px) saturate(180%);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 50;
-    transition: opacity 0.3s ease;
+    z-index: 9999;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .loading-overlay.hidden {
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
 }
 
-.medical-pulse {
-    width: 60px;
-    height: 60px;
-    background: #ef4444;
-    border-radius: 50%;
-    animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+.glass-loader {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 3rem;
+    border-radius: 24px;
+    text-align: center;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-@keyframes pulse-ring {
-    0% {
-        transform: scale(0.9);
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-    }
+.loader-pulse {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 50%;
+    margin: 0 auto 2rem;
+    position: relative;
+    animation: loader-pulse-animation 2s infinite;
+}
 
-    70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
-    }
+.loading-title {
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    letter-spacing: -0.02em;
+}
 
-    100% {
-        transform: scale(0.9);
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-    }
+.loading-subtitle {
+    color: #94a3b8;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+@keyframes loader-pulse-animation {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 30px rgba(59, 130, 246, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
 }
 
 /* Pregunta */
@@ -119,6 +135,69 @@ body.quiz-body {
     margin-bottom: 0;
     text-align: left;
     font-size: 1.4rem;
+}
+
+/* 📊 ESTILOS PARA CUADROS PEDAGÓGICOS (MARKDOWN) */
+.question-text table, .review-q-text table, .review-explanation table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    background: #ffffff; /* Fondo blanco para mimetismo con papel oficial */
+    color: #1a1a1a; /* Texto negro para contraste máximo */
+    border-radius: 4px;
+    overflow: hidden;
+    border: 2px solid #333333;
+}
+
+.question-text th, .question-text td, 
+.review-q-text th, .review-q-text td,
+.review-explanation th, .review-explanation td {
+    border: 1px solid #333333;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 1.1rem;
+}
+
+.question-text th, .review-q-text th, .review-explanation th {
+    background: #f1f5f9;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+/* Ajuste de párrafos dentro del texto de pregunta y explicaciones */
+.question-text p, #explanationText p, .review-q-text p, .review-explanation p {
+    margin-bottom: 1.2rem;
+}
+
+.question-text p:last-child, #explanationText p:last-child {
+    margin-bottom: 0;
+}
+
+/* 📊 MEJORAS EN TABLAS PARA MÓVILES */
+.question-text .table-wrapper, #explanationText .table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+    margin: 1.5rem 0;
+    border-radius: 8px;
+}
+
+/* Forzar que las tablas tengan un aspecto limpio */
+.question-text table, #explanationText table, .review-q-text table, .review-explanation table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 2px solid #333;
+    background: #fff;
+    color: #000;
+    margin: 1rem 0;
+    width: 100%;
+}
+
+/* 🎭 ESTILOS PARA DIÁLOGOS Y ETIQUETAS */
+.question-text strong, #explanationText strong, 
+.review-q-text strong, .review-explanation strong {
+    color: #fbbf24; /* Dorado para resaltar roles en diálogos */
+    font-weight: 700;
 }
 
 /* 🏆 CLASES PREMIUM PARA MEDIOS */

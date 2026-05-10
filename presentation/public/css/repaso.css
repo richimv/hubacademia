@@ -49,7 +49,7 @@
 }
 
 .deck-card {
-    background: rgba(10, 13, 18, 0.2);
+    background: #0a0a0a; /* Sólido conforme al Design System */
     border: 1px solid var(--border-glow);
     border-radius: 20px;
     padding: 1.5rem;
@@ -58,9 +58,6 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    /* ✅ OPTIMIZACIÓN: Backdrop-filter es costoso en móviles */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
 }
 
 @media (max-width: 768px) {
@@ -181,11 +178,23 @@
         display: none;
     }
     
-    .btn-premium {
-        padding: 0 0.8rem;
-        height: 36px;
-        min-width: 36px;
-    }
+.btn-premium {
+    height: 38px;
+    padding: 0 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    background: #1a1a1a; /* Sólido */
+}
     
     .action-bar {
         gap: 0.4rem;

@@ -1,60 +1,32 @@
-# 🏗️ Sistema de Generación IA y RAG (Arquitectura V6)
+# 🏗️ Sistema de Generación IA y RAG (Arquitectura V6.1)
 
-Este documento detalla la infraestructura distribuida de inteligencia en Hub Academia, diseñada para maximizar la calidad médica mientras se mantiene un costo operativo de **Cero Dólares ($0.00)** en flujos masivos.
-
----
-
-## 0. Mapa de Servicios de Inteligencia (Personas IA)
-
-A partir de la V6, el sistema se ha descentralizado para evitar la contaminación de lógica y permitir un mantenimiento escalable:
-
-*   **👑 `AdminAiService.js` (Modo High-Fidelity):** Generación oficial para el banco. Usa **RAG FTS ($0)** inyectando fragmentos de la base de datos local para garantizar el sustento legal y bibliográfico (NTS/Harrison).
-*   **⚡ `UserAiService.js` (Modo Fast):** Generación inmediata para simulacros diarios del alumno. Prioriza la velocidad y la variabilidad extrema de casos clínicos sin costo de RAG.
-*   **🎓 `TutorAiService.js` (Modo Tutoría):** Cerebro del Chat interactivo. Utiliza **RAG Semántico (Pinecone)** para una precisión clínica de élite en conversaciones desarrolladas.
-*   **🤖 `mlService.js` (Analítica):** Puente exclusivo hacia los modelos de **Python** para predicción de tendencias y analítica predictiva.
+Este documento detalla la infraestructura distribuida de inteligencia en Hub Academia, diseñada para maximizar el rigor técnico (Médico/Pedagógico) mediante una arquitectura de **RAG Semántico Puro**.
 
 ---
 
-## 1. Configuración y Bindeo (Dominio Médico)
+## 0. Mapa de Servicios de Inteligencia (Roles IA)
 
-Tanto el Simulador como el Panel de Gestión comparten un núcleo de configuración que viaja a los servicios de IA:
+El sistema descentraliza la lógica para optimizar costos y precisión:
 
-*   **Examen Objetivo (`target`):** Define la jerarquía bibliográfica (ENAM, SERUMS, RESIDENTADO).
-*   **Carrera Profesional (`career`):** Define el estilo Few-Shot mimetizado (Medicina, Enfermería, Obstetricia).
-*   **Áreas Académicas (`topics`):** Más de 22 áreas agrupadas para garantizar la diversidad estadística.
-
----
-
-## 2. Motor RAG Híbrido (Paso a Paso)
-
-La generación y el chat siguen un flujo de fundamentación médica:
-
-1.  **Deduplicación Profunda:** Los servicios escanean las **30 preguntas más recientes** de la base de datos para prohibir repeticiones conceptuales.
-2.  **Búsqueda Especializada:**
-    *   **Generación (Admin/User):** Búsqueda léxica (FTS) para ahorro de costos.
-    *   **Chat (Tutor):** Búsqueda semántica (Pinecone) para comprensión clínica profunda.
-3.  **Inyección de Jerarquía:**
-    *   **SERUMS:** Prioriza NTS y RM oficiales del Minsa.
-    *   **RESIDENTADO:** Prioriza Tratados (Harrison, Nelson, Williams).
-4.  **Modelo Unificado:** Todas las inferencias usan `gemini-2.5-flash-lite`, el modelo más eficiente y rápido de Google Cloud.
+*   **👑 `AdminAiService.js` (High-Fidelity):** Generación de banco oficial. Utiliza **RAG Semántico (Pinecone)** para "leer" exámenes pasados y normativas (CNEB/GPC), garantizando que las preguntas tengan un sustento real y mimetismo de estilo profesional.
+*   **⚡ `UserAiService.js` (On-Demand):** Generación automática cuando el stock del banco es insuficiente para un simulacro. Prioriza la velocidad y variabilidad de casos, inyectando directrices de dificultad dinámica.
+*   **🎓 `TutorAiService.js` (Conversacional):** Cerebro del Chat. Realiza routing dinámico entre namespaces (`medicine` / `education`) para responder consultas con base bibliográfica.
+*   **📈 `mlService.js`:** Motor analítico que conecta con modelos predictivos para calcular la tendencia de aprendizaje del usuario.
 
 ---
 
-## 3. Lógica de Distribución (Anti-Sesgo)
+## 1. El Ciclo de Vida de una Pregunta (Flujo de Stock)
 
-El sistema garantiza que el alumno nunca sea evaluado en una sola área, sino de forma integral:
-*   **Muestreo 5x5**: Si se eligen múltiples áreas, el sistema rota 5 áreas al azar en cada lote.
-*   **Garantía 1-a-1**: Se prohíbe duplicar temas en un mismo lote si hay diversidad disponible.
-*   **rn Adaptive Sampling**: El repositorio utiliza particiones dinámicas para asegurar un pool variado de preguntas vistas/no vistas.
+A diferencia de otros sistemas, aquí la generación es **proactiva**:
 
----
-
-## 4. Soporte Visual Inteligente (v2.0) 🩺📸
-
-Todos los motores de generación analizan la pertinencia pedagógica de las preguntas:
-*   **Campo `visual_support_recommendation`**: Sugiere automáticamente si la pregunta requiere un diagrama, tabla o imagen clínica para mejorar la retención.
-*   **Gestión Admin**: Esta información es vital para que el equipo de contenido suba los recursos a **GCS** y los vincule a través del Panel.
+1.  **Vigilancia de Stock:** El `TrainingService` monitorea las áreas solicitadas por el usuario.
+2.  **Detección de Vacío:** Si faltan preguntas para un tema específico (ej: "Comprensión Lectora - Nombramiento"), se dispara una orden de creación.
+3.  **Inyección de Contexto (RAG):** El servicio de IA solicita al `RagService` fragmentos de exámenes reales para usarlos como plantillas (Few-Shot).
+4.  **Validación y Guardado:** La IA entrega el JSON, se limpian metadatos y se inserta en `question_bank` para futuros usuarios.
 
 ---
 
-**Certificado como Estándar de Oro - 27 de Abril, 2026** ✨🛡️
+## 2. Configuración de Modelos
+- **Inferencia:** Gemini 2.5 Flash Lite (Balance óptimo entre razonamiento y latencia).
+- **Embeddings:** `text-multilingual-embedding-002` (768 dimensiones).
+- **Vector DB:** Pinecone (Namespaces: `medicine`, `education`).

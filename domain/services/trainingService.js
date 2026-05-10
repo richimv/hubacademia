@@ -21,17 +21,15 @@ const modelCreativeLite = vertex_ai.getGenerativeModel({
 class TrainingService {
 
     /**
-     * Normaliza el tema para evitar duplicados (ej: "Historia de Roma" -> "HISTORIA ROMA").
+     * Normaliza el tema para consistencia en DB (ej: "Pediatría" -> "PEDIATRIA").
      */
     normalizeTopic(input) {
         if (!input) return "GENERAL";
         return input
             .toUpperCase()
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar tildes
-            .replace(/[^A-Z0-9 ]/g, "") // Solo letras y números
-            .replace(/\b(DE|LA|EL|LOS|LAS|UN|UNA|SOBRE|QUIERO|EXAMEN|TEST|PREGUNTAS)\b/g, "") // Stop words
             .trim()
-            .replace(/\s+/g, " "); // Espacios dobles
+            .replace(/\s+/g, " "); // Solo normalizar espacios
     }
 
     /**
@@ -68,43 +66,61 @@ class TrainingService {
      * Soporta tanto Modo Legacy (String) como Modo Multi-Area (Objeto).
      */
     async getQuestions(categoryOptions, limit = 5, userId, subscriptionTier = 'free', seenIds = []) {
-        // 1. Parsear opciones
-        let target = 'MEDICINA';
-        let areas = ['Medicina General'];
+        // 1. Parsear opciones y detectar dominio desde el inicio
+        let target = null;
         let career = null;
+        let areas = [];
 
         if (typeof categoryOptions === 'object') {
-            target = categoryOptions.target || 'MEDICINA';
-            areas = categoryOptions.areas && categoryOptions.areas.length > 0 ? categoryOptions.areas : ['Medicina General'];
+            target = categoryOptions.target || null;
             career = categoryOptions.career || null;
+            areas = categoryOptions.areas && categoryOptions.areas.length > 0 ? categoryOptions.areas : [];
         } else {
-            // Modo Legacy
-            target = 'MEDICINA';
+            // Modo Legacy o String simple
+            target = 'MEDICINA'; // Fallback seguro solo si es un string plano
             areas = [this.normalizeTopic(categoryOptions)];
         }
 
-        if (!areas || areas.length === 0) {
-            areas = ['MEDICINA GENERAL'];
-        }
+        // 🎯 DOMAIN ROUTING: Detect domain from target (V3.1 Neutral)
+        const EDUCATION_TARGETS = ['NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS'];
+        const isEducation = target && EDUCATION_TARGETS.includes(target.toUpperCase());
+        const isTrivia = target === 'GENERAL_TRIVIA';
+        
+        const dbDomain = isTrivia ? 'GENERAL_TRIVIA' : (isEducation ? 'education' : 'medicine');
+        const dbTarget = isTrivia ? null : target;
 
-        const dbDomain = target === 'GENERAL_TRIVIA' ? 'GENERAL_TRIVIA' : 'medicine';
-        const dbTarget = target === 'GENERAL_TRIVIA' ? null : target;
-
-        // 🔄 FALLBACK DE ÁREAS (SERUMS POR DEFECTO)
-        // Si no hay áreas o son genéricas, inyectamos el bloque oficial del SERUMS.
+        // 🔄 FALLBACK DE ÁREAS (Context-Aware)
+        // Si no hay áreas o son genéricas, inyectamos los ejes oficiales según el dominio.
         const isGeneric = !areas || areas.length === 0 ||
-            (areas.length === 1 && (areas[0].toUpperCase() === 'MEDICINA GENERAL' || areas[0].toUpperCase() === 'GENERAL'));
+            (areas.length === 1 && (
+                ['GENERAL', 'MEDICINA GENERAL', 'EDUCACION GENERAL', 'TODAS'].includes(areas[0].toUpperCase())
+            ));
 
         if (isGeneric) {
-            areas = [
-                'Salud Pública',
-                'Gestión de Servicios de Salud',
-                'Ética e Interculturalidad',
-                'Investigación',
-                'Cuidado Integral de Salud'
-            ];
-            console.log(`📡 Fallback Activado: Usando 5 áreas oficiales de SERUMS para configuración inicial.`);
+            if (isEducation) {
+                areas = [
+                    'Comprensión Lectora',
+                    'Razonamiento Lógico',
+                    'Teorías del Aprendizaje y Desarrollo',
+                    'Principios del Currículo Nacional (CNEB)',
+                    'Evaluación Formativa y Retroalimentación'
+                ];
+            } else if (isTrivia) {
+                areas = ['Cultura General', 'Ciencia', 'Historia', 'Arte'];
+            } else {
+                // Default: Medicina
+                areas = [
+                    'Ciencias Básicas',
+                    'Salud Pública',
+                    'Ginecología y Obstetricia',
+                    'Pediatría',
+                    'Cirugía General',
+                    'Medicina Interna'
+                ];
+            }
         }
+
+        console.log(`📡 [TrainingService] Modo: ${dbDomain} | Target: ${dbTarget} | Áreas: ${areas.join(', ')}`);
 
         // 🎯 NORMALIZACIÓN DE ÁREAS (Necesario para Repo y IA)
         const normalizedAllAreas = areas.map(a => a.trim().toUpperCase());
@@ -112,9 +128,9 @@ class TrainingService {
         areas.forEach(a => areaMap.set(a.trim().toUpperCase(), a.trim()));
 
         // ---------------------------------------------------------
-        // A. FLUJO MÉDICO (ENAM, SERUMS, RESIDENTADO)
+        // A. FLUJO PRINCIPAL (MEDICINA + EDUCACIÓN)
         // ---------------------------------------------------------
-        if (dbDomain === 'medicine') {
+        if (dbDomain === 'medicine' || dbDomain === 'education') {
             console.log(`\n🧠 [TrainingService] Analizando stock en ${normalizedAllAreas.length} áreas para ${dbTarget}...`);
 
             const rawBankQuestions = await repository.findQuestionsInBankBatch(dbDomain, dbTarget, normalizedAllAreas, 50, userId, career, seenIds);
@@ -197,28 +213,29 @@ class TrainingService {
 
                 const areaPrompt = sampledAreas.join(', ');
 
-                let aiQuestions;
-                const isAdmin = subscriptionTier === 'admin';
+                // 🎯 REGLA DE ARQUITECTURA GLOBAL: La fidelidad (RAG) es innegociable en toda la plataforma.
+                // Ya sea Medicina (ENAM/SERUMS) o Educación (ASCENSO), TODO usuario dispara generación Pinecone.
+                console.log(`🚀 [Replenish-RAG-Universal] Calling AdminAiService (RAG) for ${target}`);
+                try {
+                    let aiQuestions = await adminAiService.generateRAGQuestions(target, areaPrompt, career, limit, subscriptionTier);
 
-                if (isAdmin) {
-                    console.log(`🚀 [Replenish-Admin] Calling AdminAiService (RAG) for ${target}`);
-                    aiQuestions = await adminAiService.generateRAGQuestions(target, areaPrompt, career, 5, subscriptionTier);
-                } else {
-                    console.log(`⚡ [Replenish-User] Calling UserAiService (Fast) for ${target}`);
-                    aiQuestions = await UserAiService.generateQuestions(target, areaPrompt, career, 5, subscriptionTier);
-                }
-
-                if (aiQuestions && aiQuestions.length > 0) {
-                    source = 'HYBRID';
-                    aiQuestions = aiQuestions.map(q => this.shuffleOptions(q));
-                    // 🎯 FIX: Pasar el parámetro 'career' para que el repositorio lo guarde en la BD.
-                    const newIds = await repository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], dbDomain, dbTarget, career);
-                    if (newIds && newIds.length > 0) {
-                        await repository.markQuestionsAsSeen(userId, newIds);
-                        aiQuestions.forEach((q, idx) => { if (newIds[idx]) q.id = newIds[idx]; });
+                    if (aiQuestions && aiQuestions.length > 0) {
+                        source = 'HYBRID';
+                        aiQuestions = aiQuestions.map(q => this.shuffleOptions(q));
+                        // 🎯 FIX: No marcamos como vistas aquí, dejamos que el flujo natural lo haga al entregar
+                        const newIds = await repository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], dbDomain, dbTarget, career);
+                        if (newIds && newIds.length > 0) {
+                            aiQuestions.forEach((q, idx) => { if (newIds[idx]) q.id = newIds[idx]; });
+                        }
+                        balancedBatch = aiQuestions.slice(0, limit);
+                        console.log(`✅ Balance Restaurado: Lote de emergencia generado y entregado.`);
+                    } else {
+                        // Si la IA no devolvió nada (posible error interno silenciado)
+                        throw new Error("AI_GENERATION_EMPTY");
                     }
-                    balancedBatch = aiQuestions.slice(0, limit);
-                    console.log(`✅ Balance Restaurado: Lote de emergencia generado y entregado.`);
+                } catch (aiErr) {
+                    console.error("❌ Error Crítico en Reposición IA:", aiErr.message);
+                    throw new Error("AI_REPLENISHMENT_FAILED");
                 }
             }
 
@@ -231,7 +248,8 @@ class TrainingService {
                 };
             }
 
-            throw new Error("No hay preguntas disponibles. Intenta con otros temas o dificultad.");
+            // Si llegamos aquí y no hay preguntas, es que el BANCO está agotado Y la IA falló o no se activó.
+            throw new Error("BANK_EXHAUSTED_AND_IA_FAILED");
         }
 
         // ---------------------------------------------------------
@@ -568,14 +586,10 @@ class TrainingService {
             timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
         }
         
-        if (context === 'MEDICINA') {
-            if (target) {
-                params.push(target);
-                topicFilter += ` AND target = $${params.length}`;
-            }
-        } else if (context) {
-            params.push(`%${context}%`);
-            topicFilter += ` AND topic ILIKE $${params.length}`;
+        // Filter by target (works for both MEDICINA and EDUCACION contexts)
+        if (target) {
+            params.push(target);
+            topicFilter += ` AND target = $${params.length}`;
         }
 
         if (limit) {

@@ -42,19 +42,48 @@ class UserAiService {
 
     static async _generateBatchInternal(target, area, career, previousBatch = []) {
         try {
-            // 🎯 MEMORIA PROFUNDA
             const result = await db.query("SELECT question_text, topic FROM question_bank ORDER BY created_at DESC LIMIT 30");
             const historyText = result.rows.map(r => `- [${r.topic}]: ${r.question_text.substring(0, 50)}...`).join('\n');
 
-            // Inyectamos el prompt desde el catálogo central
             const prompt = genPrompts.getUserPrompt(target, area, career, historyText);
-
             const res = await modelLite.generateContent(prompt);
-            return JSON.parse(res.response.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim());
+            
+            let data = JSON.parse(res.response.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim());
+            
+            // 🧹 LIMPIEZA DE POST-PROCESAMIENTO (Blindaje)
+            if (Array.isArray(data)) {
+                data = data.map(q => this._cleanQuestionObject(q, target, career));
+            } else {
+                data = this._cleanQuestionObject(data, target, career);
+            }
+
+            return data;
         } catch (error) {
             console.error("⚠️ Error en batch user ai:", error.message);
             return [];
         }
+    }
+
+    static _cleanQuestionObject(q, requestedTarget, requestedCareer) {
+        if (!q) return q;
+        // 1. Limpiar letras en opciones (A), B), A., etc)
+        if (q.options) {
+            q.options = q.options.map(opt => opt.replace(/^[A-E][.\s)-]\s*/i, '').trim());
+        }
+        // 2. Limpiar referencias a letras en la explicación
+        if (q.explanation) {
+            q.explanation = q.explanation.replace(/La opción [A-E] es (la )?más pertinente/gi, 'Esta acción es la más pertinente');
+            q.explanation = q.explanation.replace(/La opción [A-E] es (la )?correcta/gi, 'Esta respuesta es la correcta');
+            q.explanation = q.explanation.replace(/La opción [A-E] /gi, 'Esta opción ');
+        }
+        
+        // 🎯 3. INTEGRIDAD DE METADATOS (Inquebrantable)
+        // Sobrescribimos lo que la IA crea con lo que el usuario pidió realmente
+        q.difficulty = 'Senior';
+        q.target = requestedTarget;
+        q.career = requestedCareer; 
+        
+        return q;
     }
 }
 

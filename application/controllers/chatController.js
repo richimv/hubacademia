@@ -106,7 +106,7 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
                     target: req.userTarget || 'ENAM',
                     specialization,
                     userTier: req.userTier,
-                    namespace: specialization === 'medicine' ? 'medicine' : 'general'
+                    namespace: (specialization === 'medicine' || specialization === 'education') ? specialization : 'general'
                 });
 
                 // TutorAiService ya devuelve { intencion, respuesta, sugerencias } parseados

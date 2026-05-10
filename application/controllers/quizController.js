@@ -15,19 +15,38 @@ class QuizController {
             const user = req.user;
 
             const finalTarget = target || 'SERUMS';
-            const finalCareer = career || 'Medicina Humana';
+            const EDUCATION_TARGETS = ['NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS'];
+            const isEducation = EDUCATION_TARGETS.includes(finalTarget);
+            const finalCareer = career || (isEducation ? 'EBR - Primaria' : 'Medicina Humana');
             let finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : []);
 
-            // 🔄 FALLBACK SERUMS: Si el usuario no tiene configuración, inyectamos el bloque oficial.
-            if (finalAreas.length === 0 || (finalAreas.length === 1 && (finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' || finalAreas[0].toUpperCase() === 'GENERAL'))) {
-                finalAreas = [
-                    'Salud Pública',
-                    'Gestión de Servicios de Salud',
-                    'Ética e Interculturalidad',
-                    'Investigación',
-                    'Cuidado Integral de Salud'
-                ];
-                console.log(`📡 Fallback Controller: Aplicando 5 ejes MINSA para ${user.email}`);
+            // 🔄 FALLBACK DE ÁREAS (Context-Aware)
+            const isGenericArea = finalAreas.length === 0 || (finalAreas.length === 1 && (
+                finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' ||
+                finalAreas[0].toUpperCase() === 'GENERAL' ||
+                finalAreas[0].toUpperCase() === 'EDUCACION GENERAL'
+            ));
+
+            if (isGenericArea) {
+                if (isEducation) {
+                    finalAreas = [
+                        'Comprensión Lectora',
+                        'Razonamiento Lógico',
+                        'Teorías del Aprendizaje y Desarrollo',
+                        'Principios del Currículo Nacional (CNEB)',
+                        'Evaluación Formativa y Retroalimentación'
+                    ];
+                    console.log(`📡 Fallback Controller: Aplicando 5 ejes Pedagógicos para ${user.email}`);
+                } else {
+                    finalAreas = [
+                        'Salud Pública',
+                        'Gestión de Servicios de Salud',
+                        'Ética e Interculturalidad',
+                        'Investigación',
+                        'Cuidado Integral de Salud'
+                    ];
+                    console.log(`📡 Fallback Controller: Aplicando 5 ejes MINSA para ${user.email}`);
+                }
             }
 
             // Validación básica
@@ -87,15 +106,26 @@ class QuizController {
             });
 
         } catch (error) {
-            // 🎯 CAPTURA DE AGOTAMIENTO DE BANCO (Uso Profesional del Log)
-            // ✅ IA FALLBACK: El servicio ahora gestiona la reposición IA de forma transparente.
-
             console.error('❌ [Error] startQuiz:', error);
 
-            if (error.message && error.message.includes("No hay preguntas disponibles")) {
-                return res.status(404).json({ error: error.message, noQuestions: true });
+            if (error.message === "AI_REPLENISHMENT_FAILED" || error.message === "AI_GENERATION_EMPTY") {
+                return res.status(500).json({ 
+                    success: false, 
+                    error: "Hubo un problema técnico al generar nuevas preguntas de IA. Por favor, intenta de nuevo en unos segundos.",
+                    technicalError: true 
+                });
             }
-            res.status(500).json({ error: 'Error interno generando el quiz.' });
+
+            if (error.message === "BANK_EXHAUSTED_AND_IA_FAILED") {
+                return res.status(404).json({ 
+                    success: false,
+                    error: "Has completado todas las preguntas disponibles para este tema.", 
+                    noQuestions: true 
+                });
+            }
+
+            // Fallback genérico
+            return res.status(500).json({ success: false, error: error.message });
         }
     }
 
@@ -269,17 +299,24 @@ class QuizController {
             // Parse areas if provided as comma-separated string
             const areaList = areas ? areas.split(',') : null;
 
-            // ✅ GUEST MODE: Return example stats if not logged in
+            // ✅ GUEST MODE: Return example stats if not logged in (Context-Aware)
             if (!req.user) {
+                const isEdu = context && context.toUpperCase() === 'EDUCACION';
                 const exampleKpis = {
                     avg_score: "14.5",
                     accuracy: 72,
                     total_correct: 145,
                     total_incorrect: 55,
                     mastered_cards: 12,
-                    strongest_topic: "Cardiología",
-                    weakest_topic: "Nefrología",
-                    radar_data: [
+                    strongest_topic: isEdu ? "Comprensión Lectora" : "Cardiología",
+                    weakest_topic: isEdu ? "Convivencia Escolar" : "Nefrología",
+                    radar_data: isEdu ? [
+                        { subject: "Comprensión Lectora", accuracy: 88, correct: 42, total: 48 },
+                        { subject: "Razonamiento Lógico", accuracy: 75, correct: 36, total: 48 },
+                        { subject: "Evaluación Formativa", accuracy: 68, correct: 32, total: 47 },
+                        { subject: "Principios del CNEB", accuracy: 62, correct: 28, total: 45 },
+                        { subject: "Convivencia Escolar", accuracy: 45, correct: 18, total: 40 }
+                    ] : [
                         { subject: "Cardiología", accuracy: 85, correct: 40, total: 47 },
                         { subject: "Pediatría", accuracy: 70, correct: 35, total: 50 },
                         { subject: "Ginecología", accuracy: 65, correct: 30, total: 46 },

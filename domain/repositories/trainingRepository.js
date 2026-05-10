@@ -332,9 +332,9 @@ class TrainingRepository {
              * pero añadimos esta guarda de seguridad para garantizarlo.
              */
             const canonicalDomain = (val) => {
-                const allowed = ['medicine', 'english', 'general_trivia'];
+                const allowed = ['medicine', 'english', 'general_trivia', 'education'];
                 const v = String(val || '').toLowerCase().trim().replace(/\s+/g, '_');
-                return allowed.includes(v) ? v : 'medicine'; // Fallback seguro a medicine
+                return allowed.includes(v) ? v : 'medicine'; // Fallback seguro
             };
 
             const query = `
@@ -370,7 +370,7 @@ class TrainingRepository {
                 const difficulty = canonicalDifficulty(q.difficulty);
                 const question_text = String(q.question_text || q.question);
                 const optionsStr = JSON.stringify(q.options || []);
-                const correct_option_index = q.correct_option_index !== undefined ? q.correct_option_index : (q.correct_answer !== undefined ? q.correct_answer : (q.correctAnswerIndex || 0));
+                const correct_option_index = parseInt(q.correct_option_index !== undefined ? q.correct_option_index : (q.correct_answer !== undefined ? q.correct_answer : (q.correctAnswerIndex || 0)), 10);
                 const explanation = q.explanation || '';
                 const explanation_image_url = q.explanation_image_url || q.EXPLICACION_IMAGEN || null;
                 const image_url = q.image_url || null;
@@ -938,6 +938,14 @@ class TrainingRepository {
             } else {
                 filter += ` AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado')`;
             }
+        } else if (context === 'education' || context === 'EDUCACION') {
+            // 🎓 Filtro Reactivo para Educación
+            if (target) {
+                params.push(target);
+                filter += ` AND target = $${params.length}`;
+            } else {
+                filter += ` AND target IN ('NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS')`;
+            }
         } else if (context) {
             params.push(`%${context}%`);
             filter += ` AND topic ILIKE $${params.length}`;
@@ -952,7 +960,7 @@ class TrainingRepository {
             params.push(areas);
             filter += ` AND jsonb_typeof(area_stats) = 'object' AND EXISTS (
                 SELECT 1 FROM jsonb_each(area_stats) 
-                WHERE key = ANY($${params.length}::text[])
+                WHERE unaccent(UPPER(key)) = ANY(SELECT unaccent(UPPER(unnest($${params.length}::text[]))))
             )`;
         }
 
@@ -995,7 +1003,7 @@ class TrainingRepository {
             queryParams.push(areas);
             areaFilter = ` AND jsonb_typeof(area_stats) = 'object' AND EXISTS (
                 SELECT 1 FROM jsonb_each(area_stats) 
-                WHERE key = ANY($${queryParams.length}::text[])
+                WHERE unaccent(UPPER(key)) = ANY(SELECT unaccent(UPPER(unnest($${queryParams.length}::text[]))))
             )`;
         }
 
@@ -1016,7 +1024,7 @@ class TrainingRepository {
         let areaFilter = '';
         if (areas && Array.isArray(areas) && areas.length > 0) {
             queryParams.push(areas);
-            areaFilter = ` AND key = ANY($${queryParams.length}::text[])`;
+            areaFilter = ` AND unaccent(UPPER(key)) = ANY(SELECT unaccent(UPPER(unnest($${queryParams.length}::text[]))))`;
         }
 
         const query = `

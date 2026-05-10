@@ -39,54 +39,15 @@
     <div class="dashboard-container">
 
         <div class="header-clean">
-            <h1
+            <h1 id="sim-hub-title"
                 style="font-size: 2.2rem; margin-bottom: 0.5rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
                 Centro de Simuladores
             </h1>
-            <p style="color: #94a3b8; font-size: 1rem;">Selecciona tu área de entrenamiento especializado</p>
+            <p id="sim-hub-subtitle" style="color: #94a3b8; font-size: 1rem;">Selecciona tu área de entrenamiento especializado</p>
         </div>
 
-        <div class="simulators-grid">
-
-            <!-- Simulacro de Exámenes -->
-            <a href="/simulator-dashboard?context=MEDICINA" class="sim-card card-med">
-                <div>
-                    <h3 class="sim-title">Simulacro de Exámenes</h3>
-                    <p class="sim-desc">
-                        Preparación intensiva para ENAM, SERUMS y Residentado Médico con bancos oficiales.
-                    </p>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: #3b82f6; font-size: 0.9rem; font-weight: 600; margin-top: auto;">
-                    Ingresar <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
-
-            <!-- Diagnóstico por Imágenes -->
-            <a href="#" class="sim-card card-img-sim" style="opacity: 0.8; cursor: not-allowed;" onclick="event.preventDefault(); window.uiManager.showToast('Próximamente: Entrenamiento con Radiografías, TC y RM')">
-                <div>
-                    <h3 class="sim-title">Diagnóstico por Imágenes</h3>
-                    <p class="sim-desc">
-                        Entrenamiento visual avanzado con casos reales de Radiografía, TC y Resonancia.
-                    </p>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: #eab308; font-size: 0.9rem; font-weight: 600; margin-top: auto;">
-                    Próximamente <i class="fas fa-lock"></i>
-                </div>
-            </a>
-
-            <!-- Diagnóstico Médico (IA) -->
-            <a href="#" class="sim-card card-dx-sim" style="opacity: 0.8; cursor: not-allowed;" onclick="event.preventDefault(); window.uiManager.showToast('Próximamente: Casos Clínicos Interactivos con IA')">
-                <div>
-                    <h3 class="sim-title">Diagnóstico Médico</h3>
-                    <p class="sim-desc">
-                        Casos clínicos interactivos guiados por IA para perfeccionar el razonamiento diagnóstico.
-                    </p>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: #10b981; font-size: 0.9rem; font-weight: 600; margin-top: auto;">
-                    Próximamente <i class="fas fa-lock"></i>
-                </div>
-            </a>
-
+        <div id="simulators-grid" class="simulators-grid">
+            <!-- Populated dynamically by simulatorsHub.js -->
         </div>
 
     </div>
@@ -151,8 +112,7 @@
     <script src="js/ui/uiManager.js"></script>
     <script src="js/ui/confirmationModal.js"></script>
     <script src="js/app.js?v=38dc494d"></script>
-    <script src="js/demoData.js"></script>
-    <script src="js/simulator-dash.js"></script>
+    <script src="js/simulatorsHub.js"></script>
 
 </body>
 

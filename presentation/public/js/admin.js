@@ -544,6 +544,7 @@ class AdminManager {
         const domains = [
             { id: 'all', name: 'Todos los Dominios' },
             { id: 'medicine', name: 'Medicina' },
+            { id: 'education', name: 'Educación' },
             { id: 'GENERAL_TRIVIA', name: 'Quiz Arena' }
         ];
 
@@ -690,6 +691,7 @@ class AdminManager {
 
                 const domains = [
                     { id: 'medicine', name: 'Medicina' },
+                    { id: 'education', name: 'Educación' },
                     { id: 'GENERAL_TRIVIA', name: 'Quiz Arena' }
                 ];
 
@@ -700,6 +702,7 @@ class AdminManager {
                         <div id="generic-target-container" style="display: ${this.currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'};">
                             <label class="form-label" for="generic-target">Examen Objetivo (*)</label>
                             <select id="generic-target" class="form-input" onchange="
+                                window.adminManager.handleQuestionTargetChange(this.value);
                                 const isResidentado = this.value === 'RESIDENTADO';
                                 const optEWrap = document.getElementById('generic-opt4-wrapper');
                                 if(optEWrap) optEWrap.style.display = isResidentado ? 'block' : 'none';
@@ -716,20 +719,31 @@ class AdminManager {
                                     }
                                 }
                             ">
+                                ${this.currentItem?.domain === 'education' ? `
+                                <option value="NOMBRAMIENTO" ${this.currentItem?.target === 'NOMBRAMIENTO' ? 'selected' : ''}>NOMBRAMIENTO</option>
+                                <option value="ASCENSO" ${this.currentItem?.target === 'ASCENSO' ? 'selected' : ''}>ASCENSO</option>
+                                <option value="ACCESO_CARGOS" ${this.currentItem?.target === 'ACCESO_CARGOS' ? 'selected' : ''}>ACCESO A CARGOS</option>
+                                ` : `
                                 <option value="ENAM" ${this.currentItem?.target === 'ENAM' ? 'selected' : ''}>ENAM</option>
                                 <option value="SERUMS" ${this.currentItem?.target === 'SERUMS' ? 'selected' : ''}>SERUMS</option>
                                 <option value="RESIDENTADO" ${this.currentItem?.target === 'RESIDENTADO' ? 'selected' : ''}>RESIDENTADO</option>
                                 <option value="N/A" ${this.currentItem?.target === 'N/A' || !this.currentItem?.target ? 'selected' : ''}>N/A (Quiz Arena)</option>
+                                `}
                             </select>
                         </div>
                     </div>
                     
                     <div id="generic-career-wrapper" style="display: ${this.currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'}; margin-top: 15px;">
-                        <label class="form-label" for="generic-career">Carrera Profesional (*)</label>
+                        <label class="form-label" for="generic-career">Carrera / Modalidad (*)</label>
                         <select id="generic-career" class="form-input">
+                            ${this.currentItem?.domain === 'education' ? `
+                            <option value="EBR - Inicial" ${this.currentItem?.career === 'EBR - Inicial' ? 'selected' : ''}>EBR - Nivel Inicial</option>
+                            <option value="EBR - Primaria" ${this.currentItem?.career === 'EBR - Primaria' ? 'selected' : ''}>EBR - Nivel Primaria</option>
+                            <option value="EBR - Secundaria" ${(this.currentItem?.career || '').startsWith('EBR - Secundaria') ? 'selected' : ''}>EBR - Nivel Secundaria</option>
+                            ` : `
                             <option value="Medicina Humana" ${this.currentItem?.career === 'Medicina Humana' ? 'selected' : ''}>Medicina Humana</option>
                             <option value="Enfermería" ${this.currentItem?.career === 'Enfermería' ? 'selected' : ''}>Enfermería</option>
-                            <option value="Obstetricia" ${this.currentItem?.career === 'Obstetricia' ? 'selected' : ''}>Obstetricia</option>
+                            `}
                         </select>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
@@ -742,7 +756,9 @@ class AdminManager {
                             ${this.createFormGroup('text', 'generic-opt0', 'Opción A (*)', optA, true)}
                             ${this.createFormGroup('text', 'generic-opt1', 'Opción B (*)', optB, true)}
                             ${this.createFormGroup('text', 'generic-opt2', 'Opción C (*)', optC, true)}
-                            ${this.createFormGroup('text', 'generic-opt3', 'Opción D (*)', optD, true)}
+                            <div id="opt3-container" style="display: ${(['ASCENSO', 'NOMBRAMIENTO'].includes(this.currentItem?.target)) ? 'none' : 'block'};">
+                                ${this.createFormGroup('text', 'generic-opt3', 'Opción D (*)', optD, true)}
+                            </div>
                             <div id="generic-opt4-wrapper" style="display: ${this.currentItem?.target?.toUpperCase() === 'RESIDENTADO' ? 'block' : 'none'};">
                                 ${this.createFormGroup('text', 'generic-opt4', 'Opción E (* Solo Residentado)', optE, false)}
                             </div>
@@ -775,6 +791,12 @@ class AdminManager {
                     if (domainSelect) {
                         domainSelect.onchange = (e) => this.handleDomainChangeInModal(e.target.value);
                     }
+                    // Trigger handleQuestionTargetChange to ensure correct initial state
+                    const targetSelect = document.getElementById('generic-target');
+                    if (targetSelect) {
+                        this.handleQuestionTargetChange(targetSelect.value);
+                    }
+
                     const txtQ = document.getElementById('generic-question-text');
                     const txtE = document.getElementById('generic-explanation');
                     if (txtQ) txtQ.rows = 3;
@@ -827,103 +849,146 @@ class AdminManager {
             case 'ai-question':
                 title.textContent = '⚡ Generador RAG (Flash Lite)';
                 fieldsHTML = `
-                    <div style="margin-bottom:20px; color:var(--text-muted); font-size:0.9rem; background: rgba(168, 85, 247, 0.08); padding: 15px; border-radius: 12px; border-left: 4px solid #a855f7;">
-                        <i class="fas fa-brain" style="color: #a855f7;"></i> <b>RAG Engine:</b> Generación basada en Harrison, AMIR, CTO y Normas Técnicas MINSA.
+                    <div id="ai-info-banner" style="margin-bottom:20px; color:var(--text-muted); font-size:0.9rem; background: rgba(168, 85, 247, 0.08); padding: 15px; border-radius: 12px; border-left: 4px solid #a855f7;">
+                        <i class="fas fa-brain" style="color: #a855f7;"></i> <b>RAG Engine:</b> <span id="ai-info-text">Generación basada en Harrison, AMIR, CTO y Normas Técnicas MINSA.</span>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <label class="form-label">Dominio (*)</label>
+                            <select id="ai-domain" class="form-input" onchange="window.adminManager.handleAiDomainChange(this.value)">
+                                <option value="medicine" selected>Medicina</option>
+                                <option value="education">Educación</option>
+                            </select>
+                        </div>
                         <div>
                             <label class="form-label">Examen Objetivo (*)</label>
                             <select id="ai-target" class="form-input" onchange="window.adminManager.handleAiTargetChange(this.value)">
                                 <option value="ENAM">ENAM</option>
-                                <option value="SERUMS">SERUMS</option>
+                                <option value="SERUMS" selected>SERUMS</option>
                                 <option value="RESIDENTADO">RESIDENTADO</option>
                             </select>
                         </div>
                         <div>
-                            <label class="form-label">Carrera Profesional (*)</label>
-                            <select id="ai-career" class="form-input">
+                            <label class="form-label" id="ai-career-label">Carrera Profesional (*)</label>
+                            <select id="ai-career" class="form-input" onchange="window.adminManager.handleAiCareerChange(this.value)">
                                 <option value="Medicina Humana">Medicina Humana</option>
                                 <option value="Enfermería">Enfermería</option>
-                                <option value="Obstetricia">Obstetricia</option>
                             </select>
                         </div>
                     </div>
 
+                    <!-- Dynamic Specialty Container for Education -->
+                    <div id="ai-specialty-container" style="display:none; margin-bottom: 20px;">
+                        <label class="form-label">Especialidad (*)</label>
+                        <select id="ai-specialty" class="form-input">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
                     <h4 style="margin-bottom:12px; font-size: 1rem; display: flex; align-items: center; gap: 10px; color: var(--accent-color);">
-                        <i class="fas fa-layer-group"></i> Configuración de Áreas de Estudio (Ejes MINSA/ENAM)
+                        <i class="fas fa-layer-group"></i> <span id="ai-areas-title">Configuración de Áreas de Estudio (Ejes MINSA/ENAM)</span>
                     </h4>
                     
                     <div id="ai-domain-container" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 14px; padding: 25px; background: rgba(0,0,0,0.15); margin-bottom: 20px;">
                         
-                        <!-- ÁREA A: CIENCIAS BÁSICAS -->
-                        <div class="ai-study-group" data-group="A" style="margin-bottom: 25px;">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
-                                <span style="background: #6366f1; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">A</span>
-                                <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Ciencias Básicas</strong>
+                        <!-- ═══ MEDICINA ═══ -->
+                        <div id="ai-areas-medicine">
+                            <div class="ai-study-group" data-group="A" style="margin-bottom: 25px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                    <span style="background: #6366f1; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">A</span>
+                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Ciencias Básicas</strong>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Anatomía"> Anatomía</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Fisiología"> Fisiología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Farmacología"> Farmacología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Microbiología y Parasitología"> Microbiología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Bioquímica"> Bioquímica</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Patología"> Patología</label>
+                                </div>
                             </div>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Anatomía"> Anatomía</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Fisiología"> Fisiología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Farmacología"> Farmacología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Microbiología y Parasitología"> Microbiología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Bioquímica"> Bioquímica</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Patología"> Patología</label>
+                            <div class="ai-study-group" data-group="B" style="margin-bottom: 25px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                    <span style="background: #a855f7; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">B</span>
+                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Ciencias Clínicas (Las 4 Grandes)</strong>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Medicina Interna"> Medicina Interna</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Pediatría"> Pediatría</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Ginecología y Obstetricia"> Ginecología y Obst.</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Cirugía General"> Cirugía General</label>
+                                </div>
+                            </div>
+                            <div class="ai-study-group" data-group="C" style="margin-bottom: 25px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                    <span style="background: #38bdf8; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">C</span>
+                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Especialidades Clínicas</strong>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Cardiología"> Cardiología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Gastroenterología"> Gastroenterología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Neurología"> Neurología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Nefrología"> Nefrología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Neumología"> Neumología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Endocrinología"> Endocrinología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Infectología"> Infectología</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Psiquiatría"> Psiquiatría</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Traumatología"> Traumatología</label>
+                                </div>
+                            </div>
+                            <div class="ai-study-group" data-group="D">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                    <span style="background: #22c55e; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">D</span>
+                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Salud Pública y Gestión</strong>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Salud Pública"> Salud Pública</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Gestión de Servicios de Salud"> Gestión</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Ética e Interculturalidad"> Ética e Intercult.</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Investigación"> Investigación</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Epidemiología"> Epidemiología</label>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- ÁREA B: LAS 4 GRANDES -->
-                        <div class="ai-study-group" data-group="B" style="margin-bottom: 25px;">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
-                                <span style="background: #a855f7; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">B</span>
-                                <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Ciencias Clínicas (Las 4 Grandes)</strong>
+                        <!-- ═══ EDUCACIÓN ═══ -->
+                        <div id="ai-areas-education" style="display: none;">
+                            <div class="ai-study-group" data-group="ASCENSO" style="display: block;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                    <span style="background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">★</span>
+                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Prueba Integrada (Ascenso)</strong>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Conocimientos Pedagógicos y de la Especialidad" checked> Conocimientos Pedagógicos y de la Especialidad (Única)</label>
+                                </div>
                             </div>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Medicina Interna"> Medicina Interna</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Pediatría"> Pediatría</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Ginecología y Obstetricia"> Ginecología y Obst.</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Cirugía General"> Cirugía General</label>
-                            </div>
-                        </div>
-
-                        <!-- ÁREA C: ESPECIALIDADES -->
-                        <div class="ai-study-group" data-group="C" style="margin-bottom: 25px;">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
-                                <span style="background: #38bdf8; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">C</span>
-                                <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Especialidades Clínicas</strong>
-                            </div>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Cardiología"> Cardiología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Gastroenterología"> Gastroenterología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Neurología"> Neurología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Nefrología"> Nefrología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Neumología"> Neumología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Endocrinología"> Endocrinología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Infectología"> Infectología</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Psiquiatría"> Psiquiatría</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Traumatología"> Traumatología</label>
-                            </div>
-                        </div>
-
-                        <!-- ÁREA D: SALUD PÚBLICA -->
-                        <div class="ai-study-group" data-group="D">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
-                                <span style="background: #22c55e; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">D</span>
-                                <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Salud Pública y Gestión</strong>
-                            </div>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Salud Pública"> Salud Pública</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Gestión de Servicios de Salud"> Gestión</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Ética e Interculturalidad"> Ética e Intercult.</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Investigación"> Investigación</label>
-                                <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Epidemiología"> Epidemiología</label>
+                            <div class="ai-study-group" data-group="NOMBRAMIENTO" style="display: none; margin-top: 20px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                    <span style="background: #10b981; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">A</span>
+                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Habilidades Generales</strong>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Comprensión Lectora"> Comprensión Lectora</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Razonamiento Lógico"> Razonamiento Lógico</label>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                    <span style="background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">B</span>
+                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Conocimientos Pedagógicos</strong>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Teorías del Aprendizaje y Desarrollo"> Teorías del Aprendizaje</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Principios del Currículo Nacional (CNEB)"> Principios CNEB</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Evaluación Formativa y Retroalimentación"> Evaluación Formativa</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Convivencia Escolar y Clima de Aula"> Convivencia Escolar</label>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-muted); font-size: 0.85rem;">
-                        <input type="checkbox" id="ai-domain-all" onchange="document.querySelectorAll('.ai-domain-cb').forEach(c => c.checked = this.checked)"> 
-                        Seleccionar todos los temas disponibles
+                        <input type="checkbox" id="ai-domain-all" onchange="document.querySelectorAll('.ai-domain-cb:not([style*=none] .ai-domain-cb)').forEach(c => c.checked = this.checked)"> 
+                        Seleccionar todos los temas visibles
                     </label>
                 `;
                 setTimeout(() => {
@@ -938,14 +1003,12 @@ class AdminManager {
                 setTimeout(() => {
                     const btn = document.getElementById('generic-save-btn');
                     if (btn) {
-                        btn.innerHTML = '<i class="fas fa-magic"></i> Iniciar Generación RAG';
+                        btn.innerHTML = '<i class="fas fa-bolt"></i> Iniciar Generación RAG';
                         btn.style.background = 'linear-gradient(135deg, #a855f7, #6366f1)';
-                        btn.style.borderColor = 'transparent';
+                        btn.style.boxShadow = '0 4px 15px rgba(168, 85, 247, 0.3)';
                     }
                 }, 0);
                 break;
-            // ...
-            case 'course':
                 title.textContent = id ? 'Editar Curso' : 'Añadir Curso';
 
                 // SOLUCIÓN: Obtener detalles completos del curso (incluyendo unidades y temas) desde la API
@@ -1644,6 +1707,7 @@ class AdminManager {
      */
     handleDomainChangeInModal(domain) {
         const isTrivia = domain === 'GENERAL_TRIVIA';
+        const isEducation = domain === 'education';
 
         const targetContainer = document.getElementById('generic-target-container');
         const careerWrapper = document.getElementById('generic-career-wrapper');
@@ -1652,6 +1716,104 @@ class AdminManager {
         if (targetContainer) targetContainer.style.display = isTrivia ? 'none' : 'block';
         if (careerWrapper) careerWrapper.style.display = isTrivia ? 'none' : 'block';
         if (explImageWrapper) explImageWrapper.style.display = isTrivia ? 'none' : 'block';
+
+        // Swap target options based on domain
+        const targetSelect = document.getElementById('generic-target');
+        if (targetSelect) {
+            if (isEducation) {
+                targetSelect.innerHTML = `
+                    <option value="NOMBRAMIENTO" selected>NOMBRAMIENTO</option>
+                    <option value="ASCENSO">ASCENSO</option>
+                    <option value="ACCESO_CARGOS">ACCESO A CARGOS</option>
+                `;
+            } else if (!isTrivia) {
+                targetSelect.innerHTML = `
+                    <option value="ENAM" selected>ENAM</option>
+                    <option value="SERUMS">SERUMS</option>
+                    <option value="RESIDENTADO">RESIDENTADO</option>
+                    <option value="N/A">N/A (Quiz Arena)</option>
+                `;
+            }
+            // Hide option E for non-Residentado
+            const optEWrap = document.getElementById('generic-opt4-wrapper');
+            if (optEWrap) optEWrap.style.display = 'none';
+        }
+
+        // Swap career options based on domain
+        const careerSelect = document.getElementById('generic-career');
+        if (careerSelect) {
+            if (isEducation) {
+                careerSelect.innerHTML = `
+                    <option value="EBR - Inicial">EBR - Nivel Inicial</option>
+                    <option value="EBR - Primaria" selected>EBR - Nivel Primaria</option>
+                    <option value="EBR - Secundaria">EBR - Nivel Secundaria</option>
+                `;
+            } else if (!isTrivia) {
+                careerSelect.innerHTML = `
+                    <option value="Medicina Humana" selected>Medicina Humana</option>
+                    <option value="Enfermería">Enfermería</option>
+                `;
+            }
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Manejador de cambio de dominio en el modal de Generación IA
+     */
+    handleAiDomainChange(domain) {
+        const isEdu = domain === 'education';
+        
+        // Swap target options
+        const targetSelect = document.getElementById('ai-target');
+        if (targetSelect) {
+            targetSelect.innerHTML = isEdu ? `
+                <option value="NOMBRAMIENTO" selected>NOMBRAMIENTO</option>
+                <option value="ASCENSO">ASCENSO</option>
+                <option value="ACCESO_CARGOS">ACCESO A CARGOS</option>
+            ` : `
+                <option value="ENAM" selected>ENAM</option>
+                <option value="SERUMS">SERUMS</option>
+                <option value="RESIDENTADO">RESIDENTADO</option>
+            `;
+        }
+
+        // Swap career options
+        const careerSelect = document.getElementById('ai-career');
+        if (careerSelect) {
+            careerSelect.innerHTML = isEdu ? `
+                <option value="EBR - Inicial">EBR - Nivel Inicial</option>
+                <option value="EBR - Primaria" selected>EBR - Nivel Primaria</option>
+                <option value="EBR - Secundaria">EBR - Nivel Secundaria</option>
+            ` : `
+                <option value="Medicina Humana" selected>Medicina Humana</option>
+                <option value="Enfermería">Enfermería</option>
+            `;
+        }
+
+        // Toggle area containers
+        const medAreas = document.getElementById('ai-areas-medicine');
+        const eduAreas = document.getElementById('ai-areas-education');
+        if (medAreas) medAreas.style.display = isEdu ? 'none' : 'block';
+        if (eduAreas) eduAreas.style.display = isEdu ? 'block' : 'none';
+
+        // Uncheck all when switching
+        document.querySelectorAll('.ai-domain-cb').forEach(c => c.checked = false);
+        const allCheck = document.getElementById('ai-domain-all');
+        if (allCheck) allCheck.checked = false;
+
+        // Update info banner and title
+        const infoText = document.getElementById('ai-info-text');
+        const areasTitle = document.getElementById('ai-areas-title');
+        if (infoText) {
+            infoText.textContent = isEdu 
+                ? 'Generación basada en CNEB, Marco del Buen Desempeño Docente y normativas MINEDU.'
+                : 'Generación basada en Harrison, AMIR, CTO y Normas Técnicas MINSA.';
+        }
+        if (areasTitle) {
+            areasTitle.textContent = isEdu
+                ? 'Configuración de Áreas de Estudio (Ejes MINEDU)'
+                : 'Configuración de Áreas de Estudio (Ejes MINSA/ENAM)';
+        }
     }
 
     closeGenericModal() {
@@ -1927,22 +2089,30 @@ class AdminManager {
                         aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando Lote (2-3 min)... por favor no cierre.';
                         aiBtn.disabled = true;
 
-                        // Áreas de Estudio seleccionadas (checkboxes) → van al campo `studyAreas`
+                        // Áreas de Estudio seleccionadas (checkboxes)
                         const selectedStudyAreas = Array.from(document.querySelectorAll('.ai-domain-cb:checked')).map(cb => cb.value);
                         if (selectedStudyAreas.length === 0) {
                             throw new Error("Por favor selecciona al menos una Área de Estudio/Especialidad.");
                         }
 
                         const targetVal = document.getElementById('ai-target').value;
-                        const careerVal = document.getElementById('ai-career')?.value || null;
-                        const domainVal = 'medicine'; // Exclusivo para RAG Médico
+                        let careerVal = document.getElementById('ai-career')?.value || null;
+                        const domainVal = document.getElementById('ai-domain')?.value || 'medicine';
+
+                        // Concatenate specialty if applicable (Education)
+                        if (domainVal === 'education') {
+                            const specEl = document.getElementById('ai-specialty');
+                            if (specEl && specEl.value && specEl.value !== 'General') {
+                                careerVal = `${careerVal} - ${specEl.value}`;
+                            }
+                        }
 
                         const reqBody = {
                             target: targetVal,
                             career: careerVal,
                             difficulty: 'Senior',
-                            domain: domainVal,                       // Dominio global de la BD
-                            studyAreas: selectedStudyAreas.join(', ') // Áreas de estudio para el prompt de la IA
+                            domain: domainVal,
+                            studyAreas: selectedStudyAreas.join(', ')
                         };
                         const aiUrl = `${window.AppConfig.API_URL}/api/admin/questions/generate-ai`;
                         const resAi = await fetch(aiUrl, {
@@ -2314,25 +2484,180 @@ class AdminManager {
     }
 
     /**
-     * ✅ Lógica Dinámica para el Generador RAG
-     * Filtra las áreas de estudio según el objetivo del examen.
+     * ✅ Lógica Dinámica para el Generador RAG (IA)
      */
-    handleAiTargetChange(target) {
-        const groups = document.querySelectorAll('.ai-study-group');
-        const isSerums = target === 'SERUMS';
+    handleAiDomainChange(domain) {
+        const medicineAreas = document.getElementById('ai-areas-medicine');
+        const educationAreas = document.getElementById('ai-areas-education');
+        const targetSelect = document.getElementById('ai-target');
+        const careerSelect = document.getElementById('ai-career');
+        const careerLabel = document.getElementById('ai-career-label');
+        const specialtyContainer = document.getElementById('ai-specialty-container');
+        const bannerText = document.getElementById('ai-info-text');
 
-        groups.forEach(group => {
-            const groupId = group.dataset.group;
-            if (isSerums) {
-                // Para SERUMS solo mostrar Grupo D
-                group.style.display = groupId === 'D' ? 'block' : 'none';
+        if (domain === 'medicine') {
+            medicineAreas.style.display = 'block';
+            educationAreas.style.display = 'none';
+            specialtyContainer.style.display = 'none';
+            careerLabel.textContent = 'Carrera Profesional (*)';
+            bannerText.textContent = 'Generación basada en Harrison, AMIR, CTO y Normas Técnicas MINSA.';
+
+            // Reset medical options
+            targetSelect.innerHTML = `
+                <option value="ENAM">ENAM</option>
+                <option value="SERUMS" selected>SERUMS</option>
+                <option value="RESIDENTADO">RESIDENTADO</option>
+            `;
+            careerSelect.innerHTML = `
+                <option value="Medicina Humana">Medicina Humana</option>
+                <option value="Enfermería">Enfermería</option>
+            `;
+        } else {
+            medicineAreas.style.display = 'none';
+            educationAreas.style.display = 'block';
+            careerLabel.textContent = 'Nivel Educativo (*)';
+            bannerText.textContent = 'Generación basada en CNEB, Marco del Buen Desempeño Docente y Leyes MINEDU.';
+
+            // Reset education options
+            targetSelect.innerHTML = `
+                <option value="ASCENSO" selected>ASCENSO (EBR)</option>
+                <option value="NOMBRAMIENTO">NOMBRAMIENTO</option>
+            `;
+            careerSelect.innerHTML = `
+                <option value="EBR Inicial">EBR Inicial</option>
+                <option value="EBR Primaria">EBR Primaria</option>
+                <option value="EBR Secundaria">EBR Secundaria</option>
+            `;
+            this.handleAiTargetChange('ASCENSO');
+            this.handleAiCareerChange('EBR Inicial');
+        }
+    }
+
+    handleAiTargetChange(target) {
+        const groups = document.querySelectorAll('#ai-areas-education .ai-study-group');
+        groups.forEach(g => {
+            if (g.dataset.group === target) {
+                g.style.display = 'block';
+                // Auto-check the first one if unique
+                const cb = g.querySelector('.ai-domain-cb');
+                if (cb) cb.checked = true;
             } else {
-                // Para ENAM/RESIDENTADO mostrar todo
-                group.style.display = 'block';
+                g.style.display = 'none';
             }
         });
     }
 
+    handleAiCareerChange(level) {
+        const specialtyContainer = document.getElementById('ai-specialty-container');
+        const specialtySelect = document.getElementById('ai-specialty');
+        
+        if (!specialtyContainer || !specialtySelect) return;
+
+        let options = [];
+        if (level === 'EBR Primaria') {
+            options = [
+                { value: 'General', text: 'Primaria Regular' },
+                { value: 'Profesor de Innovación Pedagógica', text: 'Profesor de Innovación Pedagógica' },
+                { value: 'Educación Física', text: 'Educación Física' }
+            ];
+        } else if (level === 'EBR Secundaria') {
+            options = [
+                { value: 'Arte y Cultura', text: 'Arte y Cultura' },
+                { value: 'Ciencias Sociales', text: 'Ciencias Sociales' },
+                { value: 'Ciencia y Tecnología', text: 'Ciencia y Tecnología' },
+                { value: 'Comunicación', text: 'Comunicación' },
+                { value: 'Desarrollo Personal, Ciudadanía y Cívica', text: 'Desarrollo Personal, Ciudadanía y Cívica' },
+                { value: 'Educación Física', text: 'Educación Física' },
+                { value: 'Educación Religiosa', text: 'Educación Religiosa' },
+                { value: 'Educación para el Trabajo', text: 'Educación para el Trabajo' },
+                { value: 'Inglés como Lengua Extranjera', text: 'Inglés como Lengua Extranjera' },
+                { value: 'Matemática', text: 'Matemática' },
+                { value: 'Profesor de Innovación Pedagógica', text: 'Profesor de Innovación Pedagógica' }
+            ];
+        }
+
+        if (options.length > 0) {
+            specialtySelect.innerHTML = options.map(o => `<option value="${o.value}">${o.text}</option>`).join('');
+            specialtyContainer.style.display = 'block';
+        } else {
+            specialtyContainer.style.display = 'none';
+            specialtySelect.innerHTML = '<option value="General">General</option>';
+        }
+    }
+
+    /**
+     * ✅ Lógica para el Editor de Preguntas Manual
+     */
+    handleDomainChangeInModal(domain) {
+        const targetSelect = document.getElementById('generic-target');
+        const careerSelect = document.getElementById('generic-career');
+        const explImageGroup = document.getElementById('generic-explanation-image-upload-group');
+
+        if (domain === 'education') {
+            if (targetSelect) {
+                targetSelect.innerHTML = `
+                    <option value="NOMBRAMIENTO">NOMBRAMIENTO</option>
+                    <option value="ASCENSO" selected>ASCENSO</option>
+                    <option value="ACCESO_CARGOS">ACCESO A CARGOS</option>
+                `;
+            }
+            if (careerSelect) {
+                careerSelect.innerHTML = `
+                    <option value="EBR - Inicial">EBR - Nivel Inicial</option>
+                    <option value="EBR - Primaria">EBR - Nivel Primaria</option>
+                    <option value="EBR - Secundaria">EBR - Nivel Secundaria</option>
+                `;
+            }
+            if (explImageGroup) explImageGroup.style.display = 'block';
+            this.handleQuestionTargetChange('ASCENSO');
+        } else if (domain === 'medicine') {
+            if (targetSelect) {
+                targetSelect.innerHTML = `
+                    <option value="ENAM">ENAM</option>
+                    <option value="SERUMS" selected>SERUMS</option>
+                    <option value="RESIDENTADO">RESIDENTADO</option>
+                    <option value="N/A">N/A (Quiz Arena)</option>
+                `;
+            }
+                careerSelect.innerHTML = `
+                    <option value="Medicina Humana">Medicina Humana</option>
+                    <option value="Enfermería">Enfermería</option>
+                `;
+            if (explImageGroup) explImageGroup.style.display = 'block';
+            this.handleQuestionTargetChange('SERUMS');
+        } else {
+            // General Trivia
+            if (targetSelect) targetSelect.parentElement.style.display = 'none';
+            if (careerSelect) careerSelect.parentElement.style.display = 'none';
+            if (explImageGroup) explImageGroup.style.display = 'none';
+            this.handleQuestionTargetChange('N/A');
+        }
+    }
+
+    handleQuestionTargetChange(target) {
+        const optionDContainer = document.getElementById('opt3-container');
+        const optionsSelect = document.getElementById('generic-correct-ans');
+        const isEducation = target === 'ASCENSO' || target === 'NOMBRAMIENTO';
+
+        if (optionDContainer) {
+            if (isEducation) {
+                optionDContainer.style.display = 'none';
+                // If correct answer was 3 (Option D), reset to 0
+                if (optionsSelect && optionsSelect.value === '3') {
+                    optionsSelect.value = '0';
+                }
+                // Hide option D in correct answer select
+                if (optionsSelect && optionsSelect.options[3]) {
+                    optionsSelect.options[3].style.display = 'none';
+                }
+            } else {
+                optionDContainer.style.display = 'block';
+                if (optionsSelect && optionsSelect.options[3]) {
+                    optionsSelect.options[3].style.display = 'block';
+                }
+            }
+        }
+    }
 }
 
 // Inicializar administrador

@@ -47,17 +47,24 @@ El sistema ha evolucionado de una "Biblioteca de Libros" a un repositorio multim
 
 ---
 
-## 3. 🧠 Módulo de Preguntas e IA (RAG Engine)
-Es el core académico de la plataforma, diseñado para simular exámenes de alto nivel como **ENAM**, **SERUMS** y **Residentado**.
+## 3. 🧠 Módulo de Preguntas e IA (Multi-Dominio)
+Es el core académico de la plataforma, diseñado para simular exámenes de alto nivel tanto en **Ciencias de la Salud** (Medicina, Enfermería, Obstetricia) como en **Educación** (Docente Pro).
 
-*   **Generador RAG (Retrieval-Augmented Generation):**
-    *   **Fuentes Clínicas (ENAM/RES):** Utiliza bibliografía de élite: Harrison, Washington, Nelson, Williams y manuales AMIR/CTO.
-    *   **Fuentes Normativas (SERUMS):** Prioriza Normas Técnicas (NTS), Resoluciones Ministeriales (RM) y Leyes del MINSA/EsSalud (ej. PAI, Cadena de Frío, Dengue).
+### 3.1 Soporte de Dominios
+El panel detecta el contexto y ajusta los formularios automáticamente:
+*   **Medicina:** Targets como ENAM, SERUMS, RESIDENTADO. Áreas clínicas (Medicina Interna, Pediatría, etc.).
+*   **Educación:** Targets como NOMBRAMIENTO, ASCENSO, ACCESO A CARGOS. Áreas pedagógicas (Comprensión Lectora, Currículo Nacional, Evaluación Formativa).
+
+### 3.2 Generador RAG (Retrieval-Augmented Generation)
+*   **Fuentes de Medicina:** Bibliografía de élite (Harrison, CTO) y Normas Técnicas MINSA.
+*   **Fuentes de Educación:** Currículo Nacional (CNEB), Marco del Buen Desempeño Docente y Resoluciones Viceministeriales del MINEDU.
 *   **Control de Calidad:** 
-    *   **Anti-duplicidad:** Antes de generar, el sistema escanea las últimas 200 preguntas para asegurar que el nuevo lote sea inédito.
-    *   **Jerarquía de Fuentes:** La IA tiene prohibido inventar; debe citar al menos dos fuentes oficiales en cada explicación.
-*   **Inyección Masiva:** El administrador puede subir miles de preguntas vía Excel/JSON o generarlas por lotes de 5 mediante la IA en tiempo real integrada. 
-    *   **Motor RAG Local Lite:** El botón "Generar con IA (Lite)" en el panel usa explícitamente el modelo **Gemini 2.5 Flash Lite** para mantener el costo en cero, utilizando el mismo prompt de alta fidelidad médica de `mlService`.
+    *   **Anti-duplicidad:** Escaneo de los últimos 200 registros antes de inyectar.
+    *   **Enfoque Constructivista:** Para el dominio educativo, la IA tiene prohibido generar respuestas conductistas o puramente memorísticas.
+*   **Inyección Masiva (3 Botones):**
+    1.  **Importar:** Permite subir archivos Excel/CSV con el campo `domain` definido para clasificar preguntas automáticamente.
+    2.  **Generar IA:** Motor basado en **Gemini 2.0 Flash**. Permite seleccionar el dominio y las áreas de estudio específicas para generar lotes de 5 preguntas de alta fidelidad.
+    3.  **Nueva:** Formulario manual que cambia sus opciones de target y carrera según el dominio seleccionado en tiempo real.
 
 ---
 

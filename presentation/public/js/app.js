@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- PASO 1: Componentes Globales ---
-    if (typeof ChatComponent !== 'undefined') window.chatComponent = new ChatComponent();
+    if (typeof ChatComponent !== 'undefined') window.chatbot = new ChatComponent();
 
     if (typeof ConfirmationModal !== 'undefined' && document.getElementById('confirmation-modal')) {
         window.confirmationModal = new ConfirmationModal();
@@ -412,6 +412,6 @@ window.handleLogout = async () => {
 };
 
 // Helpers Globales
-window.openChat = () => window.uiManager?.checkAuthAndExecute(() => window.chatComponent?.openAndAsk(''));
-window.askAboutCourse = (n) => window.uiManager?.checkAuthAndExecute(() => window.chatComponent?.openAndAsk(`Cuéntame del curso "${n}"`));
-window.askAboutTopic = (t) => window.uiManager?.checkAuthAndExecute(() => window.chatComponent?.openAndAsk(`Explícame "${t}"`));
+window.openChat = () => window.uiManager?.checkAuthAndExecute(() => window.chatbot?.openAndAsk(''));
+window.askAboutCourse = (n) => window.uiManager?.checkAuthAndExecute(() => window.chatbot?.openAndAsk(`Cuéntame del curso "${n}"`));
+window.askAboutTopic = (t) => window.uiManager?.checkAuthAndExecute(() => window.chatbot?.openAndAsk(`Explícame "${t}"`));

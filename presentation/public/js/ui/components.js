@@ -831,8 +831,12 @@ window.UIComponents.createReviewCardHTML = function (config) {
         </div>`;
     });
 
+    const rawQuestionText = question.question_text || 'Pregunta sin texto disponible.';
+    const questionTextHTML = (window.marked && window.marked.parse) ? window.marked.parse(rawQuestionText) : rawQuestionText;
+
     const defaultExp = 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.';
-    const expText = (question.explanation || defaultExp).replace(/\n/g, '<br>');
+    const rawExpText = question.explanation || defaultExp;
+    const expTextHTML = (window.marked && window.marked.parse) ? window.marked.parse(rawExpText) : rawExpText.replace(/\n/g, '<br>');
 
     let expImageHTML = '';
     if (question.explanation_image_url) {
@@ -844,14 +848,12 @@ window.UIComponents.createReviewCardHTML = function (config) {
         </div>`;
     }
 
-    const questionText = question.question_text || 'Pregunta sin texto disponible.';
-
     return `
     <div class="review-card ${question.image_url ? 'has-image' : ''}" data-qindex="${index}">
         <div class="review-card-header">
             <div class="review-q-text" style="flex: 1; margin: 0;">
                 <span style="color:#3b82f6; font-weight: 800; margin-right: 0.5rem;">Q${index + 1}</span> 
-                ${questionText}
+                ${questionTextHTML}
             </div>
             ${saveBtnHTML}
         </div>
@@ -861,7 +863,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
         </div>
         <div class="review-explanation">
             <strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>
-            ${expText}
+            ${expTextHTML}
             ${expImageHTML}
         </div>
     </div>`;

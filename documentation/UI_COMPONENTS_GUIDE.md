@@ -32,11 +32,37 @@ Muestra una "píldora" de estado cuando el usuario pierde la conexión, informan
 
 ---
 
-## 2. 🪟 ConfirmationModal (`confirmationModal.js`)
+## 2. Modales y Bloqueo de Scroll (Global)
+
+Para garantizar una experiencia premium y evitar el "Scroll Chaining" (cuando el fondo se mueve al llegar al límite del modal), Hub Academia utiliza un estándar global:
+
+### Estándar de Implementación:
+1.  **CSS Bloqueo:** Siempre se debe usar la clase `.modal-open` en el `body` para desactivar el scroll de fondo.
+2.  **Overscroll Behavior:** Los contenedores de los modales (`.modal-overlay` y `.modal-body`) deben tener `overscroll-behavior: contain;`.
+3.  **Gestión JS:** Todos los modales deben registrarse mediante `window.uiManager.pushModalState(id)` y cerrarse con `popModalState(id)`.
+
+```css
+/* modal.css */
+body.modal-open {
+    overflow: hidden !important;
+}
+
+.modal-body {
+    overscroll-behavior: contain;
+}
+```
+
+### Estética Premium (Glassmorphism):
+- **Overlay:** `rgba(0, 0, 0, 0.85)` con `backdrop-filter: blur(10px)`.
+- **Z-Index:** El estándar global para modales es `2000000` para asegurar que floten sobre cabeceras y otros elementos de la UI.
+
+---
+
+## 3. 🪟 ConfirmationModal (`confirmationModal.js`)
 
 Componente premium que reemplaza a `confirm()` y `alert()` nativos. Utiliza promesas para una integración limpia con `async/await`.
 
-### 2.1. Confirmación de Acción
+### 3.1. Confirmación de Acción
 Para acciones que requieren consentimiento (ej. eliminar una tarjeta).
 
 **Uso:**
