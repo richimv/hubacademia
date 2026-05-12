@@ -25,6 +25,11 @@ class RepasoManager {
         window.addEventListener('popstate', this.handlePopState);
 
         this.subDecksCollapsed = localStorage.getItem('subDecksCollapsed') === 'true';
+
+        // ✅ NUEVO: Prevención de peticiones duplicadas (Shared Promises)
+        this._sharedRequests = {
+            decks: {} // { parentId: Promise }
+        };
     }
 
     /**
@@ -142,6 +147,34 @@ class RepasoManager {
         this.bindEvents();
     }
 
+    /**
+     * ✅ SHARED FETCH: Evita que Sidebar y Dashboard pidan lo mismo a la vez.
+     */
+    async fetchDecksShared(parentId = null) {
+        const key = parentId || 'ROOT';
+        if (this._sharedRequests.decks[key]) {
+            return this._sharedRequests.decks[key];
+        }
+
+        const promise = (async () => {
+            try {
+                const url = parentId ? `${window.AppConfig.API_URL}/api/decks?parentId=${parentId}` : `${window.AppConfig.API_URL}/api/decks`;
+                const headers = {};
+                if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+                
+                const res = await window.uiManager.safeFetch(url, { headers });
+                const data = await res.json();
+                return data.decks || [];
+            } finally {
+                // Limpiar la promesa después de un pequeño delay para permitir nuevas cargas si hay cambios
+                setTimeout(() => delete this._sharedRequests.decks[key], 5000);
+            }
+        })();
+
+        this._sharedRequests.decks[key] = promise;
+        return promise;
+    }
+
     bindEvents() {
         document.getElementById('create-deck-form').addEventListener('submit', (e) => {
             if (!this.token && window.uiManager) {
@@ -212,9 +245,10 @@ class RepasoManager {
         try {
             const previousDeck = this.currentDeck;
 
+            // 🚀 OPTIMIZACIÓN: Usar Shared Fetch para evitar colisiones con el Explorer
             const [deck, children, cards] = await Promise.all([
-                this.fetchDeck(deckId),
-                this.fetchDecks(deckId),
+                this.getDeckById(deckId),
+                this.fetchDecksShared(deckId),
                 this.fetchCards(deckId)
             ]);
 
@@ -303,16 +337,31 @@ class RepasoManager {
 
     // --- Renderers ---
 
-    renderRootDecks() {
+    async renderRootDecks() {
         const container = document.getElementById('dashboard-view');
+        if (!container) return;
+
         container.innerHTML = `
             <h2 style="margin-bottom:1.5rem">Mis Mazos</h2>
-            <div id="root-decks-grid" class="decks-grid"></div>
+            <div id="root-decks-grid" class="decks-grid">
+                <div class="deck-skeleton-card"></div>
+                <div class="deck-skeleton-card"></div>
+                <div class="deck-skeleton-card"></div>
+            </div>
         `;
 
-        this.fetchDecks(null).then(decks => {
-            this.renderDeckCards(decks, document.getElementById('root-decks-grid'), null);
-        });
+        try {
+            const decks = await this.fetchDecksShared(null);
+            const grid = document.getElementById('root-decks-grid');
+            if (grid) {
+                grid.innerHTML = '';
+                this.renderDeckCards(decks, grid, null);
+            }
+        } catch (e) {
+            console.error('[renderRootDecks] Error:', e);
+            const grid = document.getElementById('root-decks-grid');
+            if (grid) grid.innerHTML = '<p style="color:var(--accent-warning)">Error al cargar mazos</p>';
+        }
     }
 
     async renderCommunityDecks(page = 1) {
@@ -571,7 +620,7 @@ class RepasoManager {
                                 <i class="fas fa-chart-pie"></i> <span class="btn-text">Estadísticas</span>
                             </button>
 
-                            ${this.token ? `
+                            ${this.token && deck.type !== 'SYSTEM' ? `
                             <button class="btn-premium btn-premium-secondary" onclick="DeckExplorer.openGuideModal('${deck.id}', '${this.escapeHtml(deck.name)}')">
                                 <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
                             </button>
@@ -1114,7 +1163,20 @@ class RepasoManager {
                 btn.style.display = 'none';
             }
         }
+    }
 
+    switchMode(mode) {
+        // 🛡️ PROTECCIÓN PREMIUM: Carga masiva bloqueada para Free
+        if (mode === 'bulk' && this.userTier === 'free') {
+            if (window.uiManager && window.uiManager.showAuthPromptModal) {
+                window.uiManager.showAuthPromptModal('La Carga Masiva (Excel) es una función exclusiva para usuarios Premium. ¡Ahorra tiempo mejorando tu plan!');
+            } else {
+                alert('La Carga Masiva es una función Premium.');
+            }
+            return;
+        }
+
+        const tabs = document.querySelectorAll('.card-mode-tab');
         const total = document.querySelectorAll('.card-item-checkbox').length;
         const masterCb = document.getElementById('select-all-cards');
         if (masterCb) {
@@ -1478,62 +1540,18 @@ class RepasoManager {
 
     // --- API Helpers ---
 
-    async fetchDeck(id) {
-        if (!this.token) {
-            // Mock System Folder for Guest
-            if (id === 'demo-system-1') {
-                return {
-                    id: 'demo-system-1',
-                    name: 'Repaso Medicina',
-                    icon: '🩺',
-                    type: 'SYSTEM',
-                    total_cards: 3,
-                    due_cards: 3
-                };
-            }
-            if (id === 'demo-user-1') {
-                return {
-                    id: 'demo-user-1',
-                    name: 'Mis Tarjetas',
-                    icon: '👶',
-                    type: 'USER',
-                    total_cards: 3,
-                    due_cards: 3
-                };
-            }
-        }
-
+    /**
+     * ✅ FETCH DECK BY ID: Centralizado y limpio.
+     */
+    async getDeckById(id) {
         const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${id}`, {
             headers: { 'Authorization': `Bearer ${this.token}` },
             cache: 'no-cache'
         });
 
-        if (!res.ok) {
-            console.error(`Error fetching deck ${id}: ${res.status} ${res.statusText}`);
-            return null;
-        }
-
+        if (!res.ok) return null;
         const data = await res.json();
         return data.deck;
-    }
-
-    async fetchDecks(parentId) {
-        if (!this.token) {
-            if (parentId) return []; // No subdecks for demo root yet
-            // Return root guest decks
-            return [
-                { id: 'demo-system-1', name: 'Repaso Medicina', icon: '🩺', type: 'SYSTEM', total_cards: 7, due_cards: 7, mastery_percentage: 10 }
-            ];
-        }
-
-        let url = `${window.AppConfig.API_URL}/api/decks`;
-        if (parentId) url += `?parentId=${parentId}`;
-        const res = await window.uiManager.safeFetch(url, {
-            headers: { 'Authorization': `Bearer ${this.token}` },
-            cache: 'no-cache'
-        });
-        const data = await res.json();
-        return data.decks || [];
     }
 
     async fetchCards(deckId) {

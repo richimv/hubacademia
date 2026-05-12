@@ -508,7 +508,7 @@ class TrainingRepository {
             // Guest mode: return unique system decks by name
             const query = `
                 SELECT DISTINCT ON (d.name)
-                    d.id, d.name, d.type, d.icon, d.source_module, d.parent_id, d.description,
+                    d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
                     0 as total_cards, 0 as due_cards, 
                     (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
                     0 as mastery_percentage
@@ -523,7 +523,7 @@ class TrainingRepository {
         // Standard user query
         let query = `
             SELECT 
-                d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id, d.description,
+                d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id,
                 d.is_public, d.saves_count, d.likes_count, d.cloned_from_id,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
@@ -550,7 +550,7 @@ class TrainingRepository {
     async getDeckById(userId, deckId) {
         const query = `
             SELECT 
-                d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id, d.description,
+                d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id,
                 d.is_public, d.saves_count, d.likes_count, d.cloned_from_id,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
@@ -564,6 +564,15 @@ class TrainingRepository {
         const params = userId === 'GUEST' ? [deckId] : [userId, deckId];
         const result = await db.query(query, params);
         return result.rows[0];
+    }
+
+    async getDeckGuide(userId, deckId) {
+        const query = `
+            SELECT description FROM decks 
+            WHERE (user_id = $1 OR type = 'SYSTEM' OR is_public = true) AND id = $2
+        `;
+        const result = await db.query(query, [userId, deckId]);
+        return result.rows[0] ? result.rows[0].description : null;
     }
 
     async createDeck(userId, name, type = 'USER', sourceModule = 'MANUAL', icon = '📚', parentId = null, description = null, color = null) {

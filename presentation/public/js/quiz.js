@@ -784,20 +784,7 @@ function renderQuestion() {
     }
 
     // Texto Pregunta
-    if (window.marked && window.marked.parse) {
-        const rawHTML = window.marked.parse(q.question_text || '');
-        elements.questionText.innerHTML = rawHTML;
-        // Envolver tablas para scroll móvil
-        const tables = elements.questionText.querySelectorAll('table');
-        tables.forEach(table => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'table-wrapper';
-            table.parentNode.insertBefore(wrapper, table);
-            wrapper.appendChild(table);
-        });
-    } else {
-        elements.questionText.textContent = q.question_text;
-    }
+    elements.questionText.innerHTML = window.MarkdownRenderer.render(q.question_text || '');
 
     // Reset UI
     elements.optionsGrid.innerHTML = '';
@@ -895,28 +882,7 @@ function handleAnswer(selectedIndex, btnElement) {
     // Mostrar explicación y caja de feedback en Modos de Aprendizaje (20qs +)
 
     // 📚 MODO ESTUDIO (20qs): Comportamiento de Aprendizaje Profundo
-    if (window.marked && window.marked.parse) {
-        const rawHTML = window.marked.parse(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
-        elements.explanationText.innerHTML = rawHTML;
-        // Envolver tablas en explicación para scroll móvil
-        const tables = elements.explanationText.querySelectorAll('table');
-        tables.forEach(table => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'table-wrapper';
-            table.parentNode.insertBefore(wrapper, table);
-            wrapper.appendChild(table);
-        });
-    } else {
-        // 🎯 DINAMISMO: Cambiar título según dominio
-        const isEducation = state.targetExam === 'ASCENSO' || state.targetExam === 'NOMBRAMIENTO';
-        if (elements.explanationTitle) {
-            elements.explanationTitle.innerHTML = isEducation
-                ? '<i class="fas fa-graduation-cap"></i> Fundamentación Pedagógica'
-                : '<i class="fas fa-info-circle"></i> Sustento Técnico';
-        }
-
-        elements.explanationText.innerText = q.explanation || "No hay explicación disponible.";
-    }
+    elements.explanationText.innerHTML = window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
 
     if (q.explanation_image_url) {
         elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);

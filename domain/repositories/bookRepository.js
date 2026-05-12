@@ -3,16 +3,25 @@ const db = require('../../infrastructure/database/db');
 class BookRepository {
 
     async findAll(filters = {}) {
-        // ✅ MEJORA: Incluir Áreas Académicas para agrupación en catálogo.
-        const { type } = filters;
+        const { type, domain } = filters;
 
-        const whereClause = type ? `WHERE r.resource_type = '${type}'` : ''; // Simple sanitization, ideally use params but for fixed types it's ok or use param array.
-        // Better security: use params. But findAll query is complex with subquery.
-        // Let's use string template for now as 'type' comes from strict set in controller or empty.
+        let whereClause = '';
+        const params = [];
+
+        if (type && domain) {
+            whereClause = 'WHERE r.resource_type = $1 AND r.domain = $2';
+            params.push(type, domain);
+        } else if (type) {
+            whereClause = 'WHERE r.resource_type = $1';
+            params.push(type);
+        } else if (domain) {
+            whereClause = 'WHERE r.domain = $1';
+            params.push(domain);
+        }
 
         const query = `
             SELECT 
-                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium, r.content_html,
+                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium, r.content_html, r.domain,
                 (
                     SELECT COALESCE(JSON_AGG(DISTINCT car.area), '[]')
                     FROM course_books cb
@@ -32,11 +41,10 @@ class BookRepository {
                     WHERE cb.resource_id = r.id
                 ) as "courseIds"
             FROM resources r
-            ${type ? 'WHERE r.resource_type = $1' : ''}
+            ${whereClause}
             ORDER BY r.title
         `;
 
-        const params = type ? [type] : [];
         const { rows } = await db.query(query, params);
         return rows;
     }
@@ -95,8 +103,8 @@ class BookRepository {
             await db.query('BEGIN');
 
             const { rows } = await db.query(
-                'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type, is_premium, content_html) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-                [resourceId, title, author, url, image_url || null, resource_type || 'book', is_premium, content_html]
+                'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type, is_premium, content_html, domain) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+                [resourceId, title, author, url, image_url || null, resource_type || 'book', is_premium, content_html, bookData.domain || 'medicine']
             );
             const newResource = rows[0];
 
@@ -147,6 +155,11 @@ class BookRepository {
         if (content_html !== undefined) {
             params.push(content_html);
             fields.push(`content_html = $${params.length}`);
+        }
+
+        if (bookData.domain !== undefined) {
+            params.push(bookData.domain);
+            fields.push(`domain = $${params.length}`);
         }
 
         params.push(id);

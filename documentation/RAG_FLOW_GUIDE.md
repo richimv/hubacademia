@@ -19,8 +19,7 @@ El RAG no se aplica igual a todos, para optimizar el rendimiento y la experienci
 | Servicio | Uso del RAG | Motor | Objetivo |
 | :--- | :--- | :--- | :--- |
 | **`TutorAiService` (Chat)** | ✅ **Activo** | Pinecone (Semantic) | Responder dudas con citas exactas de NTS/CNEB. |
-| **`AdminAiService` (Banco)** | ✅ **Activo** | Pinecone (Semantic) | Generar preguntas con mimetismo de exámenes reales. |
-| **`UserAiService` (Emergencia)** | ❌ **Inactivo** | Interno (Zero-Shot) | Generar preguntas rápidas cuando el banco se agota. |
+| **`AdminAiService` (Banco)** | ✅ **Activo** | Pinecone (Semantic) | Generar preguntas basadas en exámenes reales. |
 
 ---
 

@@ -146,17 +146,17 @@ class AdminService {
         return await adminRepository.deleteQuestion(id);
     }
 
-    async syncResource(url, cleanTitle, resourceType, persistentThumbnailUrl, author) {
+    async syncResource(url, cleanTitle, resourceType, persistentThumbnailUrl, author, domain = 'medicine') {
         const existing = await adminRepository.getResourceByUrl(url);
 
         if (existing) {
             const finalThumb = persistentThumbnailUrl || existing.image_url;
-            await adminRepository.updateResource(existing.id, cleanTitle, resourceType, finalThumb);
+            await adminRepository.updateResource(existing.id, cleanTitle, resourceType, finalThumb, domain);
             return { action: 'updated' };
         } else {
             const resourceId = `RES_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
             const resultAuthor = author || 'Admin Hub';
-            await adminRepository.addResource(resourceId, cleanTitle, resultAuthor, url, resourceType, persistentThumbnailUrl);
+            await adminRepository.addResource(resourceId, cleanTitle, resultAuthor, url, resourceType, persistentThumbnailUrl, domain);
             return { action: 'inserted' };
         }
     }

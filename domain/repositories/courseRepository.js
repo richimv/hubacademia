@@ -3,24 +3,28 @@ const { normalizeText } = require('../utils/textUtils');
 
 class CourseRepository {
 
-    async findAll() {
-        // ✅ SOLUCIÓN: Reemplazamos el procedimiento almacenado (que usaba la tabla 'sections' eliminada)
-        // por una consulta directa que construye la estructura correcta con temas y libros.
-        const query = `
+    async findAll(filters = {}) {
+        let query = `
             SELECT 
                 c.id,
                 c.course_id,
                 c.name,
                 c.image_url, 
+                c.domain,
                 (
                     SELECT COALESCE(JSON_AGG(cc.career_id), '[]')
                     FROM course_careers cc
                     WHERE cc.course_id = c.id
                 ) AS "careerIds"
             FROM courses c
-            ORDER BY c.name ASC
         `;
-        const { rows } = await db.query(query);
+        const params = [];
+        if (filters.domain) {
+            query += ' WHERE c.domain = $1';
+            params.push(filters.domain);
+        }
+        query += ' ORDER BY c.name ASC';
+        const { rows } = await db.query(query, params);
         return rows;
     }
 
@@ -161,15 +165,15 @@ class CourseRepository {
 
     async create(courseData) {
         // ✅ LÓGICA REHECHA: Esta función ahora es simple y correcta.
-        const { name, topicIds, bookIds, units, careerIds, image_url } = courseData;
+        const { name, topicIds, bookIds, units, careerIds, image_url, domain = 'medicine' } = courseData;
 
         const client = await db.pool().connect();
         try {
             await client.query('BEGIN');
             // 1. Insertar el curso principal.
             const tempCourseId = `C-${Date.now()}`; // Valor temporal para satisfacer la restricción NOT NULL.
-            // ✅ FIX: Incluir image_url en el insert
-            const courseRes = await client.query('INSERT INTO courses (name, course_id, image_url) VALUES ($1, $2, $3) RETURNING *', [name, tempCourseId, image_url]);
+            // ✅ FIX: Incluir image_url y domain en el insert
+            const courseRes = await client.query('INSERT INTO courses (name, course_id, image_url, domain) VALUES ($1, $2, $3, $4) RETURNING *', [name, tempCourseId, image_url, domain]);
             const newCourse = courseRes.rows[0];
 
             /* 2. Insertar temas. (DESACTIVADO: El usuario solicitó eliminar la relación curso-temas)
@@ -204,42 +208,29 @@ class CourseRepository {
 
     async update(id, courseData) {
         // ✅ SOLUCIÓN: Usar una transacción para actualizar el curso y sus relaciones.
-        const { name, topicIds, bookIds, units, careerIds, image_url } = courseData;
+        const { name, topicIds, bookIds, units, careerIds, image_url, domain } = courseData;
         const client = await db.pool().connect();
         try {
             await client.query('BEGIN');
-            // ✅ SOLUCIÓN: Eliminar 'updated_at' de la consulta e INCLUIR image_url.
-            // Si image_url es undefined (no se envió cambio), mantenemos el valor actual con COALESCE o simplemente lo actualizamos si viene en null explicitamente.
-            // Pero como updateEntity siempre envía el body procesado, si no hay cambio image_url podría no estar.
-            // Sin embargo, coursesController maneja esto. Si image_url viene, se actualiza.
-
-            // Lógica dinámica simple: si image_url está presente en courseData, actualizamos. Si no, solo nombre?
-            // Para simplificar y dado que el controlador maneja la lógica de "borrar" enviando null, o "mantener" no enviando nada...
-            // Si image_url es undefined, NO deberíamos tocarlo.
-
-            let updateQuery = 'UPDATE courses SET name = $1';
-            const params = [name, id];
-            let paramIndex = 3;
+            
+            let queryFields = ['name = $1'];
+            let params = [name];
+            let pIndex = 2;
 
             if (image_url !== undefined) {
-                updateQuery += `, image_url = $${paramIndex}`;
-                params.splice(2, 0, image_url); // Insert image_url at index 2 (param $3) -> wait, params are 1-indexed in query, 0-indexed in array.
-                // query: name=$1, id=$2. image_url=$3.
-                // params array: [name, id] -> logic above is slightly flawed for splice.
-                // Let's reset.
+                queryFields.push(`image_url = $${pIndex++}`);
+                params.push(image_url);
             }
 
-            // RE-DOING QUERY CONSTRUCTION FOR SAFETY
-            // Always update name.
-            // Update image_url ONLY if it is defined (null is a valid value for deletion).
-
-            if (image_url !== undefined) {
-                const courseRes = await client.query('UPDATE courses SET name = $1, image_url = $2 WHERE id = $3 RETURNING *', [name, image_url, id]);
-                var updatedCourse = courseRes.rows[0];
-            } else {
-                const courseRes = await client.query('UPDATE courses SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
-                var updatedCourse = courseRes.rows[0];
+            if (domain !== undefined) {
+                queryFields.push(`domain = $${pIndex++}`);
+                params.push(domain);
             }
+
+            params.push(id);
+            const updateQuery = `UPDATE courses SET ${queryFields.join(', ')} WHERE id = $${pIndex} RETURNING *`;
+            const courseRes = await client.query(updateQuery, params);
+            const updatedCourse = courseRes.rows[0];
 
             // 2. Relations... (Rest of method)
 

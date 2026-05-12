@@ -109,17 +109,17 @@ class AdminRepository {
         return result.rows[0];
     }
 
-    async updateResource(id, title, resourceType, imageUrl) {
+    async updateResource(id, title, resourceType, imageUrl, domain = 'medicine') {
         await db.query(
-            'UPDATE resources SET title = $1, resource_type = $2, image_url = $3 WHERE id = $4',
-            [title, resourceType, imageUrl, id]
+            'UPDATE resources SET title = $1, resource_type = $2, image_url = $3, domain = $4 WHERE id = $5',
+            [title, resourceType, imageUrl, domain, id]
         );
     }
 
-    async addResource(resourceId, title, author, url, resourceType, imageUrl) {
+    async addResource(resourceId, title, author, url, resourceType, imageUrl, domain = 'medicine') {
         await db.query(
-            'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-            [resourceId, title, author, url, resourceType, false, imageUrl]
+            'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium, image_url, domain) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [resourceId, title, author, url, resourceType, false, imageUrl, domain]
         );
     }
 

@@ -164,14 +164,26 @@ const checkAILimits = (type) => {
             }
             else if (effectiveType === 'monthly_flashcards') {
                 if (!isActiveAccount) {
-                    if (hasGlobalLives) {
-                        req.usageType = 'usage_count'; // Permite gestionar flashcards a costa de su vida global
+                    // 🛡️ REGLA DE BLOQUEO: Carga masiva es SOLO para Premium
+                    const isBatchImport = req.path.includes('/batch');
+                    if (isBatchImport) {
+                        return res.status(403).json({ error: 'La Carga Masiva (Excel) es una función exclusiva para usuarios Premium. ¡Mejora tu plan para ahorrar tiempo!', reason: 'PREMIUM_ONLY_FEATURE' });
+                    }
+
+                    // 🛡️ REGLA DE JUSTICIA: Edición (PUT) y Eliminación (DELETE) son GRATUITOS
+                    // Nota: El controlador decidirá si el PUT es una "Guía" (Paga) o un "Renombrar" (Gratis)
+                    const isMaintenance = req.method === 'DELETE' || (req.method === 'PUT' && !req.path.includes('/study')) || req.path.includes('/reorder');
+                    
+                    if (isMaintenance) {
+                        req.usageType = null;
+                    } else if (hasGlobalLives) {
+                        req.usageType = 'usage_count'; 
                     } else {
-                        return res.status(403).json({ error: 'Se han agotado tus vidas de Prueba. Mejora tu plan para crear más tarjetas inteligentes.', reason: 'FREE_LIVES_EXHAUSTED' });
+                        return res.status(403).json({ error: 'Se han agotado tus vidas de Prueba. Mejora tu plan para continuar creando y estudiando.', reason: 'FREE_LIVES_EXHAUSTED' });
                     }
                 } else {
-                    // ✅ LÓGICA REFINADA: Solo limitamos la GENERACIÓN CON IA para usuarios con plan.
-                    // El CRUD manual (crear, editar, subir imagen) es ILIMITADO para ellos.
+                    // ✅ LÓGICA REFINADA PARA PREMIUM: 
+                    // El CRUD manual (crear, editar, subir imagen) es ILIMITADO.
                     const isAiGeneration = req.path.includes('/generate') || req.path.includes('check-ai-limits');
                     const isBatchImport = req.path.includes('/batch');
                     
@@ -181,13 +193,11 @@ const checkAILimits = (type) => {
                         }
                         req.usageType = 'monthly_flashcards_usage';
                     } else if (isBatchImport) {
-                        // 🛡️ Límite diario para importaciones masivas (Excel)
                         if ((user.daily_import_usage || 0) >= userLimits.batch_import) {
                             return res.status(403).json({ error: `Límite diario de importación masiva alcanzado (${userLimits.batch_import}). Vuelve mañana o mejora tu plan.`, reason: 'DAILY_LIMIT_EXHAUSTED' });
                         }
                         req.usageType = 'daily_import_usage';
                     } else {
-                        // CRUD Manual: Sin límite para usuarios de pago
                         req.usageType = null;
                     }
                 }

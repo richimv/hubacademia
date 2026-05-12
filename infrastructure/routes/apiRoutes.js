@@ -170,22 +170,23 @@ const DeckController = require('../../application/controllers/deckController');
 router.get('/decks/public', optionalAuth, DeckController.getPublicDecks); // ✅ NUEVO: Explorador de Comunidad
 router.get('/decks', optionalAuth, DeckController.listDecks);
 router.get('/decks/:deckId', optionalAuth, DeckController.getDeckById); // ✅ NUEVO: Fetch Single Deck
+router.get('/decks/:deckId/guide', optionalAuth, DeckController.getDeckGuide); // 🚀 LAZY LOADING: Fetch Guide Only
 router.put('/decks/:deckId/visibility', auth, DeckController.toggleVisibility); // ✅ NUEVO: Toggle Privacidad
-router.post('/decks/:deckId/clone', auth, checkAILimits('monthly_flashcards'), DeckController.cloneDeck); // ✅ NUEVO: Clonar a librería
-router.post('/decks', auth, checkAILimits('monthly_flashcards'), DeckController.createDeck);
-router.get('/decks/:deckId/cards/due', auth, DeckController.getDueCards);
-router.get('/decks/:deckId/cards/:cardId/study', auth, DeckController.getStudyCard);
-router.get('/decks/:deckId/cards', optionalAuth, DeckController.listCards); // ✅ NUEVO
-router.post('/decks/:deckId/cards', auth, checkAILimits('monthly_flashcards'), DeckController.addCard); // ✅ NUEVO
-router.post('/decks/:deckId/cards/batch', auth, checkAILimits('monthly_flashcards'), DeckController.addBulkCards); // ✅ NUEVO: Batch Import
-router.post('/decks/:deckId/generate', auth, checkAILimits('monthly_flashcards'), DeckController.generateCards); // ✅✨ NUEVO: IA Gen
-router.put('/decks/:deckId', auth, checkAILimits('monthly_flashcards'), DeckController.updateDeck); // ✅ NUEVO: Rename
-router.delete('/decks/:deckId', auth, DeckController.deleteDeck); // ✅ NUEVO
-router.put('/decks/:deckId/cards/reorder', auth, DeckController.reorderCards); // ✅ NUEVO: Reorder
-router.delete('/cards/batch', auth, DeckController.deleteBulkCards); // ✅ NUEVO: Batch Delete
-router.post('/cards/upload-image', auth, checkAILimits('monthly_flashcards'), upload.single('file'), DeckController.uploadCardImage); // ✅ NUEVO: Flashcard Image Upload
-router.put('/cards/:cardId', auth, checkAILimits('monthly_flashcards'), DeckController.updateCard); // ✅ NUEVO
-router.delete('/cards/:cardId', auth, DeckController.deleteCard); // ✅ NUEVO
+router.post('/decks/:deckId/clone', auth, checkAILimits('monthly_flashcards'), DeckController.cloneDeck); 
+router.post('/decks', auth, checkAILimits('monthly_flashcards'), DeckController.createDeck); // 🪙 COBRA VIDA (Crear Mazo)
+router.get('/decks/:deckId/cards/due', auth, checkAILimits('monthly_flashcards'), DeckController.getDueCards); 
+router.get('/decks/:deckId/cards/:cardId/study', auth, checkAILimits('monthly_flashcards'), DeckController.getStudyCard); // 🪙 COBRA VIDA (Botón Play pequeño)
+router.get('/decks/:deckId/cards', optionalAuth, DeckController.listCards); 
+router.post('/decks/:deckId/cards', auth, checkAILimits('monthly_flashcards'), DeckController.addCard); // 🪙 COBRA VIDA (Añadir Tarjeta)
+router.post('/decks/:deckId/cards/batch', auth, checkAILimits('monthly_flashcards'), DeckController.addBulkCards); // 🛡️ BLOQUEO PREMIUM (Middleware)
+router.post('/decks/:deckId/generate', auth, checkAILimits('monthly_flashcards'), DeckController.generateCards); 
+router.put('/decks/:deckId', auth, DeckController.updateDeck); // 🛠️ GESTIÓN INTERNA (Controller decide si cobra Guía o no)
+router.delete('/decks/:deckId', auth, DeckController.deleteDeck); 
+router.put('/decks/:deckId/cards/reorder', auth, DeckController.reorderCards); 
+router.delete('/cards/batch', auth, DeckController.deleteBulkCards); 
+router.post('/cards/upload-image', auth, upload.single('file'), DeckController.uploadCardImage); 
+router.put('/cards/:cardId', auth, DeckController.updateCard); 
+router.delete('/cards/:cardId', auth, DeckController.deleteCard); 
 
 // Legacy/Direct Review Routes (Mantenidos por compatibilidad, pero redirigidos a lógica de mazos si es necesario)
 router.get('/training/flashcards/due', auth, quizController.getDueFlashcards); // Global due

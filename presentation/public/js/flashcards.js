@@ -221,8 +221,8 @@ const FlashcardManager = (() => {
             displayTopic = deckName || 'GENERAL';
         }
         ui.topic.textContent = displayTopic;
-        ui.frontText.innerHTML = card.front_content.replace(/\n/g, '<br>');
-        ui.backText.innerHTML = card.back_content.replace(/\n/g, '<br>');
+        ui.frontText.innerHTML = window.MarkdownRenderer.render(card.front_content || '');
+        ui.backText.innerHTML = window.MarkdownRenderer.render(card.back_content || '');
 
         // ✅ NUEVO: Lógica de Ocultación (Modo Listening/Speaking)
         // Usamos visibility:hidden para mantener el layout intacto pero forzar el oído
@@ -259,24 +259,26 @@ const FlashcardManager = (() => {
 
         // 🟢 FIX: Adjust Font Size to fit container (Prevent Overflow)
         const adjustFontSize = (element, text, hasImage) => {
-            let baseSize = 1.8;
+            const isMobile = window.innerWidth < 600;
+            let baseSize = isMobile ? 1.7 : 2.0; // Base más pequeña en móvil para evitar desbordamiento extremo
             const length = text.length;
 
-            if (length > 400) baseSize = 0.9;
-            else if (length > 300) baseSize = 1.0;
-            else if (length > 200) baseSize = 1.2;
-            else if (length > 100) baseSize = 1.4;
-            else if (length > 60) baseSize = 1.6;
-            else if (length > 0 && length <= 25) baseSize = 2.8;
-            else if (length > 25 && length <= 60) baseSize = 2.2;
+            if (length > 450) baseSize = isMobile ? 0.95 : 1.1;
+            else if (length > 350) baseSize = isMobile ? 1.1 : 1.25;
+            else if (length > 250) baseSize = isMobile ? 1.25 : 1.4;
+            else if (length > 150) baseSize = isMobile ? 1.4 : 1.6;
+            else if (length > 80) baseSize = isMobile ? 1.6 : 1.8;
+            else if (length > 0 && length <= 30) baseSize = isMobile ? 2.2 : 2.8;
+            else if (length > 30 && length <= 80) baseSize = isMobile ? 1.8 : 2.2;
             
             if (hasImage) {
-                if (length > 200) baseSize *= 0.75; 
-                else if (length <= 30) baseSize = 1.8;
+                if (length > 200) baseSize *= 0.8; 
+                else if (length <= 40) baseSize = isMobile ? 1.5 : 1.8;
                 else baseSize *= 0.85; 
             }
 
             element.style.fontSize = `${baseSize}rem`;
+            element.style.lineHeight = isMobile ? "1.3" : "1.4"; 
         };
 
         adjustFontSize(ui.frontText, card.front_content || '', hasFrontImage);

@@ -6,8 +6,15 @@ const { normalizeText } = require('../utils/textUtils');
  */
 class CareerRepository {
 
-    async findAll() {
-        const { rows } = await db.query('SELECT * FROM careers ORDER BY name');
+    async findAll(filters = {}) {
+        let query = 'SELECT * FROM careers';
+        const params = [];
+        if (filters.domain) {
+            query += ' WHERE domain = $1';
+            params.push(filters.domain);
+        }
+        query += ' ORDER BY name';
+        const { rows } = await db.query(query, params);
         return rows;
     }
 
@@ -31,36 +38,35 @@ class CareerRepository {
     }
 
     async create(careerData) {
-        const { name, area, image_url } = careerData;
-        // ✅ SOLUCIÓN TEMPORAL: Generar un 'career_id' de texto para satisfacer la restricción NOT NULL.
-        // La solución ideal es eliminar la columna 'career_id' de la tabla 'careers' en la base de datos.
+        const { name, area, image_url, domain = 'medicine' } = careerData;
         const tempCareerId = `CAREER_${Date.now()}`;
 
-        // ✅ FIX: Incluir image_url en la inserción
         const { rows } = await db.query(
-            'INSERT INTO careers (career_id, name, area, image_url) VALUES ($1, $2, $3, $4) RETURNING *',
-            [tempCareerId, name, area, image_url]
+            'INSERT INTO careers (career_id, name, area, image_url, domain) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [tempCareerId, name, area, image_url, domain]
         );
         return rows[0];
     }
 
     async update(id, careerData) {
-        const { name, area, image_url } = careerData;
+        const { name, area, image_url, domain } = careerData;
 
-        // ✅ FIX: Incluir image_url en la actualización si viene definido
-        // Al igual que en Courses, si image_url está presente, lo actualizamos.
         let query = 'UPDATE careers SET name = $1, area = $2';
         const params = [name, area];
+        let pIndex = 3;
 
         if (image_url !== undefined) {
-            query += ', image_url = $3';
+            query += `, image_url = $${pIndex++}`;
             params.push(image_url);
-            query += ' WHERE id = $4 RETURNING *';
-            params.push(id);
-        } else {
-            query += ' WHERE id = $3 RETURNING *';
-            params.push(id);
         }
+
+        if (domain !== undefined) {
+            query += `, domain = $${pIndex++}`;
+            params.push(domain);
+        }
+
+        query += ` WHERE id = $${pIndex} RETURNING *`;
+        params.push(id);
 
         const { rows } = await db.query(query, params);
 

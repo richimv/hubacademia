@@ -74,19 +74,7 @@ class DeckExplorer {
     }
 
     async fetchDecks(parentId = null) {
-        let url = this.api;
-        if (parentId) url += `?parentId=${parentId}`;
-        // else url += `?parentId=ROOT`; // REMOVED: Backend expects null/undefined for Root 
-        // Wait, backend logic: if parentId provided -> filter eq parentId. 
-        // If NOT provided -> filter IS NULL (Root).
-        // So default call is OK for root.
-
-        const headers = {};
-        if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
-
-        const res = await window.uiManager.safeFetch(url, { headers });
-        const data = await res.json();
-        return data.decks || [];
+        return await this.manager.fetchDecksShared(parentId);
     }
 
     async renderRootLevel() {
@@ -403,23 +391,39 @@ class DeckExplorer {
     }
 
     // --- Guide Modal ---
-    static openGuideModal(deckId, deckName) {
+    static async openGuideModal(deckId, deckName) {
         const deck = window.repasoManager.currentDeck;
         if (!deck || deck.id !== deckId) return;
 
         document.getElementById('deck-guide-title').innerText = `Guía: ${deckName}`;
-        
-        const description = deck.description || '';
         const contentDiv = document.getElementById('deck-guide-content');
-        
-        if (description.trim() === '') {
-            contentDiv.innerHTML = '<span style="color: #64748b; font-style: italic;">No hay una guía de estudio definida para este mazo. Pulsa "Editar" para empezar.</span>';
-        } else {
-            // Now storing HTML directly from TinyMCE for best Excel/Word support
-            contentDiv.innerHTML = description;
-        }
+        const textarea = document.getElementById('deck-guide-textarea');
 
-        document.getElementById('deck-guide-textarea').value = description;
+        // 🚀 LAZY LOADING: Fetch description only when opening the modal
+        contentDiv.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;"><i class="fas fa-circle-notch fa-spin"></i> Cargando guía de estudio...</div>';
+        
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/guide`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            const description = data.description || '';
+            
+            // Actualizar objeto local para que 'Editar' tenga el contenido fresco
+            deck.description = description;
+
+            if (description.trim() === '') {
+                contentDiv.innerHTML = '<span style="color: #64748b; font-style: italic;">No hay una guía de estudio definida para este mazo. Pulsa "Editar" para empezar.</span>';
+            } else {
+                contentDiv.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.wrapTables(description) : description;
+            }
+            textarea.value = description;
+
+        } catch (e) {
+            console.error('Error loading guide:', e);
+            contentDiv.innerHTML = '<span style="color: #ef4444;">Error al cargar la guía. Inténtalo de nuevo.</span>';
+        }
         
         // Show view mode, hide edit mode
         document.getElementById('deck-guide-view-mode').style.display = 'block';

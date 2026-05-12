@@ -293,13 +293,14 @@ class AdminController {
 
     async syncDriveFolder(req, res) {
         try {
-            const { folderId, resourceType, author } = req.body;
+            const { folderId, resourceType, author, domain } = req.body;
 
             if (!folderId || !resourceType) {
                 return res.status(400).json({ error: 'Faltan parámetros: folderId y resourceType son obligatorios.' });
             }
 
-            console.log(`📂 [Admin] Iniciando sincronización de carpeta Drive: ${folderId} como ${resourceType}`);
+            const resolvedDomain = domain || 'medicine';
+            console.log(`📂 [Admin] Iniciando sincronización de carpeta Drive: ${folderId} como ${resourceType} en dominio ${resolvedDomain}`);
 
             const DriveService = require('../../domain/services/driveService');
             const files = await DriveService.getFilesFromFolder(folderId);
@@ -337,7 +338,7 @@ class AdminController {
                     console.log(`✨ Sin miniatura para: ${file.name} (se usará diseño por defecto UI)`);
                 }
 
-                const result = await adminService.syncResource(driveUrl, cleanTitle, resourceType, persistentThumbnailUrl, author);
+                const result = await adminService.syncResource(driveUrl, cleanTitle, resourceType, persistentThumbnailUrl, author, resolvedDomain);
                 if (result.action === 'updated') updatedCount++;
                 else insertedCount++;
             }

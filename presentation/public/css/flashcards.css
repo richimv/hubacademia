@@ -157,14 +157,14 @@ body {
     /* Flexbox columna: badge | contenido | hint */
     display: flex;
     flex-direction: column;
-    padding: 0 1.5rem;
+    padding: 1rem 1.5rem 0.5rem 1.5rem; /* ✅ MÁXIMO ESPACIO: Top 1rem, Bottom 0.5rem */
     overflow: hidden;
 }
 .fc-card-face--back { transform: rotateY(180deg); }
 
 /* --- Fila 1: Badge (altura fija, nunca se comprime) --- */
 .fc-badge-container {
-    height: 55px;
+    height: 40px; /* Reducido de 55px */
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -190,19 +190,19 @@ body {
 
 /* --- Fila 2: Content Area (toma todo el espacio restante) --- */
 .fc-content-area {
-    flex: 1;             /* Toma todo el espacio disponible */
-    min-height: 0;       /* Permite que flex lo comprima si es necesario */
+    flex: 1;             
+    min-height: 0;       
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    overflow: hidden;    /* Contiene cualquier desbordamiento */
+    /* justify-content: center; // Eliminado para evitar cortes en overflow */
+    overflow: hidden;    
     width: 100%;
 }
 
 /* --- Fila 3: Hint (altura fija, nunca se comprime) --- */
 .fc-hint-container {
-    height: 40px;
+    height: 30px; /* Reducido de 40px */
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -252,12 +252,34 @@ body {
     font-weight: 700;
     text-align: center;
     font-size: 1.6rem;
-    scrollbar-width: none;
+    scrollbar-width: thin; /* Mostrar scrollbar fino si es necesario */
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* Centrado por defecto */
     padding: 0.5rem 0;
+    transition: font-size 0.2s ease;
+}
+
+/* ✅ TRUCO MAESTRO: Centrado que no rompe el scroll superior */
+.content-text::before,
+.content-text::after {
+    content: '';
+    margin: auto;
+}
+
+.content-text > div, .content-text > p {
+    width: 100%;
+    z-index: 1; /* Asegurar que el contenido esté sobre los pseudos */
+}
+
+/* ✅ SOLUCIÓN MÓVIL: Scrollbar visible en Webkit */
+.content-text::-webkit-scrollbar {
+    width: 4px;
+}
+.content-text::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
 }
 
 /* ✅ SOLUCIÓN MÓVIL: Si hay imagen y el texto es largo, alineamos arriba para evitar bloqueo de scroll */

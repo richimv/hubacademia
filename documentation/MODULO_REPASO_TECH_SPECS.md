@@ -126,14 +126,27 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - **Idiomas (Listening/Speaking)**: Regla de "Pureza Lingüística" que obliga a un anverso 100% puro en el idioma objetivo para una síntesis de voz (TTS) impecable, con traducción aislada en el reverso.
 - **Active Recall Reforzado**: Todas las generaciones fuerzan el formato "Disparador Mental" -> "Respuesta Atómica", optimizando la retención a largo plazo.
 
-### G. Seguridad, FinOps y Control de Cuotas
+### G. Seguridad, Monetización y Control de Cuotas (V16)
 - **Escudos de Caracteres (Safety Caps)**:
     - **Límite de Texto**: Restricción estricta de **400 caracteres** por cara para garantizar tarjetas atómicas y evitar el almacenamiento de documentos extensos.
     - **Límite de Síntesis (TTS)**: Para optimizar costos de Google Cloud, el audio premium solo procesa los primeros **500 caracteres** de cada cara.
-- **Cuotas de Importación Diaria (Excel)**:
-    - **Usuarios Free**: Máximo **1 carga masiva** por día.
-    - **Usuarios Premium (Básico/Avanzado)**: Máximo **10 cargas masivas** por día.
-- **Validación Preventiva**: El frontend (`repaso.js`) audita el archivo Excel antes de la subida, proporcionando feedback inmediato sobre filas excedidas o columnas faltantes.
+
+- **Política de Consumo de Vidas (Usuarios Free)**:
+    El sistema aplica una filosofía de **"Mantenimiento Gratuito vs. Valor de Pago"**:
+    - **Acciones Gratuitas (0 Vidas)**: 
+        - Edición de texto en tarjetas existentes.
+        - Gestión de metadatos de mazo (Renombrar, cambiar icono o color).
+        - Eliminación de tarjetas o mazos.
+        - Reordenamiento de tarjetas.
+    - **Acciones de Pago (1 Vida)**:
+        - **Creación**: Nuevo mazo (incluye sub-mazos/carpetas) y nuevas tarjetas individuales.
+        - **Estudio**: Inicio de sesión de estudio ("Estudiar Ahora") y revisión de tarjetas individuales (botón Play).
+        - **Valor Agregado**: Guardado de **Guía de Estudio** (Descripción enriquecida) y Generación de tarjetas con IA (Gemini).
+
+- **Restricciones Premium (Planes Pagados)**:
+    - **Carga Masiva (Excel)**: Función **exclusiva para usuarios Premium**. Los usuarios Free tienen el acceso bloqueado tanto en la interfaz (UI) como en la API para proteger la integridad operativa del sistema de importación masiva.
+
+- **Validación Preventiva**: El frontend (`repaso.js`) audita el contenido antes de la subida, proporcionando feedback inmediato sobre límites de caracteres o cuotas de vida insuficientes.
 
 ### H. UX Discovery y Micro-interacciones (Tutor IA)
 - **Efecto Neon Glow Pulse**: Animación optimizada por hardware (CSS keyframes) que aplica un resplandor de neón vibrante al botón del Tutor al girar la flashcard. Se eliminó la inyección de partículas en el DOM para favorecer la fluidez de renderizado a 60fps en smartphones, manteniendo la alta visibilidad requerida.
@@ -145,6 +158,11 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Resolución de Condición de Carrera (Última Tarjeta)**: Se implementó una barrera asíncrona (`await syncPromise`) en la calificación de la última flashcard de la cola. Esto fuerza al sistema a esperar que la base de datos confirme la revisión antes de pedir la siguiente tanda, erradicando el bug de repetición de tarjetas.
 - **Renderizado por Lotes (DocumentFragment)**: Las cuadrículas de mazos masivos (`renderDeckCards` y `renderCommunityDecks`) fueron refactorizadas para ensamblar las tarjetas en memoria temporal (`DocumentFragment`) antes de inyectarlas al DOM en una sola operación. Esto elimina el bloqueo del hilo principal y reduce los costosos cálculos de *reflow/repaint* del navegador al mínimo.
 
+### J. Arquitectura Lite y Optimización de Red (V17 - Mayo 2026)
+- **Data Thinning (Lazy Loading)**: Refactorización del modelo de datos para excluir el campo `description` (Guía de Estudio) de todas las consultas de listado. El contenido enriquecido ahora se carga bajo demanda mediante el endpoint `/api/decks/:id/guide` solo cuando el usuario abre el modal correspondiente.
+- **Shared Request Pool**: Implementación de un gestor de promesas compartidas en el frontend para evitar peticiones duplicadas durante el arranque de la aplicación (Barra lateral y Dashboard compartiendo el mismo flujo de datos).
+- **Optimistic UI Updates**: Mejora de la percepción de velocidad mediante la actualización inmediata del DOM en acciones de edición y renombrado, sincronizando con la base de datos en segundo plano.
+
 ---
 
-**Documentación Técnica Actualizada - 04 de Mayo, 2026.**
+**Documentación Técnica Actualizada - 12 de Mayo, 2026.**

@@ -661,24 +661,22 @@ class AdminManager {
         // Definimos los endpoints de la API para cada tipo
         switch (type) {
             // ... (el resto del switch case permanece igual)
-            case 'career':
+            case 'career': {
                 title.textContent = id ? 'Editar Carrera' : 'Añadir Carrera';
                 if (id) this.currentItem = this.allCareers.find(c => c.id === parseInt(id, 10));
 
-                const areas = [
-                    { id: 'Ciencias de la Salud', name: 'Ciencias de la Salud' },
-                    { id: 'Ingenierías', name: 'Ingenierías' },
-                    { id: 'Ciencias Empresariales', name: 'Ciencias Empresariales' },
-                    { id: 'Ciencias Sociales y Humanidades', name: 'Ciencias Sociales y Humanidades' },
-                    { id: 'Arquitectura y Diseño', name: 'Arquitectura y Diseño' },
-                    { id: 'Ciencias Exactas', name: 'Ciencias Exactas' }
+                const domains = [
+                    { id: 'medicine', name: 'Salud Professional' },
+                    { id: 'educacion', name: 'Educación Docente' }
                 ];
 
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre de la Carrera (*)', this.currentItem?.name || '', true) +
                     this.createSelect('generic-area', 'Área Académica (*)', areas, this.currentItem?.area || '', false) +
+                    this.createSelect('generic-domain', 'Sector / Dominio (*)', domains, this.currentItem?.domain || 'medicine', false) +
                     this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', this.currentItem?.image_url || '');
                 break;
-            case 'question':
+            }
+            case 'question': {
                 title.textContent = id ? 'Editar Pregunta' : 'Añadir Pregunta';
                 if (id) this.currentItem = this.allQuestions.find(q => String(q.id) === String(id));
 
@@ -803,6 +801,7 @@ class AdminManager {
                     if (txtE) txtE.rows = 2;
                 }, 0);
                 break;
+            }
 
             case 'bulk-question':
                 title.textContent = '📦 Importación Inteligente de Preguntas';
@@ -986,10 +985,6 @@ class AdminManager {
                         </div>
                     </div>
                     
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-muted); font-size: 0.85rem;">
-                        <input type="checkbox" id="ai-domain-all" onchange="document.querySelectorAll('.ai-domain-cb:not([style*=none] .ai-domain-cb)').forEach(c => c.checked = this.checked)"> 
-                        Seleccionar todos los temas visibles
-                    </label>
                 `;
                 setTimeout(() => {
                     const btn = document.getElementById('generic-save-btn');
@@ -1000,15 +995,8 @@ class AdminManager {
                     }
                 }, 0);
                 break;
-                setTimeout(() => {
-                    const btn = document.getElementById('generic-save-btn');
-                    if (btn) {
-                        btn.innerHTML = '<i class="fas fa-bolt"></i> Iniciar Generación RAG';
-                        btn.style.background = 'linear-gradient(135deg, #a855f7, #6366f1)';
-                        btn.style.boxShadow = '0 4px 15px rgba(168, 85, 247, 0.3)';
-                    }
-                }, 0);
-                break;
+
+            case 'course': {
                 title.textContent = id ? 'Editar Curso' : 'Añadir Curso';
 
                 // SOLUCIÓN: Obtener detalles completos del curso (incluyendo unidades y temas) desde la API
@@ -1021,22 +1009,24 @@ class AdminManager {
                             console.error('Error fetching course details');
                             this.currentItem = this.allCourses.find(c => c.id === parseInt(id, 10)); // Fallback
                         }
-                    } catch (error) {
-                        console.error('Error fetching course details:', error);
-                        this.currentItem = this.allCourses.find(c => c.id === parseInt(id, 10)); // Fallback
+                    } catch (e) {
+                        console.error('Error in fetch course:', e);
+                        this.currentItem = this.allCourses.find(c => c.id === parseInt(id, 10));
                     }
                 }
 
-                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', this.currentItem?.name || '', true) +
-                    // NUEVO: Selector de Carreras
-                    this.createCheckboxList('Carreras Asociadas', 'generic-careers', this.allCareers, this.currentItem?.careerIds || [], 'career') +
-                    // this.createUnitManager(...) Eliminado
+                const domainsCourse = [
+                    { id: 'medicine', name: 'Salud Professional' },
+                    { id: 'educacion', name: 'Educación Docente' }
+                ];
 
-                    // OPTIMIZACIÓN: Ordenar libros por ID descendente (Más recientes primero) para facilitar asignación rápida.
-                    // Se crea una copia [...Array] para no mutar el original desordenadamente.
+                fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', this.currentItem?.name || '', true) +
+                    this.createSelect('generic-domain', 'Sector / Dominio (*)', domainsCourse, this.currentItem?.domain || 'medicine', false) +
+                    this.createCheckboxList('Carreras Asociadas', 'generic-careers', this.allCareers, this.currentItem?.careerIds || [], 'career') +
                     this.createCheckboxList('Recursos de Referencia', 'generic-books', [...this.allBooks].sort((a, b) => b.id - a.id), this.currentItem?.materials?.map(m => m.id) || this.currentItem?.bookIds || [], 'book') +
                     this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', this.currentItem?.image_url || '');
                 break;
+            }
             case 'topic':
                 title.textContent = id ? 'Editar Tema' : 'Añadir Tema';
                 if (id) this.currentItem = this.allTopics.find(t => t.id === parseInt(id, 10));
@@ -1070,9 +1060,15 @@ class AdminManager {
                     { id: 'other', name: 'Otro' }
                 ];
 
+                const domainsBook = [
+                    { id: 'medicine', name: 'Sector Salud' },
+                    { id: 'educacion', name: 'Sector Educación' }
+                ];
+
                 fieldsHTML = `
-                <div style="margin-bottom: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                     ${this.createSelect('generic-type', 'Tipo de Recurso (*)', resourceTypes, this.currentItem?.resource_type || 'book', false)}
+                    ${this.createSelect('generic-domain', 'Sector / Dominio (*)', domainsBook, this.currentItem?.domain || 'medicine', false)}
                 </div>
 
                 <!-- Checkbox Premium -->
@@ -1150,8 +1146,12 @@ class AdminManager {
 
                     ${this.createFormGroup('text', 'generic-folder-id', 'ID de la Carpeta de Google Drive (*)', '', true)}
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-                        ${this.createSelect('generic-resource-type', 'Tipo de Recurso para este Lote (*)', resourceTypes, 'book', false)}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        ${this.createSelect('generic-resource-type', 'Tipo de Recurso (*)', resourceTypes, 'book', false)}
+                        ${this.createSelect('generic-domain', 'Sector / Dominio (*)', [
+                            { id: 'medicine', name: 'Sector Salud' },
+                            { id: 'educacion', name: 'Sector Educación' }
+                        ], 'medicine', false)}
                         ${this.createFormGroup('text', 'generic-author', 'Nombre de Autor / Fuente', 'Admin Hub', true)}
                     </div>
 
@@ -1914,6 +1914,7 @@ class AdminManager {
                     const careerFormData = new FormData();
                     careerFormData.append('name', document.getElementById('generic-name').value);
                     careerFormData.append('area', document.getElementById('generic-area').value);
+                    careerFormData.append('domain', document.getElementById('generic-domain').value);
 
                     // Manejo de imagen
                     const deleteCareerImage = document.getElementById('generic-image-delete-flag')?.value;
@@ -1934,6 +1935,7 @@ class AdminManager {
                     // AHORA USA FORMDATA
                     const courseFormData = new FormData();
                     courseFormData.append('name', document.getElementById('generic-name').value);
+                    courseFormData.append('domain', document.getElementById('generic-domain').value);
                     // Append arrays as JSON strings or separate fields depending on backend expectation.
                     // For FormData usually we append multiple values with same key or a JSON string.
                     // Let's serialize to JSON for safety if backend expects JSON body usually.
@@ -2004,6 +2006,7 @@ class AdminManager {
                     formData.append('url', document.getElementById('generic-url').value);
                     // Type Field
                     formData.append('resource_type', document.getElementById('generic-type').value);
+                    formData.append('domain', document.getElementById('generic-domain').value);
                     // Premium Field
                     formData.append('is_premium', document.getElementById('generic-is-premium').checked);
                     // NUEVO: Resumen Enriquecido (HTML)
@@ -2270,6 +2273,8 @@ class AdminManager {
                         const resourceType = document.getElementById('generic-resource-type').value;
                         const author = document.getElementById('generic-author').value.trim();
 
+                        const domainVal = document.getElementById('generic-domain').value;
+
                         if (!folderId) throw new Error('El ID de la carpeta es obligatorio.');
 
                         syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Escaneando Drive...';
@@ -2282,7 +2287,7 @@ class AdminManager {
                                 'Content-Type': 'application/json',
                                 'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                             },
-                            body: JSON.stringify({ folderId, resourceType, author })
+                            body: JSON.stringify({ folderId, resourceType, author, domain: domainVal })
                         });
 
                         const resDataSync = await resSync.json();

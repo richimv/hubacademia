@@ -832,11 +832,11 @@ window.UIComponents.createReviewCardHTML = function (config) {
     });
 
     const rawQuestionText = question.question_text || 'Pregunta sin texto disponible.';
-    const questionTextHTML = (window.marked && window.marked.parse) ? window.marked.parse(rawQuestionText) : rawQuestionText;
+    const questionTextHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(rawQuestionText) : rawQuestionText;
 
     const defaultExp = 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.';
     const rawExpText = question.explanation || defaultExp;
-    const expTextHTML = (window.marked && window.marked.parse) ? window.marked.parse(rawExpText) : rawExpText.replace(/\n/g, '<br>');
+    const expTextHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(rawExpText) : rawExpText.replace(/\n/g, '<br>');
 
     let expImageHTML = '';
     if (question.explanation_image_url) {

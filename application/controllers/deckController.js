@@ -119,6 +119,21 @@ class DeckController {
     }
 
     /**
+     * GET /api/decks/:deckId/guide
+     */
+    getDeckGuide = async (req, res) => {
+        try {
+            const { userId } = this._getUserContext(req);
+            const { deckId } = req.params;
+            const description = await DeckService.getDeckGuide(userId, deckId);
+            res.json({ success: true, description });
+        } catch (error) {
+            console.error('[getDeckGuide] Error:', error);
+            res.status(500).json({ error: 'Error al obtener la guía' });
+        }
+    }
+
+    /**
      * POST /api/decks
      */
     createDeck = async (req, res) => {
@@ -162,7 +177,12 @@ class DeckController {
             }
 
             const deck = await DeckService.updateDeck(userId, deckId, name, icon, description, color || null);
-            await this._syncUsage(req);
+            
+            // 🪙 CONSUMO DE VIDA: Solo si se está guardando una GUÍA (Descripción)
+            // Si solo cambia nombre o icono, es gratis.
+            if (description && description.trim().length > 0) {
+                await this._syncUsage(req);
+            }
 
             // 2. Cleanup orphaned images in description
             const oldImages = this._extractImageUrls(currentDeck.description);
@@ -193,6 +213,12 @@ class DeckController {
             const { deckId } = req.params;
             const { userId } = this._getUserContext(req);
             const cards = await DeckService.getDueCards(userId, deckId);
+            
+            // 🪙 CONSUMO DE VIDA: Solo si hay tarjetas pendientes y el middleware lo marcó
+            if (cards && cards.length > 0) {
+                await this._syncUsage(req);
+            }
+
             res.json({ success: true, cards });
         } catch (error) {
             console.error('[getDueCards] Error:', error);
@@ -214,6 +240,9 @@ class DeckController {
             if (!card || card.user_id !== userId) {
                 return res.status(403).json({ error: 'Tarjeta no encontrada o sin acceso' });
             }
+
+            // 🪙 CONSUMO DE VIDA: Estudiar una tarjeta individual también gasta 1 vida (Botón Play pequeño)
+            await this._syncUsage(req);
 
             res.json({ success: true, cards: [card] }); // Envuelto en array para compatibilidad con el frontend
         } catch (error) {

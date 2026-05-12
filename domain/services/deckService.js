@@ -9,6 +9,10 @@ class DeckService {
         return await trainingRepository.getDeckById(userId, deckId);
     }
 
+    async getDeckGuide(userId, deckId) {
+        return await trainingRepository.getDeckGuide(userId, deckId);
+    }
+
     async createDeck(userId, name, icon, parentId = null, description = null, color = null) {
         // Default to USER created manual deck
         return await trainingRepository.createDeck(userId, name, 'USER', 'MANUAL', icon, parentId, description, color);

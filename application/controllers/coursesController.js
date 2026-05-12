@@ -64,7 +64,8 @@ class CoursesController {
 
     async getCareers(req, res) {
         try {
-            const careers = await this.adminService.getAll('career');
+            const { domain } = req.query;
+            const careers = await this.adminService.getAll('career', { domain });
             res.json(careers);
         } catch (error) {
             res.status(500).json({ error: 'Error al obtener las carreras' });
@@ -73,7 +74,8 @@ class CoursesController {
 
     async getCourses(req, res) {
         try {
-            const courses = await this.adminService.getAll('course');
+            const { domain } = req.query;
+            const courses = await this.adminService.getAll('course', { domain });
             res.json(courses);
         } catch (error) {
             if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
@@ -178,8 +180,8 @@ class CoursesController {
 
     async getBooks(req, res) {
         try {
-            const { type } = req.query; // ✅ Soporte para filtrado
-            const books = await this.adminService.getAll('book', { type });
+            const { type, domain } = req.query; // ✅ Soporte para filtrado por tipo y dominio
+            const books = await this.adminService.getAll('book', { type, domain });
             res.json(books);
         } catch (error) {
             if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {

@@ -12,21 +12,21 @@ class SearchComponent {
     constructor() {
         this.searchInput = document.getElementById('searchInput');
         this.searchButton = document.getElementById('searchButton');
-        this.contentContainer = document.getElementById('content-container'); // Contenedor principal para resultados y exploración
-        this.browseContainer = document.getElementById('browse-container'); // Contenedor específico para la exploración
-        this.resultsContainer = document.getElementById('results-container'); // Contenedor para resultados de búsqueda
+        this.contentContainer = document.getElementById('content-container'); 
+        this.browseContainer = document.getElementById('browse-container'); 
+        this.resultsContainer = document.getElementById('results-container'); 
 
         // Almacenes de datos
         this.allData = { careers: [], courses: [], topics: [] };
-        // DEFENSIVE: Inicializar arrays para evitar crashes si la carga falla
         this.featuredCourses = [];
 
-        this.viewStack = []; // Pila para gestionar el historial de navegación
-        this.currentView = { name: 'home', args: [] }; // Vista actual
+        this.viewStack = []; 
+        this.currentView = { name: 'home', args: [] }; 
 
-        // MANTA TABS STATE (Phase 30)
-        this.activeTab = 'biblioteca'; // 'biblioteca' | 'cursos'
-        this.activeFilter = 'Libros y Manuales'; // Default param for first tab
+        // MANTA TABS STATE (Sector-Based Taxonomy)
+        this.activeSector = 'medicine'; // 'medicine' (Salud) | 'educacion' (Educación)
+        this.activeTab = 'salud'; // 'salud' | 'educacion'
+        this.activeFilter = 'Libros y Manuales'; 
 
         this.init();
 
@@ -1024,71 +1024,73 @@ class SearchComponent {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
 
-        // MANTA REDESIGN (PHASE 30) - TABS SKELETON
-        // 1. DIBUJAR LAS PESTAÑAS Y EL CONTENEDOR DE FILTROS A NIVEL ESTRUCTURAL
-
-        const tabsHTML = `
+        // ✅ REFACTORIZACIÓN ROBUSTA: El SearchComponent gestiona su propia navegación
+        // Evitamos depender de elementos estáticos en index.html que causaban errores de 'null'.
+        this.browseContainer.innerHTML = `
             <div id="manta-navigation" class="manta-navigation-area">
-                <div class="manta-tabs-container" id="manta-tabs">
-                    <button class="manta-tab ${this.activeTab === 'biblioteca' ? 'active' : ''}" data-tab="biblioteca">Biblioteca</button>
-                    <button class="manta-tab ${this.activeTab === 'cursos' ? 'active' : ''}" data-tab="cursos">Cursos</button>
+                <div class="manta-resource-tabs-wrapper">
+                    <div class="manta-tabs-container resource-tabs" id="manta-resource-tabs">
+                        <button class="manta-tab resource-tab ${this.activeTab === 'salud' ? 'active' : ''}" data-tab="salud">SALUD</button>
+                        <button class="manta-tab resource-tab ${this.activeTab === 'educacion' ? 'active' : ''}" data-tab="educacion">EDUCACIÓN</button>
+                    </div>
                 </div>
-                <div class="manta-filters-container" id="manta-filters">
-                    <!-- Pills renderizados dinámicamente aquí -->
-                </div>
+                <div class="manta-filters-container" id="manta-filters"></div>
             </div>
-            <div id="manta-grid-container" class="manta-content-grid" style="margin-top: 0;">
-                <!-- Contenido (Cartas) renderizado dinámicamente aquí -->
-            </div>
+            <div id="manta-grid-container" class="manta-content-grid" style="margin-top: 0.5rem;"></div>
         `;
 
-        // REEMPLAZAMOS EL BROWSE CONTAINER CON NUESTRA ESTRUCTURA LIMPIA
-        this.browseContainer.innerHTML = tabsHTML;
+        // Ocultar navegación estática de index.html para evitar duplicidad
+        const staticNav = document.getElementById('manta-navigation');
+        if (staticNav && staticNav.parentElement === document.getElementById('content-container')) {
+            staticNav.classList.add('hidden');
+        }
 
-        // ASIGNAR EVENT LISTENERS A LAS PESTAÑAS
-        this.browseContainer.querySelectorAll('.manta-tab').forEach(tabBtn => {
+        // TABS LISTENERS
+        this.browseContainer.querySelectorAll('.resource-tab').forEach(tabBtn => {
             tabBtn.addEventListener('click', (e) => {
-                // Actualizar estado activo visual
-                this.browseContainer.querySelectorAll('.manta-tab').forEach(t => t.classList.remove('active'));
+                this.browseContainer.querySelectorAll('.resource-tab').forEach(t => t.classList.remove('active'));
                 e.currentTarget.classList.add('active');
+                
+                const tab = e.currentTarget.dataset.tab;
+                this.activeTab = tab;
 
-                // Actualizar logica
-                this.activeTab = e.currentTarget.dataset.tab;
-
-                // Resetear el sub-filtro por defecto cuando se cambia de pestaña
-                if (this.activeTab === 'biblioteca') {
+                if (tab === 'salud') {
+                    this.activeSector = 'medicine';
                     this.activeFilter = 'Libros y Manuales';
-                } else if (this.activeTab === 'cursos') {
-                    // Buscar la primera área de carreras como default
-                    const areas = [...new Set(this.allData.careers.map(c => c.area || 'Otras Áreas'))];
-                    this.activeFilter = areas[0] || 'Ciencias de la salud';
+                } else if (tab === 'educacion') {
+                    this.activeSector = 'educacion';
+                    this.activeFilter = 'Libros y Manuales';
                 }
 
                 this.renderTabContent();
             });
         });
 
-        // 2. DISPARAR RENDERIZACION DEL CONTENIDO ACTUAL
         this.renderTabContent();
     }
 
-    // NUEVO: Lógica dinámica de renderizado de contenido según Tab y Filtro
     async renderTabContent() {
         const filtersContainer = this.browseContainer.querySelector('#manta-filters');
         const gridContainer = this.browseContainer.querySelector('#manta-grid-container');
 
-        // Limpiamos grilla y mostramos skeleton
         gridContainer.innerHTML = Array(6).fill('<div class="course-card">' + createSkeletonCardHTML('Grid') + '</div>').join('');
 
-        if (this.activeTab === 'biblioteca') {
-            // 1. DIBUJAR PILDORAS DE BIBLIOTECA
-            const biblioFilters = [
-                { id: 'Libros y Manuales', val: 'book' },
-                { id: 'Papers Científicos', val: 'paper' },
-                { id: 'Normas y Directivas', val: 'norma' },
-                { id: 'Guías Clínicas', val: 'guia' },
-                { id: 'Imágenes / Otros', val: 'other' }
+        if (this.activeTab === 'salud' || this.activeTab === 'educacion') {
+            let biblioFilters = [
+                { id: 'Libros y Manuales', val: 'book' }
             ];
+
+            // CONFIGURACIÓN POR SECTOR
+            if (this.activeSector === 'medicine') {
+                // SALUD: Filtros de siempre (incluyendo Papers)
+                biblioFilters.push({ id: 'Papers Científicos', val: 'paper' });
+                biblioFilters.push({ id: 'Normas y Directivas', val: 'norma' });
+                biblioFilters.push({ id: 'Guías Clínicas', val: 'guia' });
+                biblioFilters.push({ id: 'Imágenes / Otros', val: 'other' });
+            } else {
+                // EDUCACIÓN: Solo Libros y Normas
+                biblioFilters.push({ id: 'Normas y Directivas', val: 'norma' });
+            }
 
             filtersContainer.innerHTML = biblioFilters.map(f => `
                 <button class="manta-filter-pill ${this.activeFilter === f.id ? 'active' : ''}" data-filter-id="${f.id}" data-filter-val="${f.val}">
@@ -1096,166 +1098,37 @@ class SearchComponent {
                 </button>
             `).join('');
 
-            // Escuchar clics en pill
             this._attachFilterListeners(filtersContainer, async (valStr) => {
-                // Llamar a Supabase o Cache
                 let data = [];
                 try {
-                    const res = await fetch(`${window.AppConfig.API_URL}/api/books?type=${valStr}`);
+                    const res = await fetch(`${window.AppConfig.API_URL}/api/books?type=${valStr}&domain=${this.activeSector}`);
                     if (res.ok) data = await res.json();
                 } catch (e) { console.error('Error fetching library type', e); }
 
-                if (!data || data.length === 0) {
-                    gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay recursos en esta categoría.</p>';
-                } else {
-                    // Construcción Multi-Tema
-                    const groupedData = data.reduce((acc, doc) => {
-                        if (doc.topics && doc.topics.length > 0) {
-                            doc.topics.forEach(t => {
-                                let topicName = typeof t === 'object' && t !== null ? (t.name || t.title || 'General') : t;
-                                if (!acc[topicName]) acc[topicName] = [];
-                                // Evitar duplicar
-                                if (!acc[topicName].some(item => item.id === doc.id)) {
-                                    acc[topicName].push(doc);
-                                }
-                            });
-                        } else {
-                            if (!acc['General']) acc['General'] = [];
-                            acc['General'].push(doc);
-                        }
-                        // Aplicar orden cronológico (más recientes primero según ID) como mejora extra
-                        for (let key in acc) {
-                            acc[key].sort((a, b) => (b.id || 0) - (a.id || 0));
-                        }
-                        return acc;
-                    }, {});
-
-                    let allCardsHTML = [];
-                    for (const topic of Object.keys(groupedData).sort()) {
-                        allCardsHTML.push(`<div class="manta-group-title" style="grid-column: 1/-1;">${topic}</div>`);
-                        groupedData[topic].forEach(doc => {
-                            allCardsHTML.push(createUnifiedResourceCardHTML(doc));
-                        });
-                    }
-
-                    // PERFORMANCE MOBILE: Paginación DOM (Progressive Rendering)
-                    gridContainer.innerHTML = '';
-                    let currentIndex = 0;
-                    const itemsPerPage = 20;
-
-                    const renderNextBatch = () => {
-                        const nextBatch = allCardsHTML.slice(currentIndex, currentIndex + itemsPerPage);
-                        if (nextBatch.length === 0) return;
-
-                        // Quitar el sentinel anterior si existe para poner uno nuevo al final
-                        const oldSentinel = gridContainer.querySelector('.scroll-sentinel');
-                        if (oldSentinel) oldSentinel.remove();
-
-                        // Añadir HTML sin sobreescribir (insertAdjacentHTML es O(1))
-                        gridContainer.insertAdjacentHTML('beforeend', nextBatch.join(''));
-                        currentIndex += itemsPerPage;
-
-                        // Si hay más elementos, crear un nuevo sentinel
-                        if (currentIndex < allCardsHTML.length) {
-                            const sentinel = document.createElement('div');
-                            sentinel.className = 'scroll-sentinel';
-                            sentinel.style.cssText = 'height: 10px; grid-column: 1/-1;';
-                            gridContainer.appendChild(sentinel);
-
-                            const observer = new IntersectionObserver((entries) => {
-                                if (entries[0].isIntersecting) {
-                                    observer.disconnect();
-                                    requestAnimationFrame(renderNextBatch);
-                                }
-                            }, { rootMargin: '200px' });
-                            observer.observe(sentinel);
-                        }
-                    };
-                    renderNextBatch();
-                }
+                this._renderResourceGrid(data, gridContainer);
             });
 
-            // Disparar autollenado para la pildora activa
-            const activePill = biblioFilters.find(f => f.id === this.activeFilter);
+            // Auto-load active pill
+            const activePill = biblioFilters.find(f => f.id === this.activeFilter) || biblioFilters[0];
             if (activePill) {
-                // Manual simulate fetch
                 let data = [];
                 try {
-                    const res = await fetch(`${window.AppConfig.API_URL}/api/books?type=${activePill.val}`);
+                    const res = await fetch(`${window.AppConfig.API_URL}/api/books?type=${activePill.val}&domain=${this.activeSector}`);
                     if (res.ok) data = await res.json();
                 } catch (e) { }
-
-                if (!data || data.length === 0) {
-                    gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay recursos disponibles.</p>';
-                } else {
-                    // Construcción Multi-Tema
-                    const groupedData = data.reduce((acc, doc) => {
-                        if (doc.topics && doc.topics.length > 0) {
-                            doc.topics.forEach(t => {
-                                let topicName = typeof t === 'object' && t !== null ? (t.name || t.title || 'General') : t;
-                                if (!acc[topicName]) acc[topicName] = [];
-                                // Evitar duplicar
-                                if (!acc[topicName].some(item => item.id === doc.id)) {
-                                    acc[topicName].push(doc);
-                                }
-                            });
-                        } else {
-                            if (!acc['General']) acc['General'] = [];
-                            acc['General'].push(doc);
-                        }
-                        // Aplicar orden cronológico (Nuevos primero)
-                        for (let key in acc) {
-                            acc[key].sort((a, b) => (b.id || 0) - (a.id || 0));
-                        }
-                        return acc;
-                    }, {});
-
-                    let allCardsHTML = [];
-                    for (const topic of Object.keys(groupedData).sort()) {
-                        allCardsHTML.push(`<div class="manta-group-title" style="grid-column: 1/-1;">${topic}</div>`);
-                        groupedData[topic].forEach(doc => {
-                            allCardsHTML.push(createUnifiedResourceCardHTML(doc));
-                        });
-                    }
-
-                    // PERFORMANCE MOBILE: Paginación DOM (Progressive Rendering)
-                    gridContainer.innerHTML = '';
-                    let currentIndex = 0;
-                    const itemsPerPage = 20;
-
-                    const renderNextBatch = () => {
-                        const nextBatch = allCardsHTML.slice(currentIndex, currentIndex + itemsPerPage);
-                        if (nextBatch.length === 0) return;
-
-                        const oldSentinel = gridContainer.querySelector('.scroll-sentinel');
-                        if (oldSentinel) oldSentinel.remove();
-
-                        gridContainer.insertAdjacentHTML('beforeend', nextBatch.join(''));
-                        currentIndex += itemsPerPage;
-
-                        if (currentIndex < allCardsHTML.length) {
-                            const sentinel = document.createElement('div');
-                            sentinel.className = 'scroll-sentinel';
-                            sentinel.style.cssText = 'height: 10px; grid-column: 1/-1;';
-                            gridContainer.appendChild(sentinel);
-
-                            const observer = new IntersectionObserver((entries) => {
-                                if (entries[0].isIntersecting) {
-                                    observer.disconnect();
-                                    requestAnimationFrame(renderNextBatch);
-                                }
-                            }, { rootMargin: '200px' });
-                            observer.observe(sentinel);
-                        }
-                    };
-                    renderNextBatch();
-                }
+                this._renderResourceGrid(data, gridContainer);
             }
 
-
         } else if (this.activeTab === 'cursos') {
-            // 1. DIBUJAR PILDORAS DINAMICAS SEGUN AREAS DE CARRERAS
-            const areas = [...new Set(this.allData.careers.map(c => c.area || 'Otras Áreas'))].sort();
+            // Filtrar carreras por sector
+            const filteredCareers = this.allData.careers.filter(c => c.domain === this.activeSector);
+            const areas = [...new Set(filteredCareers.map(c => c.area || 'Otras Áreas'))].sort();
+
+            if (areas.length === 0) {
+                filtersContainer.innerHTML = '';
+                gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay cursos disponibles para este sector.</p>';
+                return;
+            }
 
             filtersContainer.innerHTML = areas.map(a => `
                 <button class="manta-filter-pill ${this.activeFilter === a ? 'active' : ''}" data-filter-id="${a}">
@@ -1263,7 +1136,6 @@ class SearchComponent {
                 </button>
             `).join('');
 
-            // Función helper para renderizar Cursos agrupados por Carrera
             const renderCoursesByCareer = (careersInArea) => {
                 if (!careersInArea || careersInArea.length === 0) {
                     return '<p class="empty-state" style="grid-column: 1 / -1;">No hay carreras en esta área.</p>';
@@ -1271,7 +1143,6 @@ class SearchComponent {
 
                 let html = '';
                 careersInArea.forEach(career => {
-                    // Filtrar cursos (castear IDs a String para evitar fallos strict equality)
                     const strCareerId = String(career.id);
                     const linkedCourses = this.allData.courses.filter(c => c.careerIds && c.careerIds.some(id => String(id) === strCareerId));
                     if (linkedCourses.length > 0) {
@@ -1285,98 +1156,101 @@ class SearchComponent {
                 return html || '<p class="empty-state" style="grid-column: 1 / -1;">Aún no hay cursos asignados a las carreras de esta área.</p>';
             };
 
-            // Escuchar clics
             this._attachFilterListeners(filtersContainer, (areaStr) => {
-                const careersInArea = this.allData.careers.filter(c => (c.area || 'Otras Áreas') === areaStr);
+                const careersInArea = filteredCareers.filter(c => (c.area || 'Otras Áreas') === areaStr);
                 const rawHTML = renderCoursesByCareer(careersInArea);
-
-                if (rawHTML.includes('empty-state')) {
-                    gridContainer.innerHTML = rawHTML;
-                    return;
-                }
-
-                // Convertir HTML continuo en Array de tarjetas para render progresivo
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = rawHTML;
-                const allCardsHTML = Array.from(tempDiv.children).map(el => el.outerHTML);
-
-                // Lógica de Paginación DOM (Progressive)
-                gridContainer.innerHTML = '';
-                let currentIndex = 0;
-                const itemsPerPage = 15;
-
-                const renderNextBatch = () => {
-                    const nextBatch = allCardsHTML.slice(currentIndex, currentIndex + itemsPerPage);
-                    if (nextBatch.length === 0) return;
-
-                    const oldSentinel = gridContainer.querySelector('.scroll-sentinel');
-                    if (oldSentinel) oldSentinel.remove();
-
-                    gridContainer.insertAdjacentHTML('beforeend', nextBatch.join(''));
-                    currentIndex += itemsPerPage;
-
-                    if (currentIndex < allCardsHTML.length) {
-                        const sentinel = document.createElement('div');
-                        sentinel.className = 'scroll-sentinel';
-                        sentinel.style.cssText = 'height: 10px; grid-column: 1/-1;';
-                        gridContainer.appendChild(sentinel);
-
-                        const observer = new IntersectionObserver((entries) => {
-                            if (entries[0].isIntersecting) {
-                                observer.disconnect();
-                                requestAnimationFrame(renderNextBatch);
-                            }
-                        }, { rootMargin: '200px' });
-                        observer.observe(sentinel);
-                    }
-                };
-                renderNextBatch();
+                this._renderPaginatedGrid(rawHTML, gridContainer, 15);
             });
 
-            // Disparar autollenado
-            const careersInActiveArea = this.allData.careers.filter(c => (c.area || 'Otras Áreas') === this.activeFilter);
+            // Auto-load
+            const careersInActiveArea = filteredCareers.filter(c => (c.area || 'Otras Áreas') === this.activeFilter);
             const rawHTMLActive = renderCoursesByCareer(careersInActiveArea);
-
-            if (rawHTMLActive.includes('empty-state')) {
-                gridContainer.innerHTML = rawHTMLActive;
-            } else {
-                // Convertir HTML continuo en Array de tarjetas para render progresivo
-                const tempDivActive = document.createElement('div');
-                tempDivActive.innerHTML = rawHTMLActive;
-                const allCardsHTMLActive = Array.from(tempDivActive.children).map(el => el.outerHTML);
-
-                gridContainer.innerHTML = '';
-                let currIndex = 0;
-                const limitPerPage = 15;
-
-                const renderInitBatch = () => {
-                    const nextBatch = allCardsHTMLActive.slice(currIndex, currIndex + limitPerPage);
-                    if (nextBatch.length === 0) return;
-
-                    const oldSentinel = gridContainer.querySelector('.scroll-sentinel');
-                    if (oldSentinel) oldSentinel.remove();
-
-                    gridContainer.insertAdjacentHTML('beforeend', nextBatch.join(''));
-                    currIndex += limitPerPage;
-
-                    if (currIndex < allCardsHTMLActive.length) {
-                        const sentinel = document.createElement('div');
-                        sentinel.className = 'scroll-sentinel';
-                        sentinel.style.cssText = 'height: 10px; grid-column: 1/-1;';
-                        gridContainer.appendChild(sentinel);
-
-                        const obs = new IntersectionObserver((entries) => {
-                            if (entries[0].isIntersecting) {
-                                obs.disconnect();
-                                requestAnimationFrame(renderInitBatch);
-                            }
-                        }, { rootMargin: '200px' });
-                        obs.observe(sentinel);
-                    }
-                };
-                renderInitBatch();
-            }
+            this._renderPaginatedGrid(rawHTMLActive, gridContainer, 15);
         }
+    }
+
+    // New Helper: Render Resource Grid with Grouping and Pagination
+    _renderResourceGrid(data, gridContainer) {
+        if (!data || data.length === 0) {
+            gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay recursos en esta categoría.</p>';
+            return;
+        }
+
+        const groupedData = data.reduce((acc, doc) => {
+            if (doc.topics && doc.topics.length > 0) {
+                doc.topics.forEach(t => {
+                    let topicName = typeof t === 'object' && t !== null ? (t.name || t.title || 'General') : t;
+                    if (!acc[topicName]) acc[topicName] = [];
+                    if (!acc[topicName].some(item => item.id === doc.id)) {
+                        acc[topicName].push(doc);
+                    }
+                });
+            } else {
+                if (!acc['General']) acc['General'] = [];
+                acc['General'].push(doc);
+            }
+            for (let key in acc) {
+                acc[key].sort((a, b) => (b.id || 0) - (a.id || 0));
+            }
+            return acc;
+        }, {});
+
+        let allCardsHTML = [];
+        for (const topic of Object.keys(groupedData).sort()) {
+            allCardsHTML.push(`<div class="manta-group-title" style="grid-column: 1/-1;">${topic}</div>`);
+            groupedData[topic].forEach(doc => {
+                allCardsHTML.push(createUnifiedResourceCardHTML(doc));
+            });
+        }
+
+        this._renderPaginatedGrid(allCardsHTML, gridContainer, 20, true);
+    }
+
+    // New Helper: Generic Paginated Grid Rendering
+    _renderPaginatedGrid(content, container, itemsPerPage, isArray = false) {
+        let allCardsHTML = [];
+        if (!isArray) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            allCardsHTML = Array.from(tempDiv.children).map(el => el.outerHTML);
+        } else {
+            allCardsHTML = content;
+        }
+
+        container.innerHTML = '';
+        if (allCardsHTML.length === 0) {
+            container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay contenido disponible.</p>';
+            return;
+        }
+
+        let currentIndex = 0;
+        const renderNextBatch = () => {
+            const nextBatch = allCardsHTML.slice(currentIndex, currentIndex + itemsPerPage);
+            if (nextBatch.length === 0) return;
+
+            const oldSentinel = container.querySelector('.scroll-sentinel');
+            if (oldSentinel) oldSentinel.remove();
+
+            container.insertAdjacentHTML('beforeend', nextBatch.join(''));
+            currentIndex += itemsPerPage;
+
+            if (currentIndex < allCardsHTML.length) {
+                const sentinel = document.createElement('div');
+                sentinel.className = 'scroll-sentinel';
+                sentinel.style.cssText = 'height: 10px; grid-column: 1/-1;';
+                container.appendChild(sentinel);
+
+                const observer = new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting) {
+                        observer.disconnect();
+                        requestAnimationFrame(renderNextBatch);
+                    }
+                }, { rootMargin: '200px' });
+                observer.observe(sentinel);
+            }
+            if (window.libraryManager) window.libraryManager.updateButtons();
+        };
+        renderNextBatch();
     }
 
     // Helper privado para añadir Event Listeners a los filtros dinamicos
