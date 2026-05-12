@@ -59,6 +59,38 @@ class TrainingRepository {
     }
 
     /**
+     * ✅ DEMO ENGINE: Retorna N preguntas aleatorias reales del banco.
+     * Filtra por dominio y por target específico (ej: SERUMS o ASCENSO).
+     */
+    async getRandomDemoQuestions(domain, limit = 10, excludeIds = [], target = null) {
+        let query = `
+            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, domain, topic, target
+            FROM question_bank
+            WHERE domain = $1
+        `;
+        const params = [domain];
+        let paramIdx = 2;
+
+        if (target) {
+            query += ` AND target = $${paramIdx} `;
+            params.push(target);
+            paramIdx++;
+        }
+
+        if (excludeIds && excludeIds.length > 0) {
+            query += ` AND id <> ALL($${paramIdx}::uuid[]) `;
+            params.push(excludeIds);
+            paramIdx++;
+        }
+
+        query += ` ORDER BY RANDOM() LIMIT $${paramIdx}`;
+        params.push(limit);
+
+        const res = await db.query(query, params);
+        return res.rows;
+    }
+
+    /**
      * Busca preguntas en el Banco Global basadas en MULTIPLES TEMAS (Areas).
      * @param {string} domain - Target (ej: 'SERUMS', 'ENAM', 'ENARM', o 'MEDICINA' default)
      * @param {string[]} topics - Array de temas (ej: ['Cardiología', 'Pediatría'])

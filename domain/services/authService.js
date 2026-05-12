@@ -43,7 +43,6 @@ class AuthService {
 
             // 🎯 CONFIGURACIÓN: Lista de correos con privilegios automáticos (Admin)
             const adminEmails = [
-                'admin@uc.edu', 
                 'hubacademia01@gmail.com'
             ];
 
@@ -64,25 +63,9 @@ class AuthService {
                 throw new Error('No se pudo crear o recuperar el usuario de la base de datos.');
             }
 
-            // 2. Provisión de preferencias iniciales si es un usuario nuevo
-            try {
-                // Usamos 'medicine' como dominio base por defecto para el Tutor IA médico
-                const DEFAULT_DOMAIN = 'medicine'; 
-                const prefs = await userPreferencesService.getPreferences(id, DEFAULT_DOMAIN);
-                
-                if (!prefs || Object.keys(prefs).length === 0) {
-                    // console.log(`✨ Provisionando preferencias iniciales (${DEFAULT_DOMAIN}) para: ${email}`);
-                    await userPreferencesService.savePreferences(id, DEFAULT_DOMAIN, {
-                        target: 'SERUMS',
-                        difficulty: 'Básico',
-                        career: 'Medicina Humana',
-                        areas: ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud']
-                    });
-                }
-            } catch (prefErr) {
-                // Error no crítico: El usuario puede seguir logueado aunque fallen sus preferencias
-                console.warn(`⚠️ Sistema de preferencias (Sync): ${prefErr.message}`);
-            }
+            // 2. Eliminada la provisión automática de preferencias.
+            // Ahora el frontend obligará al usuario a configurar el simulador manualmente
+            // para evitar mezclar dominios (Medicina vs Educación) y evitar exámenes por defecto erróneos.
 
             return user;
         } catch (error) {
@@ -140,9 +123,9 @@ class AuthService {
                 }
             }
 
-            const updatedUser = await this.userRepository.update(userId, { 
+            const updatedUser = await this.userRepository.update(userId, {
                 name,
-                last_name_change_at: new Date() 
+                last_name_change_at: new Date()
             });
             return updatedUser;
         } catch (error) {

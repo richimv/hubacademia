@@ -124,7 +124,14 @@ class QuestionRagService {
      */
     async getTechnicalBasis(namespace, area, topic = '', limit = 4) {
         console.log(`📚 [TechBasis] Sustento para: ${area} - ${topic}`);
-        const queryText = `Documentación oficial, leyes, normativa técnica y fundamentos de ${area} ${topic}`;
+        
+        let queryText = `Documentación oficial, leyes, normativa técnica y fundamentos de ${area} ${topic}`;
+        
+        // Refuerzo para Medicina: Forzar búsqueda de normas e instrumentos legales del MINSA
+        if (namespace === 'medicine') {
+            queryText = `GPC MINSA, Norma Técnica de Salud NTS, protocolos y manejo clínico oficial de ${area} ${topic}`;
+        }
+
         const vector = await this._getEmbedding(queryText);
         if (!vector) return "";
 
@@ -170,33 +177,70 @@ class QuestionRagService {
     /**
      * getSyllabusContext: Búsqueda exacta en los archivos Temario_EBR_...
      */
-    async getSyllabusContext(namespace, career = '', subtopic = '') {
-        const cleanCareer = career.toUpperCase().replace('EBR - ', '').trim();
-        const queryText = `Temario oficial MINEDU ${cleanCareer} ${subtopic}`;
+    async getSyllabusContext(namespace, career = '', specialty = '') {
+        let queryText = '';
+        let searchFilter = (src) => false;
+
+        if (namespace === 'medicine') {
+            const isNursing = career.toLowerCase().includes('enfermeria');
+            const medicalSpecialty = isNursing ? 'ENFERMERIA' : 'MEDICINA HUMANA';
+            queryText = `Temario SERUMS ${medicalSpecialty} contenidos oficiales Area: ${specialty || ''}`.trim();
+            
+            searchFilter = (src) => {
+                const s = src.toUpperCase();
+                return s.includes('TEMARIO') && s.includes('SERUMS') && (isNursing ? s.includes('ENFERMERIA') : s.includes('MEDICINA'));
+            };
+        } else {
+            // Normalización agresiva para coincidir con Temario_EBR_Nivel_...
+            const cleanLevel = career.replace('EBR - ', '').replace('Nivel ', '').toUpperCase()
+                                     .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar tildes
+                                     .replace(/[()]/g, '') // Quitar paréntesis
+                                     .trim();
+            const cleanSpecialty = specialty.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            
+            queryText = `Temario EBR Nivel ${cleanLevel} ${cleanSpecialty} conocimientos pedagógicos especialidad`.trim();
+            
+            searchFilter = (src) => {
+                const s = src.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, ' ');
+                const levelKeywords = cleanLevel.split(' ').filter(w => w.length > 3 && w !== 'PROFESOR' && w !== 'DE');
+                return s.includes('TEMARIO') && levelKeywords.every(kw => s.includes(kw));
+            };
+        }
+
+        console.log(`🔍 [Syllabus-Sniper] Namespace: ${namespace} | Apuntando a: ${queryText}`);
+
         const vector = await this._getEmbedding(queryText);
         if (!vector) return "";
 
         try {
             const response = await axios.post(`https://${this.PINECONE_HOST}/query`, {
                 vector: vector,
-                topK: 20, // Buscamos más para filtrar
+                topK: 500, // Fuerza bruta: 500 fragmentos para vencer la dilución semántica
                 includeMetadata: true,
                 namespace: namespace
             }, {
                 headers: { 'Api-Key': this.PINECONE_KEY, 'Content-Type': 'application/json' }
             });
 
-            // Filtramos y priorizamos archivos de TEMARIO del nivel correcto
+            // Filtramos con rigor por el nombre del archivo (source) normalizado
             const syllabusMatches = (response.data.matches || [])
-                .filter(m => {
-                    const src = (m.metadata.source || "").toUpperCase();
-                    return src.includes('TEMARIO_') && (cleanCareer ? src.includes(cleanCareer) : true);
-                })
-                .slice(0, 5); // Enviamos hasta 5 fragmentos del temario
+                .filter(m => searchFilter(m.metadata.source || ""));
 
-            if (syllabusMatches.length === 0) return "";
+            if (syllabusMatches.length === 0) {
+                console.error(`🚨 [Syllabus-Error] No se encontró el temario oficial para: ${cleanLevel}`);
+                return "ERROR: No se encontró el temario oficial para este nivel. Detener generación.";
+            }
 
-            return syllabusMatches.map((m, i) => {
+            // 🎲 ALEATORIZACIÓN: Barajamos los resultados para no enviar siempre los mismos fragmentos
+            for (let i = syllabusMatches.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [syllabusMatches[i], syllabusMatches[j]] = [syllabusMatches[j], syllabusMatches[i]];
+            }
+
+            // Tomamos 5 fragmentos aleatorios del pool de relevancia
+            const finalMatches = syllabusMatches.slice(0, 5);
+
+            return finalMatches.map((m, i) => {
                 return `--- TEMARIO OFICIAL FRAGMENTO ${i + 1} [${m.metadata.source}] ---\n${m.metadata.text || m.metadata.content}\n`;
             }).join('\n');
         } catch (error) {

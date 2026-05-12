@@ -20,33 +20,10 @@ class QuizController {
             const finalCareer = career || (isEducation ? 'EBR - Primaria' : 'Medicina Humana');
             let finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : []);
 
-            // 🔄 FALLBACK DE ÁREAS (Context-Aware)
-            const isGenericArea = finalAreas.length === 0 || (finalAreas.length === 1 && (
-                finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' ||
-                finalAreas[0].toUpperCase() === 'GENERAL' ||
-                finalAreas[0].toUpperCase() === 'EDUCACION GENERAL'
-            ));
-
-            if (isGenericArea) {
-                if (isEducation) {
-                    finalAreas = [
-                        'Comprensión Lectora',
-                        'Razonamiento Lógico',
-                        'Teorías del Aprendizaje y Desarrollo',
-                        'Principios del Currículo Nacional (CNEB)',
-                        'Evaluación Formativa y Retroalimentación'
-                    ];
-                    console.log(`📡 Fallback Controller: Aplicando 5 ejes Pedagógicos para ${user.email}`);
-                } else {
-                    finalAreas = [
-                        'Salud Pública',
-                        'Gestión de Servicios de Salud',
-                        'Ética e Interculturalidad',
-                        'Investigación',
-                        'Cuidado Integral de Salud'
-                    ];
-                    console.log(`📡 Fallback Controller: Aplicando 5 ejes MINSA para ${user.email}`);
-                }
+            // ✅ VALIDACIÓN DE ÁREAS (Obligatorio)
+            // Se eliminó el fallback automático para evitar iniciar exámenes con temas por defecto erróneos.
+            if (!finalAreas || finalAreas.length === 0) {
+                return res.status(400).json({ error: 'Debes configurar tu examen (áreas y especialidad) antes de comenzar.' });
             }
 
             // Validación básica
@@ -98,7 +75,7 @@ class QuizController {
             res.json({
                 success: true,
                 topic: returnedTopic,
-                areas: finalAreas, 
+                areas: finalAreas,
                 round: round,
                 questions: quizData.questions,
                 isPremium: isPremium,
@@ -109,18 +86,18 @@ class QuizController {
             console.error('❌ [Error] startQuiz:', error);
 
             if (error.message === "AI_REPLENISHMENT_FAILED" || error.message === "AI_GENERATION_EMPTY") {
-                return res.status(500).json({ 
-                    success: false, 
+                return res.status(500).json({
+                    success: false,
                     error: "Hubo un problema técnico al generar nuevas preguntas de IA. Por favor, intenta de nuevo en unos segundos.",
-                    technicalError: true 
+                    technicalError: true
                 });
             }
 
             if (error.message === "BANK_EXHAUSTED_AND_IA_FAILED") {
-                return res.status(404).json({ 
+                return res.status(404).json({
                     success: false,
-                    error: "Has completado todas las preguntas disponibles para este tema.", 
-                    noQuestions: true 
+                    error: "Has completado todas las preguntas disponibles para este tema.",
+                    noQuestions: true
                 });
             }
 
@@ -235,9 +212,9 @@ class QuizController {
             const deckId = await TrainingRepository.ensureSystemDeck(userId, moduleName);
 
             const fronts = questions.map(q => q.question_text ? q.question_text.trim() : typeof q === 'string' ? q.trim() : '');
-            
+
             const savedFronts = await TrainingRepository.checkExistingFlashcards(userId, deckId, fronts);
-            
+
             res.json({ success: true, savedFronts });
         } catch (error) {
             console.error('Error checking saved flashcards:', error);
@@ -259,7 +236,7 @@ class QuizController {
             }
 
             const TrainingRepository = require('../../domain/repositories/trainingRepository');
-            
+
             // ✅ ESTRATEGIA "SOLO RESPUESTA": Para optimizar UI y velocidad de repaso,
             // el dorso solo contendrá el texto de la respuesta correcta.
             const questionsArray = Array.isArray(question) ? question : [question];
@@ -295,7 +272,7 @@ class QuizController {
     async getStats(req, res) {
         try {
             const { context, target, limit, days, areas } = req.query; // 'MEDICINA', etc.
-            
+
             // Parse areas if provided as comma-separated string
             const areaList = areas ? areas.split(',') : null;
 
@@ -359,14 +336,15 @@ class QuizController {
     async getEvolution(req, res) {
         try {
             const { context, target, limit, days, areas } = req.query;
-            
+
             const areaList = areas ? areas.split(',') : null;
 
-            // ✅ GUEST MODE: Return example chart data
+            // ✅ GUEST MODE: Return example chart data (Context-Aware)
             if (!req.user) {
+                const isEdu = context && context.toUpperCase() === 'EDUCACION';
                 const exampleChart = {
-                    labels: ["1 Mar", "2 Mar", "3 Mar", "4 Mar", "5 Mar"],
-                    scores: ["12.0", "13.5", "12.8", "15.0", "14.5"]
+                    labels: isEdu ? ["Sesión 1", "Sesión 2", "Sesión 3"] : ["1 Mar", "2 Mar", "3 Mar", "4 Mar", "5 Mar"],
+                    scores: isEdu ? ["14.0", "15.5", "16.0"] : ["12.0", "13.5", "12.8", "15.0", "14.5"]
                 };
                 return res.json({ success: true, chart: exampleChart });
             }
@@ -409,16 +387,9 @@ class QuizController {
             const finalCareer = career || 'Medicina Humana';
             let finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : []);
 
-            // 🔄 FALLBACK SERUMS: Si el usuario no tiene configuración (ej: ronda 2 del usuario anterior), inyectamos el bloque oficial.
-            if (finalAreas.length === 0 || (finalAreas.length === 1 && (finalAreas[0].toUpperCase() === 'MEDICINA GENERAL' || finalAreas[0].toUpperCase() === 'GENERAL'))) {
-                finalAreas = [
-                    'Salud Pública',
-                    'Gestión de Servicios de Salud',
-                    'Ética e Interculturalidad',
-                    'Investigación',
-                    'Cuidado Integral de Salud'
-                ];
-                console.log(`📡 Fallback Controller [Batch]: Aplicando 5 ejes MINSA.`);
+            // ✅ VALIDACIÓN DE ÁREAS (Obligatorio)
+            if (!finalAreas || finalAreas.length === 0) {
+                return res.status(400).json({ error: 'Configuración de áreas no encontrada.' });
             }
 
             // TrainingService.generateQuiz ahora solo consulta la DB para Simulacros Médicos.
@@ -430,8 +401,8 @@ class QuizController {
                 seenIds || []
             );
 
-            res.json({ 
-                success: true, 
+            res.json({
+                success: true,
                 questions: result.questions,
                 areas: finalAreas,
                 source: result.source
@@ -447,6 +418,42 @@ class QuizController {
                 return res.status(404).json({ error: error.message, noQuestions: true });
             }
             res.status(500).json({ error: 'Error cargando más preguntas.' });
+        }
+    }
+    /**
+     * GET /api/quiz/demo
+     * Fetches random questions for the demo version from the actual question bank
+     */
+    async getDemoQuestions(req, res) {
+        try {
+            // Mapeo de seguridad para dominios
+            const domainMap = {
+                'medicina': 'medicine',
+                'educacion': 'education',
+                'medicine': 'medicine',
+                'education': 'education'
+            };
+            const targetDomain = domainMap[req.query.domain?.toLowerCase()] || 'medicine';
+
+            const limit = parseInt(req.query.limit) || 10;
+            const excludeIds = req.query.excludeIds 
+                ? req.query.excludeIds.split(',').filter(id => id && id.length > 30) // Filtrar solo UUIDs válidos
+                : [];
+            const target = targetDomain === 'education' ? 'ASCENSO' : 'SERUMS';
+            
+            const TrainingRepository = require('../../domain/repositories/trainingRepository');
+            const questions = await TrainingRepository.getRandomDemoQuestions(targetDomain, limit, excludeIds, target);
+
+            res.json({
+                success: true,
+                questions: questions,
+                topic: `DEMO: ${target}`,
+                isPremium: false,
+                source: 'BANK'
+            });
+        } catch (error) {
+            console.error('Error fetching demo questions:', error);
+            res.status(500).json({ error: 'Error cargando preguntas de demostración.' });
         }
     }
 }

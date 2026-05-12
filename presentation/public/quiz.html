@@ -2,29 +2,31 @@
 <html lang="es">
 
 <head>
-<!DOCTYPE html>
-<html lang="es">
-
-<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulacro Médico - Hub Academia</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <!-- CSS Moderno (Glassmorphism) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/quiz.css?v=20260420">
-    <link rel="stylesheet" href="css/modal.css?v=20260420">
-    <link rel="stylesheet" href="css/components.css?v=20260420">
+    <link rel="stylesheet" href="css/quiz.css?v=20260511">
+    <link rel="stylesheet" href="css/modal.css?v=20260511">
+    <link rel="stylesheet" href="css/components.css?v=20260511">
 </head>
 
 <body class="quiz-body">
 
     <!-- Pantalla de Carga (Glassmorphism UI) -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="glass-loader">
-            <div class="loader-pulse"></div>
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-card">
+            <div class="premium-spinner"></div>
             <h2 id="loadingTitle" class="loading-title">Preparando simulacro...</h2>
-            <p id="loadingSubtitle" class="loading-subtitle">Consultando fuentes oficiales y configurando preguntas...</p>
+            <p id="loadingSubtitle" class="loading-subtitle" style="margin-bottom: 2.5rem;">Consultando fuentes oficiales y configurando preguntas...</p>
+            
+            <!-- Tip Box Dinámico -->
+            <div class="tip-box" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 1.5rem; border: 1px dashed rgba(255,255,255,0.1); margin: 0 auto; max-width: 320px;">
+                <p style="color: #3b82f6; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">¿Sabías que?</p>
+                <p id="loadingTip" style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5; transition: opacity 0.5s ease; opacity: 0;">Cargando tips de estudio...</p>
+            </div>
         </div>
     </div>
 
@@ -68,7 +70,7 @@
 
         <div id="feedbackBox" class="feedback-box">
             <h5 id="explanation-title" class="mb-3" style="color: #60a5fa; font-weight: 700; letter-spacing: -0.02em;">
-                <i class="fas fa-info-circle"></i> Explicación Médica
+                <i class="fas fa-info-circle"></i> Sustento Técnico
             </h5>
             <div id="explanationText" style="font-size: 1.15rem; line-height: 1.6; color: #93c5fd; margin-bottom: 1.5rem;"></div>
             <div id="explanationImageContainer" class="hidden q-explanation-image-container-premium">
@@ -194,8 +196,7 @@
     <script src="js/ui/components.js?v=20260508_v2"></script>
     <script src="js/ui/uiManager.js?v=20260508_v2"></script>
     <script src="js/app.js?v=20260508_v2"></script>
-    <script src="js/demoData.js"></script>
-    <script type="module" src="js/quiz.js?v=20260508_v3"></script>
+    <script type="module" src="js/quiz.js?v=20260511_v2"></script>
 </body>
 
 </html>

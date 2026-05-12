@@ -4,21 +4,37 @@ Este documento describe el motor de inteligencia de Hub Academia para la gestió
 
 ---
 
-## 📦 Fase 1: Optimización de Stock Local (Banco)
-
 Antes de activar la IA, el sistema intenta completar el lote de 5 preguntas usando el contenido existente en la base de datos para **todas** las áreas seleccionadas por el usuario en su configuración de examen.
 
-### 🔝 Caso A: Muchas Áreas seleccionadas (> 5 áreas)
-**Escenario Medicina:** ENAM - [15 áreas seleccionadas entre Básicas, Clínicas, Especialidades y Gestión].
-**Escenario Educación:** NOMBRAMIENTO - [10 áreas seleccionadas entre Habilidades Generales, Pedagogía y Didáctica].
+### ⚙️ Mapeo de Configuración del Simulador
+Para que el motor de búsqueda (RAG y Local) funcione, el sistema mapea la UI a los campos de la base de datos de la siguiente forma:
 
-1.  **Escaneo Global**: El sistema busca en el banco preguntas para las áreas seleccionadas simultáneamente.
-2.  **Identificación de Stock**: Identifica cuáles de esas áreas tienen preguntas disponibles (no vistas por el usuario).
-3.  **Swapping Inteligente**: Si hay stock suficiente en el conjunto de áreas:
-    - Selecciona 5 preguntas priorizando la diversidad (1 de cada área con stock).
-    - En **Educación**, se asegura de incluir al menos una de "Habilidades Generales" y una de "Didáctica".
-4.  **Entrega**: Entrega 5 preguntas del banco.
-5.  **Resultado**: **IA NO SE ACTIVA**.
+#### 🩺 Módulo Medicina (Simulacro)
+*   **Examen Objetivo (`target`)**: Mapea a `ENAM`, `SERUMS` o `RESIDENTADO`.
+*   **Carrera Profesional (`career`)**: Mapea a la profesión específica (ej: `Medicina Humana`, `Enfermería`).
+*   **Áreas de Estudio (`areas`)**: Grupo de áreas temáticas (ej: Grupo D - Salud Pública, Gestión, Ética, etc.).
+
+#### 🎓 Módulo Educación (Simulacro)
+*   **Examen Objetivo (`target`)**: Mapea a `ASCENSO`, `NOMBRAMIENTO` o `ACCESO_CARGOS`.
+*   **Modalidad / Nivel (`career` - prefijo)**: Parte del campo career (ej: `EBR - Nivel Primaria`).
+*   **Especialidad (`career` - sufijo)**: Parte final del campo career (ej: `EBR - Nivel Secundaria (Matemática)`).
+*   **Áreas de Estudio (`areas`)**: Subtemas pedagógicos o conocimientos específicos.
+
+### ⚙️ Mapeo Técnico de Configuración (Backend)
+Para que el motor de búsqueda (RAG y Local) funcione, el sistema mapea la UI a los campos de la base de datos y al namespace de Pinecone de la siguiente forma:
+
+| Módulo | Campo UI | Campo DB (`question_bank`) | Propósito RAG |
+| :--- | :--- | :--- | :--- |
+| **🩺 MEDICINA** | Examen Objetivo | `target` (SERUMS, ENAM) | Filtro de Identidad |
+| | Carrera Profesional | `career` (Medicina Humana, Enfermería) | **Namespace: medicine** |
+| | Áreas de Estudio | `topic` (Salud Pública, Gestión, etc.) | Muestreo de Áreas |
+| **🎓 EDUCACIÓN** | Examen Objetivo | `target` (ASCENSO, NOMBRAMIENTO) | Filtro de Identidad |
+| | Modalidad / Nivel | `career` (Prefijo: EBR - Nivel Primaria) | **Namespace: education** |
+| | Especialidad | `career` (Sufijo: Matemática, General) | Sniper de Temario |
+| | Áreas de Estudio | `topic` (Habilidades Gen., Pedagogía) | Muestreo de Áreas |
+
+> [!NOTE]
+> En el módulo **Educación**, el campo `career` en la base de datos concatena el Nivel y la Especialidad (ej: `EBR - Nivel Primaria - General`) para facilitar el filtrado único.
 
 ---
 
@@ -69,9 +85,39 @@ Para garantizar que el filtrado del simulador funcione correctamente, se aplican
 1.  **Campo `target`**: Almacena el tipo de examen en mayúsculas (ej: `NOMBRAMIENTO`, `ASCENSO`, `ACCESO_CARGOS`).
 2.  **Campo `career`**: Almacena la combinación de **Modalidad/Nivel + Especialidad**.
     - *Formato:* `EBR - Nivel Primaria` o `EBR - Nivel Secundaria (Matemática)`.
-    - **IMPORTANTE**: La IA ya no puede alterar este texto; el sistema lo sobrescribe con el valor exacto de la configuración del usuario.
 3.  **Campo `difficulty`**: Siempre se guarda como **`Senior`** para mantener la paridad con el nivel de examen oficial.
+
+### 🎯 Ingeniería RAG de Alta Fidelidad (Snipers)
+
+Para que el simulador coincida exactamente con lo que el usuario configuró, el sistema utiliza "Snipers" de búsqueda dinámicos en 3 capas:
+
+#### 1. Sniper de Temas (Fase 1 - El Scout)
+*   **Propósito**: Garantizar que la IA solo elija temas que pertenecen al prospecto oficial.
+*   **Estructura Educación**: `"Temario EBR Nivel [NIVEL] [ESPECIALIDAD]"`
+*   **Estructura Medicina**: `"Temario SERUMS [CARRERA]"` (ej: `Temario SERUMS ENFERMERIA`)
+
+#### 2. Sniper de Identidad (Fase 2 - El Investigador)
+*   **Propósito**: Recuperar moldes visuales de PDFs reales para clonar la estructura oficial.
+*   **Estructura Educación**: `"Prueba [TARGET] EBR [NIVEL] [ESPECIALIDAD] [AÑO] Pregunta [NUM]"` (Rango: 1-60).
+*   **Estructura Medicina**: `"[TARGET] [CARRERA] Item [NUM]"` (Rango: 1-100).
+*   **Técnica Quirúrgica (Medicina)**: Se inyecta el número de ítem con punto (ej: `78.`) como término de búsqueda para localizar fragmentos exactos del PDF.
+
+#### 3. RAG de Teoría (Fase 2 - El Experto)
+*   **Propósito**: Sustento legal y técnico para fundamentar la casuística.
+*   **Contexto**: Búsqueda semántica por el subtema elegido en las Fases 1 y 2.
 
 ---
 
-**Documentación Integrada (Medicina + Educación) - 06 de Mayo, 2026.**
+### 📂 Estructura de Temarios (Prospectos)
+
+Para garantizar la precisión técnica, el sistema utiliza dos prospectos base en el namespace `medicine`:
+
+1.  **Temario SERUMS MEDICINA HUMANA**: Enfocado en ciencias básicas, clínicas (Pediatría, Gineco-Obstetricia, Cirugía, Medicina Interna) y Salud Pública.
+2.  **Temario SERUMS ENFERMERIA**: Enfocado en cuidados de enfermería, programas de salud (Etapas de vida), inmunizaciones y gestión comunitaria.
+
+> [!IMPORTANT]
+> El sistema utiliza el campo `career` de la configuración del usuario para decidir qué temario escanear en la **Fase 1 (El Scout)**. Si el usuario elige "Enfermería", la IA jamás recibirá temas de "Cirugía Compleja" destinados a medicina humana.
+
+---
+
+**Documentación Integrada (Medicina + Educación) - 11 de Mayo, 2026.**

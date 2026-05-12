@@ -22,6 +22,34 @@ window.__quizState = state;
 
 const STORAGE_KEY = 'simulator_active_session';
 
+// 💡 TIPS DINÁMICOS PARA LA ESPERA (Evitar aburrimiento)
+const LOADING_RESOURCES = {
+    'MEDICINA': {
+        title: 'Preparando tu entrenamiento',
+        subtitle: 'Sincronizando con Biblioteca Médica...',
+        tips: [
+            "El lavado de manos es la medida más costo-efectiva en salud pública.",
+            "En el SERUMS, la gestión de la cadena de frío es crítica para el éxito del PAI.",
+            "TIP: La norma técnica de salud establece que los EESS I-1 no cuentan con laboratorio.",
+            "Dato: El Perú tiene 12 Determinantes Sociales de la Salud según el modelo de la OMS.",
+            "Recuerda: El consentimiento informado es un derecho fundamental del paciente.",
+            "Tip Rápido: Los indicadores de impacto evalúan el cambio en el estado de salud a largo plazo."
+        ]
+    },
+    'EDUCACION': {
+        title: 'Preparando tu entrenamiento',
+        subtitle: 'Analizando Casuística Pedagógica...',
+        tips: [
+            "La retroalimentación descriptiva es la más efectiva para el aprendizaje autónomo.",
+            "El andamiaje pedagógico ayuda al estudiante a transitar a su Zona de Desarrollo Próximo.",
+            "Dato: El CNEB se basa en un enfoque por competencias y un perfil de egreso nacional.",
+            "Tip: En casos de conflicto en el aula, prioriza siempre la mediación y el diálogo.",
+            "Sabías que: El error constructivo es una oportunidad valiosa de aprendizaje según el MINEDU.",
+            "Clave: La evaluación formativa busca regular el aprendizaje, no solo calificarlo."
+        ]
+    }
+};
+
 // Elementos DOM
 const elements = {
     loadingOverlay: document.getElementById('loadingOverlay'),
@@ -53,7 +81,7 @@ window.showExamReview = async function () {
     try {
         const resOverlay = document.getElementById('resultsOverlay');
         if (resOverlay) resOverlay.classList.remove('active');
-        
+
         const qHeader = document.querySelector('.question-header');
         if (qHeader) qHeader.style.display = 'none';
 
@@ -74,13 +102,13 @@ window.showExamReview = async function () {
             console.error("❌ Error: Elemento reviewFeed no encontrado.");
             return;
         }
-        
+
         feed.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#3b82f6;"></i><br><p style="color:#cbd5e1; margin-top:1rem;">Cargando revisión...</p></div>';
 
         const totalProcessed = Math.min(state.currentQuestionIndex, state.questions.length);
         const answeredQuestions = state.questions.slice(0, totalProcessed);
 
-        feed.innerHTML = ''; 
+        feed.innerHTML = '';
 
         if (totalProcessed === 0) {
             feed.innerHTML = '<div style="text-align:center; padding: 2rem; color: var(--text-muted);">No hay preguntas respondidas.</div>';
@@ -91,7 +119,7 @@ window.showExamReview = async function () {
         for (let i = 0; i < totalProcessed; i++) {
             try {
                 const q = state.questions[i];
-                if (!q) continue; 
+                if (!q) continue;
                 const ans = state.answers[i];
                 const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
                 const config = { question: q, answer: ans, index: i, isDemo: isDemo, isSavedFront: false };
@@ -273,7 +301,13 @@ function loadSession() {
         }
 
         const urlParams = new URLSearchParams(window.location.search);
-        
+
+        // ✅ NUEVO: Si estamos en modo DEMO, nunca cargamos sesión previa (evita conflictos con sesiones de usuarios registrados)
+        if (urlParams.get('demo') === 'true') {
+            console.log("🆕 Modo Demo activo: Ignorando sesión guardada para inicio limpio.");
+            return null;
+        }
+
         // Regla 2: Límite de preguntas debe coincidir (Evita cargar 10qs cuando se pide 20qs)
         const limitParam = parseInt(urlParams.get('limit'));
         const expectedLimit = (!isNaN(limitParam) && limitParam > 0) ? limitParam : 20;
@@ -317,11 +351,34 @@ async function getValidToken() {
 
 // 2. Iniciar Quiz (Llamada al Backend)
 async function startQuiz() {
-    // Mostrar Loading Dinámico
-    const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam);
-    if (elements.loadingTitle) {
-        elements.loadingTitle.innerText = isEducation ? 'Analizando Casuística Pedagógica...' : 'Analizando Biblioteca Médica...';
+    // Mostrar Loading Dinámico y Tips
+    const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
+    const resources = LOADING_RESOURCES[ctxKey];
+
+    if (elements.loadingTitle) elements.loadingTitle.innerText = resources.title;
+    if (elements.loadingSubtitle) elements.loadingSubtitle.innerText = resources.subtitle;
+    
+    // Iniciar rotador de tips
+    const tipElement = document.getElementById('loadingTip');
+    if (tipElement) {
+        let tipIdx = 0;
+        tipElement.innerText = resources.tips[0];
+        tipElement.style.opacity = '1';
+        
+        const tipInterval = setInterval(() => {
+            if (elements.loadingOverlay.classList.contains('hidden')) {
+                clearInterval(tipInterval);
+                return;
+            }
+            tipElement.style.opacity = '0';
+            setTimeout(() => {
+                tipIdx = (tipIdx + 1) % resources.tips.length;
+                tipElement.innerText = resources.tips[tipIdx];
+                tipElement.style.opacity = '1';
+            }, 500);
+        }, 3500);
     }
+
     elements.loadingOverlay.classList.remove('hidden');
 
     let data;
@@ -343,38 +400,20 @@ async function startQuiz() {
     };
 
     if (isDemo) {
-        // --- 🌟 RAG DEMO ENGINE (Scalable) ---
-        // Prioritize current target, fallback to SERUMS if empty, then fallback to anything available
-        let target = state.targetExam || 'SERUMS';
-        if (!window.DemoBank[target] || window.DemoBank[target].length === 0) {
-            target = 'SERUMS';
-        }
-
-        let questions = window.DemoBank[target] || [];
-        if (questions.length === 0) {
-            // Last resort: find any non-empty category
-            const categories = Object.keys(window.DemoBank);
-            for (const cat of categories) {
-                if (window.DemoBank[cat].length > 0) {
-                    questions = window.DemoBank[cat];
-                    target = cat;
-                    break;
-                }
-            }
-        }
-
         // --- 📊 DEMO ANTI-REPETITION & LIMITS ---
-        const sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
-        const seenIds = JSON.parse(localStorage.getItem('guest_seen_ids') || '[]');
+        // 🔄 REINICIO DIARIO: Si es un nuevo día, reseteamos el contador de sesiones demo
+        const today = new Date().toDateString();
+        const lastDemoDate = localStorage.getItem('demo_sessions_date');
+        let sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
 
-        // Filter out questions already seen by this guest
-        const availableQuestions = questions.filter(q => {
-            // Use question_text as hash since demo data might not have unique IDs
-            const qHash = btoa(q.question_text.substring(0, 50));
-            return !seenIds.includes(qHash);
-        });
+        if (lastDemoDate !== today) {
+            sessionsSent = 0;
+            localStorage.setItem('demo_sessions_count', '0');
+            localStorage.setItem('demo_sessions_date', today);
+        }
 
-        if (sessionsSent >= 3 || availableQuestions.length < state.maxQuestions) {
+        // Mantener el límite de 3 sesiones diarias para no registrados
+        if (sessionsSent >= 3) {
             elements.loadingOverlay.classList.add('hidden');
             if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
                 window.uiManager.showAuthPromptModal();
@@ -384,40 +423,70 @@ async function startQuiz() {
             return;
         }
 
-        // Shuffle available and Slice
-        const shuffled = [...availableQuestions].sort(() => 0.5 - Math.random());
-        let sliced = shuffled.slice(0, state.maxQuestions);
-
-        // Save seen IDs to prevent repetition
-        const currentBatchHashes = sliced.map(q => btoa(q.question_text.substring(0, 50)));
-        localStorage.setItem('guest_seen_ids', JSON.stringify([...new Set([...seenIds, ...currentBatchHashes])]));
-
-        // Increment session count
-        localStorage.setItem('demo_sessions_count', (sessionsSent + 1).toString());
-
-        // 🎲 Shuffle Options (Fisher-Yates) like the Backend does (QuizService.js:142)
-        sliced = sliced.map(q => {
-            const correctAnswerText = q.options[q.correct_option_index];
-            const shuffledOptions = [...q.options];
-            for (let i = shuffledOptions.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
-            }
-            return {
-                ...q,
-                options: shuffledOptions,
-                correct_option_index: shuffledOptions.indexOf(correctAnswerText)
-            };
-        });
-
-        // Simular retardo de Red para feedback UI
-        await new Promise(r => setTimeout(r, 800));
-
-        data = {
-            success: true,
-            questions: sliced,
-            topic: `DEMO: ${target}`
+        // FETCH REAL QUESTIONS FROM DB DEMO ENDPOINT
+        // Mapear el contexto del frontend al dominio del backend
+        const contextMap = {
+            'MEDICINA': 'medicine',
+            'EDUCACION': 'education'
         };
+        const domainParam = contextMap[state.context || 'MEDICINA'] || 'medicine';
+        const seenIds = JSON.parse(localStorage.getItem(`guest_seen_ids_${domainParam}`) || '[]');
+        fetchUrl = `${API_URL}/demo?domain=${domainParam}&limit=${state.maxQuestions}&excludeIds=${seenIds.join(',')}`;
+
+        try {
+            console.log(`📡 Iniciando Demo Engine para dominio: ${domainParam}`);
+            response = await fetch(fetchUrl);
+            data = await response.json();
+
+            if (!data.success || !data.questions || data.questions.length === 0) {
+                // Si el banco se agota para el invitado, limpiamos su historial local para que pueda repetir
+                localStorage.removeItem(`guest_seen_ids_${domainParam}`);
+                throw new Error("No hay preguntas disponibles para la demo.");
+            }
+
+            // Increment session count
+            localStorage.setItem('demo_sessions_count', (sessionsSent + 1).toString());
+
+            // Guardar IDs vistos para evitar repetición en la siguiente sesión
+            const newSeenIds = [...new Set([...seenIds, ...data.questions.map(q => q.id)])];
+            localStorage.setItem(`guest_seen_ids_${domainParam}`, JSON.stringify(newSeenIds));
+
+            // 🎲 Shuffle Options (Frontend Fisher-Yates) for better UX
+            data.questions = data.questions.map(q => {
+                if (!q.options || !Array.isArray(q.options)) return q;
+                
+                const correctAnswerText = q.options[q.correct_option_index];
+                const shuffledOptions = [...q.options];
+                for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+                }
+                return {
+                    ...q,
+                    options: shuffledOptions,
+                    correct_option_index: shuffledOptions.indexOf(correctAnswerText)
+                };
+            });
+
+            // Ajustar el tema para la UI
+            const target = domainParam === 'education' ? 'ASCENSO' : 'SERUMS';
+            data.topic = `DEMO: ${target}`;
+
+        } catch (demoErr) {
+            console.error("💥 Error en Demo Engine:", demoErr);
+            elements.loadingOverlay.classList.add('hidden');
+
+            // Error amigable para el usuario
+            const msg = demoErr.message === "No hay preguntas disponibles para la demo."
+                ? "Lo sentimos, no hay preguntas disponibles para esta demo en este momento."
+                : "No se pudieron cargar las preguntas de demostración. Por favor, intenta de nuevo más tarde.";
+
+            alert(msg);
+
+            // 🛑 CRITICAL: Lanzamos un error controlado para que initQuiz lo maneje si es necesario, 
+            // pero el alert ya dio feedback.
+            return;
+        }
     } else {
         const token = await getValidToken();
         if (!token) {
@@ -556,7 +625,7 @@ async function fetchNextBatch() {
             }
             state.maxQuestions = state.questions.length; // Ajustar total al mazo real disponible
             updateProgressUI();
-            return; 
+            return;
         }
 
         // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
@@ -601,7 +670,7 @@ async function fetchNextBatch() {
         const manualOverlay = document.getElementById('loading-overlay');
         if (manualOverlay) manualOverlay.remove();
         if (elements.loadingOverlay) elements.loadingOverlay.classList.add('hidden');
-        
+
         // Si estábamos esperando el lote para mostrar la siguiente pregunta, renderizarla ahora
         if (state.questions[state.currentQuestionIndex]) {
             renderQuestion();
@@ -654,16 +723,23 @@ function renderQuestion() {
                 transition: 'opacity 0.4s ease'
             });
 
-            const subMessage = state.targetExam === 'MEDICINA' ? 'Sincronizando con Biblioteca Médica...' : 'Analizando Casuística de ASCENSO...';
-            
+            const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
+            const resources = LOADING_RESOURCES[ctxKey];
+            const randomTip = resources.tips[Math.floor(Math.random() * resources.tips.length)];
+
             overlay.innerHTML = `
                 <div class="loader-content" style="padding: 3.5rem; border-radius: 2.5rem; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 1);">
                     <div class="spinner-box" style="position: relative; width: 70px; height: 70px; margin: 0 auto 2.5rem;">
                         <div style="position: absolute; width: 100%; height: 100%; border: 3px solid rgba(255,255,255,0.05); border-radius: 50%;"></div>
                         <div style="position: absolute; width: 100%; height: 100%; border: 3px solid transparent; border-top: 3px solid #fff; border-radius: 50%; animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
                     </div>
-                    <h3 style="margin-bottom: 1rem; font-size: 1.75rem; font-weight: 800; color: #fff; letter-spacing: -0.03em;">Preparando tu entrenamiento</h3>
-                    <p style="color: #64748b; font-size: 1.1rem; font-weight: 400; max-width: 300px; margin: 0 auto;">${subMessage}</p>
+                    <h3 style="margin-bottom: 0.5rem; font-size: 1.75rem; font-weight: 800; color: #fff; letter-spacing: -0.03em;">${resources.title}</h3>
+                    <p style="color: #64748b; font-size: 1rem; margin-bottom: 2rem;">${resources.subtitle}</p>
+                    
+                    <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 1.25rem; border: 1px dashed rgba(255,255,255,0.1); max-width: 320px;">
+                        <p style="color: #3b82f6; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">¿Sabías que?</p>
+                        <p id="dynamic-tip" style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5;">${randomTip}</p>
+                    </div>
                 </div>
                 <style>
                     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -709,7 +785,16 @@ function renderQuestion() {
 
     // Texto Pregunta
     if (window.marked && window.marked.parse) {
-        elements.questionText.innerHTML = window.marked.parse(q.question_text || '');
+        const rawHTML = window.marked.parse(q.question_text || '');
+        elements.questionText.innerHTML = rawHTML;
+        // Envolver tablas para scroll móvil
+        const tables = elements.questionText.querySelectorAll('table');
+        tables.forEach(table => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        });
     } else {
         elements.questionText.textContent = q.question_text;
     }
@@ -723,7 +808,7 @@ function renderQuestion() {
     if (!q.options || !Array.isArray(q.options)) {
         throw new Error("Pregunta recibida sin opciones válidas (Corrupción de datos). Abortando renderizado.");
     }
-    
+
     const letters = ['A', 'B', 'C', 'D', 'E'];
     q.options.forEach((opt, index) => {
         const btn = document.createElement('button');
@@ -811,19 +896,28 @@ function handleAnswer(selectedIndex, btnElement) {
 
     // 📚 MODO ESTUDIO (20qs): Comportamiento de Aprendizaje Profundo
     if (window.marked && window.marked.parse) {
-        elements.explanationText.innerHTML = window.marked.parse(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
+        const rawHTML = window.marked.parse(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
+        elements.explanationText.innerHTML = rawHTML;
+        // Envolver tablas en explicación para scroll móvil
+        const tables = elements.explanationText.querySelectorAll('table');
+        tables.forEach(table => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        });
     } else {
         // 🎯 DINAMISMO: Cambiar título según dominio
         const isEducation = state.targetExam === 'ASCENSO' || state.targetExam === 'NOMBRAMIENTO';
         if (elements.explanationTitle) {
-            elements.explanationTitle.innerHTML = isEducation 
-                ? '<i class="fas fa-graduation-cap"></i> Fundamentación Pedagógica' 
-                : '<i class="fas fa-info-circle"></i> Explicación Médica';
+            elements.explanationTitle.innerHTML = isEducation
+                ? '<i class="fas fa-graduation-cap"></i> Fundamentación Pedagógica'
+                : '<i class="fas fa-info-circle"></i> Sustento Técnico';
         }
 
         elements.explanationText.innerText = q.explanation || "No hay explicación disponible.";
     }
-    
+
     if (q.explanation_image_url) {
         elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);
         elements.explanationImageContainer.classList.remove('hidden');
@@ -865,7 +959,7 @@ function startMockTimer() {
     timerInterval = setInterval(() => {
         timeLeft--;
         state.timeLeft = timeLeft; // Sincronizar con el estado global
-        
+
         // Auto-save periódico (cada 10 segundos para no saturar storage, o en cada cambio si prefieres)
         if (timeLeft % 10 === 0) saveSession();
 
@@ -937,8 +1031,9 @@ async function finishQuiz() {
             areaStats: areaStats // { Topic: {correct, total} }
         };
 
-        localStorage.setItem('guest_demo_stats', JSON.stringify(currentStats));
-        console.log("💾 Estadísticas demo guardadas localmente con desglose por área.");
+        const domainKey = (state.context || 'MEDICINA').toLowerCase();
+        localStorage.setItem(`guest_demo_stats_${domainKey}`, JSON.stringify(currentStats));
+        console.log(`💾 Estadísticas demo (${domainKey}) guardadas localmente.`);
 
         // No return early here, let it show the results overlay
     }

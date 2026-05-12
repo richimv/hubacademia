@@ -10,7 +10,7 @@ const SimulatorDash = (() => {
         'MEDICINA': {
             title: 'Ciencias de la Salud',
             heroTitle: 'Ciencias de la Salud',
-            quizParams: '?target=SERUMS&career=Medicina%20Humana',
+            quizParams: '', // Eliminado el fallback automático. Ahora se fuerza la configuración.
             studyDesc: '20 preguntas. Para un aprendizaje profundo con explicación médica.',
             realDesc: '100 preguntas con límite de tiempo. Simulación completa del SERUMS.',
             sectionIcon: 'fa-stethoscope',
@@ -29,7 +29,7 @@ const SimulatorDash = (() => {
         'EDUCACION': {
             title: 'Docente Pro',
             heroTitle: 'Preparación Magisterial',
-            quizParams: '?target=ASCENSO&career=EBR%20-%20Primaria',
+            quizParams: '', // Eliminado el fallback automático.
             studyDesc: '20 preguntas. Enfoque en rúbricas y casos pedagógicos reales.',
             realDesc: '60 preguntas integradas. Simulación exacta del examen de Ascenso Docente.',
             sectionIcon: 'fa-chalkboard-teacher',
@@ -386,7 +386,7 @@ const SimulatorDash = (() => {
 
         // 2. Setup Config Modal Logic & Load Persistent Config
         setupConfigModal();
-        bindModeClicks();
+        // bindModeClicks(); REMOVED TO PREVENT DOUBLE BINDING
 
         const token = localStorage.getItem('authToken');
         if (token) {
@@ -532,6 +532,9 @@ const SimulatorDash = (() => {
     function updateModeLinks(ctxConfig) {
         const token = localStorage.getItem('authToken');
         let baseParams = `${ctxConfig.quizParams}&context=${currentContext}`;
+        
+        // Corrección: Si no hay params por defecto (ahora están vacíos), quitamos el '&'
+        if (baseParams.startsWith('&')) baseParams = `?context=${currentContext}`;
 
         // Append Custom Config if active
         if (activeConfig) {
@@ -582,7 +585,17 @@ const SimulatorDash = (() => {
                         const isArcade = id === 'btn-mode-arcade';
 
                         if (isArcade) {
-                            const sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
+                            // 🔄 REINICIO DIARIO: Reseteamos contador si es un nuevo día
+                            const today = new Date().toDateString();
+                            const lastDemoDate = localStorage.getItem('demo_sessions_date');
+                            let sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
+
+                            if (lastDemoDate !== today) {
+                                sessionsSent = 0;
+                                localStorage.setItem('demo_sessions_count', '0');
+                                localStorage.setItem('demo_sessions_date', today);
+                            }
+
                             if (sessionsSent >= 3) {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -596,6 +609,34 @@ const SimulatorDash = (() => {
                             window.uiManager.showAuthPromptModal();
                             return;
                         }
+                    }
+
+                    // 🛡️ GATEKEEPER DE CONFIGURACIÓN (Solo para Registrados)
+                    // Evita que inicien un examen en blanco o que se mezclen áreas por defecto
+                    if (token && !activeConfig) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const btnOpen = document.getElementById('btn-start-config');
+                        if (btnOpen) {
+                            btnOpen.click(); // Abrimos el modal
+                            
+                            // Efecto visual para hacer énfasis en que deben configurar
+                            const modalContent = document.querySelector('.config-modal-content');
+                            if (modalContent) {
+                                modalContent.style.animation = 'shake 0.4s ease-in-out';
+                                setTimeout(() => modalContent.style.animation = '', 400);
+                            }
+                            
+                            // Si no existe la animación global, la añadimos dinámicamente
+                            if (!document.getElementById('shake-anim')) {
+                                const style = document.createElement('style');
+                                style.id = 'shake-anim';
+                                style.textContent = `@keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }`;
+                                document.head.appendChild(style);
+                            }
+                        }
+                        return;
                     }
 
                     // 2. Block disabled modes
@@ -1436,13 +1477,13 @@ const SimulatorDash = (() => {
             });
         }
 
-        // 3. Bar Chart Demo (Context-Aware)
+        // 3. Bar Chart Demo (Context-Aware Mock Data)
         const demoAreasMap = currentContext === 'EDUCACION' ? {
             'Comprensión Lectora': { correct: 88, total: 100 },
             'Razonamiento Lógico': { correct: 75, total: 100 },
-            'Evaluación Formativa y Retroalimentación': { correct: 68, total: 100 },
-            'Principios del Currículo Nacional (CNEB)': { correct: 62, total: 100 },
-            'Convivencia Escolar y Clima de Aula': { correct: 55, total: 100 },
+            'Evaluación Formativa': { correct: 68, total: 100 },
+            'Principios del CNEB': { correct: 62, total: 100 },
+            'Convivencia Escolar': { correct: 55, total: 100 },
             'Estrategias de Enseñanza': { correct: 50, total: 100 }
         } : {
             'Ginecología y Obstetricia': { correct: 90, total: 100 },
@@ -1454,8 +1495,10 @@ const SimulatorDash = (() => {
         };
         renderBarChart(demoAreasMap);
 
-        // 4. Persistence: Check for local demo stats
-        const localStatsStr = localStorage.getItem('guest_demo_stats');
+        // 4. Persistence: Check for local demo stats (Domain-Specific)
+        const domainKey = currentContext.toLowerCase();
+        const localStatsStr = localStorage.getItem(`guest_demo_stats_${domainKey}`);
+        
         if (localStatsStr) {
             try {
                 const stats = JSON.parse(localStatsStr);
@@ -1463,11 +1506,9 @@ const SimulatorDash = (() => {
                 if (accuracyEl) accuracyEl.textContent = `${stats.accuracy || 0}%`;
                 if (countsEl) countsEl.textContent = `${stats.correct || 0} / ${stats.incorrect || 0}`;
 
-                // Update Bar Chart if areaStats exists
-                if (stats.areaStats) {
+                // Update Bar Chart if areaStats exists (Real performance)
+                if (stats.areaStats && Object.keys(stats.areaStats).length > 0) {
                     renderBarChart(stats.areaStats);
-
-                    // Update mastery count (areas with >= 70% accuracy)
                     let masteryCount = 0;
                     Object.keys(stats.areaStats).forEach(topic => {
                         const area = stats.areaStats[topic];

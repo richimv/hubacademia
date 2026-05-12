@@ -1268,6 +1268,39 @@ class AdminManager {
             }, 0);
         }
 
+        // NUEVO: Inicializar TinyMCE para Preguntas y Explicaciones
+        if (type === 'question') {
+            setTimeout(() => {
+                const richFields = ['generic-question-text', 'generic-explanation'];
+                richFields.forEach(fieldId => {
+                    if (tinymce.get(fieldId)) {
+                        tinymce.get(fieldId).remove();
+                    }
+
+                    tinymce.init({
+                        selector: `#${fieldId}`,
+                        height: 250,
+                        menubar: false,
+                        plugins: [
+                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                            'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                        ],
+                        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | table link | removeformat | help',
+                        skin: 'oxide-dark',
+                        content_css: 'dark',
+                        branding: false,
+                        promotion: false,
+                        setup: (editor) => {
+                            editor.on('change KeyUp', () => {
+                                editor.save(); // Sincroniza con el textarea original
+                            });
+                        }
+                    });
+                });
+            }, 0);
+        }
+
         // SOLUCIÓN DEFINITIVA: Inicializar el estado visual de los componentes después de renderizar.
         // Esto soluciona los dos problemas reportados.
         
@@ -1850,6 +1883,11 @@ class AdminManager {
     }
 
     async saveGenericForm() {
+        // ✅ NUEVO: Forzar sincronización de todos los editores TinyMCE antes de procesar el formulario
+        if (window.tinymce) {
+            tinymce.triggerSave();
+        }
+
         const type = this.genericForm.dataset.type;
         const id = this.genericForm.dataset.id;
         let url = id ? `${window.AppConfig.API_URL}/api/${type}s/${id}` : `${window.AppConfig.API_URL}/api/${type}s`;

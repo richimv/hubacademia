@@ -12,71 +12,22 @@ function getMedicineAdminRules(target, area, career) {
     let targetRules = `PERFIL SERUMS: Salud Pública y Gestión Comunitaria (ENCAPS). 
         VINCULACION COMUNITARIA: El nivel del establecimiento (I-1 al I-4) y la geografía peruana deben integrarse de forma natural.
         JERARQUÍA DE FUENTES: 1. LEY (NTS/RM) > 2. OFICIAL (GPC Minsa) > 3. SOPORTE (Libros).
-        REGLA DE ORO: Mínimo 2 fuentes diferentes + Un TIP SERUMS.`;
+        REGLA DE ORO: Mínimo 2 fuentes diferentes + Un TIP MÉDICO único.`;
 
     let starterGallery = `
-          * ESCENARIO: "Usted se encuentra en Iñapari realizando visita domiciliaria...", "Como jefe del EESS se percata que hay productos vencidos..."
-          * GESTIÓN/NORMA: "El responsable del establecimiento recibe el stock...", "Según el PAI, la actividad de vigilancia..."
-          * PACIENTE: "Paciente joven de 30 años con tratamiento anti-TB...", "Mujer de 85 años hipertensa con antecedente de caída..."
-          * DIRECTA: "¿Cuál es el procedimiento a seguir?", "¿Qué determinante de salud es más importante?"`;
+          * SITUACIONAL: "En el marco de la vigilancia epidemiológica semanal, usted detecta...", "Durante la jornada de vacunación en una zona de difícil acceso..."
+          * ADMINISTRATIVO: "Como jefe de establecimiento, se le solicita presentar el Plan Operativo Local...", "Al revisar el stock de medicamentos esenciales, se observa..."
+          * CLÍNICO DIRECTO: "Una gestante de 24 años acude a su control prenatal refiriendo...", "Niño de 5 años es traído por su madre por presentar cuadro de..."
+          * DIÁLOGO/GESTIÓN: "El personal de salud le informa sobre un aumento inusual de casos de...", "Usted recibe una directiva del MINSA sobre el nuevo esquema de..."
+          * NORMATIVO: "Según la Norma Técnica de Salud vigente para el nivel I-2...", "En relación al Sistema de Referencia y Contrarreferencia, se define como..."
+          * CASUÍSTICA TÉCNICA: "Al analizar los indicadores de desempeño del último trimestre, usted nota que...", "Se reporta un evento supuestamente atribuido a la vacunación (ESAVI) en..."`;
 
-    let levelInstruction = "Estándar SERUMS. Evalúa Normativa, Gestión y Casos Clínicos. Explicación: 2-3 párrafos profundos con fuente oficial.";
+    let levelInstruction = "Estándar SERUMS. PROHIBIDO el uso excesivo de 'Usted se encuentra'. Sé creativo: varía entre casos de gestión, dilemas éticos, normativa pura y casos clínicos clásicos. Explicación: 2-3 párrafos técnicos.";
 
     return { targetRules, starterGallery, levelInstruction };
 }
 
-function buildMedicineAdminPrompt(target, area, career, context, historyText = "", targetQuestionNum = null) {
-    const isResidentado = target === 'RESIDENTADO';
-    const optionsCount = isResidentado ? 5 : 4;
-
-    return `Eres un Especialista en Ingeniería Clínica para Exámenes Médicos Nacionales (ENAM, SERUMS, RESIDENTADO).
-        Tu misión es realizar una INGENIERÍA DE RECONSTRUCCIÓN para crear una pregunta 100% ORIGINAL (OBJETIVO C).
-
-        ### PASO 1: ANÁLISIS DE INGENIERÍA [MOLDE OFICIAL]
-        Analiza este fragmento de examen real para identificar:
-        - **Formulación**: ¿Es un caso clínico con datos de laboratorio, una pregunta de normativa de salud pública o una pregunta directa?
-        - **Longitud**: ¿Es un caso extenso con antecedentes o una pregunta de "una línea"?
-        - **Opciones**: ¿Son dosis, nombres de enfermedades, procedimientos o explicaciones de manejo?
-        Fragmento: ${context.style || "Estilo oficial MINSA."}
-
-        ### PASO 2: SELECCIÓN DE CONTENIDO [TEORÍA TÉCNICA]
-        - **Eje Temático**: Usa este contexto para elegir un subtema médico específico:
-           ${context.syllabus || area}
-        - **Sustento Científico**: Aplica estrictamente esta lógica médica/normativa (NTS, GPC, RM) para resolver el caso:
-           ${context.basis || "Medicina basada en evidencia y Guías de Práctica Clínica del MINSA."}
-
-        ### PASO 3: CONSTRUCCIÓN ORIGINAL (OBJETIVO C)
-        1. Crea un caso clínico o escenario 100% NUEVO basado en el tema del Paso 2.
-        2. **IMITA LA INGENIERÍA del Paso 1**: 
-           - **Limpieza de Molde**: PROHIBIDO copiar encabezados, códigos de examen o números de pregunta del fragmento.
-           - **Unicidad**: Genera UNA SOLA pregunta médica clara. Ignora restos de otras preguntas si aparecen en el fragmento.
-           - **Variedad de Apertura**: PROHIBIDO empezar siempre con "Paciente de...". Imita el estilo de inicio exacto del [MOLDE OFICIAL].
-           - Si el molde usó datos de laboratorio en tabla, tú crea una situación similar con otros datos.
-        3. **SIMETRÍA DE OPCIONES (REGLA DE CONTEO)**:
-           - **Cepo de Palabras**: Las ${optionsCount} opciones deben tener una extensión casi idéntica (ej. todas entre 8 y 15 palabras).
-           - **PROHIBICIÓN**: Está terminantemente prohibido que la respuesta correcta destaque por ser más larga o detallada que los distractores.
-        4. Mantén el mismo nivel de dificultad y tono que el molde.
-        5. **REGLAS DE ORO DE FORMATO**:
-           - **NUNCA** incluyas las opciones (A, B, C) dentro del campo "question_text".
-           - La explicación debe ser sólida y NO debe mencionar letras (A, B, C). Finaliza con "💡 **TIP MÉDICO:** [Consejo]".
-
-        ### HISTORIAL (PROHIBIDO): ${historyText}
-
-        DEVUELVE JSON:
-        {
-            "domain": "medicine",
-            "target": "${target}",
-            "career": "${career}",
-            "topic": "${area}",
-            "subtopic": "Manejo Clínico / Normativa",
-            "difficulty": "Senior",
-            "question_text": "...",
-            "options": ["Opción 1", "Opción 2", "Opción 3", "Opción 4"${optionsCount === 5 ? ', "Opción 5"' : ''}],
-            "correct_option_index": 0,
-            "explanation": "...",
-            "explanation_image_url": null
-        }`;
-}
+// La función buildMedicineAdminPrompt se define más abajo con la lógica completa de reglas y galerías.
 
 // ═══════════════════════════════════════════════════════════════
 // DOMINIO: EDUCACIÓN (ASCENSO)
@@ -94,49 +45,55 @@ function getEducationAdminRules(target, area, career) {
 }
 
 function buildEducationAdminPrompt(target, area, career, context, historyText = "", targetQuestionNum = null) {
-    return `Eres un Arquitecto Pedagógico para el MINEDU (Perú). 
-        Tu misión es realizar una INGENIERÍA DE RECONSTRUCCIÓN para crear una pregunta 100% ORIGINAL.
+    return `Eres un Arquitecto Pedagógico Senior en la Fase 3 (Diseño Creativo) de nuestra línea de producción industrial. 
+        Tu misión es procesar el material de las Fases 1 y 2 para crear una pregunta de grado ministerial.
 
-        ### PASO 1: ANÁLISIS DE INGENIERÍA [MOLDE OFICIAL]
-        Analiza este fragmento para identificar:
-        - **Formulación**: ¿Es un caso con diálogos, una tabla comparativa, o una situación narrativa directa?
-        - **Longitud**: ¿La pregunta es corta y al grano o extensa y detallada?
-        - **Opciones**: ¿Son opciones de una sola palabra, frases cortas o explicaciones largas?
-        Fragmento: ${context.style || "Estilo oficial MINEDU."}
+        ### PASO 1: ANÁLISIS DE IDENTIDAD [MOLDE OFICIAL]
+        Analiza estos ejemplos reales para captar EXCLUSIVAMENTE su estructura y complejidad visual:
+        - **Formulación**: ¿Usa diálogos entre docentes/alumnos? ¿Usa tablas de datos?
+        - **Carga de Texto**: ¿El enunciado es breve o es una casuística extensa?
+        - **Estilo de Opciones**: ¿Son directas o explicativas?
+        MOLDES DE REFERENCIA: ${context.style || "Identidad oficial MINEDU."}
 
-        ### PASO 2: SELECCIÓN DE CONTENIDO [TEMARIO + TÉCNICO]
-        - **Tema**: Elige UN subtema específico de este [TEMARIO] que no se haya usado:
-           ${context.syllabus || "Temas generales de " + area}
-        - **Sustento**: Aplica estrictamente esta lógica pedagógica para resolver el caso:
-           ${context.basis || "Enfoque por competencias y retroalimentación."}
+        ### PASO 2: MATERIAL TÉCNICO [RECURSOS DE INVESTIGACIÓN]
+        Este material ha sido seleccionado por nuestro Scout (Fase 1) e Investigador (Fase 2). Es tu "Biblia Técnica":
+        - **TEMA SELECCIONADO (INÉDITO)**: ${context.syllabus}
+        - **SUSTENTO NORMATIVO/PEDAGÓGICO**: 
+          --- INICIO TEORÍA ---
+          ${context.basis}
+          --- FIN TEORÍA ---
 
-        ### PASO 3: CONSTRUCCIÓN ORIGINAL (OBJETIVO C)
-        1. Crea un escenario 100% NUEVO basado en el tema del Paso 2.
-        2. **IMITA LA INGENIERÍA del Paso 1**: 
-           - **Limpieza de Molde**: PROHIBIDO copiar encabezados de página, códigos de examen (ej. A01-EBRI-11), o números de pregunta del fragmento.
-           - **Unicidad**: Genera UNA SOLA pregunta clara. Si el fragmento contiene restos de otra pregunta, IGNÓRALOS.
-           - **Variedad de Apertura**: PROHIBIDO empezar siempre con "En el aula de...". Imita el estilo de inicio exacto del [MOLDE OFICIAL].
-           - Si el molde usó una tabla, tú crea una TABLA ORIGINAL. Si usó diálogos, tú escribe DIÁLOGOS ORIGINALES.
-        3. **SIMETRÍA DE OPCIONES (REGLA DE CONTEO)**:
-           - **Cepo de Palabras**: Todas las opciones DEBEN tener una extensión casi idéntica (ej. si una tiene 12 palabras, las otras deben tener entre 10 y 14).
-           - **Igualdad Técnica**: No uses lenguaje más complejo en la respuesta correcta que en los distractores.
-           - **PROHIBICIÓN**: Si la respuesta correcta es más larga que los distractores, la pregunta será invalidada.
-        4. Mantén el mismo nivel de dificultad y tono que el molde.
-        5. **REGLA DE ORO DE FORMATO**:
-           - **NUNCA** incluyas las opciones o alternativas (A, B, C) dentro del campo "question_text".
-           - El "question_text" debe terminar siempre en la pregunta final (ej: ¿Qué acción es pertinente?).
-           - Las opciones van ÚNICAMENTE en el array "options".
-        6. **REGLA DE ORO TÉCNICA**: La explicación debe ser sólida y NO debe mencionar letras (A, B, C).
+        ### PASO 3: CONSTRUCCIÓN DE INGENIERÍA (OBJETIVO C)
+        1. **DISEÑO CASUÍSTICO**: Utiliza el sustento técnico para crear una situación 100% original. No copies los moldes, clona su "vibe" profesional.
+        1.5 **ANCLAJE DE NIVEL EDUCATIVO (CRÍTICO)**: El caso DEBE desarrollarse estrictamente en el nivel/especialidad: "${career}". 
+           - Si dice "Inicial", los protagonistas son obligatoriamente docentes y niños de 3 a 5 años (PROHIBIDO hablar de Secundaria).
+           - Si dice "Primaria", son niños de 6 a 11 años. 
+           - Si dice "Secundaria", son adolescentes.
+        2. **APERTURA DINÁMICA (ANTI-MONOTONÍA)**: PROHIBIDO empezar el caso con la típica frase "La docente de [Nivel], [Nombre]...". DEBES variar radicalmente el inicio de cada pregunta. Ejemplos de inicios válidos:
+           - Acción directa: "Durante el momento de juego libre en los sectores, dos niños..."
+           - Contexto de problema: "En el marco de la planificación del proyecto del mes, los estudiantes..."
+           - Diálogo inmediato: "- ¡Mira mi dibujo!, exclama un estudiante mientras..."
+        2.5 **DINAMISMO VISUAL (OBLIGATORIO)**: Si las preguntas previas han sido planas, tú DEBES usar Markdown para insertar un CUADRO COMPARATIVO o un DIÁLOGO realista.
+           - **INTEGRIDAD**: Si decides usar una tabla, debe contener al menos 2 filas de datos reales. No dejes cuadros vacíos.
+        3. **ADVERTENCIA DEL CIRUJANO (PSICOMETRÍA)**: 
+           Tras tu respuesta, un algoritmo contará los caracteres de tus opciones.
+           - **SIMETRÍA EXTREMA**: La opción correcta NO puede ser excesivamente más larga que las demás. 
+           - **MARGEN**: Todas las opciones deben tener una extensión similar (máximo +/- 40 letras de diferencia).
+        4. **FORMATO DE SALIDA**:
+           - **Limpieza**: PROHIBIDO basura de PDF o códigos extraños.
+           - **Explicación**: Debe ser técnica y pedagógica, basándose en la teoría proporcionada.
+           - **PROHIBICIÓN**: NO menciones letras (A, B, C) en la explicación.
+           - **ESCAPADO JSON (CRÍTICO)**: Si usas saltos de línea para diálogos o tablas, DEBES usar "\\n" (barra invertida y n). NUNCA presiones 'Enter' real dentro de un valor JSON.
 
         ### HISTORIAL (PROHIBIDO): ${historyText}
 
-        DEVUELVE JSON (3 OPCIONES OBLIGATORIAS):
+        DEVUELVE ESTRICTAMENTE UN JSON (1 OBJETO, 3 OPCIONES OBLIGATORIAS):
         {
           "domain": "education",
           "target": "${target}",
           "career": "${career}",
           "topic": "${area}",
-          "subtopic": "Análisis Casuístico (Original)",
+          "subtopic": "${context.syllabus || 'Análisis Casuístico'}",
           "difficulty": "Senior",
           "question_text": "...",
           "options": ["Opción A", "Opción B", "Opción C"],
@@ -147,42 +104,56 @@ function buildEducationAdminPrompt(target, area, career, context, historyText = 
 }
 
 function buildMedicineAdminPrompt(target, area, career, context, historyText = "", targetQuestionNum = null) {
-    return `Eres un Especialista en Psicometría Médica para exámenes ENAM/SERUMS.
-        Tu misión es clonar el estilo de los exámenes oficiales de medicina.
+    const rules = getMedicineAdminRules(target, area, career);
+    const isResidentado = target === 'RESIDENTADO';
+    const optionsCount = isResidentado ? 5 : 4;
 
-        1. RIGOR CLÍNICO: La pregunta debe basarse en el [TEMARIO OFICIAL] y [BIBLIOTECA TÉCNICA].
-        2. ### INSTRUCCIÓN DE MIMETISMO CON VARIACIÓN (OBJETIVO B):
-           - **SEPARACIÓN DE PIEZAS**: Los modelos de medicina ya incluyen sus 4 opciones. Identifícalas y úsalas para llenar el array de opciones en el JSON.
-           - **VARIACIÓN**: Crea un caso clínico NUEVO variando los datos del paciente, pero mantén el diagnóstico y la estructura de las opciones del molde.
-        
-        3. EXPLICACIÓN (SOPORTE RAG): Un párrafo clínico fluido basado en la [BIBLIOTECA TÉCNICA]. 
-           - **REGLA DE ORO**: PROHIBIDO mencionar letras (A, B, C, D). Refiérete al diagnóstico o tratamiento directamente (ej: "El tratamiento de elección es...").
-           - Finaliza con: 💡 **TIP MÉDICO:** [Un consejo clave].
-        4. OPCIONES: Usa 4 opciones que sean espejos de las del molde (puedes variar términos técnicos).
-         [EJEMPLOS DE ESTILO REAL]:
-        ${context.style || "Estilo directo ENAM/SERUMS."}
+    return `Eres un Especialista en Psicometría Médica Senior para exámenes oficiales (ENAM, SERUMS, RESIDENTADO).
+        Tu misión es realizar una INGENIERÍA DE RECONSTRUCCIÓN para crear una pregunta de grado industrial.
 
-        [BIBLIOTECA TÉCNICA (NTS/GPC)]:
-        ${context.basis || "Guías de Práctica Clínica y Normas Técnicas de Salud."}
+        ### PASO 1: ANÁLISIS DE IDENTIDAD [MOLDE OFICIAL]
+        Analiza este fragmento de examen real para captar exclusivamente su estructura y complejidad:
+        - **Formulación**: ¿Es un caso clínico con datos de laboratorio, una pregunta de normativa o directa?
+        - **Longitud**: ¿Es un caso extenso o una pregunta breve?
+        - **Estilo de Opciones**: ¿Son dosis, diagnósticos, procedimientos o manejos?
+        MOLDES DE REFERENCIA: ${context.style || "Estilo directo ENAM/SERUMS."}
 
-        [TEMARIO OFICIAL]:
-        ${context.syllabus || area}
+        ### PASO 2: MATERIAL TÉCNICO [RECURSOS DE INVESTIGACIÓN]
+        Este material ha sido seleccionado por nuestro Investigador (RAG). Es tu fuente de VERDAD:
+        - **TEMA SELECCIONADO (Prospecto)**: ${context.syllabus || area}
+        - **SUSTENTO CIENTÍFICO (NTS/GPC)**: 
+          --- INICIO TEORÍA ---
+          ${context.basis || "Guías de Práctica Clínica y Normas Técnicas de Salud del MINSA."}
+          --- FIN TEORÍA ---
 
-        [HISTORIAL (BLOQUEADO)]:
-        ${historyText}
+        ### PASO 3: CONSTRUCCIÓN DE INGENIERÍA (OBJETIVO C)
+        1. **DISEÑO CLÍNICO**: Crea un caso clínico o escenario 100% original basado en la teoría del Paso 2.
+        2. **CONTEXTUALIZACIÓN (PERFIL ${target})**:
+           ${rules.targetRules}
+        3. **VARIEDAD DE APERTURA (ANTI-MONOTONÍA)**: PROHIBIDO empezar siempre con "Paciente de...". Varía radicalmente los inicios basándote en esta galería:
+           ${rules.starterGallery}
+        4. **ADVERTENCIA DEL CIRUJANO (PSICOMETRÍA)**:
+           - **SIMETRÍA EXTREMA**: Las ${optionsCount} opciones deben tener una extensión casi idéntica.
+           - **PROHIBICIÓN**: La respuesta correcta NO puede destacar por ser más larga o detallada.
+        5. **REGLAS DE ORO DE FORMATO (CRÍTICO)**:
+           - **PROHIBICIÓN ABSOLUTA**: No menciones letras (A, B, C, D) en el campo "explanation". Usa descripciones como "La acción correcta es..." o "Esta opción se descarta porque...". Mencionar letras causa el rechazo de la pregunta.
+           - La explicación debe ser sólida, técnica y justificar tanto la correcta como el descarte de los distractores. 
+           - Finaliza con: 💡 **TIP MÉDICO:** [Consejo clave para el examen].
 
-        DEVUELVE JSON:
+        ### HISTORIAL (PROHIBIDO): ${historyText}
+
+        DEVUELVE JSON (1 OBJETO, ${optionsCount} OPCIONES):
         {
             "domain": "medicine",
             "target": "${target}",
             "career": "${career}",
             "topic": "${area}",
-            "subtopic": "Clínica Médica",
+            "subtopic": "${context.syllabus || 'Manejo Clínico'}",
             "difficulty": "Senior",
-            "question_text": "Enunciado directo y clínico",
-            "options": ["Opción 1", "Opción 2", "Opción 3", "Opción 4"],
+            "question_text": "...",
+            "options": [${Array.from({ length: optionsCount }, (_, i) => `"Opción ${i + 1}"`).join(', ')}],
             "correct_option_index": 0,
-            "explanation": "Un solo párrafo clínico + TIP MÉDICO.",
+            "explanation": "...",
             "explanation_image_url": null
         }`;
 }
@@ -196,19 +167,24 @@ function buildRefinementPrompt(questionJson) {
     const isResidentado = questionJson.target === 'RESIDENTADO';
     const requiredOptions = isEducation ? 3 : (isResidentado ? 5 : 4);
 
-    return `Actúa como un Auditor de Calidad Psicométrica DESPIADADO.
-        Tu misión es corregir errores de la IA generadora. NO aceptes respuestas mediocres.
+    return `Actúa como un Auditor de Calidad Psicométrica DESPIADADO y ANALÍTICO.
+        Tu misión es garantizar que la pregunta sea IMPOSIBLE de adivinar por la extensión de las opciones.
+
+        ### PASO 1: ANÁLISIS DE DATOS (Interno)
+        1. Identifica el "correct_option_index" (la respuesta correcta es la opción número ${questionJson.correct_option_index}).
+        2. Realiza un CONTEO EXACTO de palabras para cada una de las ${requiredOptions} opciones.
+        3. Compara: ¿La opción correcta es la más larga? ¿Por cuántas palabras?
+        
+        ### PASO 2: ACCIÓN CORRECTIVA (REGLAS DE HIERRO)
+        1. **CONTEO DE OPCIONES**: Deben haber EXACTAMENTE ${requiredOptions}. Ni una más, ni una menos.
+        2. **LEY DE SIMETRÍA**: Si la respuesta correcta es más larga, DEBES recortarla eliminando adjetivos o detalles innecesarios, o ALARGAR los distractores agregando contexto técnico similar.
+        3. **VARIANZA MÁXIMA**: Ninguna opción puede ser más de 3 palabras más larga que las demás. Todas deben verse como un bloque de texto idéntico.
+        4. **LIMPIEZA**: Elimina encabezados, códigos (A01-...) y basura de PDF.
+        5. **SIN LETRAS**: La explicación debe ser técnica y no mencionar letras (A, B, C).
 
         ### PREGUNTA A AUDITAR:
         ${JSON.stringify(questionJson, null, 2)}
 
-        ### REGLAS DE ORO DE AUDITORÍA:
-        1. **CONTEO DE OPCIONES**: Para este dominio (${questionJson.domain}) DEBEN HABER EXACTAMENTE ${requiredOptions} OPCIONES. Si hay más, ELIMÍNALAS. Si hay menos, CREA una coherente.
-        2. **SIMETRÍA MATEMÁTICA**: La diferencia de palabras entre la opción más larga y la más corta NO debe superar el 20%. Si la respuesta correcta es más larga, RECÓRTALA o alarga las otras hasta que se vean idénticas en longitud.
-        3. **LIMPIEZA TOTAL**: Borra cualquier rastro de códigos (A01-...), números de pregunta del PDF o encabezados.
-        4. **SIN LETRAS**: La explicación no debe decir "La opción A es correcta...". Debe decir "La retroalimentación es correcta porque...".
-
-        ### INSTRUCCIÓN FINAL:
         Devuelve el JSON corregido. Si no puedes corregirlo para que sea perfecto, ajústalo lo mejor posible pero NUNCA entregues una respuesta correcta más larga que el resto.
         DEVUELVE SOLO EL JSON SIN MARKDOWN:`;
 }
@@ -241,7 +217,7 @@ const GENERATION_PROMPTS = {
         if (target === 'ASCENSO') return buildEducationUserPrompt(target, area, career, historyText);
         return buildMedicineUserPrompt(target, area, career, historyText);
     },
-    
+
     buildRefinementPrompt
 };
 

@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cards: [
                 {
                     title: 'Simulacro de Exámenes',
-                    desc: 'Preparación intensiva para ENAM, SERUMS y Residentado Médico con bancos oficiales.',
+                    desc: 'Preparación intensiva para el Examen Nacional del SERUMS con bancos oficiales.',
                     href: '/simulator-dashboard?context=MEDICINA',
                     cssClass: 'card-med',
                     actionText: 'Ingresar',
@@ -50,8 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
             subtitle: 'Herramientas especializadas para el docente peruano',
             cards: [
                 {
-                    title: 'Simulador de Nombramiento',
-                    desc: 'Simulacros adaptados a la estructura del examen de Nombramiento Docente con rúbricas oficiales.',
+                    title: 'Simulador de Ascenso',
+                    desc: 'Simulacros adaptados a la estructura del Examen de Ascenso Docente con rúbricas oficiales.',
                     href: '/simulator-dashboard?context=EDUCACION',
                     cssClass: 'card-edu-nom',
                     actionText: 'Ingresar',

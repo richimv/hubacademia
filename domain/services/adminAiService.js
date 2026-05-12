@@ -16,10 +16,13 @@ class AdminAiService {
             model: 'gemini-2.5-flash-lite',
             generationConfig: {
                 maxOutputTokens: 16384,
-                temperature: 0.2, // Máxima fidelidad al molde RAG
+                temperature: 0.4, // Mayor variedad para evitar repeticiones
                 responseMimeType: "application/json"
             }
         });
+
+        // Asignar el servicio RAG (ya es una instancia exportada como Singleton)
+        this.ragService = QuestionRagService;
     }
 
     /**
@@ -44,6 +47,7 @@ class AdminAiService {
                 [normalizedTarget, career]
             );
             const globalHistory = lastQuestionsRes.rows.map(r => r.question_text);
+            let batchHistory = [...globalHistory]; // Memoria dinámica que crecerá
 
             let totalAttempts = 0;
             const maxAttempts = amount * 2; // Límite de seguridad para evitar bucles infinitos
@@ -55,16 +59,16 @@ class AdminAiService {
                 // Rotación de áreas temática basada en lo que ya tenemos generado con éxito
                 const area = areasArray[allQuestions.length % areasArray.length];
 
-                // Combinamos el historial global con lo generado en esta tanda
-                const currentBatchHistory = allQuestions.map(q => q.question_text);
-                const fullHistory = [...globalHistory, ...currentBatchHistory];
-
                 console.log(`📝 [Generando ${allQuestions.length + 1}/${amount}] Área: ${area} (Intento: ${totalAttempts})`);
 
-                const q = await this._generateSingleQuestion(normalizedTarget, area, career, fullHistory);
+                const q = await this._generateSingleQuestion(normalizedTarget, area, career, batchHistory);
 
                 if (q) {
                     allQuestions.push(q);
+                    // Guardamos tanto el texto como el subtema para evitar repeticiones semánticas
+                    batchHistory.push(q.question_text);
+                    if (q.syllabus) batchHistory.push(`TEMA: ${q.syllabus}`);
+                    
                     console.log(`✅ [Éxito] Pregunta añadida. Progreso: ${allQuestions.length}/${amount}`);
                 } else {
                     console.warn(`⚠️ [Fallo] Intento fallido para la pregunta ${allQuestions.length + 1}. Reintentando con nuevas keywords...`);
@@ -88,58 +92,178 @@ class AdminAiService {
     }
 
     /**
-     * Genera una sola pregunta usando Triple-RAG Context y memoria a corto plazo.
+     * _generateSingleQuestion: Pipeline Robotizado de 4 Fases.
      */
     async _generateSingleQuestion(target, area, career, history = []) {
         try {
             const namespace = target === 'ASCENSO' || target === 'NOMBRAMIENTO' || target === 'ACCESO_CARGOS' ? 'education' : 'medicine';
 
-            // 🧠 PASO 0: Generar términos de búsqueda (Sniper)
-            const searchTerms = await this._generateSearchKeywords(target, area, career);
-            const styleTerm = searchTerms[0];
-            const sourceFile = searchTerms[2];
-            console.log(`🔎 [Sniper-RAG] Apuntando a: ${styleTerm}`);
+            // --- FASE 1: EL SELECTOR DE MENÚ (Escoger el tema desde el prospecto) ---
+            console.log(`🔍 [Fase 1] Escaneando temario oficial para área: ${area}...`);
+            const syllabusList = await this.ragService.getSyllabusContext(namespace, career, area);
 
-            // 🧠 PASO 1: Obtener Temas del Temario y Molde de Estilo (Paralelo Inicial)
-            const [styleContext, syllabusContext] = await Promise.all([
-                QuestionRagService.getStyleContextByKeywords(namespace, [styleTerm], 15, sourceFile),
-                QuestionRagService.getSyllabusContext(namespace, career, area)
-            ]);
+            if (!syllabusList || syllabusList.includes("ERROR:")) {
+                console.error(`🚨 [Aborto] Temario inválido o vacío. Deteniendo generación para evitar alucinaciones.`);
+                return null;
+            }
 
-            // 🧠 PASO 2: INVESTIGACIÓN ESPECÍFICA (RAG EN CADENA)
-            // Extraemos términos clave del temario para buscar la base técnica exacta
-            const syllabusKeywords = this._extractKeywordsFromSyllabus(syllabusContext, area);
-            console.log(`📚 [Investigación] Buscando base técnica para: ${syllabusKeywords}`);
+            const selectionPrompt = `Actúa como Director Académico para la carrera de ${career}.
+            Aquí tienes fragmentos del TEMARIO OFICIAL (Prospecto):
+            ${syllabusList}
             
-            const [supportContext, techBasis] = await Promise.all([
-                QuestionRagService.getStyleContextByKeywords(namespace, [searchTerms[1]], 3),
-                QuestionRagService.getTechnicalBasis(namespace, area, `${syllabusKeywords} ${target}`, 5)
+            HISTORIAL DE TEMAS YA USADOS (PROHIBIDOS):
+            ${history.filter(h => h.startsWith('TEMA:')).slice(-15).join('\n')}
+            
+            HISTORIAL DE PREGUNTAS (CONTEXTO):
+            ${history.filter(h => !h.startsWith('TEMA:')).slice(-5).join('\n')}
+            
+            TAREAS:
+            1. Analiza el temario y elige UN subtema específico de la carrera "${career}" que pertenezca ESTRICTAMENTE al área: "${area}". 
+            2. Si el temario muestra temas de otras áreas o carreras, IGNÓRALOS. Solo puedes elegir subtemas de "${area}" para "${career}".
+            3. Si el área tiene SUB-ÁREAS, elige un punto específico (ej. "1.2 Epidemiología") y no el título general.
+            4. El tema elegido NO debe estar en el historial de temas prohibidos.
+            5. Genera 2 términos de búsqueda "Sniper" que incluyan palabras técnicas clave (ej: "NTS", "Guía clínica", "Esquema de vacunación", "Manejo clínico", "Normativa") para encontrar el sustento oficial.
+            
+            RESPONDE SOLO EN JSON:
+            { "selectedTopic": "Nombre del tema", "searchTerms": ["termino 1", "termino 2"] }`;
+
+            const selectionResult = await this.model.generateContent(selectionPrompt);
+            const selectionData = JSON.parse(selectionResult.response.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim());
+
+            const selectedSubtopic = selectionData.selectedTopic;
+            const technicalSearchTerms = selectionData.searchTerms.join(' ');
+            console.log(`🎯 [Fase 1] Tema Elegido: ${selectedSubtopic}`);
+
+            // --- FASE 2: EL INVESTIGADOR (Doble Búsqueda: Teoría + Molde de Examen Real) ---
+            const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
+            const maxQuestions = isEducation ? 60 : 100;
+            const randomQuestionNum = Math.floor(Math.random() * maxQuestions) + 1;
+            const year = isEducation ? (Math.random() > 0.5 ? '2025' : '2024') : '2025';
+
+            let examIdentity = "";
+            let styleSearchTerms = [];
+
+            if (isEducation) {
+                const level = career.replace('EBR - ', '').trim();
+                examIdentity = `Prueba ${target} EBR ${level} ${area} Año ${year} Pregunta ${randomQuestionNum}`;
+                styleSearchTerms = [examIdentity];
+            } else {
+                // Medicina: Sniper quirúrgico sin términos de educación
+                const isNursing = career.toLowerCase().includes('enfermeria');
+                const careerTag = isNursing ? 'Enfermería' : 'Medicina Humana';
+                
+                // Los exámenes médicos suelen tener el número seguido de un punto (ej: "78.")
+                examIdentity = `${target} ${careerTag} Item ${randomQuestionNum}`;
+                
+                // Sniper Terms: Buscamos el número solo (muy potente) + el contexto profesional
+                styleSearchTerms = [
+                    `${randomQuestionNum}.`, 
+                    `${target} ${careerTag} 2025`,
+                    `${target} ${careerTag} ${area}`
+                ];
+            }
+
+            console.log(`📚 [Fase 2] Investigando Teoría para: ${selectedSubtopic}`);
+            console.log(`🎭 [Fase 2] Capturando Moldes Reales de: ${examIdentity}`);
+
+            const [theoryContext, styleContext] = await Promise.all([
+                // Búsqueda de Teoría (basada en el tema)
+                this.ragService.getTechnicalBasis(namespace, selectedSubtopic, technicalSearchTerms, 5),
+                // Búsqueda de Moldes (basada en la identidad del examen real)
+                this.ragService.getStyleContextByKeywords(namespace, styleSearchTerms, 15)
             ]);
 
             const fullContext = {
                 style: styleContext,
-                support: supportContext,
-                basis: techBasis,
-                syllabus: syllabusContext
+                basis: theoryContext,
+                syllabus: selectedSubtopic
             };
 
-            // Extraemos el número de pregunta para que la IA sepa qué buscar en los fragmentos RAG
-            const targetQuestionMatch = styleTerm.match(/Pregunta (\d+)/);
-            const targetQuestionNum = targetQuestionMatch ? targetQuestionMatch[1] : null;
-
-            // Inyectamos el prompt desde el catálogo central
-            const prompt = genPrompts.getAdminPrompt(target, area, career, fullContext, history, targetQuestionNum);
+            // --- FASE 3: EL CONSTRUCTOR (Armar la pregunta) ---
+            console.log(`🏗️ [Fase 3] Construyendo pregunta casuística...`);
+            const prompt = genPrompts.getAdminPrompt(target, area, career, fullContext, history, null);
             const result = await this.model.generateContent(prompt);
             const responseText = result.response.candidates[0].content.parts[0].text;
-            const initialQuestion = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
+            let question = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
 
-            // 🧠 PASO 3: REFINAMIENTO (FILTRO DE CALIDAD FINAL)
-            console.log(`⚖️ [Auditoría] Refinando pregunta p/ simetría y limpieza...`);
-            const refinementPrompt = genPrompts.buildRefinementPrompt(initialQuestion);
-            const refinedResult = await this.model.generateContent(refinementPrompt);
-            const refinedText = refinedResult.response.candidates[0].content.parts[0].text;
+            // --- FASE 4: EL AUDITOR (Simetría, Calidad y Limpieza de Letras) ---
+            const checkQuality = (q) => {
+                const charCounts = q.options.map(o => o.length);
+                const correctCharCount = charCounts[q.correct_option_index];
+                const othersCharCounts = charCounts.filter((_, i) => i !== q.correct_option_index);
+                const avgOthersChars = othersCharCounts.reduce((a, b) => a + b, 0) / othersCharCounts.length;
+                const charDiff = correctCharCount - avgOthersChars;
 
-            return JSON.parse(refinedText.replace(/```json/g, '').replace(/```/g, '').trim());
+                // Nueva regla: No letras en explicación (A, B, C, Alternativa A, etc)
+                const hasLettersInExplanation = /la opción [ABC]|la alternativa [ABC]|en [ABC]|la [ABC] es/i.test(q.explanation || "");
+
+                return {
+                    isAsymmetric: Math.abs(charDiff) > 10,
+                    hasLetters: hasLettersInExplanation,
+                    correctLen: correctCharCount,
+                    avgOthers: avgOthersChars,
+                    diff: Math.round(charDiff)
+                };
+            };
+
+            let status = checkQuality(question);
+            let auditAttempts = 0;
+
+            while ((status.isAsymmetric || status.hasLetters) && auditAttempts < 3) {
+                auditAttempts++;
+                console.log(`⚖️ [Auditoría L${auditAttempts}] ${status.isAsymmetric ? 'ASIMETRÍA' : ''} ${status.hasLetters ? 'LETRAS DETECTADAS' : ''}`);
+
+                const refinementPrompt = `Actúa como Auditor Pedagógico.
+                
+                ### ERRORES DETECTADOS:
+                ${status.isAsymmetric ? `- Asimetría: La correcta tiene ${status.correctLen} letras vs ${Math.round(status.avgOthers)} del promedio.` : ''}
+                ${status.hasLetters ? `- Letras prohibidas: Has mencionado letras (A, B, o C) en la explicación. Esto confunde al usuario.` : ''}
+                
+                ### TAREA:
+                1. Reformula las opciones para simetría (+/- 10 caracteres).
+                2. ELIMINA cualquier mención a letras (A, B, C) de la explicación. Usa descripciones como "La opción que menciona..." o "Esta acción es correcta porque...".
+                
+                JSON A REFINAR:
+                ${JSON.stringify(question, null, 2)}
+                
+                DEVUELVE SOLO EL JSON REFINADO:`;
+
+                const refinedResult = await this.model.generateContent(refinementPrompt);
+                const refinedText = refinedResult.response.candidates[0].content.parts[0].text;
+                question = JSON.parse(refinedText.replace(/```json/g, '').replace(/```/g, '').trim());
+
+                status = checkQuality(question);
+            }
+
+            // 🚫 [BLOQUEO DE CALIDAD FINAL]
+            if (status.isAsymmetric || status.hasLetters) {
+                console.error(`🚨 [Calidad] Rechazando por fallos persistentes (Letras: ${status.hasLetters}, Asimetría: ${status.diff}).`);
+                return null;
+            }
+
+            // 🛡️ [SANEADOR DE INGENIERÍA: FORZAR CONTEO DE OPCIONES]
+            const requiredCount = isEducation ? 3 : (target === 'RESIDENTADO' ? 5 : 4);
+
+            if (question.options.length !== requiredCount) {
+                console.log(`🛡️ [Sanitizer] Forzando ${requiredCount} opciones (IA generó ${question.options.length}).`);
+
+                const correctOptionText = question.options[question.correct_option_index];
+                const distractors = question.options.filter((_, i) => i !== question.correct_option_index);
+
+                // Re-armamos el array con la correcta + los distractores necesarios
+                const newOptions = [correctOptionText, ...distractors.slice(0, requiredCount - 1)];
+
+                // Mezclamos para que la correcta no sea siempre la primera
+                for (let i = newOptions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newOptions[i], newOptions[j]] = [newOptions[j], newOptions[i]];
+                }
+
+                question.options = newOptions;
+                question.correct_option_index = newOptions.indexOf(correctOptionText);
+            }
+
+            return question;
         } catch (error) {
             console.error(`⚠️ Error en generación admin p/ ${area}:`, error.message);
             return null;
@@ -157,7 +281,7 @@ class AdminAiService {
             .filter(w => w.length > 4)
             .filter(w => !['FRAGMENTO', 'TEMARIO', 'OFICIAL', 'FUENTE'].includes(w.toUpperCase()))
             .slice(0, 10); // Tomamos las primeras 10 palabras relevantes
-        
+
         return words.length > 0 ? words.join(' ') : defaultArea;
     }
 
@@ -170,7 +294,7 @@ class AdminAiService {
             const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
             const maxQuestions = isEducation ? 60 : 100;
             const randomQuestionNum = Math.floor(Math.random() * maxQuestions) + 1;
-            const years = ["2025", "2024"];
+            const years = isEducation ? ["2025", "2024"] : ["2025"];
             const year = years[Math.floor(Math.random() * years.length)];
 
             if (isEducation) {
@@ -200,19 +324,19 @@ class AdminAiService {
                 // Medicina (ENAM/SERUMS/RESIDENTADO) - Sniper RAG de Alta Precisión
                 const isNursing = career.toLowerCase().includes('enfermeria');
                 const careerTag = isNursing ? 'enfermeria' : 'medicina';
-                
-                // Mapeo de archivos reales para SERUMS
+
+                // Mapeo de archivos reales para SERUMS (según Pinecone)
                 let sourceFile = null;
                 if (target === 'SERUMS') {
-                    const pool = isNursing 
+                    const pool = isNursing
                         ? ["SERUMS-enfermeria.pdf", "SERUMS-enfermeria-tipo-a.pdf", "SERUMS-enfermeria-tipo-b.pdf"]
-                        : ["SERUMS-medicina.pdf", "SERUMS-medicina-tipo-a.pdf", "SERUMS-medicina-tipo-b.pdf", "SERUMS_SIMULACRO1_MEDICINA_MEDIPLUS.pdf", "SERUMS_BANCO_PREGUNTAS_EXAMEN_2025-I_TheoMed.pdf"];
-                    
+                        : ["SERUMS-medicina.pdf", "SERUMS-medicina-tipo-a.pdf", "SERUMS-medicina-tipo-b.pdf"];
+
                     sourceFile = pool[Math.floor(Math.random() * pool.length)];
                 }
 
-                const styleTerm = `${target} ${careerTag} Pregunta ${randomQuestionNum}`;
-                
+                const styleTerm = `${target} ${careerTag} ${randomQuestionNum}.`;
+
                 return [
                     styleTerm,
                     `${area} ${careerTag} casuística manejo clínico oficial`,

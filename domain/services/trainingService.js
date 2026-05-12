@@ -1,7 +1,6 @@
 const { VertexAI } = require('@google-cloud/vertexai');
 const repository = require('../repositories/trainingRepository');
 const adminAiService = require('./adminAiService');
-const UserAiService = require('./userAiService');
 
 // CONFIGURACIÓN VERTEX AI
 const project = process.env.GOOGLE_CLOUD_PROJECT;

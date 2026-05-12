@@ -138,20 +138,31 @@ body.quiz-body {
 }
 
 /* 📊 ESTILOS PARA CUADROS PEDAGÓGICOS (MARKDOWN) */
-.question-text table, .review-q-text table, .review-explanation table {
+.question-text table, .review-q-text table, .review-explanation table, #explanationText table {
     width: 100%;
     border-collapse: collapse;
     margin: 1.5rem 0;
-    background: #ffffff; /* Fondo blanco para mimetismo con papel oficial */
-    color: #1a1a1a; /* Texto negro para contraste máximo */
+    background: #ffffff;
+    color: #1a1a1a;
     border-radius: 4px;
-    overflow: hidden;
     border: 2px solid #333333;
+    table-layout: auto; 
+    min-width: 450px; 
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .question-text th, .question-text td, 
 .review-q-text th, .review-q-text td,
-.review-explanation th, .review-explanation td {
+.review-explanation th, .review-explanation td,
+#explanationText th, #explanationText td {
     border: 1px solid #333333;
     padding: 12px 16px;
     text-align: left;
