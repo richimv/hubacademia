@@ -902,15 +902,12 @@ class UIManager {
                 config.btnText = 'Ver Planes Premium 💎';
                 config.btnUrl = '/pricing';
             }
-        } else if (context === 'flashcards' || context === 'monthly_flashcards') {
-            const isMonthly = customMsg && (customMsg.includes('mensual') || customMsg.includes('intentos'));
-            config.title = isMonthly ? '¡Cuota de Generación Alcanzada!' : '¡Prueba Gratuita Agotada!';
-            config.message = customMsg || (isMonthly
-                ? 'Has alcanzado tu límite de <strong>Generación</strong>. Mejora tu plan para seguir creando tarjetas inteligentes.'
-                : 'Se han agotado tus vidas de prueba. Suscríbete ahora para obtener <strong>Acceso Ilimitado</strong>.');
+        } else if (context === 'flashcards' || context === 'monthly_flashcards' || context === 'study') {
+            config.title = '¡Prueba Gratuita Agotada!';
+            config.message = customMsg || 'Se han agotado tus vidas de prueba. Suscríbete ahora para obtener <strong>Acceso Ilimitado</strong>.';
             config.btnText = 'Ver Planes 🚀';
             config.btnUrl = '/pricing';
-            config.icon = isMonthly ? 'fa-magic' : 'fa-heart-crack';
+            config.icon = 'fa-heart-crack';
         } else {
             // Contexto Arena (Default)
             if (userTier === 'basic') {

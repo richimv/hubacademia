@@ -9,6 +9,13 @@ window.MarkdownRenderer = {
         // ✅ USAR MARKED SI ESTÁ DISPONIBLE (Soporte completo para Tablas, GFM, etc.)
         let html = '';
         if (window.marked && typeof window.marked.parse === 'function') {
+            // Configurar para que respete saltos de línea simples
+            window.marked.setOptions({
+                gfm: true,
+                breaks: true, // ✅ ESTA ES LA CLAVE: \n -> <br>
+                headerIds: false,
+                mangle: false
+            });
             html = window.marked.parse(text);
         } else {
             // Fallback al renderizador básico si marked no cargó

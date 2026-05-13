@@ -177,7 +177,21 @@ const FlashcardManager = (() => {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!res.ok) throw new Error('API Failed');
+        // ✅ SEGUNDA LÍNEA DE DEFENSA: Manejo de 403 (Forbidden)
+        if (res.status === 403) {
+            console.error('[FlashcardManager] Error 403: Acceso denegado por límites de vida.');
+            
+            if (window.uiManager) {
+                if (window.uiManager.showLimitModal) window.uiManager.showLimitModal('flashcards');
+                else if (window.uiManager.showPaywallModal) window.uiManager.showPaywallModal(null, 'flashcards');
+            }
+
+            // Redirigir al hub tras un breve delay para que vea el mensaje
+            setTimeout(() => window.location.href = '/repaso', 2500);
+            return;
+        }
+
+        if (!res.ok) throw new Error(`API Failed with status: ${res.status}`);
 
         const data = await res.json();
 

@@ -1053,8 +1053,14 @@ class RepasoManager {
         const actionBtn = e.target.closest('button[data-action]');
         if (actionBtn) {
             e.stopPropagation();
-            const action = actionBtn.dataset.action;
+            const action = actionBtn.dataset.action; // ✅ RESTAURADO
             if (action === 'play') {
+                // ✅ VALIDACIÓN UNIFICADA: Sin latencia y con diseño estándar
+                if (window.uiManager && window.uiManager.isResourceLocked(true)) {
+                    window.uiManager.showPaywallModal(null, 'flashcards');
+                    return;
+                }
+                
                 if (this.token) window.location.href = `/flashcards?deckId=${card.deck_id}&cardId=${card.id}`;
                 else window.uiManager.showAuthPromptModal();
             } else if (action === 'edit') {
@@ -1532,6 +1538,15 @@ class RepasoManager {
         }
 
         const deckName = deckNameParam || this.currentDeck?.name || 'Mazo';
+
+        // ✅ ARQUITECTURA PROFESIONAL: Validación Proactiva (Zero Latency)
+        if (window.uiManager && typeof window.uiManager.isResourceLocked === 'function') {
+            if (window.uiManager.isResourceLocked(true)) {
+                console.warn('[RepasoManager] Acceso bloqueado: Sin vidas.');
+                window.uiManager.showPaywallModal(null, 'flashcards');
+                return; // Bloquear redirección al instante
+            }
+        }
 
         // Navigation: Transfer to flashcards.html with context
         const studyUrl = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
@@ -2240,39 +2255,6 @@ class RepasoManager {
         }
     }
 
-    /**
-     * Muestra alerta 100% nativa para los limites de uso
-     */
-    _showLimitModal(msg) {
-        let modal = document.getElementById('custom-limit-modal');
-
-        if (modal) {
-            // Si ya existe, solo actualizamos el mensaje y lo activamos
-            modal.querySelector('p').textContent = msg;
-            modal.classList.add('active');
-        } else {
-            // Si no existe, lo creamos
-            const modalHtml = `
-                <div class="modal-overlay active" id="custom-limit-modal" style="z-index:9999; backdrop-filter:blur(8px);">
-                    <div class="modal-content" style="background:var(--bg-card, #1f1f1f); padding:2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); max-width:400px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
-                        <div style="margin-bottom:1.5rem;">
-                            <i class="fas fa-crown" style="font-size:3.5rem; color:#ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
-                        </div>
-                        <h2 style="margin-bottom:1rem; font-size:1.4rem; color:var(--text-main, #f8fafc);">Límite Alcanzado</h2>
-                        <p style="color:var(--text-muted, #94a3b8); font-size:0.95rem; margin-bottom:2rem; padding:0 1rem;">${msg}</p>
-                        <button class="btn-action" style="background:linear-gradient(90deg, #f59e0b, #d97706); color:white; font-weight:bold; padding:0.8rem 2rem; border-radius:8px; border:none; width:100%; cursor:pointer;" onclick="const m = document.getElementById('custom-limit-modal'); if(m){ m.classList.remove('active'); } if(window.uiManager && window.uiManager.popModalState) window.uiManager.popModalState('custom-limit-modal');">Entendido</button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            modal = document.getElementById('custom-limit-modal');
-        }
-
-        // Registrar en historial
-        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
-            window.uiManager.pushModalState('custom-limit-modal');
-        }
-    }
 
     /**
      * Verifica de forma pasiva (sin descontar nada) si el usuario es elegible
@@ -2293,10 +2275,8 @@ class RepasoManager {
                 return true;
             } else if (res.status === 403) {
                 // Bifurcación Inteligente UI: Vida de Prueba vs Límite Básico/Avanzado
-                if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                    window.uiManager.showPaywallModal(data.error, 'flashcards');
-                } else {
-                    window.uiManager.showToast('⚠️ ' + (data.error || 'Has agotado tus límites. Mejora tu plan para continuar.'));
+                if (window.uiManager && window.uiManager.showPaywallModal) {
+                    window.uiManager.showPaywallModal(null, 'flashcards');
                 }
                 return false;
             } else {
