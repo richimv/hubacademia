@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        const response = await fetch(`${window.AppConfig.API_URL}/api/resources/${resourceId}`);
+        const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/resources/${resourceId}`);
         if (!response.ok) throw new Error('Recurso no encontrado');
 
         const resource = await response.json();

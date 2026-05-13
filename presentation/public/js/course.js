@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadCourseData(id) {
     const container = document.getElementById('course-content');
     try {
-        const response = await fetch(`${window.AppConfig.API_URL}/api/courses/${id}`);
+        const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses/${id}`);
         if (!response.ok) throw new Error('Curso no encontrado');
 
         const course = await response.json();

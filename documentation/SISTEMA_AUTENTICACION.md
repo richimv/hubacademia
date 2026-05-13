@@ -58,13 +58,26 @@ Tras la auditoría forense, se implementó una re-estructuración total del cicl
 - **Cambio**: Se aseguró que el mapeo de `subscription_tier` y `subscription_status` sea persistente durante la sincronización inicial.
 - **Efecto**: Los usuarios premium ahora ven su estrella dorada (`⭐ BASIC/ADVANCED`) al instante, y los límites de uso gratuitos desaparecen correctamente para ellos (vistas gratis ocultas para cuentas `active`).
 
-## 4. Estado Actual del Sistema
+## 4. Arquitectura de Comunicación y Sincronización (v2.0)
+
+### 4.1. Gateway Centralizado: `NetworkService.js`
+Se ha implementado un servicio de red centralizado que actúa como el único punto de salida para todas las peticiones API:
+*   **Inyección Automática de Auth**: Inyecta el token JWT más reciente (recuperado de Supabase o LocalStorage) en cada petición sin que el desarrollador deba gestionarlo manualmente en cada módulo.
+*   **Manejo Inteligente de Content-Type**: Detecta automáticamente si el cuerpo de la petición es `FormData` (subida de archivos) para permitir que el navegador gestione los límites de multipart, o si es un objeto plano para enviarlo como `application/json`.
+*   **Interceptores Globales**: Captura errores 401/403 de forma centralizada para forzar cierres de sesión y redirecciones de seguridad.
+
+### 4.2. Sincronización Reactiva de Módulos (Observer Pattern)
+Los módulos pesados (como **Repaso/Flashcards**) ya no consultan el estado de forma síncrona en el arranque (lo que causaba errores de "Modo Invitado" falsos). En su lugar:
+*   **Suscripción a Cambios**: Los managers de módulos (ej. `RepasoManager`) se suscriben al evento `onStateChange` del `SessionManager`.
+*   **Actualización Dinámica**: Cuando la sesión se resuelve o cambia (Login/Logout), los módulos actualizan su estado interno y UI (ocultar banners de invitado, habilitar botones premium) en tiempo real.
+
+## 5. Estado Actual del Sistema
 
 - **Estabilidad**: 100% (Verificado el flujo atómico).
 - **Consola de Render**: Limpia de errores de duplicidad.
 - **Experiencia de Usuario**: Fluida, sin parpadeos en el botón de login tras el primer intento exitoso.
 
-## 5. Guía de Escalabilidad y Futuras Integraciones
+## 6. Guía de Escalabilidad y Futuras Integraciones
 
 Para asegurar que Hub Academia crezca sin fricciones técnicas, se deben seguir estas directrices:
 

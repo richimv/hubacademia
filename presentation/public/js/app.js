@@ -28,9 +28,8 @@ function initTrafficTracking() {
         if (!navigator.onLine) return;
 
         try {
-            await fetch(`${window.API_URL}/api/analytics/pulse`, {
+            await window.NetworkService.fetch(`${window.API_URL}/api/analytics/pulse`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId, isMobile })
             });
         } catch (err) {

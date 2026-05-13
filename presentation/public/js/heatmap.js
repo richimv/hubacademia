@@ -23,9 +23,7 @@ class ActivityHeatmap {
     }
 
     async fetchData() {
-        const res = await fetch(this.apiUrl, {
-            headers: { 'Authorization': `Bearer ${this.token}` }
-        });
+        const res = await window.NetworkService.fetch(this.apiUrl);
         if (!res.ok) throw new Error('API Error');
         const json = await res.json();
         return json.heatmap || {};

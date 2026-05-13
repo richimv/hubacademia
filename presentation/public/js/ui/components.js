@@ -629,7 +629,6 @@ function createUnifiedResourceCardHTML(item) {
             <!-- Zona Inferior: Información (Clicable) -->
             <div class="urc-info-zone" role="button" tabindex="0" onclick="window.uiManager.unlockAndNavigate('${item.id}', '${type}', ${isPremium})" title="Ver detalles de ${title}">
                 <div class="urc-meta">
-                    <span class="urc-badge ${typeColorClass}"><i class="fas ${iconClass}"></i> ${typeLabel}</span>
                     ${item.size ? `<span class="urc-size"><i class="fas fa-hdd"></i> ${item.size}</span>` : ''}
                 </div>
                 

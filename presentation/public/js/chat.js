@@ -416,12 +416,8 @@ class ChatComponent {
                     icon.style.color = '#f59e0b';
 
                     // Llamar al API
-                    fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
+                    window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                        },
                         body: JSON.stringify({
                             title: noteTitle,
                             content: responseText,
@@ -653,13 +649,8 @@ class ChatComponent {
 
             console.log('📦 Datos enviados:', requestData);
 
-            const fetchPromise = fetch(`${window.AppConfig.API_URL}/api/chat`, {
+            const fetchPromise = window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
                 body: JSON.stringify(requestData)
             });
 
@@ -683,12 +674,6 @@ class ChatComponent {
             }
 
             if (!response.ok) {
-                // Si el error es de autenticación, forzar logout
-                if (response.status === 401) {
-                    this.addMessage('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.', 'bot');
-                    window.sessionManager.logout();
-                    return;
-                }
 
                 // ✅ NUEVO: Manejo de Soft Block (Límite alcanzado)
                 if (response.status === 403) {
@@ -983,9 +968,7 @@ class ChatComponent {
         if (!window.sessionManager.isLoggedIn()) return;
 
         try {
-            const response = await fetch(`${window.AppConfig.API_URL}/api/chat/conversations`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-            });
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat/conversations`);
             if (!response.ok) throw new Error('No se pudo cargar el historial.');
 
             this.conversations = await response.json();
@@ -1066,12 +1049,8 @@ class ChatComponent {
 
     async updateConversationTitle(conversationId, newTitle) {
         try {
-            const response = await fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`, {
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
                 body: JSON.stringify({ title: newTitle })
             });
 
@@ -1102,9 +1081,8 @@ class ChatComponent {
         if (!isConfirmed) return;
 
         try {
-            const response = await fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`, {
+                method: 'DELETE'
             });
 
             if (!response.ok) throw new Error('No se pudo eliminar la conversación.');
@@ -1141,9 +1119,7 @@ class ChatComponent {
         messagesContainer.innerHTML = '<div class="loading-state">Cargando chat...</div>';
 
         try {
-            const response = await fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-            });
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`);
             if (!response.ok) throw new Error('No se pudo cargar la conversación.');
 
             this.messages = await response.json();

@@ -16,20 +16,15 @@ class SearchService {
 
     static async _fetchData(endpoint) {
         const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
-        const response = await fetch(`${API_URL}${endpoint}`);
+        const response = await window.NetworkService.fetch(`${API_URL}${endpoint}`);
         if (!response.ok) throw new Error(`Error fetching ${endpoint}`);
         return response.json();
     }
 
     static async search(query) {
-        const token = localStorage.getItem('authToken');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
         const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
-        const response = await fetch(`${API_URL}/api/buscar?q=${encodeURIComponent(query)}`, {
-            method: 'GET',
-            headers: headers
+        const response = await window.NetworkService.fetch(`${API_URL}/api/buscar?q=${encodeURIComponent(query)}`, {
+            method: 'GET'
         });
 
         if (!response.ok) throw new Error(`Error del servidor: ${response.statusText}`);

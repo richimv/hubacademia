@@ -39,9 +39,8 @@ class AuthApiService {
             name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || 'Usuario Google'
         };
 
-        const response = await fetch(`${API_URL}/api/auth/sync`, {
+        const response = await window.NetworkService.fetch(`${API_URL}/api/auth/sync`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
 
@@ -60,10 +59,7 @@ class AuthApiService {
 
         const API_URL = this.getApiUrl();
         try {
-            const response = await fetch(`${API_URL}/api/auth/me`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
+            const response = await window.NetworkService.fetch(`${API_URL}/api/auth/me`);
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
                     localStorage.removeItem('authToken');
@@ -87,12 +83,8 @@ class AuthApiService {
         if (!token) throw new Error('No hay sesión activa.');
 
         const API_URL = this.getApiUrl();
-        const response = await fetch(`${API_URL}/api/auth/delete-account`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await window.NetworkService.fetch(`${API_URL}/api/auth/delete-account`, {
+            method: 'DELETE'
         });
 
         const data = await response.json().catch(() => ({}));
@@ -108,12 +100,8 @@ class AuthApiService {
         if (!token) throw new Error('No hay sesión activa.');
 
         const API_URL = this.getApiUrl();
-        const response = await fetch(`${API_URL}/api/auth/profile`, {
+        const response = await window.NetworkService.fetch(`${API_URL}/api/auth/profile`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({ name })
         });
 

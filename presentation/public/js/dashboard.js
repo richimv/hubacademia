@@ -1,15 +1,8 @@
 class DashboardManager {
     constructor() {
-        this.apiUrl = '/api/admin/dashboard-stats';
-        this.aiUrl = '/api/admin/run-ai'; // Endpoint para activar Python
+        this.apiUrl = `${window.AppConfig.API_URL}/api/admin/dashboard-stats`;
+        this.aiUrl = `${window.AppConfig.API_URL}/api/admin/run-ai`; // Endpoint para activar Python
         this.charts = {}; // Store chart instances
-        this.token = localStorage.getItem('authToken');
-
-        // Verificar autenticación antes de iniciar
-        if (!this.token) {
-            window.location.href = '/login';
-            return;
-        }
 
         this.init();
         this.setupEventListeners();
@@ -44,6 +37,8 @@ class DashboardManager {
             document.getElementById('main-content').style.display = 'block'; // Usar 'block' es más seguro para layout general
         } catch (error) {
             console.error('Fatal Error:', error);
+            if (error.message === 'Unauthorized') return; // NetworkService maneja el logout
+
             document.getElementById('loading').innerHTML = `
                 <div style="text-align: center; color: #ef4444;">
                     <i class="fas fa-exclamation-triangle fa-2x"></i>
@@ -56,8 +51,8 @@ class DashboardManager {
 
     async fetchData() {
         const [statsRes, realTimeRes] = await Promise.all([
-            fetch(this.apiUrl, { headers: { 'Authorization': `Bearer ${this.token}` } }),
-            fetch('/api/analytics/real-time', { headers: { 'Authorization': `Bearer ${this.token}` } })
+            window.NetworkService.fetch(this.apiUrl),
+            window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/analytics/real-time`)
         ]);
 
         if (!statsRes.ok || !realTimeRes.ok) {
@@ -175,9 +170,8 @@ class DashboardManager {
         btn.style.opacity = '0.7';
 
         try {
-            const res = await fetch(this.aiUrl, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${this.token}` }
+            const res = await window.NetworkService.fetch(this.aiUrl, {
+                method: 'POST'
             });
 
             if (res.ok) {

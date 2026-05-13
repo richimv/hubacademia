@@ -403,10 +403,7 @@ class DeckExplorer {
         contentDiv.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;"><i class="fas fa-circle-notch fa-spin"></i> Cargando guía de estudio...</div>';
         
         try {
-            const token = localStorage.getItem('authToken');
-            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/guide`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/guide`);
             const data = await res.json();
             const description = data.description || '';
             
@@ -500,10 +497,8 @@ class DeckExplorer {
                     const formData = new FormData();
                     formData.append('file', blobInfo.blob(), blobInfo.filename());
 
-                    const token = localStorage.getItem('authToken');
-                    const res = await fetch(`${window.AppConfig.API_URL}/api/cards/upload-image`, {
+                    const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/cards/upload-image`, {
                         method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
                         body: formData
                     });
 
@@ -545,17 +540,10 @@ class DeckExplorer {
     }
 
     static _cleanupSessionImages(urls) {
-        const token = localStorage.getItem('authToken');
-        urls.forEach(url => {
-            fetch(`${window.AppConfig.API_URL}/api/media/delete`, {
+            window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/media/delete`, {
                 method: 'DELETE',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
-                },
                 body: JSON.stringify({ url })
             }).catch(err => console.error('Error cleaning up session image:', err));
-        });
     }
 
     static async saveGuide() {
@@ -587,12 +575,8 @@ class DeckExplorer {
             }
             DeckExplorer.sessionImages = [];
 
-            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${deck.id}`, {
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/${deck.id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     name: deck.name,
                     icon: deck.icon,

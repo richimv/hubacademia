@@ -22,7 +22,7 @@ class LibraryService {
 
     // Inicializa el servicio cargando el estado inicial del usuario
     async init() {
-        if (!this._getToken()) return; // No hacer nada si no hay usuario
+        if (!localStorage.getItem('authToken')) return; // No hacer nada si no hay usuario
         try {
             await this._loadStatus();
             this._dispatchChange();
@@ -67,12 +67,8 @@ class LibraryService {
 
         // 2. LLAMADA AL SERVIDOR
         try {
-            const response = await fetch(`${window.AppConfig.API_URL}/api/library/toggle`, {
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/toggle`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this._getToken()}`
-                },
                 body: JSON.stringify({ type, id, action })
             });
 
@@ -97,8 +93,7 @@ class LibraryService {
      */
     async loadFullLibrary() {
         try {
-            const response = await fetch(`${window.AppConfig.API_URL}/api/library/my-library`, {
-                headers: { 'Authorization': `Bearer ${this._getToken()}` },
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/my-library`, {
                 cache: 'no-cache'
             });
             if (!response.ok) {
@@ -121,8 +116,7 @@ class LibraryService {
     // --- MÉTODOS PRIVADOS ---
 
     async _loadStatus() {
-        const response = await fetch(`${window.AppConfig.API_URL}/api/library/status`, {
-            headers: { 'Authorization': `Bearer ${this._getToken()}` },
+        const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/status`, {
             cache: 'no-cache'
         });
 
@@ -147,9 +141,7 @@ class LibraryService {
     }
 
     _getToken() {
-        const token = localStorage.getItem('authToken');
-        if (!token || token === 'undefined' || token === 'null') return null;
-        return token;
+        return localStorage.getItem('authToken');
     }
 
     _dispatchChange() {

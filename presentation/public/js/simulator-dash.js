@@ -392,9 +392,7 @@ const SimulatorDash = (() => {
         if (token) {
             try {
                 // Fetch preferences from API instead of localStorage
-                const res = await fetch(`${window.AppConfig.API_URL}/api/users/preferences?domain=${currentContext.toLowerCase()}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/users/preferences?domain=${currentContext.toLowerCase()}`);
                 const prefData = await res.json();
 
                 if (prefData && prefData.data) {
@@ -900,12 +898,8 @@ const SimulatorDash = (() => {
                 if (token) {
                     try {
                         // Persist to Database for Cross-Device Sync
-                        await fetch(`${window.AppConfig.API_URL}/api/users/preferences`, {
+                        await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/users/preferences`, {
                             method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            },
                             body: JSON.stringify({
                                 domain: currentContext.toLowerCase(),
                                 config_json: activeConfig
@@ -958,12 +952,7 @@ const SimulatorDash = (() => {
             if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo
             if (activeDays) qs += `&days=${activeDays}`;     // Filtro por tiempo
 
-            const headers = {};
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-
-            const res = await fetch(`${window.AppConfig.API_URL}/api/quiz/evolution${qs}`, {
-                headers
-            });
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/quiz/evolution${qs}`);
             const data = await res.json();
 
             if (lineChartInst) lineChartInst.destroy();
@@ -1102,12 +1091,7 @@ const SimulatorDash = (() => {
             if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo (10 = Rápido, 20 = Estudio)
             if (activeDays) qs += `&days=${activeDays}`;     // Filtro por tiempo (7, 30)
 
-            const headers = {};
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-
-            const res = await fetch(`${window.AppConfig.API_URL}/api/quiz/stats${qs}`, {
-                headers
-            });
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/quiz/stats${qs}`);
             const data = await res.json();
             cachedStats = data.kpis; // Store for AI Analysis
 
@@ -1253,12 +1237,8 @@ const SimulatorDash = (() => {
 
             try {
                 // LLAMADA REAL A LA IA DE DIAGNÓSTICO PROFUNDO
-                const response = await fetch(`${window.AppConfig.API_URL}/api/analytics/diagnostic`, {
+                const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/analytics/diagnostic`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify({ stats: cachedStats }) // data que llega desde loadStats() previamente
                 });
 

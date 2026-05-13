@@ -168,12 +168,8 @@ document.querySelectorAll('.plan-select-btn').forEach(button => {
 
         try {
             // ✅ Enviar el planId en el body
-            const response = await fetch(`${window.AppConfig.API_URL}/api/payment/create-order`, {
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/payment/create-order`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({ planId: selectedPlan })
             });
 

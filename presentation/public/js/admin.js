@@ -29,6 +29,8 @@ class AdminManager {
         // Elementos del DOM
         this.genericModal = document.getElementById('generic-modal');
         this.genericForm = document.getElementById('generic-form');
+        this.sectionsContainer = document.getElementById('admin-main-container'); // O el contenedor donde quieras mostrar errores críticos
+
 
         // SOLUCIÓN: Bindeo explícito para el nuevo manejador de eventos.
         this.handleResetPassword = this.handleResetPassword.bind(this);
@@ -334,13 +336,8 @@ class AdminManager {
         if (tabId === 'tab-questions') this.displayQuestions();
     }
 
-    // NUEVO: Método auxiliar para obtener las cabeceras de autenticación.
-    _getAuthHeaders() {
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        };
-    }
+    // ELIMINADO: _getAuthHeaders ahora es manejado automáticamente por NetworkService
+
 
     // NUEVO: Método para obtener IDs seleccionados de un checkbox list
     getSelectedIds(name) {
@@ -386,13 +383,12 @@ class AdminManager {
     async loadAllData() {
         try {
             const [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes] = await Promise.all([
-                fetch(`${window.AppConfig.API_URL}/api/careers`, { headers: this._getAuthHeaders() }),
-                fetch(`${window.AppConfig.API_URL}/api/courses`, { headers: this._getAuthHeaders() }),
-
-                fetch(`${window.AppConfig.API_URL}/api/students`, { headers: this._getAuthHeaders() }),
-                fetch(`${window.AppConfig.API_URL}/api/topics`, { headers: this._getAuthHeaders() }),
-                fetch(`${window.AppConfig.API_URL}/api/books`, { headers: this._getAuthHeaders() }),
-                fetch(`${window.AppConfig.API_URL}/api/admin/questions`, { headers: this._getAuthHeaders() })
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/careers`),
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses`),
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/students`),
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/topics`),
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books`),
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/questions`)
             ]);
 
             for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes]) {
@@ -656,7 +652,16 @@ class AdminManager {
         const fieldsContainer = document.getElementById('generic-form-fields');
         fieldsContainer.innerHTML = '';
         let fieldsHTML = '';
-        this.currentItem = null; // ✅ SOLUCIÓN: Usar propiedad de clase para acceso global
+        this.currentItem = null; 
+
+        // Resetear botón de guardado a estado inicial para evitar fugas de estilo de otros modales (ej: de Drive Sync)
+        const saveBtn = document.getElementById('generic-save-btn');
+        if (saveBtn) {
+            saveBtn.innerHTML = 'Guardar';
+            saveBtn.style.background = '';
+            saveBtn.style.borderColor = '';
+            saveBtn.style.boxShadow = '';
+        }
 
         // Definimos los endpoints de la API para cada tipo
         switch (type) {
@@ -1120,6 +1125,13 @@ class AdminManager {
                 </div>
                 `;
                 fieldsHTML += this.createImageUploadGroup('generic-image', 'Portada/Miniatura (Imagen)', this.currentItem?.image_url || '');
+                
+                setTimeout(() => {
+                    const btn = document.getElementById('generic-save-btn');
+                    if (btn) {
+                        btn.innerHTML = id ? '<i class="fas fa-save"></i> Guardar Cambios' : '<i class="fas fa-plus"></i> Añadir Recurso';
+                    }
+                }, 0);
                 break;
             }
 
@@ -1210,7 +1222,7 @@ class AdminManager {
                         const headers = { ...this._getAuthHeaders() };
                         delete headers['Content-Type']; // Dejar que el navegador establezca el boundary
 
-                        fetch(`${window.AppConfig.API_URL}/api/admin/upload-editor`, {
+                        window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/upload-editor`, {
                             method: 'POST',
                             headers: headers,
                             body: formData
@@ -2155,10 +2167,8 @@ class AdminManager {
                             domain: domainVal,
                             studyAreas: selectedStudyAreas.join(', ')
                         };
-                        const aiUrl = `${window.AppConfig.API_URL}/api/admin/questions/generate-ai`;
-                        const resAi = await fetch(aiUrl, {
+                        const resAi = await window.NetworkService.fetch(aiUrl, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
                             body: JSON.stringify(reqBody)
                         });
                         const resDataAi = await resAi.json();
@@ -2249,10 +2259,8 @@ class AdminManager {
                     }
 
                     // Enviar petición Custom para inyección masiva
-                    const _url = `${window.AppConfig.API_URL}/api/admin/questions/bulk`;
-                    const _response = await fetch(_url, {
+                    const _response = await window.NetworkService.fetch(_url, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
                         body: JSON.stringify(body)
                     });
                     const _responseData = await _response.json();
@@ -2281,12 +2289,8 @@ class AdminManager {
                         syncBtn.disabled = true;
 
                         const syncUrl = `${window.AppConfig.API_URL}/api/admin/drive/sync-folder`;
-                        const resSync = await fetch(syncUrl, {
+                        const resSync = await window.NetworkService.fetch(syncUrl, {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                            },
                             body: JSON.stringify({ folderId, resourceType, author, domain: domainVal })
                         });
 
@@ -2322,25 +2326,20 @@ class AdminManager {
                 body.id = id;
             }
 
-            const headers = {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            };
-
-            // FIX: Content-Type NO debe establecerse para FormData (el navegador pone boundary)
-            if (!(body instanceof FormData)) {
-                headers['Content-Type'] = 'application/json';
-            }
-
-            const response = await fetch(url, {
+            const response = await window.NetworkService.fetch(url, {
                 method: method,
-                headers: headers,
                 body: (body instanceof FormData) ? body : JSON.stringify(body)
             });
 
-            const responseData = await response.json();
+            let responseData = {};
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                responseData = await response.json();
+            }
 
             if (!response.ok) {
-                throw new Error(responseData.error || `Error al guardar ${type}`);
+                const errorMsg = responseData.error || responseData.message || `Error ${response.status} al guardar ${type}`;
+                throw new Error(errorMsg);
             }
 
             const successMessage = method === 'POST' && responseData.tempPassword ? `¡Guardado con éxito! La contraseña temporal es: ${responseData.tempPassword}` : '¡Guardado con éxito!';
@@ -2350,16 +2349,10 @@ class AdminManager {
             await this.loadAllData(); // Recargar todos los datos y refrescar la UI
 
         } catch (error) {
-            console.error(`❌ Error guardando ${type}:`, error);
+            if (error.message === 'Unauthorized') return; // NetworkService ya manejó el logout
 
-            // NUEVO: Manejo específico para sesión expirada
-            if (error.message.includes('Token expirado') || error.message.includes('Token inválido') || error.message.includes('Acceso denegado')) {
-                await window.confirmationModal.showAlert('Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.', 'Sesión Expirada');
-                // Opcional: Redirigir al login después de que el usuario cierre el modal (si showAlert tuviera callback, o con un pequeño delay)
-                // setTimeout(() => window.location.href = '/login', 2000);
-            } else {
-                await window.confirmationModal.showAlert(`Error al guardar: ${error.message}`, 'Error');
-            }
+            console.error(`❌ Error guardando ${type}:`, error);
+            await window.confirmationModal.showAlert(`Error al guardar: ${error.message}`, 'Error');
         } finally {
             // MEJORA UI/UX: Restaurar botón independientemente de si hubo éxito o error
             if (saveBtn) {
@@ -2378,12 +2371,8 @@ class AdminManager {
                 url = `${window.AppConfig.API_URL}/api/admin/question/${id}`;
             }
 
-            const response = await fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                }
+            const response = await window.NetworkService.fetch(url, {
+                method: 'DELETE'
             });
 
             if (!response.ok) {
@@ -2395,14 +2384,9 @@ class AdminManager {
             await this.loadAllData(); // Recargar todos los datos y refrescar la UI
 
         } catch (error) {
+            if (error.message === 'Unauthorized') return;
             console.error(`❌ Error eliminando ${type}:`, error);
-
-            // NUEVO: Manejo específico para sesión expirada
-            if (error.message.includes('Token expirado') || error.message.includes('Token inválido') || error.message.includes('Acceso denegado')) {
-                await window.confirmationModal.showAlert('Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.', 'Sesión Expirada');
-            } else {
-                await window.confirmationModal.showAlert(`Error al eliminar: ${error.message}`, 'Error');
-            }
+            await window.confirmationModal.showAlert(`Error al eliminar: ${error.message}`, 'Error');
         }
     }
 
@@ -2420,12 +2404,8 @@ class AdminManager {
         }
 
         try {
-            const response = await fetch(`${window.AppConfig.API_URL}/api/auth/users/${userId}/reset-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                }
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/auth/users/${userId}/reset-password`, {
+                method: 'POST'
             });
 
             if (!response.ok) {
@@ -2703,5 +2683,15 @@ class AdminManager {
     }
 }
 
-// Inicializar administrador
-window.adminManager = new AdminManager();
+// Inicializar administrador cuando el DOM y los servicios estén listos
+document.addEventListener('DOMContentLoaded', () => {
+    if (!window.NetworkService) {
+        console.error('❌ [Admin] NetworkService no detectado. Reintentando en 100ms...');
+        setTimeout(() => {
+            if (window.NetworkService) window.adminManager = new AdminManager();
+            else console.error('❌ [Admin] Fallo crítico: NetworkService no disponible.');
+        }, 100);
+        return;
+    }
+    window.adminManager = new AdminManager();
+});

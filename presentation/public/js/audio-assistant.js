@@ -403,13 +403,8 @@ class AudioAssistant {
         this.sessionHistory.push({ role: 'user', content: userMessage });
 
         try {
-            const token = localStorage.getItem('authToken');
-            const response = await fetch(`${window.AppConfig.API_URL}/api/chat`, {
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     message: userMessage + contextInjection,
                     specialization: 'neutral',
@@ -545,12 +540,8 @@ class AudioAssistant {
 
             const title = `Nota de Voz: ${this.pageContext?.label || 'Asistente IA'}`;
 
-            const response = await fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
                 body: JSON.stringify({
                     title: title,
                     content: this.lastResponseText,

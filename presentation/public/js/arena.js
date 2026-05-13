@@ -53,13 +53,9 @@ const Arena = (function () {
         ui.screens.loading.classList.remove('hidden');
 
         try {
-            // ✅ NUEVO: Usar safeFetch para inicio resiliente
-            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/arena/start`, {
+            // ✅ NUEVO: Usar NetworkService para inicio resiliente
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/arena/start`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({ topic })
             });
 
@@ -195,11 +191,9 @@ const Arena = (function () {
         if (isLoadingMore) return;
         isLoadingMore = true;
         try {
-            const token = localStorage.getItem('authToken');
-            // ✅ NUEVO: Preload resiliente
-            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/arena/questions`, {
+            // ✅ NUEVO: Preload resiliente con NetworkService
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/arena/questions`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ topic: ui.lobby.topic.value })
             });
             const data = await res.json();
@@ -314,11 +308,7 @@ const Arena = (function () {
         const tbody = document.getElementById('lb-body');
         if (!tbody) return;
         try {
-            const token = localStorage.getItem('authToken');
-            const headers = {};
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-
-            const res = await fetch(`${window.AppConfig.API_URL}/api/arena/ranking`, { headers });
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/arena/ranking`);
             const data = await res.json();
             
             if (data.success && data.leaderboard.length > 0) {
@@ -338,12 +328,9 @@ const Arena = (function () {
         clearInterval(state.timer);
         if (state.currIdx === 0 && state.score === 0) { window.location.reload(); return; }
         try {
-            const token = localStorage.getItem('authToken');
-            // ✅ NUEVO: Envío de puntaje resiliente
-            await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/arena/submit`, {
+            // ✅ NUEVO: Envío de puntaje resiliente con NetworkService
+            await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/arena/submit`, {
                 method: 'POST',
-                isRetryable: true, // Idempotente para el score de esta partida
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ score: state.score, totalQuestions: state.questions.length, topic: ui.lobby.topic.value })
             });
         } catch (e) { 
@@ -375,9 +362,7 @@ const Arena = (function () {
 
     async function fetchUser() {
         try {
-            const token = localStorage.getItem('authToken');
-            if (!token) return;
-            const res = await fetch(`${window.AppConfig.API_URL}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/auth/me`);
             const data = await res.json();
             if (data.id) document.getElementById('userNameDisplay').textContent = `Jugador: ${data.name || 'Anónimo'}`;
         } catch (e) {}
@@ -385,9 +370,7 @@ const Arena = (function () {
 
     async function fetchUserStats() {
         try {
-            const token = localStorage.getItem('authToken');
-            if (!token) return;
-            const res = await fetch(`${window.AppConfig.API_URL}/api/arena/stats`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/arena/stats`);
             const data = await res.json();
             if (data.success) {
                 document.getElementById('userBestScore').textContent = data.stats.highScore;

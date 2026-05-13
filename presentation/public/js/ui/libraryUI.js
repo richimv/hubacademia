@@ -530,12 +530,8 @@ class LibraryUI {
                 `${window.AppConfig.API_URL}/api/library/notes/${this.editingNoteId}` :
                 `${window.AppConfig.API_URL}/api/library/notes`;
 
-            const res = await fetch(url, {
+            const res = await window.NetworkService.fetch(url, {
                 method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
                 body: JSON.stringify({
                     title,
                     content,
@@ -572,9 +568,8 @@ class LibraryUI {
         if (!confirmed) return;
 
         try {
-            await fetch(`${window.AppConfig.API_URL}/api/library/notes/${noteId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+            await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/notes/${noteId}`, {
+                method: 'DELETE'
             });
             this.service.loadFullLibrary();
             this.closeNoteModal();

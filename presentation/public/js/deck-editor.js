@@ -28,12 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = localStorage.getItem('authToken');
 
         try {
-            const res = await fetch('/api/decks', {
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({ name, icon, parentId }) // Send parentId (null or uuid)
             });
 

@@ -31,6 +31,7 @@ Hub Academia sigue un enfoque de defensa en profundidad, donde cada capa del sis
 
 ### 3.1. Middleware de Autenticación
 *   **Validación de Token:** Cada petición a rutas protegidas (`/api/*`) debe incluir un encabezado `Authorization: Bearer <JWT>`. El middleware verifica la firma y vigencia del token antes de permitir el acceso al controlador.
+*   **Gestión Centralizada (NetworkService):** Se ha eliminado la gestión manual de tokens en cada archivo `.js`. Ahora el `NetworkService` centraliza la inyección de seguridad, reduciendo la superficie de ataque y evitando fugas de tokens por errores de implementación en nuevos módulos.
 *   **Bypass Controlado:** Algunas rutas de lectura son `optionalAuth`, permitiendo acceso limitado a invitados mientras se personaliza la experiencia para usuarios logueados.
 
 ### 3.2. Limitación de Tasa (Rate Limiting)

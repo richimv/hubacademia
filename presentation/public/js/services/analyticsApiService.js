@@ -9,19 +9,9 @@ class AnalyticsApiService {
      * @returns {Promise<void>}
      */
     static async recordFeedback(query, response, isHelpful, messageId) {
-        const token = localStorage.getItem('authToken');
-        // No es necesario un token para el feedback, pero es bueno tener el contexto del usuario si está logueado.
-        const headers = {
-            'Content-Type': 'application/json',
-        };
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-
         try {
-            const res = await fetch(`${API_URL}/api/analytics/feedback`, {
+            const res = await window.NetworkService.fetch(`${API_URL}/api/analytics/feedback`, {
                 method: 'POST',
-                headers: headers,
                 body: JSON.stringify({ query, response, isHelpful, messageId }),
             });
             if (!res.ok) {
@@ -35,12 +25,7 @@ class AnalyticsApiService {
     // ✅ CORRECCIÓN: Este método debe estar dentro de la clase.
     // Es un método genérico para hacer peticiones GET autenticadas.
     static async _get(endpoint) {
-        const token = localStorage.getItem('authToken');
-        if (!token) throw new Error('No autenticado');
-
-        const response = await fetch(endpoint, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await window.NetworkService.fetch(endpoint);
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -101,7 +86,7 @@ class AnalyticsApiService {
 
     // ✅ NUEVO: Helper para peticiones GET públicas (sin requerir token)
     static async _getPublic(endpoint) {
-        const response = await fetch(endpoint);
+        const response = await window.NetworkService.fetch(endpoint);
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.error || `Error al obtener datos de ${endpoint}`);
@@ -131,27 +116,18 @@ class AnalyticsApiService {
      * @param {string} entityType - 'course', 'topic', 'career'.
      * @param {number} entityId - El ID de la entidad.
      */
-    static recordView(entityType, entityId) {
-        const token = localStorage.getItem('authToken');
-        
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        fetch(`${API_URL}/api/analytics/view`, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({ entityType, entityId }),
-            // ✅ MEJORA: keepalive permite que esta petición se complete incluso si el usuario navega a otra página.
-            keepalive: true
-        }).catch(error => {
+    static async recordView(entityType, entityId) {
+        try {
+            await window.NetworkService.fetch(`${API_URL}/api/analytics/view`, {
+                method: 'POST',
+                body: JSON.stringify({ entityType, entityId }),
+                // ✅ MEJORA: keepalive permite que esta petición se complete incluso si el usuario navega a otra página.
+                keepalive: true
+            });
+        } catch (error) {
             // No hacemos nada en caso de error para no interrumpir la experiencia del usuario.
             console.warn('Advertencia: No se pudo registrar la vista de página.', error);
-        });
+        }
     }
 }
 

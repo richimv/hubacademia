@@ -78,7 +78,8 @@ class UIManager {
                     this.handleConnectivityChange(false);
                 }
 
-                const response = await fetch(url, options);
+                // ✅ USAR NETWORK SERVICE (CENTRALIZADO)
+                const response = await window.NetworkService.fetch(url, options);
 
                 // Si la respuesta es OK o no es reintentable (ej. 401, 400), salir
                 if (response.ok || response.status < 500) return response;
@@ -87,6 +88,9 @@ class UIManager {
                 throw new Error(`Server Error: ${response.status}`);
 
             } catch (err) {
+                // Si es un error de autorización (401/403), NetworkService ya disparó el logout
+                if (err.message === 'Unauthorized') throw err;
+
                 const isNetworkError = err.name === 'TypeError' || err.message.includes('fetch');
 
                 // Si no es reintentable o es el último intento, propagar el error
@@ -278,12 +282,8 @@ class UIManager {
 
         // Caso 2b: Validar exactamente en el Backend
         try {
-            const response = await fetch(`${window.AppConfig.API_URL}/api/usage/verify`, {
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/usage/verify`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({ resource_id: id })
             });
 

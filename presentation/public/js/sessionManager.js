@@ -165,6 +165,7 @@ class SessionManager {
     }
 
     async logout() {
+        console.log('🚪 Iniciando cierre de sesión global...');
         try {
             // 1. Limpiar estado local de Supabase (y revocar si es posible)
             if (window.supabaseClient) {
@@ -176,9 +177,10 @@ class SessionManager {
 
         // 2. Limpieza Agresiva de LocalStorage
         localStorage.removeItem('authToken');
-        localStorage.removeItem('sb-rayjtupppcbhzjizhamn-auth-token'); // Limpiar token específico de Supabase si se conoce
-        // Opcional: Limpiar todo si es seguro para la app
-        // localStorage.clear(); 
+        localStorage.removeItem('sb-rayjtupppcbhzjizhamn-auth-token'); 
+        
+        // Limpiar cualquier cache de aplicaciones específicas
+        sessionStorage.clear();
 
         this.currentUser = null;
         this.notifyStateChange();
@@ -212,6 +214,9 @@ class SessionManager {
 
 // Instancia global
 window.sessionManager = new SessionManager();
+
+// ✅ Alias Global para fácil acceso desde NetworkService
+window.handleLogout = () => window.sessionManager.logout();
 
 window.sessionManager.onStateChange((user) => {
     if (user) {

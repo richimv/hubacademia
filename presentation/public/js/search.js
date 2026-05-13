@@ -73,9 +73,9 @@ class SearchComponent {
     async loadAllData() {
         try {
             const [careersRes, coursesRes, topicsRes] = await Promise.all([
-                fetch(`${window.AppConfig.API_URL}/api/careers`),
-                fetch(`${window.AppConfig.API_URL}/api/courses`),
-                fetch(`${window.AppConfig.API_URL}/api/topics`)
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/careers`),
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses`),
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/topics`)
             ]);
             this.allData.careers = await careersRes.json();
             this.allData.courses = await coursesRes.json();
@@ -98,7 +98,7 @@ class SearchComponent {
                 static async _fetchData(endpoint) {
                     const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
                     try {
-                        const response = await fetch(`${API_URL}${endpoint}`);
+                        const response = await window.NetworkService.fetch(`${API_URL}${endpoint}`);
                         if (!response.ok) return []; // Retornar array vacío en error
                         return await response.json();
                     } catch (e) {
@@ -120,11 +120,7 @@ class SearchComponent {
 
             // ✅ SOLUCIÓN AL ERROR 400: El endpoint buscar requiere una query.
             // Para obtener el catálogo y destacar documentos oficiales, usamos el endpoint directo general de recursos.
-            const latestDocsResponse = await fetch(`${window.AppConfig.API_URL}/api/books`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Añadir token por si el endpoint lo requiere
-                }
-            });
+            const latestDocsResponse = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books`);
             const latestDocsData = latestDocsResponse.ok ? await latestDocsResponse.json() : [];
 
             // Filtrar y ordenar los más recientes de forma manual
@@ -471,18 +467,8 @@ class SearchComponent {
         `;
 
         try {
-            const token = localStorage.getItem('authToken');
-            const headers = {
-                'Content-Type': 'application/json'
-            };
-
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            const response = await fetch(`${window.AppConfig.API_URL}/api/buscar?q=${encodeURIComponent(query)}`, {
-                method: 'GET',
-                headers: headers
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/buscar?q=${encodeURIComponent(query)}`, {
+                method: 'GET'
             });
 
             if (!response.ok) {
@@ -1076,6 +1062,7 @@ class SearchComponent {
         gridContainer.innerHTML = Array(6).fill('<div class="course-card">' + createSkeletonCardHTML('Grid') + '</div>').join('');
 
         if (this.activeTab === 'salud' || this.activeTab === 'educacion') {
+            let data = [];
             let biblioFilters = [
                 { id: 'Libros y Manuales', val: 'book' }
             ];
@@ -1101,7 +1088,7 @@ class SearchComponent {
             this._attachFilterListeners(filtersContainer, async (valStr) => {
                 let data = [];
                 try {
-                    const res = await fetch(`${window.AppConfig.API_URL}/api/books?type=${valStr}&domain=${this.activeSector}`);
+                    const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?type=${valStr}&domain=${this.activeSector}`);
                     if (res.ok) data = await res.json();
                 } catch (e) { console.error('Error fetching library type', e); }
 
@@ -1111,9 +1098,8 @@ class SearchComponent {
             // Auto-load active pill
             const activePill = biblioFilters.find(f => f.id === this.activeFilter) || biblioFilters[0];
             if (activePill) {
-                let data = [];
                 try {
-                    const res = await fetch(`${window.AppConfig.API_URL}/api/books?type=${activePill.val}&domain=${this.activeSector}`);
+                    const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?type=${activePill.val}&domain=${this.activeSector}`);
                     if (res.ok) data = await res.json();
                 } catch (e) { }
                 this._renderResourceGrid(data, gridContainer);

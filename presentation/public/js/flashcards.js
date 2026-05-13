@@ -172,10 +172,8 @@ const FlashcardManager = (() => {
         }
 
 
-        // ✅ NUEVO: Carga resiliente
-        const res = await window.uiManager.safeFetch(endpoint, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        // ✅ NUEVO: Carga resiliente con NetworkService
+        const res = await window.NetworkService.fetch(endpoint);
 
         // ✅ SEGUNDA LÍNEA DE DEFENSA: Manejo de 403 (Forbidden)
         if (res.status === 403) {
@@ -522,13 +520,8 @@ const FlashcardManager = (() => {
      */
     async function syncReview(reviewData, token) {
         try {
-            await window.uiManager.safeFetch(`${API_URL}/review`, {
+            await window.NetworkService.fetch(`${API_URL}/review`, {
                 method: 'POST',
-                isRetryable: true,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify(reviewData)
             });
             console.log(`✅ Flashcard ${reviewData.cardId} sincronizada.`);

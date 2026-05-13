@@ -140,10 +140,8 @@ window.showExamReview = async function () {
                             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                             saveBtn.disabled = true;
                             try {
-                                const token = await getValidToken();
-                                const res = await fetch(`${API_URL}/../training/flashcards/save-from-question`, {
+                                const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/../training/flashcards/save-from-question`, {
                                     method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                                     body: JSON.stringify({ question: q, topic: q.topic || state.topic, moduleName: state.context || 'MEDICINA' })
                                 });
                                 const data = await res.json();
@@ -164,19 +162,16 @@ window.showExamReview = async function () {
 
         const isDemoStatus = new URLSearchParams(window.location.search).get('demo') === 'true';
         if (!isDemoStatus && answeredQuestions.length > 0) {
-            getValidToken().then(token => {
-                fetch(`${API_URL}/../training/flashcards/check-saved`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ questions: answeredQuestions, moduleName: state.context || 'MEDICINA' })
-                }).then(res => res.json()).then(data => {
-                    if (data.success && data.savedFronts) {
-                        data.savedFronts.forEach(txt => {
-                            const btn = saveButtonsMap.get(txt.trim());
-                            if (btn) updateToSaved(btn);
-                        });
-                    }
-                });
+            window.NetworkService.fetch(`${window.AppConfig.API_URL}/../training/flashcards/check-saved`, {
+                method: 'POST',
+                body: JSON.stringify({ questions: answeredQuestions, moduleName: state.context || 'MEDICINA' })
+            }).then(res => res.json()).then(data => {
+                if (data.success && data.savedFronts) {
+                    data.savedFronts.forEach(txt => {
+                        const btn = saveButtonsMap.get(txt.trim());
+                        if (btn) updateToSaved(btn);
+                    });
+                }
             });
         }
 
@@ -435,7 +430,7 @@ async function startQuiz() {
 
         try {
             console.log(`📡 Iniciando Demo Engine para dominio: ${domainParam}`);
-            response = await fetch(fetchUrl);
+            response = await window.NetworkService.fetch(fetchUrl);
             data = await response.json();
 
             if (!data.success || !data.questions || data.questions.length === 0) {
@@ -488,14 +483,10 @@ async function startQuiz() {
             return;
         }
     } else {
-        const token = await getValidToken();
-        if (!token) {
-            alert("Debes iniciar sesión para realizar simulacros.");
-            window.location.href = '/login';
-            return;
-        }
-        fetchOptions.headers['Authorization'] = `Bearer ${token}`;
-        response = await fetch(fetchUrl, fetchOptions);
+        response = await window.NetworkService.fetch(fetchUrl, {
+            method: 'POST',
+            body: fetchOptions.body
+        });
         data = await response.json();
 
         // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
@@ -591,15 +582,10 @@ async function fetchNextBatch() {
     console.log("🔄 Fetching next batch...");
 
     try {
-        const token = await getValidToken();
         const seenIds = state.questions.map(q => q.id);
 
-        const response = await fetch(`${API_URL}/next-batch`, {
+        const response = await window.NetworkService.fetch(`${API_URL}/next-batch`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({
                 topic: state.topic, // Legacy compatibility
                 target: state.targetExam,
@@ -1011,16 +997,9 @@ async function finishQuiz() {
         return;
     }
 
-    const token = await getValidToken();
     try {
-        // ✅ NUEVO: Envío resiliente con safeFetch
-        await window.uiManager.safeFetch(`${API_URL}/submit`, {
+        await window.NetworkService.fetch(`${window.AppConfig.API_URL}/submit`, {
             method: 'POST',
-            isRetryable: true, // Permitir reintentos aunque sea POST porque es idempotente via quizId (si lo añadimos)
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({
                 topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : state.topic,
                 areas: state.areas,

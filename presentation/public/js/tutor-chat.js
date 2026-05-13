@@ -131,12 +131,8 @@ class FlashcardTutor {
                 }
             };
 
-            const response = await fetch(`${window.AppConfig.API_URL}/api/chat`, {
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
                 body: JSON.stringify(payload)
             });
 
@@ -157,6 +153,7 @@ class FlashcardTutor {
             }
 
         } catch (error) {
+            if (error.message === 'Unauthorized') return;
             console.error("Tutor Error:", error);
             this._addMessage("Lo siento, tuve un problema de conexión. Inténtalo de nuevo.", 'bot');
         } finally {
@@ -238,12 +235,8 @@ class FlashcardTutor {
             
             const title = `Nota de Repaso: ${this.cardContext?.topic || 'Flashcard'}`;
             
-            const response = await fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
                 body: JSON.stringify({
                     title: title,
                     content: content,
