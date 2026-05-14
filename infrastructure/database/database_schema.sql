@@ -190,6 +190,7 @@ CREATE TABLE IF NOT EXISTS public.resources (
     resource_type CHARACTER VARYING(50) DEFAULT 'book'::character varying,
     is_premium BOOLEAN DEFAULT false,
     content_html TEXT,
+    domain CHARACTER VARYING(50) DEFAULT 'medicine'::character varying,
     CONSTRAINT resources_pkey PRIMARY KEY (id)
 );
 

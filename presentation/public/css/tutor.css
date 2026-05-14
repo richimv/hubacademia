@@ -174,38 +174,8 @@
     -webkit-text-fill-color: transparent;
 }
 
-.tutor-message code {
-    background-color: rgba(0, 0, 0, 0.3);
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    font-family: 'Consolas', monospace;
-    font-size: 0.85em;
-    color: #e2e8f0;
-}
-
-.tutor-message pre {
-    background-color: #020617;
-    padding: 1rem;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin: 0.75rem 0;
-    border: 1px solid var(--tutor-border);
-}
-
-.tutor-message pre code {
-    background-color: transparent;
-    padding: 0;
-    color: inherit;
-}
-
-.tutor-message pre::-webkit-scrollbar {
-    height: 6px;
-}
-
-.tutor-message pre::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
+/* ✅ Markdown code/pre → Centralizado en markdown-content.css
+   Solo la regla de strong con gradiente se mantiene aquí por ser exclusiva del tutor. */
 
 
 @keyframes message-in {

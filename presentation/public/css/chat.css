@@ -474,8 +474,8 @@
     font-size: 0.95rem;
     position: relative;
     word-wrap: break-word;
-    white-space: pre-wrap;
-    /* ✅ FIX: Preservar saltos de línea del Shift+Enter */
+    /* ✅ FIX V2: Removido pre-wrap. Marked.js ya maneja los saltos de línea con <br>.
+       pre-wrap causaba doble espaciado al preservar \n Y renderizar <br> al mismo tiempo. */
     animation: messageEnter 0.3s ease-out both;
 }
 
@@ -516,6 +516,7 @@
     border: none;
     display: flex;
     flex-direction: column;
+    max-width: 95%; /* ✅ V3: Más ancho para aprovechar el espacio del chat */
 }
 
 .message.bot .message-body {
@@ -532,95 +533,10 @@
     border: 1px solid var(--chat-primary);
 }
 
-/* Markdown Styling (Premium Medical) */
-.message.bot strong {
-    font-weight: 700;
-    color: #60a5fa; /* Acento azul para fármacos, dosis, signos vitales */
-}
-
-.message.bot h2 {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #93c5fd; /* Azul claro para subtítulos */
-    margin: 1rem 0 0.4rem;
-    padding-bottom: 0.3rem;
-    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
-}
-
-.message.bot h3 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #a5b4fc; /* Indigo suave */
-    margin: 0.75rem 0 0.3rem;
-}
-
-.message.bot p {
-    margin: 0.5rem 0;
-    line-height: 1.7;
-}
-
-.message ul,
-.message ol {
-    padding-left: 1.25rem;
-    margin: 0.5rem 0;
-}
-
-.message.bot li {
-    margin-bottom: 0.3rem;
-    line-height: 1.6;
-}
-
-.message.bot li::marker {
-    color: var(--chat-primary);
-}
-
-.message.bot blockquote {
-    border-left: 3px solid var(--chat-primary);
-    padding: 0.5rem 0.75rem;
-    margin: 0.5rem 0;
-    background: rgba(59, 130, 246, 0.05);
-    border-radius: 0 6px 6px 0;
-    font-style: italic;
-    color: #cbd5e1;
-}
-
-.message.bot hr {
-    border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    margin: 0.75rem 0;
-}
-
-.message code {
-    background-color: rgba(0, 0, 0, 0.3);
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    font-family: 'Consolas', monospace;
-    font-size: 0.85em;
-}
-
-.message pre {
-    background-color: #020617;
-    padding: 1rem;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin: 0.75rem 0;
-    border: 1px solid var(--chat-border);
-}
-
-.message pre code {
-    background-color: transparent;
-    padding: 0;
-    font-size: 0.9em;
-}
-
-.message pre::-webkit-scrollbar {
-    height: 6px;
-}
-
-.message pre::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
+/* ✅ Markdown Styling → Centralizado en markdown-content.css
+   Todas las reglas para h2, h3, p, ul, ol, li, blockquote, code, pre, hr, etc.
+   ahora viven en un solo archivo unificado aplicado via la clase .markdown-content.
+   Esto garantiza consistencia entre Chat General, Audio Assistant, Flashcard Tutor y Notas. */
 
 /* Navigation Buttons inside chat */
 .chat-nav-button {

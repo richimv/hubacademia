@@ -166,11 +166,15 @@ class FlashcardTutor {
         msgContainer.className = `tutor-message-wrapper ${role}`;
 
         const msg = document.createElement('div');
-        msg.className = `tutor-message tutor-message-${role}`;
+        msg.className = `tutor-message tutor-message-${role} markdown-content markdown-compact`;
         
+        // ✅ SAFETY NET: Extraer respuesta si el texto es JSON crudo
+        if (typeof text === 'string' && text.trimStart().startsWith('{')) {
+            try { const p = JSON.parse(text); if (p && p.respuesta) text = p.respuesta; } catch(e) {}
+        }
+
         // ✅ MEJORA: Formateador Markdown Unificado
         let formattedText = window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
-            
         msg.innerHTML = formattedText;
         msgContainer.appendChild(msg);
 

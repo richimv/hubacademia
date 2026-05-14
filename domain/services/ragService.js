@@ -12,35 +12,36 @@ class RagService {
     constructor() {
         this._rewriterModel = null;
         this._auth = new GoogleAuth({ scopes: 'https://www.googleapis.com/auth/cloud-platform' });
-        
+
         this.PINECONE_HOST = process.env.PINECONE_HOST;
         this.PINECONE_KEY = process.env.PINECONE_API_KEY;
-        
+
         console.log("✅ RagService V6.1: Motor Híbrido (Pinecone) inicializado.");
     }
 
     /**
      * 🧠 AGENTIC REWRITER MULTI-DOMINIO: Optimiza la búsqueda según la especialidad.
+     * Ahora público para ser usado por TutorAiService.
      */
-    async _extractSmartTerms(message, specialization, target = '') {
+    async extractSmartTerms(message, specialization, target = '') {
         try {
             if (!this._rewriterModel) {
                 const { VertexAI } = require('@google-cloud/vertexai');
-                const vertexAI = new VertexAI({ 
-                    project: process.env.GOOGLE_CLOUD_PROJECT, 
-                    location: process.env.GOOGLE_CLOUD_LOCATION 
+                const vertexAI = new VertexAI({
+                    project: process.env.GOOGLE_CLOUD_PROJECT,
+                    location: process.env.GOOGLE_CLOUD_LOCATION
                 });
                 this._rewriterModel = vertexAI.getGenerativeModel({
                     model: 'gemini-2.5-flash-lite',
-                    generationConfig: { 
-                        temperature: 0.1, 
+                    generationConfig: {
+                        temperature: 0.1,
                         maxOutputTokens: 512,
-                        responseMimeType: "application/json" 
+                        responseMimeType: "application/json"
                     }
                 });
             }
 
-            const role = specialization === 'medicine' 
+            const role = specialization === 'medicine'
                 ? 'indexador médico experto. Extrae términos clínicos (diagnósticos, síntomas, fármacos, normas NTS/GPC).'
                 : 'indexador pedagógico experto. Extrae términos del CNEB, RVM, RM, casuística docente y competencias.';
 
@@ -53,11 +54,16 @@ class RagService {
                 contents: [{ role: "user", parts: [{ text: prompt }] }]
             });
 
-            const parsed = JSON.parse(result.response.candidates[0].content.parts[0].text);
+            const rawText = result.response.candidates[0].content.parts[0].text;
+            // Limpieza robusta de JSON
+            const cleanJson = rawText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+            const parsed = JSON.parse(cleanJson);
+
             return parsed.terms || [];
         } catch (error) {
-            console.warn("⚠️ Rewriter IA falló. Usando mensaje original.");
-            return null;
+            console.warn("⚠️ Rewriter IA falló (RagService). Usando fallback.");
+            // Fallback: extraer palabras clave básicas si falla la IA
+            return message.split(/\s+/).filter(w => w.length > 4).slice(0, 5);
         }
     }
 
@@ -94,9 +100,9 @@ class RagService {
 
         console.log(`🔍 RAG V6.1 [SEMANTIC | NS: ${namespace}]: "${queryText.substring(0, 40)}..."`);
 
-        // 1. Optimizar términos de búsqueda según el dominio
-        const smartTerms = await this._extractSmartTerms(queryText, specialization, target);
-        const enhancedQuery = smartTerms ? smartTerms.join(' ') : queryText;
+        // 1. Optimizar términos de búsqueda (Usar predefinidos si existen para evitar doble llamada a IA)
+        const smartTerms = filters.predefinedTerms || await this.extractSmartTerms(queryText, specialization, target);
+        const enhancedQuery = (smartTerms && smartTerms.length > 0) ? smartTerms.join(' ') : queryText;
 
         // 2. Ejecutar Búsqueda en Pinecone
         return this._executeSemanticSearch(enhancedQuery, limit, target, namespace);

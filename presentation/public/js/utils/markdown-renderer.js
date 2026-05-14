@@ -3,37 +3,100 @@
  * Unifies the format across all chats (General, Audio, Flashcards) and Notes.
  */
 window.MarkdownRenderer = {
+    /**
+     * Renderiza texto Markdown a HTML.
+     * @param {string} text - Contenido en Markdown.
+     * @returns {string} HTML renderizado.
+     */
     render(text) {
         if (!text) return '';
 
-        // ✅ USAR MARKED SI ESTÁ DISPONIBLE (Soporte completo para Tablas, GFM, etc.)
+        // 1. JSON Safety Net: Si es un JSON crudo de la IA, extraer solo "respuesta"
+        let cleanText = text;
+        if (typeof text === 'string' && text.trimStart().startsWith('{')) {
+            try {
+                const parsed = JSON.parse(text);
+                if (parsed && parsed.respuesta) cleanText = parsed.respuesta;
+            } catch (e) { /* No es JSON, continuar */ }
+        }
+
         let html = '';
+        
+        // 2. Intentar usar marked.js (Soporte completo para Tablas, GFM, etc.)
         if (window.marked && typeof window.marked.parse === 'function') {
-            // Configurar para que respete saltos de línea simples
             window.marked.setOptions({
                 gfm: true,
-                breaks: true, // ✅ ESTA ES LA CLAVE: \n -> <br>
+                breaks: true,
                 headerIds: false,
                 mangle: false
             });
-            html = window.marked.parse(text);
+            try {
+                html = window.marked.parse(cleanText);
+            } catch (err) {
+                console.error('❌ [MarkdownRenderer] Error con marked:', err);
+                html = this._basicRender(cleanText);
+            }
         } else {
-            // Fallback al renderizador básico si marked no cargó
-            html = this._basicRender(text);
+            html = this._basicRender(cleanText);
         }
 
-        // ✅ ENVOLVER TABLAS PARA RESPONSIVIDAD (Scrolling Horizontal)
-        return this.wrapTables(html);
+        // 3. Post-procesamiento via DOM (Tablas responsivas y Resolución de Imágenes)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Envolver tablas
+        tempDiv.querySelectorAll('table').forEach(table => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        });
+
+        // Resolver URLs de imágenes y hacerlas clicables
+        tempDiv.querySelectorAll('img').forEach(img => {
+            const rawSrc = img.getAttribute('src');
+            let resolved = rawSrc;
+            
+            if (rawSrc && typeof window.resolveImageUrl === 'function') {
+                resolved = window.resolveImageUrl(rawSrc);
+                console.log(`🖼️ [MarkdownRenderer] Resolviendo: ${rawSrc} -> ${resolved}`);
+                img.src = resolved;
+            }
+
+            // Hacerla interactiva con el Visor Inmersivo de Hub Academia
+            img.style.cursor = 'zoom-in';
+            img.title = 'Hacer clic para abrir en el Visor Inmersivo';
+            img.onclick = (e) => {
+                e.preventDefault();
+                const ui = window.uiManager || (window.parent && window.parent.uiManager);
+                if (ui && typeof ui.showMediaViewer === 'function') {
+                    const title = img.alt || 'Visualizando recurso del chat';
+                    ui.showMediaViewer(resolved, title);
+                } else {
+                    console.warn('⚠️ [MarkdownRenderer] uiManager no detectado, abriendo en pestaña nueva.');
+                    window.open(resolved, '_blank');
+                }
+            };
+            
+            img.loading = 'lazy';
+        });
+
+        return tempDiv.innerHTML;
     },
 
+    /**
+     * Envuelve las tablas en un div con scroll horizontal para móviles.
+     */
     wrapTables(html) {
         if (!html || !html.includes('<table')) return html;
-        // Regex para envolver cada tabla en un div.table-wrapper
         return html.replace(/<table[\s\S]*?<\/table>/g, (match) => {
             return `<div class="table-wrapper">${match}</div>`;
         });
     },
 
+    /**
+     * Renderizador básico (Regex) si marked.js no está cargado.
+     */
     _basicRender(text) {
         return text
             .replace(/\n{3,}/g, '\n\n')

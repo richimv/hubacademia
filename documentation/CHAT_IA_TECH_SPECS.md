@@ -10,7 +10,8 @@ El Chat Tutor de Hub Academia es un motor conversacional multi-dominio diseñado
 ## 2. Arquitectura de Modelos
 El sistema utiliza **Gemini 2.5 Flash Lite** para la inferencia, optimizado para latencia mínima.
 
-- **Orquestación:** `TutorAiService.js` gestiona el routing dinámico.
+- **Orquestación:** `TutorAiService.js` gestiona el routing dinámico y la inyección de contexto.
+- **Semantic Expansion:** Motor de re-escritura en `RagService.js` que expande la consulta del usuario en temas técnicos.
 - **Embeddings:** Vertex AI `text-multilingual-embedding-002` (768 dimensiones).
 
 ## 3. Especializaciones del Tutor
@@ -19,12 +20,37 @@ El sistema adapta su "personalidad" y base de conocimientos según la especialid
 ### A. Tutor Clínico (`medicine`)
 - **Namespace Pinecone:** `medicine`
 - **Rol:** Tutor Senior de Medicina Peruana.
+- **Multimedia:** Acceso proactivo a infografías, esquemas y mapas mentales médicos.
 - **Fuentes:** NTS, GPC, Harrison, Nelson.
 
 ### B. Tutor Pedagógico (`education`)
 - **Namespace Pinecone:** `education`
 - **Rol:** Tutor Senior de Preparación Magisterial.
+- **Multimedia:** Acceso proactivo a mapas mentales del CNEB y esquemas pedagógicos.
 - **Fuentes:** CNEB, Ley 29944, RVM 094-2020, Pruebas de Ascenso.
+
+### C. Tutor de Idiomas (`languages`)
+- **Namespace:** N/A (sin RAG).
+- **Rol:** Tutor conversacional de Inglés e Italiano.
+- **Comportamiento:** Inmersión gradual, corrección amigable y **tablas gramaticales proactivas**.
+
+## 4. Capacidades Multimedia e Inteligencia Visual
+El sistema gestiona una arquitectura de apoyo visual proactivo y especializado:
+
+- **Catálogo Visual Dinámico:** Integración con Postgres para buscar recursos tipo `other` (infografías, esquemas) en tiempo real.
+- **Proactividad Visual:** La IA decide autónomamente cuándo insertar una imagen del catálogo. No requiere que el usuario la pida explícitamente si el tema es complejo.
+- **Límite de Recursos:** Hasta **3 imágenes por respuesta** si la complejidad del tema lo amerita (exclusivo para Medicina y Educación).
+- **Tablas Proactivas:** Capacidad universal (todos los dominios) para generar tablas comparativas y cuadros sinópticos en Markdown para estructurar información técnica.
+- **Renderizado Premium:** Procesador DOM en `markdown-renderer.js` que envuelve tablas en wrappers responsivos y resuelve URLs de GCS mediante el proxy `/api/media/gcs`.
+
+### D. Asistente Neutro (`neutral`)
+- **Namespace:** N/A (sin RAG).
+- **Rol:** Asistente inteligente versátil para consultas generales.
+
+### E. Tutor de Flashcards (`flashcard_tutor`)
+- **Namespace:** N/A (sin RAG, modo efímero).
+- **Rol:** Tutor contextual que expande el conocimiento de la flashcard activa.
+- **Comportamiento:** Recibe `front`, `back` y `topic` como contexto inyectado.
 
 ## 4. Flujo de Procesamiento RAG
 1. **Routing:** El controlador detecta la especialidad enviada desde la UI.
@@ -41,6 +67,177 @@ Todas las respuestas del tutor siguen este esquema para ser renderizadas por el 
   "sugerencias": ["Pregunta 1", "Pregunta 2", "Pregunta 3"]
 }
 ```
+- `responseMimeType: "application/json"` fuerza a Gemini a devolver JSON válido.
+- Parsing en `TutorAiService.js` con fallback de limpieza de bloques ```` ```json ````
 
 ## 6. Evolución Técnica: De FTS a Pinecone Puro
 El sistema ha migrado de una búsqueda basada en palabras clave (FTS) a una arquitectura **100% basada en Contexto Semántico**. Esto garantiza que el tutor entienda sinónimos, pedagogía y relaciones clínicas complejas sin depender de una base de datos local.
+
+---
+
+## 7. Pipeline de Renderizado de Texto (V3 — Unificado)
+
+### 7.1 Problema Original
+El texto de la IA se mostraba con formato inconsistente, JSON crudo visible, `\n` literales, y espaciado excesivo entre párrafos y viñetas.
+
+### 7.2 Causa Raíz
+Dos sistemas conflictivos preservaban el whitespace simultáneamente:
+- `white-space: pre-wrap` en `.message` (CSS) → preservaba cada `\n` como espacio visual.
+- `marked.js` con `breaks: true` → convertía cada `\n` en `<br>`.
+- **Resultado:** cada salto de línea se renderizaba **dos veces**.
+- Además, `marked.js` no estaba cargado en la mayoría de páginas (solo `flashcards.html` y `quiz.html`).
+
+### 7.3 Arquitectura Actual
+
+```
+Gemini API → JSON { respuesta: "Markdown..." }
+    ↓
+TutorAiService.js → Parsea JSON, extrae "respuesta"
+    ↓
+ChatController.js → enrichResponse() → res.json({ respuesta, sugerencias })
+    ↓
+Frontend (chat.js / tutor-chat.js / audio-assistant.js)
+    ↓
+formatMessage(text)
+    ├─ JSON Safety Net: detecta JSON crudo → extrae "respuesta"
+    └─ MarkdownRenderer.render(text)
+         ├─ JSON Safety Net (centralizado)
+         ├─ marked.js parse (breaks: true, gfm: true)
+         ├─ wrapTables() → responsividad horizontal
+         └─ resolveImageUrl() → resolución de paths de GCS vía proxy
+    ↓
+<div class="message-body markdown-content">HTML renderizado</div>
+    ↓
+markdown-content.css → Tipografía premium unificada
+```
+
+### 7.4 Archivos Clave
+
+| Archivo | Rol |
+|---------|-----|
+| `css/markdown-content.css` | **CSS único** para todo contenido Markdown de la IA |
+| `js/utils/markdown-renderer.js` | Motor de parsing centralizado (marked.js + fallback regex) |
+| `js/chat.js` → `formatMessage()` | Renderiza mensajes del chat general |
+| `js/tutor-chat.js` → `addMessage()` | Renderiza mensajes del tutor de flashcards |
+| `js/audio-assistant.js` → `_setResponseHTML()` | Renderiza respuestas del asistente de voz |
+| `js/ui/libraryUI.js` | Renderiza notas guardadas en el visor |
+
+### 7.5 JSON Safety Net
+Si por algún motivo el texto contiene un JSON crudo (fallo de parsing backend, mensajes históricos corruptos):
+```javascript
+if (typeof text === 'string' && text.trimStart().startsWith('{')) {
+    try {
+        const parsed = JSON.parse(text);
+        if (parsed && parsed.respuesta) text = parsed.respuesta;
+    } catch(e) {}
+}
+```
+Implementado en: `markdown-renderer.js`, `chat.js`, y `tutor-chat.js`.
+
+### 7.6 Dependencias CDN (marked.js)
+`marked.min.js` **DEBE** cargarse ANTES de `markdown-renderer.js` en cada HTML:
+- ✅ `index.html`
+- ✅ `resource.html`
+- ✅ `course.html`
+- ✅ `flashcards.html`
+- ✅ `repaso.html`
+- ✅ `simulator-dashboard.html`
+- ✅ `quiz.html`
+
+### 7.7 Configuración de marked.js
+```javascript
+marked.setOptions({
+    gfm: true,        // GitHub Flavored Markdown (tablas, strikethrough)
+    breaks: true,      // \n → <br> (seguro porque pre-wrap fue removido)
+    headerIds: false,  // Sin IDs auto-generados en headings
+    mangle: false      // Sin ofuscación de emails
+});
+```
+
+---
+
+## 8. Diseño CSS Unificado (`markdown-content.css`)
+
+### 8.1 Clases CSS
+| Clase | Uso |
+|-------|-----|
+| `.markdown-content` | Contenedor base para texto IA (paragraphs, lists, code, tables) |
+| `.markdown-compact` | Modificador para paneles pequeños (Audio, Tutor Flashcard) |
+
+### 8.2 Paleta de Colores
+| Elemento | Color | Token |
+|----------|-------|-------|
+| Headings H1, H2 | `#93c5fd` | Blue 300 |
+| Headings H3 | `#a5b4fc` | Indigo 300 |
+| Bold/Strong | `#60a5fa` | Blue 400 (accent keywords) |
+| List markers | `#60a5fa` | Blue 400 |
+| Blockquote border | `#6366f1` | Indigo 500 |
+| Code blocks bg | `#020617` | Slate 950 |
+| Inline code bg | `rgba(0,0,0,0.35)` | — |
+
+### 8.3 Spacing
+- **Párrafos:** `margin-bottom: 0.6em`
+- **Listas:** `margin: 0.4em 0 0.7em`, items `margin-bottom: 0.25em`
+- **Headings:** `margin-top: 1.1em`, `margin-bottom: 0.4em`
+- **Code blocks:** `margin: 0.75em 0`
+- **Compact variant:** Reduce ~15% todos los espaciados
+
+### 8.4 Ancho de Mensajes
+- **Bot messages:** `max-width: 95%` — Aprovecha casi todo el ancho del chat.
+- **User messages:** `max-width: 85%` — Distinción visual del remitente.
+
+---
+
+## 9. Interfaces del Chat
+
+### 9.1 Chat General (Widget flotante)
+- **Archivo:** `js/chat.js`
+- **Persistencia:** Conversaciones guardadas en PostgreSQL vía `ChatService`.
+- **Historial:** Carga completa al cambiar de conversación.
+- **Sugerencias:** Pastillas clickeables generadas por la IA o fallback predefinido.
+
+### 9.2 Asistente de Voz (Audio Assistant)
+- **Archivo:** `js/audio-assistant.js`
+- **Modo:** Efímero (`ephemeral: true`), sin persistencia en BD.
+- **Input:** Web Speech API (`SpeechRecognition`) — reconocimiento de voz del navegador.
+- **Output:** Web Speech API (`SpeechSynthesis`) — voz nativa del navegador.
+- **Idioma TTS:** Detectado por contexto de página (URL, título del recurso/curso).
+- **Contexto:** Inyecta label de página actual en el prompt.
+
+### 9.3 Tutor de Flashcards
+- **Archivo:** `js/tutor-chat.js`
+- **Modo:** Efímero con historial de sesión en cliente.
+- **Contexto:** Inyecta `front`, `back`, `topic` de la tarjeta activa.
+- **Estilo:** `.markdown-compact` para panel lateral compacto.
+
+---
+
+## 10. Prompts del Sistema (`chatPrompts.js`)
+
+### 10.1 Directrices de Formato (Globales)
+Inyectadas a TODOS los prompts vía `buildPrompt()`:
+1. Markdown rico: `**negrita**` para conceptos clave.
+2. Viñetas `- o *` para clasificaciones.
+3. Doble salto de línea entre párrafos.
+4. `## o ###` para subtítulos en explicaciones extensas.
+5. **Tablas Proactivas:** La IA decide crear tablas para fundamentar y dar claridad profesional.
+6. **NUNCA** envolver la respuesta en bloques de código.
+
+### 10.2 Rol de Curador Visual (Medicina/Edu)
+1. **Selección:** Elegir hasta 3 imágenes del catálogo si son altamente relevantes.
+2. **Integración:** Sintaxis `![Descripción](URL)` integrada naturalmente en el flujo.
+3. **No alucinar:** Si el catálogo no aplica, ignorarlo sin mencionarlo.
+
+### 10.3 Reglas de Citación
+- **Fuentes oficiales (MINSA, MINEDU):** Citar explícitamente (NTS, GPC, RVM).
+- **Literatura comercial (Harrison, CTO):** Camuflar como "literatura médica estándar".
+
+### 10.3 Sugerencias Activas
+- 3 preguntas cortas (máx 45 caracteres) en el array `sugerencias`.
+- Escritas en primera persona del usuario: "Quiero saber más", "Dame un ejemplo".
+- **NUNCA** incluirlas dentro del texto de la `respuesta`.
+
+---
+
+## 11. Archivo Deprecado
+- **`chat.html`**: Página standalone legacy que usa Bootstrap 5. **NO se usa** en la aplicación actual. El chat vive como widget flotante inyectado por `chat.js` en todas las páginas. Solo existe una ruta legacy en `vercel.json`. Candidato a eliminación.

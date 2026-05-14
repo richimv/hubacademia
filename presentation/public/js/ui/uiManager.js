@@ -758,8 +758,11 @@ class UIManager {
         const cleanUrl = url.split('?')[0].toLowerCase();
         // Extensiones estándar
         if (/\.(png|jpe?g|webp|gif|svg)$/i.test(cleanUrl)) return true;
-        // ✅ MEJORA: Detectar imágenes servidas por nuestra API (GCS/AI)
-        if (url.includes('/api/media/gcs') || url.includes('/api/media/explanation') || url.includes('/api/admin/upload-editor')) return true;
+        // ✅ MEJORA: Detectar imágenes servidas por nuestra API (GCS/AI/Thumbnails)
+        if (url.includes('/api/media/gcs') || 
+            url.includes('/api/media/explanation') || 
+            url.includes('/api/admin/upload-editor') ||
+            url.includes('thumbnails/')) return true;
         return false;
     }
 
@@ -782,9 +785,13 @@ class UIManager {
 
     isOurResource(url) {
         if (!url) return false;
-        if (!url.startsWith('http')) return true; // Relative GCS path
-        // ✅ MEJORA: Detectar si es una URL servida por nuestro proxy GCS
-        if (url.includes(window.AppConfig.API_URL) || url.includes('/api/media/gcs') || url.includes('/api/media/explanation')) return true;
+        // Si es una ruta relativa o contiene thumbnails, es nuestro
+        if (!url.startsWith('http') || url.includes('thumbnails/')) return true;
+        // ✅ MEJORA: Detectar si es una URL servida por nuestro proxy o dominio
+        const domain = window.location.hostname;
+        if (url.includes(domain) || 
+            url.includes('/api/media/gcs') || 
+            url.includes('/api/media/explanation')) return true;
         return false;
     }
 

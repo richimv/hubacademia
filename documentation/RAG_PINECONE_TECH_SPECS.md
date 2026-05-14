@@ -1,4 +1,4 @@
-# 🌲 Specs Técnicas: RAG con Pinecone (V6)
+# 🌲 Specs Técnicas: RAG con Pinecone (V6.5 - Inmersive)
 
 ## 🛠️ Stack Tecnológico
 - **Base de Datos Vectorial**: Pinecone (Serverless).
@@ -17,11 +17,11 @@ Para garantizar precisión y evitar alucinaciones cruzadas, los datos se aíslan
 | **`languages`** | Gramática, Diccionarios, Modismos. | Modo Idiomas (Próximamente). |
 | **`general`** | Cultura General, Ayuda del Hub. | Modo Neutro. |
 
-## 🧠 Flujo de Recuperación (Retrieval)
-1. **Embedding**: El mensaje del usuario se convierte en un vector de 768 dimensiones.
-2. **Namespace Routing**: Se selecciona el namespace basado en la especialidad del chat (`medicine` o `education`).
-3. **Top-K Search**: Se recuperan los 8 fragmentos más cercanos semánticamente.
-4. **Metadata Filtering**: El sistema puede filtrar por `target` (ej. solo Nombramiento) si el metadato existe en el vector.
+## 🧠 Flujo de Recuperación (Retrieval V6.5)
+0. **Semantic Query Expansion (Rewriter)**: Gemini expande la consulta en **3-5 temas técnicos**.
+1. **Persistent Topic Cache**: Si el usuario hace seguimiento, se reutilizan los temas del turno anterior.
+2. **Top-K Search**: Se recuperan **20 fragmentos** para máxima profundidad técnica.
+3. **Multimedia Sync**: Sincronización con el Catálogo Visual y apertura en el **Visor Inmersivo Universal**.
 
 ## 📥 Ingesta de Datos (Ingestion)
 Gestionada por el script `scripts/ingest_rag.py`:

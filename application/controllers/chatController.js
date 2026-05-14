@@ -260,7 +260,7 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
     async enrichResponse(userMessage, llmResult) {
         // La respuesta principal ya viene del LLM.
         // Esta función ahora solo añade información extra o sugerencias.
-        const { intencion, confianza, respuesta } = llmResult;
+        const { intencion, confianza, respuesta, idioma_detectado } = llmResult;
         console.log('🎯 Generando respuesta contextual para:', intencion);
 
         let enrichedResponse = respuesta;
@@ -270,6 +270,7 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
             intencion,
             confianza: confianza || 0.85,
             respuesta: enrichedResponse,
+            idioma_detectado: idioma_detectado || 'es',
             sugerencias: await this.generateChatSuggestions(intencion, llmResult)
         };
     }
@@ -308,9 +309,9 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
         };
         // Fallback general más útil y seguro
         return predefinedSuggestions[intencion] || [
-            "Buscar cursos",
-            "Ver libros de Anatomía",
-            "Explícame un tema"
+            "Quiero saber más",
+            "Dame un ejemplo",
+            "¿Cómo puedo aplicar esto?"
         ];
     }
 

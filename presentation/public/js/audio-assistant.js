@@ -329,7 +329,10 @@ class AudioAssistant {
         if (this.isListening) return;
 
         this.recognition = new this.SpeechRecognition();
-        this.recognition.lang = 'es-PE';
+        // ✅ V2: Idioma dinámico basado en el contexto actual (cambia cuando la IA responde en otro idioma)
+        const langMap = { 'es': 'es-PE', 'en': 'en-US', 'it': 'it-IT', 'fr': 'fr-FR', 'de': 'de-DE' };
+        this.recognition.lang = langMap[this.pageContext?.lang] || 'es-PE';
+        console.log(`🎙️ [AudioAssistant] Micrófono configurado para idioma: ${this.recognition.lang}`);
         this.recognition.interimResults = true;
         this.recognition.maxAlternatives = 1;
 
@@ -424,6 +427,12 @@ class AudioAssistant {
 
             const data = await response.json();
             const aiText = data.respuesta || 'No pude generar una respuesta.';
+
+            // ✅ V2: Sincronizar idioma del TTS/Micro con la respuesta de la IA
+            if (data.idioma_detectado && data.idioma_detectado !== this.pageContext?.lang) {
+                console.log(`🌍 [AudioAssistant] Idioma cambiado: ${this.pageContext?.lang} → ${data.idioma_detectado}`);
+                if (this.pageContext) this.pageContext.lang = data.idioma_detectado;
+            }
 
             this.lastResponseText = aiText;
             this.sessionHistory.push({ role: 'bot', content: aiText });
@@ -583,6 +592,8 @@ class AudioAssistant {
         // ✅ USAR RENDERIZADOR UNIFICADO
         let formatted = window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
 
+        // ✅ Aplicar clase de formato premium unificado
+        el.className = 'audio-response-content markdown-content markdown-compact';
         el.innerHTML = formatted;
 
         // Reset del botón de nota

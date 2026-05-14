@@ -1,0 +1,288 @@
+/* ============================================================
+   MARKDOWN CONTENT — Unified Premium AI Text Rendering
+   ============================================================
+   Applied to: Chat General, Audio Assistant, Flashcard Tutor, Notes Viewer.
+   Single source of truth for all AI-generated Markdown content.
+   ============================================================ */
+
+/* ─── BASE CONTAINER ─────────────────────────────────── */
+.markdown-content {
+    font-family: var(--font-main, 'Inter', system-ui, sans-serif);
+    font-size: 0.93rem;
+    line-height: 1.7;
+    color: inherit;
+    word-break: break-word;
+    overflow-wrap: break-word;
+
+    /* ✅ CRITICAL: Let the HTML tags handle spacing, not raw whitespace */
+    white-space: normal;
+}
+
+/* ─── PARAGRAPHS ─────────────────────────────────────── */
+.markdown-content p {
+    margin: 0 0 0.6em 0;
+    line-height: 1.7;
+}
+
+.markdown-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* ─── HEADINGS ───────────────────────────────────────── */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+    font-family: var(--font-main, 'Inter', system-ui, sans-serif);
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    margin-top: 1.1em;
+    margin-bottom: 0.4em;
+}
+
+.markdown-content h1:first-child,
+.markdown-content h2:first-child,
+.markdown-content h3:first-child,
+.markdown-content h4:first-child {
+    margin-top: 0;
+}
+
+.markdown-content h1 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #93c5fd; /* Blue 300 */
+    padding-bottom: 0.35em;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.markdown-content h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #93c5fd; /* Blue 300 */
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.markdown-content h3 {
+    font-size: 0.97rem;
+    font-weight: 700;
+    color: #a5b4fc; /* Indigo 300 */
+}
+
+.markdown-content h4 {
+    font-size: 0.93rem;
+    font-weight: 600;
+    color: #c7d2fe; /* Indigo 200 */
+}
+
+/* ─── BOLD & ITALIC (Key Terms Accent) ───────────────── */
+.markdown-content strong {
+    font-weight: 700;
+    color: #60a5fa; /* Blue 400 — Premium accent for keywords */
+}
+
+.markdown-content em {
+    font-style: italic;
+    color: #cbd5e1; /* Slate 300 */
+}
+
+/* ─── LISTS ──────────────────────────────────────────── */
+.markdown-content ul,
+.markdown-content ol {
+    margin: 0.4em 0 0.7em;
+    padding-left: 1.4em;
+}
+
+.markdown-content li {
+    margin-bottom: 0.25em;
+    line-height: 1.65;
+}
+
+.markdown-content li:last-child {
+    margin-bottom: 0;
+}
+
+.markdown-content li > p {
+    margin: 0;
+}
+
+/* Marker accent */
+.markdown-content ul li::marker {
+    color: #60a5fa; /* Blue 400 */
+}
+
+.markdown-content ol li::marker {
+    color: #60a5fa;
+    font-weight: 600;
+}
+
+/* Nested lists: tighter spacing */
+.markdown-content li > ul,
+.markdown-content li > ol {
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+}
+
+/* ─── BLOCKQUOTES ────────────────────────────────────── */
+.markdown-content blockquote {
+    border-left: 3px solid #6366f1; /* Indigo 500 */
+    padding: 0.5em 0.85em;
+    margin: 0.6em 0;
+    background: rgba(99, 102, 241, 0.06);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: #cbd5e1;
+}
+
+.markdown-content blockquote p {
+    margin: 0;
+}
+
+/* ─── INLINE CODE ────────────────────────────────────── */
+.markdown-content code {
+    background: rgba(0, 0, 0, 0.35);
+    padding: 0.15em 0.4em;
+    border-radius: 5px;
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Consolas', monospace);
+    font-size: 0.85em;
+    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ─── CODE BLOCKS ────────────────────────────────────── */
+.markdown-content pre {
+    background: #020617; /* Slate 950 */
+    padding: 1em 1.2em;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 0.75em 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+}
+
+.markdown-content pre code {
+    background: transparent;
+    padding: 0;
+    border: none;
+    font-size: 0.88em;
+    line-height: 1.6;
+    color: #e2e8f0;
+    white-space: pre;
+}
+
+.markdown-content pre::-webkit-scrollbar {
+    height: 6px;
+}
+
+.markdown-content pre::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+/* ─── HORIZONTAL RULES ───────────────────────────────── */
+.markdown-content hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 0.8em 0;
+}
+
+/* ─── LINKS ──────────────────────────────────────────── */
+.markdown-content a {
+    color: #60a5fa;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
+}
+
+.markdown-content a:hover {
+    color: #93c5fd;
+}
+
+/* ─── TABLES ─────────────────────────────────────────── */
+.markdown-content .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin: 0.8em 0;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88em;
+}
+
+.markdown-content th {
+    background: rgba(59, 130, 246, 0.1);
+    color: #93c5fd;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75em;
+    letter-spacing: 0.04em;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.markdown-content td {
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.markdown-content tr:last-child td {
+    border-bottom: none;
+}
+
+.markdown-content tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* ─── IMAGES (Visual Resources from GCS) ────────────── */
+.markdown-content img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 10px;
+    margin: 0.8em auto;
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: zoom-in;
+}
+
+.markdown-content img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+}
+
+/* ─── COMPACT VARIANT (for smaller panels like audio/tutor) ── */
+.markdown-content.markdown-compact {
+    font-size: 0.85rem;
+    line-height: 1.55;
+}
+
+.markdown-content.markdown-compact p {
+    margin-bottom: 0.45em;
+}
+
+.markdown-content.markdown-compact h2 {
+    font-size: 0.95rem;
+    margin-top: 0.8em;
+}
+
+.markdown-content.markdown-compact h3 {
+    font-size: 0.88rem;
+    margin-top: 0.6em;
+}
+
+.markdown-content.markdown-compact ul,
+.markdown-content.markdown-compact ol {
+    margin: 0.3em 0 0.5em;
+}
+
+.markdown-content.markdown-compact li {
+    margin-bottom: 0.15em;
+    font-size: 0.84rem;
+}

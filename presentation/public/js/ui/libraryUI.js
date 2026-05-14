@@ -444,7 +444,7 @@ class LibraryUI {
             document.getElementById('note-editor-title').value = note.title;
             document.getElementById('note-editor-textarea').value = note.content;
             this._renderColorOptions(note.color || '');
-            viewer.innerHTML = this._renderMarkdown(note.content);
+            viewer.innerHTML = `<div class="markdown-content">${this._renderMarkdown(note.content)}</div>`;
             headerText.innerHTML = `<i class="fas fa-sticky-note"></i> Ver Nota`;
 
             this.switchToViewer();

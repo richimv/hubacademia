@@ -183,8 +183,9 @@ class ChatComponent {
 
             // ✅ RESTAURADO: Solo 2 preguntas puntuales que la IA entienda bien.
             const defaultSuggestions = [
-                "Explícame de forma resumida todo lo que puedes hacer como mi Tutor Educativo.",
-                "¿Qué tipo de normativas, guías y conocimientos médicos dominas?"
+                "¿Qué puedes hacer por mí?",
+                "Ayúdame a estudiar un tema",
+                "Quiero practicar idiomas"
             ];
             this.showFollowUpSuggestions(defaultSuggestions);
         }
@@ -364,7 +365,21 @@ class ChatComponent {
             // ✅ NUEVO: Listener para los botones de feedback.
             const messagesContainer = document.getElementById('chatbot-messages');
             messagesContainer.addEventListener('click', (e) => {
-                // 1. Manejo de Feedback (Ya existente)
+                // 1. Manejo de Clic en Imágenes (Visor Inmersivo Retroactivo)
+                const img = e.target.closest('img');
+                if (img && messagesContainer.contains(img)) {
+                    const ui = window.uiManager || (window.parent && window.parent.uiManager);
+                    if (ui && typeof ui.showMediaViewer === 'function') {
+                        // Usar la URL ya resuelta de la imagen
+                        const src = img.src;
+                        const title = img.alt || 'Visualizando recurso del chat';
+                        console.log('🖼️ [ChatDelegation] Abriendo visor para:', src);
+                        ui.showMediaViewer(src, title);
+                        return; // Detener flujo para no disparar otros clics
+                    }
+                }
+
+                // 2. Manejo de Feedback (Ya existente)
                 const feedbackBtn = e.target.closest('.feedback-btn');
                 if (feedbackBtn && !feedbackBtn.disabled) {
                     const isHelpful = feedbackBtn.dataset.helpful === 'true';
@@ -818,7 +833,7 @@ class ChatComponent {
         }
 
         const formattedText = this.formatMessage(text);
-        let messageHTML = `<div class="message-body">${formattedText}</div>`;
+        let messageHTML = `<div class="message-body markdown-content">${formattedText}</div>`;
 
         // Agregar información de metadata para mensajes del bot
         // Intención/Confianza removed from UI as per user request.
@@ -887,6 +902,20 @@ class ChatComponent {
     }
 
     formatMessage(text) {
+        // ✅ SAFETY NET: Si el texto es un JSON crudo de la IA (ej: {"intencion":..., "respuesta":...}),
+        // extraer solo el campo "respuesta" para mostrar al usuario.
+        if (typeof text === 'string' && text.trimStart().startsWith('{')) {
+            try {
+                const parsed = JSON.parse(text);
+                if (parsed && parsed.respuesta) {
+                    text = parsed.respuesta;
+                    console.log('🛡️ JSON Safety Net: Extraído campo "respuesta" de JSON crudo.');
+                }
+            } catch (e) {
+                // No es JSON válido, continuar con el texto original
+            }
+        }
+
         // Expresión regular para detectar URLs (absolutas y relativas que empiezan con /)
         const urlRegex = /(https?:\/\/[^\s]+)|(\B\/[^\s]+)/g;
         // ✅ SOLUCIÓN: La regex ahora captura el formato `* [type:ID] Texto` y `[type:ID] Texto`.
@@ -911,12 +940,6 @@ class ChatComponent {
                     // ✅ FIX: Redirigir a la página real de curso (MPA).
                     functionCall = `window.location.href = 'course?id=${numericId}'`;
                 } else if (type === 'topic') {
-                    // ✅ FIX: Como no hay página de tema, redirigimos a la búsqueda con el nombre del tema (o placeholder).
-                    // Pero si el ID es válido, intentamos ir a búsqueda filtrada por tema si existiera, o search.
-                    // Mejor: redirigir a search.html con query.
-                    // Para simplificar, asumiremos que si hay ID, el usuario quiere ver "algo".
-                    // Dado que el usuario dijo que "ya no tenemos paginas para temas", lo mejor es no navegar a una 404.
-                    // Redirigiremos al HOME con una búsqueda pre-llenada o simplemente search.html
                     functionCall = `window.location.href = '/?q=tema:${numericId}'`;
                 }
 
