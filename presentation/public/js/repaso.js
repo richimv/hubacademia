@@ -41,10 +41,26 @@ class RepasoManager {
     }
 
     /**
-     * ✅ NUEVO: Espera a que la sesión esté lista antes de proceder (Resiliencia Móvil)
+     * ✅ REFACTOR PROFUNDO: Espera asíncrona real. No confía solo en el heap de JS.
+     * Fuerza la lectura de AuthApiService para garantizar que el token existe o se intenta recuperar.
      */
     async waitForSession(maxWaitMs = 3000) {
-        if (window.sessionManager && window.sessionManager.isLoggedIn()) return true;
+        // En lugar de chequear solo el JS congelado (currentUser), intentamos asegurar que hay token activo
+        let currentToken = null;
+        if (window.AuthApiService && typeof window.AuthApiService.getValidToken === 'function') {
+            try {
+                currentToken = await window.AuthApiService.getValidToken();
+            } catch (e) {
+                console.warn('⚠️ [RepasoManager] No se pudo verificar el token asíncronamente.', e);
+            }
+        } else {
+            currentToken = localStorage.getItem('authToken');
+        }
+
+        // Si tenemos token o explícitamente sabemos que somos invitados, procedemos rápido
+        if (currentToken || (window.sessionManager && window.sessionManager.isLoggedIn())) {
+             return true;
+        }
         
         return new Promise((resolve) => {
             const start = Date.now();
@@ -150,8 +166,11 @@ class RepasoManager {
 
 
     async init() {
-        // No longer enforcing redirect here.
-        // Component will handle missing token by showing restricted views.
+        console.log('🚀 [RepasoManager] Inicializando módulo...');
+        
+        // ✅ CRÍTICO: Esperar a que la sesión esté lista antes de cargar componentes
+        // Esto evita errores 401 en móviles al cargar la página o refrescar.
+        await this.waitForSession(2500);
 
         // Init Components
         await this.explorer.init();
@@ -189,7 +208,8 @@ class RepasoManager {
     }
 
     /**
-     * ✅ SHARED FETCH: Evita que Sidebar y Dashboard pidan lo mismo a la vez.
+     * ✅ SHARED FETCH CON SOFT FALLBACK:
+     * Si la petición falla (ej: la red aún está despertando en móvil), reintenta silenciosamente.
      */
     async fetchDecksShared(parentId = null) {
         const key = parentId || 'ROOT';
@@ -198,14 +218,30 @@ class RepasoManager {
         }
 
         const promise = (async () => {
+            const url = parentId ? `${window.AppConfig.API_URL}/api/decks?parentId=${parentId}` : `${window.AppConfig.API_URL}/api/decks`;
+            
             try {
-                const url = parentId ? `${window.AppConfig.API_URL}/api/decks?parentId=${parentId}` : `${window.AppConfig.API_URL}/api/decks`;
-
                 const res = await window.NetworkService.fetch(url);
                 const data = await res.json();
                 return data.decks || [];
+            } catch (error) {
+                console.warn(`⚠️ [RepasoManager] Falló petición a mazos, aplicando Soft Fallback (1 segundo de gracia). Error:`, error);
+                
+                // Esperar 1 segundo y reintentar UNA VEZ en silencio
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                try {
+                    // Re-validar token por si las moscas
+                    if (window.AuthApiService) await window.AuthApiService.getValidToken();
+                    const resRetry = await window.NetworkService.fetch(url);
+                    const dataRetry = await resRetry.json();
+                    return dataRetry.decks || [];
+                } catch (retryError) {
+                    console.error('❌ [RepasoManager] Falló el reintento del Soft Fallback.', retryError);
+                    throw retryError; // Ahora sí fallamos con gracia
+                }
             } finally {
-                // Limpiar la promesa después de un pequeño delay para permitir nuevas cargas si hay cambios
+                // Limpiar la promesa después de un pequeño delay
                 setTimeout(() => delete this._sharedRequests.decks[key], 5000);
             }
         })();
@@ -231,16 +267,20 @@ class RepasoManager {
             const needsSync = sessionStorage.getItem('repaso_sync_needed') === 'true';
             
             if (event.persisted || needsSync) {
-                console.log('🔄 Volviendo del estudio. Sincronizando estado...');
+                console.log('🔄 Volviendo del estudio. Aplicando re-hidratación resiliente...');
                 sessionStorage.removeItem('repaso_sync_needed'); // Limpiar flag
                 
                 // 1. Limpiar caché local para ver cambios de progreso
                 this.invalidateCache();
 
-                // 2. Esperar a que la sesión esté activa (Crucial para móviles)
+                // 2. NETWORK WAKE-UP DELAY (Crítico para iOS/Android BFCache)
+                // Damos tiempo a la antena del móvil para reconectar antes de pedir red
+                await new Promise(resolve => setTimeout(resolve, 400));
+
+                // 3. Esperar a que la sesión esté activa (Validación real)
                 await this.waitForSession(2000);
                 
-                // 3. Recarga limpia
+                // 4. Recarga limpia
                 if (this.currentDeck) {
                     this.loadFolder(this.currentDeck.id, false);
                 } else {

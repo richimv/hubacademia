@@ -35,6 +35,12 @@ class DeckExplorer {
                 localStorage.setItem('repaso_explorer_scroll', this.treeContainer.scrollTop);
             });
         }
+
+        // ✅ MEJORA: Esperar a que la sesión esté lista antes de cargar el árbol
+        if (this.manager && typeof this.manager.waitForSession === 'function') {
+            await this.manager.waitForSession(2000);
+        }
+
         await this.loadTree();
     }
 
