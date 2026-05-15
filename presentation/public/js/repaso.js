@@ -41,6 +41,28 @@ class RepasoManager {
     }
 
     /**
+     * ✅ NUEVO: Espera a que la sesión esté lista antes de proceder (Resiliencia Móvil)
+     */
+    async waitForSession(maxWaitMs = 3000) {
+        if (window.sessionManager && window.sessionManager.isLoggedIn()) return true;
+        
+        return new Promise((resolve) => {
+            const start = Date.now();
+            const check = () => {
+                if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+                    resolve(true);
+                } else if (Date.now() - start > maxWaitMs) {
+                    console.warn('⚠️ [RepasoManager] Tiempo de espera de sesión agotado.');
+                    resolve(false);
+                } else {
+                    setTimeout(check, 100);
+                }
+            };
+            check();
+        });
+    }
+
+    /**
      * Renders icon with its vibrant color applied. Used for card icons and headers.
      */
     static renderColoredIcon(icon, fallbackFA = 'fas fa-folder') {
@@ -205,20 +227,27 @@ class RepasoManager {
 
         // Force refresh when returning from flashcard study via browser back button
         window.addEventListener('pageshow', async (event) => {
-            // event.persisted is true if coming from BFCache
-            if (event.persisted) {
-                console.log('🔄 Volviendo del BFCache (Mobile/Back). Refrescando vista...');
+            // event.persisted is true if coming from BFCache, o si forzamos vía flag
+            const needsSync = sessionStorage.getItem('repaso_sync_needed') === 'true';
+            
+            if (event.persisted || needsSync) {
+                console.log('🔄 Volviendo del estudio. Sincronizando estado...');
+                sessionStorage.removeItem('repaso_sync_needed'); // Limpiar flag
                 
-                // ✅ MEJORA: Esperar un poco a que el JS respire y la red se estabilice
-                setTimeout(async () => {
-                    if (this.currentDeck) {
-                        this.loadFolder(this.currentDeck.id, false);
-                    } else {
-                        this.loadDashboard(false);
-                    }
-                    // Forzar recarga del explorador también
-                    if (this.explorer) this.explorer.loadTree();
-                }, 100);
+                // 1. Limpiar caché local para ver cambios de progreso
+                this.invalidateCache();
+
+                // 2. Esperar a que la sesión esté activa (Crucial para móviles)
+                await this.waitForSession(2000);
+                
+                // 3. Recarga limpia
+                if (this.currentDeck) {
+                    this.loadFolder(this.currentDeck.id, false);
+                } else {
+                    this.loadDashboard(false);
+                }
+                
+                if (this.explorer) this.explorer.loadTree();
             }
         });
     }
