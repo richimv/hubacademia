@@ -1346,79 +1346,44 @@ class UIManager {
         if (document.getElementById(modalId)) return;
 
         const modalHTML = `
-            <div id="${modalId}" class="auth-prompt-modal" style="display:flex; backdrop-filter: blur(12px); background: rgba(0,0,0,0.4);">
+            <div id="${modalId}" class="auth-prompt-modal" style="display:flex; backdrop-filter: blur(15px); background: rgba(0,0,0,0.5);">
                 <div class="modal-content" style="
                     background: #0f172a; 
                     border: 1px solid rgba(255,255,255,0.1); 
-                    border-radius: 32px; 
-                    padding: 3rem 2.5rem; 
+                    border-radius: 20px; 
+                    padding: 3rem; 
                     text-align: center; 
                     max-width: 440px; 
-                    box-shadow: 0 0 40px rgba(59, 130, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-                    position: relative;
-                    overflow: hidden;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
                 ">
-                    <!-- Decoración de fondo -->
-                    <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); pointer-events: none;"></div>
-
-                    <div style="margin-bottom: 2rem; position: relative;">
-                        <div style="
-                            width: 100px; height: 100px; 
-                            background: rgba(255, 255, 255, 0.03); 
-                            border: 1px solid rgba(255, 255, 255, 0.05);
-                            border-radius: 28px; 
-                            display: flex; align-items: center; justify-content: center; 
-                            margin: 0 auto; 
-                            padding: 15px;
-                            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-                        ">
-                            <img src="/assets/logo.png" alt="Hub Academia" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.3));">
-                        </div>
-                        <!-- Resplandor debajo del logo -->
-                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; background: rgba(59, 130, 246, 0.15); filter: blur(35px); z-index: -1;"></div>
+                    <div style="margin-bottom: 2rem;">
+                        <img src="/assets/logo.png" alt="Hub Academia" style="height: 60px; object-fit: contain;">
                     </div>
 
-                    <h2 style="font-size: 1.8rem; font-weight: 800; color: #ffffff; margin-bottom: 1rem; letter-spacing: -0.02em;">
-                        ¡Hola, ${user.displayName || 'estudiante'}!
+                    <h2 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; margin-bottom: 1rem; letter-spacing: -0.01em;">
+                        Bienvenido a Hub Academia
                     </h2>
                     
-                    <div style="margin-bottom: 2.5rem;">
-                        <p style="color: #cbd5e1; font-size: 1.05rem; line-height: 1.7;">
-                            Qué alegría que te unas a <span style="color: #60a5fa; font-weight: 700;">Hub Academia</span>.
+                    <div style="margin-bottom: 2.5rem; text-align: center;">
+                        <p style="color: #94a3b8; font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                            Tu cuenta ha sido configurada correctamente. Dispones de <strong>50 créditos de uso</strong> para explorar todas las herramientas de estudio y productividad de la plataforma.
                         </p>
-                        <div style="
-                            background: rgba(255,255,255,0.03); 
-                            border: 1px solid rgba(255,255,255,0.05); 
-                            border-radius: 16px; 
-                            padding: 1rem; 
-                            margin-top: 1.5rem;
-                            display: inline-block;
-                        ">
-                            <p style="color: #f8fafc; font-size: 0.95rem; margin: 0;">
-                                🎁 Te hemos regalado <span style="color: #fbbf24; font-weight: 800; font-size: 1.1rem;">50 vidas de estudio</span>
-                            </p>
-                        </div>
                     </div>
 
                     <button class="btn-primary" onclick="window.uiManager.closeWelcomeModal('${modalId}')" style="
                         width: 100%; 
-                        background: linear-gradient(90deg, #3b82f6, #2563eb); 
+                        background: #3b82f6; 
                         color: white; 
-                        font-weight: 700; 
+                        font-weight: 600; 
                         border: none;
-                        padding: 1.2rem; 
-                        font-size: 1.1rem;
-                        border-radius: 16px;
+                        padding: 1rem; 
+                        font-size: 1rem;
+                        border-radius: 8px;
                         cursor: pointer;
-                        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-                        box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.5);
-                    " onmouseover="this.style.transform='scale(1.03) translateY(-3px)'; this.style.boxShadow='0 15px 25px -5px rgba(37, 99, 235, 0.6)'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.boxShadow='0 10px 20px -5px rgba(37, 99, 235, 0.5)'">
-                        ¡Empezar ahora!
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                        Acceder al Hub
                     </button>
-                    
-                    <p style="margin-top: 1.5rem; color: #64748b; font-size: 0.85rem; font-weight: 500;">
-                        Presiona el botón para comenzar tu viaje
-                    </p>
                 </div>
             </div>`;
 
