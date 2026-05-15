@@ -163,6 +163,11 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Shared Request Pool**: Implementación de un gestor de promesas compartidas en el frontend para evitar peticiones duplicadas durante el arranque de la aplicación (Barra lateral y Dashboard compartiendo el mismo flujo de datos).
 - **Optimistic UI Updates**: Mejora de la percepción de velocidad mediante la actualización inmediata del DOM en acciones de edición y renombrado, sincronizando con la base de datos en segundo plano.
 
+### K. Arquitectura BFCache y Eliminación N+1 (V18 - Mayo 2026)
+- **Renderizado Declarativo y Centralización de Estado**: Se erradicó el anti-patrón N+1 y se desacopló completamente la lógica del DOM en el Explorador de Mazos. El componente ahora opera bajo un modelo de 'Estado Único' (Flat Tree en memoria), donde la función `toggleNode` solo muta datos y el método `renderTree` proyecta esos datos al HTML de forma síncrona. Esto garantiza una consistencia visual absoluta y latencia de 0ms en la expansión de carpetas profundas.
+- **BFCache Network Resiliency**: Para solucionar errores críticos en navegadores móviles (iOS/Android) que suspenden las conexiones TCP al usar el botón "Atrás" (BFCache), se inyectó un `Delay Resiliente` (400ms) en el evento `pageshow`.
+- **Soft Fallback Global (NetworkService)**: La lógica repetitiva de manejo de desconexiones fue centralizada en `NetworkService.js`. El servicio ahora intercepta de forma transparente excepciones de red puras (`Failed to fetch`) y aplica un reintento inteligente y silencioso a los 800ms, blindando toda la aplicación contra cortes momentáneos de conectividad sin perturbar la UI.
+
 ---
 
-**Documentación Técnica Actualizada - 12 de Mayo, 2026.**
+**Documentación Técnica Actualizada - 15 de Mayo, 2026.**

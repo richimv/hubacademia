@@ -96,6 +96,20 @@ class DeckController {
     }
 
     /**
+     * GET /api/decks/tree
+     */
+    getDeckTree = async (req, res) => {
+        try {
+            const { userId } = this._getUserContext(req);
+            const decks = await DeckService.getDeckTree(userId);
+            res.json({ success: true, decks });
+        } catch (error) {
+            console.error('[getDeckTree] Error:', error);
+            res.status(500).json({ error: 'Error al obtener el árbol de mazos' });
+        }
+    }
+
+    /**
      * GET /api/decks/:deckId
      */
     getDeckById = async (req, res) => {

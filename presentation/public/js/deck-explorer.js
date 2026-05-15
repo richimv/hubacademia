@@ -12,6 +12,7 @@ class DeckExplorer {
         this.activeNodeId = null; // Current selection
         this.api = `${window.AppConfig.API_URL}/api/decks`;
         this.token = localStorage.getItem('authToken');
+        this.flatTree = []; // Stores the complete deck hierarchy
     }
 
     _loadExpandedState() {
@@ -41,23 +42,13 @@ class DeckExplorer {
 
     async loadTree() {
         try {
-            // We need a way to get the FULL tree or at least flat list to build it.
-            // Current /api/decks returns filtered list.
-            // Strategy: Fetch ALL roots, then lazily fetch children?
-            // BETTER: Fetch ALL decks flat list and build tree client-side for "Explorer" feel (if not huge).
-            // Let's assume /api/decks without parentId returns ROOTS. 
-            // We might need to adjust API to return ALL or handle recursion.
-            // For now, let's stick to "Fetch Roots + Fetch Context Children".
-            // Actually, for a tree, we need to know if a node has children.
-            // The `children_count` property helps.
+            // ✅ NUEVO: Carga del árbol completo en una sola petición (Elimina N+1)
+            const res = await window.NetworkService.fetch(`${this.api}/tree`);
+            const data = await res.json();
+            this.flatTree = data.decks || [];
 
-            // Fetch Roots first
-            await this.renderRootLevel();
-
-            // Restore expanded nodes recursively
-            if (this.expandedNodes.size > 0) {
-                await this.restoreExpandedState();
-            }
+            // Declarative Rendering: The state dictates the UI
+            this.renderTree();
 
             // Restore Scroll Position
             const savedScroll = localStorage.getItem('repaso_explorer_scroll');
@@ -69,7 +60,7 @@ class DeckExplorer {
 
         } catch (e) {
             console.error(e);
-            this.treeContainer.innerHTML = '<div style="color:var(--accent-warning)">Error cargando árbol</div>';
+            this.treeContainer.innerHTML = '<div style="color:var(--accent-warning); text-align:center; padding: 2rem;">Error al cargar explorador<br><br><button onclick="window.repasoManager.explorer.loadTree()" class="btn-premium btn-premium-secondary" style="margin: 0 auto; padding: 8px 16px; font-size: 0.9rem;"><i class="fas fa-sync-alt"></i> Reintentar</button></div>';
         }
     }
 
@@ -77,37 +68,35 @@ class DeckExplorer {
         return await this.manager.fetchDecksShared(parentId);
     }
 
-    async renderRootLevel() {
+    renderTree() {
         this.treeContainer.innerHTML = '';
+        const fragment = document.createDocumentFragment();
 
         // 1. "Inicio" / All
-        const rootItem = this.createTreeItem({ id: 'ROOT', name: 'Mis Mazos', icon: 'fas fa-home', children_count: 0 }, 0, true);
-        this.treeContainer.appendChild(rootItem);
-
+        fragment.appendChild(this.createTreeItem({ id: 'ROOT', name: 'Mis Mazos', icon: 'fas fa-home', children_count: 0 }, 0, true));
         // 1.5 "Comunidad" / Explorador Público
-        const communityItem = this.createTreeItem({ id: 'COMMUNITY', name: 'Comunidad', icon: 'fas fa-globe', children_count: 0 }, 0, true);
-        this.treeContainer.appendChild(communityItem);
+        fragment.appendChild(this.createTreeItem({ id: 'COMMUNITY', name: 'Comunidad', icon: 'fas fa-globe', children_count: 0 }, 0, true));
 
-        // 2. Fetch API Roots
-        const decks = await this.fetchDecks(null);
+        // 2. Filtrar raíces desde flatTree
+        const roots = this.flatTree.filter(d => !d.parent_id);
 
         // Render System Decks first
-        const systems = decks.filter(d => d.type === 'SYSTEM');
-        const users = decks.filter(d => d.type !== 'SYSTEM');
+        const systems = roots.filter(d => d.type === 'SYSTEM');
+        const users = roots.filter(d => d.type !== 'SYSTEM');
 
-        // Render standard nodes
+        // Render standard nodes recursivamente basado en el estado
         [...systems, ...users].forEach(deck => {
-            const el = this.createTreeItem(deck, 0);
-            this.treeContainer.appendChild(el);
+            fragment.appendChild(this.renderNodeRecursive(deck, 0));
         });
+
+        this.treeContainer.appendChild(fragment);
     }
 
-    createTreeItem(deck, level, isRootLink = false) {
+    createTreeItem(deck, level, isRootLink = false, isExpanded = false) {
         const hasChildren = parseInt(deck.children_count || 0) > 0;
         const container = document.createElement('div');
         container.className = 'tree-node';
         container.dataset.id = deck.id;
-        container.dataset.level = level; // Store level for child reference
 
         // Indentation
         const paddingLeft = level * 1.5;
@@ -120,12 +109,14 @@ class DeckExplorer {
         // Toggle Icon
         const toggle = document.createElement('span');
         toggle.className = 'tree-toggle';
-        toggle.innerHTML = hasChildren ? '<i class="fas fa-chevron-right"></i>' : '<span style="width:12px; display:inline-block"></span>';
+        toggle.innerHTML = hasChildren 
+            ? (isExpanded ? '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-right"></i>') 
+            : '<span style="width:12px; display:inline-block"></span>';
 
         if (hasChildren && !isRootLink) {
             toggle.onclick = (e) => {
                 e.stopPropagation();
-                this.toggleNode(deck.id, container);
+                this.toggleNode(deck.id);
             };
         }
 
@@ -166,88 +157,50 @@ class DeckExplorer {
 
         container.appendChild(content);
 
-        // Children Container (Hidden by default)
-        const childrenContainer = document.createElement('div');
-        childrenContainer.className = 'tree-children';
-        childrenContainer.style.display = 'none';
-        childrenContainer.id = `children-${deck.id}`;
-        container.appendChild(childrenContainer);
+        return container;
+    }
+
+    renderNodeRecursive(deck, level) {
+        const isExpanded = this.expandedNodes.has(deck.id);
+        const container = this.createTreeItem(deck, level, false, isExpanded);
+
+        if (isExpanded) {
+            const childrenContainer = document.createElement('div');
+            childrenContainer.className = 'tree-children';
+            
+            const kids = this.flatTree.filter(d => d.parent_id === deck.id);
+            if (kids.length > 0) {
+                kids.forEach(k => {
+                    childrenContainer.appendChild(this.renderNodeRecursive(k, level + 1));
+                });
+            } else {
+                const emptyState = document.createElement('div');
+                emptyState.style.cssText = `padding: 0.5rem 1.5rem; padding-left: ${(level + 1) * 1.5 + 1.5}rem; color: #475569; font-size: 0.85rem; font-style: italic;`;
+                emptyState.innerHTML = 'Sin sub-mazos';
+                childrenContainer.appendChild(emptyState);
+            }
+            container.appendChild(childrenContainer);
+        }
 
         return container;
     }
 
-    async toggleNode(deckId, nodeElement, forceExpand = null) {
-        if (!nodeElement) return;
-        const childrenDiv = nodeElement.querySelector('.tree-children');
-        const toggleIcon = nodeElement.querySelector('.tree-toggle i');
-
-        // Determine if we should expand or collapse
-        const currentlyExpanded = this.expandedNodes.has(deckId);
-        const shouldExpand = forceExpand !== null ? forceExpand : !currentlyExpanded;
-
-        if (!shouldExpand) {
-            // --- Collapse ---
-            childrenDiv.style.display = 'none';
-            if (toggleIcon) toggleIcon.className = 'fas fa-chevron-right';
+    toggleNode(deckId) {
+        // Mutate state exclusively
+        if (this.expandedNodes.has(deckId)) {
             this.expandedNodes.delete(deckId);
-            this._saveExpandedState();
         } else {
-            // --- Expand ---
-            childrenDiv.style.display = 'block';
-            if (toggleIcon) toggleIcon.className = 'fas fa-chevron-down';
-
-            if (!childrenDiv.hasChildNodes()) {
-                // Lazy Load
-                const currentLevel = parseInt(nodeElement.dataset.level || 0);
-                const loadingIndicator = document.createElement('div');
-                loadingIndicator.style.cssText = `padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #64748b; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;`;
-                loadingIndicator.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-                childrenDiv.appendChild(loadingIndicator);
-
-                try {
-                    const kids = await this.fetchDecks(deckId);
-                    childrenDiv.innerHTML = ''; // Clear loading
-
-                    if (kids.length > 0) {
-                        kids.forEach(k => {
-                            const childNode = this.createTreeItem(k, currentLevel + 1);
-                            childrenDiv.appendChild(childNode);
-                        });
-                    } else {
-                        const emptyState = document.createElement('div');
-                        emptyState.style.cssText = `padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #475569; font-size: 0.85rem; font-style: italic;`;
-                        emptyState.innerHTML = 'Sin sub-mazos';
-                        childrenDiv.appendChild(emptyState);
-                    }
-                } catch (err) {
-                    childrenDiv.innerHTML = `<div style="padding: 0.5rem 1.5rem; padding-left: ${(currentLevel + 1) * 1.5 + 1.5}rem; color: #ef4444; font-size: 0.85rem;">Error</div>`;
-                }
-            }
-
-            // Always add to Set when expanding
             this.expandedNodes.add(deckId);
-            this._saveExpandedState();
-
-            // --- RECURSIVE RESTORATION ---
-            // If we just loaded/expanded, check if any of these children were also expanded
-            const kidsNodes = childrenDiv.querySelectorAll('.tree-node');
-            for (const kid of kidsNodes) {
-                const kidId = kid.dataset.id;
-                if (this.expandedNodes.has(kidId)) {
-                    await this.toggleNode(kidId, kid, true); // Force expand recursively
-                }
-            }
         }
-    }
-
-    async restoreExpandedState() {
-        const roots = this.treeContainer.querySelectorAll('.tree-node');
-        for (const node of roots) {
-            const id = node.dataset.id;
-            if (this.expandedNodes.has(id)) {
-                await this.toggleNode(id, node, true); // Force expand root levels
-            }
-        }
+        this._saveExpandedState();
+        
+        // Preserve scroll across re-renders
+        const currentScroll = this.treeContainer.scrollTop;
+        
+        // Declarative re-render
+        this.renderTree();
+        
+        this.treeContainer.scrollTop = currentScroll;
     }
 
     setActive(id) {

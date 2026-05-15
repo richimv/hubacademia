@@ -547,6 +547,42 @@ class TrainingRepository {
         return result.rows;
     }
 
+    async getAllUserDecks(userId) {
+        if (userId === 'GUEST') {
+            // Guest mode: return unique system decks
+            const query = `
+                SELECT DISTINCT ON (d.name)
+                    d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
+                    0 as total_cards, 0 as due_cards, 
+                    (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
+                    0 as mastery_percentage
+                FROM decks d
+                WHERE d.type = 'SYSTEM'
+                ORDER BY d.name, d.created_at ASC
+            `;
+            const result = await db.query(query);
+            return result.rows;
+        }
+
+        // Fetch ALL decks for the user regardless of parent_id
+        const query = `
+            SELECT 
+                d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id,
+                d.is_public, d.saves_count, d.likes_count, d.cloned_from_id,
+                COUNT(uf.id) as total_cards,
+                COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
+                (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
+                ROUND((COUNT(uf.id) FILTER (WHERE uf.interval_days > 21)::float / NULLIF(COUNT(uf.id), 0)) * 100) as mastery_percentage
+            FROM decks d
+            LEFT JOIN user_flashcards uf ON d.id = uf.deck_id
+            WHERE d.user_id = $1
+            GROUP BY d.id 
+            ORDER BY d.created_at ASC
+        `;
+        const result = await db.query(query, [userId]);
+        return result.rows;
+    }
+
     async getDeckById(userId, deckId) {
         const query = `
             SELECT 

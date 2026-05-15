@@ -5,6 +5,10 @@ class DeckService {
         return await trainingRepository.getDecks(userId, parentId);
     }
 
+    async getDeckTree(userId) {
+        return await trainingRepository.getAllUserDecks(userId);
+    }
+
     async getDeckById(userId, deckId) {
         return await trainingRepository.getDeckById(userId, deckId);
     }

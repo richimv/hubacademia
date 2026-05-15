@@ -168,6 +168,7 @@ router.get('/quiz/leaderboard', auth, quizController.getLeaderboard);
 const DeckController = require('../../application/controllers/deckController');
 
 router.get('/decks/public', optionalAuth, DeckController.getPublicDecks); // ✅ NUEVO: Explorador de Comunidad
+router.get('/decks/tree', optionalAuth, DeckController.getDeckTree); // 🚀 NUEVO: Fetch Completo del Árbol de Mazos sin recursividad
 router.get('/decks', optionalAuth, DeckController.listDecks);
 router.get('/decks/:deckId', optionalAuth, DeckController.getDeckById); // ✅ NUEVO: Fetch Single Deck
 router.get('/decks/:deckId/guide', optionalAuth, DeckController.getDeckGuide); // 🚀 LAZY LOADING: Fetch Guide Only

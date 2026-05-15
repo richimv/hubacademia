@@ -1346,83 +1346,36 @@ class UIManager {
         if (document.getElementById(modalId)) return;
 
         const modalHTML = `
-            <div id="${modalId}" class="auth-prompt-modal" style="display:flex;">
-                <div class="modal-content premium-variant" style="max-height: 90vh; overflow-y: auto;">
-                    <div class="modal-header">
-                        <h2>¡Bienvenido a Hub Academia!</h2>
-                        <button class="modal-close-btn" onclick="window.uiManager.closeWelcomeModal('${modalId}')">&times;</button>
-                    </div>
-                    
-                    <div class="modal-body">
-                         <div class="auth-prompt-icon" style="margin-bottom: 15px;">
-                            <div style="
-                                width: 60px; height: 60px; 
-                                background: rgba(255, 215, 0, 0.05); 
-                                border-radius: 50%; 
-                                display: flex; align-items: center; justify-content: center; 
-                                margin: 0 auto;
-                                border: 1px solid rgba(255, 215, 0, 0.2);
-                                box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
-                            ">
-                                <i class="fas fa-gift" style="font-size: 1.8rem; color: #ffd700;"></i>
-                            </div>
-                        </div>
-
-                        <div class="auth-prompt-main-text" style="font-size: 1rem; color: #e2e8f0; margin-bottom: 20px; line-height: 1.5;">
-                            Te damos la bienvenida con un <br>
-                            <span style="color: #fbbf24; font-weight: 700; letter-spacing: 0.5px;">Paquete de Inicio Gratuito</span>
-                        </div>
-
-                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; text-align: left;">
-                            <ul style="list-style: none; padding: 0; margin: 0; color: #cbd5e1; font-size: 0.9rem;">
-                                <li style="margin-bottom: 10px; display: flex; align-items: start; gap: 10px;">
-                                    <i class="fas fa-check-circle" style="color: #4ade80; margin-top: 2px; font-size: 1rem;"></i>
-                                    <div>
-                                        <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">50 Pases de Vidas Globales</strong>
-                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Para simulacros, Quiz Arena, Asistente y más.</div>
-                                    </div>
-                                </li>
-                                <li style="margin-bottom: 0; display: flex; align-items: start; gap: 10px;">
-                                    <i class="fas fa-check-circle" style="color: #4ade80; margin-top: 2px; font-size: 1rem;"></i>
-                                    <div>
-                                        <strong style="color: #f1f5f9; display: block; margin-bottom: 1px;">Estadísticas en Tiempo Real</strong>
-                                        <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">Mide tu rendimiento clínico y académico instantáneamente.</div>
-                                    </div>
-                                </li>
-                            </ul>
+            <div id="${modalId}" class="auth-prompt-modal" style="display:flex; backdrop-filter: blur(10px);">
+                <div class="modal-content" style="background: #111827; border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 2.5rem; text-align: center; max-width: 420px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1)); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid rgba(255,255,255,0.05);">
+                            <i class="fas fa-sparkles" style="font-size: 2rem; color: #60a5fa;"></i>
                         </div>
                     </div>
 
-                    <div class="modal-footer">
-                        <button class="btn-primary" onclick="window.location.href='/pricing'" style="
-                            width: 100%; 
-                            background: linear-gradient(90deg, #f59e0b, #d97706); 
-                            color: #fff; 
-                            font-weight: 700; 
-                            border: none;
-                            padding: 12px; 
-                            font-size: 0.95rem;
-                            border-radius: 10px;
-                            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
-                            transition: transform 0.2s;
-                            cursor: pointer;
-                        " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                            👑 Obtener Acceso Ilimitado
-                        </button>
-                        <button class="btn-secondary" onclick="window.uiManager.closeWelcomeModal('${modalId}')" style="
-                            width: 100%; 
-                            background: transparent; 
-                            border: 1px solid rgba(255,255,255,0.1); 
-                            color: #94a3b8;
-                            padding: 10px; 
-                            font-size: 0.9rem;
-                            border-radius: 10px;
-                            cursor: pointer;
-                            transition: all 0.2s;
-                        " onmouseover="this.style.borderColor='rgba(255,255,255,0.3)'; this.style.color='#e2e8f0'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.color='#94a3b8'">
-                             Empezar con mi cuenta gratuita
-                        </button>
-                    </div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.75rem;">¡Hola, ${user.displayName || 'estudiante'}!</h2>
+                    <p style="color: #94a3b8; font-size: 1rem; line-height: 1.6; margin-bottom: 2rem;">
+                        Qué alegría que te unas a <strong>Hub Academia</strong>. <br>
+                        Para que empieces con todo, te hemos regalado <span style="color: #60a5fa; font-weight: 600;">50 vidas de estudio</span>. <br>
+                        ¡Úsalas para explorar y aprender a tu ritmo!
+                    </p>
+
+                    <button class="btn-primary" onclick="window.uiManager.closeWelcomeModal('${modalId}')" style="
+                        width: 100%; 
+                        background: #3b82f6; 
+                        color: white; 
+                        font-weight: 600; 
+                        border: none;
+                        padding: 1rem; 
+                        font-size: 1rem;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 20px -3px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 15px -3px rgba(59, 130, 246, 0.3)'">
+                        ¡Empezar a aprender!
+                    </button>
                 </div>
             </div>`;
 
