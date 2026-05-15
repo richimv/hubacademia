@@ -558,9 +558,6 @@ const FlashcardManager = (() => {
     function handleExit() {
         console.log("Exiting study session...", { currentDeckId });
         
-        // ✅ NUEVO: Marcar que venimos de un estudio para forzar recarga limpia en Repaso
-        sessionStorage.setItem('repaso_sync_needed', 'true');
-
         // Si venimos de nuestra propia web, usamos el botón atrás nativo para no ensuciar el historial
         if (document.referrer.includes(window.location.host)) {
             window.history.back();

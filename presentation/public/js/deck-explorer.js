@@ -11,6 +11,7 @@ class DeckExplorer {
         this.expandedNodes = this._loadExpandedState(); // Restore from storage
         this.activeNodeId = null; // Current selection
         this.api = `${window.AppConfig.API_URL}/api/decks`;
+        this.token = localStorage.getItem('authToken');
     }
 
     _loadExpandedState() {
@@ -35,24 +36,22 @@ class DeckExplorer {
                 localStorage.setItem('repaso_explorer_scroll', this.treeContainer.scrollTop);
             });
         }
-
-        // ✅ MEJORA: Esperar a que la sesión esté lista antes de cargar el árbol
-        if (this.manager && typeof this.manager.waitForSession === 'function') {
-            await this.manager.waitForSession(2000);
-        }
-
         await this.loadTree();
     }
 
     async loadTree() {
         try {
-            // Restore Scroll Position BEFORE load to show skeleton or previous state
-            const savedScroll = localStorage.getItem('repaso_explorer_scroll');
-            if (savedScroll && this.treeContainer) {
-                this.treeContainer.scrollTop = parseInt(savedScroll);
-            }
+            // We need a way to get the FULL tree or at least flat list to build it.
+            // Current /api/decks returns filtered list.
+            // Strategy: Fetch ALL roots, then lazily fetch children?
+            // BETTER: Fetch ALL decks flat list and build tree client-side for "Explorer" feel (if not huge).
+            // Let's assume /api/decks without parentId returns ROOTS. 
+            // We might need to adjust API to return ALL or handle recursion.
+            // For now, let's stick to "Fetch Roots + Fetch Context Children".
+            // Actually, for a tree, we need to know if a node has children.
+            // The `children_count` property helps.
 
-            // Fetch Roots
+            // Fetch Roots first
             await this.renderRootLevel();
 
             // Restore expanded nodes recursively
@@ -60,18 +59,17 @@ class DeckExplorer {
                 await this.restoreExpandedState();
             }
 
+            // Restore Scroll Position
+            const savedScroll = localStorage.getItem('repaso_explorer_scroll');
+            if (savedScroll && this.treeContainer) {
+                setTimeout(() => {
+                    this.treeContainer.scrollTop = parseInt(savedScroll);
+                }, 100); // Small delay to ensure rendering finished
+            }
+
         } catch (e) {
-            console.error('[DeckExplorer] Error loading tree:', e);
-            
-            // ✅ MEJORA: Si es un error de red o sesión, mostrar botón de reintento
-            this.treeContainer.innerHTML = `
-                <div style="padding: 1rem; text-align: center;">
-                    <div style="color:var(--accent-warning); font-size:0.85rem; margin-bottom:0.5rem;">Error al cargar explorador</div>
-                    <button onclick="window.repasoManager.explorer.loadTree()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--chat-primary); padding:4px 12px; border-radius:6px; font-size:0.75rem; cursor:pointer;">
-                        <i class="fas fa-sync"></i> Reintentar
-                    </button>
-                </div>
-            `;
+            console.error(e);
+            this.treeContainer.innerHTML = '<div style="color:var(--accent-warning)">Error cargando árbol</div>';
         }
     }
 
@@ -164,12 +162,7 @@ class DeckExplorer {
 
         content.appendChild(toggle);
         content.appendChild(label);
-
-        // ✅ MEJORA: Usar check de sesión dinámico para mostrar el botón de "Añadir"
-        const hasAuth = localStorage.getItem('authToken') || (window.sessionManager && window.sessionManager.isLoggedIn());
-        if (hasAuth && !isRootLink && deck.type !== 'SYSTEM') {
-            content.appendChild(addBtn);
-        }
+        if (this.token && !isRootLink && deck.type !== 'SYSTEM') content.appendChild(addBtn);
 
         container.appendChild(content);
 

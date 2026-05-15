@@ -38,39 +38,49 @@ class NetworkService {
             headers
         };
 
-        try {
-            const response = await fetch(url, fetchOptions);
+        let retries = 1;
+        while (true) {
+            try {
+                const response = await fetch(url, fetchOptions);
 
-            // 3. INTERCEPTOR GLOBAL: Manejo de Errores de Autorización
-            if (response.status === 401 || response.status === 403) {
-                console.warn(`⚠️ [NetworkService] Error de autorización (401/403) en: ${url}`);
-                
-                // Si el backend dice que la sesión expiró, forzamos limpieza
-                if (window.sessionManager) {
-                    // Notificar al usuario antes de redirigir si es posible
-                    if (window.uiManager && window.uiManager.showToast) {
-                        window.uiManager.showToast('Tu sesión ha expirado. Por seguridad, debes volver a ingresar.', 'warning');
+                // 3. INTERCEPTOR GLOBAL: Manejo de Errores de Autorización
+                if (response.status === 401 || response.status === 403) {
+                    console.warn(`⚠️ [NetworkService] Error de autorización (401/403) en: ${url}`);
+                    
+                    // Si el backend dice que la sesión expiró, forzamos limpieza
+                    if (window.sessionManager) {
+                        // Notificar al usuario antes de redirigir si es posible
+                        if (window.uiManager && window.uiManager.showToast) {
+                            window.uiManager.showToast('Tu sesión ha expirado. Por seguridad, debes volver a ingresar.', 'warning');
+                        }
+                        
+                        // Esperar un poco para que el toast sea visible si no estamos en un flujo crítico
+                        setTimeout(() => window.sessionManager.logout(), 2000);
                     }
                     
-                    // Esperar un poco para que el toast sea visible si no estamos en un flujo crítico
-                    setTimeout(() => window.sessionManager.logout(), 2000);
+                    const error = new Error('Unauthorized');
+                    error.status = response.status;
+                    throw error;
                 }
-                
-                const error = new Error('Unauthorized');
-                error.status = response.status;
+
+                return response;
+            } catch (error) {
+                // Manejo de errores de red (offline, DNS, Wake-Up delay, etc.)
+                if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+                    if (retries > 0) {
+                        console.warn(`🔄 [NetworkService] Red inestable, aplicando Soft Fallback (Reintento en 800ms) para: ${url}`);
+                        retries--;
+                        await new Promise(res => setTimeout(res, 800));
+                        continue; // Reintenta el ciclo
+                    }
+
+                    console.error('❌ [NetworkService] Error de conexión crítica tras reintentos:', error);
+                    if (window.uiManager && window.uiManager.showToast) {
+                        window.uiManager.showToast('Problema de conexión con el servidor.', 'error');
+                    }
+                }
                 throw error;
             }
-
-            return response;
-        } catch (error) {
-            // Manejo de errores de red (offline, DNS, etc.)
-            if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-                console.error('❌ [NetworkService] Error de conexión crítica:', error);
-                if (window.uiManager && window.uiManager.showToast) {
-                    window.uiManager.showToast('Problema de conexión con el servidor.', 'error');
-                }
-            }
-            throw error;
         }
     }
 

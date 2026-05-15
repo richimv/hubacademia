@@ -223,14 +223,3 @@ window.sessionManager.onStateChange((user) => {
         window.sessionManager.checkSubscriptionStatus();
     }
 });
-
-// ✅ BFCache Resiliency: Forzar validación asíncrona al volver de background
-window.addEventListener('pageshow', (event) => {
-    if (event.persisted && window.sessionManager.isLoggedIn()) {
-        console.log('🔄 [SessionManager] BFCache Resume detectado. Validando sesión activa...');
-        // Pequeño delay para dejar que la red despierte en móviles
-        setTimeout(() => {
-            window.sessionManager.validateSession();
-        }, 300);
-    }
-});
