@@ -1346,36 +1346,79 @@ class UIManager {
         if (document.getElementById(modalId)) return;
 
         const modalHTML = `
-            <div id="${modalId}" class="auth-prompt-modal" style="display:flex; backdrop-filter: blur(10px);">
-                <div class="modal-content" style="background: #111827; border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 2.5rem; text-align: center; max-width: 420px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-                    <div style="margin-bottom: 1.5rem;">
-                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1)); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid rgba(255,255,255,0.05);">
-                            <i class="fas fa-sparkles" style="font-size: 2rem; color: #60a5fa;"></i>
+            <div id="${modalId}" class="auth-prompt-modal" style="display:flex; backdrop-filter: blur(12px); background: rgba(0,0,0,0.4);">
+                <div class="modal-content" style="
+                    background: #0f172a; 
+                    border: 1px solid rgba(255,255,255,0.1); 
+                    border-radius: 32px; 
+                    padding: 3rem 2.5rem; 
+                    text-align: center; 
+                    max-width: 440px; 
+                    box-shadow: 0 0 40px rgba(59, 130, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <!-- Decoración de fondo -->
+                    <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); pointer-events: none;"></div>
+
+                    <div style="margin-bottom: 2rem; position: relative;">
+                        <div style="
+                            width: 100px; height: 100px; 
+                            background: rgba(255, 255, 255, 0.03); 
+                            border: 1px solid rgba(255, 255, 255, 0.05);
+                            border-radius: 28px; 
+                            display: flex; align-items: center; justify-content: center; 
+                            margin: 0 auto; 
+                            padding: 15px;
+                            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                        ">
+                            <img src="/assets/logo.png" alt="Hub Academia" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.3));">
+                        </div>
+                        <!-- Resplandor debajo del logo -->
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; background: rgba(59, 130, 246, 0.15); filter: blur(35px); z-index: -1;"></div>
+                    </div>
+
+                    <h2 style="font-size: 1.8rem; font-weight: 800; color: #ffffff; margin-bottom: 1rem; letter-spacing: -0.02em;">
+                        ¡Hola, ${user.displayName || 'estudiante'}!
+                    </h2>
+                    
+                    <div style="margin-bottom: 2.5rem;">
+                        <p style="color: #cbd5e1; font-size: 1.05rem; line-height: 1.7;">
+                            Qué alegría que te unas a <span style="color: #60a5fa; font-weight: 700;">Hub Academia</span>.
+                        </p>
+                        <div style="
+                            background: rgba(255,255,255,0.03); 
+                            border: 1px solid rgba(255,255,255,0.05); 
+                            border-radius: 16px; 
+                            padding: 1rem; 
+                            margin-top: 1.5rem;
+                            display: inline-block;
+                        ">
+                            <p style="color: #f8fafc; font-size: 0.95rem; margin: 0;">
+                                🎁 Te hemos regalado <span style="color: #fbbf24; font-weight: 800; font-size: 1.1rem;">50 vidas de estudio</span>
+                            </p>
                         </div>
                     </div>
 
-                    <h2 style="font-size: 1.5rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.75rem;">¡Hola, ${user.displayName || 'estudiante'}!</h2>
-                    <p style="color: #94a3b8; font-size: 1rem; line-height: 1.6; margin-bottom: 2rem;">
-                        Qué alegría que te unas a <strong>Hub Academia</strong>. <br>
-                        Para que empieces con todo, te hemos regalado <span style="color: #60a5fa; font-weight: 600;">50 vidas de estudio</span>. <br>
-                        ¡Úsalas para explorar y aprender a tu ritmo!
-                    </p>
-
                     <button class="btn-primary" onclick="window.uiManager.closeWelcomeModal('${modalId}')" style="
                         width: 100%; 
-                        background: #3b82f6; 
+                        background: linear-gradient(90deg, #3b82f6, #2563eb); 
                         color: white; 
-                        font-weight: 600; 
+                        font-weight: 700; 
                         border: none;
-                        padding: 1rem; 
-                        font-size: 1rem;
-                        border-radius: 12px;
+                        padding: 1.2rem; 
+                        font-size: 1.1rem;
+                        border-radius: 16px;
                         cursor: pointer;
-                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
-                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 20px -3px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 15px -3px rgba(59, 130, 246, 0.3)'">
-                        ¡Empezar a aprender!
+                        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                        box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.5);
+                    " onmouseover="this.style.transform='scale(1.03) translateY(-3px)'; this.style.boxShadow='0 15px 25px -5px rgba(37, 99, 235, 0.6)'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.boxShadow='0 10px 20px -5px rgba(37, 99, 235, 0.5)'">
+                        ¡Empezar ahora!
                     </button>
+                    
+                    <p style="margin-top: 1.5rem; color: #64748b; font-size: 0.85rem; font-weight: 500;">
+                        Presiona el botón para comenzar tu viaje
+                    </p>
                 </div>
             </div>`;
 
