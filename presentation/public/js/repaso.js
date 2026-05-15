@@ -178,7 +178,7 @@ class RepasoManager {
         const promise = (async () => {
             try {
                 const url = parentId ? `${window.AppConfig.API_URL}/api/decks?parentId=${parentId}` : `${window.AppConfig.API_URL}/api/decks`;
-                
+
                 const res = await window.NetworkService.fetch(url);
                 const data = await res.json();
                 return data.decks || [];
@@ -204,10 +204,21 @@ class RepasoManager {
         document.getElementById('card-form').addEventListener('submit', (e) => this.handleSaveCard(e));
 
         // Force refresh when returning from flashcard study via browser back button
-        window.addEventListener('pageshow', (event) => {
+        window.addEventListener('pageshow', async (event) => {
             // event.persisted is true if coming from BFCache
-            if (event.persisted && this.currentDeck) {
-                this.loadFolder(this.currentDeck.id, false);
+            if (event.persisted) {
+                console.log('🔄 Volviendo del BFCache (Mobile/Back). Refrescando vista...');
+                
+                // ✅ MEJORA: Esperar un poco a que el JS respire y la red se estabilice
+                setTimeout(async () => {
+                    if (this.currentDeck) {
+                        this.loadFolder(this.currentDeck.id, false);
+                    } else {
+                        this.loadDashboard(false);
+                    }
+                    // Forzar recarga del explorador también
+                    if (this.explorer) this.explorer.loadTree();
+                }, 100);
             }
         });
     }
@@ -377,7 +388,16 @@ class RepasoManager {
         } catch (e) {
             console.error('[renderRootDecks] Error:', e);
             const grid = document.getElementById('root-decks-grid');
-            if (grid) grid.innerHTML = '<p style="color:var(--accent-warning)">Error al cargar mazos</p>';
+            if (grid) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                        <p style="color:var(--accent-warning); margin-bottom: 1rem;">Error al cargar tus mazos</p>
+                        <button onclick="window.repasoManager.renderRootDecks()" class="btn-premium btn-premium-secondary" style="margin: 0 auto;">
+                            <i class="fas fa-sync"></i> Reintentar carga
+                        </button>
+                    </div>
+                `;
+            }
         }
     }
 
@@ -1067,7 +1087,7 @@ class RepasoManager {
                     window.uiManager.showPaywallModal(null, 'flashcards');
                     return;
                 }
-                
+
                 if (this.token) window.location.href = `/flashcards?deckId=${card.deck_id}&cardId=${card.id}`;
                 else window.uiManager.showAuthPromptModal();
             } else if (action === 'edit') {
