@@ -398,10 +398,10 @@ const SimulatorDash = (() => {
                 if (prefData && prefData.data) {
                     activeConfig = prefData.data;
                     // Keep localStorage in sync for legacy code
-                    localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig));
+                    localStorage.setItem(`simActiveConfig_${currentContext}`, JSON.stringify(activeConfig));
                 } else {
                     // Fallback to localStorage if API has nothing
-                    const savedConfig = localStorage.getItem('simActiveConfig');
+                    const savedConfig = localStorage.getItem(`simActiveConfig_${currentContext}`);
                     if (savedConfig) activeConfig = JSON.parse(savedConfig);
                 }
 
@@ -892,7 +892,7 @@ const SimulatorDash = (() => {
                 btnSave.disabled = true;
 
                 activeConfig = { target, areas: selectedAreas, career };
-                localStorage.setItem('simActiveConfig', JSON.stringify(activeConfig)); // Persist locally
+                localStorage.setItem(`simActiveConfig_${currentContext}`, JSON.stringify(activeConfig)); // Persist locally
 
                 const token = localStorage.getItem('authToken');
                 if (token) {
@@ -1199,7 +1199,7 @@ const SimulatorDash = (() => {
                     stateLoading.style.display = 'none';
                     stateResults.style.display = 'block';
 
-                    let activeCfg = JSON.parse(localStorage.getItem('simActiveConfig')) || {};
+                    let activeCfg = JSON.parse(localStorage.getItem(`simActiveConfig_${currentContext}`)) || {};
                     let targetExamName = activeCfg.target || 'General';
 
                     let mockStrengths = `
@@ -1255,7 +1255,7 @@ const SimulatorDash = (() => {
                         const radar = cachedStats.radar_data || [];
                         const sortedRadar = [...radar].sort((a, b) => b.accuracy - a.accuracy);
 
-                        let activeCfgLogs = JSON.parse(localStorage.getItem('simActiveConfig')) || {};
+                        let activeCfgLogs = JSON.parse(localStorage.getItem(`simActiveConfig_${currentContext}`)) || {};
                         let restrictedTarget = activeCfgLogs.target || 'General';
                         let availableAreas = activeCfgLogs.areas || ['Medicina General', 'Salud Pública', 'Epidemiología'];
 

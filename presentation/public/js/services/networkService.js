@@ -43,9 +43,9 @@ class NetworkService {
             try {
                 const response = await fetch(url, fetchOptions);
 
-                // 3. INTERCEPTOR GLOBAL: Manejo de Errores de Autorización
-                if (response.status === 401 || response.status === 403) {
-                    console.warn(`⚠️ [NetworkService] Error de autorización (401/403) en: ${url}`);
+                // 3. INTERCEPTOR GLOBAL: Manejo de Errores de Autorización (Sesión Expirada)
+                if (response.status === 401) {
+                    console.warn(`⚠️ [NetworkService] Error de autorización (401) en: ${url}`);
                     
                     // Si el backend dice que la sesión expiró, forzamos limpieza
                     if (window.sessionManager) {

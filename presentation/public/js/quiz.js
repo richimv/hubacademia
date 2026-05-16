@@ -196,20 +196,21 @@ async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     state.topic = urlParams.get('topic') || '';
     state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || 'Senior';
+    state.context = urlParams.get('context') || 'MEDICINA'; // Default
+
     // Custom Exam Builder params
     let savedConfig = null;
     try {
-        const stored = localStorage.getItem('simActiveConfig');
+        const stored = localStorage.getItem(`simActiveConfig_${state.context}`);
         if (stored) savedConfig = JSON.parse(stored);
     } catch (error) { console.warn("No active config found"); }
 
     state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'SERUMS');
-    state.context = urlParams.get('context') || 'MEDICINA'; // Default
     state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
 
     const areasParam = urlParams.get('areas');
     if (areasParam) {
-        state.areas = areasParam.split(',');
+        state.areas = String(areasParam).split(',');
     } else if (savedConfig && savedConfig.areas && savedConfig.areas.length > 0) {
         state.areas = savedConfig.areas;
     } else {
@@ -265,7 +266,7 @@ async function init() {
         console.error('Error iniciando quiz:', error);
         localStorage.removeItem(STORAGE_KEY); // Auto-Recuperación con la clave correcta
         alert('Se detectó un examen dañado en memoria. Hemos limpiado el caché de seguridad de tu navegador. Por favor, intenta iniciar el simulacro nuevamente y ya debería funcionar.');
-        window.location.href = 'index.html';
+        window.location.href = '/';
     }
 }
 
@@ -313,7 +314,7 @@ function loadSession() {
         }
 
         // Regla 3: Validar que el mazo/tema sea el mismo (para no cargar un examen viejo en un contexto nuevo)
-        const currentAreas = (urlParams.get('areas') || '').split(',').sort().join(',');
+        const currentAreas = String(urlParams.get('areas') || '').split(',').sort().join(',');
         const storedAreas = (data.areas || []).sort().join(',');
 
         if (currentAreas === storedAreas && data.questions.length > 0) {
@@ -770,7 +771,7 @@ function renderQuestion() {
     }
 
     // Texto Pregunta
-    elements.questionText.innerHTML = window.MarkdownRenderer.render(q.question_text || '');
+    elements.questionText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.question_text || '') : (q.question_text || '');
 
     // Reset UI
     elements.optionsGrid.innerHTML = '';
@@ -795,7 +796,7 @@ function renderQuestion() {
         textSpan.className = 'option-text';
         // También procesar Markdown en opciones por si acaso (aunque menos común)
         if (window.marked && window.marked.parse) {
-            textSpan.innerHTML = window.marked.parse(opt).replace(/^<p>|<\/p>$/g, '');
+            textSpan.innerHTML = window.marked.parse(String(opt || '')).replace(/^<p>|<\/p>$/g, '');
         } else {
             textSpan.textContent = opt;
         }
@@ -868,7 +869,7 @@ function handleAnswer(selectedIndex, btnElement) {
     // Mostrar explicación y caja de feedback en Modos de Aprendizaje (20qs +)
 
     // 📚 MODO ESTUDIO (20qs): Comportamiento de Aprendizaje Profundo
-    elements.explanationText.innerHTML = window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
+    elements.explanationText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.") : (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
 
     if (q.explanation_image_url) {
         elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);
