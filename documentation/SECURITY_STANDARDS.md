@@ -34,9 +34,10 @@ Hub Academia sigue un enfoque de defensa en profundidad, donde cada capa del sis
 *   **Gestión Centralizada (NetworkService):** Se ha eliminado la gestión manual de tokens en cada archivo `.js`. Ahora el `NetworkService` centraliza la inyección de seguridad, reduciendo la superficie de ataque y evitando fugas de tokens por errores de implementación en nuevos módulos.
 *   **Bypass Controlado:** Algunas rutas de lectura son `optionalAuth`, permitiendo acceso limitado a invitados mientras se personaliza la experiencia para usuarios logueados.
 
-### 3.2. Limitación de Tasa (Rate Limiting)
-*   **Auth Limiter:** Protege los endpoints de sincronización contra abusos.
-*   **Límites de Cuotas (Cerbero):** El middleware `checkLimitsMiddleware.js` controla el consumo de IA y Simulacros según el plan del usuario (Free/Premium), protegiendo la rentabilidad y previniendo el scraping masivo.
+### 3.2. Limitación de Tasa (Rate Limiting y Prevención de Abuso)
+*   **Global API Limiter:** Aplicado universalmente en el entrypoint de todas las rutas `/api/*` en [server.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/infrastructure/config/server.js#L139) mediante `express-rate-limit`. Establece un techo de **500 peticiones por IP cada 15 minutos**, protegiendo al servidor de escaneos automáticos de vulnerabilidades y ráfagas maliciosas de clics ("click-spamming").
+*   **Auth Limiter (Estricto):** Protege las rutas críticas de autenticación y sincronización de sesiones en [apiRoutes.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/infrastructure/routes/apiRoutes.js#L80) (`/api/auth/sync`). Restringe la tasa a un máximo de **20 intentos por IP cada 15 minutos**, erradicando ataques de fuerza bruta en el handshake de tokens.
+*   **Límites de Capa de Negocio (Cerbero):** El middleware centralizado [checkLimitsMiddleware.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/application/middlewares/checkLimitsMiddleware.js) actúa como el firewall financiero de la plataforma. Audita de forma transaccional el consumo de APIs externas de Vertex AI (Chat, Audio, Flashcards, Simuladores y Autoevaluaciones de Recursos) y el volumen de archivos cargados (Excel de 10/día) según el rol y tier activo de la cuenta, arrojando respuestas `403 Forbidden` instantáneas con el flag `paywall: true` cuando se sobrepasa la cuota.
 
 ### 3.3. Sanitización y Validación de Entrada
 *   **Input Check:** Validación estricta de tipos y longitudes (ej: el nombre debe tener >2 caracteres).

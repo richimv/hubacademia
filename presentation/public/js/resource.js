@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const resourceId = urlParams.get('id');
     const wrapper = document.getElementById('resource-wrapper');
+    let stateResourceId = null;
 
     if (!resourceId) {
         wrapper.innerHTML = '<div class="error-state">No se especificó un recurso (Falta ID).</div>';
@@ -79,6 +80,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // En lugar de usar Regex (que es frágil ante diferentes codificaciones HTML de TinyMCE),
         // parseamos el HTML real y reescribimos los sources explícitamente para saltarnos Vercel.
         let safeHTML = resource.content_html || defaultContent;
+        if (window.MarkdownRenderer && safeHTML !== defaultContent) {
+            safeHTML = window.MarkdownRenderer.render(safeHTML);
+        }
         if (window.AppConfig && window.AppConfig.API_URL && safeHTML !== defaultContent) {
             try {
                 const parser = new DOMParser();
@@ -127,6 +131,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 
                 <div class="resource-actions">
+                    <button class="btn-save btn-quiz-premium" onclick="openQuizConfigModal('${resource.id}')">
+                        <i class="fas fa-brain"></i> Autoevaluación IA
+                    </button>
                     <!-- Integración con Mi Biblioteca / LibraryUI -->
                     <button class="btn-save btn-primary js-library-btn action-save" data-id="${resource.id}" data-type="book" data-action="save">
                         <i class="far fa-bookmark"></i> Agregar a mi Biblioteca
@@ -138,7 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
 
             <div class="resource-body">
-                <div class="resource-content" id="resource-content-body">
+                <div class="resource-content markdown-content" id="resource-content-body">
                     ${safeHTML}
                 </div>
             </div>
@@ -268,6 +275,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert("Error al guardar en la biblioteca.");
         }
     }
+
+    // Lógica para Autoevaluación IA
+    window.openQuizConfigModal = function(id) {
+        if (window.uiManager) {
+            window.uiManager.checkAuthAndExecute(() => {
+                stateResourceId = id;
+                const modal = document.getElementById('modal-quiz-config');
+                if (modal) modal.classList.add('active');
+            });
+        } else {
+            stateResourceId = id;
+            const modal = document.getElementById('modal-quiz-config');
+            if (modal) modal.classList.add('active');
+        }
+    };
+    
+    window.closeQuizConfigModal = function() {
+        const modal = document.getElementById('modal-quiz-config');
+        if (modal) modal.classList.remove('active');
+    };
+
+    window.startDynamicQuiz = function() {
+        const count = document.getElementById('quiz-count').value;
+        const difficulty = document.getElementById('quiz-difficulty').value;
+        window.location.href = `/arena.html?resourceId=${stateResourceId}&count=${count}&difficulty=${difficulty}`;
+    };
 
     // Exponer funciones globales
     window.openResourceLink = openResourceLink;

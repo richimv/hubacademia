@@ -128,18 +128,66 @@ class TutorAiService {
             const mainSearchQuery = (smartTopics && smartTopics.length > 0) ? smartTopics.join(' ') : message;
             console.log(`🧠 [TutorAiService] Temas finales: ${smartTopics?.join(', ') || 'ninguno'}`);
 
-            // 2. Buscar en Pinecone según la especialización (RAG Activo)
+            // 2. Determinar Contexto de Estudio (Ruta Express vs RAG Híbrido Multiuso)
             let context = "";
-            const activeRAG = ['medicine', 'education'].includes(specialization);
+            const resourceContext = filters.resourceContext || null;
 
-            if (activeRAG) {
-                // Pasamos predefinedTerms para evitar la doble llamada a la IA reescritora
-                context = await RagService.searchContextSmart(mainSearchQuery, 20, { 
-                    mode: 'SEMANTIC', 
-                    target,
-                    namespace,
-                    predefinedTerms: smartTopics
-                });
+            if (resourceContext) {
+                // Modo Contexto de Recurso (Asistente de Voz / Chat del Recurso)
+                const content = resourceContext.content_html || "";
+                const plainText = content ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+                const isContentShort = plainText && plainText.length > 0 && plainText.length < 15000;
+
+                if (isContentShort) {
+                    console.log(`📚 [TutorAiService] Usando content_html de recurso directo (< 15k texto plano)`);
+                    context = `--- CONTEXTO OFICIAL DEL RECURSO: "${resourceContext.title}" ---\n${plainText}\n\n[INSTRUCCIONES DE RESPUESTA]:\nResponde a la pregunta del usuario utilizando este material como tu base de verdad técnica primaria. Si la pregunta requiere profundizar o no está explícita aquí, usa tu experiencia clínica/pedagógica para dar una respuesta rica y veraz.`;
+                } else {
+                    console.log(`🔍 [TutorAiService] Usando RAG Resiliente de 3 niveles para recurso extenso/sin sinopsis`);
+                    let filename = null;
+                    if (resourceContext.file_url) {
+                        const parts = resourceContext.file_url.split('/');
+                        filename = decodeURIComponent(parts[parts.length - 1]);
+                    }
+
+                    const questionRagService = require('./questionRagService');
+                    
+                    // Nivel 1: RAG Dinámico por metadato de archivo
+                    context = await questionRagService.getStyleContextByKeywords(
+                        specialization,
+                        [mainSearchQuery],
+                        8,
+                        filename
+                    );
+
+                    // Nivel 2: RAG Semántico Global
+                    if (!context || context.trim() === '') {
+                        console.warn(`⚠️ [TutorAiService] No se encontraron fragmentos en Pinecone para ${filename}, intentando RAG semántico global.`);
+                        context = await questionRagService.getStyleContextByKeywords(
+                            specialization,
+                            [`${resourceContext.title} ${mainSearchQuery}`],
+                            8,
+                            null
+                        );
+                    }
+
+                    // Nivel 3: Fallback Generativo Experto
+                    if (!context || context.trim() === '') {
+                        console.warn(`⚠️ [TutorAiService] RAG falló en chat de voz, usando fallback básico del título.`);
+                        context = `Tema de estudio principal: "${resourceContext.title}".`;
+                    }
+                }
+            } else {
+                // Modo Chat General (Normal RAG)
+                const activeRAG = ['medicine', 'education'].includes(specialization);
+                if (activeRAG) {
+                    // Pasamos predefinedTerms para evitar la doble llamada a la IA reescritora
+                    context = await RagService.searchContextSmart(mainSearchQuery, 20, { 
+                        mode: 'SEMANTIC', 
+                        target,
+                        namespace,
+                        predefinedTerms: smartTopics
+                    });
+                }
             }
 
             // 3. Buscar imágenes (Usando temas persistentes)

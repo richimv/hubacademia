@@ -197,7 +197,7 @@ router.post('/training/flashcards/save-from-question', auth, quizController.save
 
 // --- Rutas de Quiz Battle (Arena / Arcade) ---
 const quizGameController = require('../../application/controllers/quizGameController');
-router.post('/arena/start', auth, checkAILimits('quiz_arena'), quizGameController.startGame);
+router.post('/arena/start', auth, checkAILimits('self_evaluation'), quizGameController.startGame);
 router.post('/arena/questions', auth, quizGameController.getQuestions); // ✅ NUEVO: Fetch Background
 router.post('/arena/submit', auth, quizGameController.submitScore);
 router.get('/arena/ranking', optionalAuth, quizGameController.getRanking);

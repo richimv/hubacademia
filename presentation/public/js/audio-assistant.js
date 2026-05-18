@@ -121,17 +121,21 @@ class AudioAssistant {
     // ─────────────────────────────────────────────────────────
     _capturePageContext() {
         const path = window.location.pathname.toLowerCase();
-        let context = { type: 'general', text: '', label: 'Contexto general', lang: 'es' };
+        let context = { type: 'general', text: '', label: 'Contexto general', lang: 'es', resourceId: null };
 
         // 🟢 Detección de Idioma Basada en Contexto
         if (path.includes('ingles') || path.includes('english')) context.lang = 'en';
         else if (path.includes('italiano') || path.includes('italian')) context.lang = 'it';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const resourceId = urlParams.get('id');
 
         const resourceContentEl = document.getElementById('resource-content-body');
         if (resourceContentEl) {
             const rawText = resourceContentEl.innerText?.trim() || '';
             context.text = rawText.substring(0, 10000); 
             context.type = 'resource';
+            context.resourceId = resourceId; // ✅ Capturar el ID del recurso de forma segura
             const titleEl = document.querySelector('.resource-info h1');
             context.label = titleEl ? `Recurso: ${titleEl.innerText}` : 'Recurso académico';
             
@@ -397,9 +401,9 @@ class AudioAssistant {
         if (transcriptEl) transcriptEl.textContent = userMessage;
 
         let contextInjection = '';
-        if (this.pageContext?.text) {
-            contextInjection = `\n\n[CONTEXTO COMPLETO DEL RECURSO - "${this.pageContext.label}"]\n---\n${this.pageContext.text}\n---\nINSTRUCCIONES DE ANÁLISIS PROFUNDO:\n1. ANALIZA TODO: Lee y comprende la totalidad del contexto proporcionado arriba (incluso si es extenso).\n2. SALIDA CONCISA: Aunque hayas analizado todo, tu respuesta hablada/escrita debe ser un resumen EJECUTIVO, BRILLANTE y CONCISO. No menciones todo de golpe.\n3. MEMORIA ACTIVA: Mantén todos los detalles técnicos en tu "memoria" para responder preguntas específicas, rebuscadas o complejas del usuario más adelante.\n4. REFUERZO EXTERNO: Si el usuario hace una pregunta muy técnica que no está en el resumen, utiliza tu conocimiento experto de fuentes oficiales (según la especialidad: medicina, ingeniería, idiomas, educación, etc.) para dar una respuesta completa y veraz.\n5. INTERACCIÓN: Termina siempre invitando al usuario a profundizar en temas específicos del recurso.`;
-        } else {
+        const resourceId = this.pageContext?.resourceId || null;
+
+        if (!resourceId) {
             contextInjection = `\n\n[CONTEXTO] El usuario se encuentra en ${this.pageContext?.label || 'Hub Academia'}. Responde de forma clara, directa y estructurada. Invita a seguir conversando.`;
         }
 
@@ -410,6 +414,7 @@ class AudioAssistant {
                 method: 'POST',
                 body: JSON.stringify({
                     message: userMessage + contextInjection,
+                    resourceId: resourceId,
                     specialization: 'neutral',
                     ephemeral: true,
                     isAudio: true, // ✅ Identificador para el middleware de límites

@@ -34,8 +34,8 @@ class ChatController {
         try {
             console.log('💬 ChatController.processMessage iniciado');
 
-            // ✅ FASE II: Extraer datos del request.
-            const { message, specialization = 'medicine', context, ephemeral = false } = req.body;
+            // ✅ FASE II: Extraer datos del request (incluyendo resourceId si lo envía el asistente de voz/chat)
+            const { message, specialization = 'medicine', context, ephemeral = false, resourceId = null } = req.body;
             let { conversationId } = req.body; // 'let' porque puede ser creado.
             const userId = req.user.id; // Obtenido del token JWT.
 
@@ -43,7 +43,29 @@ class ChatController {
                 return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
             }
 
-            console.log(`💬 Procesando mensaje (${specialization}):`, message.substring(0, 60));
+            // ✅ CARGA DE CONTEXTO DINÁMICO DE RECURSO (Si viene de la página de un recurso)
+            let finalSpecialization = specialization;
+            let resourceContext = null;
+
+            if (resourceId) {
+                try {
+                    const resRow = await new (require('../../domain/repositories/bookRepository'))().findById(resourceId);
+                    if (resRow) {
+                        finalSpecialization = resRow.domain || 'medicine';
+                        resourceContext = {
+                            id: resourceId,
+                            title: resRow.title || '',
+                            content_html: resRow.content_html || '',
+                            file_url: resRow.file_url || null
+                        };
+                        console.log(`📚 [ChatController] Contexto de recurso cargado. Especialidad dinamizada: ${finalSpecialization} | Recurso: "${resRow.title}"`);
+                    }
+                } catch (err) {
+                    console.error("⚠️ Error cargando contexto de recurso en ChatController:", err.message);
+                }
+            }
+
+            console.log(`💬 Procesando mensaje (${finalSpecialization}):`, message.substring(0, 60));
 
             if (!this.analyticsService) {
                 console.error('❌ ERROR CRÍTICO: analyticsService no está disponible');
@@ -99,14 +121,15 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
             // --- ✅ FASE III: PROCESAMIENTO IA (V6 - TutorAiService) ---
             let aiResult;
             try {
-                console.log(`🤖 Generando respuesta V6. RAG: ${hasRAGAccess}. Tier: ${req.userTier}. Spec: ${specialization}`);
+                console.log(`🤖 Generando respuesta V6. RAG: ${hasRAGAccess}. Tier: ${req.userTier}. Spec: ${finalSpecialization}`);
 
-                // Llamada al servicio especializado con el mensaje procesado (incluye contexto flashcard si aplica)
+                // Llamada al servicio especializado con el mensaje procesado
                 aiResult = await TutorAiService.handleChat(processedMessage, conversationHistory, {
                     target: req.userTarget || 'ENAM',
-                    specialization,
+                    specialization: finalSpecialization,
                     userTier: req.userTier,
-                    namespace: (specialization === 'medicine' || specialization === 'education') ? specialization : 'general'
+                    namespace: (finalSpecialization === 'medicine' || finalSpecialization === 'education') ? finalSpecialization : 'general',
+                    resourceContext: resourceContext // ✅ Pasar el contexto del recurso cargado al servicio IA
                 });
 
                 // TutorAiService ya devuelve { intencion, respuesta, sugerencias } parseados

@@ -158,26 +158,7 @@ window.addEventListener('pageshow', (event) => {
     setTimeout(restoreButtons, 200); 
 });
 
-// ✅ LÓGICA DEL BOTÓN "HUB QUIZ ARENA"
-const btnQuiz = document.getElementById('btn-quiz-arena');
-if (btnQuiz) {
-    btnQuiz.addEventListener('click', () => {
-        // ✅ STANDARD AUTH CHECK: Use UI Manager to handle Auth or Show Paywall Modal
-        if (window.uiManager) {
-            window.uiManager.checkAuthAndExecute(() => {
-                console.log('🎮 Iniciando Hub Quiz Arena...');
-                window.location.href = '/quiz';
-            });
-        } else {
-            // Fallback if UIManager not loaded
-            if (!window.sessionManager || !window.sessionManager.isLoggedIn()) {
-                window.location.href = '/login';
-            } else {
-                window.location.href = '/quiz';
-            }
-        }
-    });
-}
+
 
 // ✅ FUNCIÓN DE UI (Solo pinta, no modifica datos para evitar bucles)
 function updateHeaderUI(user) {

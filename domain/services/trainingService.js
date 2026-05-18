@@ -425,6 +425,143 @@ class TrainingService {
     }
 
     /**
+     * Generador de Cuestionarios Dinámicos desde Recursos
+     * Toma el texto de un recurso (libro, documento) y genera preguntas de alto impacto.
+     */
+    async generateQuizFromResource(title, content, count = 5, difficulty = 'intermediate', resourceUrl = null, domain = 'medicine') {
+        try {
+            console.log(`🤖 [Arena IA] Generando quiz dinámico para recurso: ${title} | Dificultad: ${difficulty}`);
+            
+            // 1. Extraer nombre de archivo para filtro RAG
+            let filename = null;
+            if (resourceUrl) {
+                try {
+                    const decoded = decodeURIComponent(resourceUrl);
+                    const parts = decoded.split('/');
+                    filename = parts[parts.length - 1];
+                } catch(e) {}
+            }
+
+            // 2. Determinar el contexto de uso (Directo vs RAG) - Limpiar HTML para contar caracteres reales de texto plano
+            let contextForAI = "";
+            const plainText = content ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+            const isContentShort = plainText && plainText.length > 0 && plainText.length < 15000;
+            
+            // 3. Generar Subtemas Dinámicos para Aleatoriedad
+            const subtopicsPrompt = `Actúa como un experto docente. Extrae 5 subtemas o conceptos muy específicos a evaluar del siguiente recurso: "${title}". Devuelve SOLO una lista separada por comas, sin numeración ni introducciones.`;
+            let subtopicsStr = "Conceptos generales";
+            try {
+                const subResp = await modelCreativeLite.generateContent(subtopicsPrompt);
+                subtopicsStr = subResp.response.candidates[0].content.parts[0].text.trim();
+            } catch(e) { console.warn("No se pudieron generar subtemas dinámicos."); }
+            
+            // Seleccionar 2 subtemas al azar con parsing ultra-robusto (comas, guiones, números, saltos de línea)
+            let subtopicsArr = subtopicsStr
+                .split(/[\n,;]+/)
+                .map(s => s.replace(/^[-*•\d\.\s]+/g, '').trim())
+                .filter(s => s.length > 3);
+                
+            if (subtopicsArr.length === 0) {
+                subtopicsArr = ["Conceptos clave", "Definiciones principales", "Aplicaciones prácticas", "Análisis crítico", "Casos de estudio"];
+            }
+
+            const selectedSubtopics = subtopicsArr.sort(() => 0.5 - Math.random()).slice(0, 2).join(', ');
+            console.log(`🎯 [Arena IA] Subtemas dinámicos seleccionados: ${selectedSubtopics}`);
+
+            if (isContentShort) {
+                console.log(`📚 [Arena IA] Usando content_html directo (Largo texto plano: ${plainText.length} < 15k)`);
+                contextForAI = plainText;
+            } else {
+                console.log(`🔍 [Arena IA] Usando RAG Dinámico para recurso extenso o sin content_html`);
+                const questionRagService = require('./questionRagService');
+                // Buscar en Pinecone filtrando por el filename si existe
+                contextForAI = await questionRagService.getStyleContextByKeywords(
+                    domain, 
+                    [selectedSubtopics], 
+                    8, 
+                    filename
+                );
+                
+                if (!contextForAI || contextForAI.trim() === '') {
+                    console.warn(`⚠️ [Arena IA] No se encontraron fragmentos en Pinecone para ${filename}, intentando búsqueda semántica global con el título.`);
+                    contextForAI = await questionRagService.getStyleContextByKeywords(
+                        domain, 
+                        [`${title} ${selectedSubtopics}`], 
+                        8, 
+                        null
+                    );
+                }
+                
+                if (!contextForAI || contextForAI.trim() === '') {
+                    console.warn(`⚠️ [Arena IA] Fallback semántico falló, usando fallback AI pura.`);
+                    contextForAI = `Resumen básico del recurso: ${title}. Temas a evaluar: ${selectedSubtopics}`;
+                }
+            }
+
+            const prompt = `
+            Actúa como un experto docente y Quiz Master.
+            Tu tarea es generar EXACTAMENTE ${count} preguntas de evaluación de opción múltiple (Active Recall) basadas EXCLUSIVAMENTE en el siguiente material de estudio:
+            
+            TÍTULO DEL RECURSO: "${title}"
+            ENFOQUE DINÁMICO (Priorizar estos temas si están en el material): ${selectedSubtopics}
+            NIVEL DE DIFICULTAD: ${difficulty.toUpperCase()} (Si es 'basic' o 'easy': conceptos directos y definiciones clave. Si es 'advanced' o 'hard': análisis crítico, diagnóstico avanzado y toma de decisiones).
+            
+            --- INICIO DEL MATERIAL ---
+            ${contextForAI}
+            --- FIN DEL MATERIAL ---
+            
+            🚨 REGLAS DE ORO:
+            1. VERACIDAD: Todas las respuestas deben deducirse o estar alineadas al material provisto.
+            2. FORMATO: Genera EXACTAMENTE 4 opciones. Sin letras (A, B) al inicio.
+            3. SIMETRÍA VISUAL: Todas las opciones deben tener una longitud similar. No hacer la correcta obvia por su longitud.
+            4. IDIOMA: Español.
+            5. EXPLICACIONES: Añade una breve explicación educativa (1-2 líneas) de por qué la respuesta es correcta.
+            
+            JSON ESTRICTO (No incluyas explicaciones fuera del JSON):
+            [{"question_text":"¿Cuál es el principal concepto...?","options":["Opción 1", "Opción 2", "Opción 3", "Opción 4"],"correct_option_index":0,"explanation":"Explicación corta.","topic":"${title}","visual_support_recommendation":""}]
+            `;
+
+            const result = await modelCreativeLite.generateContent(prompt);
+            const text = result.response.candidates[0].content.parts[0].text;
+
+            let questions;
+            try {
+                const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                let jsonString = codeBlockMatch ? codeBlockMatch[1] : text;
+                const startIndex = jsonString.search(/\[/);
+                const endIndex = jsonString.lastIndexOf(']');
+                if (startIndex !== -1 && endIndex !== -1) {
+                    jsonString = jsonString.substring(startIndex, endIndex + 1);
+                }
+                questions = JSON.parse(jsonString);
+            } catch (parseError) {
+                console.error("❌ Error parseando JSON de Recurso:", parseError.message);
+                return [];
+            }
+
+            // Sanitización
+            questions = questions.map(q => {
+                if (q.options.length > 4) {
+                    if (q.correct_option_index >= 4) {
+                        q.options[3] = q.options[q.correct_option_index];
+                        q.correct_option_index = 3;
+                    }
+                    q.options = q.options.slice(0, 4);
+                }
+                while (q.options.length < 4) {
+                    q.options.push("Opción extra");
+                }
+                return q;
+            });
+
+            return questions;
+        } catch (error) {
+            console.error("❌ Error IA Generación Recurso:", error);
+            return [];
+        }
+    }
+
+    /**
      * Genera Flashcards a partir de un tema o texto (Para Custom Decks).
      * @param {string} topic - Tema o texto corto.
      * @param {number} count - Número sugerido (Default 20, adaptable).

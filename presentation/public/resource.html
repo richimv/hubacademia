@@ -53,6 +53,37 @@
         </div>
     </main>
 
+    <!-- Quiz Config Modal (Premium) -->
+    <div id="modal-quiz-config" class="modal-overlay" style="z-index: 100000;">
+        <div class="modal-content premium-glass-dark" style="max-width: 450px; padding: 2.5rem; text-align: center; border-radius: 24px; position: relative;">
+            <button class="modal-close-btn" onclick="closeQuizConfigModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; color: #64748b; cursor: pointer;"><i class="fas fa-times"></i></button>
+            <i class="fas fa-brain" style="font-size: 3.5rem; color: #a855f7; margin-bottom: 1.5rem; filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4)); display: inline-block;"></i>
+            <h2 style="color: white; font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700;">Autoevaluación IA</h2>
+            <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 2rem;">Personaliza tu entrenamiento basado en este recurso.<br><span style="color: #c084fc; font-size: 0.8rem; font-weight: 600; display: block; margin-top: 0.6rem;"><i class="fas fa-shield-alt"></i> Máximo 15 autoevaluaciones por día</span></p>
+            
+            <div class="form-group" style="text-align: left; margin-bottom: 1.5rem;">
+                <label for="quiz-count" style="color: #94a3b8; font-size: 0.8rem; display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Cantidad de Preguntas</label>
+                <select id="quiz-count" style="width: 100%; padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: white; outline: none; font-family: inherit; font-size: 0.95rem;">
+                    <option value="5" selected>5 Preguntas</option>
+                    <option value="10">10 Preguntas</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 2rem;">
+                <label for="quiz-difficulty" style="color: #94a3b8; font-size: 0.8rem; display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Nivel de Dificultad</label>
+                <select id="quiz-difficulty" style="width: 100%; padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: white; outline: none; font-family: inherit; font-size: 0.95rem;">
+                    <option value="basic" selected>Fácil</option>
+                    <option value="advanced">Difícil</option>
+                </select>
+            </div>
+
+            <button class="btn-start" onclick="startDynamicQuiz()"
+                style="margin: 0 auto; width: 100%; padding: 1rem; background: linear-gradient(135deg, #a855f7, #6366f1); border-radius: 12px; color: white; font-weight: 600; font-size: 1.1rem; border: none; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fas fa-play"></i> Iniciar Desafío
+            </button>
+        </div>
+    </div>
+
     <!-- Footer Injection -->
     <footer class="main-footer">
         <div class="footer-container">

@@ -1,5 +1,6 @@
 const TrainingService = require('../../domain/services/trainingService');
-const db = require('../../infrastructure/database/db');
+const BookRepository = require('../../domain/repositories/bookRepository');
+const bookRepo = new BookRepository();
 const UsageService = require('../../domain/services/usageService');
 const usageService = new UsageService();
 
@@ -7,254 +8,145 @@ class QuizGameController {
 
     /**
      * POST /api/arena/start
-     * Inicia una partida Arcade (Battle Mode).
+     * Genera un quiz de aprendizaje activo dinámico, sin guardar en base de datos.
      */
     async startGame(req, res) {
         try {
-            const { topic } = req.body;
+            const { resourceId, topic, count = 5, difficulty = 'intermediate' } = req.body;
             const user = req.user;
 
             if (!user || !user.id) {
-                console.error("❌ QuizGameController: User ID no encontrado en request.");
                 return res.status(401).json({ error: 'Usuario no autenticado correctamente.' });
             }
 
-            console.log(`⚔️ Iniciando Quiz Battle: ${topic || 'Aleatorio'} para ${user.name} (ID: ${user.id})`);
+            // La validación de límites (tanto cuota de vidas de Free como el tope diario de 15)
+            // ya fue realizada de forma centralizada por el middleware checkAILimits('self_evaluation')
 
-            // 1. Generar Preguntas (Modo Rápido: General / Arcade)
-            const questions = await TrainingService.generateGeneralQuiz(topic || 'Cultura General', user.id, user.subscriptionTier);
+            console.log(`⚔️ Iniciando Dynamic Quiz Arena para ${user.name} (ID: ${user.id}) | ResourceId: ${resourceId}`);
 
-            // 2. ACTUALIZAR LÍMITES DE USO IA (Cobro de token figurativo tras éxito)
-            // 💡 IMPORTANTE: Aquí se hace efectivo el cobro de "1 Vida" para usuarios Free (1/1), Basic (5/5) o Advanced (10/10).
-            // Se inyecta la columna a actualizar a través del middleware (req.usageType = 'daily_arena_usage').
+            let questions = [];
+
+            if (resourceId) {
+                // Modo Recurso: Obtener recurso y generar preguntas
+                const resource = await bookRepo.findById(resourceId);
+                if (!resource) {
+                    return res.status(404).json({ error: 'Recurso no encontrado.' });
+                }
+                questions = await TrainingService.generateQuizFromResource(resource.title, resource.content_html, count, difficulty, resource.url, resource.domain);
+            } else {
+                // Modo Fallback (Sin DB, solo AI pura)
+                questions = await TrainingService.generateGeneralQuestionsAI([topic || 'Cultura General'], 5, user.subscriptionTier);
+            }
+
+            // Incrementar contadores en base de datos de forma segura
             try {
-                if (req.usageType) {
-                    await db.query(
-                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                const pool = require('../../infrastructure/database/db');
+                if (req.usageType === 'usage_count') {
+                    // Para Free: descontar vida global Y aumentar contador diario de autoevaluación (15/día)
+                    await pool.query(
+                        `UPDATE users SET usage_count = usage_count + 1, daily_arena_usage = daily_arena_usage + 1 WHERE id = $1`, 
                         [user.id]
                     );
-                    console.log(`📉 Límite de ${req.usageType} incrementado (1 Vida descontada) para usuario ${user.id}.`);
+                    console.log(`📉 Cuotas actualizadas para Free User ${user.id} (+1 usage_count, +1 daily_arena_usage).`);
+                } else if (req.usageType === 'daily_arena_usage') {
+                    // Para Premium: solo aumentar contador diario de autoevaluación (15/día)
+                    await pool.query(
+                        `UPDATE users SET daily_arena_usage = daily_arena_usage + 1 WHERE id = $1`, 
+                        [user.id]
+                    );
+                    console.log(`📉 Cuotas actualizadas para Premium User ${user.id} (+1 daily_arena_usage).`);
                 }
             } catch (limitErr) {
-                console.error("⚠️ No se pudo actualizar el límite. Continuando...", limitErr);
+                console.error("⚠️ No se pudo actualizar el límite del usuario para autoevaluación:", limitErr.message);
             }
 
             res.json({
                 success: true,
-                gameId: Date.now().toString(), // Simple ID
+                gameId: Date.now().toString(),
                 lives: 3,
                 timePerQuestion: 20,
-                questions: questions.map(q => ({
-                    id: Math.random().toString(36).substr(2, 9),
-                    question: q.question_text,
-                    options: q.options,
-                    correctAnswer: q.correct_option_index,
-                    explanation: q.explanation,
-                    image_url: q.image_url,
-                    explanation_image_url: q.explanation_image_url
-                }))
+                questions: questions.map(q => {
+                    const originalOptions = [...q.options];
+                    const correctAnswerText = originalOptions[q.correct_option_index];
+                    
+                    // Mezclar de forma aleatoria (Fisher-Yates)
+                    const shuffledOptions = [...originalOptions];
+                    for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        const temp = shuffledOptions[i];
+                        shuffledOptions[i] = shuffledOptions[j];
+                        shuffledOptions[j] = temp;
+                    }
+                    
+                    const newCorrectAnswerIdx = shuffledOptions.indexOf(correctAnswerText);
+                    
+                    return {
+                        id: Math.random().toString(36).substr(2, 9),
+                        question: q.question_text,
+                        options: shuffledOptions,
+                        correctAnswer: newCorrectAnswerIdx !== -1 ? newCorrectAnswerIdx : q.correct_option_index,
+                        explanation: q.explanation,
+                        image_url: q.image_url,
+                        explanation_image_url: q.explanation_image_url
+                    };
+                })
             });
 
         } catch (error) {
             console.error('❌ Error en QuizGameController.startGame:', error);
-
-            // ✅ MANEJO DE AGOTAMIENTO DE BANCO (Para mostrar modal correcto en el front)
-            if (error.message === "BANCO_AGOTADO_TIER") {
-                return res.status(403).json({ 
-                    success: false, 
-                    errorCode: 'BANK_EXHAUSTED',
-                    error: 'Has agotado las preguntas disponibles en este tema. Prueba con otro o sube a Advanced.' 
-                });
-            }
-
-            res.status(500).json({ error: 'Error iniciando batalla.' });
+            res.status(500).json({ error: 'Error iniciando desafío.' });
         }
     }
 
     /**
      * POST /api/arena/questions
-     * Genera un lote de preguntas extra (Infinite Mode).
+     * Genera un lote de preguntas extra (Infinite Mode Dinámico).
      */
     async getQuestions(req, res) {
         try {
-            const { topic } = req.body;
-            const user = req.user;
-
-            // No se descuenta vida aquí — solo en startGame.
-            // Las preguntas adicionales son parte del mismo juego.
-
-            // Generar nuevo lote
-            const questions = await TrainingService.generateGeneralQuiz(topic || 'General', user.id, user.subscriptionTier);
-
-            res.json({
-                success: true,
-                questions: questions.map(q => ({
-                    id: Math.random().toString(36).substr(2, 9),
-                    question: q.question_text,
-                    options: q.options,
-                    correctAnswer: q.correct_option_index,
-                    explanation: q.explanation,
-                    image_url: q.image_url,
-                    explanation_image_url: q.explanation_image_url
-                }))
-            });
+            // Reutilizamos la misma lógica de generación dinámica sin persistencia
+            this.startGame(req, res);
         } catch (error) {
-            console.error('Error fetching more questions:', error);
-
-            if (error.message === "BANCO_AGOTADO_TIER") {
-                return res.status(403).json({ 
-                    success: false, 
-                    errorCode: 'BANK_EXHAUSTED',
-                    error: 'Has agotado las preguntas disponibles en este tema.' 
-                });
-            }
-
-            res.status(500).json({ error: 'Error generando preguntas.' });
+            res.status(500).json({ error: 'Error obteniendo preguntas extra.' });
         }
     }
 
     /**
      * POST /api/arena/submit
-     * Guarda el puntaje final de la partida.
+     * No guarda nada en base de datos.
      */
     async submitScore(req, res) {
-        try {
-            const { score, totalQuestions, maxCombo, topic } = req.body;
-            const userId = req.user.id;
-
-            const difficulty = 'Senior'; // Estándar Unificado para Ranking
-
-            // Validación básica
-            if (!score && score !== 0) return res.status(400).json({ error: 'Score required' });
-
-            console.log(`💾 Guardando Score Arcade: ${score} para usuario ${userId}`);
-
-            // Insertar en quiz_scores (Tabla unificada)
-            const query = `
-                INSERT INTO quiz_scores (user_id, topic, difficulty, score, total_questions_played, rounds_completed, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6, NOW())
-                RETURNING id
-            `;
-
-            // Mapeamos params: rounds_completed lo usaremos como "max_combo" hack o simplemente 1
-            // FIX: Enviamos source: 'ARENA' explícitamente para evitar ensuciar Flashcards
-            // Sin embargo, TrainingService.submitQuizResult se llama desde QuizController (Simulacro).
-            // Arena usa su PROPIO submitScore que guarda en `quiz_scores` (SQL INSERT directo).
-            // WOW. Arena NO llama a `TrainingService.submitQuizResult`.
-            // Llama a db.query directo.
-
-            // VERIFICACIÓN CRÍTICA:
-            // QuizController (Simulacro) -> Llama a `TrainingService.submitQuizResult`.
-            // QuizGameController (Arena) -> Llama a `INSERT INTO quiz_scores` DIRECTAMENTE.
-
-            // CONCLUSIÓN:
-            // El ARENA YA ESTÁ SEPARADO. NO LLAMA A `submitQuizResult` DE TRAINING SERVICE.
-            // POR LO TANTO, NO GENERA FLASHCARDS.
-
-            await db.query(query, [userId, topic || 'General', difficulty, score, totalQuestions || 0, maxCombo || 0]);
-
-            res.json({
-                success: true,
-                message: 'Score guardado',
-                rank: 'Pending'
-            });
-
-        } catch (error) {
-            console.error('Error submitScore:', error);
-            res.status(500).json({ error: 'Error guardando puntaje.' });
-        }
+        // Al no existir tabla persistente de "Arena", devolvemos un estado de éxito simulado
+        res.json({
+            success: true,
+            message: 'Score procesado (In-memory)',
+            rank: 'N/A'
+        });
     }
 
     /**
-    * GET /api/arena/ranking
-    * Devuelve el Top 10 Global de la tabla quiz_scores.
-    */
+     * GET /api/arena/ranking
+     * Devuelve una lista vacía ya que se ha eliminado el ranking global competitivo.
+     */
     async getRanking(req, res) {
-        try {
-            // Consulta real a quiz_scores uniendo con users
-            // Consulta real: Mejores puntajes únicos por usuario
-            const query = `
-                SELECT DISTINCT ON (qs.user_id) 
-                    u.name, 
-                    qs.score, 
-                    qs.topic,
-                    qs.difficulty
-                FROM quiz_scores qs
-                JOIN users u ON qs.user_id = u.id
-                ORDER BY qs.user_id, qs.score DESC
-            `;
-
-            // Nota: Para ordenar el resultado final por Score DESC, necesitamos una subconsulta o reordenamiento en JS/SQL
-            // Versión mejorada con CTE o Subquery para Top 10 Global Real
-            const finalQuery = `
-                WITH RankedScores AS (
-                    SELECT 
-                        u.name, 
-                        qs.score, 
-                        qs.topic,
-                        qs.difficulty,
-                        ROW_NUMBER() OVER (PARTITION BY qs.user_id ORDER BY qs.score DESC) as rn
-                    FROM quiz_scores qs
-                    JOIN users u ON qs.user_id = u.id
-                )
-                SELECT name, score, topic, difficulty
-                FROM RankedScores
-                WHERE rn = 1
-                ORDER BY score DESC
-                LIMIT 10;
-            `;
-
-            const result = await db.query(finalQuery);
-
-            const leaderboard = result.rows.map(row => ({
-                name: row.name,
-                score: row.score,
-                topic: row.topic, // ✅ Ahora enviamos el TEMA
-                difficulty: row.difficulty,
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=random`
-            }));
-
-            res.json({
-                success: true,
-                leaderboard
-            });
-
-        } catch (error) {
-            console.error('Error getting ranking:', error);
-            res.status(500).json({ error: 'Error obteniendo ranking' });
-        }
+        res.json({
+            success: true,
+            leaderboard: []
+        });
     }
+
     /**
      * GET /api/arena/stats
-     * Devuelve estadísticas del usuario actual (Mejor puntaje, partidas jugadas).
+     * Devuelve estadísticas vacías al no existir persistencia.
      */
     async getUserStats(req, res) {
-        try {
-            const userId = req.user.id;
-
-            const query = `
-                SELECT 
-                    COALESCE(MAX(score), 0) as high_score,
-                    COUNT(*) as total_games
-                FROM quiz_scores
-                WHERE user_id = $1
-            `;
-
-            const result = await db.query(query, [userId]);
-            const stats = result.rows[0];
-
-            res.json({
-                success: true,
-                stats: {
-                    highScore: stats.high_score,
-                    totalGames: stats.total_games
-                }
-            });
-
-        } catch (error) {
-            console.error('Error getting user stats:', error);
-            res.status(500).json({ error: 'Error obteniendo estadísticas' });
-        }
+        res.json({
+            success: true,
+            stats: {
+                highScore: 0,
+                totalGames: 0
+            }
+        });
     }
 }
 

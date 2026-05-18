@@ -77,7 +77,8 @@
 .resource-hero .btn-view, 
 .resource-hero .btn-download, 
 .resource-hero .btn-save,
-.resource-actions .btn-save {
+.resource-actions .btn-save,
+.resource-actions .btn-quiz-premium {
     padding: 10px 16px !important; /* Forzar minimalismo */
     border-radius: 10px !important;
     font-size: 0.9rem !important; /* Elegancia constante */
@@ -104,6 +105,17 @@
 .btn-view:hover, .btn-save:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-quiz-premium {
+    background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4) !important;
+}
+
+.btn-quiz-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6) !important;
 }
 
 .btn-download {

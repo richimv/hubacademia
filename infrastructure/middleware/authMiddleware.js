@@ -42,6 +42,8 @@ async function auth(req, res, next) {
         return res.status(401).json({ error: 'Acceso denegado. Token no provisto.' });
     }
 
+
+
     try {
         // 1. Verificar token con Supabase (con Retry Pattern para evitar ECONNRESET)
         let sbUser;
@@ -102,6 +104,8 @@ async function optionalAuth(req, res, next) {
     const authHeader = req.header('Authorization');
     const token = authHeader ? authHeader.split(' ')[1] : req.query.token;
     if (!token) return next();
+
+
 
     try {
         // Usar el helper con reintentos para evitar ráfagas de errores de conexión (443 Timeout)

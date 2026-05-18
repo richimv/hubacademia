@@ -795,7 +795,9 @@ function renderQuestion() {
         const textSpan = document.createElement('span');
         textSpan.className = 'option-text';
         // También procesar Markdown en opciones por si acaso (aunque menos común)
-        if (window.marked && window.marked.parse) {
+        if (window.MarkdownRenderer) {
+            textSpan.innerHTML = window.MarkdownRenderer.render(String(opt || '')).replace(/^<p>|<\/p>$/g, '');
+        } else if (window.marked && window.marked.parse) {
             textSpan.innerHTML = window.marked.parse(String(opt || '')).replace(/^<p>|<\/p>$/g, '');
         } else {
             textSpan.textContent = opt;

@@ -13,11 +13,11 @@ El sistema ahora soporta matemática rígida (Planes y Tokens).
 | Característica | **Plan Básico (Free / Entry)** | **Plan Avanzado (Pro / Premium)** |
 | :--- | :--- | :--- |
 | **Costo / Duración** | S/ 9.90 (2 Meses) | S/ 24.90 (6 Meses) |
-| **Tutor IA (Chat)** | Estándar + Lite (20 msg/día) | Biblioteca RAG + Lite (30 msg/día) |
-| **Quiz Arena (IA)** | 5 partidas/día (Modelo Lite) | 10 partidas/día (Modelo Lite) |
+| **Tutor IA (Chat + Voz)** | Chat y Voz Estándar (30 msg/día) | RAG + Chat y Voz Avanzado (50 msg/día) |
 | **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico (Modelo Lite) |
 | **Flashcards (IA)** | 10 intentos / mes (1-20 tjs/int) | 30 intentos / mes (1-20 tjs/int) |
-| **Simulador Médico (Completados)** | **CAP 15/Día (Lite)** | **CAP 40/Día (Lite)** |
+| **Simulador de Exámenes** | **CAP 15/Día (Lite)** | **CAP 50/Día (Lite)** |
+| **Autoevaluación (Recursos)** | **CAP 15/Día (Universal)** | **CAP 15/Día (Universal)** |
 
 ---
 
@@ -55,9 +55,6 @@ A continuación, la lista completa e hiper-detallada de los módulos integrados 
   - Integrado a `deckController.js`. Siendo de Plan Básico, tienes **10 intentos** al mes. Cada intento genera de **1 a 15 tarjetas** según la complejidad del tema.
   - Si tu plan es avanzado, tienes **30 intentos** mensuales, permitiendo un volumen de hasta 450 tarjetas inteligentes al mes si se explota el máximo.
 
-### 2.5 Módulo: Quiz Arena
-- Integrado bajo la propiedad estricta `daily_arena_usage` consumiendo 1 contador de API por intento de juego, sin afectar el resto del ecosistema ni los tokens directos de IAs complejas.
-
 ---
 
 ## 🗄️ 3. Modificaciones en Base de Datos e Infraestructura
@@ -67,7 +64,6 @@ Se ejecutaron scripts de Alteración a nivel del Servidor de Base de Datos Postg
 1.  **Migración de Estados y Tiers:** Se formalizó la taxonomía del negocio. `subscription_tier`: `'free'`, `'basic'`, `'advanced'`, `'elite'`.
 2.  **Tracking y Contadores Creados / Sincronizados:**
     - `daily_ai_usage` (Resetea al amanecer a 0).
-    - `daily_arena_usage` (Resetea al amanecer a 0).
     - `monthly_thinking_usage` (No resetea a diario. Resetea cuando se vence el mes/plan).
     - `monthly_flashcards_usage` (No resetea a diario. Resetea con la factura nueva mensual/semestral).
     - `last_usage_reset`: Fecha vital del backend para decidir si debe resetear contadores de 24 hrs.
@@ -91,13 +87,13 @@ Todo el software ha culminado el hito de protección de ingresos. **Cualquier us
 ### 1. El Beneficio "Tutor IA Clínico RAG"
 - **Acceso Exclusivo a Biblioteca (Chat):** El usuario **Advanced** es el único que activa el motor RAG en el Chat, permitiendo que la IA fundamente sus respuestas en Harrison, NTS o GPC.
 - **Diagnóstico Clínico (Advanced):** Es un análisis de **Patrones Estadísticos**. La IA analiza los resultados de los exámenes para dar consejos de estudio. **No utiliza RAG**, sino procesamiento de datos masivos del alumno.
-- **Costo:** Ambas funciones consumen de la cuota de 30 mensajes diarios del Chat.
+- **Costo:** Ambas funciones consumen de la cuota de 50 mensajes diarios del Chat.
 
 ### 2. Generación de Exámenes (Sin RAG para Usuarios)
 Por diseño y velocidad de respuesta:
 - **Generación Directa:** El Simulador Médico para todos los niveles (incluyendo Advanced) utiliza generación directa por IA sin interconsulta RAG. 
 - **Modo Experto (Admin):** Solo el Administrador puede activar el barrido RAG para alimentar el banco de preguntas oficial.
-- **Límites "Cap"**: 15 (Basic) y 40 (Advanced) simulacros culmidanos por día.
+- **Límites "Cap"**: 15 (Basic) y 50 (Advanced) simulacros culminados por día.
 
 ### 3. Defensa Absoluta de Cuotas: Módulo de Flashcards
 Las tarjetas generadas con IA estipulan **10 intentos al mes** para Basic y **30 intentos al mes** para Advanced.
@@ -105,3 +101,8 @@ Las tarjetas generadas con IA estipulan **10 intentos al mes** para Basic y **30
 - El middleware extrae directamente de PostgreSQL la entidad `monthly_flashcards_usage`. 
 - Al saturar las cuotas (10 o 30 intentos), el backend escupe rígidamente un 403 con el mensaje del límite alcanzado.
 El framework UI inyecta al vuelo -sin depender de scripts ni promesas externas- un bloque DOM `custom-limit-modal` con posición absoluta `fixed` que bloquea y empapela toda la pantalla. Es imposible de romper o saltar mediante CSS de otros módulos y blinda tajantemente la base de datos de usuarios aprovechados.
+
+### 4. Autoevaluación de Recursos (Separado y Universal)
+- **Aislamiento Total:** El consumo de autoevaluaciones no descuenta del límite diario de Simuladores. Así se evita que el usuario agote sus exámenes simulados al realizar trivias cortas sobre recursos o lecturas individuales.
+- **Límite Universal (15/Día):** Todos los usuarios, sin importar su plan (Free, Basic, Advanced), tienen un tope diario estricto de **15 autoevaluaciones por día** controlado por el contador `daily_arena_usage` en PostgreSQL para mitigar abusos de costos de inferencia.
+- **Usuarios Free:** Cada partida exitosa descuenta adicionalmente **1 vida global** de su pool de 50 vidas (`usage_count`). En caso de agotar sus vidas o el límite de 15 cuestionarios diarios, se bloquea el inicio de forma segura.

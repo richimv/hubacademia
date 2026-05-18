@@ -34,7 +34,7 @@ const checkAILimits = (type) => {
 
             let user = result.rows[0];
             const tier = user.subscription_tier || 'free';
-            
+
             // --- LOGICA DE RESETEO ROBUSTA ---
             const now = new Date();
             const todayDate = now.toISOString().split('T')[0]; // Hoy en UTC: "YYYY-MM-DD"
@@ -43,7 +43,7 @@ const checkAILimits = (type) => {
             if (user.last_usage_reset) {
                 // Si pg devuelve objeto Date, toISOString() es seguro. 
                 // Si devuelve string (depende de config), tomamos solo la parte de la fecha.
-                lastResetDateStr = (user.last_usage_reset instanceof Date) 
+                lastResetDateStr = (user.last_usage_reset instanceof Date)
                     ? user.last_usage_reset.toISOString().split('T')[0]
                     : String(user.last_usage_reset).split('T')[0];
             }
@@ -67,7 +67,7 @@ const checkAILimits = (type) => {
             // 2. REINICIO DE CONTADORES (DIARIOS Y MENSUALES)
             if (!user.last_usage_reset || lastResetDateStr !== todayDate) {
                 console.log(`♻️ [Quota Reset] Iniciando reset para ${user.subscription_tier} (${userId}). De ${lastResetDateStr} a ${todayDate}`);
-                
+
                 const lastResetDateObj = user.last_usage_reset ? new Date(user.last_usage_reset) : new Date(0);
                 const currentMonth = now.getUTCMonth();
                 const lastResetMonth = lastResetDateObj.getUTCMonth();
@@ -114,9 +114,9 @@ const checkAILimits = (type) => {
             // - Básico: 10 intentos/mes.
             // - Avanzado: 30 intentos/mes.
             const LIMITS = {
-                free: { chat_standard: 5, quiz_arena: 3, monthly_flashcards: 1, simulator: 0, batch_import: 1 },
-                basic: { chat_standard: 20, quiz_arena: 5, monthly_flashcards: 10, simulator: 15, batch_import: 10 },
-                advanced: { chat_standard: 30, quiz_arena: 10, monthly_flashcards: 30, simulator: 40, batch_import: 10 }
+                free: { chat_standard: 5, monthly_flashcards: 1, simulator: 0, batch_import: 1, audio_assistant: 5, self_evaluation: 15 },
+                basic: { chat_standard: 30, monthly_flashcards: 10, simulator: 15, batch_import: 10, audio_assistant: 30, self_evaluation: 15 },
+                advanced: { chat_standard: 50, monthly_flashcards: 30, simulator: 50, batch_import: 10, audio_assistant: 50, self_evaluation: 15 }
             };
 
             const userLimits = LIMITS[user.subscription_tier] || LIMITS.free;
@@ -147,21 +147,6 @@ const checkAILimits = (type) => {
                     req.usageType = 'daily_ai_usage';
                 }
             }
-            // El tipo 'chat_thinking' ha sido retirado. Los diagnósticos/chat usarán chat_standard o rutas sin límite.
-            else if (effectiveType === 'quiz_arena') {
-                if (!isActiveAccount) {
-                    if (hasGlobalLives) {
-                        req.usageType = 'usage_count'; // Gasta la vida dorada Global
-                    } else {
-                        return res.status(403).json({ error: 'Límite de partidas de Prueba en Arena alcanzado. ¡Mejora tu plan para seguir compitiendo!', reason: 'FREE_LIVES_EXHAUSTED' });
-                    }
-                } else {
-                    if (user.daily_arena_usage >= userLimits.quiz_arena) {
-                        return res.status(403).json({ error: 'Límite de partidas diarias en Quiz Arena alcanzado. Regresa mañana.', reason: 'DAILY_LIMIT_EXHAUSTED' });
-                    }
-                    req.usageType = 'daily_arena_usage';
-                }
-            }
             else if (effectiveType === 'monthly_flashcards') {
                 if (!isActiveAccount) {
                     // 🛡️ REGLA DE BLOQUEO: Carga masiva es SOLO para Premium
@@ -170,14 +155,24 @@ const checkAILimits = (type) => {
                         return res.status(403).json({ error: 'La Carga Masiva (Excel) es una función exclusiva para usuarios Premium. ¡Mejora tu plan para ahorrar tiempo!', reason: 'PREMIUM_ONLY_FEATURE' });
                     }
 
+                    // 🛡️ REGLA DE BLOQUEO: Generación con IA (Gemini) es SOLO para Premium
+                    const isAiGeneration = req.path.includes('/generate') || req.path.includes('check-ai-limits');
+                    if (isAiGeneration) {
+                        return res.status(403).json({
+                            error: 'La Generación de Flashcards con IA es una función exclusiva para usuarios Premium. ¡Mejora tu plan para crear cientos de tarjetas al instante!',
+                            reason: 'PREMIUM_ONLY_FEATURE',
+                            paywall: true
+                        });
+                    }
+
                     // 🛡️ REGLA DE JUSTICIA: Edición (PUT) y Eliminación (DELETE) son GRATUITOS
                     // Nota: El controlador decidirá si el PUT es una "Guía" (Paga) o un "Renombrar" (Gratis)
                     const isMaintenance = req.method === 'DELETE' || (req.method === 'PUT' && !req.path.includes('/study')) || req.path.includes('/reorder');
-                    
+
                     if (isMaintenance) {
                         req.usageType = null;
                     } else if (hasGlobalLives) {
-                        req.usageType = 'usage_count'; 
+                        req.usageType = 'usage_count';
                     } else {
                         return res.status(403).json({ error: 'Se han agotado tus vidas de Prueba. Mejora tu plan para continuar creando y estudiando.', reason: 'FREE_LIVES_EXHAUSTED' });
                     }
@@ -186,7 +181,7 @@ const checkAILimits = (type) => {
                     // El CRUD manual (crear, editar, subir imagen) es ILIMITADO.
                     const isAiGeneration = req.path.includes('/generate') || req.path.includes('check-ai-limits');
                     const isBatchImport = req.path.includes('/batch');
-                    
+
                     if (isAiGeneration) {
                         if ((user.monthly_flashcards_usage || 0) >= userLimits.monthly_flashcards) {
                             return res.status(403).json({ error: `Límite mensual de generación de flashcards alcanzado (${userLimits.monthly_flashcards} intentos). Mejora tu plan.`, reason: 'MONTHLY_LIMIT_EXHAUSTED' });
@@ -216,20 +211,50 @@ const checkAILimits = (type) => {
                     req.usageType = 'daily_simulator_usage';
                 }
             }
+            else if (effectiveType === 'self_evaluation') {
+                const limit = userLimits.self_evaluation || 15;
+                if ((user.daily_arena_usage || 0) >= limit) {
+                    return res.status(403).json({
+                        error: `Límite diario de autoevaluaciones alcanzado (${limit}/día). Vuelve mañana.`,
+                        reason: 'DAILY_LIMIT_EXHAUSTED'
+                    });
+                }
+
+                if (!isActiveAccount) {
+                    if (hasGlobalLives) {
+                        req.usageType = 'usage_count';
+                    } else {
+                        return res.status(403).json({
+                            error: 'Has agotado tus vidas de hoy (créditos). Activa tu cuenta Premium para obtener autoevaluaciones ilimitadas.',
+                            reason: 'FREE_LIVES_EXHAUSTED'
+                        });
+                    }
+                } else {
+                    req.usageType = 'daily_arena_usage';
+                }
+            }
             // ✅ AUDIO ASSISTANT: Acceso para todos, pero Free consume vidas globales
             else if (effectiveType === 'audio_assistant') {
                 if (!isActiveAccount) {
                     if (hasGlobalLives) {
                         req.usageType = 'usage_count';
                     } else {
-                        return res.status(403).json({ 
-                            error: 'Límite de mensajes de voz agotado. Mejora tu plan para continuar.', 
+                        return res.status(403).json({
+                            error: 'Límite de mensajes de voz agotado. Mejora tu plan para continuar.',
                             reason: 'FREE_LIVES_EXHAUSTED',
                             paywall: true
                         });
                     }
                 } else {
-                    // Para Basic/Advanced: es efímero, no se cobra uso de BD pero sí cuota de IA
+                    // Validar límite diario para usuarios premium (Basic/Advanced) usando el contador daily_ai_usage
+                    const limit = userLimits.audio_assistant || 50;
+                    if ((user.daily_ai_usage || 0) >= limit) {
+                        return res.status(403).json({
+                            error: 'Límite de mensajes de voz diarios alcanzado. Regresa mañana o mejora tu plan para continuar conversando con la IA.',
+                            reason: 'DAILY_LIMIT_EXHAUSTED',
+                            paywall: true
+                        });
+                    }
                     req.usageType = 'daily_ai_usage';
                 }
             }

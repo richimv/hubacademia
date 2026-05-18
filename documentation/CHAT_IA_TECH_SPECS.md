@@ -197,12 +197,22 @@ marked.setOptions({
 - **Sugerencias:** Pastillas clickeables generadas por la IA o fallback predefinido.
 
 ### 9.2 Asistente de Voz (Audio Assistant)
-- **Archivo:** `js/audio-assistant.js`
-- **Modo:** Efímero (`ephemeral: true`), sin persistencia en BD.
-- **Input:** Web Speech API (`SpeechRecognition`) — reconocimiento de voz del navegador.
-- **Output:** Web Speech API (`SpeechSynthesis`) — voz nativa del navegador.
-- **Idioma TTS:** Detectado por contexto de página (URL, título del recurso/curso).
-- **Contexto:** Inyecta label de página actual en el prompt.
+- **Archivos:** [audio-assistant.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/presentation/public/js/audio-assistant.js) (cliente) y [tutorAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/domain/services/tutorAiService.js) (motor RAG).
+- **Modo:** Efímero (`isEphemeral: true` en el payload), sin persistencia de la conversación en el histórico relacional.
+- **Límites de Uso Diario (Protección API):**
+  - **Free / Pending:** Consume vidas de su pool global (50 vidas totales de `usage_count`, 1 vida por mensaje).
+  - **Basic:** Límite diario estricto de **30 mensajes diarios**.
+  - **Advanced:** Límite diario estricto de **50 mensajes diarios**.
+  - *Nota de Base de Datos:* Para evitar migraciones arriesgadas en producción, consume el contador físico común `daily_ai_usage` pero es auditado y bloqueado de forma estricta contra su cuota (30 o 50) en el backend por `checkLimitsMiddleware.js`.
+- **Arquitectura de Contexto Híbrido de 3 Niveles (Upgrade):**
+  - Remueve el "web scraping" frágil del DOM de la página. Ahora el frontend captura el `resourceId` desde el query param de la URL (`?id=X`) en su inicialización y lo envía de forma segura en el payload.
+  - El backend resuelve el enrutador inteligente de recuperación contextual en 3 niveles:
+    1. **Express (Base de Datos):** Si la sinopsis textual del recurso en PostgreSQL tiene menos de 15,000 caracteres, se inyecta directamente en el prompt. Cero latencia y cero costo de base vectorial.
+    2. **RAG Nivel 1 (Vectorial Pinecone por Archivo):** Si es mayor a 15,000 o nula, consulta a Pinecone filtrando estrictamente por el metadato exacto del archivo original (`filename`) para recuperar fragmentos exactos de alta fidelidad.
+    3. **RAG Nivel 2 & 3 (Fallbacks Semánticos y Generativos):** En caso de fallo o desindexación, busca semánticamente a nivel global por título del recurso y temas de soporte; si Pinecone está offline, Gemini realiza inferencia generativa directa basada en el título.
+- **Input:** Web Speech API (`SpeechRecognition`) para reconocimiento de voz en tiempo real.
+- **Output:** Web Speech API (`SpeechSynthesis`) utilizando la voz nativa del navegador.
+- **Alineación Visual:** Las respuestas de texto de la IA son procesadas y formateadas con `.markdown-compact` a través de `markdown-renderer.js` para asegurar coherencia tipográfica de lujo.
 
 ### 9.3 Tutor de Flashcards
 - **Archivo:** `js/tutor-chat.js`

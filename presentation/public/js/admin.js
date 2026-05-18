@@ -540,8 +540,7 @@ class AdminManager {
         const domains = [
             { id: 'all', name: 'Todos los Dominios' },
             { id: 'medicine', name: 'Medicina' },
-            { id: 'education', name: 'Educación' },
-            { id: 'GENERAL_TRIVIA', name: 'Quiz Arena' }
+            { id: 'education', name: 'Educación' }
         ];
 
         // Custom header with Bulk Import button and DOMAIN SELECTOR
@@ -694,15 +693,14 @@ class AdminManager {
 
                 const domains = [
                     { id: 'medicine', name: 'Medicina' },
-                    { id: 'education', name: 'Educación' },
-                    { id: 'GENERAL_TRIVIA', name: 'Quiz Arena' }
+                    { id: 'education', name: 'Educación' }
                 ];
 
                 fieldsHTML = `
                     ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', this.currentItem?.question_text || '', true)}
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         ${this.createSelect('generic-domain', 'Dominio (*)', domains, this.currentItem?.domain || 'medicine', false)}
-                        <div id="generic-target-container" style="display: ${this.currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'};">
+                        <div id="generic-target-container" style="display: block;">
                             <label class="form-label" for="generic-target">Examen Objetivo (*)</label>
                             <select id="generic-target" class="form-input" onchange="
                                 window.adminManager.handleQuestionTargetChange(this.value);
@@ -730,13 +728,12 @@ class AdminManager {
                                 <option value="ENAM" ${this.currentItem?.target === 'ENAM' ? 'selected' : ''}>ENAM</option>
                                 <option value="SERUMS" ${this.currentItem?.target === 'SERUMS' ? 'selected' : ''}>SERUMS</option>
                                 <option value="RESIDENTADO" ${this.currentItem?.target === 'RESIDENTADO' ? 'selected' : ''}>RESIDENTADO</option>
-                                <option value="N/A" ${this.currentItem?.target === 'N/A' || !this.currentItem?.target ? 'selected' : ''}>N/A (Quiz Arena)</option>
                                 `}
                             </select>
                         </div>
                     </div>
                     
-                    <div id="generic-career-wrapper" style="display: ${this.currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'}; margin-top: 15px;">
+                    <div id="generic-career-wrapper" style="display: block; margin-top: 15px;">
                         <label class="form-label" for="generic-career">Carrera / Modalidad (*)</label>
                         <select id="generic-career" class="form-input">
                             ${this.currentItem?.domain === 'education' ? `
@@ -784,7 +781,7 @@ class AdminManager {
                     </div>
 
                     ${this.createImageUploadGroup('generic-image', 'Imagen de ENUNCIADO (Opcional)', this.currentItem?.image_url || '')}
-                    <div id="generic-explanation-image-upload-group" style="display: ${this.currentItem?.domain === 'GENERAL_TRIVIA' ? 'none' : 'block'};">
+                    <div id="generic-explanation-image-upload-group" style="display: block;">
                         ${this.createImageUploadGroup('generic-explanation-image', 'Imagen de EXPLICACIÓN (GCS o Local)', this.currentItem?.explanation_image_url || '')}
                     </div>
                 `;

@@ -366,7 +366,7 @@ class DeckExplorer {
             if (description.trim() === '') {
                 contentDiv.innerHTML = '<span style="color: #64748b; font-style: italic;">No hay una guía de estudio definida para este mazo. Pulsa "Editar" para empezar.</span>';
             } else {
-                contentDiv.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.wrapTables(description) : description;
+                contentDiv.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(description) : description;
             }
             textarea.value = description;
 
