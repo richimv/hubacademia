@@ -24,7 +24,7 @@ class SearchComponent {
         this.currentView = { name: 'home', args: [] }; 
 
         // MANTA TABS STATE (Sector-Based Taxonomy)
-        this.activeSector = 'medicine'; // 'medicine' (Salud) | 'educacion' (Educación)
+        this.activeSector = 'medicine'; // 'medicine' (Salud) | 'education' (Educación)
         this.activeTab = 'salud'; // 'salud' | 'educacion'
         this.activeFilter = 'Libros y Manuales'; 
 
@@ -1044,7 +1044,7 @@ class SearchComponent {
                     this.activeSector = 'medicine';
                     this.activeFilter = 'Libros y Manuales';
                 } else if (tab === 'educacion') {
-                    this.activeSector = 'educacion';
+                    this.activeSector = 'education';
                     this.activeFilter = 'Libros y Manuales';
                 }
 

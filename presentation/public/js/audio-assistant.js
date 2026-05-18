@@ -86,7 +86,7 @@ class AudioAssistant {
                     </div>
                 </div>
                 <div class="audio-quick-actions" id="audio-quick-actions">
-                    <button class="audio-quick-btn" id="audio-btn-summarize"><i class="fas fa-compress-alt"></i> Resumir página</button>
+                    <button class="audio-quick-btn" id="audio-btn-summarize"><i class="fas fa-compress-alt"></i> Resumir recurso</button>
                 </div>
                 <div class="audio-mic-control">
                     <button id="audio-mic-btn" class="audio-mic-btn" title="Hablar con el asistente"><i class="fas fa-microphone" id="audio-mic-icon"></i></button>
@@ -193,7 +193,7 @@ class AudioAssistant {
 
         // Acción Rápida: Resumir
         document.getElementById('audio-btn-summarize')?.addEventListener('click', () => {
-            this._sendToAI('Resume el contenido de esta página de manera clara, estructurada y concisa.', true);
+            this._sendToAI('Resume este recurso de manera clara, estructurada y concisa.', true);
         });
 
         // Guardar como nota

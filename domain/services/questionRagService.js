@@ -35,8 +35,11 @@ class QuestionRagService {
     /**
      * Obtiene contexto de estilo basado en keywords específicas.
      */
-    async getStyleContextByKeywords(namespace, keywords, topK = 5, sourceFilter = null) {
-        console.log(`🎭 [Agentic-RAG] Iniciando búsqueda con ${keywords.length} términos. Filtro: ${sourceFilter || 'Ninguno'}`);
+    async getStyleContextByKeywords(namespace, keywords, topK = 5, sourceFilter = null, resourceTitle = null) {
+        let activeNamespace = namespace;
+        if (activeNamespace === 'educacion') activeNamespace = 'education';
+        
+        console.log(`🎭 [Agentic-RAG] Iniciando búsqueda con ${keywords.length} términos en namespace: ${activeNamespace}. Filtro: ${sourceFilter || 'Ninguno'}`);
         
         try {
             const searches = keywords.map(async (kw) => {
@@ -52,7 +55,7 @@ class QuestionRagService {
                     vector: vector,
                     topK: 50, // Aumentamos la muestra para encontrar el número específico
                     includeMetadata: true,
-                    namespace: namespace,
+                    namespace: activeNamespace,
                     filter: filter
                 }, {
                     headers: { 'Api-Key': this.PINECONE_KEY, 'Content-Type': 'application/json' }
@@ -61,7 +64,60 @@ class QuestionRagService {
             });
 
             const resultsArray = await Promise.all(searches);
-            const allMatches = resultsArray.flat();
+            let allMatches = resultsArray.flat();
+
+            // 🔍 FILTRADO ESTRICTO DE RECURSO: Evita fugas de información de otros documentos
+            if (resourceTitle) {
+                const normalizeStr = (str) => {
+                    return str
+                        .toUpperCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "") // Quitar tildes
+                        .replace(/[^A-Z0-9\s]/g, " ") // Quitar puntuación
+                        .trim();
+                };
+
+                const getSignificantWords = (str) => {
+                    const words = normalizeStr(str).split(/\s+/);
+                    const stopWords = new Set([
+                        // Conectores y palabras comunes
+                        'PARA', 'SOBRE', 'DESDE', 'DONDE', 'ENTRE', 'HASTA', 'HACIA', 'SEGUN', 
+                        'TIENEN', 'TODOS', 'ESTAN', 'ESTE', 'ESTOS', 'ESTAS', 'COMO', 'CON', 
+                        'SINO', 'PERO', 'OTRO', 'OTROS', 'OTRA', 'OTRAS', 'SOPORTE', 'BASE',
+                        
+                        // Medicina (Genéricos)
+                        'GUIA', 'PRACTICA', 'CLINICA', 'NORMA', 'TECNICA', 'SALUD', 'MINSA', 
+                        'MANUAL', 'MEDICINA', 'PACIENTE', 'PACIENTES', 'ENFERMEDAD', 'ENFERMEDADES', 
+                        'MANEJO', 'ATENCION', 'NIVEL', 'PRIMER', 'SEGUNDO', 'TERCER', 'HOSPITAL',
+                        'CLINICO', 'NACIONAL', 'MINISTERIO',
+                        
+                        // Educación (Genéricos)
+                        'PROGRAMA', 'CURRICULAR', 'EDUCACION', 'BASICA', 'REGULAR', 'MINEDU', 
+                        'DOCENTE', 'CLASE', 'SESION', 'APRENDIZAJE', 'DISCIPLINA', 'CURRICULO',
+                        'SISTEMA', 'EVALUACION', 'MARCO', 'BUEN', 'DESEMPENO', 'DIRECTIVA', 
+                        'RESOLUCION', 'MINISTERIAL', 'VICEMINISTERIAL',
+                        
+                        // Evaluaciones genéricas
+                        'OFICIAL', 'EXAMEN', 'TEMARIO', 'SERUMS', 'ENAM', 'RESIDENTADO', 'MEDICO',
+                        'PRUEBA', 'SIMULACRO', 'BANCO', 'PREGUNTAS', 'PREGUNTA'
+                    ]);
+                    return words.filter(w => w.length > 3 && !stopWords.has(w));
+                };
+
+                const resourceWords = getSignificantWords(resourceTitle);
+                console.log(`🔍 [RAG-Filter] Palabras clave del recurso:`, resourceWords);
+
+                if (resourceWords.length > 0) {
+                    const filteredMatches = allMatches.filter(m => {
+                        const mSource = normalizeStr(m.metadata.source || "");
+                        const mTitle = normalizeStr(m.metadata.title || "");
+                        // Debe coincidir en al menos una palabra significativa del recurso
+                        return resourceWords.some(w => mSource.includes(w) || mTitle.includes(w));
+                    });
+                    console.log(`🔍 [RAG-Filter] Filtrado estricto: ${allMatches.length} -> ${filteredMatches.length} fragmentos del recurso.`);
+                    allMatches = filteredMatches;
+                }
+            }
 
             // 🎯 DETECCIÓN DE NÚMERO OBJETIVO
             const targetKw = keywords.join(' ');
@@ -100,9 +156,13 @@ class QuestionRagService {
                 selected = prioritized.slice(0, topK);
             } else {
                 if (targetNum) console.warn(`⚠️ [Sniper-RAG] No se encontró el número ${targetNum} en los fragmentos, usando relevancia semántica.`);
-                selected = others
-                    .sort(() => 0.5 - Math.random()) 
-                    .slice(0, topK);
+                if (resourceTitle) {
+                    selected = others.slice(0, topK);
+                } else {
+                    selected = others
+                        .sort(() => 0.5 - Math.random()) 
+                        .slice(0, topK);
+                }
             }
 
             console.log(`✅ [Agentic-RAG] Éxito: ${selected.length} moldes únicos capturados.`);
@@ -123,12 +183,15 @@ class QuestionRagService {
      * Prioriza fragmentos con alto valor normativo (Leyes, NTS, CNEB).
      */
     async getTechnicalBasis(namespace, area, topic = '', limit = 4) {
-        console.log(`📚 [TechBasis] Sustento para: ${area} - ${topic}`);
+        let activeNamespace = namespace;
+        if (activeNamespace === 'educacion') activeNamespace = 'education';
+        
+        console.log(`📚 [TechBasis] Sustento para: ${area} - ${topic} en namespace: ${activeNamespace}`);
         
         let queryText = `Documentación oficial, leyes, normativa técnica y fundamentos de ${area} ${topic}`;
         
         // Refuerzo para Medicina: Forzar búsqueda de normas e instrumentos legales del MINSA
-        if (namespace === 'medicine') {
+        if (activeNamespace === 'medicine') {
             queryText = `GPC MINSA, Norma Técnica de Salud NTS, protocolos y manejo clínico oficial de ${area} ${topic}`;
         }
 
@@ -140,7 +203,7 @@ class QuestionRagService {
                 vector: vector,
                 topK: 25,
                 includeMetadata: true,
-                namespace: namespace
+                namespace: activeNamespace
             }, {
                 headers: { 'Api-Key': this.PINECONE_KEY, 'Content-Type': 'application/json' }
             });
@@ -178,10 +241,13 @@ class QuestionRagService {
      * getSyllabusContext: Búsqueda exacta en los archivos Temario_EBR_...
      */
     async getSyllabusContext(namespace, career = '', specialty = '') {
+        let activeNamespace = namespace;
+        if (activeNamespace === 'educacion') activeNamespace = 'education';
+
         let queryText = '';
         let searchFilter = (src) => false;
 
-        if (namespace === 'medicine') {
+        if (activeNamespace === 'medicine') {
             const isNursing = career.toLowerCase().includes('enfermeria');
             const medicalSpecialty = isNursing ? 'ENFERMERIA' : 'MEDICINA HUMANA';
             queryText = `Temario SERUMS ${medicalSpecialty} contenidos oficiales Area: ${specialty || ''}`.trim();
@@ -207,7 +273,7 @@ class QuestionRagService {
             };
         }
 
-        console.log(`🔍 [Syllabus-Sniper] Namespace: ${namespace} | Apuntando a: ${queryText}`);
+        console.log(`🔍 [Syllabus-Sniper] Namespace: ${activeNamespace} | Apuntando a: ${queryText}`);
 
         const vector = await this._getEmbedding(queryText);
         if (!vector) return "";
@@ -217,7 +283,7 @@ class QuestionRagService {
                 vector: vector,
                 topK: 500, // Fuerza bruta: 500 fragmentos para vencer la dilución semántica
                 includeMetadata: true,
-                namespace: namespace
+                namespace: activeNamespace
             }, {
                 headers: { 'Api-Key': this.PINECONE_KEY, 'Content-Type': 'application/json' }
             });

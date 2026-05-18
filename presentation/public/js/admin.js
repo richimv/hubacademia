@@ -671,7 +671,7 @@ class AdminManager {
 
                 const domains = [
                     { id: 'medicine', name: 'Salud Professional' },
-                    { id: 'educacion', name: 'Educación Docente' }
+                    { id: 'education', name: 'Educación Docente' }
                 ];
 
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre de la Carrera (*)', this.currentItem?.name || '', true) +
@@ -1019,7 +1019,7 @@ class AdminManager {
 
                 const domainsCourse = [
                     { id: 'medicine', name: 'Salud Professional' },
-                    { id: 'educacion', name: 'Educación Docente' }
+                    { id: 'education', name: 'Educación Docente' }
                 ];
 
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Curso (*)', this.currentItem?.name || '', true) +
@@ -1064,7 +1064,7 @@ class AdminManager {
 
                 const domainsBook = [
                     { id: 'medicine', name: 'Sector Salud' },
-                    { id: 'educacion', name: 'Sector Educación' }
+                    { id: 'education', name: 'Sector Educación' }
                 ];
 
                 fieldsHTML = `
@@ -1159,7 +1159,7 @@ class AdminManager {
                         ${this.createSelect('generic-resource-type', 'Tipo de Recurso (*)', resourceTypes, 'book', false)}
                         ${this.createSelect('generic-domain', 'Sector / Dominio (*)', [
                             { id: 'medicine', name: 'Sector Salud' },
-                            { id: 'educacion', name: 'Sector Educación' }
+                            { id: 'education', name: 'Sector Educación' }
                         ], 'medicine', false)}
                         ${this.createFormGroup('text', 'generic-author', 'Nombre de Autor / Fuente', 'Admin Hub', true)}
                     </div>

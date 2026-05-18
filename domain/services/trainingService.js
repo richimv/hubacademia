@@ -470,12 +470,18 @@ class TrainingService {
                     domain, 
                     [`${title} ${selectedSubtopics}`], 
                     8, 
-                    null
+                    null,
+                    title
                 );
                 
                 if (!contextForAI || contextForAI.trim() === '') {
-                    console.warn(`⚠️ [Arena IA] Fallback semántico falló, usando fallback AI pura.`);
-                    contextForAI = `Resumen básico del recurso: ${title}. Temas a evaluar: ${selectedSubtopics}`;
+                    if (plainText && plainText.length > 0) {
+                        console.log(`⚠️ [Arena IA] RAG de título no disponible pero se usará plainText del recurso como fallback de contingencia.`);
+                        contextForAI = plainText.substring(0, 20000);
+                    } else {
+                        console.warn(`⚠️ [Arena IA] Fallback semántico falló, usando fallback AI pura.`);
+                        contextForAI = `Resumen básico del recurso: ${title}. Temas a evaluar: ${selectedSubtopics}`;
+                    }
                 }
             }
 

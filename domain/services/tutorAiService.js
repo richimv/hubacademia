@@ -150,13 +150,22 @@ class TutorAiService {
                         specialization,
                         [`${resourceContext.title} ${mainSearchQuery}`],
                         8,
-                        null
+                        null,
+                        resourceContext.title
                     );
 
                     // Fallback Generativo Experto basado en el título (Si RAG falló por completo)
                     if (!context || context.trim() === '') {
-                        console.warn(`⚠️ [TutorAiService] RAG de título no disponible, usando fallback básico centrado en el título: "${resourceContext.title}"`);
-                        context = `Tema de estudio principal: "${resourceContext.title}".\nInstrucción: Como no hay fragmentos disponibles en la base vectorial para este recurso, debes responder de manera experta basándote estrictamente en el tema indicado por el título ("${resourceContext.title}") and tus conocimientos especializados en ${specialization}.`;
+                        if (plainText && plainText.length > 0) {
+                            console.log(`⚠️ [TutorAiService] RAG de título no disponible pero se usará plainText del recurso como fallback de contingencia.`);
+                            context = `--- CONTEXTO OFICIAL DEL RECURSO (Fragmento Contingencia): "${resourceContext.title}" ---\n${plainText.substring(0, 20000)}\n\n[INSTRUCCIONES DE RESPUESTA]:\nResponde a la pregunta utilizando este fragmento del material como tu base primaria de verdad.`;
+                        } else {
+                            console.warn(`⚠️ [TutorAiService] RAG de título no disponible, usando fallback básico centrado en el título: "${resourceContext.title}"`);
+                            context = `[MODO ASISTENTE DE RECURSO - FALLBACK GENERATIVO EXPERTO]
+Tema principal de estudio: "${resourceContext.title}".
+INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobre el recurso titulado "${resourceContext.title}". Como el material completo no está indexado en la base vectorial ni en la base de datos, debes actuar como un especialista de élite en ${specialization} y generar una respuesta rica, detallada y perfectamente estructurada basándote estrictamente en tus conocimientos expertos sobre el tema exacto del título ("${resourceContext.title}").
+🚨 REGLA DE ORO: TIENES ABSOLUTAMENTE PROHIBIDO decir "no tengo acceso al contenido", "proporcióname el enlace", "no puedo acceder a páginas web externas" o excusas similares. El usuario sabe que eres el tutor integrado. Responde directamente con el resumen o explicación experta del tema indicado en el título de forma proactiva para deslumbrarlo, usando viñetas o tablas Markdown.`;
+                        }
                     }
                 }
             } else {

@@ -112,6 +112,9 @@ class RagService {
      * Ejecuta la consulta a Pinecone.
      */
     async _executeSemanticSearch(query, limit, target, namespace) {
+        let activeNamespace = namespace;
+        if (activeNamespace === 'educacion') activeNamespace = 'education';
+
         try {
             const vector = await this._getEmbedding(query);
             if (!vector) return "";
@@ -120,7 +123,7 @@ class RagService {
                 vector: vector,
                 topK: limit,
                 includeMetadata: true,
-                namespace: namespace
+                namespace: activeNamespace
             }, {
                 headers: { 'Api-Key': this.PINECONE_KEY, 'Content-Type': 'application/json' }
             });

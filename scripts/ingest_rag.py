@@ -135,6 +135,14 @@ def process_and_upload():
                 
                 print(f"[Archivo] Procesando: {meta['title']} -> Namespace: [{meta['namespace']}]")
                 
+                # Evitar duplicidad: Eliminar fragmentos antiguos del mismo archivo en Pinecone
+                try:
+                    print(f"   - Limpiando indices antiguos de '{meta['source']}' en Pinecone...")
+                    index.delete(filter={"source": meta['source']}, namespace=meta['namespace'])
+                    print(f"     [OK] Vectores previos eliminados de forma segura.")
+                except Exception as delete_err:
+                    print(f"     [Aviso] No se pudieron limpiar vectores antiguos (tal vez el archivo es nuevo): {delete_err}")
+
                 try:
                     chunks = smart_chunking(file_path)
                     print(f"   - Extraidos {len(chunks)} fragmentos.")
