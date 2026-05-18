@@ -180,8 +180,8 @@ class CoursesController {
 
     async getBooks(req, res) {
         try {
-            const { type, domain } = req.query; // ✅ Soporte para filtrado por tipo y dominio
-            const books = await this.adminService.getAll('book', { type, domain });
+            const { type, domain, includeHidden } = req.query; // ✅ Soporte para filtrado por tipo y dominio
+            const books = await this.adminService.getAll('book', { type, domain, includeHidden: includeHidden === 'true' });
             res.json(books);
         } catch (error) {
             if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
@@ -366,6 +366,14 @@ class CoursesController {
             if (req.body.is_premium !== undefined) {
                 req.body.is_premium = req.body.is_premium === 'true';
             }
+            // ✅ NUEVO: Parsear visible (FormData envía strings)
+            if (req.body.visible !== undefined) {
+                req.body.visible = req.body.visible === 'true';
+            }
+            // ✅ NUEVO: Parsear open_directly (FormData envía strings)
+            if (req.body.open_directly !== undefined) {
+                req.body.open_directly = req.body.open_directly === 'true';
+            }
             
             // ✅ NUEVO: Fallback para recursos visuales (infografías)
             // Si no hay URL pero hay imagen, la imagen ES el recurso.
@@ -493,6 +501,14 @@ class CoursesController {
             // ✅ NUEVO: Parsear is_premium (FormData envía strings)
             if (req.body.is_premium !== undefined) {
                 req.body.is_premium = req.body.is_premium === 'true';
+            }
+            // ✅ NUEVO: Parsear visible (FormData envía strings)
+            if (req.body.visible !== undefined) {
+                req.body.visible = req.body.visible === 'true';
+            }
+            // ✅ NUEVO: Parsear open_directly (FormData envía strings)
+            if (req.body.open_directly !== undefined) {
+                req.body.open_directly = req.body.open_directly === 'true';
             }
 
             // ✅ NUEVO: Fallback para recursos visuales (infografías) en UPDATE

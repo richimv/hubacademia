@@ -95,6 +95,10 @@ Optimización de la carga de bibliografía y guías clínicas mediante el escane
     *   Permite importar decenas de archivos (PDFs, Videos, Documentos) en un solo paso.
     *   **Identificador de Carpeta:** Se obtiene de la URL de Drive (ej: `https://drive.google.com/drive/folders/ID_AQUI`).
     *   **Lógica de Actualización:** Si agregas archivos nuevos a una carpeta ya sincronizada, el sistema los detecta e inserta sin duplicar los existentes (Upsert).
+*   **Controles de Lote Pre-Sincronización (Switches iOS Modernos) 👑👁️⚡:**
+    *   **Acceso Premium:** Configura todo el lote importado como contenido Premium con descuento de pases/vidas para usuarios gratuitos.
+    *   **Visible al Público:** Permite activar o desactivar la visibilidad de todo el lote en los buscadores y catálogos de estudiantes al instante.
+    *   **Apertura Inmersiva:** Si se activa, todos los archivos del lote sincronizado se configurarán para omitir la página de detalles y abrirse instantáneamente al hacer un clic en el visor modal.
 *   **Persistencia de Miniaturas (GCS):** 
     *   **Generación Automática:** Durante el escaneo, el sistema descarga la miniatura de alta resolución de Drive.
     *   **Optimización WebP:** La imagen se procesa con Sharp para reducir su peso y se sube permanentemente al Bucket de Google Cloud Storage (`/thumbnails`).

@@ -542,7 +542,10 @@ function createUnifiedResourceCardHTML(item) {
     const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
     const isLocked = window.uiManager.isResourceLocked(isPremium);
 
-    // 4. Determinar Iconos, Textos y Colores SVG(CSS) según el Tipo (Single Source of Truth)
+    // 4.1. Apertura Directa
+    const openDirectly = item.open_directly === true || String(item.open_directly).toLowerCase() === 'true' || item.open_directly === 1;
+
+    // 4.2. Determinar Iconos, Textos y Colores SVG(CSS) según el Tipo (Single Source of Truth)
     let iconClass, typeLabel, typeColorClass;
 
     switch (type) {
@@ -616,7 +619,7 @@ function createUnifiedResourceCardHTML(item) {
             </div>
 
             <!-- Zona Superior: Visual (Clicable) -->
-            <div class="urc-visual-zone" role="button" tabindex="0" onclick="window.uiManager.unlockAndNavigate('${item.id}', '${type}', ${isPremium})" title="Ver detalles de ${title}">
+            <div class="urc-visual-zone" role="button" tabindex="0" onclick="window.uiManager.unlockAndNavigate('${item.id}', '${type}', ${isPremium}, ${openDirectly})" title="Ver detalles de ${title}">
                 ${visualHTML}
                 ${displayImage ? fallbackHTML : ''}
                 
@@ -627,7 +630,7 @@ function createUnifiedResourceCardHTML(item) {
             </div>
 
             <!-- Zona Inferior: Información (Clicable) -->
-            <div class="urc-info-zone" role="button" tabindex="0" onclick="window.uiManager.unlockAndNavigate('${item.id}', '${type}', ${isPremium})" title="Ver detalles de ${title}">
+            <div class="urc-info-zone" role="button" tabindex="0" onclick="window.uiManager.unlockAndNavigate('${item.id}', '${type}', ${isPremium}, ${openDirectly})" title="Ver detalles de ${title}">
                 <div class="urc-meta">
                     ${item.size ? `<span class="urc-size"><i class="fas fa-hdd"></i> ${item.size}</span>` : ''}
                 </div>

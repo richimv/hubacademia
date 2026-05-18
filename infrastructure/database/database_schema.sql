@@ -191,6 +191,8 @@ CREATE TABLE IF NOT EXISTS public.resources (
     is_premium BOOLEAN DEFAULT false,
     content_html TEXT,
     domain CHARACTER VARYING(50) DEFAULT 'medicine'::character varying,
+    visible BOOLEAN DEFAULT true,
+    open_directly BOOLEAN DEFAULT false,
     CONSTRAINT resources_pkey PRIMARY KEY (id)
 );
 

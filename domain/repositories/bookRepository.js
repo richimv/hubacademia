@@ -3,25 +3,28 @@ const db = require('../../infrastructure/database/db');
 class BookRepository {
 
     async findAll(filters = {}) {
-        const { type, domain } = filters;
+        const { type, domain, includeHidden } = filters;
 
-        let whereClause = '';
         const params = [];
+        const conditions = [];
 
-        if (type && domain) {
-            whereClause = 'WHERE r.resource_type = $1 AND r.domain = $2';
-            params.push(type, domain);
-        } else if (type) {
-            whereClause = 'WHERE r.resource_type = $1';
+        if (type) {
             params.push(type);
-        } else if (domain) {
-            whereClause = 'WHERE r.domain = $1';
-            params.push(domain);
+            conditions.push(`r.resource_type = $${params.length}`);
         }
+        if (domain) {
+            params.push(domain);
+            conditions.push(`r.domain = $${params.length}`);
+        }
+        if (!includeHidden) {
+            conditions.push(`r.visible = true`);
+        }
+
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
         const query = `
             SELECT 
-                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium, r.content_html, r.domain,
+                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium, r.content_html, r.domain, r.visible, r.open_directly,
                 (
                     SELECT COALESCE(JSON_AGG(DISTINCT car.area), '[]')
                     FROM course_books cb
@@ -62,7 +65,7 @@ class BookRepository {
             JOIN course_books cb ON r.id = cb.resource_id
             JOIN course_careers cc ON cb.course_id = cc.course_id
             JOIN careers car ON cc.career_id = car.id
-            WHERE r.resource_type = 'book' AND (${conditions})
+            WHERE r.resource_type = 'book' AND r.visible = true AND (${conditions})
             ORDER BY r.id DESC
             LIMIT $${areaKeywords.length + 1}
         `;
@@ -95,7 +98,7 @@ class BookRepository {
     }
 
     async create(bookData) {
-        const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium = false, content_html = null } = bookData;
+        const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium = false, content_html = null, visible = true, open_directly = false } = bookData;
         // ✅ SOLUCIÓN: Generar el 'resource_id' de texto que la base de datos requiere.
         const resourceId = `RES_${Date.now()}`;
 
@@ -103,8 +106,8 @@ class BookRepository {
             await db.query('BEGIN');
 
             const { rows } = await db.query(
-                'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type, is_premium, content_html, domain) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-                [resourceId, title, author, url, image_url || null, resource_type || 'book', is_premium, content_html, bookData.domain || 'medicine']
+                'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type, is_premium, content_html, domain, visible, open_directly) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+                [resourceId, title, author, url, image_url || null, resource_type || 'book', is_premium, content_html, bookData.domain || 'medicine', visible, open_directly]
             );
             const newResource = rows[0];
 
@@ -160,6 +163,16 @@ class BookRepository {
         if (bookData.domain !== undefined) {
             params.push(bookData.domain);
             fields.push(`domain = $${params.length}`);
+        }
+
+        if (bookData.visible !== undefined) {
+            params.push(bookData.visible);
+            fields.push(`visible = $${params.length}`);
+        }
+
+        if (bookData.open_directly !== undefined) {
+            params.push(bookData.open_directly);
+            fields.push(`open_directly = $${params.length}`);
         }
 
         params.push(id);
@@ -284,6 +297,7 @@ class BookRepository {
             LEFT JOIN course_careers cc ON c.id = cc.course_id
             LEFT JOIN careers car ON car.id = cc.career_id
             WHERE 
+                r.visible = true AND (
                 -- ✅ Match TIPO (Si se detectó)
                 ${detectedType ? `(r.resource_type = $2) OR` : ''}
 
@@ -306,6 +320,7 @@ class BookRepository {
                 -- Solo si coincide MUCHO con el nombre de la carrera (evitar "Humana" -> "Medicina Humana" -> traer todo)
                 (unaccent(lower(car.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
                 (word_similarity(unaccent(lower($1)), unaccent(lower(car.name))) > 0.75)
+                )
             ORDER BY relevance_score DESC, r.title
             LIMIT 60
         `;

@@ -43,8 +43,13 @@ Cuando se activa el modo "Estudiar", el sistema despliega una capa superior tác
 *   **Alcance:** Compatible con PDFs, Vídeos (MP4/WebM), Presentaciones (PPTX) y Documentos (DOCX) almacenados en GCS.
 *   **Propiedad:** El visor sirve archivos directamente desde nuestro Bucket para garantizar que el usuario nunca abandone el dominio `hubacademia.com`.
 *   **Interfaz:** 
-    *   Fondo oscuro (Dark Mode) con desenfoque de fondo.
-    *   Controles flotantes minimalistas (Zoom, Cerrar, Página siguiente).
+*   **Interfaz (Controles Flotantes Minimalistas) 🛠️:**
+    *   **Cerrar (Botón &times;):** Cierra el visor inmersivo y restaura instantáneamente la interfaz del Hub.
+    *   **Descargar (Botón de Flecha 📥):** 
+        *   *Para recursos internos (GCS):* Realiza una descarga nativa instantánea en la máquina o dispositivo del usuario (gracias al parámetro query `download=true` de nuestro proxy que fuerza la cabecera `Content-Disposition: attachment`). El usuario no necesita hacer "guardar como" ni abre pestañas vacías.
+        *   *Para recursos externos (Google Drive, etc.):* Abre el recurso en una pestaña nueva como fallback seguro para descarga.
+    *   **Ver Original (Botón de Enlace Externo 🔗):** Abre la URL directa del recurso (sea la ruta de GCS o el enlace externo de Google Drive) en una nueva pestaña de forma limpia, permitiendo al estudiante trabajar con el visor propio de su navegador si así lo prefiere.
+*   **Fondo & Visualización:** Fondo oscuro (Dark Mode) con desenfoque (`backdrop-filter`) y renderizadores adaptados por extensión.
 *   **Integración IA (Chat):**
     *   El Chat de Tutoría estará disponible en un panel lateral.
     *   **Limitación Actual:** La IA no procesará el documento completo por razones de costo y latencia; funcionará como el chat actual, apoyando al alumno mientras lee.

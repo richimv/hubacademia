@@ -343,9 +343,9 @@ class UIManager {
         if (type === 'video') {
             // Video siempre usa su modal especializado (YouTube/MP4)
             this.openVideoModal(url, finalTitle);
-        } else if (type === 'other' || this.isImage(url) || this.isDriveLink(url)) {
-            // 'other', imágenes y links de Drive pasan por el MediaViewer
-            // El MediaViewer internamente decidirá si abrir en pestaña nueva (Drive) o visor inmersivo (GCS)
+        } else if (type === 'other' || this.isImage(url) || this.isDriveLink(url) || this.isPDF(url) || this.isOffice(url)) {
+            // 'other', imágenes, PDFs, documentos de Office y links de Drive pasan por el MediaViewer
+            // El MediaViewer internamente decidirá si abrir en pestaña nueva (Drive/externos) o visor inmersivo (GCS/locales)
             this.showMediaViewer(url, finalTitle);
         } else {
             // Libros, artículos y otros documentos estándar abren en pestaña nueva
@@ -362,10 +362,10 @@ class UIManager {
      * Verifica acceso antes de redirigir.
      * MEJORA: Si el tipo es visual (video/other), abre el visor directamente en lugar de navegar.
      */
-    async unlockAndNavigate(id, type = 'book', isPremium = false) {
+    async unlockAndNavigate(id, type = 'book', isPremium = false, openDirectly = false) {
         // ✅ REGLA DE EXPERIENCIA DIRECTA:
-        // Si es video u otro recurso visual, abrir el visor directamente
-        if (type === 'video' || type === 'other') {
+        // Si es video o tiene habilitada la Apertura Directa (openDirectly = true), abrir el visor directamente.
+        if (type === 'video' || openDirectly === true || String(openDirectly).toLowerCase() === 'true' || openDirectly === 1) {
             await this.unlockResource(id, type, isPremium);
             return;
         }
@@ -539,6 +539,7 @@ class UIManager {
         const img = document.getElementById('media-viewer-img');
         const titleEl = document.getElementById('media-viewer-title');
         const downloadBtn = document.getElementById('media-viewer-download');
+        const fullLinkBtn = document.getElementById('media-viewer-full-link');
         const body = document.getElementById('media-viewer-body');
 
         if (modal && body) {
@@ -591,10 +592,20 @@ class UIManager {
                 return;
             }
 
+            if (fullLinkBtn) {
+                fullLinkBtn.href = resolvedUrl;
+            }
+
             if (downloadBtn) {
                 downloadBtn.onclick = () => {
-                    // Simulamos clic dinámico para descarga
-                    window.open(resolvedUrl, '_blank');
+                    // Si es un recurso interno, forzar descarga mediante el proxy
+                    if (this.isOurResource(url)) {
+                        const downloadUrl = resolvedUrl + (resolvedUrl.includes('?') ? '&' : '?') + 'download=true';
+                        window.open(downloadUrl, '_blank');
+                    } else {
+                        // Enlace externo (Drive, etc.), fallback estándar a pestaña nueva
+                        window.open(resolvedUrl, '_blank');
+                    }
                 };
             }
 

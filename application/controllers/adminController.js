@@ -293,14 +293,20 @@ class AdminController {
 
     async syncDriveFolder(req, res) {
         try {
-            const { folderId, resourceType, author, domain } = req.body;
+            const { folderId, resourceType, author, domain, is_premium, visible, open_directly } = req.body;
 
             if (!folderId || !resourceType) {
                 return res.status(400).json({ error: 'Faltan parámetros: folderId y resourceType son obligatorios.' });
             }
 
             const resolvedDomain = domain || 'medicine';
-            console.log(`📂 [Admin] Iniciando sincronización de carpeta Drive: ${folderId} como ${resourceType} en dominio ${resolvedDomain}`);
+            
+            // Normalizar a booleanos nativos
+            const isPremium = is_premium === true || String(is_premium).toLowerCase() === 'true' || is_premium === 1;
+            const isVisible = visible !== false && String(visible).toLowerCase() !== 'false' && visible !== 0;
+            const openDirectly = open_directly === true || String(open_directly).toLowerCase() === 'true' || open_directly === 1;
+
+            console.log(`📂 [Admin] Iniciando sincronización de carpeta Drive: ${folderId} como ${resourceType} en dominio ${resolvedDomain} (Premium: ${isPremium}, Visible: ${isVisible}, Directo: ${openDirectly})`);
 
             const DriveService = require('../../domain/services/driveService');
             const files = await DriveService.getFilesFromFolder(folderId);
@@ -316,7 +322,7 @@ class AdminController {
                 const driveUrl = `https://drive.google.com/open?id=${file.id}`;
                 const cleanTitle = file.name.replace(/\.[^/.]+$/, "");
 
-                // ⚡️ NUEVO: Lógica de Persistencia de Miniatura en GCS con Fallback
+                // Lógica de Persistencia de Miniatura en GCS con Fallback
                 let persistentThumbnailUrl = null;
                 try {
                     const thumbData = await DriveService.downloadThumbnailBuffer(file.id);
@@ -332,13 +338,21 @@ class AdminController {
                     console.warn(`⚠️ No se pudo persistir miniatura para ${file.name}:`, thumbErr.message);
                 }
 
-                // 🛡️ SI NO HAY MINIATURA (Falló Google o es un archivo pesado), NO ASIGNAMOS NADA.
-                // El sistema ya maneja un diseño por defecto en el frontend si image_url es null.
                 if (!persistentThumbnailUrl) {
                     console.log(`✨ Sin miniatura para: ${file.name} (se usará diseño por defecto UI)`);
                 }
 
-                const result = await adminService.syncResource(driveUrl, cleanTitle, resourceType, persistentThumbnailUrl, author, resolvedDomain);
+                const result = await adminService.syncResource(
+                    driveUrl, 
+                    cleanTitle, 
+                    resourceType, 
+                    persistentThumbnailUrl, 
+                    author, 
+                    resolvedDomain,
+                    isPremium,
+                    isVisible,
+                    openDirectly
+                );
                 if (result.action === 'updated') updatedCount++;
                 else insertedCount++;
             }

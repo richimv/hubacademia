@@ -156,8 +156,11 @@ class MediaController {
                 '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             };
 
+            const isDownload = req.query.download === 'true' || req.query.download === '1';
+            const baseName = path.basename(gcsPath);
+
             res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
-            res.setHeader('Content-Disposition', 'inline');
+            res.setHeader('Content-Disposition', isDownload ? `attachment; filename="${baseName}"` : 'inline');
             res.setHeader('Cache-Control', isAdminOnly ? 'no-cache' : 'public, max-age=31536000, immutable'); // Cache 1 año para usuarios
 
             file.createReadStream().pipe(res);

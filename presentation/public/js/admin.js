@@ -387,7 +387,7 @@ class AdminManager {
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/students`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/topics`),
-                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books`),
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?includeHidden=true`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/questions`)
             ]);
 
@@ -1073,12 +1073,49 @@ class AdminManager {
                     ${this.createSelect('generic-domain', 'Sector / Dominio (*)', domainsBook, this.currentItem?.domain || 'medicine', false)}
                 </div>
 
-                <!-- Checkbox Premium -->
-                <div class="form-group" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="generic-is-premium" style="width: 20px; height: 20px; cursor: pointer;" ${this.currentItem?.is_premium ? 'checked' : ''}>
-                    <label for="generic-is-premium" style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                        <i class="fas fa-crown" style="color: var(--warning-color);"></i> Recurso Premium (Requiere suscripción o vidas)
-                    </label>
+                <!-- Switches de Control del Recurso (Premium / Visibilidad / Apertura Directa) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="switch-container premium-switch" style="margin-bottom: 0;">
+                        <label for="generic-is-premium" class="switch-label">
+                            <i class="fas fa-crown"></i>
+                            <span>
+                                <strong>Acceso Premium</strong>
+                                <span class="switch-desc">Requiere suscripción o vidas</span>
+                            </span>
+                        </label>
+                        <label class="switch-control">
+                            <input type="checkbox" id="generic-is-premium" ${this.currentItem?.is_premium ? 'checked' : ''}>
+                            <span class="switch-slider premium-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="switch-container" style="margin-bottom: 0;">
+                        <label for="generic-visible" class="switch-label">
+                            <i class="fas fa-eye"></i>
+                            <span>
+                                <strong>Visible al Público</strong>
+                                <span class="switch-desc">Mostrar en buscador y catálogo</span>
+                            </span>
+                        </label>
+                        <label class="switch-control">
+                            <input type="checkbox" id="generic-visible" ${(this.currentItem === undefined || this.currentItem?.visible !== false) ? 'checked' : ''}>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="switch-container" style="margin-bottom: 0;">
+                        <label for="generic-open-directly" class="switch-label">
+                            <i class="fas fa-bolt"></i>
+                            <span>
+                                <strong>Apertura Inmersiva</strong>
+                                <span class="switch-desc">Abrir directamente en visor modal</span>
+                            </span>
+                        </label>
+                        <label class="switch-control">
+                            <input type="checkbox" id="generic-open-directly" ${this.currentItem?.open_directly ? 'checked' : ''}>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- NUEVO: Asignación de Temas (Topics) al Recurso -->
@@ -1155,13 +1192,58 @@ class AdminManager {
 
                     ${this.createFormGroup('text', 'generic-folder-id', 'ID de la Carpeta de Google Drive (*)', '', true)}
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px; margin-bottom: 20px;">
                         ${this.createSelect('generic-resource-type', 'Tipo de Recurso (*)', resourceTypes, 'book', false)}
                         ${this.createSelect('generic-domain', 'Sector / Dominio (*)', [
                             { id: 'medicine', name: 'Sector Salud' },
                             { id: 'education', name: 'Sector Educación' }
                         ], 'medicine', false)}
                         ${this.createFormGroup('text', 'generic-author', 'Nombre de Autor / Fuente', 'Admin Hub', true)}
+                    </div>
+
+                    <!-- Switches de Control del Recurso para Drive Sync (Premium / Visibilidad / Apertura Directa) -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="switch-container premium-switch" style="margin-bottom: 0;">
+                            <label for="generic-is-premium" class="switch-label">
+                                <i class="fas fa-crown"></i>
+                                <span>
+                                    <strong>Acceso Premium</strong>
+                                    <span class="switch-desc">Cargar recursos como Premium</span>
+                                </span>
+                            </label>
+                            <label class="switch-control">
+                                <input type="checkbox" id="generic-is-premium">
+                                <span class="switch-slider premium-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="switch-container" style="margin-bottom: 0;">
+                            <label for="generic-visible" class="switch-label">
+                                <i class="fas fa-eye"></i>
+                                <span>
+                                    <strong>Visible al Público</strong>
+                                    <span class="switch-desc">Mostrar en buscador y catálogo</span>
+                                </span>
+                            </label>
+                            <label class="switch-control">
+                                <input type="checkbox" id="generic-visible" checked>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="switch-container" style="margin-bottom: 0;">
+                            <label for="generic-open-directly" class="switch-label">
+                                <i class="fas fa-bolt"></i>
+                                <span>
+                                    <strong>Apertura Inmersiva</strong>
+                                    <span class="switch-desc">Abrir directamente en visor modal</span>
+                                </span>
+                            </label>
+                            <label class="switch-control">
+                                <input type="checkbox" id="generic-open-directly">
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
                     </div>
 
                     <div style="margin-top: 20px; padding: 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px dashed var(--border-color); font-size: 0.85rem; color: var(--text-muted);">
@@ -2018,6 +2100,9 @@ class AdminManager {
                     formData.append('domain', document.getElementById('generic-domain').value);
                     // Premium Field
                     formData.append('is_premium', document.getElementById('generic-is-premium').checked);
+                    // NUEVO: visible y open_directly
+                    formData.append('visible', document.getElementById('generic-visible').checked);
+                    formData.append('open_directly', document.getElementById('generic-open-directly').checked);
                     // NUEVO: Resumen Enriquecido (HTML)
                     formData.append('content_html', document.getElementById('hidden-content-html').value);
 
@@ -2277,8 +2362,12 @@ class AdminManager {
                         const folderId = document.getElementById('generic-folder-id').value.trim();
                         const resourceType = document.getElementById('generic-resource-type').value;
                         const author = document.getElementById('generic-author').value.trim();
-
                         const domainVal = document.getElementById('generic-domain').value;
+
+                        // Capturar switches de sincronización masiva
+                        const isPremium = document.getElementById('generic-is-premium').checked;
+                        const visible = document.getElementById('generic-visible').checked;
+                        const openDirectly = document.getElementById('generic-open-directly').checked;
 
                         if (!folderId) throw new Error('El ID de la carpeta es obligatorio.');
 
@@ -2288,7 +2377,15 @@ class AdminManager {
                         const syncUrl = `${window.AppConfig.API_URL}/api/admin/drive/sync-folder`;
                         const resSync = await window.NetworkService.fetch(syncUrl, {
                             method: 'POST',
-                            body: JSON.stringify({ folderId, resourceType, author, domain: domainVal })
+                            body: JSON.stringify({ 
+                                folderId, 
+                                resourceType, 
+                                author, 
+                                domain: domainVal,
+                                is_premium: isPremium,
+                                visible: visible,
+                                open_directly: openDirectly
+                            })
                         });
 
                         const resDataSync = await resSync.json();

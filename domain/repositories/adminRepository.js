@@ -109,17 +109,17 @@ class AdminRepository {
         return result.rows[0];
     }
 
-    async updateResource(id, title, resourceType, imageUrl, domain = 'medicine') {
+    async updateResource(id, title, resourceType, imageUrl, domain = 'medicine', isPremium = false, visible = true, openDirectly = false) {
         await db.query(
-            'UPDATE resources SET title = $1, resource_type = $2, image_url = $3, domain = $4 WHERE id = $5',
-            [title, resourceType, imageUrl, domain, id]
+            'UPDATE resources SET title = $1, resource_type = $2, image_url = $3, domain = $4, is_premium = $5, visible = $6, open_directly = $7 WHERE id = $8',
+            [title, resourceType, imageUrl, domain, isPremium, visible, openDirectly, id]
         );
     }
 
-    async addResource(resourceId, title, author, url, resourceType, imageUrl, domain = 'medicine') {
+    async addResource(resourceId, title, author, url, resourceType, imageUrl, domain = 'medicine', isPremium = false, visible = true, openDirectly = false) {
         await db.query(
-            'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium, image_url, domain) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-            [resourceId, title, author, url, resourceType, false, imageUrl, domain]
+            'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium, image_url, domain, visible, open_directly) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+            [resourceId, title, author, url, resourceType, isPremium, imageUrl, domain, visible, openDirectly]
         );
     }
 
