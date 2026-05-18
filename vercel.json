@@ -98,6 +98,10 @@
             "destination": "/presentation/public/quiz.html"
         },
         {
+            "source": "/arena.html",
+            "destination": "/presentation/public/arena.html"
+        },
+        {
             "source": "/arena",
             "destination": "/presentation/public/arena.html"
         },
@@ -120,6 +124,10 @@
         {
             "source": "/simulators",
             "destination": "/presentation/public/simulators.html"
+        },
+        {
+            "source": "/resource.html",
+            "destination": "/presentation/public/resource.html"
         },
         {
             "source": "/resource",

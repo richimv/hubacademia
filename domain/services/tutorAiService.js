@@ -142,38 +142,21 @@ class TutorAiService {
                     console.log(`📚 [TutorAiService] Usando content_html de recurso directo (< 15k texto plano)`);
                     context = `--- CONTEXTO OFICIAL DEL RECURSO: "${resourceContext.title}" ---\n${plainText}\n\n[INSTRUCCIONES DE RESPUESTA]:\nResponde a la pregunta del usuario utilizando este material como tu base de verdad técnica primaria. Si la pregunta requiere profundizar o no está explícita aquí, usa tu experiencia clínica/pedagógica para dar una respuesta rica y veraz.`;
                 } else {
-                    console.log(`🔍 [TutorAiService] Usando RAG Resiliente de 3 niveles para recurso extenso/sin sinopsis`);
-                    let filename = null;
-                    if (resourceContext.file_url) {
-                        const parts = resourceContext.file_url.split('/');
-                        filename = decodeURIComponent(parts[parts.length - 1]);
-                    }
-
+                    console.log(`🔍 [TutorAiService] Usando RAG Semántico basado en el Título del Recurso: "${resourceContext.title}"`);
                     const questionRagService = require('./questionRagService');
                     
-                    // Nivel 1: RAG Dinámico por metadato de archivo
+                    // Buscamos semánticamente en Pinecone usando el título del recurso y la consulta
                     context = await questionRagService.getStyleContextByKeywords(
                         specialization,
-                        [mainSearchQuery],
+                        [`${resourceContext.title} ${mainSearchQuery}`],
                         8,
-                        filename
+                        null
                     );
 
-                    // Nivel 2: RAG Semántico Global
+                    // Fallback Generativo Experto basado en el título (Si RAG falló por completo)
                     if (!context || context.trim() === '') {
-                        console.warn(`⚠️ [TutorAiService] No se encontraron fragmentos en Pinecone para ${filename}, intentando RAG semántico global.`);
-                        context = await questionRagService.getStyleContextByKeywords(
-                            specialization,
-                            [`${resourceContext.title} ${mainSearchQuery}`],
-                            8,
-                            null
-                        );
-                    }
-
-                    // Nivel 3: Fallback Generativo Experto
-                    if (!context || context.trim() === '') {
-                        console.warn(`⚠️ [TutorAiService] RAG falló en chat de voz, usando fallback básico del título.`);
-                        context = `Tema de estudio principal: "${resourceContext.title}".`;
+                        console.warn(`⚠️ [TutorAiService] RAG de título no disponible, usando fallback básico centrado en el título: "${resourceContext.title}"`);
+                        context = `Tema de estudio principal: "${resourceContext.title}".\nInstrucción: Como no hay fragmentos disponibles en la base vectorial para este recurso, debes responder de manera experta basándote estrictamente en el tema indicado por el título ("${resourceContext.title}") and tus conocimientos especializados en ${specialization}.`;
                     }
                 }
             } else {

@@ -432,22 +432,12 @@ class TrainingService {
         try {
             console.log(`🤖 [Arena IA] Generando quiz dinámico para recurso: ${title} | Dificultad: ${difficulty}`);
             
-            // 1. Extraer nombre de archivo para filtro RAG
-            let filename = null;
-            if (resourceUrl) {
-                try {
-                    const decoded = decodeURIComponent(resourceUrl);
-                    const parts = decoded.split('/');
-                    filename = parts[parts.length - 1];
-                } catch(e) {}
-            }
-
-            // 2. Determinar el contexto de uso (Directo vs RAG) - Limpiar HTML para contar caracteres reales de texto plano
+            // 1. Determinar el contexto de uso (Directo vs RAG) - Limpiar HTML para contar caracteres reales de texto plano
             let contextForAI = "";
             const plainText = content ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
             const isContentShort = plainText && plainText.length > 0 && plainText.length < 15000;
             
-            // 3. Generar Subtemas Dinámicos para Aleatoriedad
+            // 2. Generar Subtemas Dinámicos para Aleatoriedad
             const subtopicsPrompt = `Actúa como un experto docente. Extrae 5 subtemas o conceptos muy específicos a evaluar del siguiente recurso: "${title}". Devuelve SOLO una lista separada por comas, sin numeración ni introducciones.`;
             let subtopicsStr = "Conceptos generales";
             try {
@@ -472,25 +462,16 @@ class TrainingService {
                 console.log(`📚 [Arena IA] Usando content_html directo (Largo texto plano: ${plainText.length} < 15k)`);
                 contextForAI = plainText;
             } else {
-                console.log(`🔍 [Arena IA] Usando RAG Dinámico para recurso extenso o sin content_html`);
+                console.log(`🔍 [Arena IA] Usando RAG Semántico basado en el Título para recurso extenso o sin content_html`);
                 const questionRagService = require('./questionRagService');
-                // Buscar en Pinecone filtrando por el filename si existe
+                
+                // Buscar semánticamente en Pinecone usando el título del recurso y los subtemas seleccionados
                 contextForAI = await questionRagService.getStyleContextByKeywords(
                     domain, 
-                    [selectedSubtopics], 
+                    [`${title} ${selectedSubtopics}`], 
                     8, 
-                    filename
+                    null
                 );
-                
-                if (!contextForAI || contextForAI.trim() === '') {
-                    console.warn(`⚠️ [Arena IA] No se encontraron fragmentos en Pinecone para ${filename}, intentando búsqueda semántica global con el título.`);
-                    contextForAI = await questionRagService.getStyleContextByKeywords(
-                        domain, 
-                        [`${title} ${selectedSubtopics}`], 
-                        8, 
-                        null
-                    );
-                }
                 
                 if (!contextForAI || contextForAI.trim() === '') {
                     console.warn(`⚠️ [Arena IA] Fallback semántico falló, usando fallback AI pura.`);

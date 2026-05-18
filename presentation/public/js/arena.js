@@ -250,7 +250,7 @@ const Arena = (function () {
 
     function goBack() {
         if (state.resourceId) {
-            window.location.href = `/resource.html?id=${state.resourceId}`; 
+            window.location.href = `/resource?id=${state.resourceId}`; 
         } else {
             window.location.href = '/';
         }

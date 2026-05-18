@@ -56,7 +56,7 @@ class ChatController {
                             id: resourceId,
                             title: resRow.title || '',
                             content_html: resRow.content_html || '',
-                            file_url: resRow.file_url || null
+                            file_url: resRow.url || null
                         };
                         console.log(`📚 [ChatController] Contexto de recurso cargado. Especialidad dinamizada: ${finalSpecialization} | Recurso: "${resRow.title}"`);
                     }

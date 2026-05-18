@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.startDynamicQuiz = function() {
         const count = document.getElementById('quiz-count').value;
         const difficulty = document.getElementById('quiz-difficulty').value;
-        window.location.href = `/arena.html?resourceId=${stateResourceId}&count=${count}&difficulty=${difficulty}`;
+        window.location.href = `/arena?resourceId=${stateResourceId}&count=${count}&difficulty=${difficulty}`;
     };
 
     // Exponer funciones globales

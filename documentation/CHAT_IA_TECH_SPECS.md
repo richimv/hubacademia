@@ -208,8 +208,8 @@ marked.setOptions({
   - Remueve el "web scraping" frágil del DOM de la página. Ahora el frontend captura el `resourceId` desde el query param de la URL (`?id=X`) en su inicialización y lo envía de forma segura en el payload.
   - El backend resuelve el enrutador inteligente de recuperación contextual en 3 niveles:
     1. **Express (Base de Datos):** Si la sinopsis textual del recurso en PostgreSQL tiene menos de 15,000 caracteres, se inyecta directamente en el prompt. Cero latencia y cero costo de base vectorial.
-    2. **RAG Nivel 1 (Vectorial Pinecone por Archivo):** Si es mayor a 15,000 o nula, consulta a Pinecone filtrando estrictamente por el metadato exacto del archivo original (`filename`) para recuperar fragmentos exactos de alta fidelidad.
-    3. **RAG Nivel 2 & 3 (Fallbacks Semánticos y Generativos):** En caso de fallo o desindexación, busca semánticamente a nivel global por título del recurso y temas de soporte; si Pinecone está offline, Gemini realiza inferencia generativa directa basada en el título.
+    2. **RAG Semántico Basado en Título:** Si es mayor a 15,000 o nula, consulta a Pinecone de forma global realizando una búsqueda semántica de alta fidelidad combinando el título del recurso y la consulta del usuario. Esto elimina por completo la necesidad de filtros por nombre de archivo (`filename`), haciéndolo 100% compatible con enlaces externos, Google Drive, u otros recursos que carecen de un archivo físico directo.
+    3. **Fallback Generativo:** Si la base vectorial está offline o no se recupera suficiente contexto, Gemini asume un rol de experto académico y genera respuestas de alta fidelidad basadas únicamente en el título del recurso y su conocimiento global pre-entrenado.
 - **Input:** Web Speech API (`SpeechRecognition`) para reconocimiento de voz en tiempo real.
 - **Output:** Web Speech API (`SpeechSynthesis`) utilizando la voz nativa del navegador.
 - **Alineación Visual:** Las respuestas de texto de la IA son procesadas y formateadas con `.markdown-compact` a través de `markdown-renderer.js` para asegurar coherencia tipográfica de lujo.
