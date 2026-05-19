@@ -44,6 +44,13 @@ El sistema ha evolucionado de una "Biblioteca de Libros" a un repositorio multim
     *   **Modo Oscuro Editorial:** Configuración `oxide-dark` que garantiza que el texto sea perfectamente legible (blanco) durante el proceso de edición, eliminando el problema del texto invisible.
     *   **Espacio de Trabajo:** El modal de edición se ha ampliado a **1100px** de ancho y **95vh** de alto para maximizar el área de redacción científica.
 *   **Buscador con Filtro Dual:** El panel `admin.js` ahora incorpora filtrado en tiempo real por el tipo exacto (`book`, `paper`, `guia`, `norma`, `video`, `other`), combinándose instantáneamente con la barra de texto (`admin-search-input`) permitiendo curar catálogos sin latencias de red.
+*   **Mejoras de Visualización UI/UX en Recursos:**
+    *   **Diseño Expandido de Ancho Completo:** La interfaz del panel se ha rediseñado para aprovechar casi todo el ancho de la pantalla, alineándose con la estética general del sitio web y optimizando la distribución espacial de la información.
+    *   **Mini-Imagen de Portada (Mini-thumbnail):** Cada recurso muestra una pequeña previsualización circular/cuadrada en la parte exterior izquierda de la tarjeta, permitiendo validar rápidamente si el recurso cuenta con una imagen asignada en GCS o local.
+    *   **Indicadores Rápidos (Semáforo de Tres Puntos):** Se añadieron indicadores visuales dinámicos en forma de tres puntos de color:
+        *   **Punto Dorado (Premium):** Indica si el recurso es de pago o consume vidas/pases.
+        *   **Punto Verde (Visible):** Indica si el recurso está activo y es visible públicamente para los estudiantes.
+        *   **Punto Azul (Apertura Inmersiva):** Indica si el recurso omite la página de detalles y abre directamente el visor de PDF/contenido.
 
 ---
 
@@ -59,11 +66,11 @@ El panel detecta el contexto y ajusta los formularios automáticamente:
 *   **Fuentes de Medicina:** Bibliografía de élite (Harrison, CTO) y Normas Técnicas MINSA.
 *   **Fuentes de Educación:** Currículo Nacional (CNEB), Marco del Buen Desempeño Docente y Resoluciones Viceministeriales del MINEDU.
 *   **Control de Calidad:** 
-    *   **Anti-duplicidad:** Escaneo de los últimos 200 registros antes de inyectar.
+    *   **Anti-duplicidad:** Escaneo de los últimos 25 registros antes de inyectar.
     *   **Enfoque Constructivista:** Para el dominio educativo, la IA tiene prohibido generar respuestas conductistas o puramente memorísticas.
 *   **Inyección Masiva (3 Botones):**
     1.  **Importar:** Permite subir archivos Excel/CSV con el campo `domain` definido para clasificar preguntas automáticamente.
-    2.  **Generar IA:** Motor basado en **Gemini 2.0 Flash**. Permite seleccionar el dominio y las áreas de estudio específicas para generar lotes de 5 preguntas de alta fidelidad.
+    2.  **Generar IA:** Motor basado en **Gemini 2.5 Flash Lite**. Permite seleccionar el dominio y las áreas de estudio específicas para generar lotes de 5 preguntas de alta fidelidad.
     3.  **Nueva:** Formulario manual que cambia sus opciones de target y carrera según el dominio seleccionado en tiempo real.
 
 ---
@@ -108,10 +115,25 @@ Optimización de la carga de bibliografía y guías clínicas mediante el escane
 ---
 
 ## 7. 🛠️ Reglas de Operación (Resumen Técnico)
-*   **Imágenes:** Portadas y miniaturas se guardan en el servidor (`assets/`) y se gestionan mediante `FormData` para subida fluida.
+*   **Imágenes:** Portadas y miniaturas se optimizan a WebP y se guardan permanentemente en Google Cloud Storage (GCS) mediante `mediaController.js`. La carpeta local `assets/` del servidor solo almacena portadas y contenedores de la página principal estáticos por defecto (usados como fallback).
 *   **KPI Financiero:** El panel estima ganancias basándose en la suscripción activa (s/ 9.90 mensual).
 *   **Ofuscación de Enlaces:** Implementada para proteger la integridad de los recursos compartidos.
 
 ---
+
+## 8. 🗑️ Acciones Masivas y Persistencia de Filtros
+Para acelerar la curaduría y administración de recursos, se incorporaron controles de selección masiva y persistencia de estado UX.
+
+*   **Borrado Masivo (Bulk Delete):**
+    *   **Casillas de Selección:** Cada tarjeta de recurso (en todas las pestañas: Carreras, Cursos, Alumnos, Temas, Recursos, Preguntas) incluye un checkbox de selección.
+    *   **Barra de Acciones Flotante:** Al seleccionar uno o más elementos, aparece una barra inferior `#admin-bulk-actions-bar` con el conteo de elementos seleccionados, la opción de deseleccionarlos todos o eliminarlos en bloque con confirmación previa.
+    *   **Limpieza de GCS en Cascada:** Al eliminar masivamente recursos o preguntas, el backend purga automáticamente tanto sus archivos de portada/miniatura en el bucket de Google Cloud Storage (GCS) como cualquier imagen embebida dentro de su contenido HTML guardado por TinyMCE.
+*   **Soporte de Selección en Rango (Shift + Click):**
+    *   Los administradores pueden marcar un checkbox inicial y luego presionar la tecla `Shift` mientras hacen clic en otro checkbox posterior para seleccionar (o deseleccionar) de forma automática y masiva todos los elementos intermedios.
+*   **Persistencia de Filtros y Búsqueda (Cero Reset de Inputs):**
+    *   El buscador y los filtros de tipo y ordenamiento se almacenan en el estado global (`this.searchState` y `this.tabSortState`).
+    *   Al guardar cambios tras editar, añadir nuevos ítems o refrescar la base de datos, el buscador ya no se borra. La vista se vuelve a filtrar de forma automática conservando las consultas de búsqueda y las selecciones de tipo/ordenamiento que el administrador tenía configuradas previamente.
+
+---
 > [!IMPORTANT]
-> Esta guía ha sido verificada contra el código fuente al 30 de marzo de 2026. Cualquier cambio en la lógica de `MLService.js` o `admin.js` debe ser reflejado aquí.
+> Esta guía ha sido verificada contra el código fuente al 19 de mayo de 2026. Cualquier cambio en la lógica de `MLService.js` o `admin.js` debe ser reflejado aquí.

@@ -503,8 +503,71 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
 
     const resourceTypeAttr = type === 'book' ? `data-resource-type="${item.resource_type || item.type || 'other'}"` : `data-resource-type="${type}"`;
 
+    // --- RENDERIZACIÓN EXCLUSIVA PARA RECURSOS ---
+    if (type === 'book') {
+        const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
+        const isVisible = item.visible === true || String(item.visible).toLowerCase() === 'true' || item.visible === 1 || item.visible === undefined;
+        const isOpenDirectly = item.open_directly === true || String(item.open_directly).toLowerCase() === 'true' || item.open_directly === 1;
+
+        // Renderización de Miniatura
+        let thumbnailHTML = '';
+        if (item.image_url && item.image_url.trim() !== '') {
+            const resolvedThumb = window.resolveImageUrl(item.image_url, item.resource_type || item.type || 'book');
+            thumbnailHTML = `
+                <div class="admin-item-thumbnail" title="Portada asignada">
+                    <img src="${resolvedThumb}" alt="Preview" loading="lazy">
+                </div>
+            `;
+        } else {
+            thumbnailHTML = `
+                <div class="admin-item-thumbnail empty-thumbnail" title="Sin portada personalizada (usa fallback)">
+                    <i class="fas fa-image-slash"></i>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="admin-item-card item-card resource-item-card" ${resourceTypeAttr}>
+                <div class="admin-item-checkbox-wrapper">
+                    <input type="checkbox" class="admin-item-checkbox" data-type="${type}" data-id="${item.id}" title="Seleccionar para acción masiva">
+                </div>
+                ${thumbnailHTML}
+                
+                <div class="item-card-content">
+                    <h3 style="font-size: 1rem; margin-bottom: 4px;">${displayName}</h3>
+                    ${areaBadge}
+                    ${subtitleHTML}
+                </div>
+
+                <div class="admin-item-indicators">
+                    <span class="indicator-badge premium-badge ${isPremium ? 'active' : 'inactive'}" title="${isPremium ? 'Acceso Premium Activado' : 'Acceso Libre'}">
+                        <i class="fas fa-crown"></i>
+                    </span>
+                    <span class="indicator-badge visible-badge ${isVisible ? 'active' : 'inactive'}" title="${isVisible ? 'Visible en Catálogo' : 'Oculto al Público'}">
+                        <i class="fas ${isVisible ? 'fa-eye' : 'fa-eye-slash'}"></i>
+                    </span>
+                    <span class="indicator-badge immersive-badge ${isOpenDirectly ? 'active' : 'inactive'}" title="${isOpenDirectly ? 'Apertura Inmersiva en Visor' : 'Apertura Tradicional'}">
+                        <i class="fas fa-bolt"></i>
+                    </span>
+                </div>
+                
+                <div class="item-actions">
+                    <button class="edit-btn-small" data-type="${type}" data-id="${item.id}" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete-btn-small" data-type="${type}" data-id="${item.id}" title="Eliminar">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
     return `
         <div class="admin-item-card item-card" ${resourceTypeAttr}>
+            <div class="admin-item-checkbox-wrapper">
+                <input type="checkbox" class="admin-item-checkbox" data-type="${type}" data-id="${item.id}" title="Seleccionar para acción masiva">
+            </div>
             <div class="item-card-content">
                 <h3 style="font-size: 1rem; margin-bottom: 4px;">${displayName}</h3>
                 ${areaBadge}

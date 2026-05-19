@@ -104,6 +104,17 @@
         </div>
     </div>
 
+    <!-- Barra de Acciones Masivas (Flotante) -->
+    <div id="admin-bulk-actions-bar" class="admin-bulk-actions-bar">
+        <span class="bulk-actions-text" id="bulk-actions-text">0 elementos seleccionados</span>
+        <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-secondary" id="bulk-cancel-selection-btn" style="height: 36px; padding: 0 15px; font-size: 0.85rem;">Desmarcar todos</button>
+            <button type="button" class="btn-primary" id="bulk-delete-btn" style="height: 36px; padding: 0 15px; background: #ef4444; border-color: #ef4444; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-trash-alt"></i> Eliminar Seleccionados
+            </button>
+        </div>
+    </div>
+
     <script src="js/config.js"></script> <!-- NUEVO: Configuración global -->
 
     <script src="js/services/networkService.js"></script>

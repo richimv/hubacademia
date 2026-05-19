@@ -399,6 +399,81 @@ class AdminController {
             res.status(500).json({ error: 'Error al procesar la imagen del editor.' });
         }
     }
+
+    _extractGcsPaths(html) {
+        if (!html || typeof html !== 'string') return [];
+        const paths = [];
+        const regex = /(?:file|path)=([^"&>\s]+)/g;
+        let match;
+        while ((match = regex.exec(html)) !== null) {
+            paths.push(decodeURIComponent(match[1]));
+        }
+        return [...new Set(paths)];
+    }
+
+    async bulkDelete(req, res) {
+        try {
+            const { type, ids } = req.body;
+            if (!type || !Array.isArray(ids) || ids.length === 0) {
+                return res.status(400).json({ error: 'Faltan parámetros: type e ids (Array) son requeridos.' });
+            }
+
+            console.log(`🗑️ [Admin] Eliminación masiva iniciada para ${ids.length} elementos de tipo: ${type}`);
+
+            let successCount = 0;
+            let errors = [];
+
+            for (const id of ids) {
+                try {
+                    if (type === 'question') {
+                        const qData = await adminService.getQuestionImages(id);
+                        if (qData) {
+                            const { image_url, explanation_image_url } = qData;
+                            if (image_url) await mediaController.deleteFile(image_url);
+                            if (explanation_image_url) await mediaController.deleteFile(explanation_image_url);
+                        }
+                        const isDeleted = await adminService.deleteSingleQuestion(id);
+                        if (isDeleted) successCount++;
+                    } else {
+                        const entityId = (['student', 'admin'].includes(type)) ? String(id) : parseInt(id, 10);
+                        const oldItem = await adminService.getById(type, entityId);
+                        if (oldItem) {
+                            // 1. Borrar portada (Cover)
+                            if (oldItem.image_url) {
+                                try { await mediaController.deleteFile(oldItem.image_url); }
+                                catch (err) { console.error('Error deleting cover image:', err); }
+                            }
+                            // 2. Borrar todas las imágenes internas del editor (TinyMCE)
+                            if (oldItem.content_html) {
+                                try {
+                                    const contentPaths = this._extractGcsPaths(oldItem.content_html);
+                                    for (const gcsPath of contentPaths) {
+                                        await mediaController.deleteFile(gcsPath);
+                                    }
+                                } catch (err) { console.error('Error deleting editor images:', err); }
+                            }
+                        }
+                        await adminService.delete(type, entityId);
+                        successCount++;
+                    }
+                } catch (err) {
+                    console.error(`Error al eliminar ID ${id} de tipo ${type}:`, err);
+                    errors.push({ id, error: err.message });
+                }
+            }
+
+            res.json({
+                success: true,
+                message: `Se eliminaron ${successCount} de ${ids.length} elementos de tipo ${type}.`,
+                deleted: successCount,
+                failed: errors.length,
+                errors: errors
+            });
+        } catch (error) {
+            console.error('❌ Error en borrado masivo:', error);
+            res.status(500).json({ error: 'Error del servidor al realizar el borrado masivo.' });
+        }
+    }
 }
 
 const controller = new AdminController();
@@ -413,5 +488,6 @@ module.exports = {
     updateSingleQuestion: controller.updateSingleQuestion.bind(controller),
     deleteSingleQuestion: controller.deleteSingleQuestion.bind(controller),
     syncDriveFolder: controller.syncDriveFolder.bind(controller),
-    uploadEditorImage: controller.uploadEditorImage.bind(controller)
+    uploadEditorImage: controller.uploadEditorImage.bind(controller),
+    bulkDelete: controller.bulkDelete.bind(controller)
 };

@@ -9,8 +9,7 @@ class AdminManager {
         this.allBooks = []; // Nuevo almacén para libros
         this.allQuestions = []; // NUEVO: Almacén para preguntas
 
-        // Estado de ordenamiento
-        // NUEVO: Estado de ordenamiento por pestaña
+        // Estado de ordenamiento por pestaña
         this.tabSortState = {
             'tab-careers': 'date-desc',
             'tab-courses': 'date-desc',
@@ -20,6 +19,19 @@ class AdminManager {
             'tab-questions': 'date-desc'
         };
         this.previewTimer = null; // Debounce para previsualización
+
+        // Estado de búsqueda y filtros persistentes
+        this.searchState = {
+            'tab-careers': { search: '', filter: 'all' },
+            'tab-courses': { search: '', filter: 'all' },
+            'tab-students': { search: '', filter: 'all' },
+            'tab-topics': { search: '', filter: 'all' },
+            'tab-books': { search: '', filter: 'all' },
+            'tab-questions': { search: '', filter: 'all' }
+        };
+        this.selectedIds = [];
+        this.selectedType = '';
+        this.lastCheckedCheckbox = null;
 
         // Estado de Preguntas (NUEVO)
         this.currentQuestionDomain = 'all';
@@ -231,67 +243,27 @@ class AdminManager {
             }
         });
 
-        // NUEVO: Listener centralizado para las barras de búsqueda de las pestañas.
-        // MEJORA UX: Debounce para evitar lag al escribir.
-        let searchTimeout;
         const handleSearchFilter = (e) => {
             if (e.target.classList.contains('admin-search-input') || e.target.classList.contains('admin-type-filter')) {
-                clearTimeout(searchTimeout);
+                clearTimeout(this.searchTimeout);
                 const input = e.target;
 
-                searchTimeout = setTimeout(() => {
+                this.searchTimeout = setTimeout(() => {
                     const tabId = input.dataset.targetTab || input.dataset.tab;
                     if (!tabId) return;
 
                     const tabContent = document.getElementById(tabId);
-
-                    // Buscar input interactivo y dropdown
                     const searchInput = tabContent.querySelector('.admin-search-input');
-                    const filter = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
                     const typeSelect = tabContent.querySelector('.admin-type-filter');
-                    const typeFilter = typeSelect ? typeSelect.value : 'all';
 
-                    // Seleccionar todas las tarjetas de item dentro de la pestaña activa.
-                    const items = tabContent.querySelectorAll('.admin-item-card, .career-card');
+                    // Guardar estado
+                    this.searchState[tabId] = {
+                        search: searchInput ? searchInput.value.trim() : '',
+                        filter: typeSelect ? typeSelect.value : 'all'
+                    };
 
-                    items.forEach(item => {
-                        const textContent = item.textContent.toLowerCase();
-                        const matchesText = textContent.includes(filter);
-
-                        let matchesType = true;
-                        if (typeFilter !== 'all') {
-                            matchesType = item.dataset.resourceType === typeFilter;
-                        }
-
-                        const matches = matchesText && matchesType;
-                        item.style.display = matches ? '' : 'none';
-
-                        // Animación sutil de entrada (opcional)
-                        if (matches) {
-                            item.style.animation = 'fadeIn 0.2s ease-in-out';
-                        }
-                    });
-
-                    // Mostrar estado vacío si no hay resultados
-                    const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
-                    let emptyState = tabContent.querySelector('.search-empty-state');
-
-                    if (visibleItems.length === 0 && filter !== '') {
-                        if (!emptyState) {
-                            emptyState = document.createElement('p');
-                            emptyState.className = 'search-empty-state empty-state';
-                            emptyState.textContent = `🔍 No se encontraron resultados para "${filter}"`;
-                            tabContent.appendChild(emptyState);
-                        } else {
-                            emptyState.textContent = `🔍 No se encontraron resultados para "${filter}"`;
-                            emptyState.style.display = 'block';
-                        }
-                    } else if (emptyState) {
-                        emptyState.style.display = 'none';
-                    }
-
-                }, 300); // 300ms de retraso (debounce)
+                    this.applySearchFilterForTab(tabId);
+                }, 200);
             }
         };
 
@@ -308,9 +280,79 @@ class AdminManager {
             }
         });
 
+        // ✅ NUEVO: Listener delegado para los checkboxes de selección masiva (con soporte para Shift + Click)
+        document.getElementById('admin-main-container').addEventListener('click', (e) => {
+            if (e.target.classList.contains('admin-item-checkbox')) {
+                const currentCheckbox = e.target;
+                const id = currentCheckbox.dataset.id;
+                const type = currentCheckbox.dataset.type;
+                this.selectedType = type;
+
+                // Encontrar el contenedor de la pestaña activa
+                const activeTab = document.querySelector('.tab-content.active');
+                if (!activeTab) return;
+
+                // Obtener todos los checkboxes en la pestaña activa
+                const checkboxes = Array.from(activeTab.querySelectorAll('.admin-item-checkbox'));
+
+                if (e.shiftKey && this.lastCheckedCheckbox && activeTab.contains(this.lastCheckedCheckbox)) {
+                    const start = checkboxes.indexOf(currentCheckbox);
+                    const end = checkboxes.indexOf(this.lastCheckedCheckbox);
+
+                    if (start !== -1 && end !== -1) {
+                        const rangeStart = Math.min(start, end);
+                        const rangeEnd = Math.max(start, end);
+                        const isChecked = currentCheckbox.checked;
+
+                        for (let i = rangeStart; i <= rangeEnd; i++) {
+                            const cb = checkboxes[i];
+                            cb.checked = isChecked;
+
+                            const itemVal = cb.dataset.id;
+                            if (isChecked) {
+                                if (!this.selectedIds.includes(itemVal)) {
+                                    this.selectedIds.push(itemVal);
+                                }
+                            } else {
+                                this.selectedIds = this.selectedIds.filter(itemId => itemId !== itemVal);
+                            }
+                        }
+                    }
+                } else {
+                    // Clic individual
+                    if (currentCheckbox.checked) {
+                        if (!this.selectedIds.includes(id)) {
+                            this.selectedIds.push(id);
+                        }
+                    } else {
+                        this.selectedIds = this.selectedIds.filter(itemId => itemId !== id);
+                    }
+                }
+
+                this.lastCheckedCheckbox = currentCheckbox;
+                this.updateBulkActionsBar();
+            }
+        });
+
+        // Botones de la barra de acciones masivas
+        const cancelBtn = document.getElementById('bulk-cancel-selection-btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                this.clearBulkSelection();
+            });
+        }
+
+        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.addEventListener('click', () => {
+                this.handleBulkDelete();
+            });
+        }
+
     }
 
     switchTab(tabId) {
+        this.clearBulkSelection();
         // 1. Gestionar clases de botones
         document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
         document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
@@ -454,6 +496,7 @@ class AdminManager {
         const content = this._createTabHeaderHTML('career', 'Añadir Carrera', 'tab-careers') +
             (itemsHTML || '<p class="empty-state">No hay carreras.</p>');
         container.innerHTML = content;
+        this.applySearchFilterForTab('tab-careers');
     }
 
     displayBaseCourses() {
@@ -464,6 +507,7 @@ class AdminManager {
         const content = this._createTabHeaderHTML('course', 'Añadir Curso', 'tab-courses') +
             (itemsHTML || '<p class="empty-state">No hay cursos base.</p>');
         container.innerHTML = content;
+        this.applySearchFilterForTab('tab-courses');
     }
 
 
@@ -477,6 +521,7 @@ class AdminManager {
         const content = this._createTabHeaderHTML('student', 'Añadir Alumno', 'tab-students') +
             (itemsHTML || '<p class="empty-state">No hay alumnos.</p>');
         container.innerHTML = content;
+        this.applySearchFilterForTab('tab-students');
     }
 
     displayTopics() {
@@ -487,6 +532,7 @@ class AdminManager {
         const content = this._createTabHeaderHTML('topic', 'Añadir Tema', 'tab-topics') +
             (itemsHTML || '<p class="empty-state">No hay temas.</p>');
         container.innerHTML = content;
+        this.applySearchFilterForTab('tab-topics');
     }
 
     displayBooks() {
@@ -529,6 +575,7 @@ class AdminManager {
         `;
 
         container.innerHTML = headerHTML + (itemsHTML || '<p class="empty-state">No hay recursos.</p>');
+        this.applySearchFilterForTab('tab-books');
     }
 
     displayQuestions() {
@@ -620,7 +667,7 @@ class AdminManager {
                 url.searchParams.append('search', this.currentQuestionSearch);
             }
 
-            const res = await fetch(url, { headers: this._getAuthHeaders() });
+            const res = await window.NetworkService.fetch(url);
             if (!res.ok) throw new Error('Failed to fetch questions');
 
             this.allQuestions = await res.json();
@@ -1005,7 +1052,7 @@ class AdminManager {
                 // SOLUCIÓN: Obtener detalles completos del curso (incluyendo unidades y temas) desde la API
                 if (id) {
                     try {
-                        const res = await fetch(`${window.AppConfig.API_URL}/api/courses/${id}`, { headers: this._getAuthHeaders() });
+                        const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses/${id}`);
                         if (res.ok) {
                             this.currentItem = await res.json();
                         } else {
@@ -1299,12 +1346,8 @@ class AdminManager {
                         const formData = new FormData();
                         formData.append('file', blob, fileName);
 
-                        const headers = { ...this._getAuthHeaders() };
-                        delete headers['Content-Type']; // Dejar que el navegador establezca el boundary
-
                         window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/upload-editor`, {
                             method: 'POST',
-                            headers: headers,
                             body: formData
                         })
                         .then(async response => {
@@ -2782,12 +2825,16 @@ class AdminManager {
 
     handleQuestionTargetChange(target) {
         const optionDContainer = document.getElementById('opt3-container');
+        const optionDInput = document.getElementById('generic-opt3');
         const optionsSelect = document.getElementById('generic-correct-ans');
         const isEducation = target === 'ASCENSO' || target === 'NOMBRAMIENTO';
 
         if (optionDContainer) {
             if (isEducation) {
                 optionDContainer.style.display = 'none';
+                if (optionDInput) {
+                    optionDInput.removeAttribute('required');
+                }
                 // If correct answer was 3 (Option D), reset to 0
                 if (optionsSelect && optionsSelect.value === '3') {
                     optionsSelect.value = '0';
@@ -2798,10 +2845,141 @@ class AdminManager {
                 }
             } else {
                 optionDContainer.style.display = 'block';
+                if (optionDInput) {
+                    optionDInput.setAttribute('required', 'required');
+                }
                 if (optionsSelect && optionsSelect.options[3]) {
                     optionsSelect.options[3].style.display = 'block';
                 }
             }
+        }
+    }
+
+    clearBulkSelection() {
+        this.selectedIds = [];
+        this.selectedType = '';
+        this.lastCheckedCheckbox = null;
+        document.querySelectorAll('.admin-item-checkbox').forEach(cb => cb.checked = false);
+        const bar = document.getElementById('admin-bulk-actions-bar');
+        if (bar) {
+            bar.classList.remove('active');
+        }
+    }
+
+    updateBulkActionsBar() {
+        const bar = document.getElementById('admin-bulk-actions-bar');
+        const text = document.getElementById('bulk-actions-text');
+        if (!bar || !text) return;
+
+        const count = this.selectedIds.length;
+        if (count > 0) {
+            text.textContent = `${count} elemento${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}`;
+            bar.classList.add('active');
+        } else {
+            bar.classList.remove('active');
+        }
+    }
+
+    async handleBulkDelete() {
+        if (this.selectedIds.length === 0) return;
+
+        const type = this.selectedType;
+        const count = this.selectedIds.length;
+
+        const confirmMsg = `¿Estás seguro de que quieres eliminar masivamente estos ${count} elementos (${type})? Esta acción no se puede deshacer y eliminará permanentemente todos los recursos e imágenes asociadas.`;
+
+        if (!await window.confirmationModal.show(confirmMsg, 'Eliminación Masiva', 'Eliminar Todo', 'Cancelar')) {
+            return;
+        }
+
+        try {
+            const bulkBtn = document.getElementById('bulk-delete-btn');
+            const originalHTML = bulkBtn.innerHTML;
+            bulkBtn.disabled = true;
+            bulkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/bulk-delete`, {
+                method: 'DELETE',
+                body: JSON.stringify({
+                    type: type,
+                    ids: this.selectedIds
+                })
+            });
+
+            bulkBtn.disabled = false;
+            bulkBtn.innerHTML = originalHTML;
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Error al eliminar elementos en lote');
+            }
+
+            const result = await response.json();
+            this.clearBulkSelection();
+
+            await window.confirmationModal.showAlert(`Eliminación masiva completada con éxito. Se eliminaron ${result.deleted} elementos.`, 'Éxito');
+            await this.loadAllData();
+
+        } catch (error) {
+            console.error('❌ Error en borrado masivo:', error);
+            await window.confirmationModal.showAlert(`Error al eliminar en lote: ${error.message}`, 'Error');
+        }
+    }
+
+    applySearchFilterForTab(tabId) {
+        const state = this.searchState[tabId];
+        if (!state) return;
+
+        const tabContent = document.getElementById(tabId);
+        if (!tabContent) return;
+
+        // Apply values to inputs if they exist
+        const searchInput = tabContent.querySelector('.admin-search-input');
+        if (searchInput) {
+            searchInput.value = state.search;
+        }
+
+        const typeSelect = tabContent.querySelector('.admin-type-filter');
+        if (typeSelect) {
+            typeSelect.value = state.filter;
+        }
+
+        const sortSelect = tabContent.querySelector('.tab-sort-select');
+        if (sortSelect && this.tabSortState[tabId]) {
+            sortSelect.value = this.tabSortState[tabId];
+        }
+
+        // Apply visual display filters
+        const items = tabContent.querySelectorAll('.admin-item-card, .career-card');
+        items.forEach(item => {
+            const textContent = item.textContent.toLowerCase();
+            const matchesText = textContent.includes(state.search.toLowerCase());
+
+            let matchesType = true;
+            if (state.filter !== 'all') {
+                matchesType = item.dataset.resourceType === state.filter;
+            }
+
+            const matches = matchesText && matchesType;
+            item.style.display = matches ? '' : 'none';
+        });
+
+        // Toggle empty state
+        const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
+        let emptyState = tabContent.querySelector('.search-empty-state');
+
+        if (visibleItems.length === 0 && state.search !== '') {
+            if (!emptyState) {
+                emptyState = document.createElement('p');
+                emptyState.className = 'search-empty-state empty-state';
+                emptyState.textContent = `🔍 No se encontraron resultados para "${state.search}"`;
+                tabContent.appendChild(emptyState);
+            } else {
+                emptyState.textContent = `🔍 No se encontraron resultados para "${state.search}"`;
+                emptyState.style.display = '';
+            }
+        } else if (emptyState) {
+            emptyState.style.display = 'none';
         }
     }
 }
