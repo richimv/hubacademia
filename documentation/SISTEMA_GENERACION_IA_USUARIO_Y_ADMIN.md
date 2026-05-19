@@ -53,6 +53,25 @@ El último filtro antes de la base de datos.
 
 ---
 
+## ⚡ Dualidad de Flujos: Lote Industrial (Admin) vs. RAG Flash Lite (Usuario)
+
+Para optimizar la latencia y la experiencia de usuario sin comprometer el rigor pedagógico, el sistema divide la generación en dos pipelines con propósitos diferenciados:
+
+### 1. Flujo de Lote Industrial (Admin)
+*   **Propósito**: Pre-poblar de forma masiva y asíncrona la base de datos oficial a través del panel de administración (`adminAiService.js` / `getAdminPrompt`).
+*   **Latencia**: Alta (2-3 minutos por lote).
+*   **Mecánica**: Ejecuta de manera secuencial e implacable las **5 Fases Completas**: consulta de RAG pesado (Teoría + Identidad), inyección teórica exhaustiva, tanda anti-repetición y bucle cerrado de hasta 3 intentos de auditoría psicométrica.
+
+### 2. Flujo Flash Lite / Fast RAG (Usuario en Vivo)
+*   **Propósito**: Generar preguntas de 1 en 1 en tiempo real cuando un alumno agota el banco local disponible para un subtema del simulador, o cuando el administrador inicia una generación rápida desde el panel de gestión.
+*   **Latencia**: Baja (pocos segundos) para mantener una experiencia interactiva fluida.
+*   **Mecánica**: Conserva la esencia pedagógica y estructural del motor industrial al tiempo que optimiza los tiempos de respuesta mediante las siguientes fases:
+    *   **Fase 1 (RAG de Temario Dinámico)**: Realiza búsquedas vectoriales quirúrgicas únicamente sobre los prospectos oficiales para dotar a la IA del contexto específico del subtema seleccionado y prevenir repeticiones.
+    *   **Fase 3 Adaptada (Prompts de Interfaz Pública)**: Ejecuta los prompts optimizados para usuario de `generationPrompts.js` (`getUserPrompt`), los cuales encapsulan con precisión quirúrgica las reglas de oro de redacción (aperturas dinámicas in media res, diálogos formativos, tablas comparativas y estructura de doble barrera con consigna explícita).
+    *   **Fase 4 & 5 Adaptada (Auditoría Rápida)**: Pasa la pregunta por un filtro psicométrico rápido de 1 ciclo. Esto asegura que la opción correcta cumpla con el umbral de simetría calibrada (+/- 40 caracteres) y valida mediante expresiones regulares avanzadas que la fundamentación no contenga menciones directas a letras de alternativas (A, B, C, D) debido al barajado dinámico.
+
+---
+
 ## 🧠 Reglas de Oro Técnicas
 
 1.  **Explicación Descriptiva**: Está prohibido mencionar letras (A, B, C) en la explicación para evitar confusiones tras el barajado de opciones.

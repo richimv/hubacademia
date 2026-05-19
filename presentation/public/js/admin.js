@@ -995,6 +995,7 @@ class AdminManager {
                         btn.style.background = 'linear-gradient(135deg, #a855f7, #6366f1)';
                         btn.style.boxShadow = '0 4px 15px rgba(168, 85, 247, 0.3)';
                     }
+                    this.handleAiTargetChange('SERUMS');
                 }, 0);
                 break;
 
@@ -2249,6 +2250,7 @@ class AdminManager {
                             domain: domainVal,
                             studyAreas: selectedStudyAreas.join(', ')
                         };
+                        const aiUrl = `${window.AppConfig.API_URL}/api/admin/questions/generate-ai`;
                         const resAi = await window.NetworkService.fetch(aiUrl, {
                             method: 'POST',
                             body: JSON.stringify(reqBody)
@@ -2341,6 +2343,7 @@ class AdminManager {
                     }
 
                     // Enviar petición Custom para inyección masiva
+                    const _url = `${window.AppConfig.API_URL}/api/admin/questions/bulk`;
                     const _response = await window.NetworkService.fetch(_url, {
                         method: 'POST',
                         body: JSON.stringify(body)
@@ -2629,6 +2632,7 @@ class AdminManager {
                 <option value="Medicina Humana">Medicina Humana</option>
                 <option value="Enfermería">Enfermería</option>
             `;
+            this.handleAiTargetChange('SERUMS');
         } else {
             medicineAreas.style.display = 'none';
             educationAreas.style.display = 'block';
@@ -2651,17 +2655,42 @@ class AdminManager {
     }
 
     handleAiTargetChange(target) {
-        const groups = document.querySelectorAll('#ai-areas-education .ai-study-group');
-        groups.forEach(g => {
-            if (g.dataset.group === target) {
-                g.style.display = 'block';
-                // Auto-check the first one if unique
-                const cb = g.querySelector('.ai-domain-cb');
-                if (cb) cb.checked = true;
+        const domainSelect = document.getElementById('ai-domain');
+        const domain = domainSelect ? domainSelect.value : 'medicine';
+
+        if (domain === 'medicine') {
+            const groupA = document.querySelector('#ai-areas-medicine .ai-study-group[data-group="A"]');
+            const groupB = document.querySelector('#ai-areas-medicine .ai-study-group[data-group="B"]');
+            const groupC = document.querySelector('#ai-areas-medicine .ai-study-group[data-group="C"]');
+            const groupD = document.querySelector('#ai-areas-medicine .ai-study-group[data-group="D"]');
+
+            if (target === 'SERUMS') {
+                if (groupA) groupA.style.display = 'none';
+                if (groupB) groupB.style.display = 'none';
+                if (groupC) groupC.style.display = 'none';
+                if (groupD) groupD.style.display = 'block';
+
+                // Desmarcar todos los checkboxes de los grupos ocultados (A, B, C)
+                document.querySelectorAll('#ai-areas-medicine .ai-study-group[data-group="A"] .ai-domain-cb, #ai-areas-medicine .ai-study-group[data-group="B"] .ai-domain-cb, #ai-areas-medicine .ai-study-group[data-group="C"] .ai-domain-cb').forEach(cb => cb.checked = false);
             } else {
-                g.style.display = 'none';
+                if (groupA) groupA.style.display = 'block';
+                if (groupB) groupB.style.display = 'block';
+                if (groupC) groupC.style.display = 'block';
+                if (groupD) groupD.style.display = 'block';
             }
-        });
+        } else {
+            const groups = document.querySelectorAll('#ai-areas-education .ai-study-group');
+            groups.forEach(g => {
+                if (g.dataset.group === target) {
+                    g.style.display = 'block';
+                    // Auto-check the first one if unique
+                    const cb = g.querySelector('.ai-domain-cb');
+                    if (cb) cb.checked = true;
+                } else {
+                    g.style.display = 'none';
+                }
+            });
+        }
     }
 
     handleAiCareerChange(level) {

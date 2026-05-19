@@ -28,7 +28,7 @@ class AdminAiService {
     /**
      * Generación masiva con validación de target.
      */
-    async generateRAGQuestions(target, studyAreas, career, amount = 10) {
+    async generateRAGQuestions(target, studyAreas, career, amount = 10, isUserRequest = false) {
         // 🛡️ BARRERA ELIMINADA: Anteriormente solo se permitía ASCENSO y SERUMS.
         // Ahora el sistema es Universal RAG, por lo que permitimos todos los targets.
         const normalizedTarget = target.toUpperCase();
@@ -38,7 +38,7 @@ class AdminAiService {
             let areasArray = Array.isArray(studyAreas) ? studyAreas : studyAreas.split(',').map(a => a.trim());
             let allQuestions = [];
 
-            console.log(`🚀 Iniciando Generación Premium V7.0 para ${normalizedTarget} (${amount} items)...`);
+            console.log(`🚀 Iniciando Generación Premium V7.0 para ${normalizedTarget} (${amount} items, isUserRequest: ${isUserRequest})...`);
             console.log(`🧠 Memoria de Repetición: Cargando últimas 15 preguntas de la BD.`);
 
             // 🧠 MEMORIA DE LARGO PLAZO
@@ -61,21 +61,21 @@ class AdminAiService {
 
                 console.log(`📝 [Generando ${allQuestions.length + 1}/${amount}] Área: ${area} (Intento: ${totalAttempts})`);
 
-                const q = await this._generateSingleQuestion(normalizedTarget, area, career, batchHistory);
+                const q = await this._generateSingleQuestion(normalizedTarget, area, career, batchHistory, isUserRequest);
 
                 if (q) {
                     allQuestions.push(q);
                     // Guardamos tanto el texto como el subtema para evitar repeticiones semánticas
                     batchHistory.push(q.question_text);
                     if (q.syllabus) batchHistory.push(`TEMA: ${q.syllabus}`);
-                    
+
                     console.log(`✅ [Éxito] Pregunta añadida. Progreso: ${allQuestions.length}/${amount}`);
                 } else {
                     console.warn(`⚠️ [Fallo] Intento fallido para la pregunta ${allQuestions.length + 1}. Reintentando con nuevas keywords...`);
                 }
 
-                // Pequeño delay para estabilidad de cuotas de API
-                if (allQuestions.length < amount) {
+                // Pequeño delay para estabilidad de cuotas de API (omitido para usuarios finales en vivo)
+                if (allQuestions.length < amount && !isUserRequest) {
                     await new Promise(r => setTimeout(r, 1200));
                 }
             }
@@ -94,7 +94,7 @@ class AdminAiService {
     /**
      * _generateSingleQuestion: Pipeline Robotizado de 4 Fases.
      */
-    async _generateSingleQuestion(target, area, career, history = []) {
+    async _generateSingleQuestion(target, area, career, history = [], isUserRequest = false) {
         try {
             const namespace = target === 'ASCENSO' || target === 'NOMBRAMIENTO' || target === 'ACCESO_CARGOS' ? 'education' : 'medicine';
 
@@ -136,57 +136,74 @@ class AdminAiService {
 
             // --- FASE 2: EL INVESTIGADOR (Doble Búsqueda: Teoría + Molde de Examen Real) ---
             const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
-            const maxQuestions = isEducation ? 60 : 100;
-            const randomQuestionNum = Math.floor(Math.random() * maxQuestions) + 1;
-            const year = isEducation ? (Math.random() > 0.5 ? '2025' : '2024') : '2025';
+            let fullContext = { syllabus: selectedSubtopic };
 
-            let examIdentity = "";
-            let styleSearchTerms = [];
+            if (!isUserRequest) {
+                const maxQuestions = isEducation ? 60 : 100;
+                const randomQuestionNum = Math.floor(Math.random() * maxQuestions) + 1;
+                const year = isEducation ? (Math.random() > 0.5 ? '2025' : '2024') : '2025';
 
-            if (isEducation) {
-                const level = career.replace('EBR - ', '').trim();
-                examIdentity = `Prueba ${target} EBR ${level} ${area} Año ${year} Pregunta ${randomQuestionNum}`;
-                styleSearchTerms = [examIdentity];
-            } else {
-                // Medicina: Sniper quirúrgico sin términos de educación
-                const isNursing = career.toLowerCase().includes('enfermeria');
-                const careerTag = isNursing ? 'Enfermería' : 'Medicina Humana';
-                
-                // Los exámenes médicos suelen tener el número seguido de un punto (ej: "78.")
-                examIdentity = `${target} ${careerTag} Item ${randomQuestionNum}`;
-                
-                // Sniper Terms: Buscamos el número solo (muy potente) + el contexto profesional
-                styleSearchTerms = [
-                    `${randomQuestionNum}.`, 
-                    `${target} ${careerTag} 2025`,
-                    `${target} ${careerTag} ${area}`
-                ];
+                let examIdentity = "";
+                let styleSearchTerms = [];
+
+                if (isEducation) {
+                    const level = career.replace('EBR - ', '').trim();
+                    examIdentity = `Prueba ${target} EBR ${level} ${area} Año ${year} Pregunta ${randomQuestionNum}`;
+                    styleSearchTerms = [examIdentity];
+                } else {
+                    // Medicina: Sniper quirúrgico sin términos de educación
+                    const isNursing = career.toLowerCase().includes('enfermeria');
+                    const careerTag = isNursing ? 'Enfermería' : 'Medicina Humana';
+
+                    // Los exámenes médicos suelen tener el número seguido de un punto (ej: "78.")
+                    examIdentity = `${target} ${careerTag} Item ${randomQuestionNum}`;
+
+                    // Sniper Terms: Buscamos el número solo (muy potente) + el contexto profesional
+                    styleSearchTerms = [
+                        `${randomQuestionNum}.`,
+                        `${target} ${careerTag} 2025`,
+                        `${target} ${careerTag} ${area}`
+                    ];
+                }
+
+                console.log(`📚 [Fase 2] Investigando Teoría para: ${selectedSubtopic}`);
+                console.log(`🎭 [Fase 2] Capturando Moldes Reales de: ${examIdentity}`);
+
+                const [theoryContext, styleContext] = await Promise.all([
+                    // Búsqueda de Teoría (basada en el tema)
+                    this.ragService.getTechnicalBasis(namespace, selectedSubtopic, technicalSearchTerms, 5),
+                    // Búsqueda de Moldes (basada en la identidad del examen real)
+                    this.ragService.getStyleContextByKeywords(namespace, styleSearchTerms, 15)
+                ]);
+
+                fullContext.style = styleContext;
+                fullContext.basis = theoryContext;
             }
 
-            console.log(`📚 [Fase 2] Investigando Teoría para: ${selectedSubtopic}`);
-            console.log(`🎭 [Fase 2] Capturando Moldes Reales de: ${examIdentity}`);
-
-            const [theoryContext, styleContext] = await Promise.all([
-                // Búsqueda de Teoría (basada en el tema)
-                this.ragService.getTechnicalBasis(namespace, selectedSubtopic, technicalSearchTerms, 5),
-                // Búsqueda de Moldes (basada en la identidad del examen real)
-                this.ragService.getStyleContextByKeywords(namespace, styleSearchTerms, 15)
-            ]);
-
-            const fullContext = {
-                style: styleContext,
-                basis: theoryContext,
-                syllabus: selectedSubtopic
-            };
-
             // --- FASE 3: EL CONSTRUCTOR (Armar la pregunta) ---
-            console.log(`🏗️ [Fase 3] Construyendo pregunta casuística...`);
-            const prompt = genPrompts.getAdminPrompt(target, area, career, fullContext, history, null);
-            const result = await this.model.generateContent(prompt);
-            const responseText = result.response.candidates[0].content.parts[0].text;
-            let question = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
+            console.log(`🏗️ [Fase 3] Construyendo pregunta casuística (isUserRequest: ${isUserRequest})...`);
+            let question;
+            if (isUserRequest) {
+                let historyText = "No hay contexto de repetición.";
+                if (history && history.length > 0) {
+                    historyText = history.map(item => {
+                        const text = typeof item === 'string' ? item : (item.question_text || "");
+                        return `- Escenario usado: "${text.substring(0, 150)}..."`;
+                    }).join('\n');
+                }
+                const prompt = genPrompts.getUserPrompt(target, area, career, historyText, selectedSubtopic);
+                const result = await this.model.generateContent(prompt);
+                const responseText = result.response.candidates[0].content.parts[0].text;
+                let questionArray = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
+                question = Array.isArray(questionArray) ? questionArray[0] : questionArray;
+            } else {
+                const prompt = genPrompts.getAdminPrompt(target, area, career, fullContext, history, null);
+                const result = await this.model.generateContent(prompt);
+                const responseText = result.response.candidates[0].content.parts[0].text;
+                question = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
+            }
 
-            // --- FASE 4: EL AUDITOR (Simetría, Calidad y Limpieza de Letras) ---
+            // --- FASE 4: EL AUDITOR (Simetría, Calidad, Limpieza de Letras y Consigna) ---
             const checkQuality = (q) => {
                 const charCounts = q.options.map(o => o.length);
                 const correctCharCount = charCounts[q.correct_option_index];
@@ -194,12 +211,18 @@ class AdminAiService {
                 const avgOthersChars = othersCharCounts.reduce((a, b) => a + b, 0) / othersCharCounts.length;
                 const charDiff = correctCharCount - avgOthersChars;
 
-                // Nueva regla: No letras en explicación (A, B, C, Alternativa A, etc)
+                // Nueva regla 1: No letras en explicación (A, B, C, Alternativa A, etc)
                 const hasLettersInExplanation = /la opción [ABC]|la alternativa [ABC]|en [ABC]|la [ABC] es/i.test(q.explanation || "");
+
+                // Nueva regla 2: Validar que el enunciado contenga una interrogante o consigna explícita
+                const text = q.question_text || "";
+                const lacksQuestionPrompt = !text.includes('?') && !text.includes('¿') &&
+                    !/indique|señale|determine|seleccione|calcule|identifique/i.test(text);
 
                 return {
                     isAsymmetric: Math.abs(charDiff) > 10,
                     hasLetters: hasLettersInExplanation,
+                    lacksQuestion: lacksQuestionPrompt,
                     correctLen: correctCharCount,
                     avgOthers: avgOthersChars,
                     diff: Math.round(charDiff)
@@ -209,24 +232,11 @@ class AdminAiService {
             let status = checkQuality(question);
             let auditAttempts = 0;
 
-            while ((status.isAsymmetric || status.hasLetters) && auditAttempts < 3) {
+            while ((status.isAsymmetric || status.hasLetters || status.lacksQuestion) && auditAttempts < 3) {
                 auditAttempts++;
-                console.log(`⚖️ [Auditoría L${auditAttempts}] ${status.isAsymmetric ? 'ASIMETRÍA' : ''} ${status.hasLetters ? 'LETRAS DETECTADAS' : ''}`);
+                console.log(`⚖️ [Auditoría L${auditAttempts}] ${status.isAsymmetric ? 'ASIMETRÍA ' : ''}${status.hasLetters ? 'LETRAS_DETECTADAS ' : ''}${status.lacksQuestion ? 'FALTA_PREGUNTA' : ''}`);
 
-                const refinementPrompt = `Actúa como Auditor Pedagógico.
-                
-                ### ERRORES DETECTADOS:
-                ${status.isAsymmetric ? `- Asimetría: La correcta tiene ${status.correctLen} letras vs ${Math.round(status.avgOthers)} del promedio.` : ''}
-                ${status.hasLetters ? `- Letras prohibidas: Has mencionado letras (A, B, o C) en la explicación. Esto confunde al usuario.` : ''}
-                
-                ### TAREA:
-                1. Reformula las opciones para simetría (+/- 10 caracteres).
-                2. ELIMINA cualquier mención a letras (A, B, C) de la explicación. Usa descripciones como "La opción que menciona..." o "Esta acción es correcta porque...".
-                
-                JSON A REFINAR:
-                ${JSON.stringify(question, null, 2)}
-                
-                DEVUELVE SOLO EL JSON REFINADO:`;
+                const refinementPrompt = genPrompts.buildRefinementPrompt(question);
 
                 const refinedResult = await this.model.generateContent(refinementPrompt);
                 const refinedText = refinedResult.response.candidates[0].content.parts[0].text;
@@ -236,8 +246,8 @@ class AdminAiService {
             }
 
             // 🚫 [BLOQUEO DE CALIDAD FINAL]
-            if (status.isAsymmetric || status.hasLetters) {
-                console.error(`🚨 [Calidad] Rechazando por fallos persistentes (Letras: ${status.hasLetters}, Asimetría: ${status.diff}).`);
+            if (status.isAsymmetric || status.hasLetters || status.lacksQuestion) {
+                console.error(`🚨 [Calidad] Rechazando por fallos persistentes (Letras: ${status.hasLetters}, Asimetría: ${status.diff}, Falta Pregunta: ${status.lacksQuestion}).`);
                 return null;
             }
 
@@ -261,6 +271,11 @@ class AdminAiService {
 
                 question.options = newOptions;
                 question.correct_option_index = newOptions.indexOf(correctOptionText);
+            }
+
+            // Enforzar la inyección exacta del subtopic escogido (Fase 1) En todos los casos
+            if (question) {
+                question.subtopic = selectedSubtopic || question.subtopic || 'Análisis Casuístico';
             }
 
             return question;

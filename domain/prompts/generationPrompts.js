@@ -79,10 +79,16 @@ function buildEducationAdminPrompt(target, area, career, context, historyText = 
            Tras tu respuesta, un algoritmo contará los caracteres de tus opciones.
            - **SIMETRÍA EXTREMA**: La opción correcta NO puede ser excesivamente más larga que las demás. 
            - **MARGEN**: Todas las opciones deben tener una extensión similar (máximo +/- 40 letras de diferencia).
+        3.5 **ESTRUCTURA DE PREGUNTA Y CONSIGNA (DOBLE BARRERA - CRÍTICO)**:
+           - El campo "question_text" DEBE redactarse en dos partes separadas obligatoriamente:
+             1. *El Caso/Escenario*: La descripción de la situación, diálogos o conflicto de aprendizaje.
+             2. *La Consigna/Pregunta final*: Un párrafo final claro que contenga obligatoriamente signos de interrogación (¿...?) o verbos imperativos específicos para la resolución de la casuística (ej. "indique", "señale", "determine", "seleccione", "calcule", "identifique").
+             - NUNCA termines el enunciado sin colocar una pregunta directa o instrucción explícita de lo que el docente debe responder.
         4. **FORMATO DE SALIDA**:
            - **Limpieza**: PROHIBIDO basura de PDF o códigos extraños.
            - **Explicación**: Debe ser técnica y pedagógica, basándose en la teoría proporcionada.
            - **PROHIBICIÓN**: NO menciones letras (A, B, C) en la explicación.
+           - **VALOR DE SUBTOPIC (IMPERATIVO)**: El campo 'subtopic' en el JSON devuelto debe ser exactamente: "${context.syllabus || 'Análisis Casuístico'}".
            - **ESCAPADO JSON (CRÍTICO)**: Si usas saltos de línea para diálogos o tablas, DEBES usar "\\n" (barra invertida y n). NUNCA presiones 'Enter' real dentro de un valor JSON.
 
         ### HISTORIAL (PROHIBIDO): ${historyText}
@@ -136,9 +142,15 @@ function buildMedicineAdminPrompt(target, area, career, context, historyText = "
            - **SIMETRÍA EXTREMA**: Las ${optionsCount} opciones deben tener una extensión casi idéntica.
            - **PROHIBICIÓN**: La respuesta correcta NO puede destacar por ser más larga o detallada.
         5. **REGLAS DE ORO DE FORMATO (CRÍTICO)**:
+           - **ESTRUCTURA DE PREGUNTA Y CONSIGNA (DOBLE BARRERA - CRÍTICO)**:
+             El campo "question_text" DEBE estructurarse en dos partes separadas obligatoriamente:
+             1. *El Caso Clínico/Escenario*: Toda la historia clínica, antecedentes y exámenes auxiliares.
+             2. *La Pregunta o Consigna*: Un párrafo final interrogativo (¿...?) o indicativo directo (ej. "Señale...", "Indique...", "Determine...").
+             - NUNCA dejes la historia clínica o el escenario sin una pregunta o consigna explícita en su párrafo final de cierre.
            - **PROHIBICIÓN ABSOLUTA**: No menciones letras (A, B, C, D) en el campo "explanation". Usa descripciones como "La acción correcta es..." o "Esta opción se descarta porque...". Mencionar letras causa el rechazo de la pregunta.
            - La explicación debe ser sólida, técnica y justificar tanto la correcta como el descarte de los distractores. 
            - Finaliza con: 💡 **TIP MÉDICO:** [Consejo clave para el examen].
+           - **VALOR DE SUBTOPIC (IMPERATIVO)**: El campo 'subtopic' en el JSON devuelto debe ser exactamente: "${context.syllabus || 'Manejo Clínico'}".
 
         ### HISTORIAL (PROHIBIDO): ${historyText}
 
@@ -168,24 +180,26 @@ function buildRefinementPrompt(questionJson) {
     const requiredOptions = isEducation ? 3 : (isResidentado ? 5 : 4);
 
     return `Actúa como un Auditor de Calidad Psicométrica DESPIADADO y ANALÍTICO.
-        Tu misión es garantizar que la pregunta sea IMPOSIBLE de adivinar por la extensión de las opciones.
+        Tu misión es auditar y perfeccionar la pregunta para garantizar que sea impecable pedagógicamente y formalmente.
 
         ### PASO 1: ANÁLISIS DE DATOS (Interno)
         1. Identifica el "correct_option_index" (la respuesta correcta es la opción número ${questionJson.correct_option_index}).
         2. Realiza un CONTEO EXACTO de palabras para cada una de las ${requiredOptions} opciones.
-        3. Compara: ¿La opción correcta es la más larga? ¿Por cuántas palabras?
-        
+        3. Compara la longitud de la opción correcta con los distractores.
+        4. Analiza si el campo "question_text" cuenta con una pregunta o consigna explícita de cierre.
+        5. Analiza si el campo "explanation" comete el error grave de hacer mención directa a letras de alternativas (ej: "Opción A", "Alternativa B", "la respuesta es la C", etc.).
+
         ### PASO 2: ACCIÓN CORRECTIVA (REGLAS DE HIERRO)
-        1. **CONTEO DE OPCIONES**: Deben haber EXACTAMENTE ${requiredOptions}. Ni una más, ni una menos.
-        2. **LEY DE SIMETRÍA**: Si la respuesta correcta es más larga, DEBES recortarla eliminando adjetivos o detalles innecesarios, o ALARGAR los distractores agregando contexto técnico similar.
-        3. **VARIANZA MÁXIMA**: Ninguna opción puede ser más de 3 palabras más larga que las demás. Todas deben verse como un bloque de texto idéntico.
-        4. **LIMPIEZA**: Elimina encabezados, códigos (A01-...) y basura de PDF.
-        5. **SIN LETRAS**: La explicación debe ser técnica y no mencionar letras (A, B, C).
+        1. **CONTEO DE OPCIONES**: Deben haber EXACTAMENTE ${requiredOptions} opciones. Ni una más, ni una menos.
+        2. **LEY DE SIMETRÍA**: Si la respuesta correcta es más larga, DEBES recortarla eliminando adjetivos o detalles innecesarios, o ALARGAR los distractores agregando contexto técnico similar. Todas las opciones deben verse como un bloque de texto idéntico y simétrico (máximo +/- 10 caracteres de diferencia).
+        3. **PREGUNTA O CONSIGNA OBLIGATORIA (CRÍTICO)**: El enunciado ("question_text") debe finalizar obligatoriamente con una pregunta directa (ej. "¿...?") o una instrucción imperativa explícita (ej. "indique", "señale", "determine", "seleccione", "calcule", "identifique"). Si solo tiene el caso clínico o pedagógico pero le falta la pregunta final, agrégala de forma coherente en un párrafo de cierre. NUNCA dejes la pregunta en el aire.
+        4. **LIMPIEZA DE LETRAS EN LA EXPLICACIÓN (CRÍTICO)**: Está TERMINANTEMENTE PROHIBIDO mencionar letras de alternativas (A, B, C, D, E) o decir cosas como "Alternativa A", "Opción B", "la respuesta correcta es la C" en la explicación. Las opciones se barajan de manera aleatoria y dinámica al mostrarse al alumno, por lo que el orden cambia siempre. La explicación debe ser 100% conceptual y referirse al contenido mismo de la opción.
+        5. **LIMPIEZA GENERAL**: Elimina encabezados, códigos (A01-...) y basura de PDF.
 
         ### PREGUNTA A AUDITAR:
         ${JSON.stringify(questionJson, null, 2)}
 
-        Devuelve el JSON corregido. Si no puedes corregirlo para que sea perfecto, ajústalo lo mejor posible pero NUNCA entregues una respuesta correcta más larga que el resto.
+        Devuelve el JSON corregido de forma impecable. Si no puedes corregirlo para que sea perfecto, ajústalo lo mejor posible.
         DEVUELVE SOLO EL JSON SIN MARKDOWN:`;
 }
 
@@ -212,53 +226,97 @@ const GENERATION_PROMPTS = {
         return buildMedicineAdminPrompt(target, area, career, context, historyText, targetQuestionNum);
     },
 
-    getUserPrompt: (target, area, career, historyText) => {
-        // Mantiene la lógica fast sin RAG para reponer stock rápidamente
-        if (target === 'ASCENSO') return buildEducationUserPrompt(target, area, career, historyText);
-        return buildMedicineUserPrompt(target, area, career, historyText);
+    getUserPrompt: (target, area, career, historyText, selectedSubtopic = null) => {
+        const isEducationDomain = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
+        if (isEducationDomain) return buildEducationUserPrompt(target, area, career, historyText, selectedSubtopic);
+        return buildMedicineUserPrompt(target, area, career, historyText, selectedSubtopic);
     },
 
     buildRefinementPrompt
 };
 
-// ... (Las funciones buildMedicineUserPrompt y buildEducationUserPrompt se mantienen igual para velocidad) ...
-function buildMedicineUserPrompt(target, area, career, historyText) {
-    return `Actúa como Redactor de Exámenes Médicos. Genera 1 pregunta de ${target} para ${area}.
-    REGLA: Evita estos temas: ${historyText}. 
-    DEVUELVE EXACTAMENTE UN JSON ARRAY CON 1 OBJETO QUE TENGA ESTA ESTRUCTURA:
+// ═══════════════════════════════════════════════════════════════
+// PROMPTS DE USUARIO (CALIDAD PREMIUM V3)
+// ═══════════════════════════════════════════════════════════════
+
+function buildMedicineUserPrompt(target, area, career, historyText, selectedSubtopic = null) {
+    const subtopicName = selectedSubtopic || "Caso Clínico";
+    const isResidentado = target === 'RESIDENTADO';
+    const optionsCount = isResidentado ? 5 : 4;
+    const rules = getMedicineAdminRules(target, area, career);
+
+    return `Eres un Redactor de Exámenes Médicos Senior para exámenes oficiales (${target}). Genera una pregunta de alto nivel clínico para la carrera: ${career}.
+    La pregunta debe basarse estrictamente en este TEMA del prospecto oficial: "${subtopicName}".
+
+    ### REGLAS DE ORO DE CONSTRUCCIÓN CLÍNICA (CRÍTICO):
+    1. **APERTURA DINÁMICA (ANTI-MONOTONÍA)**: Varía el inicio del caso clínico. Evita iniciar siempre con "Paciente masculino de 45 años..." o "Mujer de 30 años...". Introduce el caso con la presentación de la urgencia, el ingreso a consultorio, o hallazgos clínicos inmediatos de forma fluida.
+    2. **DINAMISMO VISUAL (Markdown)**: Si es pertinente, inyecta los resultados de exámenes de laboratorio o signos vitales en formato de lista en Markdown o tabla para dar una experiencia de examen real de alta fidelidad.
+    3. **SIMETRÍA EXTREMA (PSICOMETRÍA)**: Todas las opciones de respuesta deben tener una extensión similar y simétrica (máximo +/- 40 caracteres de diferencia). La respuesta correcta NO puede destacar por ser más larga, detallada o fundamentada.
+    4. **ESTRUCTURA DE PREGUNTA Y CONSIGNA (DOBLE BARRERA - OBLIGATORIO)**:
+       El campo "question_text" DEBE redactarse en dos partes separadas obligatoriamente por un salto de línea doble:
+       - *Parte 1 (Caso Clínico)*: Anamnesis, antecedentes, signos vitales, exploración física y resultados auxiliares.
+       - *Parte 2 (Consigna Final)*: Un párrafo final claro y directo con signos de interrogación (¿...?) o indicaciones directas imperativas (ej: "Señale el diagnóstico más probable...", "Determine la conducta inmediata...", "Indique el tratamiento de elección..."). NUNCA dejes el caso clínico sin consigna.
+    5. **EXPLICACIÓN LIMPIA (SIN LETRAS)**: La fundamentación médica debe ser rigurosa y fisiopatológica. Está TERMINANTEMENTE PROHIBIDO mencionar letras de alternativas (A, B, C, D, E) o decir cosas como "La opción D es correcta" en la explicación conceptual.
+    6. **ESCAPADO JSON DE SALTOS DE LÍNEA**: Si usas saltos de línea para datos de laboratorio o signos vitales, debes usar obligatoriamente "\\n" (barra invertida y n). Nunca presiones 'Enter' real dentro de un valor string de JSON.
+    7. **VALOR DE SUBTOPIC (IMPERATIVO)**: El campo 'subtopic' en el JSON devuelto debe ser exactamente: "${subtopicName}".
+
+    ### HISTORIAL TEMAS EVITAR (PROHIBIDOS):
+    ${historyText}
+
+    DEVUELVE EXACTAMENTE UN JSON ARRAY CON 1 OBJETO QUE TENGA ESTA ESTRUCTURA (${optionsCount} OPCIONES OBLIGATORIAS):
     [
       {
         "domain": "medicine",
         "target": "${target}",
         "career": "${career}",
         "topic": "${area}",
-        "subtopic": "Caso Clínico",
-        "difficulty": "Intermedio",
-        "question_text": "Texto de la pregunta...",
-        "options": ["Opcion A", "Opcion B", "Opcion C", "Opcion D", "Opcion E"],
+        "subtopic": "${subtopicName}",
+        "difficulty": "Senior",
+        "question_text": "Caso clínico... \\n\\n¿Cuál es la conducta inmediata más adecuada?",
+        "options": [${Array.from({ length: optionsCount }, (_, i) => `"Opción ${i + 1}"`).join(', ')}],
         "correct_option_index": 0,
-        "explanation": "Explicacion...",
-        "explanation_image_url": nul
+        "explanation": "El tratamiento de elección se fundamenta en...",
+        "explanation_image_url": null
       }
     ]`;
 }
 
-function buildEducationUserPrompt(target, area, career, historyText) {
-    return `Actúa como Especialista MINEDU. Genera 1 pregunta de Casuística de ${target} para ${area}.
-    REGLA: Evita estos temas: ${historyText}.
-    DEVUELVE EXACTAMENTE UN JSON ARRAY CON 1 OBJETO QUE TENGA ESTA ESTRUCTURA (3 OPCIONES OBLIGATORIAS):
+function buildEducationUserPrompt(target, area, career, historyText, selectedSubtopic = null) {
+    const subtopicName = selectedSubtopic || "Análisis Casuístico";
+    return `Eres un Especialista del MINEDU de alto nivel pedagógico. Genera una pregunta de Casuística de ${target} para la especialidad/nivel: ${career}.
+    La pregunta debe basarse estrictamente en este TEMA del prospecto oficial: "${subtopicName}".
+
+    ### REGLAS DE ORO DE CONSTRUCCIÓN ACADÉMICA (CRÍTICO):
+    1. **APERTURA DINÁMICA (ANTI-MONOTONÍA)**: Prohibido iniciar el caso con la típica frase descriptiva repetitiva ("La docente de...", "El docente..."). DEBES variar el inicio. Ejemplos de inicios válidos:
+       - Acción directa o diálogo: "Durante una asamblea de aula, los estudiantes debaten..."
+       - Contexto inmediato: "- ¡Mira mi torre de bloques!, le dice Juan a..."
+       - Planteamiento inmediato: "En el recreo, dos estudiantes de Primaria se empujan..."
+    2. **DINAMISMO VISUAL (Markdown)**: Inserta diálogos de aprendizaje (con guiones o formato de conversación) o un cuadro/tabla comparativo en Markdown con al menos 2 filas de datos para hacer la pregunta visualmente atractiva y realista.
+    3. **SIMETRÍA EXTREMA (PSICOMETRÍA)**: Todas las opciones de respuesta deben tener una extensión similar y simétrica (máximo +/- 40 caracteres de diferencia). La respuesta correcta NO puede ser excesivamente más larga ni más detallada que los distractores.
+    4. **ESTRUCTURA DE PREGUNTA Y CONSIGNA (DOBLE BARRERA - OBLIGATORIO)**:
+       El campo "question_text" DEBE redactarse en dos partes separadas obligatoriamente por un salto de línea doble:
+       - *Parte 1 (Caso/Escenario)*: El contexto pedagógico, diálogos y situación de conflicto cognitivo.
+       - *Parte 2 (Consigna Final)*: Un párrafo final claro y directo con signos de interrogación (¿...?) o verbos imperativos (ej. "indique", "señale", "determine", "seleccione", "identifique"). NUNCA termines la casuística sin plantear la consigna exacta de forma obligatoria.
+    5. **EXPLICACIÓN LIMPIA (SIN LETRAS)**: La explicación técnica debe basarse en teorías del aprendizaje y pedagogía. Está TERMINANTEMENTE PROHIBIDO mencionar letras de alternativas (A, B, C) o frases como "La opción A es..." dado que las alternativas se barajan de manera aleatoria.
+    6. **ESCAPADO JSON DE SALTOS DE LÍNEA**: Si usas saltos de línea para diálogos o tablas, debes usar obligatoriamente "\\n" (barra invertida y n). Nunca presiones 'Enter' real dentro de un valor string de JSON.
+    7. **VALOR DE SUBTOPIC (IMPERATIVO)**: El campo 'subtopic' en el JSON devuelto debe ser exactamente: "${subtopicName}".
+
+    ### HISTORIAL TEMAS EVITAR (PROHIBIDOS):
+    ${historyText}
+
+    DEVVELVE EXACTAMENTE UN JSON ARRAY CON 1 OBJETO QUE TENGA ESTA ESTRUCTURA (3 OPCIONES OBLIGATORIAS):
     [
       {
         "domain": "education",
         "target": "${target}",
         "career": "${career}",
         "topic": "${area}",
-        "subtopic": "Análisis Casuístico (Original)",
+        "subtopic": "${subtopicName}",
         "difficulty": "Senior",
-        "question_text": "...",
-        "options": ["Opción A", "Opción B", "Opción C"],
+        "question_text": "Caso pedagógico... \\n\\n¿Cuál es la acción docente pertinente para...?",
+        "options": ["Opción 1", "Opción 2", "Opción 3"],
         "correct_option_index": 0,
-        "explanation": "...",
+        "explanation": "La retroalimentación es clave porque...",
         "explanation_image_url": null
       }
     ]`;

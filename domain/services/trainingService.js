@@ -216,7 +216,7 @@ class TrainingService {
                 // Ya sea Medicina (ENAM/SERUMS) o Educación (ASCENSO), TODO usuario dispara generación Pinecone.
                 console.log(`🚀 [Replenish-RAG-Universal] Calling AdminAiService (RAG) for ${target}`);
                 try {
-                    let aiQuestions = await adminAiService.generateRAGQuestions(target, areaPrompt, career, limit, subscriptionTier);
+                    let aiQuestions = await adminAiService.generateRAGQuestions(target, areaPrompt, career, limit, true);
 
                     if (aiQuestions && aiQuestions.length > 0) {
                         source = 'HYBRID';
