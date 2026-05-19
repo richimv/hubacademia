@@ -6,7 +6,7 @@ const AnalyticsService = require('../../domain/services/analyticsService');
 const trainingRepository = require('../../domain/repositories/trainingRepository');
 const adminAiService = require('../../domain/services/adminAiService');
 const adminService = require('../../domain/services/adminService'); // ✅ IMPORTANTE: Se inyecta capa de Negocio
-const mediaController = require('./mediaController'); 
+const mediaController = require('./mediaController');
 
 // ==========================================
 // 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
@@ -25,7 +25,7 @@ if (!fs.existsSync(DATA_DIR)) {
 
 class AdminController {
     constructor() {
-        this.analyticsService = new AnalyticsService(); 
+        this.analyticsService = new AnalyticsService();
     }
 
     async _exportTableToCSV(tableName, fileName, dataStr) {
@@ -39,7 +39,7 @@ class AdminController {
 
             // 1. Obtener CSVs preparados desde la capa de Dominio (AdminService)
             const exportData = await adminService.generateExportData();
-            
+
             await this._exportTableToCSV('search_history', 'search_history.csv', exportData.search_history);
             await this._exportTableToCSV('courses', 'courses.csv', exportData.courses);
             await this._exportTableToCSV('resources', 'resources.csv', exportData.resources);
@@ -91,7 +91,7 @@ class AdminController {
                 },
                 charts: {
                     topCourses: dbStats.topCourses,
-                    topResources: dbStats.topResources 
+                    topResources: dbStats.topResources
                 },
                 ai: aiTrends
             };
@@ -134,7 +134,7 @@ class AdminController {
             }
 
             const difficulty = 'Senior';
-            const resolvedDomain = domain || 'medicine'; 
+            const resolvedDomain = domain || 'medicine';
             console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
 
             const generatedQuestions = await adminAiService.generateRAGQuestions(target, studyAreas, career, 5, resolvedDomain);
@@ -190,12 +190,12 @@ class AdminController {
 
             if (req.files) {
                 if (req.files['questionImage'] && req.files['questionImage'][0]) {
-                    try { q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions'); } 
+                    try { q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions'); }
                     catch (err) { console.error('Error uploading question image:', err); }
                 }
 
                 if (req.files['explanationImage'] && req.files['explanationImage'][0]) {
-                    try { q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations'); } 
+                    try { q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations'); }
                     catch (err) { console.error('Error uploading explanation image:', err); }
                 }
             }
@@ -300,7 +300,7 @@ class AdminController {
             }
 
             const resolvedDomain = domain || 'medicine';
-            
+
             // Normalizar a booleanos nativos
             const isPremium = is_premium === true || String(is_premium).toLowerCase() === 'true' || is_premium === 1;
             const isVisible = visible !== false && String(visible).toLowerCase() !== 'false' && visible !== 0;
@@ -328,9 +328,9 @@ class AdminController {
                     const thumbData = await DriveService.downloadThumbnailBuffer(file.id);
                     if (thumbData && thumbData.buffer) {
                         persistentThumbnailUrl = await mediaController.uploadBuffer(
-                            thumbData.buffer, 
-                            `${file.id}.jpg`, 
-                            thumbData.mimeType, 
+                            thumbData.buffer,
+                            `${file.id}.jpg`,
+                            thumbData.mimeType,
                             'thumbnails'
                         );
                     }
@@ -343,11 +343,11 @@ class AdminController {
                 }
 
                 const result = await adminService.syncResource(
-                    driveUrl, 
-                    cleanTitle, 
-                    resourceType, 
-                    persistentThumbnailUrl, 
-                    author, 
+                    driveUrl,
+                    cleanTitle,
+                    resourceType,
+                    persistentThumbnailUrl,
+                    author,
                     resolvedDomain,
                     isPremium,
                     isVisible,
@@ -382,7 +382,7 @@ class AdminController {
 
             // Subir a GCS en una carpeta dedicada para contenido del editor
             const gcsPath = await mediaController.uploadFile(req.file, 'editor-content');
-            
+
             // Construir la URL completa absoluta que usará el frontend para cargar la imagen
             // NOTA CRÍTICA: Usamos la URL ABSOLUTA hacia el Backend (Render) en lugar de una ruta relativa "/api/media...".
             // Esto evita que TinyMCE la interprete usando el dominio frontal (Vercel) y caiga en bloqueos de proxy,
@@ -391,7 +391,7 @@ class AdminController {
             const location = `${backendDomain}/api/media/gcs?file=${gcsPath}`;
 
             console.log(`🖼️ Imagen de editor subida con éxito (Absoluta): ${location}`);
-            
+
             // TinyMCE espera un JSON con la propiedad 'location'
             res.json({ location });
         } catch (error) {
@@ -407,7 +407,7 @@ module.exports = {
     getDashboardStats: controller.getDashboardStats.bind(controller),
     runAiAnalysis: controller.runAiAnalysis.bind(controller),
     bulkInjectQuestions: controller.bulkInjectQuestions.bind(controller),
-    generateAiQuestions: controller.generateAiQuestions.bind(controller), 
+    generateAiQuestions: controller.generateAiQuestions.bind(controller),
     getAllQuestions: controller.getAllQuestions.bind(controller),
     addSingleQuestion: controller.addSingleQuestion.bind(controller),
     updateSingleQuestion: controller.updateSingleQuestion.bind(controller),

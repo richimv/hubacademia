@@ -625,3 +625,13 @@ body {
         font-size: 1.1rem !important;
     }
 }
+
+/* ==========================================================================
+   OCULTAR BARRA DE VIDAS EN ESTUDIO (Evitar solapamientos y distracciones)
+   ========================================================================== */
+#freemium-status-bar {
+    display: none !important;
+}
+body.has-trial-mode {
+    padding-top: 0 !important;
+}

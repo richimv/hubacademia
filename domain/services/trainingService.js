@@ -84,7 +84,7 @@ class TrainingService {
         const EDUCATION_TARGETS = ['NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS'];
         const isEducation = target && EDUCATION_TARGETS.includes(target.toUpperCase());
         const isTrivia = target === 'GENERAL_TRIVIA';
-        
+
         const dbDomain = isTrivia ? 'GENERAL_TRIVIA' : (isEducation ? 'education' : 'medicine');
         const dbTarget = isTrivia ? null : target;
 
@@ -388,7 +388,7 @@ class TrainingService {
                 let jsonString = codeBlockMatch ? codeBlockMatch[1] : text;
                 const startIndex = jsonString.search(/\[/);
                 const endIndex = jsonString.lastIndexOf(']');
-                
+
                 if (startIndex !== -1 && endIndex !== -1) {
                     jsonString = jsonString.substring(startIndex, endIndex + 1);
                 }
@@ -431,26 +431,26 @@ class TrainingService {
     async generateQuizFromResource(title, content, count = 5, difficulty = 'intermediate', resourceUrl = null, domain = 'medicine') {
         try {
             console.log(`🤖 [Arena IA] Generando quiz dinámico para recurso: ${title} | Dificultad: ${difficulty}`);
-            
+
             // 1. Determinar el contexto de uso (Directo vs RAG) - Limpiar HTML para contar caracteres reales de texto plano
             let contextForAI = "";
             const plainText = content ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
             const isContentShort = plainText && plainText.length > 0 && plainText.length < 15000;
-            
+
             // 2. Generar Subtemas Dinámicos para Aleatoriedad
             const subtopicsPrompt = `Actúa como un experto docente. Extrae 5 subtemas o conceptos muy específicos a evaluar del siguiente recurso: "${title}". Devuelve SOLO una lista separada por comas, sin numeración ni introducciones.`;
             let subtopicsStr = "Conceptos generales";
             try {
                 const subResp = await modelCreativeLite.generateContent(subtopicsPrompt);
                 subtopicsStr = subResp.response.candidates[0].content.parts[0].text.trim();
-            } catch(e) { console.warn("No se pudieron generar subtemas dinámicos."); }
-            
+            } catch (e) { console.warn("No se pudieron generar subtemas dinámicos."); }
+
             // Seleccionar 2 subtemas al azar con parsing ultra-robusto (comas, guiones, números, saltos de línea)
             let subtopicsArr = subtopicsStr
                 .split(/[\n,;]+/)
                 .map(s => s.replace(/^[-*•\d\.\s]+/g, '').trim())
                 .filter(s => s.length > 3);
-                
+
             if (subtopicsArr.length === 0) {
                 subtopicsArr = ["Conceptos clave", "Definiciones principales", "Aplicaciones prácticas", "Análisis crítico", "Casos de estudio"];
             }
@@ -464,16 +464,16 @@ class TrainingService {
             } else {
                 console.log(`🔍 [Arena IA] Usando RAG Semántico basado en el Título para recurso extenso o sin content_html`);
                 const questionRagService = require('./questionRagService');
-                
+
                 // Buscar semánticamente en Pinecone usando el título del recurso y los subtemas seleccionados
                 contextForAI = await questionRagService.getStyleContextByKeywords(
-                    domain, 
-                    [`${title} ${selectedSubtopics}`], 
-                    8, 
+                    domain,
+                    [`${title} ${selectedSubtopics}`],
+                    8,
                     null,
                     title
                 );
-                
+
                 if (!contextForAI || contextForAI.trim() === '') {
                     if (plainText && plainText.length > 0) {
                         console.log(`⚠️ [Arena IA] RAG de título no disponible pero se usará plainText del recurso como fallback de contingencia.`);
@@ -560,7 +560,7 @@ class TrainingService {
             const cleanFronts = existingFronts.map(f => String(f).replace(/<[^>]*>/g, '').trim()).filter(f => f.length > 0);
 
             // Limitar la lista de existentes para no saturar el prompt (últimas 40 para contexto suficiente)
-            const exclusionList = cleanFronts.length > 0 
+            const exclusionList = cleanFronts.length > 0
                 ? `\n🚨 REGLA DE EXCLUSIÓN (NO REPETIR ESTO):\n${cleanFronts.slice(-40).join('\n')}`
                 : "";
 
@@ -681,6 +681,8 @@ class TrainingService {
 
         const attemptId = await repository.saveQuizHistory(userId, quizData);
 
+        console.log(`💾 [TrainingService] Historial de examen guardado exitosamente. Intento ID: ${attemptId} | Usuario: ${userId} | Target: ${quizData.target || 'N/A'} | Especialidad: ${quizData.career || 'N/A'} | Score: ${quizData.score}/${quizData.totalQuestions}`);
+
         // 🟢 MODULARIDAD: Crear flashcards con topics individuales
         if (options.createFlashcards) {
             const errors = quizData.questions.filter(q => q.userAnswer !== q.correct_option_index);
@@ -708,7 +710,7 @@ class TrainingService {
         if (days) {
             timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
         }
-        
+
         // Filter by target (works for both MEDICINA and EDUCACION contexts)
         if (target) {
             params.push(target);
@@ -738,7 +740,7 @@ class TrainingService {
 
         let strongest = 'N/A';
         let weakest = 'N/A';
-        let radarData = []; 
+        let radarData = [];
 
         try {
             const topicRes = await repository.getTopicAnalysis(userId, topicFilter, params, timeFilter, areas);

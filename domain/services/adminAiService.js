@@ -25,6 +25,26 @@ class AdminAiService {
         this.ragService = QuestionRagService;
     }
 
+    _parseJSON(text) {
+        if (!text) throw new Error("Texto JSON vacío");
+        const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+        try {
+            return JSON.parse(cleaned);
+        } catch (e) {
+            // Limpieza robusta de caracteres de control y secuencias escapadas en caso de fallo
+            const simpleCleaned = cleaned
+                .replace(/\\n/g, ' ')
+                .replace(/[\u0000-\u001F\u007F-\u009F]/g, "") // Eliminar caracteres de control inválidos en JSON
+                .trim();
+            try {
+                return JSON.parse(simpleCleaned);
+            } catch (e2) {
+                console.error("Error al parsear incluso después de la limpieza básica:", e2.message);
+                throw e2;
+            }
+        }
+    }
+
     /**
      * Generación masiva con validación de target.
      */
@@ -43,10 +63,14 @@ class AdminAiService {
 
             // 🧠 MEMORIA DE LARGO PLAZO
             const lastQuestionsRes = await db.query(
-                "SELECT question_text FROM question_bank WHERE target = $1 AND career = $2 ORDER BY created_at DESC LIMIT 15",
+                "SELECT question_text, subtopic FROM question_bank WHERE target = $1 AND career = $2 ORDER BY created_at DESC LIMIT 25",
                 [normalizedTarget, career]
             );
-            const globalHistory = lastQuestionsRes.rows.map(r => r.question_text);
+            const globalHistory = [];
+            lastQuestionsRes.rows.forEach(r => {
+                if (r.question_text) globalHistory.push(r.question_text);
+                if (r.subtopic) globalHistory.push(`TEMA: ${r.subtopic}`);
+            });
             let batchHistory = [...globalHistory]; // Memoria dinámica que crecerá
 
             let totalAttempts = 0;
@@ -67,7 +91,7 @@ class AdminAiService {
                     allQuestions.push(q);
                     // Guardamos tanto el texto como el subtema para evitar repeticiones semánticas
                     batchHistory.push(q.question_text);
-                    if (q.syllabus) batchHistory.push(`TEMA: ${q.syllabus}`);
+                    if (q.subtopic) batchHistory.push(`TEMA: ${q.subtopic}`);
 
                     console.log(`✅ [Éxito] Pregunta añadida. Progreso: ${allQuestions.length}/${amount}`);
                 } else {
@@ -128,7 +152,7 @@ class AdminAiService {
             { "selectedTopic": "Nombre del tema", "searchTerms": ["termino 1", "termino 2"] }`;
 
             const selectionResult = await this.model.generateContent(selectionPrompt);
-            const selectionData = JSON.parse(selectionResult.response.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim());
+            const selectionData = this._parseJSON(selectionResult.response.candidates[0].content.parts[0].text);
 
             const selectedSubtopic = selectionData.selectedTopic;
             const technicalSearchTerms = selectionData.searchTerms.join(' ');
@@ -194,13 +218,13 @@ class AdminAiService {
                 const prompt = genPrompts.getUserPrompt(target, area, career, historyText, selectedSubtopic);
                 const result = await this.model.generateContent(prompt);
                 const responseText = result.response.candidates[0].content.parts[0].text;
-                let questionArray = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
+                let questionArray = this._parseJSON(responseText);
                 question = Array.isArray(questionArray) ? questionArray[0] : questionArray;
             } else {
                 const prompt = genPrompts.getAdminPrompt(target, area, career, fullContext, history, null);
                 const result = await this.model.generateContent(prompt);
                 const responseText = result.response.candidates[0].content.parts[0].text;
-                question = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
+                question = this._parseJSON(responseText);
             }
 
             // --- FASE 4: EL AUDITOR (Simetría, Calidad, Limpieza de Letras y Consigna) ---
@@ -211,8 +235,10 @@ class AdminAiService {
                 const avgOthersChars = othersCharCounts.reduce((a, b) => a + b, 0) / othersCharCounts.length;
                 const charDiff = correctCharCount - avgOthersChars;
 
-                // Nueva regla 1: No letras en explicación (A, B, C, Alternativa A, etc)
-                const hasLettersInExplanation = /la opción [ABC]|la alternativa [ABC]|en [ABC]|la [ABC] es/i.test(q.explanation || "");
+                // Nueva regla 1: No letras en explicación (A, B, C, Alternativa A, etc) de manera robusta
+                const hasLettersInExplanation = /la opción\s+[A-E]\b|la alternativa\s+[A-E]\b/i.test(q.explanation || "") ||
+                    /\ben\s+[A-E]\b/.test(q.explanation || "") ||
+                    /\b[A-E]\s+es\s+correcta\b/i.test(q.explanation || "");
 
                 // Nueva regla 2: Validar que el enunciado contenga una interrogante o consigna explícita
                 const text = q.question_text || "";
@@ -220,7 +246,7 @@ class AdminAiService {
                     !/indique|señale|determine|seleccione|calcule|identifique/i.test(text);
 
                 return {
-                    isAsymmetric: Math.abs(charDiff) > 10,
+                    isAsymmetric: Math.abs(charDiff) > 40, // Calibrado a 40 caracteres según el Umbral Pedagógico oficial
                     hasLetters: hasLettersInExplanation,
                     lacksQuestion: lacksQuestionPrompt,
                     correctLen: correctCharCount,
@@ -240,7 +266,7 @@ class AdminAiService {
 
                 const refinedResult = await this.model.generateContent(refinementPrompt);
                 const refinedText = refinedResult.response.candidates[0].content.parts[0].text;
-                question = JSON.parse(refinedText.replace(/```json/g, '').replace(/```/g, '').trim());
+                question = this._parseJSON(refinedText);
 
                 status = checkQuality(question);
             }

@@ -136,11 +136,31 @@ window.showExamReview = async function () {
                         const qTextRaw = (q.question_text || "").trim();
                         if (qTextRaw) saveButtonsMap.set(qTextRaw, saveBtn);
                         saveBtn.onclick = async () => {
+                            // ✅ REG LA DE ORO DE TARJETAS CORTAS: Validar longitud de texto plano (< 400 caracteres)
+                            const plainText = (q.question_text || "").replace(/<[^>]*>/g, "").trim();
+                            if (plainText.length > 400) {
+                                const messageHTML = `
+                                    <div style="text-align: center; padding: 10px 0;">
+                                        <div style="font-size: 3.5rem; margin-bottom: 15px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">😢</div>
+                                        <p style="font-size: 1.05rem; font-weight: 600; color: #f3f4f6; margin-bottom: 8px;">Enunciado demasiado largo</p>
+                                        <p style="font-size: 0.92rem; color: #9ca3af; line-height: 1.45; margin: 0;">
+                                            Las flashcards deben ser cortas y atómicas (máximo 400 caracteres) para garantizar un repaso eficiente.
+                                        </p>
+                                    </div>
+                                `;
+                                if (window.confirmationModal) {
+                                    window.confirmationModal.showAlert(messageHTML, 'Límite de caracteres', 'Aceptar');
+                                } else {
+                                    alert("⚠️ Esta pregunta es demasiado extensa para convertirse en una flashcard (máximo 400 caracteres).");
+                                }
+                                return;
+                            }
+
                             const originalText = saveBtn.innerHTML;
                             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                             saveBtn.disabled = true;
                             try {
-                                const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/../training/flashcards/save-from-question`, {
+                                const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/training/flashcards/save-from-question`, {
                                     method: 'POST',
                                     body: JSON.stringify({ question: q, topic: q.topic || state.topic, moduleName: state.context || 'MEDICINA' })
                                 });
@@ -152,7 +172,11 @@ window.showExamReview = async function () {
                                     saveBtn.disabled = false;
                                     alert('Error: ' + data.error);
                                 }
-                            } catch (e) { console.error(e); saveBtn.disabled = false; }
+                            } catch (e) { 
+                                console.error(e); 
+                                saveBtn.innerHTML = originalText;
+                                saveBtn.disabled = false; 
+                            }
                         };
                     }
                 }
@@ -162,7 +186,7 @@ window.showExamReview = async function () {
 
         const isDemoStatus = new URLSearchParams(window.location.search).get('demo') === 'true';
         if (!isDemoStatus && answeredQuestions.length > 0) {
-            window.NetworkService.fetch(`${window.AppConfig.API_URL}/../training/flashcards/check-saved`, {
+            window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/training/flashcards/check-saved`, {
                 method: 'POST',
                 body: JSON.stringify({ questions: answeredQuestions, moduleName: state.context || 'MEDICINA' })
             }).then(res => res.json()).then(data => {
@@ -1001,7 +1025,7 @@ async function finishQuiz() {
     }
 
     try {
-        await window.NetworkService.fetch(`${window.AppConfig.API_URL}/submit`, {
+        await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/quiz/submit`, {
             method: 'POST',
             body: JSON.stringify({
                 topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : state.topic,

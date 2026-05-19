@@ -114,8 +114,10 @@ class TrainingRepository {
         const params = [topics, domain, target];
         let paramIdx = 4;
 
-        // Filtro de Carrera (SERUMS)
-        if (target === 'SERUMS' && career) {
+        // Filtro de Carrera (SERUMS y Educación)
+        const EDUCATION_TARGETS = ['NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS'];
+        const isEducation = target && EDUCATION_TARGETS.includes(target.toUpperCase());
+        if ((target === 'SERUMS' || isEducation) && career) {
             whereClauses += ` AND (career IS NULL OR career = $${paramIdx}) `;
             params.push(career);
             paramIdx++;
@@ -1041,7 +1043,7 @@ class TrainingRepository {
             )`;
         }
 
-        // Get last 10 attempts, ordered by date ASC specifically for Chart
+        // Get last 10 attempts, ordered by date DESC and then reversed in memory for chronological rendering
         const query = `
             SELECT 
                 to_char(created_at, 'DD/MM') as date_label,
@@ -1050,12 +1052,12 @@ class TrainingRepository {
                 (score::float / NULLIF(total_questions, 0)) * 20 as score_20 -- Projected to 0-20 scale
             FROM quiz_history
             WHERE user_id = $1 ${filter} ${timeFilter}
-            ORDER BY created_at ASC
+            ORDER BY created_at DESC
             LIMIT 10
         `;
 
         const res = await db.query(query, params);
-        return res.rows;
+        return res.rows.reverse();
     }
 
     async incrementSimulatorUsage(userId) {
