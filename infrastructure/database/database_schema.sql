@@ -193,7 +193,8 @@ CREATE TABLE IF NOT EXISTS public.resources (
     domain CHARACTER VARYING(50) DEFAULT 'medicine'::character varying,
     visible BOOLEAN DEFAULT true,
     open_directly BOOLEAN DEFAULT false,
-    CONSTRAINT resources_pkey PRIMARY KEY (id)
+    CONSTRAINT resources_pkey PRIMARY KEY (id),
+    CONSTRAINT resources_url_key UNIQUE (url)
 );
 
 -- Table: search_history
@@ -397,6 +398,7 @@ CREATE INDEX IF NOT EXISTS idx_arena_scores_score ON public.arena_scores (score 
 CREATE INDEX IF NOT EXISTS idx_question_bank_domain_target ON public.question_bank(domain, target);
 CREATE INDEX IF NOT EXISTS idx_question_bank_hash ON public.question_bank(question_hash);
 CREATE INDEX IF NOT EXISTS idx_user_notes_user_id ON public.user_notes(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_resources_url ON public.resources(url);
 
 -- Auto-update trigger for user_notes
 CREATE OR REPLACE FUNCTION update_updated_at_column()

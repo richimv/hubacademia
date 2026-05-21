@@ -1,98 +1,151 @@
 const AuthService = require('../../domain/services/authService');
-const UserRepository = require('../../domain/repositories/userRepository');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 
-// Mock dependencies
-jest.mock('../../domain/repositories/userRepository');
-jest.mock('bcryptjs');
-jest.mock('jsonwebtoken');
-jest.mock('axios'); // Mock axios for HIBP check if needed, though we might mock isPasswordPwned directly
+const mockFindById = jest.fn();
+const mockCreate = jest.fn();
+const mockUpdate = jest.fn();
+const mockDelete = jest.fn();
+
+jest.mock('../../domain/repositories/userRepository', () => {
+    return jest.fn().mockImplementation(() => {
+        return {
+            findById: mockFindById,
+            create: mockCreate,
+            update: mockUpdate,
+            delete: mockDelete
+        };
+    });
+});
+
+jest.mock('../../infrastructure/config/supabaseClient');
 
 describe('AuthService', () => {
     let authService;
-    let mockUserRepository;
 
     beforeEach(() => {
-        // Clear all mocks before each test
         jest.clearAllMocks();
         authService = new AuthService();
-        mockUserRepository = UserRepository.mock.instances[0];
-
-        // Mock isPasswordPwned to always return false by default to avoid external calls
-        authService.isPasswordPwned = jest.fn().mockResolvedValue(false);
     });
 
-    describe('login', () => {
-        it('should return token and user when credentials are valid', async () => {
-            const email = 'test@example.com';
-            const password = 'Password123!';
-            const user = {
-                id: 1,
-                email,
-                passwordHash: 'hashedPassword',
+    describe('syncGoogleUser', () => {
+        it('should sync Google user successfully', async () => {
+            const googleUser = {
+                id: 'sb-user-id',
+                email: 'test@example.com',
+                name: 'Test User'
+            };
+
+            const expectedUser = {
+                id: 'sb-user-id',
+                email: 'test@example.com',
                 name: 'Test User',
                 role: 'student'
             };
 
-            // Setup mocks
-            UserRepository.mockImplementation(() => ({
-                findByEmail: jest.fn().mockResolvedValue(user)
-            }));
-            // Re-instantiate to apply mock
-            authService = new AuthService();
+            mockCreate.mockResolvedValue(expectedUser);
 
-            bcrypt.compare.mockResolvedValue(true);
-            jwt.sign.mockReturnValue('fake-token');
+            const result = await authService.syncGoogleUser(googleUser);
 
-            const result = await authService.login(email, password);
-
-            expect(result).toHaveProperty('token', 'fake-token');
-            expect(result.user).toEqual({
-                id: user.id,
-                role: user.role,
-                name: user.name,
-                email: user.email
+            expect(result).toEqual(expectedUser);
+            expect(mockCreate).toHaveBeenCalledWith({
+                id: googleUser.id,
+                email: googleUser.email,
+                name: googleUser.name,
+                role: 'student'
             });
         });
 
-        it('should throw error when user not found', async () => {
-            UserRepository.mockImplementation(() => ({
-                findByEmail: jest.fn().mockResolvedValue(null)
-            }));
-            authService = new AuthService();
+        it('should assign admin role if email is in the admin list', async () => {
+            const adminUser = {
+                id: 'admin-id',
+                email: 'hubacademia01@gmail.com',
+                name: 'Admin User'
+            };
 
-            await expect(authService.login('wrong@example.com', 'pass'))
-                .rejects.toThrow('Credenciales inválidas');
-        });
+            const expectedUser = {
+                id: 'admin-id',
+                email: 'hubacademia01@gmail.com',
+                name: 'Admin User',
+                role: 'admin'
+            };
 
-        it('should throw error when password does not match', async () => {
-            const user = { email: 'test@example.com', passwordHash: 'hashed' };
-            UserRepository.mockImplementation(() => ({
-                findByEmail: jest.fn().mockResolvedValue(user)
-            }));
-            authService = new AuthService();
-            bcrypt.compare.mockResolvedValue(false);
+            mockCreate.mockResolvedValue(expectedUser);
 
-            await expect(authService.login('test@example.com', 'wrongpass'))
-                .rejects.toThrow('Credenciales inválidas');
+            const result = await authService.syncGoogleUser(adminUser);
+
+            expect(result.role).toBe('admin');
+            expect(mockCreate).toHaveBeenCalledWith({
+                id: adminUser.id,
+                email: adminUser.email,
+                name: adminUser.name,
+                role: 'admin'
+            });
         });
     });
 
-    describe('validatePasswordComplexity', () => {
-        it('should throw error for short password', () => {
-            expect(() => authService.validatePasswordComplexity('Short1!'))
-                .toThrow('debe tener al menos 8 caracteres');
+    describe('updateProfile', () => {
+        it('should update profile if name change restriction is not violated', async () => {
+            const userId = 'user-123';
+            const user = {
+                id: userId,
+                name: 'Old Name',
+                lastNameChangeAt: null,
+                role: 'student'
+            };
+
+            mockFindById.mockResolvedValue(user);
+            mockUpdate.mockResolvedValue({
+                ...user,
+                name: 'New Name'
+            });
+
+            const result = await authService.updateProfile(userId, { name: 'New Name' });
+
+            expect(result.name).toBe('New Name');
+            expect(mockUpdate).toHaveBeenCalledWith(userId, {
+                name: 'New Name',
+                last_name_change_at: expect.any(Date)
+            });
         });
 
-        it('should throw error for password without numbers', () => {
-            expect(() => authService.validatePasswordComplexity('NoNumbers!'))
-                .toThrow('debe contener al menos un número');
+        it('should throw error if user changed name within 7 days', async () => {
+            const userId = 'user-123';
+            const lastChange = new Date();
+            lastChange.setDate(lastChange.getDate() - 3); // 3 days ago
+
+            const user = {
+                id: userId,
+                name: 'Old Name',
+                lastNameChangeAt: lastChange.toISOString(),
+                role: 'student'
+            };
+
+            mockFindById.mockResolvedValue(user);
+
+            await expect(authService.updateProfile(userId, { name: 'New Name' }))
+                .rejects.toThrow(/Solo puedes cambiar tu nombre una vez por semana/);
         });
 
-        it('should not throw for valid password', () => {
-            expect(() => authService.validatePasswordComplexity('Valid123!'))
-                .not.toThrow();
+        it('should allow admin to change name even if changed within 7 days', async () => {
+            const userId = 'admin-123';
+            const lastChange = new Date();
+            lastChange.setDate(lastChange.getDate() - 3);
+
+            const user = {
+                id: userId,
+                name: 'Old Admin',
+                lastNameChangeAt: lastChange.toISOString(),
+                role: 'admin'
+            };
+
+            mockFindById.mockResolvedValue(user);
+            mockUpdate.mockResolvedValue({
+                ...user,
+                name: 'New Admin'
+            });
+
+            const result = await authService.updateProfile(userId, { name: 'New Admin' });
+
+            expect(result.name).toBe('New Admin');
         });
     });
 });

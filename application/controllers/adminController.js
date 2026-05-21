@@ -51,7 +51,15 @@ class AdminController {
             pythonProcess.stdout.on('data', (data) => console.log(`[PY]: ${data}`));
             pythonProcess.stderr.on('data', (data) => console.error(`[PY ERROR]: ${data}`));
 
+            pythonProcess.on('error', (err) => {
+                console.error('❌ Error al iniciar el script de IA (spawn):', err);
+                if (!res.headersSent) {
+                    res.status(500).json({ error: 'No se pudo iniciar el proceso de análisis de IA.' });
+                }
+            });
+
             pythonProcess.on('close', (code) => {
+                if (res.headersSent) return;
                 if (code === 0) {
                     res.json({ success: true, message: 'Análisis de tendencias actualizado.' });
                 } else {
@@ -60,7 +68,9 @@ class AdminController {
             });
         } catch (error) {
             console.error('Error ejecutando IA:', error);
-            res.status(500).json({ error: 'Error interno ejecutando IA' });
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Error interno ejecutando IA' });
+            }
         }
     }
 
@@ -317,6 +327,8 @@ class AdminController {
 
             let insertedCount = 0;
             let updatedCount = 0;
+            let failedCount = 0;
+            const syncErrors = [];
 
             for (const file of files) {
                 const driveUrl = `https://drive.google.com/open?id=${file.id}`;
@@ -342,26 +354,38 @@ class AdminController {
                     console.log(`✨ Sin miniatura para: ${file.name} (se usará diseño por defecto UI)`);
                 }
 
-                const result = await adminService.syncResource(
-                    driveUrl,
-                    cleanTitle,
-                    resourceType,
-                    persistentThumbnailUrl,
-                    author,
-                    resolvedDomain,
-                    isPremium,
-                    isVisible,
-                    openDirectly
-                );
-                if (result.action === 'updated') updatedCount++;
-                else insertedCount++;
+                try {
+                    const result = await adminService.syncResource(
+                        driveUrl,
+                        cleanTitle,
+                        resourceType,
+                        persistentThumbnailUrl,
+                        author,
+                        resolvedDomain,
+                        isPremium,
+                        isVisible,
+                        openDirectly
+                    );
+                    if (result.action === 'updated') updatedCount++;
+                    else insertedCount++;
+                } catch (syncErr) {
+                    console.error(`❌ Error sincronizando recurso para la URL ${driveUrl}:`, syncErr);
+                    failedCount++;
+                    syncErrors.push({
+                        file: file.name,
+                        url: driveUrl,
+                        error: syncErr.message
+                    });
+                }
             }
 
             res.json({
                 success: true,
-                message: `Sincronización completada. ${insertedCount} nuevos recursos añadidos, ${updatedCount} actualizados.`,
+                message: `Sincronización completada. ${insertedCount} nuevos recursos añadidos, ${updatedCount} actualizados.${failedCount > 0 ? ` ${failedCount} fallaron.` : ''}`,
                 inserted: insertedCount,
-                updated: updatedCount
+                updated: updatedCount,
+                failed: failedCount,
+                errors: syncErrors.length > 0 ? syncErrors : undefined
             });
 
         } catch (error) {

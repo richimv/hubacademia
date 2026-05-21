@@ -424,13 +424,19 @@ class AdminManager {
 
     async loadAllData() {
         try {
+            const questionsUrl = new URL(`${window.AppConfig.API_URL}/api/admin/questions`);
+            questionsUrl.searchParams.append('domain', this.currentQuestionDomain || 'all');
+            if (this.currentQuestionSearch) {
+                questionsUrl.searchParams.append('search', this.currentQuestionSearch);
+            }
+
             const [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes] = await Promise.all([
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/careers`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/students`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/topics`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?includeHidden=true`),
-                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/questions`)
+                window.NetworkService.fetch(questionsUrl.toString())
             ]);
 
             for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes]) {
@@ -2554,7 +2560,7 @@ class AdminManager {
             }
 
             const { newPassword } = await response.json();
-            await window.confirmationModal.showAlert(`¡Éxito! La nueva contraseña temporal para ${instructor.name} es:\n\n${newPassword}\n\nPor favor, compártela de forma segura.`, 'Contraseña Restablecida');
+            await window.confirmationModal.showAlert(`¡Éxito! La nueva contraseña temporal para ${user.name} es:\n\n${newPassword}\n\nPor favor, compártela de forma segura.`, 'Contraseña Restablecida');
         } catch (error) {
             console.error('❌ Error al restablecer la contraseña:', error);
             await window.confirmationModal.showAlert(`Error: ${error.message}`, 'Error');

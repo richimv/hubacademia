@@ -19,7 +19,10 @@ describe('CourseRepository', () => {
 
             const result = await courseRepository.findById(1);
 
-            expect(db.query).toHaveBeenCalledWith('SELECT * FROM courses WHERE id = $1', [1]);
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('WHERE c.id = $1'),
+                [1]
+            );
             expect(result).toEqual(mockCourse);
         });
 
@@ -43,7 +46,7 @@ describe('CourseRepository', () => {
             // Verify that db.query was called with the correct SQL and normalized parameter
             // Note: We are testing that the repository delegates correctly to the DB
             expect(db.query).toHaveBeenCalledWith(
-                'SELECT * FROM search_courses($1)',
+                expect.stringContaining('relevance_score'),
                 expect.arrayContaining([expect.stringMatching(/java/i)])
             );
         });

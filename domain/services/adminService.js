@@ -19,6 +19,19 @@ class AdminService {
             book: new BookRepository(),
             user: new UserRepository(),
         };
+        // Simple in-memory locking mechanism to serialize calls for the same URL
+        this.locks = new Map();
+    }
+
+    async _acquireLock(key) {
+        while (this.locks.has(key)) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        this.locks.set(key, true);
+    }
+
+    _releaseLock(key) {
+        this.locks.delete(key);
     }
 
     // ==========================================
@@ -147,17 +160,37 @@ class AdminService {
     }
 
     async syncResource(url, cleanTitle, resourceType, persistentThumbnailUrl, author, domain = 'medicine', isPremium = false, visible = true, openDirectly = false) {
-        const existing = await adminRepository.getResourceByUrl(url);
+        await this._acquireLock(url);
+        try {
+            const existing = await adminRepository.getResourceByUrl(url);
 
-        if (existing) {
-            const finalThumb = persistentThumbnailUrl || existing.image_url;
-            await adminRepository.updateResource(existing.id, cleanTitle, resourceType, finalThumb, domain, isPremium, visible, openDirectly);
-            return { action: 'updated' };
-        } else {
-            const resourceId = `RES_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-            const resultAuthor = author || 'Admin Hub';
-            await adminRepository.addResource(resourceId, cleanTitle, resultAuthor, url, resourceType, persistentThumbnailUrl, domain, isPremium, visible, openDirectly);
-            return { action: 'inserted' };
+            if (existing) {
+                const finalThumb = persistentThumbnailUrl || existing.image_url;
+                await adminRepository.updateResource(existing.id, cleanTitle, resourceType, finalThumb, domain, isPremium, visible, openDirectly);
+                return { action: 'updated' };
+            } else {
+                const resourceId = `RES_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                const resultAuthor = author || 'Admin Hub';
+                try {
+                    await adminRepository.addResource(resourceId, cleanTitle, resultAuthor, url, resourceType, persistentThumbnailUrl, domain, isPremium, visible, openDirectly);
+                    return { action: 'inserted' };
+                } catch (dbError) {
+                    // Si ocurre un error de llave duplicada (ej. código 23505 de PostgreSQL para unique_violation)
+                    if (dbError.code === '23505') {
+                        console.warn(`⚠️ Conflicto de inserción única para la URL: ${url}. Intentando actualizar en su lugar.`);
+                        // Volver a consultar el recurso existente para obtener su ID
+                        const retryExisting = await adminRepository.getResourceByUrl(url);
+                        if (retryExisting) {
+                            const finalThumb = persistentThumbnailUrl || retryExisting.image_url;
+                            await adminRepository.updateResource(retryExisting.id, cleanTitle, resourceType, finalThumb, domain, isPremium, visible, openDirectly);
+                            return { action: 'updated' };
+                        }
+                    }
+                    throw dbError; // Si no es 23505 o no se encuentra el recurso, propagamos el error
+                }
+            }
+        } finally {
+            this._releaseLock(url);
         }
     }
 }

@@ -1,6 +1,7 @@
 // infrastructure/controllers/paymentController.js
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const pool = require('../../infrastructure/database/db');
+const crypto = require('crypto');
 
 // Configuración del cliente
 // IMPORTANTE: Asegúrate de que MP_ACCESS_TOKEN en Render sea el de PRODUCCIÓN (empieza con APP_USR-...)
@@ -75,6 +76,64 @@ exports.createOrder = async (req, res) => {
 };
 
 exports.handleWebhook = async (req, res) => {
+    const xSignature = req.headers['x-signature'];
+    const xRequestId = req.headers['x-request-id'];
+    const dataId = req.query.id || req.query['data.id'];
+
+    // Validar cabeceras obligatorias y parámetro data.id
+    if (!xSignature || !xRequestId || !dataId) {
+        console.error('❌ Error Webhook: Cabeceras de firma (x-signature, x-request-id) o ID en query params ausentes.');
+        return res.status(401).json({ error: 'Unauthorized: Faltan cabeceras o datos de firma.' });
+    }
+
+    // Extraer ts y v1 de la cabecera x-signature
+    const parts = xSignature.split(',');
+    let ts, hash;
+    parts.forEach(part => {
+        const [key, value] = part.split('=');
+        if (key && value) {
+            if (key.trim() === 'ts') ts = value.trim();
+            if (key.trim() === 'v1') hash = value.trim();
+        }
+    });
+
+    if (!ts || !hash) {
+        console.error('❌ Error Webhook: Formato de x-signature inválido.');
+        return res.status(401).json({ error: 'Unauthorized: Formato de firma inválido.' });
+    }
+
+    // Validar token secreto
+    const secret = process.env.MP_WEBHOOK_SECRET;
+    if (!secret) {
+        console.error('❌ Error Webhook: MP_WEBHOOK_SECRET no está configurado en las variables de entorno.');
+        return res.status(500).json({ error: 'Internal Server Error: Configuración de firma incompleta.' });
+    }
+
+    // Construir el manifest para validar
+    const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+
+    // Calcular firma HMAC-SHA256
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(manifest);
+    const calculatedHash = hmac.digest('hex');
+
+    // Comparación segura para prevenir ataques de temporización (timing attacks)
+    let isSignatureValid = false;
+    try {
+        isSignatureValid = crypto.timingSafeEqual(
+            Buffer.from(calculatedHash, 'hex'),
+            Buffer.from(hash, 'hex')
+        );
+    } catch (e) {
+        isSignatureValid = (calculatedHash === hash);
+    }
+
+    if (!isSignatureValid) {
+        console.error('❌ Error Webhook: La firma del webhook de Mercado Pago no coincide.');
+        return res.status(401).json({ error: 'Unauthorized: Firma inválida.' });
+    }
+
+    // Firma válida, responder 200 OK inmediatamente
     const paymentId = req.query.id || req.query['data.id'];
     const type = req.query.type || req.query.topic;
 
