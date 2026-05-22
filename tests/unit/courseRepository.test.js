@@ -1,8 +1,8 @@
-const CourseRepository = require('../../domain/repositories/courseRepository');
-const db = require('../../infrastructure/database/db');
+const CourseRepository = require('../../src/domain/repositories/courseRepository');
+const db = require('../../src/infrastructure/database/db');
 
 // Mock database
-jest.mock('../../infrastructure/database/db');
+jest.mock('../../src/infrastructure/database/db');
 
 describe('CourseRepository', () => {
     let courseRepository;

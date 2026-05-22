@@ -61,7 +61,13 @@ class Server {
 
         // ✅ CORS CONFIGURADO PARA VERCEL Y DOMINIO PROPIO (HubAcademia)
         this.app.use(cors({
-            origin: ['http://localhost:3000', 'https://chatbot-tutor-uc.vercel.app', 'https://hubacademia.com', 'https://www.hubacademia.com'],
+            origin: [
+                'http://localhost:3000',
+                'https://chatbot-tutor-uc.vercel.app',
+                'https://hubacademia.vercel.app',
+                'https://hubacademia.com',
+                'https://www.hubacademia.com'
+            ],
             credentials: true
         }));
 
@@ -115,7 +121,7 @@ class Server {
         // ✅ Servir favicon.ico desde la raíz del proyecto
         this.app.get('/favicon.ico', (req, res) => {
             res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 días
-            res.sendFile(path.join(__dirname, '../../favicon.ico'));
+            res.sendFile(path.join(__dirname, '../../../favicon.ico'));
         });
     }
 

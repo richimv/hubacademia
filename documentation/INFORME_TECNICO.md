@@ -6,22 +6,23 @@ La plataforma **Hub Academia** está construida sobre una arquitectura modular l
 
 ### 1.1 Estructura del Directorio y Componentes del Sistema
 
-El ecosistema de código fuente se organiza de la siguiente manera:
-- **`presentation/`**: Capa del frontend basada en HTML5, CSS3 personalizado (con variables del sistema de diseño unificado, como se define en `DESIGN_SYSTEM.md`) y JavaScript modular vanilla. Los componentes clave del cliente incluyen:
+El ecosistema de código fuente se organiza dentro del directorio de código fuente **`src/`** para mantener un desacoplamiento limpio:
+- **`src/presentation/`**: Capa del frontend basada en HTML5, CSS3 personalizado (con variables del sistema de diseño unificado, como se define en `DESIGN_SYSTEM.md`) y JavaScript modular vanilla. Los componentes clave del cliente incluyen:
   - `js/chat.js` y `js/tutor-chat.js`: Orquestación de interfaces de chat síncrono e interactivo.
   - `js/utils/markdown-renderer.js`: Procesador de parsing centralizado que consume `marked.js` para renderizar de manera uniforme el formato del LLM, envolviendo tablas en contenedores responsivos (`table-responsive-wrapper`) y resolviendo rutas del proxy de medios.
   - `js/simulator-dash.js`: Tablero interactivo que mapea y renderiza KPIs del simulador a partir del contexto del usuario.
   - `js/quiz.js`: Motor de ejecución del examen clínico/pedagógico con persistencia en el almacenamiento local ante fallos de red.
-- **`application/`**: Capa de aplicación que contiene controladores y middlewares en NodeJS/Express:
+- **`src/application/`**: Capa de aplicación que contiene controladores y middlewares en NodeJS/Express:
   - `controllers/`: Orquestadores que reciben las peticiones HTTP y delegan la ejecución a los servicios del dominio (ej. `quizController.js`, `deckController.js`, `paymentController.js`, `mediaController.js`).
   - `middlewares/checkLimitsMiddleware.js`: Cortafuegos financiero transaccional encargado de regular el consumo de llamadas a APIs externas de IA y transferencias de archivos según el rol y nivel del usuario en tiempo real.
-- **`domain/`**: Núcleo lógico del negocio. Define las reglas de dominio, entidades, prompts de IA y servicios de infraestructura:
+- **`src/domain/`**: Núcleo lógico del negocio. Define las reglas de dominio, entidades, prompts de IA y servicios de infraestructura:
   - `services/`: Lógica operativa de los módulos (ej. `tutorAiService.js`, `trainingService.js`, `ragService.js`, `questionRagService.js`, `ttsService.js`, `driveService.js`).
   - `prompts/`: Definición de plantillas sistemáticas para Gemini (`generationPrompts.js`, `chatPrompts.js`).
   - `repositories/`: Capa de abstracción de persistencia de datos (ej. `trainingRepository.js`, `analyticsRepository.js`).
-- **`infrastructure/`**: Enrutamiento, bases de datos y configuraciones globales:
+- **`src/infrastructure/`**: Enrutamiento, bases de datos y configuraciones globales:
   - `config/`: Archivos de configuración de Express (`server.js`), cliente de base de datos (`supabaseClient.js`) y limitadores de tasa (`rateLimiters.js`).
   - `database/`: Definición de esquemas físicos (`database_schema.sql`), scripts de migración (`monetization_migration.sql`) y procedimientos almacenados avanzados (`stored_procedures.sql`).
+  - `middleware/`: Middlewares técnicos de infraestructura como `authMiddleware.js` (validación JWT) y `usageMiddleware.js` (auditoría).
   - `routes/`: Enrutamiento web de endpoints públicos y protegidos (`apiRoutes.js`, `analyticsRoutes.js`).
 - **`ml_service/`**: Microservicio local escrito en Python para el procesamiento de datos por lotes y análisis de tendencias fuera de línea.
 - **`scripts/`**: Utilidades administrativas, incluyendo `ingest_rag.py` para la ingesta de documentos a la base de datos vectorial.
@@ -238,7 +239,7 @@ A continuación, se presenta el informe detallado de la auditoría de control de
 > [!NOTE]
 > **Resolución:** Se reemplazó la variable inexistente `instructor.name` por la variable local correcta `user.name` en `handleResetPassword()`.
 
-* **Ubicación:** [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/presentation/public/js/admin.js#L2563)
+* **Ubicación:** [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js#L2563)
 * **Detalle Técnico:** En el método `handleResetPassword(userId)`, el frontend realiza una petición HTTP al endpoint de restablecimiento de credenciales de usuario. Al obtener la respuesta exitosa, ejecuta la siguiente instrucción:
   ```javascript
   await window.confirmationModal.showAlert(`¡Éxito! La nueva contraseña temporal para ${user.name} es:\n\n${newPassword}...`, 'Contraseña Restablecida');
@@ -252,7 +253,7 @@ A continuación, se presenta el informe detallado de la auditoría de control de
 > [!NOTE]
 > **Resolución:** Se modificó `loadAllData()` para instanciar la URL de consulta mediante `new URL()` y propagar dinámicamente los parámetros activos `domain` y `search` de la UI.
 
-* **Ubicación:** [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/presentation/public/js/admin.js#L425-L440)
+* **Ubicación:** [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js#L425-L440)
 * **Detalle Técnico:** La recarga de datos tras operaciones de edición, guardado o eliminación ahora incluye los parámetros activos en la UI (`this.currentQuestionDomain` y `this.currentQuestionSearch`) en su petición fetch:
   ```javascript
   const questionsUrl = new URL(`${window.AppConfig.API_URL}/api/admin/questions`);
@@ -267,7 +268,7 @@ A continuación, se presenta el informe detallado de la auditoría de control de
 
 ### 6.3 Pérdida de Foco en Inputs de Búsqueda por Regeneración Agresiva del DOM - [ESTADO: DOCUMENTADO]
 
-* **Ubicación:** [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/presentation/public/js/admin.js#L354-L380) (Método `switchTab()`)
+* **Ubicación:** [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js#L354-L380) (Método `switchTab()`)
 * **Detalle Técnico:** Cada vez que se cambia el ordenamiento usando el select `tab-sort-select`, se regenera la estructura HTML interna mediante `innerHTML`, destruyendo el foco activo.
 * **Impacto Operativo:** Identificado como una limitación menor de renderizado nativo. El comportamiento se mantiene documentado para evitar refactorizaciones mayores que comprometan la estabilidad del DOM.
 
@@ -278,7 +279,7 @@ A continuación, se presenta el informe detallado de la auditoría de control de
 > [!NOTE]
 > **Resolución:** Se inyectó un bloque `try/catch` dentro del bucle de sincronización en `syncDriveFolder` que aísla de forma segura los fallos individuales de base de datos. Los errores son capturados en un arreglo `syncErrors` y reportados al final de la respuesta JSON sin abortar el procesamiento del lote de archivos.
 
-* **Ubicación:** [adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/application/controllers/adminController.js#L327-L385)
+* **Ubicación:** [adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js#L327-L385)
 * **Detalle Técnico:** El endpoint captura de manera individual las excepciones arrojadas por `adminService.syncResource(...)` (por ejemplo, fallos de violación de clave única por duplicación en peticiones paralelas concurrentes):
   ```javascript
   try {
@@ -298,7 +299,7 @@ A continuación, se presenta el informe detallado de la auditoría de control de
 > [!NOTE]
 > **Resolución:** Se añadió un listener `.on('error', ...)` en el objeto de proceso `pythonProcess` y se inyectó validación de `res.headersSent` en el listener `'close'` para evitar excepciones por duplicidad de envíos.
 
-* **Ubicación:** [adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/application/controllers/adminController.js#L54-L68)
+* **Ubicación:** [adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js#L54-L68)
 * **Detalle Técnico:** Se capturan de forma asíncrona las fallas de spawn (por ejemplo, si la ruta del ejecutable Python es incorrecta o no está en el PATH del servidor):
   ```javascript
   pythonProcess.on('error', (err) => {

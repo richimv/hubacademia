@@ -1,11 +1,11 @@
 {
-  "name": "chatbot-tutor-uc",
+  "name": "hubacademia",
   "version": "1.0.0",
   "description": "Chatbot Tutor Académico con IA - Arquitectura 4 Capas",
-  "main": "infrastructure/config/server.js",
+  "main": "src/infrastructure/config/server.js",
   "scripts": {
-    "start": "node infrastructure/config/server.js",
-    "dev": "nodemon infrastructure/config/server.js",
+    "start": "node src/infrastructure/config/server.js",
+    "dev": "nodemon src/infrastructure/config/server.js",
     "test": "jest"
   },
   "dependencies": {

@@ -13,7 +13,7 @@ class TtsService {
         
         // Reutilizamos la lógica de credenciales de DriveService
         if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-            options.keyFilename = path.join(__dirname, '../../service-account-key.json');
+            options.keyFilename = path.join(__dirname, '../../../service-account-key.json');
             // console.log('📁 [TtsService] Usando llave local:', options.keyFilename);
         } else {
             // console.log('🔑 [TtsService] Usando credenciales de variable de entorno.');

@@ -1,4 +1,4 @@
-const RagService = require('../domain/services/ragService');
+const RagService = require('../src/domain/services/ragService');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 

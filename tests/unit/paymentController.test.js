@@ -1,10 +1,10 @@
-const paymentController = require('../../application/controllers/paymentController');
-const pool = require('../../infrastructure/database/db');
+const paymentController = require('../../src/application/controllers/paymentController');
+const pool = require('../../src/infrastructure/database/db');
 const { Payment } = require('mercadopago');
 const crypto = require('crypto');
 
 // Mock dependencies
-jest.mock('../../infrastructure/database/db');
+jest.mock('../../src/infrastructure/database/db');
 jest.mock('mercadopago');
 
 describe('PaymentController - handleWebhook', () => {

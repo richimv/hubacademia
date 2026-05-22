@@ -197,7 +197,7 @@ marked.setOptions({
 - **Sugerencias:** Pastillas clickeables generadas por la IA o fallback predefinido.
 
 ### 9.2 Asistente de Voz (Audio Assistant)
-- **Archivos:** [audio-assistant.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/presentation/public/js/audio-assistant.js) (cliente) y [tutorAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/chatbot-tutor-uc/domain/services/tutorAiService.js) (motor RAG).
+- **Archivos:** [audio-assistant.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/audio-assistant.js) (cliente) y [tutorAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/tutorAiService.js) (motor RAG).
 - **Modo:** Efímero (`isEphemeral: true` en el payload), sin persistencia de la conversación en el histórico relacional.
 - **Límites de Uso Diario (Protección API):**
   - **Free / Pending:** Consume vidas de su pool global (50 vidas totales de `usage_count`, 1 vida por mensaje).

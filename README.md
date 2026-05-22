@@ -1,4 +1,4 @@
-# 🎓 Chatbot Tutor UC - Hub Académico
+# 🎓 Hub Académico
 
 ![Hub Académico Banner](https://www.hubacademia.com/assets/logo.png)
 
@@ -76,8 +76,8 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
 
 1. **Clonar el repositorio**
    ```bash
-   git clone https://github.com/tu-org/chatbot-tutor-uc.git
-   cd chatbot-tutor-uc
+    git clone https://github.com/tu-org/hubacademia.git
+    cd hubacademia
    ```
 
 2. **Instalar Dependencias**
@@ -138,13 +138,15 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
 ## 📂 Estructura del Proyecto
 
 ```
-chatbot-tutor-uc/
-├── application/       # Lógica de aplicación (Controllers)
-├── domain/           # Lógica de negocio (Services, Repositories)
-├── infrastructure/   # DB, Server, Rutas, Configuración externa
-├── presentation/     # Frontend (Public assets, HTML, JS UI)
-├── ml_service/       # Microservicio Python (Analytics & Trends)
-└── tests/            # Tests unitarios
+hubacademia/
+├── src/
+│   ├── application/       # Lógica de aplicación (Controllers, Middlewares)
+│   ├── domain/            # Lógica de negocio (Services, Repositories, Entities, Models)
+│   ├── infrastructure/    # DB, Server, Rutas, Middlewares, Configuración externa
+│   └── presentation/      # Frontend (Public assets, HTML, JS UI)
+├── ml_service/            # Microservicio Python (Analytics & Trends)
+├── scripts/               # Scripts de utilidad (ej. extracción de contexto RAG)
+└── tests/                 # Tests unitarios
 ```
 
 ---

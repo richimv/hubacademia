@@ -12,7 +12,7 @@ class MediaController {
         if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
             storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
         } else {
-            storageOptions.keyFilename = path.join(__dirname, '../../service-account-key.json');
+            storageOptions.keyFilename = path.join(__dirname, '../../../service-account-key.json');
         }
 
         this.storage = new Storage(storageOptions);

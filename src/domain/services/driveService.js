@@ -16,7 +16,7 @@ class DriveService {
         };
 
         if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-            authOptions.keyFile = path.join(__dirname, '../../service-account-key.json');
+            authOptions.keyFile = path.join(__dirname, '../../../service-account-key.json');
             console.log('📁 [DriveService] Usando fallback local:', authOptions.keyFile);
         } else {
             console.log('🔑 [DriveService] Usando credenciales de variable de entorno.');

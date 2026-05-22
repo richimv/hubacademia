@@ -1,11 +1,11 @@
-const AuthService = require('../../domain/services/authService');
+const AuthService = require('../../src/domain/services/authService');
 
 const mockFindById = jest.fn();
 const mockCreate = jest.fn();
 const mockUpdate = jest.fn();
 const mockDelete = jest.fn();
 
-jest.mock('../../domain/repositories/userRepository', () => {
+jest.mock('../../src/domain/repositories/userRepository', () => {
     return jest.fn().mockImplementation(() => {
         return {
             findById: mockFindById,
@@ -16,7 +16,7 @@ jest.mock('../../domain/repositories/userRepository', () => {
     });
 });
 
-jest.mock('../../infrastructure/config/supabaseClient');
+jest.mock('../../src/infrastructure/config/supabaseClient');
 
 describe('AuthService', () => {
     let authService;

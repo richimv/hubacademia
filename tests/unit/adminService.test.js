@@ -1,8 +1,8 @@
-const adminService = require('../../domain/services/adminService');
-const adminRepository = require('../../domain/repositories/adminRepository');
+const adminService = require('../../src/domain/services/adminService');
+const adminRepository = require('../../src/domain/repositories/adminRepository');
 
-jest.mock('../../domain/repositories/adminRepository');
-jest.mock('../../infrastructure/database/db');
+jest.mock('../../src/domain/repositories/adminRepository');
+jest.mock('../../src/infrastructure/database/db');
 
 describe('AdminService - syncResource', () => {
     const url = 'https://drive.google.com/open?id=test_file_id';
