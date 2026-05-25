@@ -66,6 +66,39 @@ Hub Academia adopta un enfoque **Híbrido y Explícito**, idóneo para estudiant
 2.  **Inyección en Prompt de Gemini:** El nivel seleccionado se envía a la API para que Gemini restrinja su vocabulario, velocidad sintáctica y tipos de errores que corrige (ej. no exigir modismos avanzados C1 a un estudiante A2).
 3.  **Preguntas en Banco Local:** La columna `difficulty` de la tabla `question_bank` se mapeará directamente con los niveles MCER (`A1`, `A2`, `B1`, `B2`, `C1`, `C2`).
 
+### 3.3 Propósito Pedagógico y Contextual de los Exámenes Objetivos
+Para brindar un entrenamiento dirigido de alto valor, Hub Academia clasifica y orienta cada simulador de exámenes según objetivos lingüísticos, académicos o profesionales:
+
+#### A. Exámenes para Inglés (en-US / en-GB)
+*   **MCER (CEFR) [General English]:**
+    *   *Propósito:* Evaluar el dominio lingüístico general para la comunicación cotidiana.
+    *   *Enfoque:* Situaciones del día a día, modismos neutros, gramática base (tiempos verbales comunes, preposiciones) y lecturas informativas de interés general.
+*   **TOEFL [Academic English]:**
+    *   *Propósito:* Preparación para entornos universitarios de habla inglesa (principalmente de Norteamérica).
+    *   *Enfoque:* Vida en el campus, clases teóricas (lectures), diálogos de secretaría de estudios, lecturas de divulgación científica y vocabulario de nivel académico superior.
+*   **IELTS [Academic & General Training]:**
+    *   *Propósito:* Preparación para trámites de migración, residencia o ingreso a universidades británicas y de la Commonwealth.
+    *   *Enfoque:* Comprensión factual detallada, interpretación de datos lógicos, textos informativos más estructurados y un registro formal alineado al estilo de Cambridge.
+*   **Inglés Técnico (TECH_ENGLISH) [Professional English]:**
+    *   *Propósito:* Desarrollar habilidades lingüísticas para el entorno de la ingeniería, TI y desarrollo de software.
+    *   *Enfoque:* Escenarios de trabajo (juntas de Scrum, code reviews, Slack corporativo), redacción de tickets de Jira y pull requests, lectura de especificaciones de APIs y vocabulario técnico del sector.
+
+> [!TIP]
+> **Diferenciación de Ortografía y Dialecto:**  
+> - Si el dialecto seleccionado es **Inglés USA (`en-US`)**, la IA utilizará ortografía americana (ej. *analyze, color*) y modismos norteamericanos.  
+> - Si el dialecto es **Inglés UK (`en-GB`)**, la IA cambiará automáticamente a ortografía británica (ej. *analyse, colour*) y modismos de la Commonwealth.
+
+#### B. Exámenes para Italiano (it-IT)
+*   **MCER [Italiano Generale]:**
+    *   *Propósito:* Desarrollar soltura en el uso diario del italiano.
+    *   *Enfoque:* Conjugación verbal general, concordancia de género y número (*accordo di genere e numero*), uso correcto de artículos y preposiciones articuladas en contextos cotidianos.
+*   **CELI [Italiano Accademico]:**
+    *   *Propósito:* Preparación para el ingreso a universidades y el ejercicio profesional formal en Italia (certificación de la *Università per Stranieri di Perugia*).
+    *   *Enfoque:* Comprensión de textos formales, literarios o periodísticos complejos. Evaluaciones de gramática avanzada, sintaxis compleja (pronombres combinados y subjuntivo *congiuntivo*) y registro culto.
+*   **CILS [Italiano Pratico ed Immigrazione]:**
+    *   *Propósito:* Preparación para trámites de ciudadanía (como el examen CILS B1 Cittadinanza), residencia o inserción laboral básica (certificación de la *Università per Stranieri di Siena*).
+    *   *Enfoque:* Situaciones cívicas y funcionales, lectura de letreros, anuncios de transporte público, formularios oficiales de oficina, correspondencia comercial simple y temas de cultura civil italiana.
+
 ---
 
 ## 4. 📈 Medición del Progreso y Rendimiento [COMPLETED]
@@ -383,3 +416,30 @@ Este diseño sienta las bases de arquitectura desacoplada para los próximos sim
 ---
 **Autor:** Antigravity AI  
 **Documento de Diseño de UX, Mercado y Expansión v3.2** 🌎✨
+
+---
+
+## 11. Integración de Motor de Quiz, Anti-Repetición y Gestión de Medios (V3.3) [COMPLETED]
+
+En la versión 3.3 se completó la integración total de Idiomas con el Motor unificado de Quiz (`/quiz`) y se robustecieron los mecanismos de control de repetición y gestión de archivos en la nube:
+
+### 11.1 Integración y Redirección Estándar
+*   Se eliminaron las llamadas independientes a `LanguagesSimulator` en el dashboard. El flujo se unificó para redirigir directamente al motor `/quiz?context=IDIOMAS` respetando los query params de configuración (`career`, `target` y `difficulty`).
+*   Se habilitó el soporte de audio interactivo premium (`audio_text`) en la pantalla final de **Revisión del Examen** (`window.showExamReview()`), inyectando de forma dinámica el reproductor nativo asociado a cada pregunta evaluada sin duplicar recursos.
+
+### 11.2 Anti-Repetición y Sincronización
+*   **user_question_history**: Al enviar el puntaje a través de `/submit`, las preguntas se registran automáticamente en la tabla `user_question_history`, activando la exclusión en la base de datos por 24 horas y el fallback a IA (RAG) en caso de stock insuficiente.
+*   **Same-Session Exclusions**: Al solicitar lotes sucesivos (`/next-batch`), el cliente adjunta las preguntas mostradas en la sesión actual (`seenIds`), las cuales se fusionan con el historial de las últimas 24 horas para bloquear cualquier repetición intra-examen.
+*   **Detección de Duplicados en IA (Jaccard & Normalización)**: En los flujos de generación asistida por IA (Admin y User), el backend recupera hasta 50 preguntas existentes de la base de datos para la misma área y target. Estas preguntas se inyectan en el prompt como historial prohibido. Adicionalmente, se ejecuta un algoritmo de similitud por palabras (coeficiente Jaccard > 0.65) en la fase de auditoría de calidad (`checkQuality` y `checkLanguageQuality`) que, de ser activado, obliga a la IA a regenerar el reactivo en un ciclo de refinamiento iterativo.
+*   **Fijación de SyntaxError en Audios de Revisión**: Se resolvió el error de sintaxis en la página de corrección al reproducir audios con caracteres especiales (ej. comillas simples en contracciones como *don't* o *I'm*). Se eliminó la inyección directa de variables de texto en el atributo `onclick` y se reemplazó por el uso de atributos HTML5 `data-audio-text` y `data-career` leídos de forma estática en la función.
+
+### 11.3 Gestión de Audios en GCS (Separación y GC)
+*   **Flashcards e Idiomas Independientes**: Los audios generados a partir de preguntas o exportaciones de vocabulario a flashcards se almacenan en la carpeta `audio-cards/` del bucket GCS. Esto aísla a las tarjetas del caché global del simulador (`tts_cache/`).
+*   **Saneamiento de Huérfanos**:
+    *   Al eliminar una tarjeta flashcard, su archivo de audio en `audio-cards/` se elimina de GCS inmediatamente.
+    *   Al eliminar un vocabulario (`deleteWord`), el sistema comprueba si otro usuario tiene guardada esa misma URL. Si no hay dependencias, se limpia en GCS.
+    *   Al eliminar una pregunta desde el Panel de Gestión (`deleteSingleQuestion`), se calcula el hash del audio correspondiente y, si no existen referencias en otras preguntas ni vocabularios, se borra de `tts_cache/` en GCS.
+
+---
+**Autor:** Antigravity AI  
+**Documento de Diseño de UX, Mercado y Expansión v3.3** 🌎✨

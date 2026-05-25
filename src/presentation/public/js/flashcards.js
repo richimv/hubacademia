@@ -5,7 +5,7 @@
 
 const FlashcardManager = (() => {
     // --- Config & State ---
-    const API_URL = `${window.AppConfig.API_URL}/api/training/flashcards`;
+    const API_URL = `${window.AppConfig.API_URL}/api/flashcard`;
     let queue = [];
     let currentCard = null;
     let isFlipped = false;

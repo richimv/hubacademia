@@ -304,3 +304,12 @@ VALUES ($1, 'educacion', '{"target":"NOMBRAMIENTO","areas":[...],"career":"EBR -
 - [ ] Módulo "Generador de Rúbricas" (próximamente)
 - [ ] Chat con especialidad educativa (`chatPrompts.js` con context=EDUCACION)
 
+---
+
+## 11. Anti-Repetición y Sincronización de Sesiones (Mayo 2026)
+Para evitar la duplicidad de preguntas durante las sesiones de estudio y simulacros, se implementaron mejoras en el flujo de datos:
+1. **Historial Persistente (`user_question_history`)**: Al culminar y enviar las respuestas de un simulacro a través del endpoint `/submit`, el backend registra inmediatamente todas las preguntas de ese examen en `user_question_history`. Si el usuario ya vio la pregunta, se incrementa `times_seen` y se actualiza `seen_at` a la hora actual.
+2. **Exclusión Dinámica**: Al generar preguntas (`generateQuiz`), el backend consulta las preguntas de educación respondidas en las últimas 24 horas y las excluye de la búsqueda. Si el stock del banco local se agota, se activa la reposición con IA (RAG) para generar reactivos inéditos.
+3. **Exclusión en la Misma Sesión**: Al solicitar lotes adicionales (`/next-batch`) en un mismo examen, el cliente envía la lista de IDs de preguntas actualmente presentadas en la sesión (`seenIds`). El backend concatena este vector con las preguntas de las últimas 24 horas para garantizar la exclusión absoluta de preguntas ya mostradas en la sesión activa actual.
+4. **Detección de Duplicados en IA (Jaccard & Normalización)**: En los flujos de generación asistida por IA (Admin y User), el backend recupera hasta 50 preguntas existentes de la base de datos para la misma área y target. Estas preguntas se inyectan en el prompt como historial prohibido. Adicionalmente, se ejecuta un algoritmo de similitud por palabras (coeficiente Jaccard > 0.65) en la fase de auditoría de calidad (`checkQuality`) que, de ser activado, obliga a la IA a regenerar el reactivo en un ciclo de refinamiento iterativo.
+

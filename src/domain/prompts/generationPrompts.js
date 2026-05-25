@@ -174,14 +174,19 @@ function buildMedicineAdminPrompt(target, area, career, context, historyText = "
 // REFINAMIENTO Y AUDITORÍA
 // ═══════════════════════════════════════════════════════════════
 
-function buildRefinementPrompt(questionJson) {
+function buildRefinementPrompt(questionJson, issues = []) {
     const isEducation = questionJson.domain === 'education';
     const isResidentado = questionJson.target === 'RESIDENTADO';
     const requiredOptions = isEducation ? 3 : (isResidentado ? 5 : 4);
 
+    let issuesText = '';
+    if (issues && issues.length > 0) {
+        issuesText = `\n### PROBLEMAS ESPECÍFICOS DETECTADOS A CORREGIR:\n${issues.map((iss, idx) => `${idx + 1}. ${iss}`).join('\n')}\n`;
+    }
+
     return `Actúa como un Auditor de Calidad Psicométrica DESPIADADO y ANALÍTICO.
         Tu misión es auditar y perfeccionar la pregunta para garantizar que sea impecable pedagógicamente y formalmente.
-
+        ${issuesText}
         ### PASO 1: ANÁLISIS DE DATOS (Interno)
         1. Identifica el "correct_option_index" (la respuesta correcta es la opción número ${questionJson.correct_option_index}).
         2. Realiza un CONTEO EXACTO de palabras para cada una de las ${requiredOptions} opciones.

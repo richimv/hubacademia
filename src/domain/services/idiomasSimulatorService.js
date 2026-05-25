@@ -56,7 +56,7 @@ class IdiomasSimulatorService {
 
         console.log(`📡 [IdiomasSimulatorService] Target: ${target} | Áreas: ${areas.join(', ')}`);
 
-        const rawBankQuestions = await idiomasSimulatorRepository.findQuestionsInBankBatch(target, normalizedAllAreas, 50, userId, career, difficulty);
+        const rawBankQuestions = await idiomasSimulatorRepository.findQuestionsInBankBatch(target, normalizedAllAreas, 50, userId, career, difficulty, seenIds);
 
         const questionsByArea = {};
         rawBankQuestions.forEach(q => {

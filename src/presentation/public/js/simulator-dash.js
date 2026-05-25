@@ -81,7 +81,7 @@ const SimulatorDash = (() => {
                 flashcards: '/assets/Flashcards-v3.webp',
                 real: '/assets/Simulacro Real-v3.webp'
             },
-            getTargetsForLang: function(lang) {
+            getTargetsForLang: function (lang) {
                 if (lang === 'it-IT') {
                     return [
                         { value: 'MCER', label: 'MCER', checked: true },
@@ -108,10 +108,10 @@ const SimulatorDash = (() => {
         }
     };
 
-    let currentContext = 'MEDICINA'; 
-    let activeConfig = null; 
-    let activeMode = null;   
-    let activeDays = null;   
+    let currentContext = 'MEDICINA';
+    let activeConfig = null;
+    let activeMode = null;
+    let activeDays = null;
     let lineChartInst = null;
     let radarChartInst = null;
 
@@ -119,6 +119,7 @@ const SimulatorDash = (() => {
     // Se inicializará dinámicamente según el contexto
     let examAreasGrouped = [];
     let areaToGroupMap = {};
+    let selectedVocabIds = [];
 
     function renderBarChart(cleanRadarMap) {
         // Obsolete Chart.js fallback support (just in case)
@@ -226,7 +227,7 @@ const SimulatorDash = (() => {
                 // Actualizar estado activo
                 tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                
+
                 // Estilos visuales
                 tabs.forEach(t => {
                     t.style.background = 'transparent';
@@ -344,25 +345,25 @@ const SimulatorDash = (() => {
         const currentTargets = ctxConfig.targets || (ctxConfig.getTargetsForLang ? ctxConfig.getTargetsForLang('en-US') : null);
         if (currentTargets) {
             const targetContainer = document.querySelector('#config-modal-overlay .modal-section-title + div');
-                if (window.innerWidth > 520) {
-                    targetContainer.style.gridTemplateColumns = `repeat(${currentTargets.length}, 1fr)`;
-                } else {
-                    targetContainer.style.gridTemplateColumns = '1fr';
-                }
-                targetContainer.innerHTML = '';
-                currentTargets.forEach(t => {
-                    const label = document.createElement('label');
-                    label.className = `exam-target-option ${t.disabled ? 'target-option--disabled' : ''}`;
-                    const subtitleHtml = t.subtitle
-                        ? `<span style="display:block;font-size:0.6rem;opacity:0.7;font-weight:400;">${t.subtitle}</span>`
-                        : '';
-                    label.innerHTML = `
+            if (window.innerWidth > 520) {
+                targetContainer.style.gridTemplateColumns = `repeat(${currentTargets.length}, 1fr)`;
+            } else {
+                targetContainer.style.gridTemplateColumns = '1fr';
+            }
+            targetContainer.innerHTML = '';
+            currentTargets.forEach(t => {
+                const label = document.createElement('label');
+                label.className = `exam-target-option ${t.disabled ? 'target-option--disabled' : ''}`;
+                const subtitleHtml = t.subtitle
+                    ? `<span style="display:block;font-size:0.6rem;opacity:0.7;font-weight:400;">${t.subtitle}</span>`
+                    : '';
+                label.innerHTML = `
                         <input type="radio" name="examTarget" value="${t.value}" ${t.checked ? 'checked' : ''} ${t.disabled ? 'disabled' : ''}>
                         <div class="target-card" style="${t.disabled ? 'opacity: 0.4; cursor: not-allowed; border-color: rgba(255,255,255,0.05);' : ''}">${t.label}${subtitleHtml}</div>
                     `;
-                    targetContainer.appendChild(label);
-                });
-            
+                targetContainer.appendChild(label);
+            });
+
 
             // Hide SERUMS-specific UI if not a medical context
             if (currentContext !== 'MEDICINA') {
@@ -399,7 +400,7 @@ const SimulatorDash = (() => {
                             }
                             const level = selectEl.value;
                             let specialtyContainer = document.getElementById('edu-specialty-container');
-                            
+
                             if (!specialtyContainer) {
                                 specialtyContainer = document.createElement('div');
                                 specialtyContainer.id = 'edu-specialty-container';
@@ -607,7 +608,7 @@ const SimulatorDash = (() => {
     function updateModeLinks(ctxConfig) {
         const token = localStorage.getItem('authToken');
         let baseParams = `${ctxConfig.quizParams}&context=${currentContext}`;
-        
+
         // Corrección: Si no hay params por defecto (ahora están vacíos), quitamos el '&'
         if (baseParams.startsWith('&')) baseParams = `?context=${currentContext}`;
 
@@ -662,68 +663,7 @@ const SimulatorDash = (() => {
                 btn.addEventListener('click', (e) => {
                     const token = localStorage.getItem('authToken');
 
-                    // INTERCEPTAR MODULO DE IDIOMAS PARA JUGAR EN-PÁGINA
-                    if (currentContext === 'IDIOMAS') {
-                        e.preventDefault();
-                        e.stopPropagation();
 
-                        // 1. Visitante check (Redirección Únete)
-                        if (!token && window.uiManager) {
-                            const isArcade = id === 'btn-mode-arcade';
-                            if (isArcade) {
-                                // 🔄 REINICIO DIARIO
-                                const today = new Date().toDateString();
-                                const lastDemoDate = localStorage.getItem('demo_sessions_date');
-                                let sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
-
-                                if (lastDemoDate !== today) {
-                                    sessionsSent = 0;
-                                    localStorage.setItem('demo_sessions_count', '0');
-                                    localStorage.setItem('demo_sessions_date', today);
-                                }
-
-                                if (sessionsSent >= 3) {
-                                    window.uiManager.showAuthPromptModal();
-                                    return;
-                                }
-                            } else {
-                                window.uiManager.showAuthPromptModal();
-                                return;
-                            }
-                        }
-
-                        // 🛡️ GATEKEEPER DE CONFIGURACIÓN
-                        if (token && !activeConfig) {
-                            const btnOpen = document.getElementById('btn-start-config');
-                            if (btnOpen) {
-                                btnOpen.click();
-                            }
-                            return;
-                        }
-
-                        // Validar límites freemium
-                        if (window.uiManager && typeof window.uiManager.validateFreemiumAction === 'function') {
-                            if (!window.uiManager.validateFreemiumAction(e, 'simulator')) return;
-                        }
-
-                        // Configuración del Examen
-                        let limit = 10;
-                        if (id === 'btn-mode-study') limit = 20;
-                        if (id === 'btn-mode-real') limit = 100;
-
-                        const difficulty = activeConfig ? activeConfig.difficulty : 'B2';
-                        const target = activeConfig ? activeConfig.target : 'MCER';
-                        const career = activeConfig ? activeConfig.career : 'en-US';
-                        const areas = activeConfig ? activeConfig.areas : ['Grammar & Use of English', 'Vocabulary & Context', 'Reading Comprehension', 'Listening Comprehension'];
-                        const isDemo = !token;
-
-                        if (window.LanguagesSimulator) {
-                            window.LanguagesSimulator.startQuiz(limit, difficulty, target, career, areas, isDemo);
-                        } else {
-                            console.error("LanguagesSimulator no está definido.");
-                        }
-                        return;
-                    }
 
                     // 1. Visitante check (Redirección Únete)
                     if (!token && window.uiManager) {
@@ -762,18 +702,18 @@ const SimulatorDash = (() => {
                     if (token && !activeConfig) {
                         e.preventDefault();
                         e.stopPropagation();
-                        
+
                         const btnOpen = document.getElementById('btn-start-config');
                         if (btnOpen) {
                             btnOpen.click(); // Abrimos el modal
-                            
+
                             // Efecto visual para hacer énfasis en que deben configurar
                             const modalContent = document.querySelector('.config-modal-content');
                             if (modalContent) {
                                 modalContent.style.animation = 'shake 0.4s ease-in-out';
                                 setTimeout(() => modalContent.style.animation = '', 400);
                             }
-                            
+
                             // Si no existe la animación global, la añadimos dinámicamente
                             if (!document.getElementById('shake-anim')) {
                                 const style = document.createElement('style');
@@ -815,7 +755,7 @@ const SimulatorDash = (() => {
         // Render grouped checkboxes with sub-headers
         const renderAreas = (target) => {
             areasGrid.innerHTML = '';
-            
+
             // For ASCENSO: It's an integrated exam, so we hide the grid and select the integrated area
             if (target === 'ASCENSO') {
                 areasGrid.style.display = 'none';
@@ -829,13 +769,13 @@ const SimulatorDash = (() => {
             // Filter groups: SERUMS shows only its group for non-MD careers, conditional groups depend on target
             let groupsToRender = examAreasGrouped.filter(g => {
                 if (g.conditionalTarget && g.conditionalTarget !== target) return false;
-                
+
                 // 🛡️ REGLA SERUMS: Solo Medicina Humana ve las áreas clínicas.
                 // 🛡️ REGLA SERUMS: Solo se muestra el Grupo D (Salud Pública y Gestión) para TODOS.
                 if (currentContext === 'MEDICINA' && target === 'SERUMS') {
                     if (!g.label.includes('Salud Pública')) return false;
                 }
-                
+
                 return true;
             });
 
@@ -871,43 +811,43 @@ const SimulatorDash = (() => {
         // Render exam target radio buttons dynamically
         const renderTargets = (targetsList) => {
             const targetContainer = document.querySelector('#config-modal-overlay .exam-target-grid');
-                if (window.innerWidth > 520) {
-                    targetContainer.style.gridTemplateColumns = `repeat(${targetsList.length}, 1fr)`;
-                } else {
-                    targetContainer.style.gridTemplateColumns = '1fr';
-                }
-                targetContainer.innerHTML = '';
-                
-                // Determine preselected target
-                const defaultTargetObj = targetsList.find(t => t.checked) || targetsList[0];
-                let activeTarget = (activeConfig && activeConfig.target) ? activeConfig.target : defaultTargetObj.value;
-                
-                const hasActive = targetsList.some(t => t.value === activeTarget);
-                if (!hasActive) activeTarget = defaultTargetObj.value;
+            if (window.innerWidth > 520) {
+                targetContainer.style.gridTemplateColumns = `repeat(${targetsList.length}, 1fr)`;
+            } else {
+                targetContainer.style.gridTemplateColumns = '1fr';
+            }
+            targetContainer.innerHTML = '';
 
-                targetsList.forEach(t => {
-                    const label = document.createElement('label');
-                    label.className = `exam-target-option ${t.disabled ? 'target-option--disabled' : ''}`;
-                    const subtitleHtml = t.subtitle
-                        ? `<span style="display:block;font-size:0.6rem;opacity:0.7;font-weight:400;">${t.subtitle}</span>`
-                        : '';
-                    const isChecked = t.value === activeTarget;
-                    label.innerHTML = `
+            // Determine preselected target
+            const defaultTargetObj = targetsList.find(t => t.checked) || targetsList[0];
+            let activeTarget = (activeConfig && activeConfig.target) ? activeConfig.target : defaultTargetObj.value;
+
+            const hasActive = targetsList.some(t => t.value === activeTarget);
+            if (!hasActive) activeTarget = defaultTargetObj.value;
+
+            targetsList.forEach(t => {
+                const label = document.createElement('label');
+                label.className = `exam-target-option ${t.disabled ? 'target-option--disabled' : ''}`;
+                const subtitleHtml = t.subtitle
+                    ? `<span style="display:block;font-size:0.6rem;opacity:0.7;font-weight:400;">${t.subtitle}</span>`
+                    : '';
+                const isChecked = t.value === activeTarget;
+                label.innerHTML = `
                         <input type="radio" name="examTarget" value="${t.value}" ${isChecked ? 'checked' : ''} ${t.disabled ? 'disabled' : ''}>
                         <div class="target-card" style="${t.disabled ? 'opacity: 0.4; cursor: not-allowed; border-color: rgba(255,255,255,0.05);' : ''}">${t.label}${subtitleHtml}</div>
                     `;
-                    targetContainer.appendChild(label);
-                });
+                targetContainer.appendChild(label);
+            });
 
-                // Bind click events on the dynamic inputs
-                const radioInputs = targetContainer.querySelectorAll('input');
-                radioInputs.forEach(radio => {
-                    radio.addEventListener('change', (e) => {
-                        if (e.target.checked) {
-                            handleTargetChange(e.target.value);
-                        }
-                    });
+            // Bind click events on the dynamic inputs
+            const radioInputs = targetContainer.querySelectorAll('input');
+            radioInputs.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        handleTargetChange(e.target.value);
+                    }
                 });
+            });
         };
 
         const handleTargetChange = (t) => {
@@ -966,7 +906,7 @@ const SimulatorDash = (() => {
 
                 // Trigger initial render safely
                 const ctxConfig = contexts[currentContext] || contexts['MEDICINA'];
-                
+
                 // Show/hide SERUMS-specific UI (only for medicine)
                 const careerBox = document.getElementById('serums-career-container');
                 const careerTitle = careerBox ? careerBox.querySelector('.modal-section-title') : null;
@@ -1030,7 +970,7 @@ const SimulatorDash = (() => {
                             const newLang = careerSelect.value;
                             const newTargets = ctxConfig.getTargetsForLang(newLang);
                             renderTargets(newTargets);
-                            
+
                             const activeRadio = document.querySelector('.exam-target-option input:checked');
                             if (activeRadio) handleTargetChange(activeRadio.value);
                         } else if (currentContext === 'MEDICINA') {
@@ -1044,7 +984,7 @@ const SimulatorDash = (() => {
 
                 const finalRadio = document.querySelector('.exam-target-option input:checked');
                 const finalTarget = finalRadio ? finalRadio.value : 'MCER';
-                
+
                 if (currentContext === 'MEDICINA') {
                     const serumsInfo = document.getElementById('serums-info-alert');
                     if (serumsInfo) serumsInfo.style.display = finalTarget === 'SERUMS' ? 'block' : 'none';
@@ -1072,7 +1012,7 @@ const SimulatorDash = (() => {
             btnSave.onclick = async () => {
                 const target = document.querySelector('.exam-target-option input:checked').value;
                 let selectedAreas = Array.from(areasGrid.querySelectorAll('input:checked')).map(cb => cb.value);
-                
+
                 // For ASCENSO: Force the integrated area
                 if (target === 'ASCENSO') {
                     selectedAreas = ['Conocimientos Pedagógicos y de la Especialidad'];
@@ -1157,17 +1097,6 @@ const SimulatorDash = (() => {
                 // Relanzar fetch a base de datos de inmediato con nuevo target
                 loadStats();
                 loadEvolution();
-
-                // Sincronizar selectores del CCI y reiniciar historial si corresponde
-                if (currentContext === 'IDIOMAS') {
-                    const langSelect = document.getElementById('cci-lang-select');
-                    const levelSelect = document.getElementById('cci-level-select');
-                    if (langSelect && career) langSelect.value = career;
-                    if (levelSelect && difficulty) levelSelect.value = difficulty;
-
-                    cciChatHistory = [];
-                    renderWelcomeMessage();
-                }
 
                 closeModal();
             };
@@ -1345,7 +1274,7 @@ const SimulatorDash = (() => {
             const masteryEl = document.getElementById('stat-mastery');
 
             if (scoreEl) scoreEl.textContent = kpis.avg_score || '0.0';
-            
+
             // ✅ NUEVO: Equivalencia de Exámenes Internacionales en Módulo de Idiomas (4.3)
             const scoreSubEl = document.getElementById('stat-score-sub');
             if (scoreSubEl) {
@@ -1353,14 +1282,14 @@ const SimulatorDash = (() => {
                     const avg = parseFloat(kpis.avg_score) || 0.0;
                     let cefr = 'A1';
                     let eq = '';
-                    
+
                     if (avg >= 18) { cefr = 'C2'; eq = 'IELTS: 8.5-9.0 | TOEFL: 110-120'; }
                     else if (avg >= 16) { cefr = 'C1'; eq = 'IELTS: 7.0-8.0 | TOEFL: 94-109'; }
                     else if (avg >= 14) { cefr = 'B2'; eq = 'IELTS: 5.5-6.5 | TOEFL: 46-93'; }
                     else if (avg >= 12) { cefr = 'B1'; eq = 'IELTS: 4.0-5.0 | TOEFL: 32-45'; }
                     else if (avg >= 10) { cefr = 'A2'; eq = 'IELTS: <4.0 | TOEFL: <32'; }
                     else { cefr = 'A1'; eq = 'IELTS: N/A | TOEFL: N/A'; }
-                    
+
                     const lang = activeConfig?.career || 'en-US';
                     if (lang === 'it-IT') {
                         let celi = 'CELI impatto';
@@ -1371,7 +1300,7 @@ const SimulatorDash = (() => {
                         else if (cefr === 'A2') celi = 'CELI 1 / CILS A2';
                         eq = `CELI/CILS: ${celi}`;
                     }
-                    
+
                     scoreSubEl.innerHTML = `<span style="color:#a78bfa; font-weight:600;">Est. MCER: ${cefr}</span> • <span style="font-size:0.7rem;">${eq}</span>`;
                 } else {
                     scoreSubEl.textContent = 'Basado en tus últimos simulacros';
@@ -1567,7 +1496,7 @@ const SimulatorDash = (() => {
                 // LLAMADA REAL A LA IA DE DIAGNÓSTICO PROFUNDO
                 const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/analytics/diagnostic`, {
                     method: 'POST',
-                    body: JSON.stringify({ stats: cachedStats, context: currentContext }) 
+                    body: JSON.stringify({ stats: cachedStats, context: currentContext })
                 });
 
                 const data = await response.json();
@@ -1700,14 +1629,14 @@ const SimulatorDash = (() => {
                 const avg = parseFloat(avgScore) || 0.0;
                 let cefr = 'A1';
                 let eq = '';
-                
+
                 if (avg >= 18) { cefr = 'C2'; eq = 'IELTS: 8.5-9.0 | TOEFL: 110-120'; }
                 else if (avg >= 16) { cefr = 'C1'; eq = 'IELTS: 7.0-8.0 | TOEFL: 94-109'; }
                 else if (avg >= 14) { cefr = 'B2'; eq = 'IELTS: 5.5-6.5 | TOEFL: 46-93'; }
                 else if (avg >= 12) { cefr = 'B1'; eq = 'IELTS: 4.0-5.0 | TOEFL: 32-45'; }
                 else if (avg >= 10) { cefr = 'A2'; eq = 'IELTS: <4.0 | TOEFL: <32'; }
                 else { cefr = 'A1'; eq = 'IELTS: N/A | TOEFL: N/A'; }
-                
+
                 const lang = activeConfig?.career || 'en-US';
                 if (lang === 'it-IT') {
                     let celi = 'CELI impatto';
@@ -1882,7 +1811,7 @@ const SimulatorDash = (() => {
         // 5. Persistence: Check for local demo stats (Domain-Specific)
         const domainKey = currentContext.toLowerCase();
         const localStatsStr = localStorage.getItem(`guest_demo_stats_${domainKey}`);
-        
+
         if (localStatsStr) {
             try {
                 const stats = JSON.parse(localStatsStr);
@@ -1921,10 +1850,10 @@ const SimulatorDash = (() => {
 
     function stopAllAudio() {
         if (window.currentQuizAudio) {
-            try { window.currentQuizAudio.pause(); } catch(e){}
+            try { window.currentQuizAudio.pause(); } catch (e) { }
         }
         if (window.currentChatAudio) {
-            try { window.currentChatAudio.pause(); } catch(e){}
+            try { window.currentChatAudio.pause(); } catch (e) { }
         }
     }
 
@@ -1933,7 +1862,7 @@ const SimulatorDash = (() => {
         const tabSim = document.getElementById('tab-simulador');
         const tabTeoria = document.getElementById('tab-teoria');
         const tabVocab = document.getElementById('tab-vocabulario');
-        
+
         const simSections = document.getElementById('sim-dashboard-sections');
         const teoriaSection = document.getElementById('cci-teoria-section');
         const vocabSection = document.getElementById('cci-vocabulario-section');
@@ -1952,7 +1881,7 @@ const SimulatorDash = (() => {
 
         const switchTab = (mode) => {
             stopAllAudio();
-            
+
             // RUTA SEGURA: Bloquear accesos a visitantes (no registrados)
             if (mode !== 'simulator' && !localStorage.getItem('authToken')) {
                 if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
@@ -1962,12 +1891,12 @@ const SimulatorDash = (() => {
                 }
                 return;
             }
-            
+
             // Remove active from all buttons
             [tabSim, tabTeoria, tabVocab].forEach(btn => {
                 if (btn) btn.classList.remove('active');
             });
-            
+
             // Hide all sections
             [simSections, teoriaSection, vocabSection].forEach(sec => {
                 if (sec) sec.style.display = 'none';
@@ -1976,7 +1905,7 @@ const SimulatorDash = (() => {
             if (mode === 'teoria') {
                 if (tabTeoria) tabTeoria.classList.add('active');
                 if (teoriaSection) teoriaSection.style.display = 'block';
-                
+
                 const url = new URL(window.location.href);
                 url.searchParams.set('mode', 'teoria');
                 window.history.replaceState({}, '', url.toString());
@@ -1985,7 +1914,7 @@ const SimulatorDash = (() => {
             } else if (mode === 'vocabulario') {
                 if (tabVocab) tabVocab.classList.add('active');
                 if (vocabSection) vocabSection.style.display = 'block';
-                
+
                 const url = new URL(window.location.href);
                 url.searchParams.set('mode', 'vocabulario');
                 window.history.replaceState({}, '', url.toString());
@@ -1994,7 +1923,7 @@ const SimulatorDash = (() => {
             } else {
                 if (tabSim) tabSim.classList.add('active');
                 if (simSections) simSections.style.display = 'block';
-                
+
                 const url = new URL(window.location.href);
                 url.searchParams.delete('mode');
                 window.history.replaceState({}, '', url.toString());
@@ -2030,7 +1959,7 @@ const SimulatorDash = (() => {
     async function syncActiveConfig() {
         if (!activeConfig) return;
         localStorage.setItem(`simActiveConfig_${currentContext}`, JSON.stringify(activeConfig));
-        
+
         const token = localStorage.getItem('authToken');
         if (token) {
             try {
@@ -2071,7 +2000,6 @@ const SimulatorDash = (() => {
     let activeLesson = null;
     let activeLessonQuizAnswers = [];
     let lessonChatHistory = [];
-    let selectedVocabIds = [];
 
     async function loadSyllabus() {
         const listContainer = document.getElementById('cci-syllabus-list');
@@ -2097,7 +2025,7 @@ const SimulatorDash = (() => {
             }
 
             listContainer.innerHTML = '';
-            
+
             // Agrupar por unidades
             const units = {};
             data.syllabus.forEach(item => {
@@ -2111,12 +2039,12 @@ const SimulatorDash = (() => {
                 const unitDiv = document.createElement('div');
                 unitDiv.className = 'syllabus-unit';
                 unitDiv.innerHTML = `<div class="syllabus-unit-title">Unidad ${unitNum}</div>`;
-                
+
                 units[unitNum].forEach(topic => {
                     const topicCard = document.createElement('div');
                     topicCard.className = `syllabus-topic-card ${activeLesson && activeLesson.id === topic.id ? 'active' : ''}`;
                     topicCard.dataset.id = topic.id;
-                    
+
                     const statusClass = topic.completed ? 'completed' : 'pending';
                     const statusIcon = topic.completed ? 'fas fa-check-circle' : 'far fa-circle';
 
@@ -2163,7 +2091,7 @@ const SimulatorDash = (() => {
 
         document.getElementById('lesson-badge-level').innerText = topic.level;
         document.getElementById('lesson-title').innerText = topic.topic_name;
-        
+
         const explanationEl = document.getElementById('lesson-explanation');
         const exercisesWrapper = document.getElementById('lesson-exercises-wrapper');
         const completeBtn = document.getElementById('btn-lesson-complete');
@@ -2198,7 +2126,7 @@ const SimulatorDash = (() => {
                             body: JSON.stringify({ syllabusId: topic.id, completed: isCompletedNow })
                         });
                         const data = await res.json();
-                        
+
                         if (data.success) {
                             topic.completed = isCompletedNow;
                             loadSyllabus();
@@ -2212,7 +2140,7 @@ const SimulatorDash = (() => {
                                 completeBtn.querySelector('span').innerText = 'Completar';
                             }
                         }
-                    } catch(e) {
+                    } catch (e) {
                         console.error("Error toggle progress", e);
                     } finally {
                         completeBtn.disabled = false;
@@ -2236,7 +2164,7 @@ const SimulatorDash = (() => {
             let resJson = null;
             try {
                 resJson = await res.json();
-            } catch(e) {}
+            } catch (e) { }
 
             if (res.status === 403) {
                 const user = window.sessionManager ? window.sessionManager.getUser() : null;
@@ -2315,7 +2243,7 @@ const SimulatorDash = (() => {
         const explanationEl = document.getElementById('lesson-explanation');
         if (!explanationEl) return;
         explanationEl.innerHTML = '<div style="text-align:center; padding:3rem;"><i class="fas fa-circle-notch fa-spin fa-2x"></i><p style="margin-top:1rem; font-size:0.85rem; color:var(--text-muted);">Generando y persistiendo lección en base de datos con Gemini...</p></div>';
-        
+
         try {
             const lang = activeConfig?.career || 'en-US';
             const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/languages/syllabus/lesson/learn`, {
@@ -2353,7 +2281,7 @@ const SimulatorDash = (() => {
         activeLesson.exercises.forEach((ex, blockIndex) => {
             const instructions = ex.instructions || 'Completa los espacios en blanco:';
             const type = ex.type || 'sentences';
-            
+
             html += `
                 <div class="syllabus-exercise-block" data-block-index="${blockIndex}">
                     <div class="syllabus-exercise-instructions">
@@ -2378,7 +2306,7 @@ const SimulatorDash = (() => {
                     const template = item.sentence_template || '';
                     const parts = template.split('[_____]');
                     let cellContent = template;
-                    
+
                     if (parts.length > 1) {
                         cellContent = parts.reduce((acc, part, i) => {
                             if (i === 0) return part;
@@ -2407,12 +2335,12 @@ const SimulatorDash = (() => {
             } else {
                 // Sentences (lista de oraciones a completar)
                 html += `<div class="syllabus-interactive-sentences-list">`;
-                
+
                 ex.items.forEach(item => {
                     const template = item.sentence_template || '';
                     const parts = template.split('[_____]');
                     let sentenceContent = template;
-                    
+
                     if (parts.length > 1) {
                         sentenceContent = parts.reduce((acc, part, i) => {
                             if (i === 0) return part;
@@ -2440,11 +2368,11 @@ const SimulatorDash = (() => {
             html += `</div>`;
         });
 
-        // Botón de verificar al final
+        // Botón de verificar al final con IA
         html += `
             <div style="display:flex; flex-direction:column; gap:1rem; margin-top:1.5rem;">
                 <button id="btn-lesson-verify-exercises" class="btn-premium btn-premium-ia" style="width:100%; justify-content:center; padding:0.8rem 1.5rem; font-size:0.9rem;">
-                    <i class="fas fa-spell-check"></i> Verificar con IA ✨
+                    <i class="fas fa-spell-check"></i> Verificar
                 </button>
                 <div id="lesson-evaluation-summary-box" style="display:none;"></div>
             </div>
@@ -2482,6 +2410,18 @@ const SimulatorDash = (() => {
                     answers
                 })
             });
+
+            if (res.status === 403) {
+                if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                    window.uiManager.showPaywallModal(null, 'languages');
+                } else {
+                    alert('Has alcanzado tus límites en la versión gratuita.');
+                }
+                if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
+                    window.sessionManager.refreshUser().catch(() => {});
+                }
+                return;
+            }
 
             if (!res.ok) throw new Error("HTTP " + res.status);
             const data = await res.json();
@@ -2554,12 +2494,16 @@ const SimulatorDash = (() => {
 
             window.uiManager?.showToast("Evaluación completada con éxito", "success");
 
+            if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
+                window.sessionManager.refreshUser().catch(() => {});
+            }
+
         } catch (err) {
             console.error("Error al evaluar respuestas:", err);
             window.uiManager?.showToast("No se pudo evaluar con la IA. Verifica tu conexión.", "error");
         } finally {
             btnVerify.disabled = false;
-            btnVerify.innerHTML = '<i class="fas fa-spell-check"></i> Verificar con IA ✨';
+            btnVerify.innerHTML = '<i class="fas fa-spell-check"></i> Verificar';
         }
     }
 
@@ -2581,7 +2525,7 @@ const SimulatorDash = (() => {
             btnQuiz.classList.remove('active');
             tabQuiz.style.display = 'none';
             tabChat.style.display = 'block';
-            
+
             const input = document.getElementById('lesson-chat-input');
             if (input) setTimeout(() => input.focus(), 100);
         }
@@ -2611,11 +2555,14 @@ const SimulatorDash = (() => {
             if (!data.success || !data.vocabulary || data.vocabulary.length === 0) {
                 table.style.display = 'none';
                 emptyState.style.display = 'flex';
+                selectedVocabIds = [];
+                updateVocabSelection();
                 return;
             }
 
             tbody.innerHTML = '';
-            selectedVocabIds = [];
+            const existingIds = data.vocabulary.map(w => String(w.id));
+            selectedVocabIds = selectedVocabIds.filter(id => existingIds.includes(String(id)));
             updateVocabSelection();
 
             data.vocabulary.forEach(w => {
@@ -2623,13 +2570,14 @@ const SimulatorDash = (() => {
                 tr.dataset.id = w.id;
 
                 const levelBadge = `<span class="vocab-badge-level">${w.level}</span>`;
-                const playBtn = w.audio_url 
+                const playBtn = w.audio_url
                     ? `<button class="btn-vocab-play" title="Escuchar pronunciación" onclick="event.stopPropagation(); window.playVocabAudio(this, '${w.audio_url}')"><i class="fas fa-volume-up"></i></button>`
                     : '';
-                
+
+                const isChecked = selectedVocabIds.includes(w.id) ? 'checked' : '';
                 tr.innerHTML = `
                     <td style="text-align: center;" onclick="event.stopPropagation();">
-                        <input type="checkbox" class="vocab-row-check" value="${w.id}">
+                        <input type="checkbox" class="vocab-row-check" value="${w.id}" ${isChecked}>
                     </td>
                     <td>
                         <div class="vocab-word-cell">
@@ -2741,7 +2689,7 @@ const SimulatorDash = (() => {
             const fullUrl = window.NetworkService ? `${window.AppConfig.API_URL}/api/media/proxy?file=${encodeURIComponent(audioUrl)}` : audioUrl;
             const audio = new Audio(fullUrl);
             window.currentVocabAudio = audio;
-            
+
             audio.oncanplaythrough = () => {
                 icon.className = 'fas fa-volume-mute';
                 audio.play();
@@ -2756,7 +2704,7 @@ const SimulatorDash = (() => {
                 icon.className = 'fas fa-volume-up';
                 console.error("Vocab audio load error");
             };
-        } catch(e) {
+        } catch (e) {
             icon.className = 'fas fa-volume-up';
             console.error(e);
         }
@@ -2776,7 +2724,7 @@ const SimulatorDash = (() => {
             } else {
                 window.uiManager?.showToast(data.error || "No se pudo eliminar", "error");
             }
-        } catch(e) {
+        } catch (e) {
             console.error("Error deleting vocab word:", e);
         }
     };
@@ -2798,7 +2746,7 @@ const SimulatorDash = (() => {
             document.getElementById('vocab-definition').value = '';
             document.getElementById('vocab-example').value = '';
             overlay.classList.add('active');
-            
+
             if (window.uiManager?.pushModalState) {
                 window.uiManager.pushModalState('vocab-modal-overlay');
             }
@@ -2807,7 +2755,7 @@ const SimulatorDash = (() => {
         const closeModal = () => {
             overlay.classList.remove('active');
             if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
-                window.uiManager.popModalState();
+                window.uiManager.popModalState('vocab-modal-overlay');
             }
         };
 
@@ -2841,9 +2789,12 @@ const SimulatorDash = (() => {
 
                     if (res.status === 403) {
                         if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                            window.uiManager.showPaywallModal();
+                            window.uiManager.showPaywallModal(null, 'languages');
                         } else {
-                            alert('Acceso premium requerido para autocompletar con IA.');
+                            alert('Has alcanzado tus límites en la versión gratuita.');
+                        }
+                        if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
+                            window.sessionManager.refreshUser().catch(() => {});
                         }
                         return;
                     }
@@ -2853,10 +2804,13 @@ const SimulatorDash = (() => {
                         document.getElementById('vocab-translation').value = data.data.translation || '';
                         document.getElementById('vocab-definition').value = data.data.definition || '';
                         document.getElementById('vocab-example').value = data.data.example_sentence || '';
+                        if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
+                            window.sessionManager.refreshUser().catch(() => {});
+                        }
                     } else {
                         alert(data.error || "No se pudo autocompletar.");
                     }
-                } catch(e) {
+                } catch (e) {
                     console.error("AI completion error:", e);
                 } finally {
                     btnAiFill.disabled = false;
@@ -2887,9 +2841,9 @@ const SimulatorDash = (() => {
                     const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/languages/vocabulary`, {
                         method: 'POST',
                         body: JSON.stringify({
-                            word, translation, definition, 
-                            example_sentence: example, 
-                            languageCode: lang, 
+                            word, translation, definition,
+                            example_sentence: example,
+                            languageCode: lang,
                             cefrLevel: level
                         })
                     });
@@ -2902,7 +2856,7 @@ const SimulatorDash = (() => {
                     } else {
                         alert(data.error || "Error al guardar la palabra.");
                     }
-                } catch(e) {
+                } catch (e) {
                     console.error("Save vocabulary error:", e);
                 } finally {
                     btnSave.disabled = false;
@@ -2924,7 +2878,7 @@ const SimulatorDash = (() => {
                         method: 'POST',
                         body: JSON.stringify({ ids: selectedVocabIds })
                     });
-                    
+
                     if (res.status === 403) {
                         if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                             window.uiManager.showPaywallModal();
@@ -2939,7 +2893,7 @@ const SimulatorDash = (() => {
                         window.uiManager?.showToast(`¡${data.count} palabras exportadas a tus Flashcards!`, "success");
                         selectedVocabIds = [];
                         updateVocabSelection();
-                        
+
                         const selectAllChk = document.getElementById('vocab-select-all');
                         if (selectAllChk) selectAllChk.checked = false;
 
@@ -2947,7 +2901,7 @@ const SimulatorDash = (() => {
                     } else {
                         alert(data.error || "No se pudieron exportar las palabras.");
                     }
-                } catch(e) {
+                } catch (e) {
                     console.error("Export flashcards error:", e);
                 } finally {
                     btnExport.disabled = false;

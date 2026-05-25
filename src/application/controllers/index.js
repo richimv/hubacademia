@@ -58,7 +58,7 @@ module.exports = {
     userPreferencesController: require('./userPreferencesController'), // ✅ NUEVO: Multi-Domain Simulator
     mediaController: require('./mediaController'), // ✅ NUEVO: Proxy de imágenes GCS
     speechController: require('./speechController'), // ✅ NUEVO: Motor de Voz (ES, EN, IT)
-    languageChatController: new LanguageChatController(languageChatService), // ✅ NUEVO: Chat Conversacional de Idiomas (CCI)
-    languageSyllabusController: new LanguageSyllabusController(languageService),
-    languageVocabularyController: new LanguageVocabularyController(languageService)
+    languageChatController: new LanguageChatController(languageChatService, usageService), // ✅ NUEVO: Chat Conversacional de Idiomas (CCI)
+    languageSyllabusController: new LanguageSyllabusController(languageService, usageService),
+    languageVocabularyController: new LanguageVocabularyController(languageService, usageService)
 };

@@ -67,7 +67,7 @@
     function initPage() {
         const token = localStorage.getItem('authToken');
         if (!token) {
-            window.location.href = '/login';
+            window.location.href = '/simulators?domain=idiomas&authPrompt=true';
             return;
         }
 

@@ -502,6 +502,20 @@ const LanguagesSimulator = (function() {
 
             html += `
                 <div class="review-q-text">${renderedQText}</div>
+            `;
+
+            if (q.audio_text) {
+                html += `
+                <div class="quiz-audio-player-wrapper" style="margin-top: 1rem; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 1rem; display: flex; align-items: center; gap: 1rem;">
+                    <button class="quiz-audio-btn btn-message-tts review-audio-btn" style="width: 45px; height: 45px; border-radius: 50%; border: none; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <span style="color: #94a3b8; font-size: 0.875rem;">Comprensión Auditiva (Escuchar audio)</span>
+                </div>
+                `;
+            }
+
+            html += `
                 <div class="review-options">
             `;
 
@@ -538,6 +552,14 @@ const LanguagesSimulator = (function() {
             `;
 
             card.innerHTML = html;
+
+            const playBtn = card.querySelector('.review-audio-btn');
+            if (playBtn) {
+                playBtn.onclick = () => {
+                    playTTS(playBtn, q.audio_text, state.career || 'en-US');
+                };
+            }
+
             elements.reviewFeed.appendChild(card);
         });
 
@@ -677,50 +699,78 @@ const LanguagesSimulator = (function() {
         let tipIdx = 0;
         const tipText = LOADING_TIPS[0];
 
-        const popup = Swal.fire({
-            title: customTitle || 'Preparando simulacro de idiomas...',
-            html: `
-                <div class="premium-spinner" style="width:50px; height:50px; border:3px solid rgba(139,92,246,0.1); border-top:3px solid #8b5cf6; border-radius:50%; margin: 1.5rem auto; animation: spin 1s linear infinite;"></div>
-                <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.08); max-width:320px; margin:0 auto; font-size:0.9rem;">
-                    <div style="color: #a78bfa; font-weight:700; font-size:0.75rem; text-transform:uppercase; margin-bottom:0.3rem;">Tip de Estudio</div>
-                    <div id="loaderTipEl" style="color:#cbd5e1; line-height:1.4;">${tipText}</div>
-                </div>
-                <style>
-                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                </style>
-            `,
-            background: 'rgba(15, 23, 42, 0.95)',
-            color: '#fff',
-            showConfirmButton: false,
-            allowOutsideClick: false,
-            customClass: {
-                popup: 'swal-glass-popup'
-            },
-            didOpen: () => {
-                const tipEl = document.getElementById('loaderTipEl');
-                if (tipEl) {
-                    loaderTipInterval = setInterval(() => {
-                        tipIdx = (tipIdx + 1) % LOADING_TIPS.length;
-                        tipEl.style.opacity = '0';
-                        setTimeout(() => {
-                            tipEl.innerText = LOADING_TIPS[tipIdx];
-                            tipEl.style.opacity = '1';
-                        }, 250);
-                    }, 3000);
+        if (typeof Swal !== 'undefined') {
+            const popup = Swal.fire({
+                title: customTitle || 'Preparando simulacro de idiomas...',
+                html: `
+                    <div class="premium-spinner" style="width:50px; height:50px; border:3px solid rgba(139,92,246,0.1); border-top:3px solid #8b5cf6; border-radius:50%; margin: 1.5rem auto; animation: spin 1s linear infinite;"></div>
+                    <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.08); max-width:320px; margin:0 auto; font-size:0.9rem;">
+                        <div style="color: #a78bfa; font-weight:700; font-size:0.75rem; text-transform:uppercase; margin-bottom:0.3rem;">Tip de Estudio</div>
+                        <div id="loaderTipEl" style="color:#cbd5e1; line-height:1.4;">${tipText}</div>
+                    </div>
+                    <style>
+                        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                    </style>
+                `,
+                background: 'rgba(15, 23, 42, 0.95)',
+                color: '#fff',
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                customClass: {
+                    popup: 'swal-glass-popup'
+                },
+                didOpen: () => {
+                    const tipEl = document.getElementById('loaderTipEl');
+                    if (tipEl) {
+                        loaderTipInterval = setInterval(() => {
+                            tipIdx = (tipIdx + 1) % LOADING_TIPS.length;
+                            tipEl.style.opacity = '0';
+                            setTimeout(() => {
+                                tipEl.innerText = LOADING_TIPS[tipIdx];
+                                tipEl.style.opacity = '1';
+                            }, 250);
+                        }, 3000);
+                    }
+                },
+                willClose: () => {
+                    if (loaderTipInterval) clearInterval(loaderTipInterval);
                 }
-            },
-            willClose: () => {
-                if (loaderTipInterval) clearInterval(loaderTipInterval);
+            });
+        } else {
+            console.warn("SweetAlert2 no está disponible, usando cargador de respaldo.");
+            let overlay = document.getElementById('fallback-loader-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'fallback-loader-overlay';
+                overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(10,10,10,0.9); z-index:999999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-family:sans-serif;';
+                overlay.innerHTML = `
+                    <div style="width:50px; height:50px; border:3px solid rgba(255,255,255,0.1); border-top:3px solid #8b5cf6; border-radius:50%; animation: spin 1s linear infinite; margin-bottom:15px;"></div>
+                    <div style="font-size: 1.1rem; font-weight: 600;">${customTitle || 'Preparando simulacro de idiomas...'}</div>
+                    <style>
+                        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                    </style>
+                `;
+                document.body.appendChild(overlay);
+            } else {
+                overlay.style.display = 'flex';
             }
-        });
+        }
     }
 
     function hideLoader() {
-        Swal.close();
-        if (loaderTipInterval) clearInterval(loaderTipInterval);
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+            if (loaderTipInterval) clearInterval(loaderTipInterval);
+        } else {
+            const overlay = document.getElementById('fallback-loader-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
     }
 
-    return {
+    const instance = {
         startQuiz: startQuiz
     };
+
+    window.LanguagesSimulator = instance;
+    return instance;
 })();

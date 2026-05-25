@@ -843,7 +843,10 @@ window.UIComponents.createReviewCardHTML = function (config) {
         return '<div class="review-card-error">Error: Datos de pregunta no disponibles.</div>';
     }
 
-    const { question, answer, index, isDemo, isSavedFront } = config;
+    const { question, answer, index, isDemo, isSavedFront, career } = config;
+    const escapedAudioText = question.audio_text
+        ? encodeURIComponent(question.audio_text).replace(/'/g, "%27")
+        : '';
 
     let saveBtnHTML = '';
     if (!isDemo) {
@@ -923,6 +926,18 @@ window.UIComponents.createReviewCardHTML = function (config) {
             ${saveBtnHTML}
         </div>
         ${imageHTML}
+        ${(() => {
+            if (question.audio_text) {
+                return `
+                <div class="quiz-audio-player-wrapper" style="margin-top: 1rem; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 1rem; display: flex; align-items: center; gap: 1rem;">
+                    <button class="quiz-audio-btn btn-message-tts" style="width: 45px; height: 45px; border-radius: 50%; border: none; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" data-audio-text="${escapedAudioText}" data-career="${career || 'en-US'}" onclick="window.playQuestionAudio(this, decodeURIComponent(this.getAttribute('data-audio-text')), this.getAttribute('data-career'))">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <span style="color: #94a3b8; font-size: 0.875rem;">Comprensión Auditiva (Escuchar audio)</span>
+                </div>`;
+            }
+            return '';
+        })()}
         <div class="review-options">
             ${optionsHTML}
         </div>

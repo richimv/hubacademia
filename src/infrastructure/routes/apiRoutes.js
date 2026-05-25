@@ -98,13 +98,13 @@ router.post('/languages/chat', auth, checkAILimits('chat_standard'), languageCha
 // Temario y Lecciones
 router.get('/languages/syllabus', optionalAuth, languageSyllabusController.getSyllabus);
 router.post('/languages/syllabus/lesson/learn', auth, languageSyllabusController.generateLesson);
-router.post('/languages/syllabus/lesson/evaluate', auth, languageSyllabusController.evaluateLesson);
+router.post('/languages/syllabus/lesson/evaluate', auth, checkAILimits('chat_standard'), languageSyllabusController.evaluateLesson);
 router.post('/languages/syllabus/progress', auth, languageSyllabusController.toggleProgress);
 
 // Vocabulario Privado
 router.get('/languages/vocabulary', auth, languageVocabularyController.getVocabulary);
 router.post('/languages/vocabulary', auth, languageVocabularyController.addWord);
-router.post('/languages/vocabulary/generate', auth, languageVocabularyController.generateWordDetails);
+router.post('/languages/vocabulary/generate', auth, checkAILimits('chat_standard'), languageVocabularyController.generateWordDetails);
 router.delete('/languages/vocabulary/:id', auth, languageVocabularyController.deleteWord);
 router.post('/languages/vocabulary/export-flashcards', auth, languageVocabularyController.exportToFlashcards);
 

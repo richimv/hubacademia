@@ -97,6 +97,9 @@ window.showExamReview = async function () {
         const qHeader = document.querySelector('.question-header');
         if (qHeader) qHeader.style.display = 'none';
 
+        const qLayout = document.getElementById('questionLayout');
+        if (qLayout) qLayout.style.display = 'none';
+
         const qText = document.getElementById('questionText');
         if (qText) qText.style.display = 'none';
 
@@ -134,7 +137,7 @@ window.showExamReview = async function () {
                 if (!q) continue;
                 const ans = state.answers[i];
                 const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
-                const config = { question: q, answer: ans, index: i, isDemo: isDemo, isSavedFront: false };
+                const config = { question: q, answer: ans, index: i, isDemo: isDemo, isSavedFront: false, career: state.career };
                 const cardHTML = window.UIComponents.createReviewCardHTML(config);
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = cardHTML.trim();
@@ -174,7 +177,7 @@ window.showExamReview = async function () {
                             try {
                                 const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/flashcard/save-from-question`, {
                                     method: 'POST',
-                                    body: JSON.stringify({ question: q, topic: q.topic || state.topic, moduleName: state.context || 'MEDICINA' })
+                                    body: JSON.stringify({ question: q, topic: q.topic || state.topic, moduleName: state.context || 'MEDICINA', career: q.career || state.career })
                                 });
                                 const data = await res.json();
                                 if (data.success) {
@@ -471,7 +474,8 @@ async function startQuiz() {
         // Mapear el contexto del frontend al dominio del backend
         const contextMap = {
             'MEDICINA': 'medicine',
-            'EDUCACION': 'education'
+            'EDUCACION': 'education',
+            'IDIOMAS': 'languages'
         };
         const domainParam = contextMap[state.context || 'MEDICINA'] || 'medicine';
         const seenIds = JSON.parse(localStorage.getItem(`guest_seen_ids_${domainParam}`) || '[]');

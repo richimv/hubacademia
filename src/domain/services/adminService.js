@@ -142,6 +142,14 @@ class AdminService {
         return await adminRepository.getQuestionImages(id);
     }
 
+    async countOtherQuestionsWithAudio(audioText, career, excludeId) {
+        return await adminRepository.countOtherQuestionsWithAudio(audioText, career, excludeId);
+    }
+
+    async countVocabulariesWithAudioUrl(audioUrl) {
+        return await adminRepository.countVocabulariesWithAudioUrl(audioUrl);
+    }
+
     async updateSingleQuestion(id, data) {
         const expectedOptions = (data.target === 'RESIDENTADO') ? 5 : 4;
         if (!Array.isArray(data.options) || data.options.length !== expectedOptions) {

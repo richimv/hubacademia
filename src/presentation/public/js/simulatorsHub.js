@@ -143,6 +143,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.uiManager.showToast(card.toast);
                 }
             });
+        } else if (card.title === 'Tutor Conversacional IA') {
+            a.addEventListener('click', (e) => {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    e.preventDefault();
+                    if (window.uiManager) {
+                        window.uiManager.showAuthPromptModal();
+                    }
+                }
+            });
         }
 
         a.innerHTML = `
@@ -157,4 +167,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.appendChild(a);
     });
+
+    // Auto-trigger registration modal if URL parameter authPrompt is present and not logged in
+    if (urlParams.get('authPrompt') === 'true' && !localStorage.getItem('authToken')) {
+        setTimeout(() => {
+            if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+                window.uiManager.showAuthPromptModal();
+            }
+        }, 300);
+    }
 });

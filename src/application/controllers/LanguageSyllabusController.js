@@ -1,7 +1,8 @@
 class LanguageSyllabusController {
-    constructor(languageService) {
+    constructor(languageService, usageService) {
         console.log('🔄 Inicializando LanguageSyllabusController con Service...');
         this.languageService = languageService;
+        this.usageService = usageService;
 
         this.getSyllabus = this.getSyllabus.bind(this);
         this.generateLesson = this.generateLesson.bind(this);
@@ -61,6 +62,21 @@ class LanguageSyllabusController {
             }
 
             const result = await this.languageService.evaluateLesson(topicId, answers);
+
+            // 📉 ACTUALIZAR LÍMITES DE USO IA (Descontar vidas si es free/pending)
+            try {
+                const userId = req.user.id;
+                if (req.usageType === 'usage_count') {
+                    await this.usageService.checkAndIncrementUsage(userId, 'usage_count', 1);
+                    console.log(`📉 Límite de usage_count incrementado (+1) para usuario ${userId} en Evaluación de Ejercicios.`);
+                } else if (req.usageType) {
+                    const pool = require('../../infrastructure/database/db');
+                    await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);
+                }
+            } catch (limitErr) {
+                console.error("⚠️ No se pudo actualizar el límite del usuario en Evaluación de Ejercicios:", limitErr.message);
+            }
+
             return res.json({ 
                 success: true, 
                 evaluation: {

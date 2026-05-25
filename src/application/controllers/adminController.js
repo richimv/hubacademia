@@ -286,9 +286,27 @@ class AdminController {
 
             const qData = await adminService.getQuestionImages(id);
             if (qData) {
-                const { image_url, explanation_image_url } = qData;
+                const { image_url, explanation_image_url, audio_text, career } = qData;
                 if (image_url) await mediaController.deleteFile(image_url);
                 if (explanation_image_url) await mediaController.deleteFile(explanation_image_url);
+                
+                if (audio_text && audio_text.trim() !== '' && career) {
+                    try {
+                        const crypto = require('crypto');
+                        const cleanText = audio_text.replace(/[*_#`]/g, '').trim();
+                        const textHash = crypto.createHash('md5').update(`${cleanText}_${career}`).digest('hex');
+                        const gcsAudioPath = `tts_cache/${career}_${textHash}.mp3`;
+                        
+                        const otherQuestionsCount = await adminService.countOtherQuestionsWithAudio(audio_text, career, id);
+                        const vocabCount = await adminService.countVocabulariesWithAudioUrl(gcsAudioPath);
+                        
+                        if (otherQuestionsCount === 0 && vocabCount === 0) {
+                            await mediaController.deleteFile(gcsAudioPath);
+                        }
+                    } catch (gcsErr) {
+                        console.error('⚠️ [adminController] Falló saneamiento de audio al eliminar pregunta:', gcsErr.message);
+                    }
+                }
             }
 
             const isDeleted = await adminService.deleteSingleQuestion(id);

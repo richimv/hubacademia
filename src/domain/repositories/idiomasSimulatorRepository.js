@@ -3,12 +3,16 @@ const crypto = require('crypto');
 
 class IdiomasSimulatorRepository {
 
-    async findQuestionsInBankBatch(target, topics, limit = 5, userId, career = null, difficulty = null) {
+    async findQuestionsInBankBatch(target, topics, limit = 5, userId, career = null, difficulty = null, sessionSeenIds = []) {
         const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
         const seenRes = await db.query(seenQuery, [userId]);
-        const seenIds = seenRes.rows.map(r => r.question_id);
+        let seenIds = seenRes.rows.map(r => r.question_id);
 
-        console.log(`🔎 [IdiomasRepo] Usuario ${userId} ha visto ${seenIds.length} preguntas en las últimas 24h.`);
+        if (sessionSeenIds && Array.isArray(sessionSeenIds) && sessionSeenIds.length > 0) {
+            seenIds = [...new Set([...seenIds, ...sessionSeenIds])];
+        }
+
+        console.log(`🔎 [IdiomasRepo] Usuario ${userId} ha visto ${seenIds.length} preguntas (24h + sesión actual).`);
 
         let whereClauses = `WHERE domain = 'languages' AND unaccent(UPPER(topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))
                             AND ($2::text IS NULL OR target = $2)`;
@@ -178,7 +182,34 @@ class IdiomasSimulatorRepository {
             quizData.career || null
         ];
         const res = await db.query(query, values);
-        return res.rows[0].id;
+        const quizHistoryId = res.rows[0].id;
+
+        if (quizData.questions && Array.isArray(quizData.questions)) {
+            for (const q of quizData.questions) {
+                if (q.id) {
+                    try {
+                        const checkQuery = `SELECT id, times_seen FROM user_question_history WHERE user_id = $1 AND question_id = $2`;
+                        const checkRes = await db.query(checkQuery, [userId, q.id]);
+                        if (checkRes.rows.length > 0) {
+                            const row = checkRes.rows[0];
+                            await db.query(
+                                `UPDATE user_question_history SET seen_at = NOW(), times_seen = $1 WHERE id = $2`,
+                                [row.times_seen + 1, row.id]
+                            );
+                        } else {
+                            await db.query(
+                                `INSERT INTO user_question_history (user_id, question_id, seen_at, times_seen) VALUES ($1, $2, NOW(), 1)`,
+                                [userId, q.id]
+                            );
+                        }
+                    } catch (err) {
+                        console.error("❌ Error actualizando user_question_history en IdiomasRepo:", err.message);
+                    }
+                }
+            }
+        }
+
+        return quizHistoryId;
     }
 
     async getQuizEvolution(userId, target, limit, timeFilter = '', areas = null) {

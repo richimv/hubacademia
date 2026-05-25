@@ -892,8 +892,8 @@ class UIManager {
 
         // CONFIGURACIÓN POR DEFECTO (Free / Global)
         let config = {
-            title: '¡Te encantó la prueba!',
-            message: customMsg || '¡Te encantó la prueba gratuita!<br>Suscríbete ahora por s/ 9.90.<br><span style="color: #94a3b8; font-size: 0.9rem;">Acceso a más beneficios.</span>',
+            title: '¡Desbloquea el Acceso Premium! 💎',
+            message: customMsg || 'Suscríbete hoy por s/ 9.90 y accede a todos los beneficios y herramientas ilimitadas.',
             btnText: 'Suscríbete ahora',
             btnUrl: '/pricing',
             icon: 'fa-crown'
@@ -903,40 +903,43 @@ class UIManager {
         if (context === 'simulator') {
             config.icon = 'fa-stethoscope';
             if (userTier === 'basic') {
-                config.title = '¡Cuota Diaria Completada!';
-                config.message = customMsg || 'Has alcanzado tu límite de <strong>15 simulacros diarios</strong>.<br>Mejora a <strong>Advanced</strong> para obtener 40 simulacros.';
-                config.btnText = 'Mejorar Plan 🚀';
+                config.title = '¡Límite Diario Alcanzado! 🚀';
+                config.message = customMsg || 'Has alcanzado tu límite de simulacros diarios. Mejora tu plan para seguir practicando sin límites.';
+                config.btnText = 'Mejorar Plan';
                 config.btnUrl = '/pricing';
+                config.icon = 'fa-rocket';
             } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
-                config.title = '¡Meta Diaria Alcanzada!';
-                config.message = customMsg || 'Has completado tus <strong>40 simulacros épicos</strong> de hoy. ¡Mañana volvemos con más desafíos!';
-                config.btnText = 'Volver al Inicio 🏠';
+                config.title = '¡Meta Diaria Alcanzada! 🏆';
+                config.message = customMsg || 'Has completado tus simulacros de hoy. ¡Mañana volvemos con más desafíos!';
+                config.btnText = 'Volver al Inicio';
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';
             } else {
                 // Tier FREE o EXPIRED
-                config.title = '¡Simulacro Finalizado!';
-                config.message = customMsg || 'Has agotado tus <strong>Vidas de Prueba</strong> en el simulador.<br>Suscríbete para obtener acceso ilimitado y guardar tu progreso.';
-                config.btnText = 'Ver Planes Premium 💎';
+                config.title = '¡Desbloquea el Acceso Premium! 💎';
+                config.message = customMsg || 'Has alcanzado el límite de tu prueba gratuita. Suscríbete hoy para acceder a simulacros ilimitados.';
+                config.btnText = 'Ver Planes Premium';
                 config.btnUrl = '/pricing';
+                config.icon = 'fa-crown';
             }
         } else if (context === 'flashcards' || context === 'monthly_flashcards' || context === 'study') {
-            config.title = '¡Prueba Gratuita Agotada!';
-            config.message = customMsg || 'Se han agotado tus vidas de prueba. Suscríbete ahora para obtener <strong>Acceso Ilimitado</strong>.';
-            config.btnText = 'Ver Planes 🚀';
+            config.title = '¡Desbloquea el Acceso Premium! 💎';
+            config.message = customMsg || 'Has alcanzado el límite de tu prueba gratuita. Suscríbete hoy para repasar tus flashcards sin límites.';
+            config.btnText = 'Ver Planes Premium';
             config.btnUrl = '/pricing';
-            config.icon = 'fa-heart-crack';
+            config.icon = 'fa-crown';
         } else {
-            // Contexto Autoevaluación (Default)
+            // Contexto Autoevaluación / Default
             if (userTier === 'basic') {
-                config.title = '¡Cuota Diaria Completada!';
-                config.message = customMsg || 'Has alcanzado tu límite de 5 autoevaluaciones diarias.<br>Mejora a <strong>Advanced</strong> para duplicar tu cuota.';
-                config.btnText = 'Mejorar Plan 🚀';
+                config.title = '¡Límite Diario Alcanzado! 🚀';
+                config.message = customMsg || 'Has alcanzado tu límite de uso diario. Mejora tu plan para continuar entrenando.';
+                config.btnText = 'Mejorar Plan';
                 config.btnUrl = '/pricing';
+                config.icon = 'fa-rocket';
             } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
-                config.title = '¡Entrenamiento Finalizado!';
-                config.message = customMsg || 'Has completado tus 10 autoevaluaciones de hoy. ¡Mañana volvemos con más desafíos!';
-                config.btnText = 'Volver al Inicio 🏠';
+                config.title = '¡Meta Diaria Alcanzada! 🏆';
+                config.message = customMsg || 'Has completado tus autoevaluaciones de hoy. ¡Mañana volvemos con más desafíos!';
+                config.btnText = 'Volver al Inicio';
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';
             }

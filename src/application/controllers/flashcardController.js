@@ -1,6 +1,7 @@
 const flashcardService = require('../../domain/services/flashcardService');
 const flashcardRepository = require('../../domain/repositories/flashcardRepository');
 const ttsService = require('../../domain/services/ttsService');
+const mediaController = require('./mediaController');
 const crypto = require('crypto');
 
 class FlashcardController {
@@ -72,7 +73,7 @@ class FlashcardController {
      */
     async saveFlashcardFromQuestion(req, res) {
         try {
-            const { question, topic, attemptId, moduleName = 'MEDICINA' } = req.body;
+            const { question, topic, attemptId, moduleName = 'MEDICINA', career } = req.body;
             const userId = req.user.id;
 
             if (!question) {
@@ -88,16 +89,16 @@ class FlashcardController {
                 let ttsLangFront = null;
                 
                 if (q.audio_text && q.audio_text.trim() !== '') {
-                    const lang = q.career || 'en-US';
+                    const lang = q.career || career || 'en-US';
                     try {
                         console.log(`🗣️ [flashcardController] Pre-sintetizando audio para flashcard de listening (idioma: ${lang}): "${q.audio_text.substring(0, 30)}..."`);
-                        await ttsService.synthesize(q.audio_text, lang);
-                        
-                        // Generar el path exacto de caché en GCS
-                        const cleanText = q.audio_text.replace(/[*_#`]/g, '').trim();
-                        const textHash = crypto.createHash('md5').update(`${cleanText}_${lang}`).digest('hex');
-                        audioUrlFront = `tts_cache/${lang}_${textHash}.mp3`;
-                        ttsLangFront = lang;
+                        const audioBuffer = await ttsService.synthesize(q.audio_text, lang);
+                        if (audioBuffer) {
+                            const fileName = `tts_front_${Date.now()}.mp3`;
+                            const gcsPath = await mediaController.uploadRawBuffer(audioBuffer, fileName, 'audio/mpeg', 'audio-cards');
+                            audioUrlFront = gcsPath;
+                            ttsLangFront = lang;
+                        }
                     } catch (ttsErr) {
                         console.error('⚠️ [flashcardController] Falló pre-sintetizar audio para flashcard:', ttsErr.message);
                     }

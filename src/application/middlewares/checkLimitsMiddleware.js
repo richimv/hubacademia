@@ -64,6 +64,13 @@ const checkAILimits = (type) => {
 
             req.userTier = user.subscription_tier;
 
+            // 🛡️ OMITIR VERIFICACIONES DE LÍMITES PARA CONSULTAS EFÍMERAS / TUTOR DE FLASHCARDS
+            const isEphemeral = req.body && (req.body.ephemeral === true || (req.body.context && req.body.context.type === 'flashcard_tutor'));
+            if (isEphemeral) {
+                req.usageType = null;
+                return next();
+            }
+
             // 2. REINICIO DE CONTADORES (DIARIOS Y MENSUALES)
             if (!user.last_usage_reset || lastResetDateStr !== todayDate) {
                 console.log(`♻️ [Quota Reset] Iniciando reset para ${user.subscription_tier} (${userId}). De ${lastResetDateStr} a ${todayDate}`);

@@ -245,24 +245,10 @@ class AudioAssistant {
 
     _showPaywall() {
         if (window.uiManager?.showPaywallModal) {
-            window.uiManager.showPaywallModal();
-        } else if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: '<span style="color:#fbbf24;">⭐ Función Premium</span>',
-                html: `
-                    <p style="color:#cbd5e1;">El <strong>Asistente de Voz IA</strong> está disponible para usuarios <strong>Basic</strong> y <strong>Advanced</strong>.</p>
-                    <p style="color:#94a3b8; font-size:0.9rem; margin-top:10px;">Conversa por voz con la IA mientras estudias cualquier recurso.</p>
-                `,
-                icon: 'info',
-                background: 'rgba(15,15,15,0.97)',
-                confirmButtonText: '🚀 Ver Planes',
-                confirmButtonColor: '#6366f1',
-                showCancelButton: true,
-                cancelButtonText: 'Ahora no',
-                cancelButtonColor: '#374151'
-            }).then((r) => {
-                if (r.isConfirmed) window.location.href = '/pricing';
-            });
+            window.uiManager.showPaywallModal(null, 'audio_assistant');
+        } else {
+            alert('Función Premium. El Asistente de Voz está disponible para usuarios con suscripción activa.');
+            window.location.href = '/pricing';
         }
     }
 

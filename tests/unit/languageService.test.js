@@ -8,6 +8,7 @@ const mockToggleProgress = jest.fn();
 const mockGetVocabulary = jest.fn();
 const mockAddWord = jest.fn();
 const mockDeleteWord = jest.fn();
+const mockGetVocabularyWordById = jest.fn();
 const mockGetVocabularyWordsByIds = jest.fn();
 const mockInsertFlashcard = jest.fn();
 
@@ -20,6 +21,7 @@ const mockLanguageRepository = {
     getVocabulary: mockGetVocabulary,
     addWord: mockAddWord,
     deleteWord: mockDeleteWord,
+    getVocabularyWordById: mockGetVocabularyWordById,
     getVocabularyWordsByIds: mockGetVocabularyWordsByIds,
     insertFlashcard: mockInsertFlashcard
 };
@@ -87,13 +89,28 @@ describe('LanguageService', () => {
     });
 
     describe('deleteWord', () => {
-        it('should delete a vocabulary word from repository successfully', async () => {
+        it('should delete a vocabulary word without audio successfully', async () => {
+            // Simula una palabra sin audio_url
+            mockGetVocabularyWordById.mockResolvedValue({ id: 10, word: 'hello', audio_url: null });
             mockDeleteWord.mockResolvedValue(true);
 
             const result = await languageService.deleteWord(10, 'user-123');
 
-            expect(result).toBe(true);
+            expect(mockGetVocabularyWordById).toHaveBeenCalledWith(10, 'user-123');
             expect(mockDeleteWord).toHaveBeenCalledWith(10, 'user-123');
+            expect(result).toBe(true);
+        });
+
+        it('should delete a vocabulary word with audio and attempt GCS cleanup', async () => {
+            // Simula una palabra con audio_url (limpieza GCS puede fallar sin afectar el borrado)
+            mockGetVocabularyWordById.mockResolvedValue({ id: 11, word: 'world', audio_url: 'gs://bucket/audio-cards/test.mp3' });
+            mockDeleteWord.mockResolvedValue(true);
+
+            const result = await languageService.deleteWord(11, 'user-123');
+
+            expect(mockGetVocabularyWordById).toHaveBeenCalledWith(11, 'user-123');
+            expect(mockDeleteWord).toHaveBeenCalledWith(11, 'user-123');
+            expect(result).toBe(true);
         });
     });
 });

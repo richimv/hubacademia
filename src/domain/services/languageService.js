@@ -357,6 +357,20 @@ class LanguageService {
      * Elimina una palabra de vocabulario de la colección del usuario.
      */
     async deleteWord(id, userId) {
+        const word = await this.languageRepository.getVocabularyWordById(id, userId);
+        if (word && word.audio_url) {
+            const result = await this.languageRepository.deleteWord(id, userId);
+            try {
+                const count = await this.languageRepository.countVocabulariesWithAudioUrl(word.audio_url);
+                if (count === 0) {
+                    const mediaController = require('../../application/controllers/mediaController');
+                    await mediaController.deleteFile(word.audio_url);
+                }
+            } catch (err) {
+                console.error("⚠️ [LanguageService] Falló saneamiento de audio de vocabulario:", err.message);
+            }
+            return result;
+        }
         return await this.languageRepository.deleteWord(id, userId);
     }
 
@@ -375,11 +389,25 @@ class LanguageService {
             targetDeckId = await TrainingRepository.ensureSystemDeck(userId, 'IDIOMAS');
         }
 
-        const insertPromises = words.map(w => {
+        const mediaController = require('../../application/controllers/mediaController');
+
+        const insertPromises = words.map(async w => {
             const backContent = `**Traducción:** ${w.translation}\n\n**Definición:** ${w.definition || 'Sin definición'}\n\n**Ejemplo:** *${w.example_sentence || 'Sin ejemplo'}*`;
+            let flashcardAudioUrl = null;
+            if (w.word && w.language_code) {
+                try {
+                    const audioBuffer = await ttsService.synthesize(w.word, w.language_code);
+                    if (audioBuffer) {
+                        const fileName = `tts_front_${Date.now()}.mp3`;
+                        flashcardAudioUrl = await mediaController.uploadRawBuffer(audioBuffer, fileName, 'audio/mpeg', 'audio-cards');
+                    }
+                } catch (ttsErr) {
+                    console.error('⚠️ [LanguageService] Error al pre-sintetizar audio para exportación:', ttsErr.message);
+                }
+            }
             return this.languageRepository.insertFlashcard(
                 userId, targetDeckId, w.word, backContent, 'Vocabulario', 
-                w.audio_url, w.language_code
+                flashcardAudioUrl, w.language_code
             );
         });
 

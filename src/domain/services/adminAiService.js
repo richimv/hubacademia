@@ -46,6 +46,72 @@ class AdminAiService {
     }
 
     /**
+     * 🛡️ SANITIZADOR DETERMINISTA DE EXPLICACIONES
+     * Elimina referencias a letras de opciones (A, B, C, D, E) en la explicación.
+     * Se aplica como último escudo antes de retornar cualquier pregunta generada,
+     * independientemente de si la IA obedeció las instrucciones del prompt.
+     *
+     * Casos que captura y elimina:
+     *   - "la opción A", "la alternativa B", "la respuesta es la C"
+     *   - "opción A es correcta", "la A es correcta", "respuesta A"
+     *   - "La respuesta correcta es la opción A" → "La respuesta correcta es"
+     *
+     * NO toca frases que mencionan el texto real de la respuesta (que es el comportamiento correcto).
+     *
+     * @param {string} explanation - Texto de la explicación generada por la IA.
+     * @returns {string} - Explicación limpia sin referencias a letras de opciones.
+     */
+    _sanitizeExplanation(explanation) {
+        if (!explanation || typeof explanation !== 'string') return explanation;
+
+        let clean = explanation;
+
+        // Patrón 1: "la opción A", "la alternativa B", "la respuesta C", "el ítem D" etc.
+        // Elimina la letra dejando el resto de la frase intacta
+        clean = clean.replace(
+            /\b(la\s+)?(?:opci[oó]n|alternativa|respuesta|ítem|inciso|literal)\s+([A-E])\b/gi,
+            '$1opción correcta'
+        );
+
+        // Patrón 2: "la A es correcta", "la B es la respuesta"
+        clean = clean.replace(
+            /\bla\s+([A-E])\s+(es|siendo|resulta|corresponde)/gi,
+            'la opción correcta $2'
+        );
+
+        // Patrón 3: "respuesta A", "respuesta: A", "es A"
+        clean = clean.replace(
+            /\b(?:respuesta|respuestas)[:\s]+([A-E])\b/gi,
+            'respuesta correcta'
+        );
+
+        // Patrón 4: "es la A", "es la B" al final de frase
+        clean = clean.replace(
+            /\bes\s+la\s+([A-E])([.,;!?]|$)/gi,
+            'es la opción correcta$2'
+        );
+
+        // Patrón 5: Letras sueltas entre paréntesis que sean referencias de opción: "(A)", "(B)"
+        // Solo las elimina si van precedidas de "opción", "alternativa", "respuesta"
+        clean = clean.replace(
+            /\b(opci[oó]n|alternativa|respuesta)\s*\(([A-E])\)/gi,
+            '$1 correcta'
+        );
+
+        // Patrón 6: La respuesta correcta es la primera/segunda/tercera/cuarta/quinta opción
+        clean = clean.replace(
+            /\b(la\s+)?(?:opci[oó]n|alternativa|respuesta)\s+(primera|segunda|tercera|cuarta|quinta)\b/gi,
+            '$1opción correcta'
+        );
+
+        if (clean !== explanation) {
+            console.log('🧹 [SanitizeExplanation] Referencias de letra eliminadas de la explicación.');
+        }
+
+        return clean;
+    }
+
+    /**
      * Generación masiva con validación de target.
      */
     async generateRAGQuestions(target, studyAreas, career, amount = 10, isUserRequest = false, difficulty = null) {
@@ -116,12 +182,42 @@ class AdminAiService {
     }
 
     /**
-     * _generateSingleQuestion: Pipeline Robotizado de 4 Fases.
      */
     async _generateSingleQuestion(target, area, career, history = [], isUserRequest = false, difficulty = null) {
         try {
+            const db = require('../../infrastructure/database/db');
             const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS'];
             const isLanguage = (target && LANGUAGE_TARGETS.includes(target.toUpperCase())) || target === 'languages';
+
+            // 🧠 CONSULTA DE PREVENCIÓN DE DUPLICADOS VECTORIAL/TEMÁTICA
+            // Buscamos todas las preguntas existentes para este target y area (topic) en la BD, priorizando la carrera si existe
+            let existingRes;
+            if (career) {
+                existingRes = await db.query(
+                    `SELECT question_text, subtopic 
+                     FROM question_bank 
+                     WHERE target = $1 AND unaccent(UPPER(topic)) = unaccent(UPPER($3))
+                     ORDER BY (career = $2) DESC, created_at DESC LIMIT 50`,
+                    [target, career, area]
+                );
+            } else {
+                existingRes = await db.query(
+                    `SELECT question_text, subtopic 
+                     FROM question_bank 
+                     WHERE target = $1 AND unaccent(UPPER(topic)) = unaccent(UPPER($2))
+                     ORDER BY created_at DESC LIMIT 50`,
+                    [target, area]
+                );
+            }
+
+            const topicHistory = [];
+            existingRes.rows.forEach(r => {
+                if (r.question_text) topicHistory.push(r.question_text);
+                if (r.subtopic) topicHistory.push(`TEMA: ${r.subtopic}`);
+            });
+
+            // Combinar historial de la BD con el historial de la tanda/sesión
+            const combinedHistory = [...new Set([...topicHistory, ...history])];
 
             if (isLanguage) {
                 // Determinar el idioma y especificaciones basados en career (dialecto)
@@ -137,7 +233,7 @@ class AdminAiService {
                 }
 
                 const cefrLevel = difficulty || 'B1';
-                
+
                 let areaInstructions = "";
                 if (area === 'Grammar & Use of English') {
                     areaInstructions = `Focus on grammar, syntax, word order, verb conjugations, prepositions, or sentence structure appropriate for CEFR level ${cefrLevel}. The question text MUST contain exactly one blank space represented by '_____' (5 underscores) where the correct option fits.`;
@@ -149,8 +245,8 @@ class AdminAiService {
                     areaInstructions = `Create a script for a listening task (dialogue, announcement, or monologue) in the target language at CEFR level ${cefrLevel}. Store this script in the 'audio_text' field (max 100 words). The 'question_text' should be a question testing comprehension of that script. (e.g., 'According to the speaker, what is the main goal...?')`;
                 }
 
-                const historyString = (history && history.length > 0)
-                    ? `HISTORIAL DE PREGUNTAS YA EXISTENTES (PROHIBIDO GENERAR ESTAS PREGUNTAS O VARIACIONES SIMILARES):\n${history.slice(-30).map((h, i) => `${i+1}. ${h}`).join('\n')}`
+                const historyString = (combinedHistory && combinedHistory.length > 0)
+                    ? `HISTORIAL DE PREGUNTAS YA EXISTENTES (PROHIBIDO GENERAR ESTAS PREGUNTAS O VARIACIONES SIMILARES):\n${combinedHistory.slice(-30).map((h, i) => `${i + 1}. ${h}`).join('\n')}`
                     : "No hay preguntas previas.";
 
                 const languagePrompt = `
@@ -167,7 +263,7 @@ class AdminAiService {
                 2. La explicación (explanation) DEBE estar escrita en ESPAÑOL, explicando de forma clara y didáctica la gramática, vocabulario o justificación de la respuesta correcta.
                 3. Genera exactamente 4 opciones de respuesta. Evita el sesgo de longitud: TODAS las 4 opciones de respuesta deben tener una longitud similar (aproximadamente el mismo número de palabras). La opción correcta NO debe ser más detallada, más larga ni más descriptiva que los distractores.
                 4. Sin letras (A, B, C, D) al inicio de las opciones.
-                5. Escapa correctamente cualquier comilla doble interna usando \\" para que no se rompa el JSON.
+                5. Escapa correctamente cualquier comilla doble interna usando \\" para que no se ronpa el JSON.
                 6. Para preguntas que NO sean de 'Listening Comprehension', el campo 'audio_text' debe ser nulo.
                 7. Para las áreas 'Grammar & Use of English' y 'Vocabulary & Context', el enunciado de la pregunta ('question_text') DEBE incluir obligatoriamente un espacio en blanco representado exactamente por 5 guiones bajos ('_____') para que el usuario sepa dónde completar el conector, palabra o frase correspondiente.
                 8. EVITAR DUPLICADOS Y CLONES: Revisa el historial de preguntas ya existentes que se proporciona abajo y genera una pregunta completamente nueva sobre un tema, situación, vocabulario o contexto diferente. No repitas ni adaptes levemente las preguntas existentes.
@@ -191,14 +287,14 @@ class AdminAiService {
                 const result = await this.model.generateContent(languagePrompt);
                 const responseText = result.response.candidates[0].content.parts[0].text;
                 const questionObj = this._parseJSON(responseText);
-                
+
                 // Asegurar que contenga los campos necesarios
                 questionObj.topic = area;
                 questionObj.difficulty = cefrLevel;
                 questionObj.career = career;
-                
+
                 let question = questionObj;
-                
+
                 const checkLanguageQuality = (q) => {
                     const issues = [];
                     if (!q.options || q.options.length !== 4) {
@@ -207,7 +303,7 @@ class AdminAiService {
                     if (q.correct_option_index === undefined || q.correct_option_index < 0 || q.correct_option_index > 3) {
                         issues.push(`El campo 'correct_option_index' debe ser un número entero entre 0 y 3.`);
                     }
-                    
+
                     // Comprobar placeholders para Grammar y Vocabulary
                     const needsPlaceholder = ['Grammar & Use of English', 'Vocabulary & Context'].includes(area);
                     const text = q.question_text || "";
@@ -215,7 +311,7 @@ class AdminAiService {
                     if (needsPlaceholder && !hasPlaceholder) {
                         issues.push(`El enunciado de la pregunta (question_text) para el área '${area}' DEBE incluir un espacio en blanco '_____' (cinco guiones bajos) para indicar la palabra que falta.`);
                     }
-                    
+
                     // Comprobar asimetría de longitud de opciones (evitar que la correcta destaque por longitud)
                     if (q.options && q.options.length === 4 && q.correct_option_index >= 0 && q.correct_option_index <= 3) {
                         const lengths = q.options.map(o => String(o).length);
@@ -224,37 +320,58 @@ class AdminAiService {
                         const avgDistractorLen = distractorLengths.reduce((a, b) => a + b, 0) / distractorLengths.length;
                         const maxLen = Math.max(...lengths);
                         const minLen = Math.min(...lengths);
-                        
+
                         // Si la correcta es más del doble de larga que la media de los distractores y difiere por más de 15 caracteres
                         if (Math.abs(correctLen - avgDistractorLen) > 15 || (maxLen - minLen) > 25) {
                             issues.push(`Asimetría detectada en las opciones de respuesta. La opción correcta tiene longitud ${correctLen} mientras que los distractores tienen una longitud promedio de ${Math.round(avgDistractorLen)}. Todas las opciones deben tener una longitud y nivel de detalle similar para evitar pistas obvias.`);
                         }
                     }
-                    
-                    // Evitar duplicados
+
+                    // Evitar duplicados con comparación avanzada (exacta, subcadena y Jaccard por palabras)
                     const normGenText = text.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    const isDuplicate = history.some(histText => {
-                        if (!histText) return false;
-                        const normHistText = String(histText).toLowerCase().replace(/[^a-z0-9]/g, '');
-                        // Si son idénticos o uno contiene al otro
-                        return normHistText === normGenText || 
-                               (normHistText.length > 15 && normGenText.includes(normHistText)) || 
-                               (normGenText.length > 15 && normHistText.includes(normGenText));
+                    const isDuplicate = combinedHistory.some(histItem => {
+                        if (!histItem) return false;
+                        let histText = "";
+                        if (typeof histItem === 'string') {
+                            if (histItem.startsWith('TEMA:')) return false;
+                            histText = histItem;
+                        } else {
+                            histText = histItem.question_text || "";
+                        }
+
+                        const normHistText = histText.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        if (normHistText === normGenText) return true;
+                        if ((normHistText.length > 15 && normGenText.includes(normHistText)) ||
+                            (normGenText.length > 15 && normHistText.includes(normGenText))) {
+                            return true;
+                        }
+
+                        const wordsGen = text.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                        const wordsHist = histText.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                        if (wordsGen.length > 0 && wordsHist.length > 0) {
+                            const setGen = new Set(wordsGen);
+                            const setHist = new Set(wordsHist);
+                            const intersection = new Set([...setGen].filter(x => setHist.has(x)));
+                            const union = new Set([...setGen, ...setHist]);
+                            const jaccard = intersection.size / union.size;
+                            if (jaccard > 0.65) return true;
+                        }
+                        return false;
                     });
                     if (isDuplicate) {
                         issues.push(`La pregunta generada es un duplicado o clon muy similar a una pregunta del historial de la BD.`);
                     }
-                    
+
                     return issues;
                 };
 
                 let issues = checkLanguageQuality(question);
                 let auditAttempts = 0;
-                
+
                 while (issues.length > 0 && auditAttempts < 3) {
                     auditAttempts++;
                     console.log(`⚖️ [Auditoría Idiomas L${auditAttempts}] Problemas encontrados:\n- ${issues.join('\n- ')}`);
-                    
+
                     const refinementPrompt = `
                     Actúa como un profesor y editor experto de exámenes internacionales de idiomas.
                     La siguiente pregunta de opción múltiple generada por IA en formato JSON tiene problemas de calidad que deben ser corregidos:
@@ -284,29 +401,29 @@ class AdminAiService {
                       "audio_text": ...
                     }
                     `;
-                    
+
                     try {
                         const refinedResult = await this.model.generateContent(refinementPrompt);
                         const refinedText = refinedResult.response.candidates[0].content.parts[0].text;
                         question = this._parseJSON(refinedText);
-                        
+
                         // Asegurar metadatos correctos
                         question.topic = area;
                         question.difficulty = cefrLevel;
                         question.career = career;
-                        
+
                         issues = checkLanguageQuality(question);
                     } catch (refineErr) {
                         console.error(`⚠️ Error en auditoría/refinamiento de idiomas (intento ${auditAttempts}):`, refineErr.message);
                         break;
                     }
                 }
-                
+
                 // Si aún tiene problemas de asimetría o placeholders después de 3 intentos, intentamos sanearlo
                 if (issues.length > 0) {
                     console.warn(`🚨 [Calidad Idiomas] Pregunta devuelta con advertencias tras 3 intentos. Saneando lo básico...`);
                     // Asegurar placeholder si es necesario y falta
-                    if (['Grammar & Use of English', 'Vocabulary & Context'].includes(area) && 
+                    if (['Grammar & Use of English', 'Vocabulary & Context'].includes(area) &&
                         !question.question_text.includes('_____') && !question.question_text.includes('___')) {
                         question.question_text += ' _____';
                     }
@@ -319,7 +436,10 @@ class AdminAiService {
                         question.correct_option_index = 0;
                     }
                 }
-                
+
+                // 🛡️ Sanitización final determinista para idiomas: elimina referencias a letras
+                question.explanation = this._sanitizeExplanation(question.explanation);
+
                 return question;
             }
 
@@ -412,8 +532,8 @@ class AdminAiService {
             let question;
             if (isUserRequest) {
                 let historyText = "No hay contexto de repetición.";
-                if (history && history.length > 0) {
-                    historyText = history.map(item => {
+                if (combinedHistory && combinedHistory.length > 0) {
+                    historyText = combinedHistory.map(item => {
                         const text = typeof item === 'string' ? item : (item.question_text || "");
                         return `- Escenario usado: "${text.substring(0, 150)}..."`;
                     }).join('\n');
@@ -424,7 +544,7 @@ class AdminAiService {
                 let questionArray = this._parseJSON(responseText);
                 question = Array.isArray(questionArray) ? questionArray[0] : questionArray;
             } else {
-                const prompt = genPrompts.getAdminPrompt(target, area, career, fullContext, history, null);
+                const prompt = genPrompts.getAdminPrompt(target, area, career, fullContext, combinedHistory, null);
                 const result = await this.model.generateContent(prompt);
                 const responseText = result.response.candidates[0].content.parts[0].text;
                 question = this._parseJSON(responseText);
@@ -432,40 +552,90 @@ class AdminAiService {
 
             // --- FASE 4: EL AUDITOR (Simetría, Calidad, Limpieza de Letras y Consigna) ---
             const checkQuality = (q) => {
+                const issues = [];
                 const charCounts = q.options.map(o => o.length);
                 const correctCharCount = charCounts[q.correct_option_index];
                 const othersCharCounts = charCounts.filter((_, i) => i !== q.correct_option_index);
                 const avgOthersChars = othersCharCounts.reduce((a, b) => a + b, 0) / othersCharCounts.length;
                 const charDiff = correctCharCount - avgOthersChars;
 
-                // Nueva regla 1: No letras en explicación (A, B, C, Alternativa A, etc) de manera robusta
-                const hasLettersInExplanation = /la opción\s+[A-E]\b|la alternativa\s+[A-E]\b/i.test(q.explanation || "") ||
-                    /\ben\s+[A-E]\b/.test(q.explanation || "") ||
-                    /\b[A-E]\s+es\s+correcta\b/i.test(q.explanation || "");
+                if (Math.abs(charDiff) > 40) {
+                    issues.push(`Asimetría de longitud en opciones: la opción correcta tiene ${correctCharCount} caracteres, mientras que el promedio de distractores tiene ${Math.round(avgOthersChars)} (diferencia de ${Math.round(charDiff)}). Todas las opciones deben tener una longitud similar.`);
+                }
+
+                // Nueva regla 1: No letras en explicación — regex ampliado para capturar todos los patrones
+                const explanationText = q.explanation || "";
+                const hasLettersInExplanation =
+                    /\b(?:opci[oó]n|alternativa|respuesta|ítem|inciso|literal)\s+[A-E]\b/i.test(explanationText) ||
+                    /\bla\s+[A-E]\s+(?:es|siendo|resulta|corresponde)/i.test(explanationText) ||
+                    /\b[A-E]\s+es\s+(?:la\s+)?(?:correcta|correcta|incorrecta)/i.test(explanationText) ||
+                    /\bes\s+la\s+[A-E]\b/i.test(explanationText) ||
+                    /\brespuesta[:\s]+[A-E]\b/i.test(explanationText);
+                if (hasLettersInExplanation) {
+                    issues.push("La explicación contiene mención explícita a letras de alternativas (A, B, C, D o E). Las opciones se barajan al mostrarse. Explica de forma 100% conceptual usando el texto de la respuesta, no su letra.");
+                }
 
                 // Nueva regla 2: Validar que el enunciado contenga una interrogante o consigna explícita
                 const text = q.question_text || "";
                 const lacksQuestionPrompt = !text.includes('?') && !text.includes('¿') &&
                     !/indique|señale|determine|seleccione|calcule|identifique/i.test(text);
+                if (lacksQuestionPrompt) {
+                    issues.push("El enunciado de la pregunta (question_text) carece de una pregunta final clara (¿...?) o de una consigna imperativa explícita al final.");
+                }
+
+                // Evitar duplicados con comparación avanzada (exacta, subcadena y Jaccard por palabras)
+                const normGenText = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const isDuplicate = combinedHistory.some(histItem => {
+                    if (!histItem) return false;
+                    let histText = "";
+                    if (typeof histItem === 'string') {
+                        if (histItem.startsWith('TEMA:')) return false;
+                        histText = histItem;
+                    } else {
+                        histText = histItem.question_text || "";
+                    }
+
+                    const normHistText = histText.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (normHistText === normGenText) return true;
+                    if ((normHistText.length > 20 && normGenText.includes(normHistText)) ||
+                        (normGenText.length > 20 && normHistText.includes(normGenText))) {
+                        return true;
+                    }
+
+                    const wordsGen = text.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                    const wordsHist = histText.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                    if (wordsGen.length > 0 && wordsHist.length > 0) {
+                        const setGen = new Set(wordsGen);
+                        const setHist = new Set(wordsHist);
+                        const intersection = new Set([...setGen].filter(x => setHist.has(x)));
+                        const union = new Set([...setGen, ...setHist]);
+                        const jaccard = intersection.size / union.size;
+                        if (jaccard > 0.65) return true;
+                    }
+                    return false;
+                });
+                if (isDuplicate) {
+                    issues.push("La pregunta generada es un duplicado o clon muy similar a una ya existente en la base de datos o en la tanda actual. Por favor, cambia radicalmente la situación o el caso clínico para evaluar el mismo tema.");
+                }
 
                 return {
-                    isAsymmetric: Math.abs(charDiff) > 40, // Calibrado a 40 caracteres según el Umbral Pedagógico oficial
+                    isAsymmetric: Math.abs(charDiff) > 40,
                     hasLetters: hasLettersInExplanation,
                     lacksQuestion: lacksQuestionPrompt,
-                    correctLen: correctCharCount,
-                    avgOthers: avgOthersChars,
-                    diff: Math.round(charDiff)
+                    isDuplicate: isDuplicate,
+                    diff: Math.round(charDiff),
+                    issuesList: issues
                 };
             };
 
             let status = checkQuality(question);
             let auditAttempts = 0;
 
-            while ((status.isAsymmetric || status.hasLetters || status.lacksQuestion) && auditAttempts < 3) {
+            while ((status.isAsymmetric || status.hasLetters || status.lacksQuestion || status.isDuplicate) && auditAttempts < 3) {
                 auditAttempts++;
-                console.log(`⚖️ [Auditoría L${auditAttempts}] ${status.isAsymmetric ? 'ASIMETRÍA ' : ''}${status.hasLetters ? 'LETRAS_DETECTADAS ' : ''}${status.lacksQuestion ? 'FALTA_PREGUNTA' : ''}`);
+                console.log(`⚖️ [Auditoría L${auditAttempts}] ${status.isAsymmetric ? 'ASIMETRÍA ' : ''}${status.hasLetters ? 'LETRAS_DETECTADAS ' : ''}${status.lacksQuestion ? 'FALTA_PREGUNTA ' : ''}${status.isDuplicate ? 'DUPLICADA ' : ''}`);
 
-                const refinementPrompt = genPrompts.buildRefinementPrompt(question);
+                const refinementPrompt = genPrompts.buildRefinementPrompt(question, status.issuesList);
 
                 const refinedResult = await this.model.generateContent(refinementPrompt);
                 const refinedText = refinedResult.response.candidates[0].content.parts[0].text;
@@ -475,8 +645,8 @@ class AdminAiService {
             }
 
             // 🚫 [BLOQUEO DE CALIDAD FINAL]
-            if (status.isAsymmetric || status.hasLetters || status.lacksQuestion) {
-                console.error(`🚨 [Calidad] Rechazando por fallos persistentes (Letras: ${status.hasLetters}, Asimetría: ${status.diff}, Falta Pregunta: ${status.lacksQuestion}).`);
+            if (status.isAsymmetric || status.hasLetters || status.lacksQuestion || status.isDuplicate) {
+                console.error(`🚨 [Calidad] Rechazando por fallos persistentes (Letras: ${status.hasLetters}, Asimetría: ${status.isAsymmetric}, Falta Pregunta: ${status.lacksQuestion}, Duplicada: ${status.isDuplicate}).`);
                 return null;
             }
 
@@ -505,6 +675,8 @@ class AdminAiService {
             // Enforzar la inyección exacta del subtopic escogido (Fase 1) En todos los casos
             if (question) {
                 question.subtopic = selectedSubtopic || question.subtopic || 'Análisis Casuístico';
+                // 🛡️ Sanitización final determinista: elimina referencias a letras que hayan escapado la auditoría
+                question.explanation = this._sanitizeExplanation(question.explanation);
             }
 
             return question;

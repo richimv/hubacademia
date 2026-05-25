@@ -154,6 +154,18 @@ class LanguageRepository {
         return rows[0];
     }
 
+    async getVocabularyWordById(id, userId) {
+        const query = `SELECT * FROM public.user_vocabularies WHERE id = $1 AND user_id = $2`;
+        const { rows } = await db.query(query, [id, userId]);
+        return rows[0] || null;
+    }
+
+    async countVocabulariesWithAudioUrl(audioUrl) {
+        const query = `SELECT COUNT(*)::int as count FROM public.user_vocabularies WHERE audio_url = $1`;
+        const { rows } = await db.query(query, [audioUrl]);
+        return rows[0] ? rows[0].count : 0;
+    }
+
     /**
      * Obtiene la voz TTS configurada para un código de idioma.
      */

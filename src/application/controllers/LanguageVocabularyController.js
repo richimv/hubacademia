@@ -1,7 +1,8 @@
 class LanguageVocabularyController {
-    constructor(languageService) {
+    constructor(languageService, usageService) {
         console.log('🔄 Inicializando LanguageVocabularyController con Service...');
         this.languageService = languageService;
+        this.usageService = usageService;
 
         this.getVocabulary = this.getVocabulary.bind(this);
         this.addWord = this.addWord.bind(this);
@@ -59,6 +60,21 @@ class LanguageVocabularyController {
             }
 
             const data = await this.languageService.generateWordDetails(word, languageCode, cefrLevel);
+
+            // 📉 ACTUALIZAR LÍMITES DE USO IA (Descontar vidas si es free/pending)
+            try {
+                const userId = req.user.id;
+                if (req.usageType === 'usage_count') {
+                    await this.usageService.checkAndIncrementUsage(userId, 'usage_count', 1);
+                    console.log(`📉 Límite de usage_count incrementado (+1) para usuario ${userId} en Completar Vocabulario con IA.`);
+                } else if (req.usageType) {
+                    const pool = require('../../infrastructure/database/db');
+                    await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);
+                }
+            } catch (limitErr) {
+                console.error("⚠️ No se pudo actualizar el límite del usuario en Completar Vocabulario con IA:", limitErr.message);
+            }
+
             return res.json({ success: true, data });
         } catch (error) {
             console.error("❌ Error en LanguageVocabularyController.generateWordDetails:", error);

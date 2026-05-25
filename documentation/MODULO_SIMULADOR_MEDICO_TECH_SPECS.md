@@ -93,3 +93,12 @@ Como parte de la evolución hacia un producto Premium (*High-fidelity UI*), se a
    - Limpieza cronológica de exámenes dejados a medias por más de 2 horas.
    - Restricción de colisiones cruzadas (`expectedLimit !== stored.maxQuestions`), impidiendo que un simulacro interrumpido de 20 preguntas ahogue e invada el inicio en limpio de un Simulacro Rápido de 10 preguntas.
 6. **Aggressive Cache Busting**: Ante la persistencia de Service Workers / Cache del navegador, se implementó una agresiva cadena de invalidación (`?v=...`) en `quiz.html`, forzando en el cliente una recarga de todos los componentes gráficos y módulos ECMAScript sin necesidad de que el usuario vacíe su historial explícitamente.
+
+---
+
+## 8. Anti-Repetición y Sincronización de Sesiones (Mayo 2026)
+Para evitar la duplicidad de preguntas durante las sesiones de estudio y simulacros, se implementaron mejoras en el flujo de datos:
+1. **Historial Persistente (`user_question_history`)**: Al culminar y enviar las respuestas de un simulacro a través del endpoint `/submit`, el backend registra inmediatamente todas las preguntas de ese examen en `user_question_history`. Si el usuario ya vio la pregunta, se incrementa `times_seen` y se actualiza `seen_at` a la hora actual.
+2. **Exclusión Dinámica**: Al generar preguntas (`generateQuiz`), el backend consulta las preguntas respondidas en las últimas 24 horas y las excluye de la búsqueda. Si el stock del banco local se agota, se activa la reposición con IA (RAG) para generar reactivos inéditos.
+3. **Exclusión en la Misma Sesión**: Al solicitar lotes adicionales (`/next-batch`) en un mismo examen, el cliente envía la lista de IDs de preguntas actualmente presentadas en la sesión (`seenIds`). El backend concatena este vector con las preguntas de las últimas 24 horas para garantizar la exclusión absoluta de preguntas ya mostradas en la sesión activa actual.
+4. **Detección de Duplicados en IA (Jaccard & Normalización)**: En los flujos de generación asistida por IA (Admin y User), el backend recupera hasta 50 preguntas existentes de la base de datos para la misma área y target. Estas preguntas se inyectan en el prompt como historial prohibido. Adicionalmente, se ejecuta un algoritmo de similitud por palabras (coeficiente Jaccard > 0.65) en la fase de auditoría de calidad (`checkQuality`) que, de ser activado, obliga a la IA a regenerar el reactivo en un ciclo de refinamiento iterativo.
