@@ -1,22 +1,22 @@
-/* --- ARENA V3.0 (MANTA BLACK & NEON GLOW) --- */
+/* --- AUTOEVALUACIÓN IA V3.0 (MANTA BLACK & NEON GLOW) --- */
 
 :root {
-    --arena-bg: #030303;
-    --arena-card: #111111;
-    --arena-border: rgba(255, 255, 255, 0.08);
-    --arena-text: #f8fafc;
-    --arena-text-dim: #94a3b8;
-    --arena-accent: #a855f7;
-    --arena-success: #10b981;
-    --arena-error: #ef4444;
+    --self-eval-bg: #030303;
+    --self-eval-card: #111111;
+    --self-eval-border: rgba(255, 255, 255, 0.08);
+    --self-eval-text: #f8fafc;
+    --self-eval-text-dim: #94a3b8;
+    --self-eval-accent: #a855f7;
+    --self-eval-success: #10b981;
+    --self-eval-error: #ef4444;
 }
 
-body.arena-body {
-    background-color: var(--arena-bg) !important;
-    color: var(--arena-text) !important;
+body.self-evaluation-body {
+    background-color: var(--self-eval-bg) !important;
+    color: var(--self-eval-text) !important;
     font-family: 'Inter', sans-serif !important;
     margin: 0 !important;
-    padding-top: 0 !important; /* Quitar espacio vacío del head/header.css */
+    padding-top: 0 !important;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -25,12 +25,12 @@ body.arena-body {
 }
 
 /* HEADER MINIMALISTA */
-.arena-header {
+.self-evaluation-header {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    padding: 0.8rem 2rem; /* Compactar cabecera */
-    border-bottom: 1px solid var(--arena-border);
+    padding: 0.8rem 2rem;
+    border-bottom: 1px solid var(--self-eval-border);
     background: rgba(3, 3, 3, 0.8);
     backdrop-filter: blur(12px);
     z-index: 100;
@@ -52,10 +52,10 @@ body.arena-body {
     justify-content: flex-end;
 }
 
-.arena-back-btn {
+.self-evaluation-back-btn {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--arena-border);
-    color: var(--arena-text-dim);
+    border: 1px solid var(--self-eval-border);
+    color: var(--self-eval-text-dim);
     padding: 0.6rem 1.2rem;
     border-radius: 8px;
     cursor: pointer;
@@ -68,22 +68,22 @@ body.arena-body {
     gap: 8px;
 }
 
-.arena-back-btn:hover {
+.self-evaluation-back-btn:hover {
     background: rgba(239, 68, 68, 0.1);
-    color: var(--arena-error);
+    color: var(--self-eval-error);
     border-color: rgba(239, 68, 68, 0.3);
 }
 
-.arena-title {
+.self-evaluation-title {
     font-size: 1.25rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     text-transform: uppercase;
-    color: var(--arena-text);
+    color: var(--self-eval-text);
 }
 
 /* OVERLAYS (Loading, Error, Modals) */
-.arena-overlay {
+.self-evaluation-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.85);
@@ -94,7 +94,7 @@ body.arena-body {
     z-index: 1000;
 }
 
-.arena-overlay.hidden {
+.self-evaluation-overlay.hidden {
     display: none !important;
 }
 
@@ -105,7 +105,7 @@ body.arena-body {
 
 .glow-brain {
     font-size: 4rem;
-    color: var(--arena-accent);
+    color: var(--self-eval-accent);
     margin-bottom: 1.5rem;
     animation: pulseGlow 2s infinite;
 }
@@ -122,16 +122,16 @@ body.arena-body {
 }
 
 .loading-content p, .error-content p {
-    color: var(--arena-text-dim);
+    color: var(--self-eval-text-dim);
 }
 
 /* GAMEPLAY VIEW */
-.arena-gameplay {
+.self-evaluation-gameplay {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.8rem 2rem 2rem 2rem; /* Subir los elementos de juego */
+    padding: 0.8rem 2rem 2rem 2rem;
     max-width: 900px;
     margin: 0 auto;
     width: 100%;
@@ -139,14 +139,14 @@ body.arena-body {
 
 .hud-container {
     width: 100%;
-    background: var(--arena-card);
-    border: 1px solid var(--arena-border);
+    background: var(--self-eval-card);
+    border: 1px solid var(--self-eval-border);
     border-radius: 20px;
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem; /* Reducir margen inferior para ocupar el espacio */
+    margin-bottom: 1.5rem;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
@@ -157,12 +157,12 @@ body.arena-body {
 }
 
 .hud-lives i {
-    color: #333; /* empty heart */
+    color: #333;
     transition: color 0.3s ease;
 }
 
 .hud-lives i.active {
-    color: var(--arena-error);
+    color: var(--self-eval-error);
     filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5));
 }
 
@@ -181,14 +181,14 @@ body.arena-body {
 .timer-bar-fill {
     height: 100%;
     width: 100%;
-    background: linear-gradient(90deg, var(--arena-success), #3b82f6);
+    background: linear-gradient(90deg, var(--self-eval-success), #3b82f6);
     transition: width 0.1s linear, background 0.3s ease;
 }
 
 .hud-score {
     font-size: 1.4rem;
     font-weight: 800;
-    color: var(--arena-accent);
+    color: var(--self-eval-accent);
 }
 
 /* QUESTION AREA */
@@ -200,7 +200,7 @@ body.arena-body {
 .q-badge {
     background: rgba(168, 85, 247, 0.1);
     border: 1px solid rgba(168, 85, 247, 0.3);
-    color: var(--arena-accent);
+    color: var(--self-eval-accent);
     padding: 6px 16px;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -217,7 +217,7 @@ body.arena-body {
     letter-spacing: -0.02em !important;
     line-height: 1.4 !important;
     margin: 0 auto 2rem auto !important;
-    color: var(--arena-text) !important;
+    color: var(--self-eval-text) !important;
     text-align: center !important;
 }
 
@@ -228,11 +228,11 @@ body.arena-body {
 }
 
 .option-btn {
-    background: var(--arena-card);
-    border: 1px solid var(--arena-border);
+    background: var(--self-eval-card);
+    border: 1px solid var(--self-eval-border);
     padding: 1.5rem;
     border-radius: 16px;
-    color: var(--arena-text);
+    color: var(--self-eval-text);
     font-size: 1.1rem;
     font-family: inherit;
     cursor: pointer;
@@ -252,22 +252,22 @@ body.arena-body {
 
 .option-btn.correct {
     background: rgba(16, 185, 129, 0.1);
-    border-color: var(--arena-success);
-    color: var(--arena-success);
+    border-color: var(--self-eval-success);
+    color: var(--self-eval-success);
     box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
 }
 
 .option-btn.wrong {
     background: rgba(239, 68, 68, 0.1);
-    border-color: var(--arena-error);
-    color: var(--arena-error);
+    border-color: var(--self-eval-error);
+    color: var(--self-eval-error);
     opacity: 0.7;
 }
 
 /* MODALS (Feedback & Finish) */
 .feedback-card, .finish-card {
-    background: var(--arena-card);
-    border: 1px solid var(--arena-border);
+    background: var(--self-eval-card);
+    border: 1px solid var(--self-eval-border);
     padding: 3rem;
     border-radius: 24px;
     text-align: center;
@@ -303,7 +303,7 @@ body.arena-body {
 }
 
 .feedback-message {
-    color: var(--arena-text-dim);
+    color: var(--self-eval-text-dim);
     line-height: 1.6;
     margin-bottom: 2rem;
     font-size: 1.05rem;
@@ -312,7 +312,7 @@ body.arena-body {
 }
 
 .btn-next, .btn-finish {
-    background: linear-gradient(135deg, var(--arena-accent), #6366f1);
+    background: linear-gradient(135deg, var(--self-eval-accent), #6366f1);
     color: white;
     border: none;
     padding: 1rem 2rem;
@@ -342,7 +342,7 @@ body.arena-body {
 }
 
 .finish-card p {
-    color: var(--arena-text-dim);
+    color: var(--self-eval-text-dim);
     margin-bottom: 2rem;
 }
 
@@ -352,8 +352,8 @@ body.arena-body {
     gap: 3rem;
     margin-bottom: 2.5rem;
     padding: 1.5rem 0;
-    border-top: 1px solid var(--arena-border);
-    border-bottom: 1px solid var(--arena-border);
+    border-top: 1px solid var(--self-eval-border);
+    border-bottom: 1px solid var(--self-eval-border);
 }
 
 .stat-block {
@@ -364,7 +364,7 @@ body.arena-body {
 
 .stat-block span {
     font-size: 0.85rem;
-    color: var(--arena-text-dim);
+    color: var(--self-eval-text-dim);
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -374,16 +374,16 @@ body.arena-body {
     line-height: 1;
 }
 
-.color-purple { color: var(--arena-accent); }
-.color-green { color: var(--arena-success); }
+.color-purple { color: var(--self-eval-accent); }
+.color-green { color: var(--self-eval-success); }
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
-    .arena-header {
+    .self-evaluation-header {
         padding: 1rem;
     }
-    .arena-title {
-        display: none; /* Ocultar en móvil para dar espacio */
+    .self-evaluation-title {
+        display: none;
     }
     .hud-container {
         flex-direction: column;

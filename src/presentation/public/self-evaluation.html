@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desafío IA - Hub Academia</title>
+    <title>Autoevaluación IA - Hub Academia</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
 
     <!-- Fonts -->
@@ -15,21 +15,21 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/modal.css">
-    <link rel="stylesheet" href="css/arena.css?v=3.0">
+    <link rel="stylesheet" href="css/self-evaluation.css?v=3.0">
     <link rel="stylesheet" href="css/markdown-content.css">
 </head>
 
-<body class="arena-body">
+<body class="self-evaluation-body">
 
     <!-- Minimalist Header -->
-    <header class="arena-header">
+    <header class="self-evaluation-header">
         <div class="header-start">
-            <button id="arena-back-btn" class="arena-back-btn" onclick="Arena.goBack()">
-                <i class="fas fa-arrow-left"></i> <span>Abandonar Desafío</span>
+            <button id="self-evaluation-back-btn" class="self-evaluation-back-btn" onclick="SelfEvaluation.goBack()">
+                <i class="fas fa-arrow-left"></i> <span>Abandonar Autoevaluación</span>
             </button>
         </div>
         <div class="header-center">
-            <span class="arena-title"><i class="fas fa-bolt" style="color: #fbbf24;"></i> Entrenamiento Activo</span>
+            <span class="self-evaluation-title"><i class="fas fa-brain" style="color: #a855f7;"></i> Autoevaluación de Recursos</span>
         </div>
         <div class="header-end">
             <div id="user-session-controls"></div>
@@ -37,18 +37,18 @@
     </header>
 
     <!-- LOADING STATE -->
-    <div id="loading" class="arena-overlay">
+    <div id="loading" class="self-evaluation-overlay">
         <div class="loading-content">
             <div class="glow-brain">
                 <i class="fas fa-brain"></i>
             </div>
             <h2>La IA está leyendo el recurso...</h2>
-            <p>Formulando un desafío exclusivo para ti.</p>
+            <p>Formulando preguntas de autoevaluación exclusivas para ti.</p>
         </div>
     </div>
 
     <!-- ERROR STATE -->
-    <div id="errorState" class="arena-overlay hidden">
+    <div id="errorState" class="self-evaluation-overlay hidden">
         <div class="error-content">
             <i class="fas fa-exclamation-triangle"></i>
             <h2>Acceso Incorrecto</h2>
@@ -58,7 +58,7 @@
     </div>
 
     <!-- GAMEPLAY VIEW -->
-    <div id="gameplay" class="arena-gameplay hidden">
+    <div id="gameplay" class="self-evaluation-gameplay hidden">
         <div class="hud-container">
             <div class="hud-lives" id="livesBox">
                 <i class="fas fa-heart active"></i>
@@ -80,7 +80,7 @@
                 <span id="q-meta" class="q-badge">PREGUNTA 1 DE 5</span>
             </div>
             
-            <h2 class="question-text markdown-content" id="q-text">Cargando desafío...</h2>
+            <h2 class="question-text markdown-content" id="q-text">Cargando autoevaluación...</h2>
 
             <div class="options-grid" id="opt-grid">
                 <!-- Options injected here -->
@@ -89,25 +89,25 @@
     </div>
 
     <!-- MODAL FEEDBACK -->
-    <div id="modalFeedback" class="arena-overlay hidden">
+    <div id="modalFeedback" class="self-evaluation-overlay hidden">
         <div class="feedback-card">
             <div class="feedback-icon-container" id="fb-icon-container">
                 <i class="fas fa-check" id="fb-icon"></i>
             </div>
             <h2 class="feedback-title" id="fb-title">¡Excelente!</h2>
             <div class="feedback-message markdown-content" id="fb-msg"></div>
-            <button class="btn-next" id="fb-btn-next" onclick="Arena.nextQ()">
+            <button class="btn-next" id="fb-btn-next" onclick="SelfEvaluation.nextQ()">
                 Continuar <i class="fas fa-arrow-right"></i>
             </button>
         </div>
     </div>
 
     <!-- MODAL FIN DEL JUEGO -->
-    <div id="modalFinish" class="arena-overlay hidden">
+    <div id="modalFinish" class="self-evaluation-overlay hidden">
         <div class="finish-card">
             <i class="fas fa-trophy finish-icon"></i>
-            <h2>Entrenamiento Completado</h2>
-            <p>¡Has reforzado tu memoria con este recurso!</p>
+            <h2>Autoevaluación Completada</h2>
+            <p>¡Has reforzado tu memoria y Active Recall con este recurso!</p>
             
             <div class="finish-stats">
                 <div class="stat-block">
@@ -120,7 +120,7 @@
                 </div>
             </div>
 
-            <button class="btn-finish" id="btnReturnResource" onclick="Arena.goBack()">
+            <button class="btn-finish" id="btnReturnResource" onclick="SelfEvaluation.goBack()">
                 Volver al Recurso <i class="fas fa-book-reader"></i>
             </button>
         </div>
@@ -131,6 +131,6 @@
     <script src="js/services/networkService.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="js/utils/markdown-renderer.js"></script>
-    <script src="js/arena.js?v=3.0"></script>
+    <script src="js/self-evaluation.js?v=3.0"></script>
 </body>
 </html>

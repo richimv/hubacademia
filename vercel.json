@@ -98,12 +98,12 @@
             "destination": "/src/presentation/public/quiz.html"
         },
         {
-            "source": "/arena.html",
-            "destination": "/src/presentation/public/arena.html"
+            "source": "/self-evaluation.html",
+            "destination": "/src/presentation/public/self-evaluation.html"
         },
         {
-            "source": "/arena",
-            "destination": "/src/presentation/public/arena.html"
+            "source": "/self-evaluation",
+            "destination": "/src/presentation/public/self-evaluation.html"
         },
         {
             "source": "/deck-editor",
@@ -132,6 +132,10 @@
         {
             "source": "/resource",
             "destination": "/src/presentation/public/resource.html"
+        },
+        {
+            "source": "/language-tutor",
+            "destination": "/src/presentation/public/language-tutor.html"
         },
         {
             "source": "/(.*)",

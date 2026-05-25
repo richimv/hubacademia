@@ -1,4 +1,4 @@
-const Arena = (function () {
+const SelfEvaluation = (function () {
     const state = {
         questions: [],
         currIdx: 0,
@@ -44,14 +44,14 @@ const Arena = (function () {
     };
 
     function init() {
-        console.log("⚡ Inicializando Entrenamiento Activo...");
+        console.log("⚡ Inicializando Autoevaluación de Recursos...");
         const urlParams = new URLSearchParams(window.location.search);
         state.resourceId = urlParams.get('resourceId');
         state.count = urlParams.get('count') || 5;
         state.difficulty = urlParams.get('difficulty') || 'intermediate';
         
         if (!state.resourceId) {
-            showError("No se especificó un recurso para el entrenamiento.");
+            showError("No se especificó un recurso para la autoevaluación.");
             return;
         }
 
@@ -68,7 +68,7 @@ const Arena = (function () {
                 difficulty: state.difficulty
             };
 
-            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/arena/start`, {
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/self-evaluation/start`, {
                 method: 'POST',
                 body: JSON.stringify(bodyData)
             });
@@ -173,7 +173,6 @@ const Arena = (function () {
         clearInterval(state.timer);
         const q = state.questions[state.currIdx];
         
-        // El backend genera correct_option_index, mapeamos de forma flexible
         const correctAnswerIdx = q.correctAnswer !== undefined ? q.correctAnswer : q.correct_option_index;
         const isCorrect = idx === correctAnswerIdx;
         
@@ -264,4 +263,4 @@ const Arena = (function () {
 
 })();
 
-document.addEventListener('DOMContentLoaded', () => Arena.init());
+document.addEventListener('DOMContentLoaded', () => SelfEvaluation.init());

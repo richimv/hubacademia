@@ -14,7 +14,7 @@ Cuando un médico entra al portal y presiona **Registrarse**, es llevado al `aut
 
 ## FASE 2: El Modelo de Vidas (Freemium de Entrada)
 El usuario recién horneado entra al **Simulador Médico**. Este módulo no tiene barreras directas sobre cuántos clics da, sino sobre **Acciones Core** de generación y calificación.
-- El Archivo Involucrado es: `TrainingService.js` (Backend) conectado a un sistema llamado **UsageService** (Vidas).
+- El Archivo Involucrado son los servicios de simulador y flashcards (ej. `medicoService.js`, `docenteService.js`, `flashcardService.js`) (Backend) conectados a un sistema llamado **UsageService** (Vidas).
 - Los estudiantes cuyo tier es `'free'` al querer darle "Empezar Examen", disparan en BD la tabla `usage_logs`. 
 - Si no tiene más de 3 registros consumidos globales en toda su historia, se le concede generar un Examen Básico. 
 - Al consumirse la de la *Vidas*, la UI arroja el **Modal Paywall: "Alcanzaste tu límite de simulaciones gratuitas"** para convertirlos a pago.

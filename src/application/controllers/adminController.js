@@ -2,8 +2,8 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+// Removed trainingRepository import
 const AnalyticsService = require('../../domain/services/analyticsService');
-const trainingRepository = require('../../domain/repositories/trainingRepository');
 const adminAiService = require('../../domain/services/adminAiService');
 const adminService = require('../../domain/services/adminService'); // ✅ IMPORTANTE: Se inyecta capa de Negocio
 const mediaController = require('./mediaController');
@@ -122,7 +122,7 @@ class AdminController {
 
             console.log(`📥 Administrador subiendo lote de ${questions.length} preguntas masivas...`);
 
-            const result = await trainingRepository.saveBulkQuestionBankAdmin(questions);
+            const result = await adminService.saveBulkQuestionBankAdmin(questions);
 
             if (result.success) {
                 res.json({ success: true, message: `Lote inyectado con éxito: ${result.inserted} preguntas`, count: result.inserted });
@@ -153,7 +153,7 @@ class AdminController {
                 throw new Error("El formato devuelto por la IA no corresponde a un Array válido.");
             }
 
-            const result = await trainingRepository.saveBulkQuestionBankAdmin(generatedQuestions);
+            const result = await adminService.saveBulkQuestionBankAdmin(generatedQuestions);
 
             if (result.success) {
                 res.json({ success: true, message: `IA RAG ha Inyectado ${result.inserted} preguntas nuevas con éxito al Banco.`, count: result.inserted });

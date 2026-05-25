@@ -1,13 +1,12 @@
-const TrainingService = require('../../domain/services/trainingService');
+const selfEvaluationService = require('../../domain/services/selfEvaluationService');
+const selfEvaluationRepository = require('../../domain/repositories/selfEvaluationRepository');
 const BookRepository = require('../../domain/repositories/bookRepository');
 const bookRepo = new BookRepository();
-const UsageService = require('../../domain/services/usageService');
-const usageService = new UsageService();
 
-class QuizGameController {
+class SelfEvaluationController {
 
     /**
-     * POST /api/arena/start
+     * POST /api/self-evaluation/start
      * Genera un quiz de aprendizaje activo dinámico, sin guardar en base de datos.
      */
     async startGame(req, res) {
@@ -19,10 +18,7 @@ class QuizGameController {
                 return res.status(401).json({ error: 'Usuario no autenticado correctamente.' });
             }
 
-            // La validación de límites (tanto cuota de vidas de Free como el tope diario de 15)
-            // ya fue realizada de forma centralizada por el middleware checkAILimits('self_evaluation')
-
-            console.log(`⚔️ Iniciando Dynamic Quiz Arena para ${user.name} (ID: ${user.id}) | ResourceId: ${resourceId}`);
+            console.log(`⚔️ Iniciando Dynamic Quiz Autoevaluación para ${user.name} (ID: ${user.id}) | ResourceId: ${resourceId}`);
 
             let questions = [];
 
@@ -32,28 +28,32 @@ class QuizGameController {
                 if (!resource) {
                     return res.status(404).json({ error: 'Recurso no encontrado.' });
                 }
-                questions = await TrainingService.generateQuizFromResource(resource.title, resource.content_html, count, difficulty, resource.url, resource.domain);
+                questions = await selfEvaluationService.generateQuizFromResource(
+                    resource.title,
+                    resource.content_html,
+                    count,
+                    difficulty,
+                    resource.url,
+                    resource.domain
+                );
             } else {
                 // Modo Fallback (Sin DB, solo AI pura)
-                questions = await TrainingService.generateGeneralQuestionsAI([topic || 'Cultura General'], 5, user.subscriptionTier);
+                questions = await selfEvaluationService.generateGeneralQuestionsAI(
+                    [topic || 'Cultura General'],
+                    5,
+                    user.subscriptionTier
+                );
             }
 
-            // Incrementar contadores en base de datos de forma segura
+            // Incrementar contadores en base de datos de forma segura usando el repositorio
             try {
-                const pool = require('../../infrastructure/database/db');
                 if (req.usageType === 'usage_count') {
                     // Para Free: descontar vida global Y aumentar contador diario de autoevaluación (15/día)
-                    await pool.query(
-                        `UPDATE users SET usage_count = usage_count + 1, daily_arena_usage = daily_arena_usage + 1 WHERE id = $1`, 
-                        [user.id]
-                    );
+                    await selfEvaluationRepository.incrementUsageCountAndDailyEvaluation(user.id);
                     console.log(`📉 Cuotas actualizadas para Free User ${user.id} (+1 usage_count, +1 daily_arena_usage).`);
                 } else if (req.usageType === 'daily_arena_usage') {
                     // Para Premium: solo aumentar contador diario de autoevaluación (15/día)
-                    await pool.query(
-                        `UPDATE users SET daily_arena_usage = daily_arena_usage + 1 WHERE id = $1`, 
-                        [user.id]
-                    );
+                    await selfEvaluationRepository.incrementDailyEvaluationOnly(user.id);
                     console.log(`📉 Cuotas actualizadas para Premium User ${user.id} (+1 daily_arena_usage).`);
                 }
             } catch (limitErr) {
@@ -93,30 +93,28 @@ class QuizGameController {
             });
 
         } catch (error) {
-            console.error('❌ Error en QuizGameController.startGame:', error);
+            console.error('❌ Error en SelfEvaluationController.startGame:', error);
             res.status(500).json({ error: 'Error iniciando desafío.' });
         }
     }
 
     /**
-     * POST /api/arena/questions
+     * POST /api/self-evaluation/questions
      * Genera un lote de preguntas extra (Infinite Mode Dinámico).
      */
     async getQuestions(req, res) {
         try {
-            // Reutilizamos la misma lógica de generación dinámica sin persistencia
-            this.startGame(req, res);
+            await this.startGame(req, res);
         } catch (error) {
             res.status(500).json({ error: 'Error obteniendo preguntas extra.' });
         }
     }
 
     /**
-     * POST /api/arena/submit
+     * POST /api/self-evaluation/submit
      * No guarda nada en base de datos.
      */
     async submitScore(req, res) {
-        // Al no existir tabla persistente de "Arena", devolvemos un estado de éxito simulado
         res.json({
             success: true,
             message: 'Score procesado (In-memory)',
@@ -125,7 +123,7 @@ class QuizGameController {
     }
 
     /**
-     * GET /api/arena/ranking
+     * GET /api/self-evaluation/ranking
      * Devuelve una lista vacía ya que se ha eliminado el ranking global competitivo.
      */
     async getRanking(req, res) {
@@ -136,7 +134,7 @@ class QuizGameController {
     }
 
     /**
-     * GET /api/arena/stats
+     * GET /api/self-evaluation/stats
      * Devuelve estadísticas vacías al no existir persistencia.
      */
     async getUserStats(req, res) {
@@ -150,4 +148,4 @@ class QuizGameController {
     }
 }
 
-module.exports = new QuizGameController();
+module.exports = new SelfEvaluationController();

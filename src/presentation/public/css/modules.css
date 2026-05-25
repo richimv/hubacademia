@@ -205,6 +205,11 @@
     color: #f97316;
 }
 
+.action-idiomas {
+    color: #c084fc;
+    background: transparent !important;
+}
+
 .module-badge {
     position: absolute;
     top: 1.5rem;

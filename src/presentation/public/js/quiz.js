@@ -47,6 +47,18 @@ const LOADING_RESOURCES = {
             "Sabías que: El error constructivo es una oportunidad valiosa de aprendizaje según el MINEDU.",
             "Clave: La evaluación formativa busca regular el aprendizaje, no solo calificarlo."
         ]
+    },
+    'IDIOMAS': {
+        title: 'Preparando tu entrenamiento',
+        subtitle: 'Cargando Módulo de Idiomas...',
+        tips: [
+            "La repetición espaciada es clave para memorizar vocabulario a largo plazo.",
+            "Aprender frases completas es más efectivo que memorizar palabras aisladas.",
+            "Escuchar audios con transcripciones ayuda a conectar fonética y ortografía.",
+            "Practica hablar contigo mismo en el idioma objetivo para mejorar tu fluidez.",
+            "El contexto es tu mejor amigo para deducir el significado de palabras nuevas.",
+            "Intenta pensar directamente en el idioma objetivo sin traducir mentalmente."
+        ]
     }
 };
 
@@ -160,7 +172,7 @@ window.showExamReview = async function () {
                             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                             saveBtn.disabled = true;
                             try {
-                                const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/training/flashcards/save-from-question`, {
+                                const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/flashcard/save-from-question`, {
                                     method: 'POST',
                                     body: JSON.stringify({ question: q, topic: q.topic || state.topic, moduleName: state.context || 'MEDICINA' })
                                 });
@@ -186,7 +198,7 @@ window.showExamReview = async function () {
 
         const isDemoStatus = new URLSearchParams(window.location.search).get('demo') === 'true';
         if (!isDemoStatus && answeredQuestions.length > 0) {
-            window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/training/flashcards/check-saved`, {
+            window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/flashcard/check-saved`, {
                 method: 'POST',
                 body: JSON.stringify({ questions: answeredQuestions, moduleName: state.context || 'MEDICINA' })
             }).then(res => res.json()).then(data => {
@@ -212,15 +224,24 @@ window.showExamReview = async function () {
 };
 
 // Configuración
-const API_URL = `${window.AppConfig.API_URL}/api/quiz`; // Ajustar según config
+let API_URL = `${window.AppConfig.API_URL}/api/medico`; // Default fallback
 
 // 1. Inicialización
 async function init() {
     // Obtener parámetros de URL
     const urlParams = new URLSearchParams(window.location.search);
     state.topic = urlParams.get('topic') || '';
-    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || 'Senior';
     state.context = urlParams.get('context') || 'MEDICINA'; // Default
+
+    // Configurar API_URL dinámicamente según contexto
+    const ctxUpper = state.context.toUpperCase();
+    if (ctxUpper === 'EDUCACION') {
+        API_URL = `${window.AppConfig.API_URL}/api/docente`;
+    } else if (ctxUpper === 'IDIOMAS') {
+        API_URL = `${window.AppConfig.API_URL}/api/idiomas-simulator`;
+    } else {
+        API_URL = `${window.AppConfig.API_URL}/api/medico`;
+    }
 
     // Custom Exam Builder params
     let savedConfig = null;
@@ -228,6 +249,8 @@ async function init() {
         const stored = localStorage.getItem(`simActiveConfig_${state.context}`);
         if (stored) savedConfig = JSON.parse(stored);
     } catch (error) { console.warn("No active config found"); }
+
+    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || (savedConfig && savedConfig.difficulty ? savedConfig.difficulty : (state.context === 'IDIOMAS' ? 'B2' : 'Senior'));
 
     state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'SERUMS');
     state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
@@ -372,7 +395,7 @@ async function getValidToken() {
 // 2. Iniciar Quiz (Llamada al Backend)
 async function startQuiz() {
     // Mostrar Loading Dinámico y Tips
-    const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
+    const ctxKey = state.context === 'IDIOMAS' ? 'IDIOMAS' : ((['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA');
     const resources = LOADING_RESOURCES[ctxKey];
 
     if (elements.loadingTitle) elements.loadingTitle.innerText = resources.title;
@@ -415,6 +438,7 @@ async function startQuiz() {
             target: state.targetExam,
             areas: state.areas,
             career: state.career,
+            difficulty: state.difficulty,
             limit: Math.min(5, state.maxQuestions)
         })
     };
@@ -616,6 +640,7 @@ async function fetchNextBatch() {
                 target: state.targetExam,
                 areas: state.areas,
                 career: state.career,
+                difficulty: state.difficulty,
                 seenIds: seenIds
             })
         });
@@ -691,6 +716,13 @@ async function fetchNextBatch() {
 
 // 3. Renderizar Pregunta
 function renderQuestion() {
+    if (window.currentQuizAudio) {
+        try {
+            window.currentQuizAudio.pause();
+        } catch (e) {}
+        window.currentQuizAudio = null;
+    }
+
     // Check if we are done
     if (state.currentQuestionIndex >= state.maxQuestions) {
         return finishQuiz();
@@ -734,7 +766,7 @@ function renderQuestion() {
                 transition: 'opacity 0.4s ease'
             });
 
-            const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
+            const ctxKey = state.context === 'IDIOMAS' ? 'IDIOMAS' : ((['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA');
             const resources = LOADING_RESOURCES[ctxKey];
             const randomTip = resources.tips[Math.floor(Math.random() * resources.tips.length)];
 
@@ -796,6 +828,33 @@ function renderQuestion() {
 
     // Texto Pregunta
     elements.questionText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.question_text || '') : (q.question_text || '');
+
+    // Inject premium audio player if audio_text is present (for Listening Comprehension)
+    if (q.audio_text) {
+        const audioWrapper = document.createElement('div');
+        audioWrapper.className = 'quiz-audio-player-wrapper';
+        audioWrapper.style.cssText = 'margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 1rem; display: flex; align-items: center; gap: 1rem;';
+        
+        const playBtn = document.createElement('button');
+        playBtn.className = 'quiz-audio-btn btn-message-tts';
+        playBtn.style.cssText = 'width: 45px; height: 45px; border-radius: 50%; border: none; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;';
+        playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        
+        playBtn.onclick = () => {
+            window.playQuestionAudio(playBtn, q.audio_text, state.career || 'en-US');
+        };
+
+        const infoDiv = document.createElement('div');
+        infoDiv.style.flex = '1';
+        infoDiv.innerHTML = `
+            <div style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.25rem;">Comprensión Auditiva</div>
+            <div style="font-size: 0.75rem; color: #64748b;">Escucha el audio para responder la pregunta</div>
+        `;
+        
+        audioWrapper.appendChild(playBtn);
+        audioWrapper.appendChild(infoDiv);
+        elements.questionText.prepend(audioWrapper);
+    }
 
     // Reset UI
     elements.optionsGrid.innerHTML = '';
@@ -1025,13 +1084,14 @@ async function finishQuiz() {
     }
 
     try {
-        await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/quiz/submit`, {
+        await window.NetworkService.fetch(`${API_URL}/submit`, {
             method: 'POST',
             body: JSON.stringify({
                 topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : state.topic,
                 areas: state.areas,
                 target: state.targetExam,
                 career: state.career,
+                difficulty: state.difficulty,
                 score: state.score,
                 total_questions: state.currentQuestionIndex,
                 questions: state.questions.slice(0, state.currentQuestionIndex).map((q, idx) => ({
@@ -1061,5 +1121,74 @@ async function finishQuiz() {
 
 // Auto-init
 document.addEventListener('DOMContentLoaded', init);
+
+window.playQuestionAudio = async function (btn, text, lang) {
+    const icon = btn.querySelector('i');
+    if (!icon) return;
+
+    if (window.currentQuizAudio && window.currentQuizAudio.src && btn.dataset.playing === 'true') {
+        window.currentQuizAudio.pause();
+        return;
+    }
+
+    if (window.currentQuizAudio) {
+        try {
+            window.currentQuizAudio.pause();
+        } catch (e) {}
+        document.querySelectorAll('.quiz-audio-btn').forEach(b => {
+            b.dataset.playing = 'false';
+            const i = b.querySelector('i');
+            if (i) i.className = 'fas fa-play';
+        });
+    }
+
+    icon.className = 'fas fa-spinner fa-spin';
+    btn.disabled = true;
+
+    try {
+        const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/tts`, {
+            method: 'POST',
+            body: JSON.stringify({ text, lang })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        window.currentQuizAudio = audio;
+        btn.dataset.playing = 'true';
+        btn.disabled = false;
+        icon.className = 'fas fa-pause';
+
+        audio.onended = () => {
+            btn.dataset.playing = 'false';
+            icon.className = 'fas fa-play';
+            URL.revokeObjectURL(audioUrl);
+            window.currentQuizAudio = null;
+        };
+
+        audio.onpause = () => {
+            btn.dataset.playing = 'false';
+            icon.className = 'fas fa-play';
+        };
+
+        audio.onplay = () => {
+            btn.dataset.playing = 'true';
+            icon.className = 'fas fa-pause';
+        };
+
+        await audio.play();
+    } catch (err) {
+        console.error("Error playing audio:", err);
+        icon.className = 'fas fa-exclamation-triangle';
+        btn.disabled = false;
+        setTimeout(() => {
+            icon.className = 'fas fa-play';
+        }, 2000);
+    }
+};
 
 console.log("💎 Module quiz.js loaded successfully. showExamReview is ready.");

@@ -134,17 +134,32 @@ const checkAILimits = (type) => {
             }
 
             if (effectiveType === 'chat_standard') {
-                if (!isActiveAccount) {
-                    if (hasGlobalLives) {
-                        req.usageType = 'usage_count'; // Gasta la vida dorada
+                const isDiagnostic = req.path.includes('/diagnostic') || req.originalUrl.includes('/diagnostic');
+                if (isDiagnostic) {
+                    if (!isActiveAccount) {
+                        req.usageType = null;
+                        req.fallbackToStatic = true;
                     } else {
-                        return res.status(403).json({ error: 'Límite de consultas de Prueba agotado. Mejora tu plan para continuar aprendiendo con IA.', reason: 'FREE_LIVES_EXHAUSTED' });
+                        if ((user.daily_ai_usage || 0) >= userLimits.chat_standard) {
+                            req.usageType = null;
+                            req.fallbackToStatic = true;
+                        } else {
+                            req.usageType = 'daily_ai_usage';
+                        }
                     }
                 } else {
-                    if (user.daily_ai_usage >= userLimits.chat_standard) {
-                        return res.status(403).json({ error: 'Límite de mensajes diarios estándar alcanzado. Vuelve mañana o mejora tu plan.', reason: 'DAILY_LIMIT_EXHAUSTED' });
+                    if (!isActiveAccount) {
+                        if (hasGlobalLives) {
+                            req.usageType = 'usage_count'; // Gasta la vida dorada
+                        } else {
+                            return res.status(403).json({ error: 'Límite de consultas de Prueba agotado. Mejora tu plan para continuar aprendiendo con IA.', reason: 'FREE_LIVES_EXHAUSTED' });
+                        }
+                    } else {
+                        if (user.daily_ai_usage >= userLimits.chat_standard) {
+                            return res.status(403).json({ error: 'Límite de mensajes diarios estándar alcanzado. Vuelve mañana o mejora tu plan.', reason: 'DAILY_LIMIT_EXHAUSTED' });
+                        }
+                        req.usageType = 'daily_ai_usage';
                     }
-                    req.usageType = 'daily_ai_usage';
                 }
             }
             else if (effectiveType === 'monthly_flashcards') {

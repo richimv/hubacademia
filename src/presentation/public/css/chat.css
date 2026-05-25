@@ -260,95 +260,78 @@
     letter-spacing: -0.01em;
 }
 
-.chatbot-spec-container {
-    display: flex;
-    align-items: center;
-}
-
-.chatbot-spec-select {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--chat-primary);
-    font-size: 0.85rem; /* ✅ Mismo tamaño que el título */
-    font-weight: 500;
-    padding: 1px 18px 1px 4px;
-    border-radius: 4px;
-    cursor: pointer;
-    outline: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%233b82f6'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 2px center;
-    background-size: 10px;
-    transition: all 0.2s;
-    max-width: 100px;
-}
-
-.chatbot-spec-select:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: var(--chat-primary);
-}
-
-.chatbot-spec-select option {
-    background-color: rgba(25, 25, 25, 0.95); /* ✅ Fondo Oscuro */
-    color: var(--chat-text);
-    padding: 8px;
-}
-
-/* ✅ RESTAURADO: Tooltip Informativo (Ícono 'i') */
-.chatbot-spec-info {
-    font-size: 0.8rem;
-    color: var(--chat-text-muted);
-    cursor: help;
-    position: relative;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-    margin-left: 2px;
-}
-
-.chatbot-spec-info:hover {
-    opacity: 1;
-    color: var(--chat-primary);
-}
-
-/* Tooltip Premium para el icono 'i' */
-.chatbot-spec-info::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    top: calc(100% + 12px);
-    right: 0;
-    width: 260px;
-    background: rgba(10, 10, 10, 0.98);
-    color: rgba(255, 255, 255, 0.9);
+/* ✅ Selector de Especialidad tipo Tabs/Pestañas Glassmorphic */
+.chatbot-spec-tabs-container {
     padding: 12px 16px;
-    border-radius: 10px;
-    font-size: 0.75rem;
-    line-height: 1.5;
-    text-align: left;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 10000;
-    backdrop-filter: blur(15px);
-    pointer-events: none;
-    
-    /* ✅ FIX: Evitar desbordamiento de texto */
-    white-space: normal;
-    word-wrap: break-word;
-    display: block;
-    
-    /* ✅ REQUERIMIENTOS DE DISEÑO PROFESIONAL */
-    font-family: 'Inter', 'Outfit', 'Segoe UI', Roboto, sans-serif;
-    letter-spacing: 0.01em;
-    font-weight: 400;
+    background: rgba(10, 10, 10, 0.4);
+    border-bottom: 1px solid var(--chat-border);
+    backdrop-filter: blur(12px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 105;
 }
 
-.chatbot-spec-info:hover::after {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
+.spec-tabs-wrapper {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    max-width: 360px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 6px 8px;
+    gap: 8px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.02), 0 4px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.spec-tab {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    outline: none;
+    user-select: none;
+}
+
+.spec-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* ✅ Estilos de Acento Premium para Pestaña Activa */
+.spec-tab[data-value="neutral"].active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.25), inset 0 0 6px rgba(255, 255, 255, 0.1);
+}
+
+.spec-tab[data-value="medicine"].active {
+    color: #ffffff;
+    background: rgba(6, 182, 212, 0.12);
+    border: 1.5px solid rgba(6, 182, 212, 0.8);
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.5), inset 0 0 8px rgba(6, 182, 212, 0.25);
+}
+
+.spec-tab[data-value="education"].active {
+    color: #ffffff;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1.5px solid rgba(16, 185, 129, 0.8);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.5), inset 0 0 8px rgba(16, 185, 129, 0.25);
 }
 
 /* Color dinámico del Icono del Robot */
@@ -366,23 +349,18 @@
 }
 
 .chatbot-icon-svg[data-persona="medicine"] {
-    color: #3b82f6;
-    background: rgba(59, 130, 246, 0.2);
+    color: #06b6d4;
+    background: rgba(6, 182, 212, 0.15);
 }
 
 .chatbot-icon-svg[data-persona="education"] {
     color: #10b981;
-    background: rgba(16, 185, 129, 0.2);
-}
-
-.chatbot-icon-svg[data-persona="languages"] {
-    color: #f59e0b;
-    background: rgba(245, 158, 11, 0.2);
+    background: rgba(16, 185, 129, 0.15);
 }
 
 .chatbot-icon-svg[data-persona="neutral"] {
-    color: #6366f1;
-    background: rgba(99, 102, 241, 0.2);
+    color: #cbd5e1;
+    background: rgba(203, 213, 225, 0.15);
 }
 
 /* ✅ AJUSTES RESPONSIVOS PRO */
@@ -399,21 +377,27 @@
         font-size: 0.8rem; /* ✅ Mismo tamaño */
     }
     
-    .chatbot-spec-select {
-        max-width: 100px;
-        font-size: 0.8rem; /* ✅ Mismo tamaño */
-        padding: 1px 18px 1px 4px;
-    }
-
     .chatbot-icon-svg {
         width: 26px;
         height: 26px;
         font-size: 0.9rem;
     }
 
-    .chatbot-spec-info::after {
-        width: 200px; /* Un poco más estrecho en móvil */
-        right: -30px; 
+    .chatbot-spec-tabs-container {
+        padding: 8px 10px;
+    }
+
+    .spec-tabs-wrapper {
+        gap: 4px;
+        padding: 4px 6px;
+        border-radius: 12px;
+    }
+
+    .spec-tab {
+        font-size: 0.68rem;
+        padding: 8px 6px;
+        border-radius: 8px;
+        letter-spacing: 0.02em;
     }
 }
 
@@ -923,12 +907,7 @@
         /* El chat ya es Full Screen en móviles */
     }
 
-    /* Ajuste para Tooltips en Móvil */
-    .persona-pill::after {
-        width: 80vw;
-        max-width: 280px;
-        font-size: 0.8rem;
-    }
+
 }
 
 /* --- Fullscreen Mode Expansion --- */

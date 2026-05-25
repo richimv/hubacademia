@@ -48,7 +48,7 @@ class AdminAiService {
     /**
      * Generación masiva con validación de target.
      */
-    async generateRAGQuestions(target, studyAreas, career, amount = 10, isUserRequest = false) {
+    async generateRAGQuestions(target, studyAreas, career, amount = 10, isUserRequest = false, difficulty = null) {
         // 🛡️ BARRERA ELIMINADA: Anteriormente solo se permitía ASCENSO y SERUMS.
         // Ahora el sistema es Universal RAG, por lo que permitimos todos los targets.
         const normalizedTarget = target.toUpperCase();
@@ -85,7 +85,7 @@ class AdminAiService {
 
                 console.log(`📝 [Generando ${allQuestions.length + 1}/${amount}] Área: ${area} (Intento: ${totalAttempts})`);
 
-                const q = await this._generateSingleQuestion(normalizedTarget, area, career, batchHistory, isUserRequest);
+                const q = await this._generateSingleQuestion(normalizedTarget, area, career, batchHistory, isUserRequest, difficulty);
 
                 if (q) {
                     allQuestions.push(q);
@@ -118,8 +118,211 @@ class AdminAiService {
     /**
      * _generateSingleQuestion: Pipeline Robotizado de 4 Fases.
      */
-    async _generateSingleQuestion(target, area, career, history = [], isUserRequest = false) {
+    async _generateSingleQuestion(target, area, career, history = [], isUserRequest = false, difficulty = null) {
         try {
+            const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS'];
+            const isLanguage = (target && LANGUAGE_TARGETS.includes(target.toUpperCase())) || target === 'languages';
+
+            if (isLanguage) {
+                // Determinar el idioma y especificaciones basados en career (dialecto)
+                let languageDetails = "";
+                if (career === 'en-US') {
+                    languageDetails = "Language: English (United States) [en-US]. Use American spelling (e.g., 'color', 'analyze', 'center'), American idioms, and tech/business context.";
+                } else if (career === 'en-GB') {
+                    languageDetails = "Language: English (United Kingdom) [en-GB]. Use British spelling (e.g., 'colour', 'analyse', 'centre'), British idioms, and academic/IELTS-style context.";
+                } else if (career === 'it-IT') {
+                    languageDetails = "Language: Italian (Italy) [it-IT]. Focus on grammatical structures, gender agreement, formal vs informal registers (Lei vs tu), and appropriate prepositions.";
+                } else {
+                    languageDetails = `Language Code: ${career || 'en-US'}. Use the standard grammar and spelling for this language code.`;
+                }
+
+                const cefrLevel = difficulty || 'B1';
+                
+                let areaInstructions = "";
+                if (area === 'Grammar & Use of English') {
+                    areaInstructions = `Focus on grammar, syntax, word order, verb conjugations, prepositions, or sentence structure appropriate for CEFR level ${cefrLevel}. The question text MUST contain exactly one blank space represented by '_____' (5 underscores) where the correct option fits.`;
+                } else if (area === 'Vocabulary & Context') {
+                    areaInstructions = `Focus on vocabulary, word choice, synonyms/antonyms, phrasal verbs, idioms, or contextual meaning appropriate for CEFR level ${cefrLevel}. The question text MUST contain exactly one blank space represented by '_____' (5 underscores) where the correct option fits.`;
+                } else if (area === 'Reading Comprehension') {
+                    areaInstructions = `Provide a short reading passage (1-2 paragraphs) in the target language, followed by a question that tests comprehension, main idea, detail, or inference at CEFR level ${cefrLevel}. Structure the question_text as: "[Reading Passage]\n\nQuestion: [Comprehension Question]"`;
+                } else if (area === 'Listening Comprehension') {
+                    areaInstructions = `Create a script for a listening task (dialogue, announcement, or monologue) in the target language at CEFR level ${cefrLevel}. Store this script in the 'audio_text' field (max 100 words). The 'question_text' should be a question testing comprehension of that script. (e.g., 'According to the speaker, what is the main goal...?')`;
+                }
+
+                const historyString = (history && history.length > 0)
+                    ? `HISTORIAL DE PREGUNTAS YA EXISTENTES (PROHIBIDO GENERAR ESTAS PREGUNTAS O VARIACIONES SIMILARES):\n${history.slice(-30).map((h, i) => `${i+1}. ${h}`).join('\n')}`
+                    : "No hay preguntas previas.";
+
+                const languagePrompt = `
+                Actúa como un profesor experto y creador de exámenes internacionales de idiomas (tipo TOEFL, IELTS, Cambridge, CELI).
+                Genera UNA pregunta de opción múltiple con las siguientes especificaciones:
+                
+                ${languageDetails}
+                - Nivel MCER (CEFR) objetivo: ${cefrLevel}
+                - Habilidad / Área a evaluar: ${area}
+                - Especificaciones de la habilidad: ${areaInstructions}
+                
+                🚨 REGLAS DE ORO DE IDIOMAS:
+                1. El enunciado de la pregunta (question_text), el pasaje de lectura (si aplica), el script de audio (si aplica) y todas las opciones de respuesta (options) DEBEN estar escritos 100% en el idioma objetivo (${career.split('-')[0]}). No incluyas español en estas partes.
+                2. La explicación (explanation) DEBE estar escrita en ESPAÑOL, explicando de forma clara y didáctica la gramática, vocabulario o justificación de la respuesta correcta.
+                3. Genera exactamente 4 opciones de respuesta. Evita el sesgo de longitud: TODAS las 4 opciones de respuesta deben tener una longitud similar (aproximadamente el mismo número de palabras). La opción correcta NO debe ser más detallada, más larga ni más descriptiva que los distractores.
+                4. Sin letras (A, B, C, D) al inicio de las opciones.
+                5. Escapa correctamente cualquier comilla doble interna usando \\" para que no se rompa el JSON.
+                6. Para preguntas que NO sean de 'Listening Comprehension', el campo 'audio_text' debe ser nulo.
+                7. Para las áreas 'Grammar & Use of English' y 'Vocabulary & Context', el enunciado de la pregunta ('question_text') DEBE incluir obligatoriamente un espacio en blanco representado exactamente por 5 guiones bajos ('_____') para que el usuario sepa dónde completar el conector, palabra o frase correspondiente.
+                8. EVITAR DUPLICADOS Y CLONES: Revisa el historial de preguntas ya existentes que se proporciona abajo y genera una pregunta completamente nueva sobre un tema, situación, vocabulario o contexto diferente. No repitas ni adaptes levemente las preguntas existentes.
+                
+                ${historyString}
+                
+                RESPONDE ÚNICAMENTE CON EL SIGUIENTE FORMATO JSON (sin bloques de código markdown ni texto adicional):
+                {
+                  "question_text": "Texto de la pregunta (e.g. 'Complete the sentence: She _____ to the store yesterday.' o el pasaje de lectura seguido de la pregunta)",
+                  "options": ["went", "goes", "has gone", "will go"],
+                  "correct_option_index": 0,
+                  "explanation": "Explicación didáctica en español sobre por qué 'went' es la opción correcta debido al adverbio de tiempo 'yesterday'.",
+                  "topic": "${area}",
+                  "difficulty": "${cefrLevel}",
+                  "career": "${career}",
+                  "audio_text": ${area === 'Listening Comprehension' ? '"Script del audio en el idioma objetivo para que sea sintetizado."' : 'null'}
+                }
+                `;
+
+                console.log(`🤖 [Language Gen] Generando pregunta de idiomas de nivel ${cefrLevel} para el área '${area}' en variante '${career}'`);
+                const result = await this.model.generateContent(languagePrompt);
+                const responseText = result.response.candidates[0].content.parts[0].text;
+                const questionObj = this._parseJSON(responseText);
+                
+                // Asegurar que contenga los campos necesarios
+                questionObj.topic = area;
+                questionObj.difficulty = cefrLevel;
+                questionObj.career = career;
+                
+                let question = questionObj;
+                
+                const checkLanguageQuality = (q) => {
+                    const issues = [];
+                    if (!q.options || q.options.length !== 4) {
+                        issues.push(`La pregunta debe tener exactamente 4 opciones. Actualmente tiene ${q.options ? q.options.length : 0}.`);
+                    }
+                    if (q.correct_option_index === undefined || q.correct_option_index < 0 || q.correct_option_index > 3) {
+                        issues.push(`El campo 'correct_option_index' debe ser un número entero entre 0 y 3.`);
+                    }
+                    
+                    // Comprobar placeholders para Grammar y Vocabulary
+                    const needsPlaceholder = ['Grammar & Use of English', 'Vocabulary & Context'].includes(area);
+                    const text = q.question_text || "";
+                    const hasPlaceholder = text.includes('_____') || text.includes('____') || text.includes('___');
+                    if (needsPlaceholder && !hasPlaceholder) {
+                        issues.push(`El enunciado de la pregunta (question_text) para el área '${area}' DEBE incluir un espacio en blanco '_____' (cinco guiones bajos) para indicar la palabra que falta.`);
+                    }
+                    
+                    // Comprobar asimetría de longitud de opciones (evitar que la correcta destaque por longitud)
+                    if (q.options && q.options.length === 4 && q.correct_option_index >= 0 && q.correct_option_index <= 3) {
+                        const lengths = q.options.map(o => String(o).length);
+                        const correctLen = lengths[q.correct_option_index];
+                        const distractorLengths = lengths.filter((_, i) => i !== q.correct_option_index);
+                        const avgDistractorLen = distractorLengths.reduce((a, b) => a + b, 0) / distractorLengths.length;
+                        const maxLen = Math.max(...lengths);
+                        const minLen = Math.min(...lengths);
+                        
+                        // Si la correcta es más del doble de larga que la media de los distractores y difiere por más de 15 caracteres
+                        if (Math.abs(correctLen - avgDistractorLen) > 15 || (maxLen - minLen) > 25) {
+                            issues.push(`Asimetría detectada en las opciones de respuesta. La opción correcta tiene longitud ${correctLen} mientras que los distractores tienen una longitud promedio de ${Math.round(avgDistractorLen)}. Todas las opciones deben tener una longitud y nivel de detalle similar para evitar pistas obvias.`);
+                        }
+                    }
+                    
+                    // Evitar duplicados
+                    const normGenText = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const isDuplicate = history.some(histText => {
+                        if (!histText) return false;
+                        const normHistText = String(histText).toLowerCase().replace(/[^a-z0-9]/g, '');
+                        // Si son idénticos o uno contiene al otro
+                        return normHistText === normGenText || 
+                               (normHistText.length > 15 && normGenText.includes(normHistText)) || 
+                               (normGenText.length > 15 && normHistText.includes(normGenText));
+                    });
+                    if (isDuplicate) {
+                        issues.push(`La pregunta generada es un duplicado o clon muy similar a una pregunta del historial de la BD.`);
+                    }
+                    
+                    return issues;
+                };
+
+                let issues = checkLanguageQuality(question);
+                let auditAttempts = 0;
+                
+                while (issues.length > 0 && auditAttempts < 3) {
+                    auditAttempts++;
+                    console.log(`⚖️ [Auditoría Idiomas L${auditAttempts}] Problemas encontrados:\n- ${issues.join('\n- ')}`);
+                    
+                    const refinementPrompt = `
+                    Actúa como un profesor y editor experto de exámenes internacionales de idiomas.
+                    La siguiente pregunta de opción múltiple generada por IA en formato JSON tiene problemas de calidad que deben ser corregidos:
+
+                    Pregunta actual:
+                    ${JSON.stringify(question, null, 2)}
+
+                    Problemas detectados a corregir:
+                    ${issues.map((iss, idx) => `${idx + 1}. ${iss}`).join('\n')}
+
+                    Por favor, corrige y devuelve la pregunta en formato JSON siguiendo estas instrucciones:
+                    1. Si falta el espacio en blanco ('_____') para Grammar o Vocabulary, añádelo en el lugar adecuado del enunciado.
+                    2. Si hay asimetría en la longitud de las opciones (es decir, una opción es mucho más larga o descriptiva que las demás, facilitando la respuesta), reescribe las opciones para que TODAS las 4 tengan una longitud, estilo y nivel de detalle similar.
+                    3. Si la pregunta es duplicada o muy similar a las del historial, reescribe por completo el enunciado y las opciones para usar un contexto, vocabulario o situación completamente diferente, pero manteniendo el área (${area}) y nivel (${cefrLevel}).
+                    4. Asegúrate de que las opciones NO comiencen con letras como A), B), C), D).
+                    5. Mantén la explicación didáctica detallada en ESPAÑOL.
+
+                    RESPONDE ÚNICAMENTE CON EL SIGUIENTE FORMATO JSON (sin bloques de código markdown ni texto adicional):
+                    {
+                      "question_text": "...",
+                      "options": [...],
+                      "correct_option_index": ...,
+                      "explanation": "...",
+                      "topic": "${area}",
+                      "difficulty": "${cefrLevel}",
+                      "career": "${career}",
+                      "audio_text": ...
+                    }
+                    `;
+                    
+                    try {
+                        const refinedResult = await this.model.generateContent(refinementPrompt);
+                        const refinedText = refinedResult.response.candidates[0].content.parts[0].text;
+                        question = this._parseJSON(refinedText);
+                        
+                        // Asegurar metadatos correctos
+                        question.topic = area;
+                        question.difficulty = cefrLevel;
+                        question.career = career;
+                        
+                        issues = checkLanguageQuality(question);
+                    } catch (refineErr) {
+                        console.error(`⚠️ Error en auditoría/refinamiento de idiomas (intento ${auditAttempts}):`, refineErr.message);
+                        break;
+                    }
+                }
+                
+                // Si aún tiene problemas de asimetría o placeholders después de 3 intentos, intentamos sanearlo
+                if (issues.length > 0) {
+                    console.warn(`🚨 [Calidad Idiomas] Pregunta devuelta con advertencias tras 3 intentos. Saneando lo básico...`);
+                    // Asegurar placeholder si es necesario y falta
+                    if (['Grammar & Use of English', 'Vocabulary & Context'].includes(area) && 
+                        !question.question_text.includes('_____') && !question.question_text.includes('___')) {
+                        question.question_text += ' _____';
+                    }
+                    // Forzar que tenga 4 opciones si no es así
+                    if (!question.options || question.options.length !== 4) {
+                        question.options = question.options ? question.options.slice(0, 4) : ["option 1", "option 2", "option 3", "option 4"];
+                        while (question.options.length < 4) {
+                            question.options.push(`option ${question.options.length + 1}`);
+                        }
+                        question.correct_option_index = 0;
+                    }
+                }
+                
+                return question;
+            }
+
             const namespace = target === 'ASCENSO' || target === 'NOMBRAMIENTO' || target === 'ACCESO_CARGOS' ? 'education' : 'medicine';
 
             // --- FASE 1: EL SELECTOR DE MENÚ (Escoger el tema desde el prospecto) ---

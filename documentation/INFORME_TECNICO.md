@@ -13,12 +13,12 @@ El ecosistema de código fuente se organiza dentro del directorio de código fue
   - `js/simulator-dash.js`: Tablero interactivo que mapea y renderiza KPIs del simulador a partir del contexto del usuario.
   - `js/quiz.js`: Motor de ejecución del examen clínico/pedagógico con persistencia en el almacenamiento local ante fallos de red.
 - **`src/application/`**: Capa de aplicación que contiene controladores y middlewares en NodeJS/Express:
-  - `controllers/`: Orquestadores que reciben las peticiones HTTP y delegan la ejecución a los servicios del dominio (ej. `quizController.js`, `deckController.js`, `paymentController.js`, `mediaController.js`).
+  - `controllers/`: Orquestadores que reciben las peticiones HTTP y delegan la ejecución a los servicios del dominio (ej. `medicoController.js`, `docenteController.js`, `idiomasSimulatorController.js`, `flashcardController.js`, `selfEvaluationController.js`, `deckController.js`, `paymentController.js`, `mediaController.js`).
   - `middlewares/checkLimitsMiddleware.js`: Cortafuegos financiero transaccional encargado de regular el consumo de llamadas a APIs externas de IA y transferencias de archivos según el rol y nivel del usuario en tiempo real.
 - **`src/domain/`**: Núcleo lógico del negocio. Define las reglas de dominio, entidades, prompts de IA y servicios de infraestructura:
-  - `services/`: Lógica operativa de los módulos (ej. `tutorAiService.js`, `trainingService.js`, `ragService.js`, `questionRagService.js`, `ttsService.js`, `driveService.js`).
+  - `services/`: Lógica operativa de los módulos (ej. `medicoService.js`, `docenteService.js`, `idiomasSimulatorService.js`, `flashcardService.js`, `selfEvaluationService.js`, `tutorAiService.js`, `ragService.js`, `questionRagService.js`, `ttsService.js`, `driveService.js`).
   - `prompts/`: Definición de plantillas sistemáticas para Gemini (`generationPrompts.js`, `chatPrompts.js`).
-  - `repositories/`: Capa de abstracción de persistencia de datos (ej. `trainingRepository.js`, `analyticsRepository.js`).
+  - `repositories/`: Capa de abstracción de persistencia de datos (ej. `medicoRepository.js`, `docenteRepository.js`, `idiomasSimulatorRepository.js`, `flashcardRepository.js`, `selfEvaluationRepository.js`, `analyticsRepository.js`).
 - **`src/infrastructure/`**: Enrutamiento, bases de datos y configuraciones globales:
   - `config/`: Archivos de configuración de Express (`server.js`), cliente de base de datos (`supabaseClient.js`) y limitadores de tasa (`rateLimiters.js`).
   - `database/`: Definición de esquemas físicos (`database_schema.sql`), scripts de migración (`monetization_migration.sql`) y procedimientos almacenados avanzados (`stored_procedures.sql`).
@@ -74,14 +74,14 @@ Para la creación del banco de preguntas, el sistema aplica una secuencia determ
 
 ### 1.4 Módulo de Simuladores y Autoevaluación de Recursos
 
-El simulador médico y pedagógico implementa una lógica de consulta híbrida de emergencia para optimizar costes de inferencia y garantizar la disponibilidad del servicio:
-- **Banco Local Primero**: Intenta recuperar un lote de 5 preguntas directamente de `question_bank` mapeando la configuración seleccionada por el estudiante.
-- **IA de Reposición en Vivo**: Si el stock local es insuficiente para cubrir la diversidad de áreas solicitadas, el backend (`userAiService.js` en conjunto con `trainingService.js`) se activa al vuelo. Genera preguntas individuales balanceadas sobre las materias deficientes usando Gemini en modo rápido (sin RAG pesado para usuario final).
+Los simuladores médico, docente e idiomas, así como el módulo de autoevaluación, están implementados de manera independiente en sus respectivas capas para garantizar total desacoplamiento. Implementan una lógica de consulta híbrida de emergencia para optimizar costes de inferencia y garantizar la disponibilidad del servicio:
+- **Banco Local Primero**: Intenta recuperar un lote de 5 preguntas directamente de `question_bank` mapeando la configuración seleccionada por el estudiante usando los repositorios específicos (`medicoRepository.js`, `docenteRepository.js`, `idiomasSimulatorRepository.js`).
+- **IA de Reposición en Vivo**: Si el stock local es insuficiente para cubrir la diversidad de áreas solicitadas, los servicios específicos correspondientes (`medicoService.js`, `docenteService.js`, `idiomasSimulatorService.js`) generan preguntas individuales balanceadas sobre las materias deficientes usando Gemini en modo rápido (sin RAG pesado para el usuario final).
 - **Autoevaluación IA de Recursos (Regla de los <15k caracteres)**:
-  - Si el contenido de texto plano del recurso en base de datos es inferior a 15,000 caracteres, se inyecta directamente en el prompt del LLM para una respuesta instantánea a coste $0 de base de datos vectorial.
+  - Está a cargo del servicio `selfEvaluationService.js`. Si el contenido de texto plano del recurso en base de datos es inferior a 15,000 caracteres, se inyecta directamente en el prompt del LLM para una respuesta instantánea a coste $0 de base de datos vectorial.
   - Si supera los 15,000 caracteres o es nulo, el sistema enruta la consulta hacia Pinecone mediante una búsqueda semántica basada en el título y temas del recurso.
   - Si el motor vectorial reporta fallos, se activa el *Fallback Generativo Experto*, donde Gemini actúa bajo su conocimiento interno para evitar interrupciones en la UI.
-- **Tope de Seguridad**: Limitado a 15 autoevaluaciones diarias universales (`daily_arena_usage`) para evitar la saturación de llamadas API en bucles automatizados.
+- **Tope de Seguridad**: Limitado a 15 autoevaluaciones diarias universales (`daily_arena_usage`) registradas por `selfEvaluationRepository.js` para evitar la saturación de llamadas API en bucles automatizados.
 
 ---
 
@@ -166,7 +166,7 @@ El webhook del controlador de pagos (`paymentController.js`) actualiza el estado
 ### 2.5 Multiplicidad de Peticiones de Sincronización en Entrada (Race Conditions)
 A pesar de las refactorizaciones en `SessionManager`, la inicialización simultánea del cliente web de Supabase y las llamadas de carga del dashboard pueden disparar peticiones de verificación de límites e historial de manera concurrente al iniciar la aplicación.
 - **Vulnerabilidad**: La concurrencia transaccional en PostgreSQL sin bloqueos explícitos a nivel de fila (*select for update*) puede provocar lecturas sucias y actualizar saldos de vidas de forma incorrecta.
-- **Riesgo**: Un usuario Free astuto podría abrir múltiples pestañas a la vez e iniciar exámenes de la Quiz Arena en el mismo segundo exacto, burlando el decremento del contador de vidas (`usage_count`).
+- **Riesgo**: Un usuario Free astuto podría abrir múltiples pestañas a la vez e iniciar exámenes de autoevaluación en el mismo segundo exacto, burlando el decremento del contador de vidas (`usage_count`).
 
 ---
 

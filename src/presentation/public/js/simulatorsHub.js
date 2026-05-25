@@ -82,6 +82,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     toast: 'Próximamente: Generador de Rúbricas de Evaluación'
                 }
             ]
+        },
+        idiomas: {
+            title: 'Centro de Idiomas',
+            subtitle: 'Domina un nuevo idioma con simulacros de certificación y tutores de IA',
+            cards: [
+                {
+                    title: 'Simulador de Certificaciones',
+                    desc: 'Prepárate para TOEFL, IELTS, y exámenes de nivelación MCER en inglés y italiano.',
+                    href: '/simulator-dashboard?context=IDIOMAS',
+                    cssClass: 'card-lang-exam',
+                    actionText: 'Ingresar',
+                    actionColor: '#a855f7',
+                    actionIcon: 'fa-arrow-right',
+                    enabled: true
+                },
+                {
+                    title: 'Tutor Conversacional IA',
+                    desc: 'Chatea en tiempo real y recibe correcciones de gramática, vocabulario y pronunciación instantáneas.',
+                    href: '/language-tutor',
+                    cssClass: 'card-lang-chat',
+                    actionText: 'Ingresar al Chat',
+                    actionColor: '#7c3aed',
+                    actionIcon: 'fa-comments',
+                    enabled: true
+                }
+            ]
         }
     };
 

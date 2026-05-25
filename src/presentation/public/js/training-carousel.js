@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 card.style.zIndex = '5';
                 card.classList.remove('carousel-card--active');
-                card.style.pointerEvents = 'none';
+                card.style.pointerEvents = 'auto';
             } else {
                 // Ocultar tarjetas extra
                 card.style.transform = `translate(-50%, -50%) scale(1)`;

@@ -152,15 +152,16 @@ class Server {
         // ======================
         // ✅ MEJORA: Rutas con "Clean URLs" (sin .html)
         const pages = [
-            'login', 'admin', 'chat', 'dashboard', 'arena',
+            'login', 'admin', 'chat', 'dashboard', 'self-evaluation',
             'pricing', 'privacy', 'terms', 'quiz', 'course', 'career', 'category',
             'profile', 'deck-editor', 'flashcards', 'repaso', 'simulator-dashboard',
-            'simulators', 'resource'
+            'simulators', 'resource', 'language-tutor'
         ];
 
         pages.forEach(page => {
             // Ruta Limpia (ej. /pricing)
             this.app.get(`/${page}`, (req, res) => {
+                res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
                 res.sendFile(path.join(__dirname, `../../presentation/public/${page}.html`));
             });
             // Soporte Legacy (ej. /pricing.html) - Opcional: Redirigir a limpia
@@ -171,6 +172,7 @@ class Server {
 
         // ✅ Ruta Raíz
         this.app.get('/', (req, res) => {
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
             res.sendFile(path.join(__dirname, '../../presentation/public/index.html'));
         });
 

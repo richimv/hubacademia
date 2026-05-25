@@ -17,7 +17,7 @@ const AnalyticsController = require('./analyticsController');
 const CoursesController = require('./coursesController');
 const UsageController = require('./usageController'); // ✅ NUEVO
 const AdminController = require('./adminController'); // Importar la CLASE del controlador
-const QuizController = require('./quizController'); // Importar la CLASE del controlador
+// Removed QuizController require
 const UserPreferencesController = require('./userPreferencesController'); // Importar la CLASE del controlador
 const LibraryController = require('./libraryController'); // ✅ NUEVO: Importar la CLASE del controlador
 
@@ -30,6 +30,18 @@ const adminService = adminServiceSingleton;
 const searchService = new SearchService();
 const usageService = new UsageService(); // ✅ NUEVO: Servicio singleton
 
+const LanguageChatController = require('./LanguageChatController');
+const LanguageSyllabusController = require('./LanguageSyllabusController');
+const LanguageVocabularyController = require('./LanguageVocabularyController');
+
+const LanguageRepository = require('../../domain/repositories/languageRepository');
+const LanguageService = require('../../domain/services/languageService');
+const LanguageChatService = require('../../domain/services/languageChatService');
+
+const languageRepository = new LanguageRepository();
+const languageService = new LanguageService(languageRepository);
+const languageChatService = new LanguageChatService();
+
 // --- 3. Inyectar los servicios en los controladores al crearlos ---
 module.exports = {
     authController: new AuthController(authService), // Ahora authService tiene su repositorio.
@@ -38,8 +50,15 @@ module.exports = {
     coursesController: new CoursesController(searchService, adminService),
     usageController: new UsageController(usageService), // ✅ NUEVO
     adminController: require('./adminController'), // ✅ NUEVO: Importar la instancia singleton directamente
-    quizController: require('./quizController'), // ✅ NUEVO: QuizController
+    medicoController: require('./medicoController'),
+    docenteController: require('./docenteController'),
+    idiomasSimulatorController: require('./idiomasSimulatorController'),
+    flashcardController: require('./flashcardController'),
+    selfEvaluationController: require('./selfEvaluationController'),
     userPreferencesController: require('./userPreferencesController'), // ✅ NUEVO: Multi-Domain Simulator
     mediaController: require('./mediaController'), // ✅ NUEVO: Proxy de imágenes GCS
-    speechController: require('./speechController') // ✅ NUEVO: Motor de Voz (ES, EN, IT)
+    speechController: require('./speechController'), // ✅ NUEVO: Motor de Voz (ES, EN, IT)
+    languageChatController: new LanguageChatController(languageChatService), // ✅ NUEVO: Chat Conversacional de Idiomas (CCI)
+    languageSyllabusController: new LanguageSyllabusController(languageService),
+    languageVocabularyController: new LanguageVocabularyController(languageService)
 };

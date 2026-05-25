@@ -549,36 +549,44 @@
     z-index: 2000000;
 }
 
+.modal-overlay.active {
+    display: flex !important;
+}
+
 .config-modal {
     background: #0a0a0a;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(59, 130, 246, 0.2);
     border-radius: 24px;
     width: 92%;
     max-width: 500px;
     max-height: 85vh;
-    overflow-y: auto;
-    padding: 0.5rem 2rem 2rem; /* Extreme reduction of top padding */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Evitar scrollbar doble */
     box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
     animation: modalUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(59, 130, 246, 0.3) transparent;
 }
 
-/* Custom Scrollbar for Chrome/Safari */
-.config-modal::-webkit-scrollbar {
-    width: 6px;
+.config-modal .modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-.config-modal::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 20px 0; /* Important: keeps scrollbar within rounded corners */
+
+.config-modal .modal-body {
+    flex: 1;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding: 1.25rem 1.5rem !important;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
-.config-modal::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.2);
-    border-radius: 10px;
-}
-.config-modal::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.4);
+
+.config-modal .modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.01);
 }
 
 @keyframes modalUp {
@@ -659,11 +667,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
-    position: sticky;
-    top: 0;
-    background: #0a0a0a;
-    z-index: 10;
-    padding: 1.25rem 0.5rem 1rem 0; /* Aligned to left */
+    position: relative;
+    padding: 0 0 1rem 0; /* Aligned to left */
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
@@ -798,6 +803,1299 @@
 }
 
 @media (max-width: 480px) {
-    .exam-target-grid { grid-template-columns: 1fr; }
-    .area-selection-grid { grid-template-columns: 1fr; }
+    .exam-target-grid { grid-template-columns: 1fr !important; }
+    .area-selection-grid { grid-template-columns: 1fr !important; }
 }
+
+@media (max-width: 520px) {
+    .config-modal .modal-header,
+    .config-modal .modal-footer {
+        padding: 1rem 1.25rem !important;
+    }
+    .config-modal .modal-body {
+        padding: 1rem 1.25rem !important;
+    }
+    .vocab-word-row {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+    .vocab-word-row button {
+        width: 100%;
+        justify-content: center;
+        height: 44px !important;
+    }
+}
+
+/* ============================================================
+   LANGUAGES MODULE — CCI & TAB STYLES
+   ============================================================ */
+
+.languages-tabs {
+    display: none;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.5rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+}
+
+.languages-tabs::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome/Safari */
+}
+
+.lang-tab-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.5rem 1rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+    border-radius: 9999px; /* Pill style */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.lang-tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.lang-tab-btn.active {
+    color: #c084fc;
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Premium Design System Buttons */
+.btn-premium {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    color: white;
+}
+
+.btn-premium-primary {
+    background: #3b82f6 !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.btn-premium-primary:hover:not(:disabled) {
+    background: #2563eb !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.btn-premium-secondary {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #cbd5e1 !important;
+}
+
+.btn-premium-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-2px);
+}
+
+.btn-premium-ia {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+}
+
+.btn-premium-ia:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb, #7c3aed) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.45);
+}
+
+.btn-premium:disabled,
+.btn-premium-ia:disabled,
+.btn-premium-primary:disabled,
+.btn-premium-secondary:disabled {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.2) !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* CCI Container */
+.cci-container {
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+    background: rgba(15, 18, 25, 0.35);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.cci-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(10, 13, 18, 0.3);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.cci-tutor-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.avatar-glow {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.2));
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+    position: relative;
+}
+
+.avatar-glow.active-pulse::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    border-radius: 50%;
+    animation: avatarPulse 2s infinite ease-in-out;
+}
+
+@keyframes avatarPulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.3); opacity: 0; }
+}
+
+.cci-tutor-info h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.status-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.cci-selectors {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.cci-select {
+    background: rgba(10, 13, 18, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-size: 0.8rem !important;
+    padding: 0.4rem 2rem 0.4rem 0.75rem !important;
+    font-weight: 500;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.75rem center !important;
+    background-size: 0.8rem !important;
+    cursor: pointer;
+    height: auto !important;
+}
+
+.cci-auto-send-container {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+    padding: 0.4rem 0.75rem;
+    background: rgba(139, 92, 246, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 8px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+}
+
+.cci-auto-send-container:hover {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.35);
+    color: var(--text-primary);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.1);
+}
+
+.cci-auto-send-container input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #8b5cf6;
+    margin: 0;
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.cci-messages-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    background: rgba(5, 7, 10, 0.15);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.cci-message {
+    max-width: 75%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    animation: cciFadeIn 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes cciFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.cci-message.bot-msg {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border-top-left-radius: 4px;
+}
+
+.cci-message.user-msg {
+    align-self: flex-end;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(99, 102, 241, 0.12) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #e2e8f0;
+    border-top-right-radius: 4px;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.05);
+}
+
+/* Correction Alert Card */
+.cci-correction-card {
+    background: rgba(239, 68, 68, 0.04);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.cci-correction-card h5 {
+    color: #f87171;
+    margin: 0 0 0.5rem 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.correction-item {
+    display: flex;
+    align-items: start;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
+.tag-wrong {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.tag-right {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.txt-wrong {
+    text-decoration: line-through;
+    color: #ef4444;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.txt-right {
+    color: #10b981;
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.correction-explanation {
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0 0;
+    line-height: 1.45;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    padding-top: 0.5rem;
+}
+
+/* Chat Input Bar */
+.cci-input-bar {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(10, 13, 18, 0.4);
+    align-items: center;
+}
+
+.cci-input-bar input {
+    flex: 1;
+    background: rgba(5, 7, 10, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    padding: 0.85rem 1.25rem;
+    font-size: 0.9rem;
+    outline: none;
+    transition: var(--transition);
+}
+
+.cci-input-bar input:focus {
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.cci-input-bar button {
+    height: 44px;
+    width: 44px;
+    border-radius: 12px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.cci-input-bar .btn-send {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+}
+
+.cci-input-bar .btn-send:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
+}
+
+/* Audio speaker helper */
+.btn-message-tts {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: var(--transition);
+    font-size: 0.8rem;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    align-self: flex-start;
+}
+
+.btn-message-tts:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.cci-message-text {
+    word-break: break-word;
+}
+
+/* Speaking Mic Button CSS */
+.cci-input-bar .btn-mic {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cci-input-bar .btn-mic:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.cci-input-bar .btn-mic.recording {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: white !important;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.5) !important;
+    animation: active-mic-pulse 1.5s infinite;
+}
+
+@keyframes active-mic-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+/* ==========================================================================
+   Fase 4: Temario (Syllabus) y Vocabulario (Vocabulary)
+   ========================================================================== */
+
+/* 1. Temario (Syllabus) Layout */
+.cci-syllabus-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    min-height: 600px;
+    margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+    .cci-syllabus-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cci-syllabus-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.25rem;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.cci-sidebar-header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cci-sidebar-header h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 0.25rem 0;
+}
+
+.syllabus-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.cci-syllabus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    max-height: 520px;
+    padding-right: 4px;
+}
+
+/* Scrollbar styling */
+.cci-syllabus-list::-webkit-scrollbar,
+.lesson-body-scroll::-webkit-scrollbar,
+.vocab-table-wrapper::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.cci-syllabus-list::-webkit-scrollbar-thumb,
+.lesson-body-scroll::-webkit-scrollbar-thumb,
+.vocab-table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+}
+
+.cci-syllabus-list::-webkit-scrollbar-track,
+.lesson-body-scroll::-webkit-scrollbar-track,
+.vocab-table-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Syllabus Unit & Topic Card */
+.syllabus-unit {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.syllabus-unit-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #8b5cf6;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.syllabus-topic-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 0.85rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.syllabus-topic-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(3px);
+}
+
+.syllabus-topic-card.active {
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.25);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+}
+
+.topic-card-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.topic-card-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.topic-card-desc {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.topic-card-status {
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.topic-card-status.completed {
+    color: #10b981;
+}
+
+.topic-card-status.pending {
+    color: rgba(255, 255, 255, 0.15);
+}
+
+/* 2. Lesson Content Panel */
+.cci-syllabus-content {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    min-height: 580px;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.lesson-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.lesson-empty-state .empty-icon {
+    font-size: 3rem;
+    color: rgba(139, 92, 246, 0.3);
+    margin-bottom: 1rem;
+}
+
+.lesson-empty-state h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: 0.5rem;
+}
+
+.lesson-empty-state p {
+    font-size: 0.88rem;
+    max-width: 320px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.lesson-header {
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 1.25rem;
+}
+
+.lesson-badge-level {
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.lesson-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    margin: 0.5rem 0 0 0;
+}
+
+.btn-toggle-completed.completed {
+    background: rgba(16, 185, 129, 0.1) !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+    color: #34d399 !important;
+}
+
+.lesson-body-scroll {
+    overflow-y: auto;
+    max-height: 480px;
+    padding-right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+.lesson-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.lesson-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    letter-spacing: 0.3px;
+}
+
+.lesson-section-title i {
+    color: #8b5cf6;
+}
+
+.markdown-content {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #cbd5e1;
+}
+
+.markdown-content p {
+    margin: 0 0 0.75rem 0;
+}
+
+.markdown-content p:last-child {
+    margin-bottom: 0;
+}
+
+
+
+/* 3. Vocabulary Builder Layout */
+.cci-vocab-container {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    min-height: 580px;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.vocab-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 1.25rem;
+}
+
+.vocab-title-meta h4 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 0.25rem 0;
+}
+
+.vocab-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.vocab-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.vocab-table-wrapper {
+    overflow-x: auto;
+    flex-grow: 1;
+    position: relative;
+    max-height: 480px;
+}
+
+.vocab-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+.vocab-table th,
+.vocab-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    vertical-align: middle;
+}
+
+.vocab-table th {
+    background: rgba(15, 23, 42, 0.3);
+    font-weight: 600;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+}
+
+.vocab-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.vocab-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.vocab-word-cell {
+    font-weight: 600;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.vocab-badge-level {
+    font-size: 0.6rem;
+    font-weight: 700;
+    background: rgba(139, 92, 246, 0.12);
+    color: #a78bfa;
+    padding: 1px 4px;
+    border-radius: 4px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.vocab-example-text {
+    font-style: italic;
+    color: var(--text-muted);
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-vocab-play {
+    border: none;
+    background: transparent;
+    color: #3b82f6;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-vocab-play:hover {
+    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.btn-vocab-delete {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-vocab-delete:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.vocab-empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.vocab-empty-state .empty-icon {
+    font-size: 3rem;
+    color: rgba(59, 130, 246, 0.2);
+    margin-bottom: 1rem;
+}
+
+.vocab-empty-state h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: 0.5rem;
+}
+
+.vocab-empty-state p {
+    font-size: 0.85rem;
+    max-width: 320px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Expansión del significado del vocabulario */
+.vocab-details-row {
+    background: rgba(15, 23, 42, 0.2);
+}
+
+.vocab-details-container {
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ==========================================================================
+   Responsividad Móvil para Temario y Ejercicios Interactivos Estilo Cambridge
+   ========================================================================== */
+@media (max-width: 900px) {
+    .cci-syllabus-list {
+        max-height: 300px !important;
+    }
+    .lesson-body-scroll {
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+    .syllabus-interactive-table th:nth-child(2),
+    .syllabus-interactive-table td:nth-child(2) {
+        display: none; /* Ocultar pistas secundarias en pantallas muy angostas */
+    }
+}
+
+.syllabus-fill-blank-input {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.88rem;
+    font-family: inherit;
+    width: 140px;
+    text-align: center;
+    transition: all 0.2s ease;
+    outline: none;
+    display: inline-block;
+    margin: 0 4px;
+}
+
+.syllabus-fill-blank-input:focus {
+    border-color: #a78bfa;
+    background: rgba(139, 92, 246, 0.05);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+}
+
+.syllabus-fill-blank-input.correct {
+    border-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.1) !important;
+    color: #34d399 !important;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+}
+
+.syllabus-fill-blank-input.wrong {
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #f87171 !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+}
+
+.syllabus-exercise-block {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.syllabus-exercise-instructions {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #c4b5fd;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.syllabus-interactive-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+}
+
+.syllabus-interactive-table th {
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    text-align: left;
+}
+
+.syllabus-interactive-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: #e2e8f0;
+    font-size: 0.88rem;
+    vertical-align: middle;
+}
+
+.syllabus-interactive-sentence-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.syllabus-interactive-sentence-item:last-child {
+    border-bottom: none;
+}
+
+.syllabus-interactive-sentence-text {
+    font-size: 0.92rem;
+    color: #f1f5f9;
+    line-height: 1.6;
+}
+
+.syllabus-interactive-sentence-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.syllabus-item-feedback {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    line-height: 1.4;
+    display: none;
+}
+
+.syllabus-item-feedback.correct {
+    background: rgba(16, 185, 129, 0.05);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    display:block;
+}
+
+.syllabus-item-feedback.wrong {
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    display:block;
+}
+
+.syllabus-evaluation-summary {
+    background: rgba(139, 92, 246, 0.06);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-top: 1.5rem;
+    font-size: 0.88rem;
+    color: #e9d5ff;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    line-height: 1.5;
+}
+
+/* ==========================================================================
+   Responsividad Premium Móvil para el Módulo de Idiomas (Language Hub)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Prevent blowout and ensure layout boundaries */
+    .dashboard-container {
+        padding: 0.5rem !important;
+        gap: 0.5rem !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    #dashboard-content {
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Forzar ancho 100% y caja de borde en el contenedor de pestañas para evitar desbordamientos horizontales */
+    .languages-tabs {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding-left: 0.25rem !important;
+        padding-right: 0.25rem !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        position: relative !important;
+        z-index: 10 !important;
+        touch-action: pan-x !important;
+    }
+
+    /* Reducir alturas fijas de contenedores en móvil para que no ocupen toda la pantalla */
+    .cci-container {
+        height: 380px !important;
+        max-width: 100% !important;
+    }
+
+    /* Hacer el header del chat minimalista en móvil */
+    .cci-header {
+        padding: 0.4rem 0.5rem !important;
+        gap: 0.4rem !important;
+    }
+
+    .avatar-glow {
+        display: none !important; /* Hide avatar on mobile for vertical and horizontal space savings */
+    }
+
+    .cci-tutor-info {
+        gap: 0.25rem !important;
+    }
+
+    .cci-tutor-info h4 {
+        font-size: 0.85rem !important;
+    }
+
+    .status-text {
+        font-size: 0.65rem !important;
+    }
+
+    .cci-selectors {
+        width: 100% !important;
+        flex-wrap: wrap !important;
+        gap: 0.25rem !important;
+    }
+
+    .cci-select {
+        font-size: 0.7rem !important;
+        padding: 0.2rem 1.25rem 0.2rem 0.4rem !important;
+        height: 26px !important;
+        flex: 1 1 45% !important;
+        min-width: 80px !important;
+    }
+
+    .cci-auto-send-container {
+        font-size: 0.68rem !important;
+        padding: 0.2rem 0.4rem !important;
+        flex: 1 1 100% !important;
+        justify-content: center !important;
+        margin-top: 0.1rem !important;
+    }
+
+    /* Reducir burbujas y spacing de mensajes */
+    .cci-messages-box {
+        padding: 0.5rem !important;
+        gap: 0.5rem !important;
+    }
+
+    .cci-message {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.8rem !important;
+        max-width: 90% !important;
+        margin-bottom: 0.2rem !important;
+    }
+
+    .btn-message-tts {
+        margin-top: 0.15rem !important;
+        font-size: 0.7rem !important;
+        padding: 1px 4px !important;
+    }
+
+    /* Hacer la barra de entrada minimalista en móvil */
+    .cci-input-bar {
+        padding: 0.4rem 0.5rem !important;
+        gap: 0.4rem !important;
+    }
+
+    .cci-input-bar input {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.8rem !important;
+        border-radius: 6px !important;
+    }
+
+    .cci-input-bar button {
+        height: 32px !important;
+        width: 32px !important;
+        border-radius: 6px !important;
+        font-size: 0.8rem !important;
+    }
+
+    .cci-syllabus-layout {
+        min-height: auto !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    .cci-syllabus-sidebar {
+        height: auto !important;
+        max-height: 250px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+    }
+
+    /* Reducir paddings internos en lección para que quepa todo el texto responsivamente */
+    .cci-syllabus-content {
+        min-height: auto !important;
+        padding: 0.5rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+    }
+
+    .syllabus-exercise-block {
+        padding: 0.5rem 0.75rem !important;
+        margin-bottom: 1rem !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .syllabus-exercise-instructions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 0.3rem !important;
+        font-size: 0.82rem !important;
+        line-height: 1.3 !important;
+        word-break: break-word !important;
+    }
+
+    .syllabus-fill-blank-input {
+        width: 90px !important;
+        font-size: 0.8rem !important;
+        padding: 0.15rem 0.3rem !important;
+        margin: 0 1px !important;
+    }
+
+    .syllabus-interactive-sentence-text {
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
+    }
+
+    .cci-vocab-container {
+        min-height: auto !important;
+        padding: 1rem !important;
+        max-width: 100% !important;
+    }
+
+    .vocab-table-wrapper {
+        max-height: 350px !important;
+    }
+}
+
+

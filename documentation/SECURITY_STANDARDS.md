@@ -48,7 +48,7 @@ Hub Academia sigue un enfoque de defensa en profundidad, donde cada capa del sis
 ## 4. 🗄️ Seguridad de la Base de Datos (PostgreSQL)
 
 ### 4.1. Prevención Total de Inyección SQL
-*   **Consultas Parametrizadas:** Es la regla de oro en todos los repositorios (`userRepository`, `trainingRepository`, etc.). Nunca se concatenan variables en strings SQL.
+*   **Consultas Parametrizadas:** Es la regla de oro en todos los repositorios (`userRepository`, `medicoRepository`, `docenteRepository`, etc.). Nunca se concatenan variables en strings SQL.
 *   **Driver Seguro:** Uso del driver `pg` con prepared statements automáticos.
 
 ### 4.2. Seguridad a Nivel de Fila (RLS)

@@ -69,6 +69,54 @@ CREATE TABLE IF NOT EXISTS public.courses (
     CONSTRAINT courses_pkey PRIMARY KEY (id)
 );
 
+-- Table: languages
+CREATE TABLE IF NOT EXISTS public.languages (
+    id SERIAL PRIMARY KEY,
+    code CHARACTER VARYING(10) UNIQUE NOT NULL, -- 'en-US', 'en-GB', 'it-IT'
+    name CHARACTER VARYING(50) NOT NULL,        -- 'English (USA)', 'English (UK)', 'Italiano'
+    tts_voice CHARACTER VARYING(50) NOT NULL,   -- Voz neural de Google Cloud TTS
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: languages_syllabus
+CREATE TABLE IF NOT EXISTS public.languages_syllabus (
+    id SERIAL PRIMARY KEY,
+    language_code VARCHAR(10) NOT NULL REFERENCES public.languages(code) ON DELETE CASCADE,
+    level VARCHAR(10) NOT NULL, -- 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'
+    unit_number INT NOT NULL,
+    topic_name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    content JSONB DEFAULT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: user_language_progress
+CREATE TABLE IF NOT EXISTS public.user_language_progress (
+    id UUID NOT NULL DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    syllabus_id INT NOT NULL REFERENCES public.languages_syllabus(id) ON DELETE CASCADE,
+    completed BOOLEAN DEFAULT TRUE,
+    completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT user_language_progress_pkey PRIMARY KEY (id),
+    CONSTRAINT user_syllabus_unique UNIQUE (user_id, syllabus_id)
+);
+
+-- Table: user_vocabularies
+CREATE TABLE IF NOT EXISTS public.user_vocabularies (
+    id UUID NOT NULL DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    language_code VARCHAR(10) NOT NULL REFERENCES public.languages(code) ON DELETE CASCADE,
+    level VARCHAR(10) NOT NULL, -- 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'
+    word VARCHAR(100) NOT NULL,
+    translation VARCHAR(255) NOT NULL,
+    definition TEXT,
+    example_sentence TEXT,
+    audio_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    CONSTRAINT user_vocabularies_pkey PRIMARY KEY (id)
+);
+
 -- Table: decks
 CREATE TABLE IF NOT EXISTS public.decks (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -133,6 +181,7 @@ CREATE TABLE IF NOT EXISTS public.question_bank (
     subtopic CHARACTER VARYING(255),
     explanation_image_url TEXT,
     visual_support_recommendation TEXT,
+    audio_text TEXT,
     CONSTRAINT question_bank_pkey PRIMARY KEY (id)
 );
 
@@ -264,6 +313,10 @@ CREATE TABLE IF NOT EXISTS public.user_flashcards (
     explanation_image_url TEXT,
     audio_url_frente TEXT, -- ✅ NUEVO: Voz para el frente
     audio_url_dorso TEXT,  -- ✅ NUEVO: Voz para el dorso
+    tts_lang_frente CHARACTER VARYING(10),
+    tts_lang_dorso CHARACTER VARYING(10),
+    hide_text_frente BOOLEAN DEFAULT false,
+    hide_text_dorso BOOLEAN DEFAULT false,
     is_template BOOLEAN DEFAULT false,
     CONSTRAINT user_flashcards_pkey PRIMARY KEY (id)
 );
@@ -390,6 +443,24 @@ CREATE POLICY "Users can view own notes" ON public.user_notes FOR SELECT USING (
 CREATE POLICY "Users can create own notes" ON public.user_notes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can edit own notes" ON public.user_notes FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own notes" ON public.user_notes FOR DELETE USING (auth.uid() = user_id);
+
+ALTER TABLE public.languages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Languages" ON public.languages FOR SELECT USING (true);
+
+ALTER TABLE public.languages_syllabus ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Read Syllabus" ON public.languages_syllabus;
+CREATE POLICY "Public Read Syllabus" ON public.languages_syllabus FOR SELECT USING (true);
+
+ALTER TABLE public.user_language_progress ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage own progress" ON public.user_language_progress;
+CREATE POLICY "Users can manage own progress" ON public.user_language_progress
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE public.user_vocabularies ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage own vocabulary" ON public.user_vocabularies;
+CREATE POLICY "Users can manage own vocabulary" ON public.user_vocabularies
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_flashcards_user_review ON public.user_flashcards(user_id, next_review_at);

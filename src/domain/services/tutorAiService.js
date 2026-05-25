@@ -228,8 +228,7 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             // Mapeo de fuentes según el dominio
             const sourcesMap = {
                 'medicine': 'Biblioteca Médica Digital (NTS, GPC, Harrison)',
-                'education': 'Biblioteca Magisterial (CNEB, Normas MINEDU, Pruebas de Ascenso)',
-                'languages': 'Language Hub (Gramática y Modismos)'
+                'education': 'Biblioteca Magisterial (CNEB, Normas MINEDU, Pruebas de Ascenso)'
             };
 
             return {

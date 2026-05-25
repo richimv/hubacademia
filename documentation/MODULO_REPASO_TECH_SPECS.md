@@ -6,7 +6,7 @@ El **Módulo de Repaso** es el sistema de memorización a largo plazo de Hub Aca
 ## Estado de Implementación (Abril 2026)
 
 ### ✅ Finalizado: Edición Visual de Tarjetas
-- **Persistencia**: Se ha extendido el backend (`trainingRepository`, `deckService`, `deckController`) para soportar el campo `image_url` en flashcards de usuario.
+- **Persistencia**: Se ha extendido el backend (`flashcardRepository`, `deckService`, `deckController`) para soportar el campo `image_url` en flashcards de usuario.
 - **Carga de Medios**: Integración con GCS mediante el proxy `/api/media/gcs`. Implementación de carga directa desde el modal de edición con optimización visual.
 - **UI/UX**: 
   - Las tarjetas en la lista de repaso ahora muestran una miniatura si contienen imagen.
@@ -120,7 +120,7 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Scroll de Alta Accesibilidad**: Configuración de Flexbox para garantizar que el texto largo siempre sea legible desde el inicio en celulares, manteniendo el centrado vertical en textos cortos.
 
 ### F. Generación Multidisciplinar Adaptativa
-- **Motor de IA Multidominio**: El prompt maestro en `trainingService.js` ha sido refactorizado para aplicar estrategias pedagógicas específicas según el área:
+- **Motor de IA Multidominio**: El prompt maestro en `flashcardService.js` ha sido refactorizado para aplicar estrategias pedagógicas específicas según el área:
     - **Medicina**: Enfoque en razonamiento clínico, síntomas y diagnósticos diferenciales (Juicio clínico vs. Definición).
     - **Educación**: Enfoque en teorías del aprendizaje, gestión de aula y estrategias aplicadas para docentes.
     - **Idiomas (Listening/Speaking)**: Regla de "Pureza Lingüística" que obliga a un anverso 100% puro en el idioma objetivo para una síntesis de voz (TTS) impecable, con traducción aislada en el reverso.

@@ -1,4 +1,20 @@
-const trainingRepository = require('../repositories/trainingRepository');
+const { VertexAI } = require('@google-cloud/vertexai');
+const trainingRepository = require('../repositories/flashcardRepository');
+
+// CONFIGURACIÓN VERTEX AI
+const project = process.env.GOOGLE_CLOUD_PROJECT;
+const location = process.env.GOOGLE_CLOUD_LOCATION;
+const vertex_ai = new VertexAI({ project: project, location: location });
+
+const modelCreativeLite = vertex_ai.getGenerativeModel({
+    model: 'gemini-2.5-flash-lite',
+    generationConfig: {
+        maxOutputTokens: 8192,
+        temperature: 0.9,
+        topP: 0.95,
+        responseMimeType: 'application/json'
+    },
+});
 
 class FlashcardService {
 
@@ -77,6 +93,46 @@ class FlashcardService {
             nextReview: nextReviewDate,
             intervalDays: interval
         };
+    }
+
+    /**
+     * Genera Flashcards a partir de un tema o texto (Para Custom Decks).
+     * @param {string} topic - Tema o texto corto.
+     * @param {number} count - Número sugerido (Default 10, adaptable).
+     */
+    async generateFlashcardsFromTopic(topic, count = 10) {
+        try {
+            const prompt = `
+            Actúa como un experto pedagogogía y diseño instruccional.
+            Crea entre 1 y 15 Flashcards educativas sobre el tema: "${topic}".
+            
+            🚨 REGLA DE INTELIGENCIA ADAPTATIVA:
+            - Si el usuario solicita EXPLÍCITAMENTE una cantidad en el tema (ej: "3 tarjetas"), cumple con esa cantidad exacta SIEMPRE QUE esté entre 1 y 15.
+            - Si no hay una cantidad explícita, sé proporcional a la densidad del tema. Si el tema es simple o muy específico, genera lo necesario (aunque sea 1 o 2 tarjetas).
+            - Si el tema es complejo o extenso, genera el máximo de 15 tarjetas críticas.
+            - No intentes meter todo un libro en 15 tarjetas; prioriza lo que un estudiante NECESITA memorizar primero.
+
+            FORMATO JSON ESTRICTO:
+            [{ "front": "Pregunta o Concepto", "back": "Respuesta o Definición Breve" }]
+
+            REGLAS DE CALIDAD:
+            1. Idioma: Español.
+            2. "front": Debe ser claro y provocar recuerdo activo (Active Recall).
+            3. "back": Debe ser conciso (< 50 palabras). Evita respuestas de una sola palabra si el concepto requiere matiz.
+            4. Evita preguntas de verdadero/falso o sí/no.
+            `;
+
+            console.log(`🧠 AI Adaptive Flashcards: Procesando '${topic}' (Margen 5-15)...`);
+            const result = await modelCreativeLite.generateContent(prompt);
+            const text = result.response.candidates[0].content.parts[0].text;
+
+            const cards = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+            return cards;
+
+        } catch (error) {
+            console.error("❌ Error Generando Flashcards IA:", error);
+            throw new Error("No se pudo generar contenido con IA.");
+        }
     }
 }
 

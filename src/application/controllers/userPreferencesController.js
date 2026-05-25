@@ -44,18 +44,7 @@ class UserPreferencesController {
                 return res.status(400).json({ error: 'Domain and config_json are mandatory parameters.' });
             }
 
-            // Cleanup: Remove legacy difficulty from config
-            if (typeof config_json === 'object' && config_json !== null) {
-                delete config_json.difficulty;
-            } else if (typeof config_json === 'string') {
-                try {
-                    const parsed = JSON.parse(config_json);
-                    delete parsed.difficulty;
-                    config_json = JSON.stringify(parsed);
-                } catch (e) {
-                    // Silently ignore if not JSON
-                }
-            }
+            // Preserve difficulty in config_json for simulator settings (such as CEFR levels)
 
             const updatedConfig = await this.preferencesService.savePreferences(userId, domain, config_json);
 

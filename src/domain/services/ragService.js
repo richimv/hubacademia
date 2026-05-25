@@ -150,8 +150,7 @@ class RagService {
         if (!results || results.length === 0) return "";
         const labels = {
             'medicine': 'Fuente Médica',
-            'education': 'Biblioteca Magisterial',
-            'languages': 'Language Hub'
+            'education': 'Biblioteca Magisterial'
         };
         const domainLabel = labels[namespace] || 'Biblioteca Especializada';
 

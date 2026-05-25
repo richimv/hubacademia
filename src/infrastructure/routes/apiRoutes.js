@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController, usageController, adminController, quizController, userPreferencesController, mediaController, speechController
+const { coursesController, analyticsController, authController, chatController, usageController, adminController, medicoController, docenteController, idiomasSimulatorController, flashcardController, selfEvaluationController, userPreferencesController, mediaController, speechController, languageChatController, languageSyllabusController, languageVocabularyController
 } = require('../../application/controllers');
 
 // --- Importar Middleware ---
@@ -92,6 +92,22 @@ router.put('/chat/conversations/:id', auth, chatController.updateConversationTit
 router.delete('/chat/conversations/:id', auth, chatController.deleteConversation);
 router.post('/chat/train-model', auth, adminOnly, chatController.trainModel);
 
+// --- Rutas de Idiomas ---
+router.post('/languages/chat', auth, checkAILimits('chat_standard'), languageChatController.processChat);
+
+// Temario y Lecciones
+router.get('/languages/syllabus', optionalAuth, languageSyllabusController.getSyllabus);
+router.post('/languages/syllabus/lesson/learn', auth, languageSyllabusController.generateLesson);
+router.post('/languages/syllabus/lesson/evaluate', auth, languageSyllabusController.evaluateLesson);
+router.post('/languages/syllabus/progress', auth, languageSyllabusController.toggleProgress);
+
+// Vocabulario Privado
+router.get('/languages/vocabulary', auth, languageVocabularyController.getVocabulary);
+router.post('/languages/vocabulary', auth, languageVocabularyController.addWord);
+router.post('/languages/vocabulary/generate', auth, languageVocabularyController.generateWordDetails);
+router.delete('/languages/vocabulary/:id', auth, languageVocabularyController.deleteWord);
+router.post('/languages/vocabulary/export-flashcards', auth, languageVocabularyController.exportToFlashcards);
+
 // --- Rutas Públicas ---
 router.get('/buscar', optionalAuth, coursesController.searchCourses);
 router.get('/careers', coursesController.getCareers);
@@ -157,14 +173,32 @@ router.post('/analytics/view', optionalAuth, analyticsController.recordView.bind
 router.get('/internal/analytics-data', analyticsController.getAnalyticsForML);
 router.get('/internal/ml-data', coursesController.getDataForML);
 
-// --- Rutas de Quiz (Gamificación) ---
-router.post('/quiz/start', auth, checkAILimits('simulator'), quizController.startQuiz);
-router.post('/quiz/next-batch', auth, checkAILimits('simulator'), quizController.getNextBatch); // ✅ NUEVO
-router.get('/quiz/demo', optionalAuth, quizController.getDemoQuestions); // ✅ NUEVO: Fetch Real DB Questions for Demos
-router.post('/quiz/submit', auth, quizController.submitScore); // Updated logic
-router.get('/quiz/stats', optionalAuth, quizController.getStats);
-router.get('/quiz/evolution', optionalAuth, quizController.getEvolution); // ✅ NEW endpoint
-router.get('/quiz/leaderboard', auth, quizController.getLeaderboard);
+// --- Rutas del Simulador Médico ---
+router.post('/medico/start', auth, checkAILimits('simulator'), medicoController.startQuiz);
+router.post('/medico/next-batch', auth, checkAILimits('simulator'), medicoController.getNextBatch);
+router.get('/medico/demo', optionalAuth, medicoController.getDemoQuestions);
+router.post('/medico/submit', auth, medicoController.submitScore);
+router.get('/medico/stats', optionalAuth, medicoController.getStats);
+router.get('/medico/evolution', optionalAuth, medicoController.getEvolution);
+router.get('/medico/leaderboard', auth, medicoController.getLeaderboard);
+
+// --- Rutas del Simulador Docente ---
+router.post('/docente/start', auth, checkAILimits('simulator'), docenteController.startQuiz);
+router.post('/docente/next-batch', auth, checkAILimits('simulator'), docenteController.getNextBatch);
+router.get('/docente/demo', optionalAuth, docenteController.getDemoQuestions);
+router.post('/docente/submit', auth, docenteController.submitScore);
+router.get('/docente/stats', optionalAuth, docenteController.getStats);
+router.get('/docente/evolution', optionalAuth, docenteController.getEvolution);
+router.get('/docente/leaderboard', auth, docenteController.getLeaderboard);
+
+// --- Rutas del Simulador de Idiomas ---
+router.post('/idiomas-simulator/start', auth, checkAILimits('simulator'), idiomasSimulatorController.startQuiz);
+router.post('/idiomas-simulator/next-batch', auth, checkAILimits('simulator'), idiomasSimulatorController.getNextBatch);
+router.get('/idiomas-simulator/demo', optionalAuth, idiomasSimulatorController.getDemoQuestions);
+router.post('/idiomas-simulator/submit', auth, idiomasSimulatorController.submitScore);
+router.get('/idiomas-simulator/stats', optionalAuth, idiomasSimulatorController.getStats);
+router.get('/idiomas-simulator/evolution', optionalAuth, idiomasSimulatorController.getEvolution);
+router.get('/idiomas-simulator/leaderboard', auth, idiomasSimulatorController.getLeaderboard);
 
 // --- DECKS & FLASHCARDS ---
 const DeckController = require('../../application/controllers/deckController');
@@ -191,19 +225,18 @@ router.post('/cards/upload-image', auth, upload.single('file'), DeckController.u
 router.put('/cards/:cardId', auth, DeckController.updateCard); 
 router.delete('/cards/:cardId', auth, DeckController.deleteCard); 
 
-// Legacy/Direct Review Routes (Mantenidos por compatibilidad, pero redirigidos a lógica de mazos si es necesario)
-router.get('/training/flashcards/due', auth, quizController.getDueFlashcards); // Global due
-router.post('/training/flashcards/review', auth, quizController.reviewFlashcard);
-router.post('/training/flashcards/check-saved', auth, quizController.checkSavedFlashcards); // ✅ NUEVO
-router.post('/training/flashcards/save-from-question', auth, quizController.saveFlashcardFromQuestion); // ✅ NUEVO
+// --- Rutas de Repaso de Flashcards ---
+router.get('/flashcard/due', auth, flashcardController.getDueFlashcards);
+router.post('/flashcard/review', auth, flashcardController.reviewFlashcard);
+router.post('/flashcard/check-saved', auth, flashcardController.checkSavedFlashcards);
+router.post('/flashcard/save-from-question', auth, flashcardController.saveFlashcardFromQuestion);
 
-// --- Rutas de Quiz Battle (Arena / Arcade) ---
-const quizGameController = require('../../application/controllers/quizGameController');
-router.post('/arena/start', auth, checkAILimits('self_evaluation'), quizGameController.startGame);
-router.post('/arena/questions', auth, quizGameController.getQuestions); // ✅ NUEVO: Fetch Background
-router.post('/arena/submit', auth, quizGameController.submitScore);
-router.get('/arena/ranking', optionalAuth, quizGameController.getRanking);
-router.get('/arena/stats', auth, quizGameController.getUserStats);
+// --- Rutas del Módulo de Autoevaluación ---
+router.post('/self-evaluation/start', auth, checkAILimits('self_evaluation'), selfEvaluationController.startGame);
+router.post('/self-evaluation/questions', auth, selfEvaluationController.getQuestions);
+router.post('/self-evaluation/submit', auth, selfEvaluationController.submitScore);
+router.get('/self-evaluation/ranking', optionalAuth, selfEvaluationController.getRanking);
+router.get('/self-evaluation/stats', auth, selfEvaluationController.getUserStats);
 
 // --- Rutas de Analytics Personalizados (Heatmap, etc) ---
 const customAnalyticsRoutes = require('./analyticsRoutes');

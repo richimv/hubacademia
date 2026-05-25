@@ -193,6 +193,10 @@ class AdminService {
             this._releaseLock(url);
         }
     }
+
+    async saveBulkQuestionBankAdmin(questionsArray) {
+        return await adminRepository.saveBulkQuestionBankAdmin(questionsArray);
+    }
 }
 
 // ✅ IMPORTANTE: Se exporta LA INSTANCIA (Singleton) porque adminController e index.js esperan una instancia

@@ -1,4 +1,4 @@
-const trainingRepository = require('../repositories/trainingRepository');
+const trainingRepository = require('../repositories/flashcardRepository');
 
 class DeckService {
     async getUserDecks(userId, parentId = null) {

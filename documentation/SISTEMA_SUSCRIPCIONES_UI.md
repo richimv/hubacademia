@@ -9,7 +9,7 @@ Se han realizado actualizaciones en la capa de datos para soportar una visualiza
 - **Auth Controller**: El endpoint `/api/auth/me` ahora entrega estos metadatos al cliente para su renderizado.
 
 ## 2. Gestión de Banco Agotado (IA Universal)
-Se implementó un flujo de reposición automática en `TrainingService.js` para garantizar que ningún usuario se quede sin preguntas, independientemente de su plan.
+Se implementó un flujo de reposición automática en los servicios de simulador (`medicoService.js`, `docenteService.js`, `idiomasSimulatorService.js`) para garantizar que ningún usuario se quede sin preguntas, independientemente de su plan.
 
 ### Flujo de Reposición:
 1. El servidor detecta que el lote de preguntas del banco es insuficiente (< 5).
@@ -33,7 +33,7 @@ Se reemplazó la visualización simple del rol por una sección dedicada en `pro
     - **Plan Gratuito**: Muestra una invitación "Unlock" resaltada en dorado para incentivar el upgrade.
 
 ## 4. Estándares de Logging
-Se han profesionalizado los logs en la terminal (`TrainingService.js`) utilizando iconos y trazas claras:
+Se han profesionalizado los logs en la terminal (`medicoService.js`, `docenteService.js`, `idiomasSimulatorService.js`) utilizando iconos y trazas claras:
 - `🔎 [Banco]`: Estado de stock en las áreas seleccionadas.
 - `🤖 [IA Reposición]`: Activación de generación universal para completar lotes.
 - `🍃 [IA AHORRO]`: Uso de modelo Lite ($0 cost) para todos los usuarios.

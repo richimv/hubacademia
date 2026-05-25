@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutor Conversacional IA | Hub Academia</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/base.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/header.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/footer.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/modal.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/components.css?v=v_pure_dark_v8">
+    <link rel="stylesheet" href="css/markdown-content.css?v=1">
+    <link rel="stylesheet" href="css/language-tutor.css?v=20260525">
+</head>
+
+<body class="hero-hidden">
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Hub Académico</span>
+            </a>
+            <a href="/simulators?domain=idiomas" id="header-back-btn" class="header-back-btn">
+                <i class="fas fa-arrow-left"></i> <span>Volver a Idiomas</span>
+            </a>
+        </div>
+        <div class="header-nav">
+            <div id="user-session-controls">
+                <span class="loading-user">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Loading -->
+        <div id="loading" style="text-align: center; padding: 4rem;">
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #8b5cf6;"></i>
+        </div>
+
+        <!-- Content -->
+        <div id="tutor-content" style="display: none;">
+            <div class="dashboard-header">
+                <h1 class="ctx-title-compact">Tutor Conversacional IA</h1>
+            </div>
+
+            <!-- Chat Conversacional de Idiomas (CCI) -->
+            <div class="cci-container">
+                <div class="cci-header">
+                    <div class="cci-tutor-info">
+                        <div class="avatar-glow active-pulse">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div>
+                            <h4 id="cci-tutor-name">Tutor de Idiomas</h4>
+                            <span class="status-text"><span class="pulse-dot" style="display:inline-block; width:8px; height:8px; background:#10b981; border-radius:50%; margin-right:4px;"></span>En línea • Corrección en tiempo real</span>
+                        </div>
+                    </div>
+                    <div class="cci-selectors">
+                        <select id="cci-lang-select" class="cci-select">
+                            <option value="en-US">English (USA)</option>
+                            <option value="en-GB">English (UK)</option>
+                            <option value="it-IT">Italiano</option>
+                        </select>
+                        <select id="cci-level-select" class="cci-select">
+                            <option value="A1">Nivel A1 (Principiante)</option>
+                            <option value="A2">Nivel A2 (Básico)</option>
+                            <option value="B1">Nivel B1 (Intermedio)</option>
+                            <option value="B2">Nivel B2 (Intermedio Alto)</option>
+                            <option value="C1">Nivel C1 (Avanzado)</option>
+                            <option value="C2">Nivel C2 (Maestría)</option>
+                        </select>
+                        <label class="cci-auto-send-container" title="Activa o desactiva el envío automático al terminar de hablar">
+                            <input type="checkbox" id="cci-auto-send-check">
+                            <span>Auto-enviar</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="cci-messages" class="cci-messages-box">
+                    <!-- Mensajes cargados dinámicamente -->
+                </div>
+                <div class="cci-input-bar">
+                    <input type="text" id="cci-user-input" placeholder="Escribe un mensaje en el idioma seleccionado..." autocomplete="off">
+                    <button id="cci-mic-btn" class="btn-mic" title="Hablar (Speaking)">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button id="cci-send-btn" class="btn-send" title="Enviar mensaje">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Injection -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="assets/logo.png" alt="Hub Academia Logo">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">
+                    Tu biblioteca académica potenciada por IA. Estudia sin límites, aprende a tu ritmo.
+                </p>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Explorar</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="course" class="footer-link">Cursos</a></li>
+                    <li><a href="/" class="footer-link">Biblioteca</a></li>
+                    <li><a href="pricing" class="footer-link">Precios</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <ul class="footer-links-list">
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="copyright">
+                © 2026 Hub Academia. Todos los derechos reservados.
+            </div>
+            <div class="footer-socials">
+                <a href="https://www.facebook.com/profile.php?id=61586735506660" target="_blank"
+                    rel="noopener noreferrer" class="social-link" title="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="https://www.instagram.com/hubacademia_" target="_blank" rel="noopener noreferrer"
+                    class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.tiktok.com/@hub.academia" target="_blank" rel="noopener noreferrer"
+                    class="social-link" title="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/services/networkService.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="js/utils/markdown-renderer.js"></script>
+    <script src="js/services/authApiService.js"></script>
+    <script src="js/services/analyticsApiService.js"></script>
+    <script src="js/sessionManager.js"></script>
+    <script src="js/ui/uiManager.js?v=20260508_v2"></script>
+    <script src="js/ui/components.js?v=20260508_v2"></script>
+    <script src="js/app.js?v=20260508_v2"></script>
+
+    <!-- Specific Page Script -->
+    <script src="js/language-tutor.js?v=20260525"></script>
+</body>
+
+</html>

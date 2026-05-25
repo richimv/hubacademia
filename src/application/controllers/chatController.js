@@ -103,7 +103,7 @@ Eres un experto en el tema de esta tarjeta. Ayuda al estudiante a entender no so
 REGLAS:
 1. Sé pedagógico y expande la explicación si el usuario lo solicita o si el concepto es complejo.
 2. Usa ejemplos, reglas mnemotécnicas o datos adicionales relevantes (dosis, gramática, leyes, etc).
-3. Adapta tu tono a la disciplina (Medicina, Idiomas, etc).
+3. Adapta tu tono a la disciplina (Medicina, Educación, etc).
 
 CONTEXTO DE LA TARJETA:
 - FRENTE: ${context.front}

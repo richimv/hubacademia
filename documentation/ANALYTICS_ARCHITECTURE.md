@@ -109,3 +109,22 @@ A continuación se detalla el significado estratégico de cada métrica visible 
 *   **Ingresos Estimados:** 
     -   *Propósito:* Cálculo basado en suscripciones activas por el costo del Plan Avanzado.
     -   *Valor:* Visibilidad financiera rápida para medir la rentabilidad del proyecto sin necesidad de entrar a plataformas de pago externas.
+
+## 7. Diagnósticos Inteligentes y Fallback Estático Multi-Módulo
+
+El sistema de diagnósticos profundos asistidos por IA está estructurado para optimizar costos de API (Vertex AI) y garantizar una experiencia de usuario fluida sin paywalls intrusivos.
+
+### A. Soporte Multi-Módulo
+Los diagnósticos se adaptan dinámicamente al contexto activo del estudiante:
+*   **MEDICINA (Default):** Evalúa áreas clínicas clave como Ginecología, Pediatría, Medicina Interna, etc.
+*   **EDUCACION:** Evalúa competencias pedagógicas y de escala magisterial (Comprensión Lectora, Razonamiento Lógico, Convivencia Escolar, etc.).
+*   **IDIOMAS:** Evalúa las 4 habilidades del MCER (Reading, Listening, Vocabulary, Grammar) y proporciona equivalencias estimadas para exámenes oficiales (IELTS, TOEFL, CELI, CILS).
+
+### B. Flujo de Control de Cuotas y Fallback
+Para evitar el consumo desmedido de cuotas de LLM y prevenir errores 403 blocks visibles al usuario:
+1.  **Detección de Endpoint:** La ruta `/api/analytics/diagnostic` es interceptada por el `checkLimitsMiddleware`.
+2.  **Omisión de Bloqueo 403:** Si el usuario pertenece a un plan no Premium (`free`, `pending`, `demo`) o ha alcanzado su límite diario de IA, en lugar de recibir un error 403:
+    - Se establece `req.usageType = null` (no se descuentan créditos ni se incrementa su uso).
+    - Se establece `req.fallbackToStatic = true` en la petición.
+3.  **Generación de Fallback Estático:** El `analyticsController` detecta la bandera `req.fallbackToStatic` o el tier del usuario y retorna un diagnóstico clínico/pedagógico/lingüístico en formato HTML/CSS limpio directamente desde el backend.
+4.  **Clientes Invitados (Guest):** El dashboard (`simulator-dash.js`) maneja a los usuarios sin sesión de forma local en el cliente, adaptando sus KPIs y gráficos de evolución demo según el módulo activo.

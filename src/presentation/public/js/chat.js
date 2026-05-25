@@ -67,20 +67,7 @@ class ChatComponent {
                         </button>
                         <div class="chatbot-title">
                             <i id="chatbot-icon" class="fas fa-robot chatbot-icon-svg" data-persona="${this.specialization}"></i>
-                            <div class="chatbot-title-content">
-                                <div class="chatbot-title-top">
-                                    <h3 id="chatbot-title-heading">Asistente</h3>
-                                    <div class="chatbot-spec-container">
-                                        <select id="chatbot-spec-select" class="chatbot-spec-select">
-                                            <option value="neutral" ${this.specialization === 'neutral' ? 'selected' : ''}>neutro</option>
-                                            <option value="medicine" ${this.specialization === 'medicine' ? 'selected' : ''}>médico</option>
-                                            <option value="education" ${this.specialization === 'education' ? 'selected' : ''}>educación</option>
-                                            <option value="languages" ${this.specialization === 'languages' ? 'selected' : ''}>idiomas</option>
-                                        </select>
-                                        <i class="fas fa-info-circle chatbot-spec-info" id="chatbot-spec-info" data-tooltip="${this.getPersonaInfo(this.specialization)}"></i>
-                                    </div>
-                                </div>
-                            </div>
+                            <h3 id="chatbot-title-heading">Asistente</h3>
                         </div>
                         <div class="chatbot-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
                             <!-- Botón Pantalla Completa (Mejorado) -->
@@ -90,6 +77,14 @@ class ChatComponent {
                             <button id="chatbot-close" class="chatbot-close" aria-label="Cerrar chat" title="Cerrar">
                                 <i class="fas fa-times"></i>
                             </button>
+                        </div>
+                    </div>
+                    <!-- ✅ Nuevo Selector de Modos tipo Tabs Glassmorphic Horizontal -->
+                    <div class="chatbot-spec-tabs-container" id="chatbot-spec-tabs-container">
+                        <div class="spec-tabs-wrapper" role="tablist">
+                            <button class="spec-tab" role="tab" data-value="neutral" aria-selected="${this.specialization === 'neutral'}">NEUTRO</button>
+                            <button class="spec-tab" role="tab" data-value="medicine" aria-selected="${this.specialization === 'medicine'}">MÉDICO</button>
+                            <button class="spec-tab" role="tab" data-value="education" aria-selected="${this.specialization === 'education'}">EDUCACIÓN</button>
                         </div>
                     </div>
 
@@ -145,33 +140,39 @@ class ChatComponent {
      */
     updatePersonaUI() {
         const icon = document.getElementById('chatbot-icon');
-        const specSelect = document.getElementById('chatbot-spec-select');
-        const infoIcon = document.getElementById('chatbot-spec-info');
         
         if (icon) {
             icon.dataset.persona = this.specialization;
         }
 
-        if (specSelect) {
-            specSelect.value = this.specialization;
-        }
+        // Actualizar el estado activo de los botones de especialidad
+        const tabs = document.querySelectorAll('.spec-tab');
+        tabs.forEach(tab => {
+            if (tab.dataset.value === this.specialization) {
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+            } else {
+                tab.classList.remove('active');
+                tab.setAttribute('aria-selected', 'false');
+            }
+        });
 
-        if (infoIcon) {
-            infoIcon.dataset.tooltip = this.getPersonaInfo(this.specialization);
-        }
+        // Actualizar placeholder del input según modo
+        this.updateInputPlaceholder();
     }
 
     /**
-     * ✅ NUEVO: Obtener la descripción corta del modo (Creativo y técnico).
+     * Actualiza el placeholder del textarea según la especialidad activa.
      */
-    getPersonaInfo(persona) {
-        const infos = {
-            medicine: "Asistente clínico experto para consultas sobre farmacología, diagnósticos y protocolos médicos. utiliza tecnología rag y vectorización para basar cada respuesta en evidencia científica de alto nivel.",
-            education: "Guía pedagógica diseñada para el fortalecimiento docente, diseño curricular y metodologías de aprendizaje. emplea ia contextualizada para elevar el estándar educativo.",
-            languages: "Soporte lingüístico avanzado para práctica conversacional inmersiva y perfeccionamiento gramatical. optimizado para el dominio fluido de nuevos idiomas mediante modelos dinámicos.",
-            neutral: "Asistente de propósito general para consultas de cultura, ciencia y productividad cotidiana. configurado para brindar soporte rápido y versátil en múltiples áreas."
+    updateInputPlaceholder() {
+        const textarea = document.getElementById('chatbot-input');
+        if (!textarea) return;
+        const placeholders = {
+            neutral: "Escribe tu pregunta aquí...",
+            medicine: "Pregunta sobre farmacología, diagnósticos o protocolos...",
+            education: "Pregunta sobre diseño curricular, metodologías o pedagogía..."
         };
-        return infos[persona] || "Asistente Hub";
+        textarea.placeholder = placeholders[this.specialization] || "Escribe tu pregunta aquí...";
     }
 
     addWelcomeMessage() {
@@ -185,7 +186,7 @@ class ChatComponent {
             const defaultSuggestions = [
                 "¿Qué puedes hacer por mí?",
                 "Ayúdame a estudiar un tema",
-                "Quiero practicar idiomas"
+                "Preguntar sobre Medicina o Educación"
             ];
             this.showFollowUpSuggestions(defaultSuggestions);
         }
@@ -233,13 +234,11 @@ class ChatComponent {
             });
         }
 
-        // ✅ NUEVO: Listener para el selector de especialidad (Dropdown)
-        const specSelect = document.getElementById('chatbot-spec-select');
-        const modeDesc = document.getElementById('chatbot-mode-desc');
-
-        if (specSelect) {
-            specSelect.addEventListener('change', (e) => {
-                const newValue = e.target.value;
+        // ✅ Selector de especialidad (Pestañas/Tabs Glassmorphic)
+        const specTabs = document.querySelectorAll('.spec-tab');
+        specTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const newValue = tab.dataset.value;
                 if (this.specialization === newValue) return;
 
                 this.specialization = newValue;
@@ -251,11 +250,11 @@ class ChatComponent {
                 console.log(`🎯 Especialidad cambiada a: ${this.specialization}`);
                 
                 if (window.uiManager && window.uiManager.showToast) {
-                    const names = { neutral: 'Neutro', medicine: 'Médico', education: 'Educación', languages: 'Idiomas' };
+                    const names = { neutral: 'Neutro', medicine: 'Médico', education: 'Educación' };
                     window.uiManager.showToast(`Modo: Experto ${names[this.specialization]}`, 'info');
                 }
             });
-        }
+        });
 
         // ✅ FASE III: Botón de "Nuevo Chat"
         const newChatBtn = document.getElementById('new-chat-btn');

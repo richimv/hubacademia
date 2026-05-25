@@ -637,8 +637,8 @@ class DeckController {
             const existingCards = await DeckService.getDeckCards(deckId);
             const existingFronts = existingCards.map(c => c.front_content);
 
-            const TrainingService = require('../../domain/services/trainingService');
-            const cards = await TrainingService.generateFlashcardsFromTopic(topic, requestedAmount, existingFronts);
+            const FlashcardService = require('../../domain/services/flashcardService');
+            const cards = await FlashcardService.generateFlashcardsFromTopic(topic, requestedAmount);
 
             const savedCards = [];
             for (const card of cards) {

@@ -139,6 +139,78 @@ class AdminRepository {
 
         return headers + "\n" + rows;
     }
+
+    async saveBulkQuestionBankAdmin(questionsArray) {
+        if (!questionsArray || questionsArray.length === 0) return { success: false, inserted: 0 };
+
+        const client = await db.pool().connect();
+        try {
+            await client.query('BEGIN');
+            let insertedCount = 0;
+            const crypto = require('crypto');
+
+            const canonicalDifficulty = (val) => {
+                return 'Senior';
+            };
+
+            const canonicalDomain = (val) => {
+                const allowed = ['medicine', 'english', 'general_trivia', 'education'];
+                const v = String(val || '').toLowerCase().trim().replace(/\s+/g, '_');
+                return allowed.includes(v) ? v : 'medicine'; // Fallback seguro
+            };
+
+            const query = `
+                INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career, visual_support_recommendation)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                ON CONFLICT (question_hash) DO UPDATE SET 
+                    target = EXCLUDED.target,
+                    image_url = EXCLUDED.image_url,
+                    explanation = EXCLUDED.explanation,
+                    explanation_image_url = EXCLUDED.explanation_image_url,
+                    options = EXCLUDED.options,
+                    career = EXCLUDED.career,
+                    subtopic = EXCLUDED.subtopic,
+                    visual_support_recommendation = EXCLUDED.visual_support_recommendation
+                RETURNING id;
+            `;
+
+            for (const q of questionsArray) {
+                const domain = canonicalDomain(q.domain);          // Siempre canónico
+                const target = q.target || 'N/A';
+                const exactTopic = q.topic || 'General';            // Área de estudio
+                const exactSubtopic = q.subtopic || null;           // Subtema clínico (nullable)
+                const difficulty = canonicalDifficulty(q.difficulty);
+                const question_text = String(q.question_text || q.question);
+                const optionsStr = JSON.stringify(q.options || []);
+                const correct_option_index = parseInt(q.correct_option_index !== undefined ? q.correct_option_index : (q.correct_answer !== undefined ? q.correct_answer : (q.correctAnswerIndex || 0)), 10);
+                const explanation = q.explanation || '';
+                const explanation_image_url = q.explanation_image_url || q.EXPLICACION_IMAGEN || null;
+                const image_url = q.image_url || null;
+                const career = q.career || null;
+
+                const normTopic = String(exactTopic || 'General').toLowerCase().trim();
+                const normText = String(question_text || '').toLowerCase().trim();
+                const rawStringForHash = `${normTopic}-${normText}-${optionsStr}`;
+                const hash = crypto.createHash('md5').update(rawStringForHash).digest('hex');
+
+                await client.query(query, [
+                    domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr,
+                    correct_option_index, explanation, explanation_image_url, image_url, hash, career,
+                    q.visual_support_recommendation || null
+                ]);
+                insertedCount++;
+            }
+
+            await client.query('COMMIT');
+            return { success: true, inserted: insertedCount };
+        } catch (e) {
+            await client.query('ROLLBACK');
+            console.error('Error insertando bulk questions:', e);
+            throw e;
+        } finally {
+            client.release();
+        }
+    }
 }
 
 module.exports = new AdminRepository();

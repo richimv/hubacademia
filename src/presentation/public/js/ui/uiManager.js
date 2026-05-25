@@ -927,15 +927,15 @@ class UIManager {
             config.btnUrl = '/pricing';
             config.icon = 'fa-heart-crack';
         } else {
-            // Contexto Arena (Default)
+            // Contexto Autoevaluación (Default)
             if (userTier === 'basic') {
                 config.title = '¡Cuota Diaria Completada!';
-                config.message = customMsg || 'Has alcanzado tu límite de 5 partidas diarias en Arena.<br>Mejora a <strong>Advanced</strong> para duplicar tu cuota.';
+                config.message = customMsg || 'Has alcanzado tu límite de 5 autoevaluaciones diarias.<br>Mejora a <strong>Advanced</strong> para duplicar tu cuota.';
                 config.btnText = 'Mejorar Plan 🚀';
                 config.btnUrl = '/pricing';
             } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
                 config.title = '¡Entrenamiento Finalizado!';
-                config.message = customMsg || 'Has completado tus 10 partidas épicas de hoy. ¡Mañana volvemos con más desafíos!';
+                config.message = customMsg || 'Has completado tus 10 autoevaluaciones de hoy. ¡Mañana volvemos con más desafíos!';
                 config.btnText = 'Volver al Inicio 🏠';
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';

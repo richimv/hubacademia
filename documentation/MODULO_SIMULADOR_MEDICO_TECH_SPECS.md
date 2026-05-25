@@ -20,13 +20,13 @@ se renderiza usando gráficos **SVG** nativos vectoriales, proporcionando animac
 - **`js/quiz.js`**: Motor de interacción: manejo de estados (pregunta actual, respuestas), cronómetros, y batch loading. Permite la **creación manual e interactiva de Flashcards** desde el panel de revisión de desempeño.
 
 ### ⚙️ Backend (Application & Domain)
-- **`QuizController.js`**: Orquestador de peticiones. Maneja la lógica de inicio, entrega y límites. Ahora soporta filtrado dinámico por `days` y `areas`.
-- **`TrainingService.js`**: El "cerebro" del módulo. Implementa la lógica híbrida: Banco -> IA Fallback. Gestiona la agregación de estadísticas bajo demanda.
-- **`trainingRepository.js`**: Capa de persistencia. Incluye consultas optimizadas en PostgreSQL para análisis de `jsonb` (estadísticas por área) y series temporales de evolución.
+- **`medicoController.js`**: Orquestador de peticiones. Maneja la lógica de inicio, entrega y límites. Ahora soporta filtrado dinámico por `days` y `areas`.
+- **`medicoService.js`**: El "cerebro" del módulo. Implementa la lógica híbrida: Banco -> IA Fallback. Gestiona la agregación de estadísticas bajo demanda.
+- **`medicoRepository.js`**: Capa de persistencia. Incluye consultas optimizadas en PostgreSQL para análisis de `jsonb` (estadísticas por área) y series temporales de evolución.
 - **`mlService.js`**: Interface con Gemini 2.5 Flash Lite para generación RAG y análisis de rendimiento.
 
 ### 🗄️ Infraestructura (Persistence)
-- **`TrainingRepository.js`**: Consultas SQL puras para `question_bank` y `quiz_history`.
+- **`medicoRepository.js`**: Consultas SQL puras para `question_bank` y `quiz_history`.
 - **Tablas Críticas:**
   - `question_bank`: Repositorio global indexado por `target` y `topic`.
   - `quiz_history`: Almacena puntajes y el objeto **JSONB `area_stats`**.

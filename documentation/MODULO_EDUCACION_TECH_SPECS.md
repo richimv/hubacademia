@@ -34,11 +34,11 @@ Frontend (simulators.html)
          │                        │                        │
          └────────────────────────┼────────────────────────┘
                                   ▼
-                   quizController.js (POST /api/quiz/start)
-                                  │
-                     target: "NOMBRAMIENTO" ──→ domain: "education"
-                                  │
-                   trainingService.js (getQuestions)
+                    docenteController.js (POST /api/docente/start)
+                                   │
+                      target: "NOMBRAMIENTO" ──→ domain: "education"
+                                   │
+                    docenteService.js (getQuestions)
                                   │
               ┌───────────────────┼───────────────────┐
               ▼                                       ▼
@@ -214,7 +214,7 @@ ON public.question_bank(domain, target);
 GET /api/quiz/stats?context=EDUCACION&target=NOMBRAMIENTO&areas=Comprensión+Lectora,...
 ```
 
-El endpoint `getStats` en `quizController.js` filtra `quiz_history` por `target` de forma unificada (tanto medicina como educación). El servicio `getUserQuizStats` agrega:
+El endpoint `getStats` en `docenteController.js` filtra `quiz_history` por `target` de forma unificada (para el simulador docente). El servicio `getUserQuizStats` agrega:
 - **Score promedio** (escala /20)
 - **Accuracy** (%)
 - **Radar Data** (desglose por área con correct/total)
@@ -239,7 +239,7 @@ Los invitados ven datos de demostración adaptativos:
 - **Contexto EDUCACION:** Barras con Comprensión Lectora (88%), Razonamiento Lógico (75%), etc.
 - **Contexto MEDICINA:** Barras con Ginecología (90%), Medicina Interna (85%), etc.
 
-Esto aplica tanto al frontend (`renderGuestDemoData()`) como al backend (Guest Mode en `quizController.getStats`).
+Esto aplica tanto al frontend (`renderGuestDemoData()`) como al backend (Guest Mode en `docenteController.getStats`).
 
 ---
 
@@ -262,8 +262,8 @@ Esto aplica tanto al frontend (`renderGuestDemoData()`) como al backend (Guest M
 | Archivo | Descripción |
 |---|---|
 | `domain/prompts/generationPrompts.js` | Reescrito: arquitectura multi-dominio con funciones separadas |
-| `domain/services/trainingService.js` | Domain routing dinámico + fallback context-aware + stats filter unificado |
-| `application/controllers/quizController.js` | Fallback áreas/career context-aware + Guest demo context-aware |
+| `domain/services/docenteService.js` | Domain routing dinámico + fallback context-aware + stats filter unificado |
+| `application/controllers/docenteController.js` | Fallback áreas/career context-aware + Guest demo context-aware |
 
 ### Infraestructura
 
