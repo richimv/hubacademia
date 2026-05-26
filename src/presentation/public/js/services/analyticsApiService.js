@@ -1,135 +1,137 @@
-const API_URL = window.AppConfig.API_URL;
+(() => {
+    const API_URL = window.AppConfig.API_URL;
 
-class AnalyticsApiService {
-    /**
-     * Registra el feedback del usuario sobre una respuesta del bot.
-     * @param {string} query - La pregunta original del usuario.
-     * @param {string} response - La respuesta que dio el bot.
-     * @param {boolean} isHelpful - Si el usuario la marcó como útil.
-     * @returns {Promise<void>}
-     */
-    static async recordFeedback(query, response, isHelpful, messageId) {
-        try {
-            const res = await window.NetworkService.fetch(`${API_URL}/api/analytics/feedback`, {
-                method: 'POST',
-                body: JSON.stringify({ query, response, isHelpful, messageId }),
-            });
-            if (!res.ok) {
-                console.error('Error al enviar el feedback:', await res.text());
+    class AnalyticsApiService {
+        /**
+         * Registra el feedback del usuario sobre una respuesta del bot.
+         * @param {string} query - La pregunta original del usuario.
+         * @param {string} response - La respuesta que dio el bot.
+         * @param {boolean} isHelpful - Si el usuario la marcó como útil.
+         * @returns {Promise<void>}
+         */
+        static async recordFeedback(query, response, isHelpful, messageId) {
+            try {
+                const res = await window.NetworkService.fetch(`${API_URL}/api/analytics/feedback`, {
+                    method: 'POST',
+                    body: JSON.stringify({ query, response, isHelpful, messageId }),
+                });
+                if (!res.ok) {
+                    console.error('Error al enviar el feedback:', await res.text());
+                }
+            } catch (error) {
+                console.error('Error de red al enviar el feedback:', error);
             }
-        } catch (error) {
-            console.error('Error de red al enviar el feedback:', error);
+        }
+
+        // ✅ CORRECCIÓN: Este método debe estar dentro de la clase.
+        // Es un método genérico para hacer peticiones GET autenticadas.
+        static async _get(endpoint) {
+            const response = await window.NetworkService.fetch(endpoint);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Error al obtener datos de ${endpoint}`);
+            }
+            return response.json();
+        }
+
+        /**
+         * Obtiene las métricas principales para el dashboard (KPIs).
+         * @returns {Promise<object>}
+         */
+        static async getDashboardAnalytics(days = 7) {
+            // ✅ SOLUCIÓN: Añadir el parámetro 'days' a la URL de la petición.
+            return this._get(`${API_URL}/api/analytics?days=${days}`);
+        }
+
+        /**
+         * Obtiene las tendencias de búsqueda para los gráficos.
+         * @returns {Promise<object>}
+         */
+        static async getSearchTrends(days = 7) {
+            // ✅ SOLUCIÓN: Pasar el parámetro 'days' a la API para que el filtro de tiempo funcione.
+            return this._get(`${API_URL}/api/analytics/trends?days=${days}`);
+        }
+
+        /**
+         * ✅ SOLUCIÓN: Nuevo método para obtener las tendencias de interacción por canal.
+         * @param {number} days - El número de días a consultar.
+         */
+        static async getInteractionTrends(days = 7) {
+            return this._get(`${API_URL}/api/analytics/interaction-trends?days=${days}`);
+        }
+
+        /**
+         * Obtiene las predicciones de los modelos de ML.
+         * @returns {Promise<object>}
+         */
+        static async getPredictions() {
+            return this._get(`${API_URL}/api/analytics/predictions`);
+        }
+
+        /**
+         * ✅ NUEVO: Obtiene las métricas de rendimiento de IA (CTR, Impresiones).
+         * @param {number} days 
+         */
+        static async getAIAnalytics(days = 30) {
+            return this._get(`${API_URL}/api/analytics/ai?days=${days}`);
+        }
+
+        /**
+         * Obtiene todos los registros de feedback.
+         * @returns {Promise<Array>}
+         */
+        static async getFeedback() {
+            return this._get(`${API_URL}/api/analytics/feedback`);
+        }
+
+        // ✅ NUEVO: Helper para peticiones GET públicas (sin requerir token)
+        static async _getPublic(endpoint) {
+            const response = await window.NetworkService.fetch(endpoint);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Error al obtener datos de ${endpoint}`);
+            }
+            return response.json();
+        }
+
+        /**
+         * Obtiene los libros destacados basados en visitas.
+         * @param {number} limit 
+         */
+        static async getFeaturedBooks(limit = 10) {
+            return this._getPublic(`${API_URL}/api/analytics/featured-books?limit=${limit}`);
+        }
+
+        /**
+         * Obtiene los cursos destacados basados en visitas.
+         * @param {number} limit 
+         */
+        static async getFeaturedCourses(limit = 10) {
+            return this._getPublic(`${API_URL}/api/analytics/featured-courses?limit=${limit}`);
+        }
+
+        /**
+         * ✅ NUEVO: Registra una vista de página.
+         * Se envía en modo "fire-and-forget", no necesitamos esperar la respuesta.
+         * @param {string} entityType - 'course', 'topic', 'career'.
+         * @param {number} entityId - El ID de la entidad.
+         */
+        static async recordView(entityType, entityId) {
+            try {
+                await window.NetworkService.fetch(`${API_URL}/api/analytics/view`, {
+                    method: 'POST',
+                    body: JSON.stringify({ entityType, entityId }),
+                    // ✅ MEJORA: keepalive permite que esta petición se complete incluso si el usuario navega a otra página.
+                    keepalive: true
+                });
+            } catch (error) {
+                // No hacemos nada en caso de error para no interrumpir la experiencia del usuario.
+                console.warn('Advertencia: No se pudo registrar la vista de página.', error);
+            }
         }
     }
 
-    // ✅ CORRECCIÓN: Este método debe estar dentro de la clase.
-    // Es un método genérico para hacer peticiones GET autenticadas.
-    static async _get(endpoint) {
-        const response = await window.NetworkService.fetch(endpoint);
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `Error al obtener datos de ${endpoint}`);
-        }
-        return response.json();
-    }
-
-    /**
-     * Obtiene las métricas principales para el dashboard (KPIs).
-     * @returns {Promise<object>}
-     */
-    static async getDashboardAnalytics(days = 7) {
-        // ✅ SOLUCIÓN: Añadir el parámetro 'days' a la URL de la petición.
-        return this._get(`${API_URL}/api/analytics?days=${days}`);
-    }
-
-    /**
-     * Obtiene las tendencias de búsqueda para los gráficos.
-     * @returns {Promise<object>}
-     */
-    static async getSearchTrends(days = 7) {
-        // ✅ SOLUCIÓN: Pasar el parámetro 'days' a la API para que el filtro de tiempo funcione.
-        return this._get(`${API_URL}/api/analytics/trends?days=${days}`);
-    }
-
-    /**
-     * ✅ SOLUCIÓN: Nuevo método para obtener las tendencias de interacción por canal.
-     * @param {number} days - El número de días a consultar.
-     */
-    static async getInteractionTrends(days = 7) {
-        return this._get(`${API_URL}/api/analytics/interaction-trends?days=${days}`);
-    }
-
-    /**
-     * Obtiene las predicciones de los modelos de ML.
-     * @returns {Promise<object>}
-     */
-    static async getPredictions() {
-        return this._get(`${API_URL}/api/analytics/predictions`);
-    }
-
-    /**
-     * ✅ NUEVO: Obtiene las métricas de rendimiento de IA (CTR, Impresiones).
-     * @param {number} days 
-     */
-    static async getAIAnalytics(days = 30) {
-        return this._get(`${API_URL}/api/analytics/ai?days=${days}`);
-    }
-
-    /**
-     * Obtiene todos los registros de feedback.
-     * @returns {Promise<Array>}
-     */
-    static async getFeedback() {
-        return this._get(`${API_URL}/api/analytics/feedback`);
-    }
-
-    // ✅ NUEVO: Helper para peticiones GET públicas (sin requerir token)
-    static async _getPublic(endpoint) {
-        const response = await window.NetworkService.fetch(endpoint);
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `Error al obtener datos de ${endpoint}`);
-        }
-        return response.json();
-    }
-
-    /**
-     * Obtiene los libros destacados basados en visitas.
-     * @param {number} limit 
-     */
-    static async getFeaturedBooks(limit = 10) {
-        return this._getPublic(`${API_URL}/api/analytics/featured-books?limit=${limit}`);
-    }
-
-    /**
-     * Obtiene los cursos destacados basados en visitas.
-     * @param {number} limit 
-     */
-    static async getFeaturedCourses(limit = 10) {
-        return this._getPublic(`${API_URL}/api/analytics/featured-courses?limit=${limit}`);
-    }
-
-    /**
-     * ✅ NUEVO: Registra una vista de página.
-     * Se envía en modo "fire-and-forget", no necesitamos esperar la respuesta.
-     * @param {string} entityType - 'course', 'topic', 'career'.
-     * @param {number} entityId - El ID de la entidad.
-     */
-    static async recordView(entityType, entityId) {
-        try {
-            await window.NetworkService.fetch(`${API_URL}/api/analytics/view`, {
-                method: 'POST',
-                body: JSON.stringify({ entityType, entityId }),
-                // ✅ MEJORA: keepalive permite que esta petición se complete incluso si el usuario navega a otra página.
-                keepalive: true
-            });
-        } catch (error) {
-            // No hacemos nada en caso de error para no interrumpir la experiencia del usuario.
-            console.warn('Advertencia: No se pudo registrar la vista de página.', error);
-        }
-    }
-}
-
-// ✅ EXPORTAR GLOBALMENTE
-window.AnalyticsApiService = AnalyticsApiService;
+    // ✅ EXPORTAR GLOBALMENTE
+    window.AnalyticsApiService = AnalyticsApiService;
+})();
