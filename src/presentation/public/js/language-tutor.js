@@ -189,9 +189,10 @@
         if (role === 'user') {
             html += `<div class="cci-message-text">${content}</div>`;
         } else {
+            const renderedContent = window.MarkdownRenderer ? window.MarkdownRenderer.render(content) : content;
             const escapedText = content.replace(/'/g, "\\'").replace(/"/g, '&quot;');
             html += `
-                <div class="cci-message-text">${content}</div>
+                <div class="cci-message-text markdown-content">${renderedContent}</div>
                 <button class="btn-message-tts" onclick="window.playLanguageTTS(this, '${escapedText}', '${lang}')">
                     <i class="fas fa-volume-up"></i> Escuchar
                 </button>

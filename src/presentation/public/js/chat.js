@@ -1020,7 +1020,7 @@ class ChatComponent {
         listContainer.innerHTML = this.conversations.map(conv => `
             <div class="conversation-item ${conv.id == this.activeConversationId ? 'active' : ''}" data-id="${conv.id}">
                 <i class="fas fa-comment-dots"></i>
-                <span class="conversation-title">${this.escapeHTML(conv.title)}</span>
+                <span class="conversation-title">${escapeHtml(conv.title)}</span>
                 <div class="conversation-actions">
                     <button class="edit-conversation-btn" aria-label="Editar título"><i class="fas fa-pen"></i></button>
                     <button class="delete-conversation-btn" aria-label="Eliminar chat"><i class="fas fa-trash"></i></button>
@@ -1126,11 +1126,7 @@ class ChatComponent {
         }
     }
 
-    escapeHTML(str) {
-        return str.replace(/[&<>"']/g, (match) => {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match];
-        });
-    }
+
 
     async switchConversation(conversationId) {
         if (this.activeConversationId == conversationId) return;

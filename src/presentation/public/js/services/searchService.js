@@ -1,6 +1,8 @@
 // ✅ API_URL se obtiene directamente de AppConfig para evitar conflictos globales
 console.log('✅ [SearchService] Loading...');
 
+const API_URL = window.AppConfig.API_URL;
+
 class SearchService {
     static async loadAllData() {
         const [careers, courses, sections, instructors, topics, books] = await Promise.all([
@@ -15,14 +17,12 @@ class SearchService {
     }
 
     static async _fetchData(endpoint) {
-        const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
         const response = await window.NetworkService.fetch(`${API_URL}${endpoint}`);
         if (!response.ok) throw new Error(`Error fetching ${endpoint}`);
         return response.json();
     }
 
     static async search(query) {
-        const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
         const response = await window.NetworkService.fetch(`${API_URL}/api/buscar?q=${encodeURIComponent(query)}`, {
             method: 'GET'
         });

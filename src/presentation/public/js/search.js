@@ -96,7 +96,7 @@ class SearchComponent {
             // Definición Local de Emergencia
             class FailSafeSearchService {
                 static async _fetchData(endpoint) {
-                    const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
+                    const API_URL = window.AppConfig.API_URL;
                     try {
                         const response = await window.NetworkService.fetch(`${API_URL}${endpoint}`);
                         if (!response.ok) return []; // Retornar array vacío en error

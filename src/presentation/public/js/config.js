@@ -90,4 +90,92 @@
         // console.warn('⚠️ Librería Supabase no detectada al cargar config.js'); // SIlenced to prevent unnecessary console noise on pages that don't need Supabase Auth
     }
 
+    /**
+     * ✅ GLOBAL UTILITY: escapeHtml
+     * Escapes HTML special characters to prevent HTML injection / XSS.
+     */
+    window.escapeHtml = function (text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    };
+
+    /**
+     * ✅ GLOBAL UTILITY: playQuestionAudio
+     * Centralized backend-based Text-To-Speech (TTS) audio player.
+     * Prevents overlapping audio playback across the application.
+     */
+    window.playQuestionAudio = async function (btn, text, lang) {
+        const icon = btn.querySelector('i');
+        if (!icon) return;
+
+        if (window.currentQuizAudio && window.currentQuizAudio.src && btn.dataset.playing === 'true') {
+            window.currentQuizAudio.pause();
+            return;
+        }
+
+        if (window.currentQuizAudio) {
+            try {
+                window.currentQuizAudio.pause();
+            } catch (e) {}
+            document.querySelectorAll('.quiz-audio-btn').forEach(b => {
+                b.dataset.playing = 'false';
+                const i = b.querySelector('i');
+                if (i) i.className = 'fas fa-play';
+            });
+        }
+
+        icon.className = 'fas fa-spinner fa-spin';
+        btn.disabled = true;
+
+        try {
+            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/tts`, {
+                method: 'POST',
+                body: JSON.stringify({ text, lang })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const audioUrl = URL.createObjectURL(blob);
+            const audio = new Audio(audioUrl);
+            window.currentQuizAudio = audio;
+            btn.dataset.playing = 'true';
+            btn.disabled = false;
+            icon.className = 'fas fa-pause';
+
+            audio.onended = () => {
+                btn.dataset.playing = 'false';
+                icon.className = 'fas fa-play';
+                URL.revokeObjectURL(audioUrl);
+                window.currentQuizAudio = null;
+            };
+
+            audio.onpause = () => {
+                btn.dataset.playing = 'false';
+                icon.className = 'fas fa-play';
+            };
+
+            audio.onplay = () => {
+                btn.dataset.playing = 'true';
+                icon.className = 'fas fa-pause';
+            };
+
+            await audio.play();
+        } catch (err) {
+            console.error("Error al reproducir audio de listening:", err);
+            icon.className = 'fas fa-exclamation-triangle';
+            btn.disabled = false;
+            setTimeout(() => {
+                icon.className = 'fas fa-play';
+            }, 2000);
+        }
+    };
+
 })();

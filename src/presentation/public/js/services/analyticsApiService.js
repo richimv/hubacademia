@@ -1,4 +1,4 @@
-const API_URL = window.AppConfig ? window.AppConfig.API_URL : 'http://localhost:3000';
+const API_URL = window.AppConfig.API_URL;
 
 class AnalyticsApiService {
     /**

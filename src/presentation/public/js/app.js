@@ -4,12 +4,10 @@
  * Versión corregida: Soluciona error de Avatar y Logout en bucle.
  */
 
-// ✅ 1. CONFIGURACIÓN INTELIGENTE DE LA API
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const BACKEND_URL = isLocal ? 'http://localhost:3000' : 'https://tutor-ia-backend.onrender.com';
-window.API_URL = BACKEND_URL;
+// ✅ 1. CONFIGURACIÓN DE LA API DESDE LA CONFIGURACIÓN GLOBAL (AppConfig)
+window.API_URL = window.AppConfig.API_URL;
 
-console.log('🌍 Entorno:', isLocal ? 'Local' : 'Producción', '| API:', window.API_URL);
+console.log('🌍 Entorno:', (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'Local' : 'Producción', '| API:', window.API_URL);
 
 // ✅ NUEVO: Tracking de Tráfico en Tiempo Real
 function initTrafficTracking() {

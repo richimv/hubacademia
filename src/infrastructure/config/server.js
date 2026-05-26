@@ -11,6 +11,42 @@ class Server {
     }
 
     async setup() {
+        // ✅ AUTOMATIC CACHE BUSTING: Runs on startup to version JS and CSS files in all HTML pages
+        try {
+            console.log('🔄 Ejecutando Cache Busting Automático...');
+            const fs = require('fs');
+            const path = require('path');
+            const crypto = require('crypto');
+            
+            const publicPath = path.join(__dirname, '../../presentation/public');
+            const version = crypto.randomBytes(4).toString('hex');
+            
+            if (fs.existsSync(publicPath)) {
+                fs.readdirSync(publicPath).filter(f => f.endsWith('.html')).forEach(f => {
+                    const filePath = path.join(publicPath, f);
+                    // Asegurar que no esté marcado como de solo lectura
+                    try {
+                        fs.chmodSync(filePath, 0o666);
+                    } catch (e) {}
+
+                    let content = fs.readFileSync(filePath, 'utf8');
+                    
+                    // 1. Cache bust all local CSS files (href="css/..." or href="/css/...")
+                    const cssRegex = /(href="(?:\/)?css\/[^"]+\.css)(?:\?v=[^"]+)?(?=")/g;
+                    content = content.replace(cssRegex, `$1?v=${version}`);
+                    
+                    // 2. Cache bust all local JS files (src="js/..." or src="/js/...")
+                    const jsRegex = /(src="(?:\/)?js\/[^"]+\.js)(?:\?v=[^"]+)?(?=")/g;
+                    content = content.replace(jsRegex, `$1?v=${version}`);
+                    
+                    fs.writeFileSync(filePath, content, 'utf8');
+                });
+                console.log(`✅ Cache Busting Completado. Nueva versión de assets: ${version}`);
+            }
+        } catch (cacheError) {
+            console.warn('⚠️ No se pudo ejecutar el Cache Busting automático:', cacheError.message);
+        }
+
         this.setupGlobalErrorHandlers();
         await this.testDBConnection();
         this.configureMiddleware();

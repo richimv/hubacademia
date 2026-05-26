@@ -434,13 +434,13 @@ class RepasoManager {
 
                 card.innerHTML = `
                     <!-- Desktop layout -->
-                    <div class="deck-card-desktop" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${this.escapeHtml(deck.name)}')">
+                    <div class="deck-card-desktop" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${escapeHtml(deck.name)}')">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                             <span class="deck-badge badge-system" style="font-size:0.6rem; padding:0.15rem 0.5rem; background: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.2);"><i class="fas fa-users"></i> PÚBLICO</span>
                             <div style="color: #94a3b8; font-size: 0.75rem;"><i class="fas fa-download"></i> ${deck.saves_count || 0}</div>
                         </div>
                         <div style="font-size:1.5rem; margin-bottom:0.5rem;">${iconHtml}</div>
-                        <h3 style="font-size:0.9rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${this.escapeHtml(deck.name)}">${deck.name}</h3>
+                        <h3 style="font-size:0.9rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
                         <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem;">
                             ${deck.total_cards || 0} tarjetas
                         </div>
@@ -455,7 +455,7 @@ class RepasoManager {
                     </div>
 
                     <!-- Mobile layout -->
-                    <div class="deck-card-mobile" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${this.escapeHtml(deck.name)}')">
+                    <div class="deck-card-mobile" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${escapeHtml(deck.name)}')">
                         <div style="font-size:1.2rem; flex-shrink:0;">${iconHtml}</div>
                         <div style="flex:1; min-width:0;">
                             <div style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
@@ -616,7 +616,7 @@ class RepasoManager {
 
                         <div class="action-bar">
                             ${total > 0 && localStorage.getItem('authToken') ? `
-                            <button class="btn-premium btn-premium-primary" onclick="window.repasoManager.startStudy('${deck.id}', '${this.escapeHtml(deck.name)}', ${total})">
+                            <button class="btn-premium btn-premium-primary" onclick="window.repasoManager.startStudy('${deck.id}', '${escapeHtml(deck.name)}', ${total})">
                                 <i class="fas fa-play"></i> <span class="btn-text">Estudiar Ahora</span>
                             </button>
                             ` : ''}
@@ -641,7 +641,7 @@ class RepasoManager {
                             </button>
 
                             ${this.token && deck.type !== 'SYSTEM' ? `
-                            <button class="btn-premium btn-premium-secondary" onclick="DeckExplorer.openGuideModal('${deck.id}', '${this.escapeHtml(deck.name)}')">
+                            <button class="btn-premium btn-premium-secondary" onclick="DeckExplorer.openGuideModal('${deck.id}', '${escapeHtml(deck.name)}')">
                                 <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
                             </button>
                             ` : ''}
@@ -838,18 +838,18 @@ class RepasoManager {
                 actionBtns = `
                     <div style="display:flex; gap:0.4rem; align-items:center;">
                         <button class="deck-action-btn" style="background:rgba(59,130,246,0.15); color:#60a5fa; border: 1px solid rgba(59,130,246,0.2);" 
-                            onclick="event.stopPropagation(); window.repasoManager.startStudy('${deck.id}', '${this.escapeHtml(deck.name)}', ${deck.total_cards || 0})" 
+                            onclick="event.stopPropagation(); window.repasoManager.startStudy('${deck.id}', '${escapeHtml(deck.name)}', ${deck.total_cards || 0})" 
                             title="Estudiar">
                             <i class="fas fa-play"></i>
                         </button>
                         ${!isSystem ? `
                             <button class="deck-action-btn" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border: 1px solid rgba(255,255,255,0.1);" 
-                                onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${this.escapeHtml(deck.name)}', '${deck.icon || ''}', \`${this.escapeHtml(deck.description || '')}\`, '${deck.color || ''}')" 
+                                onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${escapeHtml(deck.name)}', '${deck.icon || ''}', \`${escapeHtml(deck.description || '')}\`, '${deck.color || ''}')" 
                                 title="Editar nombre/icono/color/guía">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="deck-action-btn deck-action-btn--delete" 
-                                onclick="event.stopPropagation(); window.repasoManager.confirmDeleteDeck('${deck.id}', '${this.escapeHtml(deck.name)}')" 
+                                onclick="event.stopPropagation(); window.repasoManager.confirmDeleteDeck('${deck.id}', '${escapeHtml(deck.name)}')" 
                                 title="Eliminar mazo">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -875,7 +875,7 @@ class RepasoManager {
                         <span class="deck-badge ${badgeClass}" style="font-size:0.6rem; padding:0.15rem 0.5rem;">${badgeText}</span>
                     </div>
                     <div style="font-size:1.5rem; margin-bottom:0.5rem;">${iconHtml}</div>
-                    <h3 style="font-size:0.9rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${this.escapeHtml(deck.name)}">${deck.name}</h3>
+                    <h3 style="font-size:0.9rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
                     <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem;">
                         ${deck.total_cards || 0} tarjetas
                         ${hasDue ? `<span style="color:#ef4444; font-weight:600; margin-left:0.5rem;">${deck.due_cards} pend.</span>` : ''}
@@ -983,12 +983,12 @@ class RepasoManager {
                 </div>
                 <div class="card-row-front">
                     ${c.image_url ? `<img src="${window.resolveImageUrl(c.image_url)}" style="width:24px; height:24px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;" loading="lazy">` : ''}
-                    ${this.escapeHtml(c.front_content)}
+                    ${escapeHtml(c.front_content)}
                     ${c.interval_days > 21 ? `<span class="badge-mastered" title="Tarjeta Dominada"><i class="fas fa-star"></i> Dominada</span>` : ''}
                 </div>
                 <div class="card-row-back">
                     ${c.explanation_image_url ? '<i class="fas fa-image" style="color:#94a3b8; margin-right:4px;"></i>' : ''}
-                    ${this.escapeHtml(c.back_content)}
+                    ${escapeHtml(c.back_content)}
                 </div>
                 <div class="card-row-actions">
                     <button class="deck-action-btn deck-action-btn--play" title="Estudiar" data-action="play">
@@ -1046,8 +1046,8 @@ class RepasoManager {
                     <i class="fas fa-grip-vertical drag-handle"></i>
                     <input type="checkbox" class="card-checkbox card-item-checkbox" value="${c.id}" data-id="${c.id}">
                 </div>
-                <div class="card-row-front">${c.image_url ? `<img src="${window.resolveImageUrl(c.image_url)}" style="width:24px; height:24px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;" loading="lazy">` : ''}${this.escapeHtml(c.front_content)}</div>
-                <div class="card-row-back">${c.explanation_image_url ? '<i class="fas fa-image" style="color:#94a3b8; margin-right:4px;"></i>' : ''}${this.escapeHtml(c.back_content)}</div>
+                <div class="card-row-front">${c.image_url ? `<img src="${window.resolveImageUrl(c.image_url)}" style="width:24px; height:24px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;" loading="lazy">` : ''}${escapeHtml(c.front_content)}</div>
+                <div class="card-row-back">${c.explanation_image_url ? '<i class="fas fa-image" style="color:#94a3b8; margin-right:4px;"></i>' : ''}${escapeHtml(c.back_content)}</div>
                 <div class="card-row-actions">
                     <button class="deck-action-btn deck-action-btn--play" data-action="play"><i class="fas fa-play" style="color:#60a5fa;"></i></button>
                     ${this.token ? `<button class="deck-action-btn" data-action="edit"><i class="fas fa-pen"></i></button><button class="deck-action-btn deck-action-btn--delete" data-action="delete"><i class="fas fa-trash"></i></button>` : ''}
@@ -2388,16 +2388,6 @@ class RepasoManager {
             console.error(err);
         }
 
-    }
-
-    escapeHtml(text) {
-        if (!text) return '';
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
     }
 
     /**

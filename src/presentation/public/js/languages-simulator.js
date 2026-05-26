@@ -250,7 +250,7 @@ const LanguagesSimulator = (function() {
             playBtn.innerHTML = '<i class="fas fa-play"></i>';
             
             playBtn.onclick = () => {
-                playTTS(playBtn, q.audio_text, state.career);
+                window.playQuestionAudio(playBtn, q.audio_text, state.career);
             };
 
             const infoDiv = document.createElement('div');
@@ -556,7 +556,7 @@ const LanguagesSimulator = (function() {
             const playBtn = card.querySelector('.review-audio-btn');
             if (playBtn) {
                 playBtn.onclick = () => {
-                    playTTS(playBtn, q.audio_text, state.career || 'en-US');
+                    window.playQuestionAudio(playBtn, q.audio_text, state.career || 'en-US');
                 };
             }
 
@@ -617,77 +617,10 @@ const LanguagesSimulator = (function() {
     }
 
     /**
-     * Síntesis de voz (TTS) para listening
-     */
-    async function playTTS(btn, text, lang) {
-        const icon = btn.querySelector('i');
-        if (!icon) return;
-
-        if (currentAudio && btn.dataset.playing === 'true') {
-            currentAudio.pause();
-            return;
-        }
-
-        if (currentAudio) {
-            try { currentAudio.pause(); } catch(e){}
-            document.querySelectorAll('.quiz-audio-btn').forEach(b => {
-                b.dataset.playing = 'false';
-                const i = b.querySelector('i');
-                if (i) i.className = 'fas fa-play';
-            });
-        }
-
-        icon.className = 'fas fa-spinner fa-spin';
-        btn.disabled = true;
-
-        try {
-            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/tts`, {
-                method: 'POST',
-                body: JSON.stringify({ text, lang })
-            });
-
-            if (!response.ok) throw new Error(`Error ${response.status}`);
-
-            const blob = await response.blob();
-            const audioUrl = URL.createObjectURL(blob);
-            const audio = new Audio(audioUrl);
-            currentAudio = audio;
-            btn.dataset.playing = 'true';
-            btn.disabled = false;
-            icon.className = 'fas fa-pause';
-
-            audio.onended = () => {
-                btn.dataset.playing = 'false';
-                icon.className = 'fas fa-play';
-                URL.revokeObjectURL(audioUrl);
-                currentAudio = null;
-            };
-
-            audio.onpause = () => {
-                btn.dataset.playing = 'false';
-                icon.className = 'fas fa-play';
-            };
-
-            audio.onplay = () => {
-                btn.dataset.playing = 'true';
-                icon.className = 'fas fa-pause';
-            };
-
-            await audio.play();
-        } catch (err) {
-            console.error("Error al reproducir audio de listening:", err);
-            icon.className = 'fas fa-exclamation-triangle';
-            btn.disabled = false;
-            setTimeout(() => {
-                icon.className = 'fas fa-play';
-            }, 2000);
-        }
-    }
-
     function stopAudio() {
-        if (currentAudio) {
-            try { currentAudio.pause(); } catch (e) {}
-            currentAudio = null;
+        if (window.currentQuizAudio) {
+            try { window.currentQuizAudio.pause(); } catch (e) {}
+            window.currentQuizAudio = null;
         }
     }
 
