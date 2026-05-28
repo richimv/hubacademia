@@ -11,7 +11,7 @@ class LibraryUI {
             listContainer: '#library-list-container'
         };
 
-        this.currentTab = 'saved';
+        this.currentTab = 'resources';
         this.currentFilter = 'all';
         this.isFullscreen = false;
         this.editingNoteId = null; // ID de la nota que se está editando
@@ -31,33 +31,57 @@ class LibraryUI {
     init() {
         console.log('🎨 LibraryUI V2.1: Iniciando...');
 
+        const pageContainer = document.getElementById('library-page-container');
+        this.isPageMode = !!pageContainer;
+
         window.addEventListener('library:state-changed', () => {
             this.updateAllButtons();
-            if (this.isDrawerOpen()) this.renderDrawerList();
+            if (this.isPageMode || this.isDrawerOpen()) this.renderDrawerList();
         });
 
-        // ✅ NUEVO: Escuchar cambios de sesión para mostrar/ocultar el botón flotante dinámicamente
+        // ✅ Escuchar cambios de sesión
         if (window.sessionManager) {
             window.sessionManager.onStateChange((user) => {
+                this._syncTabVisibility(user);
                 if (user) {
-                    this._renderFloatingButton();
-                    // ✅ RECARGA CRÍTICA: Sincronizar estado de biblioteca con el nuevo usuario
                     this.service.init().then(() => {
-                        if (this.isDrawerOpen()) this.renderDrawerList();
+                        this.renderDrawerList();
                     });
                 } else {
-                    const toggleBtn = document.querySelector('.library-toggle');
-                    if (toggleBtn) toggleBtn.remove();
-                    this.toggleDrawer(false);
+                    if (this.isPageMode) {
+                        if (['saved', 'favorites', 'notes'].includes(this.currentTab)) {
+                            this.switchTab('resources');
+                        }
+                    }
                 }
             });
+            // Sincronizar visibilidad inicial
+            this._syncTabVisibility(window.sessionManager.getUser());
         }
 
         document.body.addEventListener('click', (e) => this._handleBodyClick(e));
-        this._renderDrawerStructure();
 
-        if (localStorage.getItem('authToken')) {
-            this._renderFloatingButton();
+        if (this.isPageMode) {
+            // Leer tab por defecto de la URL (?tab=resources / saved / favorites / notes)
+            const params = new URLSearchParams(window.location.search);
+            const tabParam = params.get('tab');
+            const isLoggedIn = window.sessionManager?.isLoggedIn();
+            
+            if (['resources', 'saved', 'favorites', 'notes'].includes(tabParam)) {
+                if (!isLoggedIn && ['saved', 'favorites', 'notes'].includes(tabParam)) {
+                    this.currentTab = 'resources';
+                } else {
+                    this.currentTab = tabParam;
+                }
+            } else {
+                this.currentTab = 'resources';
+            }
+            
+            // Cargar datos
+            this.service.loadFullLibrary();
+            this.switchTab(this.currentTab);
+        } else {
+            console.log('📚 Modo silencioso (Biblioteca en página dedicada).');
         }
 
         this._initObserver();
@@ -172,7 +196,29 @@ class LibraryUI {
         document.querySelectorAll('.library-tab').forEach(t =>
             t.classList.toggle('active', t.dataset.tab === tabName)
         );
-        this.renderDrawerList();
+
+        // Ocultar todos los paneles y mostrar el activo
+        document.querySelectorAll('.library-panel').forEach(panel => {
+            panel.style.display = 'none';
+        });
+        const activePanel = document.getElementById(`panel-${tabName}`);
+        if (activePanel) {
+            activePanel.style.display = 'block';
+        }
+
+        if (this.isPageMode) {
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabName);
+            window.history.replaceState({}, '', url);
+
+            if (window.globalSidebar) {
+                window.globalSidebar.highlightActiveItem();
+            }
+        }
+
+        if (tabName !== 'resources') {
+            this.renderDrawerList();
+        }
     }
 
     switchFilter(filter) {
@@ -184,6 +230,12 @@ class LibraryUI {
     }
 
     renderDrawerList() {
+        if (this.isPageMode) {
+            this.selectors.listContainer = `#${this.currentTab}-list-container`;
+        } else {
+            this.selectors.listContainer = '#library-list-container';
+        }
+
         if (this.currentTab === 'notes') {
             this._renderNotesList();
             return;
@@ -212,7 +264,7 @@ class LibraryUI {
     }
 
     _renderFilters(items) {
-        const filterContainer = document.querySelector('.library-category-filters');
+        const filterContainer = this.isPageMode ? document.getElementById(`${this.currentTab}-category-filters`) : document.querySelector('.library-category-filters');
         if (!filterContainer) return;
 
         if (this.currentTab === 'notes') {
@@ -264,7 +316,7 @@ class LibraryUI {
     }
 
     _renderNotesList() {
-        const filterContainer = document.querySelector('.library-category-filters');
+        const filterContainer = this.isPageMode ? document.getElementById(`${this.currentTab}-category-filters`) : document.querySelector('.library-category-filters');
         if (filterContainer) filterContainer.style.display = 'none';
 
         const container = document.querySelector(this.selectors.listContainer);
@@ -334,6 +386,40 @@ class LibraryUI {
                     <div class="library-item-title">${note.title}</div>
                     <div class="note-preview">${preview}...</div>
                     <div class="note-source" style="color:${color}; font-weight:600;">${sourceLabel} <span style="color:#94a3b8; font-weight:normal;">· ${dateStr}</span></div>
+                </div>
+            </div>
+        `;
+    }
+
+    _syncTabVisibility(user) {
+        const savedTab = document.getElementById('tab-btn-saved');
+        const favoritesTab = document.getElementById('tab-btn-favorites');
+        const notesTab = document.getElementById('tab-btn-notes');
+        
+        const displayStyle = user ? '' : 'none';
+        if (savedTab) savedTab.style.display = displayStyle;
+        if (favoritesTab) favoritesTab.style.display = displayStyle;
+        if (notesTab) notesTab.style.display = displayStyle;
+    }
+
+    _renderPageStructure() {
+        const container = document.getElementById('library-page-container');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="library-header-page" style="margin-bottom: 1.5rem;">
+                <h1 style="font-size: 2.2rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Mi Biblioteca</h1>
+                <p style="color: #94a3b8; font-size: 1rem; margin-top: 0.25rem;">Gestiona tus recursos guardados, favoritos y notas personales</p>
+            </div>
+            <div class="library-tabs" style="margin-bottom: 1rem;">
+                <button class="library-tab active" data-tab="saved" onclick="window.libraryUI.switchTab('saved')">Guardados</button>
+                <button class="library-tab" data-tab="favorites" onclick="window.libraryUI.switchTab('favorites')">Favoritos</button>
+                <button class="library-tab" data-tab="notes" onclick="window.libraryUI.switchTab('notes')">Notas</button>
+            </div>
+            <div class="library-category-filters"></div>
+            <div class="library-content">
+                <div class="library-list" id="library-list-container">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
                 </div>
             </div>
         `;

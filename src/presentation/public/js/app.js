@@ -230,7 +230,7 @@ function updateHeaderUI(user) {
     } else {
         // --- MODO: INVITADO ---
         container.innerHTML = `
-            <button id="open-login-modal" class="btn-primary" style="padding: 0.6rem 1.5rem; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; border: none;">
+            <button id="open-login-modal" class="btn-primary">
                 <i class="fas fa-sign-in-alt"></i> <span>Acceder</span>
             </button>
         `;

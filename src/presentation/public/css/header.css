@@ -75,14 +75,16 @@ body {
 }
 
 .logo-text {
-    font-weight: 600;
-    font-size: 1.125rem;
+    font-weight: 700;
+    font-size: 1.25rem;
     color: var(--text-main);
-    display: none;
-}
-
-@media (min-width: 768px) {
-    /* .logo-text { display: block; } REMOVED */
+    display: block; /* Always visible */
+    background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.3px;
+    font-family: 'Inter', sans-serif;
 }
 
 /* Nuevo contenedor para alinear logo y botón a la izquierda */
@@ -91,31 +93,6 @@ body {
     align-items: center;
 }
 
-.header-back-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-muted);
-    background: transparent;
-    border: none;
-    /* Separador estilo "pipe" */
-    border-left: 1px solid var(--border-color);
-    margin-left: 1.5rem;
-    padding-left: 1.5rem;
-    height: 28px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-
-.header-back-btn:hover {
-    color: var(--accent);
-}
-
-.header-back-btn.hidden {
-    display: none !important;
-}
 
 .nav-link {
     text-decoration: none;
@@ -171,7 +148,11 @@ body {
     padding: 0.6rem 1.6rem;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     letter-spacing: 0.2px;
 }
@@ -373,8 +354,11 @@ body {
         white-space: nowrap;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 0;
-        /* Sin gap porque no hay texto */
+        height: 34px;
+        box-sizing: border-box;
+        border-radius: 8px;
     }
 
     #user-session-controls .btn-primary span {
@@ -387,6 +371,32 @@ body {
         margin: 0;
     }
 
+    /* Minimal mobile layout for open-login-modal (compact rounded rectangle) */
+    #user-session-controls #open-login-modal,
+    #open-login-modal.btn-primary {
+        width: 36px !important;
+        height: 32px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        padding: 0 !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+    }
+
+    #user-session-controls #open-login-modal span,
+    #open-login-modal.btn-primary span {
+        display: none !important;
+    }
+
+    #user-session-controls #open-login-modal i,
+    #open-login-modal.btn-primary i {
+        margin: 0 !important;
+        font-size: 0.95rem !important;
+    }
+
     .header-nav {
         gap: 0.35rem;
         /* ✅ Tighter, more cohesive look */
@@ -395,5 +405,21 @@ body {
     .user-menu-dropdown {
         right: -10px;
         min-width: 200px;
+    }
+
+    /* Centered logo on mobile */
+    .logo {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .logo-text {
+        font-size: 1.05rem;
     }
 }

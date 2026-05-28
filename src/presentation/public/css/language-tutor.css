@@ -27,27 +27,7 @@
     margin: 0;
 }
 
-/* Return button */
-.header-back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #cbd5e1;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.5rem 1rem;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.2s ease;
-}
 
-.header-back-btn:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.15);
-    transform: translateX(-3px);
-}
 
 /* CCI Container */
 .cci-container {

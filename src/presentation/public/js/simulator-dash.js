@@ -288,18 +288,6 @@ const SimulatorDash = (() => {
         const urlParams = new URLSearchParams(window.location.search);
         currentContext = (urlParams.get('context') || 'MEDICINA').toUpperCase();
 
-        // Actualizar href del botón "Volver a Simuladores" según contexto
-        const backBtn = document.getElementById('header-back-btn');
-        if (backBtn) {
-            if (currentContext === 'EDUCACION') {
-                backBtn.href = '/simulators?domain=educacion';
-            } else if (currentContext === 'IDIOMAS') {
-                backBtn.href = '/simulators?domain=idiomas';
-            } else {
-                backBtn.href = '/simulators?domain=salud';
-            }
-        }
-
         // 0. Initialize Context-Aware Data Structures
         const ctxConfig = contexts[currentContext] || contexts['MEDICINA'];
         examAreasGrouped = ctxConfig.areas || [];

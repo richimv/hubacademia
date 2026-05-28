@@ -15,10 +15,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="css/base.css?v=131520e2">
-    <link rel="stylesheet" href="css/header.css?v=131520e2">
-    <link rel="stylesheet" href="css/footer.css?v=131520e2">
-    <link rel="stylesheet" href="css/dashboard.css?v=131520e2">
+    <link rel="stylesheet" href="css/base.css?v=408af56b">
+    <link rel="stylesheet" href="css/header.css?v=408af56b">
+    <link rel="stylesheet" href="css/footer.css?v=408af56b">
+    <link rel="stylesheet" href="css/dashboard.css?v=408af56b">
 
     <!-- ✅ FIX: Cargar librería de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -31,9 +31,6 @@
             <a href="/" class="logo">
                 <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
                 <span class="logo-text">Admin Dashboard</span>
-            </a>
-            <a href="/" id="header-back-btn" class="header-back-btn">
-                <i class="fas fa-arrow-left"></i> <span>Volver</span>
             </a>
             <button id="btn-update-ai" class="btn"
                 style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.4rem 0.8rem; border-radius: 8px; cursor:pointer; margin-left: 1rem;"><i
@@ -163,42 +160,44 @@
     <!-- Footer Injection -->
     <footer class="main-footer">
         <div class="footer-container">
-            <!-- Col 1 -->
             <div class="footer-brand">
                 <a href="/" class="footer-logo">
-                    <img src="assets/logo.png" alt="Hub Academia Logo">
+                    <img src="/assets/logo.png" alt="Hub Academia Logo">
                     Hub Academia
                 </a>
-                <p class="footer-slogan">
-                    Panel de Administración del Sistema Hub Academia.
-                </p>
+                <p class="footer-slogan">Tu plataforma de aprendizaje inteligente. Simulacros, flashcards y asistente interactivo para salud, educación e idiomas.</p>
             </div>
-
-            <!-- Col 2 -->
             <div class="footer-links-col">
-                <h4 class="footer-heading">Navegación</h4>
+                <h4 class="footer-heading">Explorar</h4>
                 <ul class="footer-links-list">
                     <li><a href="/" class="footer-link">Inicio</a></li>
-                    <li><a href="/simulators" class="footer-link">Simuladores</a></li>
+                    <li><a href="/library" class="footer-link">Mi biblioteca</a></li>
+                    <li><a href="pricing" class="footer-link">Precios</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <ul class="footer-links-list">
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
                 </ul>
             </div>
         </div>
-
         <div class="footer-bottom">
-            <div class="copyright">
-                © 2026 Hub Academia. Todos los derechos reservados.
-            </div>
+            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
         </div>
     </footer>
 
     <!-- Scripts -->
-    <script src="js/config.js?v=131520e2"></script> <!-- ✅ NUEVO: Configuración Global -->
-    <script src="js/sessionManager.js?v=131520e2"></script>
-    <script src="js/dashboard.js?v=131520e2"></script>
-    <script src="js/app.js?v=131520e2"></script>
-    <script src="js/services/networkService.js?v=131520e2"></script>
-    <script src="js/services/authApiService.js?v=131520e2"></script>
-    <script src="js/services/analyticsApiService.js?v=131520e2"></script>
+    <script src="js/config.js?v=408af56b"></script> <!-- ✅ NUEVO: Configuración Global -->
+    <script src="js/sessionManager.js?v=408af56b"></script>
+    <script src="js/dashboard.js?v=408af56b"></script>
+    <script src="js/ui/sidebar.js?v=408af56b"></script>
+    <script src="js/app.js?v=408af56b"></script>
+    <script src="js/services/networkService.js?v=408af56b"></script>
+    <script src="js/services/authApiService.js?v=408af56b"></script>
+    <script src="js/services/analyticsApiService.js?v=408af56b"></script>
     <script>
         // Auth Check inline para evitar FOUC
         const token = localStorage.getItem('authToken');

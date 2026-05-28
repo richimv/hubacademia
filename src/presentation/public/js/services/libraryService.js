@@ -92,6 +92,7 @@ class LibraryService {
      * Carga la data completa (para el Drawer/Mi Biblioteca)
      */
     async loadFullLibrary() {
+        if (!localStorage.getItem('authToken')) return;
         try {
             const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/my-library`, {
                 cache: 'no-cache'

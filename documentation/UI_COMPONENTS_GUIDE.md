@@ -130,6 +130,13 @@ Para evitar colisiones visuales ("z-index wars"), se ha establecido el siguiente
 | **Header / Navigation** | `1000` | Menú superior y navegación persistente. |
 | **Main Content** | `1` - `100` | Flujo normal de la página. |
 
+### 🚨 Adaptación Dinámica por Barra de Vidas (Trial Bar)
+- La barra lateral (`.global-sidebar`) y la cabecera (`.main-header`) reaccionan al estado `body.has-trial-mode` desplazándose verticalmente según la variable CSS `--trial-bar-height` (46px).
+- En computadoras de escritorio, la barra lateral inicia en `top: var(--trial-bar-height)` para evitar solapamientos con el botón de hamburguesa. En celulares, se mantiene en `top: 0` ocupando `100vh` de forma inmersiva.
+
+### 📚 Cuadrícula Responsiva de Biblioteca
+- El contenedor `#library-page-container` en `library.html` fuerza exactamente **6 columnas por fila en PC** y se adapta de manera fluida a **3 columnas en teléfonos móviles**, evitando que los elementos de tarjetas y textos queden comprimidos.
+
 > [!IMPORTANT]
 > Nunca uses un `z-index` superior a `2,000,000` en componentes de página regulares. El rango superior está reservado exclusivamente para el sistema de feedback global (`UIManager`).
 

@@ -35,6 +35,8 @@ class UIManager {
         const div = document.createElement('div');
         div.id = 'status-pill-container';
         div.className = 'status-pill-container';
+        // 🛡️ Estilos inline de seguridad: garantizan position:fixed incluso si components.css no está cargado
+        div.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-120px);z-index:9999;transition:transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);pointer-events:none;';
         div.innerHTML = `
             <div id="status-pill" class="status-pill">
                 <span class="status-dot"></span>
@@ -44,7 +46,7 @@ class UIManager {
         document.body.appendChild(div);
     }
 
-    handleConnectivityChange(isOnline) {
+    handleConnectivityChange(isOnline, wasOffline = false) {
         this.isOnline = isOnline;
         const container = document.getElementById('status-pill-container');
         const pill = document.getElementById('status-pill');
@@ -53,14 +55,27 @@ class UIManager {
         if (!isOnline) {
             pill.className = 'status-pill offline';
             text.textContent = 'Sin conexión - Trabajando localmente';
-            container.classList.add('active');
+            // 🛡️ También aplicar estilo inline para páginas sin components.css
+            container.style.transform = 'translateX(-50%) translateY(0)';
+            this._wasOffline = true;
         } else {
-            pill.className = 'status-pill online';
-            text.textContent = 'Conectado';
-            // Ocultar después de un momento
-            setTimeout(() => {
+            // 🚨 FIX: Solo mostrar "Conectado" si se recuperó de un estado offline
+            // No mostrar en la carga inicial cuando ya hay conexión
+            if (this._wasOffline) {
+                pill.className = 'status-pill online';
+                text.textContent = 'Conectado';
+                container.style.transform = 'translateX(-50%) translateY(0)';
+                // Ocultar después de 3 segundos
+                setTimeout(() => {
+                    container.style.transform = 'translateX(-50%) translateY(-120px)';
+                    container.classList.remove('active');
+                    this._wasOffline = false;
+                }, 3000);
+            } else {
+                // Conexión inicial normal: mantener oculto silenciosamente
+                container.style.transform = 'translateX(-50%) translateY(-120px)';
                 container.classList.remove('active');
-            }, 3000);
+            }
         }
     }
 

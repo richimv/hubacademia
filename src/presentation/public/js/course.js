@@ -37,17 +37,6 @@ async function loadCourseData(id) {
 
         const course = await response.json();
 
-        // ✅ ACIVAR BOTÓN DE VOLVER EN HEADER
-        const headerBackBtn = document.getElementById('header-back-btn');
-        if (headerBackBtn) {
-            headerBackBtn.classList.add('visible');
-            headerBackBtn.onclick = (e) => {
-                e.preventDefault();
-                history.back();
-            };
-            headerBackBtn.querySelector('span').textContent = 'Volver';
-        }
-
         renderCourse(course, container);
         window.currentCourseData = course; // Guardar en caché para re-renders
     } catch (error) {

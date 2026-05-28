@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Biblioteca | Hub Academia</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/base.css?v=408af56b">
+    <link rel="stylesheet" href="css/header.css?v=408af56b">
+    <link rel="stylesheet" href="css/footer.css?v=408af56b">
+    <link rel="stylesheet" href="css/dashboard.css?v=408af56b">
+    <link rel="stylesheet" href="css/components.css?v=408af56b">
+    <link rel="stylesheet" href="css/modal.css?v=408af56b">
+    <link rel="stylesheet" href="css/markdown-content.css?v=408af56b">
+    <link rel="stylesheet" href="css/chat.css?v=408af56b">
+    <link rel="stylesheet" href="css/sidebar.css?v=408af56b">
+    <link rel="stylesheet" href="css/search.css?v=408af56b">
+    <link rel="stylesheet" href="css/browse.css?v=408af56b">
+    <link rel="stylesheet" href="css/results.css?v=408af56b">
+    <link rel="stylesheet" href="css/course.css?v=408af56b">
+
+    <!-- Global scripts -->
+    <script src="js/config.js?v=408af56b"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="js/utils/markdown-renderer.js?v=408af56b"></script>
+
+    <style>
+        /* Asegurar que la barra de búsqueda en la biblioteca sea relativa y esté bien centrada */
+        #panel-resources .search-section {
+            position: relative !important;
+            top: auto !important;
+            bottom: auto !important;
+            left: auto !important;
+            transform: none !important;
+            width: 100% !important;
+            max-width: 800px !important;
+            margin: 1.5rem auto 2.5rem auto !important;
+            padding: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border-bottom: none !important;
+            display: block !important;
+        }
+
+        #panel-resources .search-box {
+            background: rgba(255, 255, 255, 0.03) !important;
+            padding: 0.6rem 0.6rem 0.6rem 1.5rem !important;
+            border-radius: 50px !important;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+            display: flex !important;
+            gap: 10px !important;
+            align-items: center !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            backdrop-filter: blur(10px);
+            box-sizing: border-box !important;
+        }
+
+        #panel-resources .search-box input {
+            flex: 1 !important;
+            border: none !important;
+            outline: none !important;
+            font-size: 1.1rem !important;
+            padding: 0.5rem 1rem !important;
+            background: transparent !important;
+            color: var(--text-main) !important;
+        }
+
+        #panel-resources .search-box button {
+            border-radius: 30px !important;
+            padding: 0.8rem 2rem !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            background: var(--primary) !important;
+            color: white !important;
+            border: none !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            transition: background 0.2s, transform 0.2s !important;
+        }
+
+        #panel-resources .search-box button:hover {
+            background: var(--primary-light) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Grid de recursos: 6 columnas en escritorio, 3 en celulares (recuperar diseño imperativo) */
+        .books-grid,
+        .courses-grid,
+        .careers-grid,
+        .browse-grid,
+        .manta-content-grid,
+        .results-list,
+        .library-list,
+        .documents-grid-premium,
+        .medical-books-grid {
+            display: grid !important;
+            grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+            gap: 1rem !important;
+            width: 100% !important;
+        }
+
+        /* Responsividad de contenedores y textos en biblioteca */
+        @media (max-width: 768px) {
+            .dashboard-container,
+            #library-page-container,
+            #panel-resources,
+            #content-container,
+            #browse-container,
+            .manta-content-grid {
+                min-width: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            
+            .dashboard-container {
+                padding: 1rem 0.5rem !important;
+            }
+            #library-page-container {
+                padding: 1rem !important;
+                border-radius: 12px !important;
+            }
+            .library-header-page h1 {
+                font-size: 1.6rem !important;
+            }
+            .library-header-page p {
+                font-size: 0.85rem !important;
+            }
+
+            /* Scroll horizontal premium en tabs de biblioteca */
+            .library-tabs {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding: 0.4rem !important;
+                gap: 0.5rem !important;
+                scrollbar-width: none !important;
+                background: rgba(255, 255, 255, 0.02) !important;
+                border-radius: 12px !important;
+                margin-bottom: 1.5rem !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .library-tabs::-webkit-scrollbar {
+                display: none !important;
+            }
+            .library-tab {
+                flex: 0 0 auto !important;
+                white-space: nowrap !important;
+                padding: 0.5rem 1rem !important;
+                font-size: 0.85rem !important;
+            }
+
+            /* Grid responsivo exacto: 3 recursos por fila en celulares */
+            .books-grid,
+            .courses-grid,
+            .careers-grid,
+            .browse-grid,
+            .manta-content-grid,
+            .results-list,
+            .library-list,
+            .documents-grid-premium,
+            .medical-books-grid {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 0.5rem !important;
+                width: 100% !important;
+            }
+
+            .unified-resource-card {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            /* Barra de búsqueda compacta horizontal */
+            #panel-resources .search-section {
+                margin: 1rem auto 1.5rem auto !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            #panel-resources .search-box {
+                flex-direction: row !important;
+                padding: 0.35rem 0.35rem 0.35rem 1rem !important;
+                border-radius: 50px !important;
+                gap: 5px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            #panel-resources .search-box input {
+                font-size: 0.95rem !important;
+                padding: 0.25rem 0.5rem !important;
+                width: auto !important;
+                flex: 1 !important;
+            }
+            #panel-resources .search-box button {
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                max-width: 36px !important;
+                padding: 0 !important;
+                border-radius: 50% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                flex-shrink: 0 !important;
+            }
+            #panel-resources .search-box button .search-btn-text {
+                display: none !important;
+            }
+            #panel-resources .search-box button i {
+                margin: 0 !important;
+                font-size: 0.95rem !important;
+            }
+
+            /* Prevent filter pills from shrinking, enabling horizontal scroll */
+            .manta-filter-pill,
+            .library-cat-btn {
+                flex-shrink: 0 !important;
+                white-space: nowrap !important;
+            }
+
+            /* Forzar que el contenedor de filtros sea scrollable horizontalmente en móviles */
+            .manta-filters-container,
+            .library-category-filters {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                gap: 0.5rem !important;
+                padding: 0.5rem 0 !important;
+                scrollbar-width: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .manta-filters-container::-webkit-scrollbar,
+            .library-category-filters::-webkit-scrollbar {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="hero-hidden">
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Hub Academia</span>
+            </a>
+        </div>
+        <div class="header-nav">
+            <div id="user-session-controls">
+                <span class="loading-user">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="dashboard-container" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;">
+        <!-- Dedicated Library Page Container -->
+        <div id="library-page-container" class="glass-card" style="padding: 2rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(20px);">
+            
+            <div class="library-header-page" style="margin-bottom: 1.5rem;">
+                <h1 style="font-size: 2.2rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Mi Biblioteca</h1>
+                <p style="color: #94a3b8; font-size: 1rem; margin-top: 0.25rem;">Gestiona tus recursos guardados, favoritos y notas personales</p>
+            </div>
+            
+            <div class="library-tabs" style="margin-bottom: 1rem;">
+                <button class="library-tab active" data-tab="resources" onclick="window.libraryUI.switchTab('resources')">Biblioteca de Recursos</button>
+                <button class="library-tab" data-tab="saved" id="tab-btn-saved" onclick="window.libraryUI.switchTab('saved')" style="display: none;">Guardados</button>
+                <button class="library-tab" data-tab="favorites" id="tab-btn-favorites" onclick="window.libraryUI.switchTab('favorites')" style="display: none;">Favoritos</button>
+                <button class="library-tab" data-tab="notes" id="tab-btn-notes" onclick="window.libraryUI.switchTab('notes')" style="display: none;">Notas</button>
+            </div>
+
+            <!-- Panel 1: Biblioteca de Recursos (General Catalog & Search) -->
+            <div id="panel-resources" class="library-panel active">
+                <section class="search-section" style="margin-bottom: 2rem;">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Busca tu recurso académico...">
+                        <button id="searchButton" class="btn-primary">
+                            <i class="fas fa-search"></i> <span class="search-btn-text">Buscar</span>
+                        </button>
+                    </div>
+                </section>
+                <div id="content-container">
+                    <nav id="breadcrumbs" class="breadcrumbs hidden" aria-label="breadcrumb"></nav>
+                    <div id="browse-container"></div>
+                    <div id="results-container" class="hidden"></div>
+                </div>
+            </div>
+
+            <!-- Panel 2: Guardados -->
+            <div id="panel-saved" class="library-panel" style="display: none;">
+                <div class="library-category-filters" id="saved-category-filters"></div>
+                <div class="library-content">
+                    <div class="library-list" id="saved-list-container">
+                        <div class="empty-state"><i class="far fa-bookmark"></i><p>No tienes recursos guardados.</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 3: Favoritos -->
+            <div id="panel-favorites" class="library-panel" style="display: none;">
+                <div class="library-category-filters" id="favorites-category-filters"></div>
+                <div class="library-content">
+                    <div class="library-list" id="favorites-list-container">
+                        <div class="empty-state"><i class="far fa-heart"></i><p>No tienes favoritos.</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 4: Notas -->
+            <div id="panel-notes" class="library-panel" style="display: none;">
+                <div class="library-content">
+                    <div class="library-list" id="notes-list-container">
+                        <!-- Custom add note btn + notes list -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="/assets/logo.png" alt="Hub Academia Logo">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">Tu plataforma de aprendizaje inteligente. Simulacros, flashcards y asistente interactivo para salud, educación e idiomas.</p>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Explorar</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="/library" class="footer-link">Mi biblioteca</a></li>
+                    <li><a href="pricing" class="footer-link">Precios</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <ul class="footer-links-list">
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
+        </div>
+    </footer>
+
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js?v=408af56b"></script>
+    <script src="js/services/networkService.js?v=408af56b"></script>
+    <script src="js/services/authApiService.js?v=408af56b"></script>
+    <script src="js/services/analyticsApiService.js?v=408af56b"></script>
+    <script src="js/sessionManager.js?v=408af56b"></script>
+    <script src="js/ui/uiManager.js?v=408af56b"></script>
+    <script src="js/ui/components.js?v=408af56b"></script>
+    <script src="js/ui/confirmationModal.js?v=408af56b"></script>
+    <script src="js/services/searchService.js?v=408af56b"></script>
+    <script type="module" src="js/search.js?v=408af56b"></script>
+    <script src="js/services/libraryService.js?v=408af56b"></script>
+    <script src="js/ui/libraryUI.js?v=408af56b"></script>
+    <script src="js/ui/sidebar.js?v=408af56b"></script>
+    <script src="js/chat.js?v=408af56b"></script>
+    <script src="js/security.js?v=408af56b"></script>
+    <script src="js/app.js?v=408af56b"></script>
+</body>
+
+</html>

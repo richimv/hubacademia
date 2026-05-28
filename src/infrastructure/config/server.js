@@ -191,7 +191,7 @@ class Server {
             'login', 'admin', 'chat', 'dashboard', 'self-evaluation',
             'pricing', 'privacy', 'terms', 'quiz', 'course', 'career', 'category',
             'profile', 'deck-editor', 'flashcards', 'repaso', 'simulator-dashboard',
-            'simulators', 'resource', 'language-tutor'
+            'simulators', 'resource', 'language-tutor', 'library'
         ];
 
         pages.forEach(page => {

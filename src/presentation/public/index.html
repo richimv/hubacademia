@@ -4,33 +4,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hub Académico</title>
+    <title>Hub Academia</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=131520e2">
-    <link rel="stylesheet" href="css/components.css?v=131520e2">
-    <link rel="stylesheet" href="css/search.css?v=131520e2">
-    <link rel="stylesheet" href="css/browse.css?v=131520e2">
-    <link rel="stylesheet" href="css/results.css?v=131520e2">
-    <link rel="stylesheet" href="css/header.css?v=131520e2">
-    <link rel="stylesheet" href="css/modal.css?v=131520e2">
-    <link rel="stylesheet" href="css/chat.css?v=131520e2">
-    <link rel="stylesheet" href="css/course.css?v=131520e2">
-    <link rel="stylesheet" href="css/hero.css?v=131520e2">
-    <link rel="stylesheet" href="css/modules.css?v=131520e2">
+    <link rel="stylesheet" href="css/base.css?v=408af56b">
+    <link rel="stylesheet" href="css/components.css?v=408af56b">
+    <link rel="stylesheet" href="css/search.css?v=408af56b">
+    <link rel="stylesheet" href="css/browse.css?v=408af56b">
+    <link rel="stylesheet" href="css/results.css?v=408af56b">
+    <link rel="stylesheet" href="css/header.css?v=408af56b">
+    <link rel="stylesheet" href="css/modal.css?v=408af56b">
+    <link rel="stylesheet" href="css/chat.css?v=408af56b">
+    <link rel="stylesheet" href="css/course.css?v=408af56b">
+    <link rel="stylesheet" href="css/hero.css?v=408af56b">
+    <link rel="stylesheet" href="css/modules.css?v=408af56b">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
 
     <!-- ✅ Google Identity Services (One Tap - Solo en index.html) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <link rel="stylesheet" href="css/audio-assistant.css?v=131520e2">
-    <link rel="stylesheet" href="css/markdown-content.css?v=131520e2"> <!-- ✅ Formato unificado de Markdown IA -->
-    <link rel="stylesheet" href="css/footer.css?v=131520e2">
+    <link rel="stylesheet" href="css/audio-assistant.css?v=408af56b">
+    <link rel="stylesheet" href="css/markdown-content.css?v=408af56b"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="css/footer.css?v=408af56b">
 
     <!-- ✅ Utilidades Globales -->
-    <script src="js/config.js?v=131520e2"></script>
+    <script src="js/config.js?v=408af56b"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="js/utils/markdown-renderer.js?v=131520e2"></script>
+    <script src="js/utils/markdown-renderer.js?v=408af56b"></script>
 </head>
 
 <body>
@@ -38,19 +38,10 @@
         <div class="header-start">
             <a href="/" class="logo">
                 <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
-                <span class="logo-text">Hub Académico</span>
+                <span class="logo-text">Hub Academia</span>
             </a>
-            <button id="header-back-btn" class="header-back-btn hidden">
-                <i class="fas fa-arrow-left"></i> <span>Volver</span>
-            </button>
         </div>
         <div class="header-nav">
-            <div class="nav-links desktop-only" style="display: flex; gap: 1.5rem; margin-right: 1.5rem;">
-                <a href="/simulators" class="nav-link">Módulo Salud</a>
-                <a href="/simulators?domain=educacion" class="nav-link">Módulo Educación</a>
-                <a href="/simulators?domain=idiomas" class="nav-link">Módulo Idiomas</a>
-                <a href="/repaso" class="nav-link">Flashcards</a>
-            </div>
             <div id="user-session-controls">
                 <span class="loading-user">Cargando...</span>
             </div>
@@ -58,162 +49,186 @@
     </header>
 
     <div class="hero-wrapper">
-        <section id="hero-slider">
+        <section id="hero-slider" class="single-hero-banner">
             <div class="slider-container">
                 <div class="slide active">
                     <img src="assets/portada.png" alt="Hub Background" class="slide-bg desktop-only">
                     <img src="assets/portada.png" alt="Hub Background" class="slide-bg mobile-only">
                     <div class="slide-overlay"></div>
                     <div class="hero-content">
-                        <h1 class="hero-title">Tu Hub Académico <span class="highlight-text">Inteligente</span></h1>
-                        <p class="hero-subtitle">Acelera tu aprendizaje con nuestros módulos de estudio.</p>
-                        <ul class="hero-features">
-                            <li><i class="fas fa-user-md"></i> Simulacros Médicos</li>
-                            <li><i class="fas fa-brain"></i> Flashcards SM-2</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="slide">
-                    <img src="assets/simuladormedicoportada.png" alt="Simulador Médico Background" class="slide-bg">
-                    <div class="slide-overlay"></div>
-                    <div class="hero-content">
-                        <h1 class="hero-title">Simulador <span class="highlight-text" style="color: #60a5fa;">Médico
-                                Pro</span></h1>
-                        <p class="hero-subtitle">Simulacros exactos para el Examen Nacional del SERUMS.</p>
-                        <div class="hero-actions">
-                            <a href="/simulator-dashboard?context=MEDICINA" class="btn-gamified"
-                                style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                                <i class="fas fa-stethoscope"></i> Entrar al Simulador
-                            </a>
+                        <h1 class="hero-title">Tu Hub Academia <span class="highlight-text">Inteligente</span></h1>
+                        <p class="hero-subtitle">Acelera tu aprendizaje con simulacros interactivos y tutoría conversacional potenciada por Inteligencia Artificial.</p>
+                        
+                        <div class="hero-ecosystem-pills">
+                            <span class="ecosystem-pill"><i class="fas fa-stethoscope"></i> Salud</span>
+                            <span class="ecosystem-pill"><i class="fas fa-chalkboard-teacher"></i> Educación</span>
+                            <span class="ecosystem-pill"><i class="fas fa-language"></i> Idiomas</span>
                         </div>
-                    </div>
-                </div>
-                <div class="slide">
-                    <img src="assets/educacionportada.png" alt="Docente Pro Background" class="slide-bg">
-                    <div class="slide-overlay"></div>
-                    <div class="hero-content">
-                        <h1 class="hero-title">Docente <span class="highlight-text" style="color: #38bdf8;">Pro
-                                Magisterial</span></h1>
-                        <p class="hero-subtitle">Simulacros pedagógicos para el Examen de Ascenso Docente.</p>
-                        <div class="hero-actions">
-                            <a href="/simulator-dashboard?context=EDUCACION" class="btn-gamified"
-                                style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">
-                                <i class="fas fa-chalkboard-teacher"></i> Simulador Educativo
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="slider-nav">
-                <button class="prev-btn"><i class="fas fa-chevron-left"></i></button>
-                <button class="next-btn"><i class="fas fa-chevron-right"></i></button>
-            </div>
-            <div class="slider-dots">
-                <div class="dot active"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-            </div>
-        </section>
 
-        <section class="search-section">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Busca tu recurso académico...">
-                <button id="searchButton" class="btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                        viewBox="0 0 16 16">
-                        <path
-                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                    </svg>
-                    Buscar
-                </button>
+                        <div class="hero-actions" style="margin-top: 2rem;">
+                            <a href="#" id="hero-explore-btn" class="btn-gamified" style="background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);">
+                                <i class="fas fa-compass"></i> Explorar Módulos
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </div>
 
-    <div class="main-container">
-        <section id="training-modules">
-            <div class="modules-header">
-                <h2 class="modules-title">Centro de Entrenamiento</h2>
-            </div>
-            <div class="carousel-wrapper">
-                <div class="carousel-scene">
-                    <div class="carousel-cylinder">
-                        <a href="/simulators" class="carousel-card card-sim">
-                            <div class="card-img-container">
-                                <img src="/assets/custom-sim-bg.png" alt="Simuladores Médicos">
-                                <div class="card-overlay"></div>
+    <!-- Contenedor General de Nuevas Secciones de Estudio -->
+    <div class="homepage-sections-container">
+        
+        <!-- 👩‍🏫 SECCIÓN 1: ASCENSO DOCENTE -->
+        <section id="docente-section" class="scroll-animate-section">
+            <div class="section-grid">
+                <div class="section-info-zone">
+                    <span class="section-badge badge-edu"><i class="fas fa-chalkboard-teacher"></i> Módulo Educación</span>
+                    <h2 class="section-main-title">Examen de <span class="accent-purple-text">Ascenso Docente</span></h2>
+                    <p class="section-description">
+                        Prepárate con simulacros pedagógicos actualizados y diseñados bajo las directrices del marco de competencias nacionales del Minedu.
+                    </p>
+                    <ul class="section-features-list">
+                        <li class="feature-item">
+                            <i class="fas fa-check-circle edu-bullet"></i>
+                            <div class="feature-item-text">
+                                <strong>Simulacros Oficiales:</strong> Evaluaciones sobre conocimientos pedagógicos generales y de especialidad.
                             </div>
-                            <div class="module-info">
-                                <h3>Módulo Salud</h3>
-                                <p>Domina el Examen Nacional del SERUMS con simulacros de alta fidelidad y casos
-                                    clínicos.</p>
+                        </li>
+                        <li class="feature-item">
+                            <i class="fas fa-robot edu-bullet"></i>
+                            <div class="feature-item-text">
+                                <strong>Retroalimentación por IA:</strong> Obtén una justificación analítica inmediata para cada pregunta fallada.
                             </div>
-                            <div class="module-action action-med">
-                                Entrar al Simulador <i class="fas fa-arrow-right"></i>
+                        </li>
+                        <li class="feature-item">
+                            <i class="fas fa-chart-line edu-bullet"></i>
+                            <div class="feature-item-text">
+                                <strong>Métricas de Logro:</strong> Monitorea tu desempeño por competencias y detecta tus áreas de mejora.
                             </div>
-                        </a>
-                        <a href="/repaso" class="carousel-card card-repaso">
-                            <div class="card-img-container">
-                                <img src="/assets/custom-repaso-bg.png" alt="Flashcards">
-                                <div class="card-overlay"></div>
+                        </li>
+                    </ul>
+                    <a href="/simulator-dashboard?context=EDUCACION" class="btn-premium-cta btn-edu-theme">
+                        <i class="fas fa-graduation-cap"></i> Preparar Examen
+                    </a>
+                </div>
+                
+                <div class="section-preview-zone">
+                    <div class="preview-card-glass">
+                        <img src="assets/educacionportada.png" alt="Docente Pro" class="mockup-banner-bg">
+                        <div class="mockup-overlay-sim">
+                            <span class="sim-tag">Simulador Activo</span>
+                            <h3 class="sim-title">Evaluación de Ascenso Docente</h3>
+                            <div class="sim-progress-bar">
+                                <div class="sim-progress-fill fill-edu"></div>
                             </div>
-                            <div class="module-info">
-                                <h3>Flashcards</h3>
-                                <p>Potencia tu memoria con tarjetas inteligentes y repetición espaciada (SM-2), para
-                                    dominar cualquier materia o idioma.</p>
-                            </div>
-                            <div class="module-action action-flash">
-                                Comenzar Repaso <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </a>
-
-                        <a href="/simulators?domain=educacion" class="carousel-card card-edu">
-                            <div class="card-img-container">
-                                <img src="/assets/custom-edu-bg.png" alt="Docente Pro">
-                                <div class="card-overlay"></div>
-                            </div>
-                            <div class="module-info">
-                                <h3>Módulo Educación</h3>
-                                <p>Preparación integral para el Examen de Ascenso Docente con simulacros alineados al
-                                    marco pedagógico nacional.</p>
-                            </div>
-                            <div class="module-action action-edu">
-                                Preparar Examen <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </a>
-                        <a href="/simulators?domain=idiomas" class="carousel-card card-idiomas">
-                            <div class="card-img-container">
-                                <img src="/assets/custom-idiomas-bg.png" alt="Módulo Idiomas">
-                                <div class="card-overlay"></div>
-                            </div>
-                            <div class="module-info">
-                                <h3>Módulo Idiomas</h3>
-                                <p>Domina el inglés e italiano con simulacros internacionales de TOEFL, IELTS,
-                                    nivelación MCER y un chat de corrección gramatical en tiempo real.</p>
-                            </div>
-                            <div class="module-action action-idiomas">
-                                Practicar Idiomas <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </a>
+                        </div>
                     </div>
                 </div>
-                <button class="carousel-nav carousel-prev" aria-label="Anterior"><i
-                        class="fas fa-chevron-left"></i></button>
-                <button class="carousel-nav carousel-next" aria-label="Siguiente"><i
-                        class="fas fa-chevron-right"></i></button>
             </div>
-            <div class="carousel-indicators"></div>
         </section>
 
-        <div id="content-container">
-            <nav id="breadcrumbs" class="breadcrumbs hidden" aria-label="breadcrumb"></nav>
-            <div id="manta-navigation" class="manta-navigation-area">
-                <div id="manta-tabs" class="manta-tabs-container"></div>
-                <div id="manta-filters" class="manta-filters-container"></div>
+        <!-- 🩺 SECCIÓN 2: SALUD (SERUMS) -->
+        <section id="salud-section" class="scroll-animate-section">
+            <div class="section-grid grid-inverted">
+                <div class="section-info-zone">
+                    <span class="section-badge badge-med"><i class="fas fa-stethoscope"></i> Módulo Salud</span>
+                    <h2 class="section-main-title">Simulacro Nacional <span class="accent-blue-text">SERUMS Pro</span></h2>
+                    <p class="section-description">
+                        Banco de preguntas completo para la preparación del Examen SERUMS en las áreas de Medicina y Enfermería.
+                    </p>
+                    <ul class="section-features-list">
+                        <li class="feature-item">
+                            <i class="fas fa-heartbeat med-bullet"></i>
+                            <div class="feature-item-text">
+                                <strong>Casos Clínicos:</strong> Ejercicios basados en situaciones reales de atención de salud pública y privada.
+                            </div>
+                        </li>
+                        <li class="feature-item">
+                            <i class="fas fa-stethoscope med-bullet"></i>
+                            <div class="feature-item-text">
+                                <strong>Medicina & Enfermería:</strong> Contenido segmentado específicamente para cada carrera de la salud.
+                            </div>
+                        </li>
+                        <li class="feature-item">
+                            <i class="fas fa-bolt med-bullet"></i>
+                            <div class="feature-item-text">
+                                <strong>Flashcards de Dosis:</strong> Mazos de repaso interactivo sobre farmacología y protocolos de emergencia.
+                            </div>
+                        </li>
+                    </ul>
+                    <a href="/simulator-dashboard?context=MEDICINA" class="btn-premium-cta btn-med-theme">
+                        <i class="fas fa-stethoscope"></i> Iniciar Simulador
+                    </a>
+                </div>
+                
+                <div class="section-preview-zone">
+                    <div class="preview-card-glass">
+                        <img src="assets/simuladormedicoportada.png" alt="Simulador Médico" class="mockup-banner-bg">
+                        <div class="mockup-overlay-sim">
+                            <span class="sim-tag">SERUMS 2026</span>
+                            <h3 class="sim-title">Examen Clínico General</h3>
+                            <div class="sim-progress-bar">
+                                <div class="sim-progress-fill fill-med"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="browse-container"></div>
-            <div id="results-container" class="hidden"></div>
-        </div>
+        </section>
+
+        <!-- 🗣️ SECCIÓN 3: IDIOMAS (Tutor Conversacional IA) -->
+        <section id="idiomas-section" class="scroll-animate-section">
+            <div class="section-grid">
+                <div class="section-info-zone">
+                    <span class="section-badge badge-lang"><i class="fas fa-language"></i> Módulo Idiomas</span>
+                    <h2 class="section-main-title">Tutor de Voz <span class="accent-pink-text">Conversacional IA</span></h2>
+                    <p class="section-description">
+                        Domina el inglés y el italiano practicando conversación oral directa con nuestro tutor de voz automatizado de baja latencia.
+                    </p>
+                    <ul class="section-features-list">
+                        <li class="feature-item">
+                            <i class="fas fa-comments lang-bullet"></i>
+                            <div class="feature-item-text">
+                                <strong>Corrección de Gramática:</strong> La IA corrige tu sintaxis y vocabulario inmediatamente.
+                            </div>
+                        </li>
+                        <li class="feature-item">
+                            <i class="fas fa-microphone-alt lang-bullet"></i>
+                            <div class="feature-item-text">
+                                <strong>Tutoría Oral Inteligente:</strong> Practica tu Speaking y Listening con diálogos fluidos de voz.
+                            </div>
+                        </li>
+                        <li class="feature-item">
+                            <i class="fas fa-graduation-cap lang-bullet"></i>
+                            <div class="feature-item-text">
+                                <strong>Certificaciones MCER:</strong> Prepárate con simulacros específicos alineados a TOEFL, IELTS e Italiano.
+                            </div>
+                        </li>
+                    </ul>
+                    <a href="/language-tutor" class="btn-premium-cta btn-lang-theme">
+                        <i class="fas fa-microphone-alt"></i> Hablar con el Tutor
+                    </a>
+                </div>
+                
+                <div class="section-preview-zone">
+                    <div class="preview-card-glass">
+                        <div class="chat-mockup-container">
+                            <div class="chat-bubble assistant">
+                                Hello! Let's practice English today. How was your weekend?
+                            </div>
+                            <div class="chat-bubble user">
+                                I went to the beach. It was very beautiful!
+                            </div>
+                            <div class="chat-feedback">
+                                <i class="fas fa-check-circle"></i> ¡Gramática excelente!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </div>
 
     <div id="filter-modal" class="modal filter-modal modal-overlay" style="display: none;">
@@ -246,57 +261,46 @@
         <div class="footer-container">
             <div class="footer-brand">
                 <a href="/" class="footer-logo">
-                    <img src="assets/logo.png" alt="Hub Academia Logo">
+                    <img src="/assets/logo.png" alt="Hub Academia Logo">
                     Hub Academia
                 </a>
-                <p class="footer-slogan">Tu plataforma de entrenamiento médico. Simulacros, flashcards y asistente
-                    inteligente.</p>
+                <p class="footer-slogan">Tu plataforma de aprendizaje inteligente. Simulacros, flashcards y asistente interactivo para salud, educación e idiomas.</p>
             </div>
             <div class="footer-links-col">
                 <h4 class="footer-heading">Explorar</h4>
                 <ul class="footer-links-list">
                     <li><a href="/" class="footer-link">Inicio</a></li>
-                    <li><a href="course" class="footer-link">Cursos</a></li>
-                    <li><a href="/" class="footer-link">Mi biblioteca</a></li>
+                    <li><a href="/library" class="footer-link">Mi biblioteca</a></li>
                     <li><a href="pricing" class="footer-link">Precios</a></li>
                 </ul>
             </div>
             <div class="footer-links-col">
                 <h4 class="footer-heading">Legal y Ayuda</h4>
                 <ul class="footer-links-list">
-                    <li><a href="https://hubacademia.com/privacy" class="footer-link">Política de Privacidad</a></li>
-                    <li><a href="https://hubacademia.com/terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
                     <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
             <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
-            <div class="footer-socials">
-                <a href="" target="_blank" class="social-link"><i class="fab fa-facebook"></i></a>
-                <a href="" target="_blank" class="social-link"><i class="fab fa-instagram"></i></a>
-                <a href="" target="_blank" class="social-link"><i class="fab fa-tiktok"></i></a>
-            </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/config.js?v=131520e2"></script>
-    <script src="js/ui/components.js?v=131520e2"></script>
-    <script src="js/services/networkService.js?v=131520e2"></script>
-    <script src="js/services/authApiService.js?v=131520e2"></script>
-    <script src="js/services/analyticsApiService.js?v=131520e2"></script>
-    <script src="js/sessionManager.js?v=131520e2"></script>
-    <script src="js/ui/uiManager.js?v=131520e2"></script>
-    <script src="js/services/searchService.js?v=131520e2"></script>
-    <script type="module" src="js/search.js?v=131520e2"></script>
-    <script src="js/chat.js?v=131520e2"></script>
-    <script src="js/ui/confirmationModal.js?v=131520e2"></script>
-    <script src="js/services/libraryService.js?v=131520e2"></script>
-    <script src="js/ui/libraryUI.js?v=131520e2"></script>
-    <script src="js/security.js?v=131520e2"></script>
-    <script src="js/hero-slider.js?v=131520e2"></script>
-    <script src="js/training-carousel.js?v=131520e2"></script>
+    <script src="js/config.js?v=408af56b"></script>
+    <script src="js/ui/components.js?v=408af56b"></script>
+    <script src="js/services/networkService.js?v=408af56b"></script>
+    <script src="js/services/authApiService.js?v=408af56b"></script>
+    <script src="js/services/analyticsApiService.js?v=408af56b"></script>
+    <script src="js/sessionManager.js?v=408af56b"></script>
+    <script src="js/ui/uiManager.js?v=408af56b"></script>
+    <script src="js/chat.js?v=408af56b"></script>
+    <script src="js/ui/confirmationModal.js?v=408af56b"></script>
+    <script src="js/services/libraryService.js?v=408af56b"></script>
+    <script src="js/security.js?v=408af56b"></script>
+    <script src="js/home-animations.js?v=408af56b"></script>
 
     <!-- ✅ Google One Tap: Login rápido desde la página principal -->
     <script>
@@ -370,8 +374,9 @@
         });
     </script>
 
-    <script src="js/audio-assistant.js?v=131520e2"></script>
-    <script src="js/app.js?v=131520e2"></script>
+    <script src="js/audio-assistant.js?v=408af56b"></script>
+    <script src="js/ui/sidebar.js?v=408af56b"></script>
+    <script src="js/app.js?v=408af56b"></script>
 
 </body>
 

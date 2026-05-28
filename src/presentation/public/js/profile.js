@@ -38,9 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <img src="assets/logo.png" alt="Logo" class="logo-img">
                             <span class="logo-text">Hub Academia</span>
                         </a>
-                        <a href="/" class="header-back-btn visible" style="display: flex;">
-                            <i class="fas fa-arrow-left"></i> Volver
-                        </a>
                     </div>
                 </header>
             `;
@@ -94,16 +91,12 @@ function renderSubscriptionDetails(user) {
 // Modal de eliminación simplificado (Solo Google)
 const modal = document.getElementById('delete-modal');
 const deleteInput = document.getElementById('delete-password');
-const deleteLabel = document.querySelector('label[for="delete-password"]');
 const deleteError = document.getElementById('delete-error');
 
 function openDeleteModal() {
     modal.style.display = 'flex';
     deleteInput.value = '';
     deleteError.style.display = 'none';
-    deleteLabel.textContent = 'Escribe "ELIMINAR" para confirmar:';
-    deleteInput.placeholder = 'ELIMINAR';
-    deleteInput.type = 'text';
     deleteInput.focus();
 }
 

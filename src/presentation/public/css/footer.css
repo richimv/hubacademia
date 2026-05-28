@@ -141,20 +141,7 @@
     font-size: 0.875rem;
 }
 
-.footer-socials {
-    display: flex;
-    gap: 1.25rem;
-}
 
-.social-link {
-    color: var(--text-muted);
-    font-size: 1.1rem;
-    transition: color 0.2s;
-}
-
-.social-link:hover {
-    color: var(--text-main);
-}
 
 /* Responsive */
 /* Responsive Mobile Footer - Grid Layout Refactor */
@@ -193,9 +180,11 @@
         align-items: flex-start;
     }
 
-    /* Hide redundant headings in mobile */
+    /* Show and style headings in mobile */
     .footer-heading {
-        display: none;
+        display: block;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
     }
 
     .footer-links-list {
@@ -206,19 +195,15 @@
         font-size: 0.9rem;
     }
 
-    /* 3. Footer Bottom: Copyright & Socials */
+    /* 3. Footer Bottom: Copyright */
     .footer-bottom {
-        flex-direction: column-reverse;
-        /* Copyright last */
-        gap: 1.25rem;
         padding-top: 1.5rem;
         margin-top: 0;
         border: none;
         text-align: center;
-    }
-
-    .footer-socials {
+        display: flex;
         justify-content: center;
+        align-items: center;
     }
 
     .copyright {

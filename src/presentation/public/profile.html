@@ -7,10 +7,10 @@
     <title>Mi Perfil - Hub Academia</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="css/base.css?v=131520e2">
-    <link rel="stylesheet" href="css/auth.css?v=131520e2"> <!-- Reusing Auth styles -->
-    <link rel="stylesheet" href="css/header.css?v=131520e2">
-    <link rel="stylesheet" href="css/footer.css?v=131520e2">
+    <link rel="stylesheet" href="css/base.css?v=408af56b">
+    <link rel="stylesheet" href="css/auth.css?v=408af56b"> <!-- Reusing Auth styles -->
+    <link rel="stylesheet" href="css/header.css?v=408af56b">
+    <link rel="stylesheet" href="css/footer.css?v=408af56b">
     <style>
         /* Premium Profile Styles */
         :root {
@@ -361,7 +361,7 @@
             transform: scale(1.05);
         }
     </style>
-    <link rel="stylesheet" href="css/modal.css?v=131520e2">
+    <link rel="stylesheet" href="css/modal.css?v=408af56b">
 </head>
 
 <body>
@@ -401,19 +401,6 @@
         </div>
 
         <div class="settings-grid">
-            <!-- Account Security -->
-            <div class="settings-card">
-                <div class="card-header">
-                    <i class="fas fa-shield-alt"></i> Seguridad
-                </div>
-                <p class="card-desc">
-                    Protege tu cuenta actualizando tu contraseña periódicamente.
-                </p>
-                <a href="/change-password" class="btn-action btn-primary-outline">
-                    <i class="fas fa-key"></i> Cambiar Contraseña
-                </a>
-            </div>
-
             <!-- Coming Soon: Preferences -->
             <div class="settings-card" style="opacity: 0.7; pointer-events: none;">
                 <div class="card-header">
@@ -455,13 +442,11 @@
 
                 <div class="form-group" style="margin-top: 1.5rem;">
                     <label for="delete-password"
-                        style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Ingresa tu contraseña para
-                        confirmar:</label>
-                    <input type="password" id="delete-password" class="auth-input" placeholder="Tu contraseña"
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Escribe "ELIMINAR" para confirmar:</label>
+                    <input type="text" id="delete-password" class="auth-input" placeholder="ELIMINAR"
                         style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-primary); color: white;">
                     <div id="delete-error"
-                        style="color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; display: none;">Contraseña
-                        incorrecta</div>
+                        style="color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; display: none;">Debes escribir "ELIMINAR" textualmente.</div>
                 </div>
             </div>
             <div class="modal-actions">
@@ -492,13 +477,14 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=131520e2"></script>
-    <script src="/js/services/networkService.js?v=131520e2"></script>
-    <script src="/js/services/authApiService.js?v=131520e2"></script>
-    <script src="/js/sessionManager.js?v=131520e2"></script>
+    <script src="/js/config.js?v=408af56b"></script>
+    <script src="/js/services/networkService.js?v=408af56b"></script>
+    <script src="/js/services/authApiService.js?v=408af56b"></script>
+    <script src="/js/sessionManager.js?v=408af56b"></script>
 
+    <script src="/js/ui/sidebar.js?v=408af56b"></script>
     <!-- Reuse Header Logic (Basic injection for now) -->
-    <script src="/js/profile.js?v=131520e2"></script>
+    <script src="/js/profile.js?v=408af56b"></script>
 
 </body>
 

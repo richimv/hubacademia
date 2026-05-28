@@ -344,24 +344,42 @@ body.hero-hidden .search-subtitle {
     outline: none;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 768px) {
     .search-box {
-        flex-direction: column;
-        padding: 0.5rem;
-        border-radius: 20px;
-        gap: 0.5rem;
+        flex-direction: row !important;
+        padding: 0.35rem 0.35rem 0.35rem 1rem !important;
+        border-radius: 50px !important;
+        gap: 5px !important;
     }
 
     .search-box input {
-        width: 100%;
-        text-align: center;
-        padding: 0.5rem;
+        flex: 1 !important;
+        width: auto !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.95rem !important;
+        text-align: left !important;
     }
 
     .search-box button {
-        width: 100%;
-        padding: 0.6rem;
-        border-radius: 20px;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .search-box button span {
+        display: none !important;
+    }
+
+    .search-box button i {
+        margin: 0 !important;
+        font-size: 0.95rem !important;
     }
 }
 
@@ -605,12 +623,15 @@ body.hero-hidden .search-subtitle {
 
 /* FILTERS CONTAINER (PILLS MANTA STYLE) */
 .manta-filters-container {
-    display: flex;
+    display: flex !important;
+    flex-wrap: nowrap !important;
     gap: 0.5rem;
     padding: 0.25rem 0;
     margin-bottom: 0;
-    overflow-x: auto;
+    overflow-x: auto !important;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
 }
 
 .manta-filters-container::-webkit-scrollbar {
@@ -626,7 +647,8 @@ body.hero-hidden .search-subtitle {
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    white-space: nowrap;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
     transition: all 0.2s ease;
 }
 

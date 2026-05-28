@@ -164,14 +164,7 @@ class SearchComponent {
             });
         }
 
-        // NUEVO: Listener para el botón VOLVER GLOBAL del header
-        const headerBackBtn = document.getElementById('header-back-btn');
-        if (headerBackBtn) {
-            headerBackBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.navigateBack();
-            });
-        }
+
 
         // NUEVO: Listener para la barra de búsqueda sticky
         // CORRECCIÓN BUG: Usamos un 'placeholder' para evitar el salto de contenido
@@ -243,31 +236,22 @@ class SearchComponent {
         // Mantener registro de la vista actual para re-renderizado por cambios de sesión
         this.currentView = { name: viewName, args: args };
 
-        // LÓGICA DE VISIBILIDAD DEL HERO Y BOTÓN VOLVER GLOBAL
-        const headerBackBtn = document.getElementById('header-back-btn');
+        // LÓGICA DE VISIBILIDAD DEL HERO
         const searchSection = document.querySelector('.search-section');
         const heroSlider = document.getElementById('hero-slider'); // NUEVO: Referencia directa al slider
         const trainingModules = document.getElementById('training-modules'); // NUEVO: Controle Módulos
 
         if (viewName === 'home') {
-            document.body.classList.remove('hero-hidden');
+            if (!window.location.pathname.includes('library')) {
+                document.body.classList.remove('hero-hidden');
+            }
             if (searchSection) searchSection.classList.remove('sticky');
             if (heroSlider) heroSlider.style.display = 'block'; // Mostrar slider en Home
             if (trainingModules) trainingModules.style.display = 'block';
-
-            if (headerBackBtn) {
-                headerBackBtn.classList.add('hidden');
-                headerBackBtn.classList.remove('visible');
-            }
         } else {
             document.body.classList.add('hero-hidden');
             if (heroSlider) heroSlider.style.display = 'none'; // Ocultar slider en otras vistas (Resultados, Cursos, etc.)
             if (trainingModules) trainingModules.style.display = 'none';
-
-            if (headerBackBtn) {
-                headerBackBtn.classList.remove('hidden');
-                headerBackBtn.classList.add('visible');
-            }
         }
 
         // 2. Renderizar contenido según la vista
@@ -487,6 +471,14 @@ class SearchComponent {
     }
 
     renderSearchResults(data) {
+        // Exclude courses and videos from search results
+        if (data && data.results) {
+            data.results = data.results.filter(item => {
+                const type = item.type || item.resource_type;
+                return type !== 'course' && type !== 'video';
+            });
+        }
+
         // 1. Ocultar el modo de exploración y mostrar el de resultados.
         this.browseContainer.classList.add('hidden');
         this.resultsContainer.classList.remove('hidden');
