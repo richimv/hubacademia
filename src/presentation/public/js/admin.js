@@ -907,12 +907,13 @@ class AdminManager {
                         <i class="fas fa-brain" style="color: #a855f7;"></i> <b>RAG Engine:</b> <span id="ai-info-text">Generación basada en Harrison, AMIR, CTO y Normas Técnicas MINSA.</span>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
                         <div>
                             <label class="form-label">Dominio (*)</label>
                             <select id="ai-domain" class="form-input" onchange="window.adminManager.handleAiDomainChange(this.value)">
                                 <option value="medicine" selected>Medicina</option>
                                 <option value="education">Educación</option>
+                                <option value="languages">Idiomas</option>
                             </select>
                         </div>
                         <div>
@@ -928,6 +929,17 @@ class AdminManager {
                             <select id="ai-career" class="form-input" onchange="window.adminManager.handleAiCareerChange(this.value)">
                                 <option value="Medicina Humana">Medicina Humana</option>
                                 <option value="Enfermería">Enfermería</option>
+                            </select>
+                        </div>
+                        <div id="ai-difficulty-container" style="display: none;">
+                            <label class="form-label">Nivel MCER / CEFR (*)</label>
+                            <select id="ai-difficulty" class="form-input">
+                                <option value="A1">A1 (Principiante)</option>
+                                <option value="A2">A2 (Básico)</option>
+                                <option value="B1" selected>B1 (Intermedio)</option>
+                                <option value="B2">B2 (Intermedio Alto)</option>
+                                <option value="C1">C1 (Avanzado)</option>
+                                <option value="C2">C2 (Maestría)</option>
                             </select>
                         </div>
                     </div>
@@ -1070,8 +1082,23 @@ class AdminManager {
                                 </div>
                             </div>
                         </div>
+
+                        <!-- ═══ IDIOMAS ═══ -->
+                        <div id="ai-areas-languages" style="display: none;">
+                            <div class="ai-study-group" data-group="LANGUAGES" style="display: block;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                    <span style="background: #ec4899; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">L</span>
+                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Habilidades Lingüísticas</strong>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Grammar & Use of English" checked> Grammar & Use of English</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Vocabulary & Context" checked> Vocabulary & Context</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Reading Comprehension" checked> Reading Comprehension</label>
+                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Listening Comprehension" checked> Listening Comprehension</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    
                 `;
                 setTimeout(() => {
                     const btn = document.getElementById('generic-save-btn');
@@ -1967,58 +1994,107 @@ class AdminManager {
      * ✅ NUEVO: Manejador de cambio de dominio en el modal de Generación IA
      */
     handleAiDomainChange(domain) {
-        const isEdu = domain === 'education';
-        
-        // Swap target options
         const targetSelect = document.getElementById('ai-target');
-        if (targetSelect) {
-            targetSelect.innerHTML = isEdu ? `
-                <option value="NOMBRAMIENTO" selected>NOMBRAMIENTO</option>
-                <option value="ASCENSO">ASCENSO</option>
-                <option value="ACCESO_CARGOS">ACCESO A CARGOS</option>
-            ` : `
-                <option value="ENAM" selected>ENAM</option>
-                <option value="SERUMS">SERUMS</option>
-                <option value="RESIDENTADO">RESIDENTADO</option>
-            `;
-        }
-
-        // Swap career options
         const careerSelect = document.getElementById('ai-career');
-        if (careerSelect) {
-            careerSelect.innerHTML = isEdu ? `
-                <option value="EBR - Inicial">EBR - Nivel Inicial</option>
-                <option value="EBR - Primaria" selected>EBR - Nivel Primaria</option>
-                <option value="EBR - Secundaria">EBR - Nivel Secundaria</option>
-            ` : `
-                <option value="Medicina Humana" selected>Medicina Humana</option>
-                <option value="Enfermería">Enfermería</option>
-            `;
-        }
+        const careerLabel = document.getElementById('ai-career-label');
+        const specialtyContainer = document.getElementById('ai-specialty-container');
+        const difficultyContainer = document.getElementById('ai-difficulty-container');
+        const medicineAreas = document.getElementById('ai-areas-medicine');
+        const educationAreas = document.getElementById('ai-areas-education');
+        const languagesAreas = document.getElementById('ai-areas-languages');
+        const infoText = document.getElementById('ai-info-text');
+        const areasTitle = document.getElementById('ai-areas-title');
 
-        // Toggle area containers
-        const medAreas = document.getElementById('ai-areas-medicine');
-        const eduAreas = document.getElementById('ai-areas-education');
-        if (medAreas) medAreas.style.display = isEdu ? 'none' : 'block';
-        if (eduAreas) eduAreas.style.display = isEdu ? 'block' : 'none';
-
-        // Uncheck all when switching
+        // Uncheck all checkboxes and reset master check
         document.querySelectorAll('.ai-domain-cb').forEach(c => c.checked = false);
         const allCheck = document.getElementById('ai-domain-all');
         if (allCheck) allCheck.checked = false;
 
-        // Update info banner and title
-        const infoText = document.getElementById('ai-info-text');
-        const areasTitle = document.getElementById('ai-areas-title');
-        if (infoText) {
-            infoText.textContent = isEdu 
-                ? 'Generación basada en CNEB, Marco del Buen Desempeño Docente y normativas MINEDU.'
-                : 'Generación basada en Harrison, AMIR, CTO y Normas Técnicas MINSA.';
-        }
-        if (areasTitle) {
-            areasTitle.textContent = isEdu
-                ? 'Configuración de Áreas de Estudio (Ejes MINEDU)'
-                : 'Configuración de Áreas de Estudio (Ejes MINSA/ENAM)';
+        if (domain === 'languages') {
+            if (targetSelect) {
+                targetSelect.innerHTML = `
+                    <option value="TOEFL">TOEFL</option>
+                    <option value="IELTS">IELTS</option>
+                    <option value="TECH_ENGLISH" selected>TECH_ENGLISH</option>
+                    <option value="MCER">MCER</option>
+                    <option value="CELI">CELI</option>
+                    <option value="CILS">CILS</option>
+                `;
+            }
+            if (careerSelect) {
+                careerSelect.innerHTML = `
+                    <option value="en-US" selected>English (USA)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="it-IT">Italiano (IT)</option>
+                `;
+            }
+            if (careerLabel) careerLabel.textContent = 'Dialecto / Variante (*)';
+            if (specialtyContainer) specialtyContainer.style.display = 'none';
+            if (difficultyContainer) difficultyContainer.style.display = 'block';
+
+            if (medicineAreas) medicineAreas.style.display = 'none';
+            if (educationAreas) educationAreas.style.display = 'none';
+            if (languagesAreas) languagesAreas.style.display = 'block';
+
+            if (infoText) infoText.textContent = 'Generación de preguntas de idiomas adaptadas al nivel MCER/CEFR seleccionado.';
+            if (areasTitle) areasTitle.textContent = 'Configuración de Habilidades Lingüísticas';
+
+            this.handleAiTargetChange('TECH_ENGLISH');
+        } else if (domain === 'education') {
+            if (targetSelect) {
+                targetSelect.innerHTML = `
+                    <option value="ASCENSO" selected>ASCENSO (EBR)</option>
+                    <option value="NOMBRAMIENTO">NOMBRAMIENTO</option>
+                    <option value="ACCESO_CARGOS">ACCESO A CARGOS</option>
+                `;
+            }
+            if (careerSelect) {
+                careerSelect.innerHTML = `
+                    <option value="EBR - Inicial">EBR - Nivel Inicial</option>
+                    <option value="EBR - Primaria" selected>EBR - Nivel Primaria</option>
+                    <option value="EBR - Secundaria">EBR - Nivel Secundaria</option>
+                `;
+            }
+            if (careerLabel) careerLabel.textContent = 'Nivel Educativo (*)';
+            if (specialtyContainer) specialtyContainer.style.display = 'none';
+            if (difficultyContainer) difficultyContainer.style.display = 'none';
+
+            if (medicineAreas) medicineAreas.style.display = 'none';
+            if (educationAreas) educationAreas.style.display = 'block';
+            if (languagesAreas) languagesAreas.style.display = 'none';
+
+            if (infoText) infoText.textContent = 'Generación basada en CNEB, Marco del Buen Desempeño Docente y normativas MINEDU.';
+            if (areasTitle) areasTitle.textContent = 'Configuración de Áreas de Estudio (Ejes MINEDU)';
+
+            this.handleAiTargetChange('ASCENSO');
+            this.handleAiCareerChange('EBR - Primaria');
+        } else {
+            // Default: medicine
+            if (targetSelect) {
+                targetSelect.innerHTML = `
+                    <option value="ENAM">ENAM</option>
+                    <option value="SERUMS" selected>SERUMS</option>
+                    <option value="RESIDENTADO">RESIDENTADO</option>
+                `;
+            }
+            if (careerSelect) {
+                careerSelect.innerHTML = `
+                    <option value="Medicina Humana" selected>Medicina Humana</option>
+                    <option value="Enfermería">Enfermería</option>
+                `;
+            }
+            if (careerLabel) careerLabel.textContent = 'Carrera Profesional (*)';
+            if (specialtyContainer) specialtyContainer.style.display = 'none';
+            if (difficultyContainer) difficultyContainer.style.display = 'none';
+
+            if (medicineAreas) medicineAreas.style.display = 'block';
+            if (educationAreas) educationAreas.style.display = 'none';
+            if (languagesAreas) languagesAreas.style.display = 'none';
+
+            if (infoText) infoText.textContent = 'Generación basada en Harrison, AMIR, CTO y Normas Técnicas MINSA.';
+            if (areasTitle) areasTitle.textContent = 'Configuración de Áreas de Estudio (Ejes MINSA/ENAM)';
+
+            this.handleAiTargetChange('SERUMS');
         }
     }
 
@@ -2324,10 +2400,14 @@ class AdminManager {
                             }
                         }
 
+                        const difficultyVal = (domainVal === 'languages')
+                            ? (document.getElementById('ai-difficulty')?.value || 'B1')
+                            : 'Senior';
+
                         const reqBody = {
                             target: targetVal,
                             career: careerVal,
-                            difficulty: 'Senior',
+                            difficulty: difficultyVal,
                             domain: domainVal,
                             studyAreas: selectedStudyAreas.join(', ')
                         };
@@ -2684,57 +2764,6 @@ class AdminManager {
         }
     }
 
-    /**
-     * ✅ Lógica Dinámica para el Generador RAG (IA)
-     */
-    handleAiDomainChange(domain) {
-        const medicineAreas = document.getElementById('ai-areas-medicine');
-        const educationAreas = document.getElementById('ai-areas-education');
-        const targetSelect = document.getElementById('ai-target');
-        const careerSelect = document.getElementById('ai-career');
-        const careerLabel = document.getElementById('ai-career-label');
-        const specialtyContainer = document.getElementById('ai-specialty-container');
-        const bannerText = document.getElementById('ai-info-text');
-
-        if (domain === 'medicine') {
-            medicineAreas.style.display = 'block';
-            educationAreas.style.display = 'none';
-            specialtyContainer.style.display = 'none';
-            careerLabel.textContent = 'Carrera Profesional (*)';
-            bannerText.textContent = 'Generación basada en Harrison, AMIR, CTO y Normas Técnicas MINSA.';
-
-            // Reset medical options
-            targetSelect.innerHTML = `
-                <option value="ENAM">ENAM</option>
-                <option value="SERUMS" selected>SERUMS</option>
-                <option value="RESIDENTADO">RESIDENTADO</option>
-            `;
-            careerSelect.innerHTML = `
-                <option value="Medicina Humana">Medicina Humana</option>
-                <option value="Enfermería">Enfermería</option>
-            `;
-            this.handleAiTargetChange('SERUMS');
-        } else {
-            medicineAreas.style.display = 'none';
-            educationAreas.style.display = 'block';
-            careerLabel.textContent = 'Nivel Educativo (*)';
-            bannerText.textContent = 'Generación basada en CNEB, Marco del Buen Desempeño Docente y Leyes MINEDU.';
-
-            // Reset education options
-            targetSelect.innerHTML = `
-                <option value="ASCENSO" selected>ASCENSO (EBR)</option>
-                <option value="NOMBRAMIENTO">NOMBRAMIENTO</option>
-            `;
-            careerSelect.innerHTML = `
-                <option value="EBR Inicial">EBR Inicial</option>
-                <option value="EBR Primaria">EBR Primaria</option>
-                <option value="EBR Secundaria">EBR Secundaria</option>
-            `;
-            this.handleAiTargetChange('ASCENSO');
-            this.handleAiCareerChange('EBR Inicial');
-        }
-    }
-
     handleAiTargetChange(target) {
         const domainSelect = document.getElementById('ai-domain');
         const domain = domainSelect ? domainSelect.value : 'medicine';
@@ -2759,7 +2788,7 @@ class AdminManager {
                 if (groupC) groupC.style.display = 'block';
                 if (groupD) groupD.style.display = 'block';
             }
-        } else {
+        } else if (domain === 'education') {
             const groups = document.querySelectorAll('#ai-areas-education .ai-study-group');
             groups.forEach(g => {
                 if (g.dataset.group === target) {
@@ -2770,6 +2799,9 @@ class AdminManager {
                     g.style.display = 'none';
                 }
             });
+        } else if (domain === 'languages') {
+            // For languages, just check all lingustics abilities by default
+            document.querySelectorAll('#ai-areas-languages .ai-domain-cb').forEach(cb => cb.checked = true);
         }
     }
 

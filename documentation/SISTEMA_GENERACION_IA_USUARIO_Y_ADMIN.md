@@ -77,3 +77,21 @@ Para optimizar la latencia y la experiencia de usuario sin comprometer el rigor 
 1.  **Explicación Descriptiva**: Está prohibido mencionar letras (A, B, C) en la explicación para evitar confusiones tras el barajado de opciones.
 2.  **Variedad de Apertura**: El sistema bloquea el uso repetitivo de frases como "En el aula de..." o "Un docente desea...", forzando inicios in media res o descripciones situacionales.
 3.  **Dificultad Senior**: El tono y la complejidad deben imitar fielmente los exámenes de ascenso de escala magisterial.
+
+---
+
+## 🌐 Integración del Dominio de Idiomas (Languages)
+
+El sistema ha sido extendido para dar soporte completo a la generación de preguntas para el aprendizaje de lenguas extranjeras, unificando los criterios bajo las cuatro capas arquitectónicas:
+
+### 1. Modelo de Datos y Validación
+* **Dominio Canónico**: Se registra en la base de datos como `'languages'`. El repositorio (`adminRepository.js`) valida y autoriza este dominio en la lista blanca de `canonicalDomain`.
+* **Dificultad Adaptable (MCER/CEFR)**: En lugar de forzar `'Senior'`, se autorizan y guardan los niveles estándar del Marco Común Europeo de Referencia para las lenguas (`'A1'`, `'A2'`, `'B1'`, `'B2'`, `'C1'`, `'C2'`) en la columna `difficulty` gracias a la actualización de `canonicalDifficulty`.
+* **Variantes de Dialecto**: El dialecto o variante regional se mapea en la columna `career` (ej. `'en-US'` para inglés estadounidense, `'en-GB'` para inglés británico, `'it-IT'` para italiano).
+
+### 2. Flujo Específico de Calidad y Generación
+Al detectar un target de idiomas (ej. `MCER`, `TOEFL`, `IELTS`), el servicio de IA (`adminAiService.js`) conmuta al pipeline de idiomas:
+* **Idioma del Contenido**: El enunciado (`question_text`), las opciones y los scripts de audio se generan al 100% en el idioma objetivo. La explicación didáctica se escribe en **español** para facilitar el autoaprendizaje del alumno.
+* **Placeholder Obligatorio**: Para las áreas de *Grammar & Use of English* y *Vocabulary & Context*, se valida y exige la inyección de exactamente un espacio en blanco (`_____`) en el enunciado de la pregunta.
+* **Soporte de Audio**: En la habilidad *Listening Comprehension*, se crea un script pedagógico (máx. 100 palabras) almacenado en la columna `audio_text` para su posterior síntesis por el motor TTS.
+* **Auditoría Psicométrica de Idiomas**: Comprueba asimetrías de longitud entre la alternativa correcta y los distractores (máximo 15 caracteres de desviación respecto a la media de distractores) y el formato JSON. Sanea referencias a letras (`A`, `B`, `C`, `D`) de manera determinista al final del flujo.

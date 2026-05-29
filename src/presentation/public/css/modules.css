@@ -436,6 +436,7 @@
 
     .scroll-animate-section {
         padding: 4rem 1.5rem;
+        overflow: visible !important;
     }
     
     .section-info-zone {

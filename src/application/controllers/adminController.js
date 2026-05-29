@@ -138,16 +138,16 @@ class AdminController {
 
     async generateAiQuestions(req, res) {
         try {
-            const { target, domain, studyAreas, career } = req.body;
+            const { target, domain, studyAreas, career, difficulty } = req.body;
             if (!target || !studyAreas) {
                 return res.status(400).json({ error: 'Faltan parámetros: target y studyAreas son requeridos.' });
             }
 
-            const difficulty = 'Senior';
             const resolvedDomain = domain || 'medicine';
-            console.log(`🧠 Admin solicitó lote RAG: ${target}, ${difficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
+            const resolvedDifficulty = difficulty || (resolvedDomain === 'languages' ? 'B1' : 'Senior');
+            console.log(`🧠 Admin solicitó lote RAG: ${target}, ${resolvedDifficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
 
-            const generatedQuestions = await adminAiService.generateRAGQuestions(target, studyAreas, career, 5, resolvedDomain);
+            const generatedQuestions = await adminAiService.generateRAGQuestions(target, studyAreas, career, 5, false, resolvedDifficulty);
 
             if (!generatedQuestions || !Array.isArray(generatedQuestions)) {
                 throw new Error("El formato devuelto por la IA no corresponde a un Array válido.");

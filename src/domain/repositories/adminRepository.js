@@ -162,11 +162,13 @@ class AdminRepository {
             const crypto = require('crypto');
 
             const canonicalDifficulty = (val) => {
-                return 'Senior';
+                const allowedCEFR = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+                const cleanVal = String(val || '').toUpperCase().trim();
+                return allowedCEFR.includes(cleanVal) ? cleanVal : 'Senior';
             };
 
             const canonicalDomain = (val) => {
-                const allowed = ['medicine', 'english', 'general_trivia', 'education'];
+                const allowed = ['medicine', 'english', 'general_trivia', 'education', 'languages'];
                 const v = String(val || '').toLowerCase().trim().replace(/\s+/g, '_');
                 return allowed.includes(v) ? v : 'medicine'; // Fallback seguro
             };

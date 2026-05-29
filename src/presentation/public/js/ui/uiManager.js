@@ -1314,11 +1314,17 @@ class UIManager {
      * Actualiza la barra de estado con los datos del usuario.
      */
     updateFreemiumStatus(user) {
+        // Excluir de las páginas de Flashcards y Quiz para evitar solapamientos e interrupción de la UI de estudio
+        const isExcludedPage = window.location.pathname.includes('/flashcards') || 
+                               window.location.pathname.includes('/quiz') || 
+                               window.location.pathname.endsWith('flashcards.html') || 
+                               window.location.pathname.endsWith('quiz.html');
+
         this.injectFreemiumStatusBar();
         const bar = document.getElementById('freemium-status-bar');
         const countSpan = document.getElementById('free-usage-count');
 
-        if (!user || user.subscriptionStatus === 'active' || user.role === 'admin') {
+        if (isExcludedPage || !user || user.subscriptionStatus === 'active' || user.role === 'admin') {
             if (bar) bar.style.display = 'none';
             document.body.classList.remove('has-trial-mode'); // ✅ Remove class
             return;
