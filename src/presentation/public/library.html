@@ -10,24 +10,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="css/base.css?v=408af56b">
-    <link rel="stylesheet" href="css/header.css?v=408af56b">
-    <link rel="stylesheet" href="css/footer.css?v=408af56b">
-    <link rel="stylesheet" href="css/dashboard.css?v=408af56b">
-    <link rel="stylesheet" href="css/components.css?v=408af56b">
-    <link rel="stylesheet" href="css/modal.css?v=408af56b">
-    <link rel="stylesheet" href="css/markdown-content.css?v=408af56b">
-    <link rel="stylesheet" href="css/chat.css?v=408af56b">
-    <link rel="stylesheet" href="css/sidebar.css?v=408af56b">
-    <link rel="stylesheet" href="css/search.css?v=408af56b">
-    <link rel="stylesheet" href="css/browse.css?v=408af56b">
-    <link rel="stylesheet" href="css/results.css?v=408af56b">
-    <link rel="stylesheet" href="css/course.css?v=408af56b">
+    <link rel="stylesheet" href="css/base.css?v=58586bc4">
+    <link rel="stylesheet" href="css/header.css?v=58586bc4">
+    <link rel="stylesheet" href="css/footer.css?v=58586bc4">
+    <link rel="stylesheet" href="css/dashboard.css?v=58586bc4">
+    <link rel="stylesheet" href="css/components.css?v=58586bc4">
+    <link rel="stylesheet" href="css/modal.css?v=58586bc4">
+    <link rel="stylesheet" href="css/markdown-content.css?v=58586bc4">
+    <link rel="stylesheet" href="css/chat.css?v=58586bc4">
+    <link rel="stylesheet" href="css/sidebar.css?v=58586bc4">
+    <link rel="stylesheet" href="css/search.css?v=58586bc4">
+    <link rel="stylesheet" href="css/browse.css?v=58586bc4">
+    <link rel="stylesheet" href="css/results.css?v=58586bc4">
+    <link rel="stylesheet" href="css/course.css?v=58586bc4">
 
     <!-- Global scripts -->
-    <script src="js/config.js?v=408af56b"></script>
+    <script src="js/config.js?v=58586bc4"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="js/utils/markdown-renderer.js?v=408af56b"></script>
+    <script src="js/utils/markdown-renderer.js?v=58586bc4"></script>
 
     <style>
         /* Asegurar que la barra de búsqueda en la biblioteca sea relativa y esté bien centrada */
@@ -237,15 +237,291 @@
                 overflow-x: auto !important;
                 -webkit-overflow-scrolling: touch !important;
                 gap: 0.5rem !important;
-                padding: 0.5rem 0 !important;
-                scrollbar-width: none !important;
-                width: 100% !important;
-                max-width: 100% !important;
             }
             .manta-filters-container::-webkit-scrollbar,
             .library-category-filters::-webkit-scrollbar {
                 display: none !important;
             }
+        } /* Fin de @media (max-width: 768px) */
+            
+        /* Estilos modernos para el tablón de Notas (UI/UX Premium - Globales para PC y Mobile) */
+        #panel-notes .library-list {
+            display: grid !important;
+            grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+            gap: 1.25rem !important;
+            width: 100% !important;
+        }
+
+        @media (max-width: 1200px) {
+            #panel-notes .library-list {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            #panel-notes .library-list {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+            #panel-notes .library-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.75rem !important;
+            }
+        }
+
+        .note-card {
+            position: relative;
+            background: rgba(18, 18, 18, 0.65) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+            border-radius: 16px !important;
+            padding: 1.25rem !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            height: 210px !important;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+            margin-bottom: 0 !important;
+            text-align: left !important;
+        }
+
+        .note-card:hover {
+            transform: translateY(-5px) !important;
+            background: rgba(24, 24, 24, 0.85) !important;
+            border-color: var(--note-color, #3b82f6) !important;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 255, 255, 0.03) !important;
+        }
+
+        .note-card-accent {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--note-color);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .note-card-actions {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 6px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 2;
+        }
+
+        .note-card:hover .note-card-actions {
+            opacity: 1;
+        }
+
+        .note-card-action-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10, 10, 10, 0.85);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .note-card-action-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1);
+        }
+
+        .note-card-action-btn.delete:hover {
+            color: #f43f5e;
+            border-color: rgba(244, 63, 94, 0.4);
+        }
+
+        .note-card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .note-card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 44px; /* Evita que choque con los botones flotantes */
+        }
+
+        .note-card-preview {
+            font-size: 0.825rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            opacity: 0.85;
+        }
+
+        .note-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            font-size: 0.7rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 8px;
+        }
+
+        .note-card-badge {
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            letter-spacing: 0.3px;
+        }
+
+        .note-card-date {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        /* Botón para añadir notas en grilla */
+        #panel-notes .library-add-note-btn {
+            height: 210px !important;
+            background: rgba(255, 255, 255, 0.01) !important;
+            border: 2px dashed rgba(255, 255, 255, 0.08) !important;
+            color: var(--text-muted) !important;
+            border-radius: 16px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 12px !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            margin-bottom: 0 !important;
+            padding: 1.5rem !important;
+            box-sizing: border-box !important;
+        }
+
+        #panel-notes .library-add-note-btn i {
+            font-size: 1.8rem !important;
+            color: var(--primary) !important;
+            transition: transform 0.25s ease !important;
+        }
+
+        #panel-notes .library-add-note-btn:hover {
+            background: rgba(59, 130, 246, 0.04) !important;
+            border-color: var(--primary) !important;
+            color: var(--text-main) !important;
+            transform: translateY(-5px) !important;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        #panel-notes .library-add-note-btn:hover i {
+            transform: scale(1.15) rotate(90deg) !important;
+        }
+
+        /* Barra de herramientas para buscar/ordenar notas */
+        .notes-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .notes-search-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .notes-search-wrapper .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
+        .notes-search-wrapper input {
+            width: 100%;
+            padding: 0.65rem 1rem 0.65rem 2.6rem;
+            background: rgba(15, 23, 42, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 30px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .notes-search-wrapper input:focus {
+            border-color: var(--primary-light) !important;
+            background: rgba(15, 23, 42, 0.8) !important;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.2) !important;
+        }
+
+        .notes-sort-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notes-sort-wrapper label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .notes-sort-wrapper select {
+            background: rgba(15, 23, 42, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px !important;
+            color: var(--text-main) !important;
+            padding: 0.55rem 2.2rem 0.55rem 0.85rem !important;
+            font-size: 0.85rem;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 8px center !important;
+            background-size: 18px !important;
+        }
+
+        .notes-sort-wrapper select:focus {
+            border-color: var(--primary-light) !important;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.2) !important;
         }
     </style>
 </head>
@@ -367,22 +643,22 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/config.js?v=408af56b"></script>
-    <script src="js/services/networkService.js?v=408af56b"></script>
-    <script src="js/services/authApiService.js?v=408af56b"></script>
-    <script src="js/services/analyticsApiService.js?v=408af56b"></script>
-    <script src="js/sessionManager.js?v=408af56b"></script>
-    <script src="js/ui/uiManager.js?v=408af56b"></script>
-    <script src="js/ui/components.js?v=408af56b"></script>
-    <script src="js/ui/confirmationModal.js?v=408af56b"></script>
-    <script src="js/services/searchService.js?v=408af56b"></script>
-    <script type="module" src="js/search.js?v=408af56b"></script>
-    <script src="js/services/libraryService.js?v=408af56b"></script>
-    <script src="js/ui/libraryUI.js?v=408af56b"></script>
-    <script src="js/ui/sidebar.js?v=408af56b"></script>
-    <script src="js/chat.js?v=408af56b"></script>
-    <script src="js/security.js?v=408af56b"></script>
-    <script src="js/app.js?v=408af56b"></script>
+    <script src="js/config.js?v=58586bc4"></script>
+    <script src="js/services/networkService.js?v=58586bc4"></script>
+    <script src="js/services/authApiService.js?v=58586bc4"></script>
+    <script src="js/services/analyticsApiService.js?v=58586bc4"></script>
+    <script src="js/sessionManager.js?v=58586bc4"></script>
+    <script src="js/ui/uiManager.js?v=58586bc4"></script>
+    <script src="js/ui/components.js?v=58586bc4"></script>
+    <script src="js/ui/confirmationModal.js?v=58586bc4"></script>
+    <script src="js/services/searchService.js?v=58586bc4"></script>
+    <script type="module" src="js/search.js?v=58586bc4"></script>
+    <script src="js/services/libraryService.js?v=58586bc4"></script>
+    <script src="js/ui/libraryUI.js?v=58586bc4"></script>
+    <script src="js/ui/sidebar.js?v=58586bc4"></script>
+    <script src="js/chat.js?v=58586bc4"></script>
+    <script src="js/security.js?v=58586bc4"></script>
+    <script src="js/app.js?v=58586bc4"></script>
 </body>
 
 </html>

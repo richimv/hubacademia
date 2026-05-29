@@ -38,6 +38,15 @@ class MedicoService {
         const difficulty = categoryOptions.difficulty || null;
         let areas = categoryOptions.areas && categoryOptions.areas.length > 0 ? categoryOptions.areas : [];
 
+        if (categoryOptions.mode === 'real') {
+            areas = [
+                'Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología',
+                'Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General',
+                'Cardiología', 'Gastroenterología', 'Neurología', 'Nefrología', 'Neumología', 'Endocrinología', 'Infectología', 'Reumatología', 'Traumatología',
+                'Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'
+            ];
+        }
+
         const isGeneric = !areas || areas.length === 0 ||
             (areas.length === 1 && ['GENERAL', 'MEDICINA GENERAL', 'TODAS'].includes(areas[0].toUpperCase()));
 
@@ -145,7 +154,8 @@ class MedicoService {
         return {
             questions: balancedBatch.slice(0, limit),
             source: source,
-            topic: sampledAreas[0]
+            topic: sampledAreas[0],
+            areas: areas
         };
     }
 
@@ -210,8 +220,12 @@ class MedicoService {
         }
 
         if (limit) {
-            params.push(parseInt(limit, 10));
-            topicFilter += ` AND total_questions = $${params.length}`;
+            if (limit === 'real') {
+                topicFilter += ` AND total_questions >= 50`;
+            } else {
+                params.push(parseInt(limit, 10));
+                topicFilter += ` AND total_questions = $${params.length}`;
+            }
         }
 
         const qStats = await medicoRepository.getBasicQuizStats(userId, topicFilter, params, timeFilter, areas);

@@ -83,7 +83,7 @@ class IdiomasSimulatorRepository {
 
     async getRandomDemoQuestions(limit = 10, excludeIds = [], target = null) {
         let query = `
-            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, domain, topic, target
+            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, domain, topic, target, audio_text
             FROM question_bank
             WHERE domain = 'languages'
         `;
@@ -224,8 +224,12 @@ class IdiomasSimulatorRepository {
         }
 
         if (limit) {
-            params.push(parseInt(limit, 10));
-            filter += ` AND total_questions = $${params.length}`;
+            if (limit === 'real') {
+                filter += ` AND total_questions >= 50`;
+            } else {
+                params.push(parseInt(limit, 10));
+                filter += ` AND total_questions = $${params.length}`;
+            }
         }
 
         if (areas && Array.isArray(areas) && areas.length > 0) {

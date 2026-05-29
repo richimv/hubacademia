@@ -96,6 +96,40 @@ describe('IdiomasSimulatorService', () => {
             );
             expect(idiomasSimulatorRepository.saveQuestionBankBatch).toHaveBeenCalled();
         });
+
+        it('should override areas and select all areas when mode is real', async () => {
+            const mockQuestions = [
+                { id: '1', question_text: 'Q1', options: ['A', 'B', 'C', 'D'], correct_option_index: 0, topic: 'Grammar & Use of English' }
+            ];
+
+            idiomasSimulatorRepository.findQuestionsInBankBatch.mockResolvedValue(mockQuestions);
+
+            const options = {
+                target: 'MCER',
+                career: 'en-US',
+                difficulty: 'B2',
+                areas: ['Grammar & Use of English'],
+                mode: 'real'
+            };
+
+            const result = await idiomasSimulatorService.generateQuiz(options, 'user-123', 5, 'free', []);
+
+            expect(result.areas).toEqual([
+                'Grammar & Use of English',
+                'Vocabulary & Context',
+                'Reading Comprehension',
+                'Listening Comprehension'
+            ]);
+            expect(idiomasSimulatorRepository.findQuestionsInBankBatch).toHaveBeenCalledWith(
+                'MCER',
+                ['GRAMMAR & USE OF ENGLISH', 'VOCABULARY & CONTEXT', 'READING COMPREHENSION', 'LISTENING COMPREHENSION'],
+                50,
+                'user-123',
+                'en-US',
+                'B2',
+                []
+            );
+        });
     });
 
     describe('submitQuizResult', () => {

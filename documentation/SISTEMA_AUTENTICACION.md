@@ -96,5 +96,12 @@ El sistema está blindado para leer datos tanto en `snake_case` (Base de Datos) 
 La fuente de verdad para los límites gratuitos es el archivo `database_schema.sql` (`max_free_limit INTEGER DEFAULT 50`). Cualquier cambio en la política de "vidas" debe empezar allí y reflejarse en el constructor de `User.js`.
 
 ---
+### 4.3. Resiliencia de Sesión y Mitigación de 401 en Exámenes Críticos
+Para evitar la interrupción de exámenes largos (1-3 horas), se han aplicado las siguientes directrices:
+*   **Logout sin Redirección en Simulador:** Al recibir un error 401, el interceptor de `NetworkService` y `SessionManager` eliminan el token caducado pero no redirigen al usuario a `/` si se encuentra en la ruta del quiz o del simulador. En su lugar, abren de forma nativa la modal `auth-prompt-modal`.
+*   **Retorno Dinámico vía OAuth (`redirectTo`):** El flujo de inicio de sesión con Google ya no usa un destino fijo (`/`). Ahora apunta a `window.location.href`, permitiendo que el usuario regrese a la pantalla exacta en la que estaba tras re-autenticarse, y reanude su progreso de inmediato.
+
+---
 **Elaborado por**: Antigravity AI - Expert Senior Team.
-**Versión**: 1.6 - Manual de Escalabilidad y Blindaje.
+**Versión**: 2.0 - Resiliencia de Sesión, Cola Offline y Dynamic OAuth Redirects.
+

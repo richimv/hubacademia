@@ -1011,10 +1011,42 @@ class AdminManager {
                             <div class="ai-study-group" data-group="ASCENSO" style="display: block;">
                                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
                                     <span style="background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">★</span>
-                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Prueba Integrada (Ascenso)</strong>
+                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Prueba Nacional Integrada (Ascenso)</strong>
                                 </div>
-                                <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
-                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Conocimientos Pedagógicos y de la Especialidad" checked> Conocimientos Pedagógicos y de la Especialidad (Única)</label>
+                                <div style="display: flex; flex-direction: column; gap: 15px;">
+                                    <div>
+                                        <strong style="color: #60a5fa; font-size: 0.82rem; text-transform: uppercase; display: block; margin-bottom: 6px;">Enfoques y Principios del CNEB</strong>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Enfoque por competencias" checked> Enfoque por competencias</label>
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Enfoques transversales" checked> Enfoques transversales</label>
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Principios de la educación peruana" checked> Principios de la educación</label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <strong style="color: #60a5fa; font-size: 0.82rem; text-transform: uppercase; display: block; margin-bottom: 6px;">Teorías y Procesos del Aprendizaje</strong>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Constructivismo y socioconstructivismo" checked> Constructivismo y socioconstructivismo</label>
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Aprendizajes significativos" checked> Aprendizajes significativos</label>
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Activación y recojo de saberes previos" checked> Activación y recojo de saberes previos</label>
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Conflicto o disonancia cognitiva y demanda cognitiva" checked> Conflicto o disonancia y demanda</label>
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Procesos auxiliares" checked> Procesos auxiliares</label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <strong style="color: #60a5fa; font-size: 0.82rem; text-transform: uppercase; display: block; margin-bottom: 6px;">Planificación y Evaluación</strong>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Planificación pedagógica" checked> Planificación pedagógica</label>
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Evaluación formativa y retroalimentación" checked> Evaluación y retroalimentación</label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <strong style="color: #60a5fa; font-size: 0.82rem; text-transform: uppercase; display: block; margin-bottom: 6px;">Clima Escolar e Inclusión</strong>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Convivencia democrática y clima de aula" checked> Convivencia y clima de aula</label>
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Educación inclusiva y DUA" checked> Educación inclusiva y DUA</label>
+                                            <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Características y desarrollo del estudiante" checked> Características del estudiante</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="ai-study-group" data-group="NOMBRAMIENTO" style="display: none; margin-top: 20px;">
@@ -2732,9 +2764,8 @@ class AdminManager {
             groups.forEach(g => {
                 if (g.dataset.group === target) {
                     g.style.display = 'block';
-                    // Auto-check the first one if unique
-                    const cb = g.querySelector('.ai-domain-cb');
-                    if (cb) cb.checked = true;
+                    // Auto-check all of them by default
+                    g.querySelectorAll('.ai-domain-cb').forEach(cb => cb.checked = true);
                 } else {
                     g.style.display = 'none';
                 }

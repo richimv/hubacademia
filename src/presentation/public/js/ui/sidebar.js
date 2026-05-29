@@ -33,6 +33,13 @@ class GlobalSidebar {
     render() {
         if (document.querySelector('.global-sidebar')) return; // Evitar duplicar
 
+        const token = localStorage.getItem('authToken');
+        const initialDisplay = token ? 'flex' : 'none';
+        const initialDisplayBlock = token ? 'block' : 'none';
+
+        // Deshabilitar transiciones temporalmente para evitar parpadeos
+        document.body.classList.add('no-transition');
+
         // Aplicar estado colapsado inicial en el body
         if (this.collapsed && window.innerWidth > 768) {
             document.body.classList.add('sidebar-collapsed');
@@ -40,7 +47,7 @@ class GlobalSidebar {
 
         // Crear la estructura HTML de la barra lateral
         const aside = document.createElement('aside');
-        aside.className = 'global-sidebar';
+        aside.className = 'global-sidebar no-transition';
         if (this.collapsed) aside.classList.add('collapsed');
 
         aside.innerHTML = `
@@ -93,24 +100,24 @@ class GlobalSidebar {
                         <span class="sidebar-item-label">Biblioteca de Recursos</span>
                     </a>
 
-                    <a href="/library?tab=saved" class="sidebar-item" data-page="library-saved">
+                    <a href="/library?tab=saved" class="sidebar-item" data-page="library-saved" style="display: ${initialDisplay};">
                         <i class="fas fa-bookmark"></i>
                         <span class="sidebar-item-label">Guardados</span>
                     </a>
                     
-                    <a href="/library?tab=favorites" class="sidebar-item" data-page="library-favorites">
+                    <a href="/library?tab=favorites" class="sidebar-item" data-page="library-favorites" style="display: ${initialDisplay};">
                         <i class="fas fa-heart"></i>
                         <span class="sidebar-item-label">Mis Favoritos</span>
                     </a>
                     
-                    <a href="/library?tab=notes" class="sidebar-item" data-page="library-notes">
+                    <a href="/library?tab=notes" class="sidebar-item" data-page="library-notes" style="display: ${initialDisplay};">
                         <i class="fas fa-edit"></i>
                         <span class="sidebar-item-label">Notas</span>
                     </a>
                 </div>
 
                 <!-- Sección Mi Cuenta -->
-                <div class="sidebar-section" id="sidebar-section-account">
+                <div class="sidebar-section" id="sidebar-section-account" style="display: ${initialDisplayBlock};">
                     <span class="sidebar-section-title">Mi Cuenta</span>
                     
                     <a href="/profile" class="sidebar-item" data-page="profile">
@@ -121,7 +128,7 @@ class GlobalSidebar {
             </div>
 
             <!-- Sidebar Footer -->
-            <div class="sidebar-footer">
+            <div class="sidebar-footer" style="display: ${initialDisplayBlock};">
                 <button type="button" class="sidebar-item logout-item" id="sidebar-logout-btn" style="width: 100%; text-align: left; background: transparent; border: none;">
                     <i class="fas fa-sign-out-alt"></i>
                     <span class="sidebar-item-label">Cerrar sesión</span>
@@ -164,6 +171,35 @@ class GlobalSidebar {
 
         // Sincronizar visibilidad de Cerrar Sesión con SessionManager
         this._syncAuthState();
+
+        // Persist scroll position across page reloads
+        this.restoreScroll();
+
+        // Forzar reflow y reactivar transiciones después del renderizado inicial
+        document.body.offsetHeight;
+        setTimeout(() => {
+            document.body.classList.remove('no-transition');
+            aside.classList.remove('no-transition');
+        }, 50);
+    }
+
+    restoreScroll() {
+        const sidebarMenu = document.querySelector('.sidebar-menu');
+        if (sidebarMenu) {
+            const savedScroll = localStorage.getItem('sidebar_scroll_top');
+            if (savedScroll) {
+                this.isRestoringScroll = true;
+                sidebarMenu.scrollTop = parseInt(savedScroll, 10);
+                requestAnimationFrame(() => {
+                    if (sidebarMenu) {
+                        sidebarMenu.scrollTop = parseInt(savedScroll, 10);
+                        setTimeout(() => {
+                            this.isRestoringScroll = false;
+                        }, 150);
+                    }
+                });
+            }
+        }
     }
 
     _setupMobileHeaderToggle() {
@@ -225,6 +261,15 @@ class GlobalSidebar {
         const mobileToggle = document.getElementById('mobile-sidebar-toggle');
         const logoutBtn = document.getElementById('sidebar-logout-btn');
 
+        // Persist scroll position on scroll
+        const sidebarMenu = sidebar.querySelector('.sidebar-menu');
+        if (sidebarMenu) {
+            sidebarMenu.addEventListener('scroll', () => {
+                if (this.isRestoringScroll) return;
+                localStorage.setItem('sidebar_scroll_top', sidebarMenu.scrollTop);
+            });
+        }
+
         // Toggle Escritorio (Colapsar)
         if (desktopToggle) {
             desktopToggle.addEventListener('click', (e) => {
@@ -232,6 +277,7 @@ class GlobalSidebar {
                 if (window.innerWidth <= 768) {
                     sidebar.classList.remove('open');
                     backdrop.classList.remove('active');
+                    document.body.classList.remove('sidebar-open');
                 } else {
                     this.collapsed = !this.collapsed;
                     localStorage.setItem('sidebar_collapsed', this.collapsed ? 'true' : 'false');
@@ -246,8 +292,9 @@ class GlobalSidebar {
         if (mobileToggle) {
             mobileToggle.addEventListener('click', (e) => {
                 e.preventDefault();
-                sidebar.classList.toggle('open');
-                backdrop.classList.toggle('active');
+                const isOpen = sidebar.classList.toggle('open');
+                backdrop.classList.toggle('active', isOpen);
+                document.body.classList.toggle('sidebar-open', isOpen);
             });
         }
 
@@ -256,8 +303,38 @@ class GlobalSidebar {
             backdrop.addEventListener('click', () => {
                 sidebar.classList.remove('open');
                 backdrop.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
             });
         }
+
+        // Interceptar y cerrar menú al hacer clic en cualquier opción (móvil/escritorio)
+        sidebar.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Interceptar enlaces de biblioteca si ya estamos en la página de biblioteca
+                const href = item.getAttribute('href');
+                if (href && href.startsWith('/library') && window.location.pathname.includes('/library')) {
+                    const urlParams = new URLSearchParams(href.split('?')[1] || '');
+                    const tab = urlParams.get('tab') || 'resources';
+                    if (window.libraryUI) {
+                        e.preventDefault();
+                        window.libraryUI.switchTab(tab);
+                        this.highlightActiveItem();
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.remove('open');
+                            backdrop.classList.remove('active');
+                            document.body.classList.remove('sidebar-open');
+                        }
+                        return;
+                    }
+                }
+
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('open');
+                    backdrop.classList.remove('active');
+                    document.body.classList.remove('sidebar-open');
+                }
+            });
+        });
 
         // Cerrar sesión
         if (logoutBtn) {
@@ -282,18 +359,22 @@ class GlobalSidebar {
             const favoritesItem = document.querySelector('[data-page="library-favorites"]');
             const notesItem = document.querySelector('[data-page="library-notes"]');
 
-            const displayVal = user ? 'flex' : 'none';
+            const isLoggedIn = !!(user || localStorage.getItem('authToken'));
+            const displayVal = isLoggedIn ? 'flex' : 'none';
             if (savedItem) savedItem.style.display = displayVal;
             if (favoritesItem) favoritesItem.style.display = displayVal;
             if (notesItem) notesItem.style.display = displayVal;
 
-            if (user) {
+            if (isLoggedIn) {
                 if (sidebarFooter) sidebarFooter.style.display = 'block';
                 if (accountSection) accountSection.style.display = 'block';
             } else {
                 if (sidebarFooter) sidebarFooter.style.display = 'none';
                 if (accountSection) accountSection.style.display = 'none';
             }
+
+            // Restaurar scroll de forma asíncrona después del cambio de visibilidad de los elementos
+            this.restoreScroll();
         };
 
         if (window.sessionManager) {

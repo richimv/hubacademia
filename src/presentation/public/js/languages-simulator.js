@@ -617,6 +617,8 @@ const LanguagesSimulator = (function() {
     }
 
     /**
+     * Detiene el audio en reproducción
+     */
     function stopAudio() {
         if (window.currentQuizAudio) {
             try { window.currentQuizAudio.pause(); } catch (e) {}

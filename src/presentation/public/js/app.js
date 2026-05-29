@@ -9,6 +9,53 @@ window.API_URL = window.AppConfig.API_URL;
 
 console.log('🌍 Entorno:', (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'Local' : 'Producción', '| API:', window.API_URL);
 
+// ✅ NUEVO: Sincronización de Simulacros guardados localmente por fallas de conexión
+async function syncPendingSubmissions() {
+    if (!navigator.onLine) return;
+    
+    const pendingKey = 'simulator_pending_submissions';
+    let pending = [];
+    try {
+        pending = JSON.parse(localStorage.getItem(pendingKey) || '[]');
+    } catch (e) {
+        return;
+    }
+    
+    if (pending.length === 0) return;
+    
+    console.log(`📡 [Sync] Se encontraron ${pending.length} simulacros pendientes de sincronizar.`);
+    
+    const remaining = [];
+    for (const item of pending) {
+        try {
+            const ctxUpper = (item.context || 'MEDICINA').toUpperCase();
+            let syncUrl = `${window.AppConfig.API_URL}/api/medico/submit`;
+            if (ctxUpper === 'EDUCACION') {
+                syncUrl = `${window.AppConfig.API_URL}/api/docente/submit`;
+            } else if (ctxUpper === 'IDIOMAS') {
+                syncUrl = `${window.AppConfig.API_URL}/api/idiomas-simulator/submit`;
+            }
+            
+            const response = await window.NetworkService.fetch(syncUrl, {
+                method: 'POST',
+                body: JSON.stringify(item.payload)
+            });
+            
+            if (response.ok) {
+                console.log(`✅ [Sync] Simulacro ${item.quizId} sincronizado exitosamente.`);
+            } else {
+                console.warn(`⚠️ [Sync] Error del servidor al sincronizar ${item.quizId} (${response.status}). Se reintentará luego.`);
+                remaining.push(item);
+            }
+        } catch (err) {
+            console.warn(`❌ [Sync] Error de conexión al sincronizar ${item.quizId}. Se reintentará luego.`, err);
+            remaining.push(item);
+        }
+    }
+    
+    localStorage.setItem(pendingKey, JSON.stringify(remaining));
+}
+
 // ✅ NUEVO: Tracking de Tráfico en Tiempo Real
 function initTrafficTracking() {
     const SESSION_KEY = 'hub_visitor_session_id';
@@ -50,6 +97,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Inicializar tracking de tráfico
     initTrafficTracking();
+
+    // Sincronizar simulacros pendientes si hay conexión
+    syncPendingSubmissions();
+    window.addEventListener('online', syncPendingSubmissions);
 
     // ✅ 0.5 INTERCEPTAR RETORNO DE PAGO EXITOSO
     const urlParams = new URLSearchParams(window.location.search);
@@ -105,7 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- PASO 1: Componentes Globales ---
     if (typeof ChatComponent !== 'undefined') window.chatbot = new ChatComponent();
 
-    if (typeof ConfirmationModal !== 'undefined' && document.getElementById('confirmation-modal')) {
+    if (typeof ConfirmationModal !== 'undefined') {
         window.confirmationModal = new ConfirmationModal();
     }
 
@@ -268,7 +319,7 @@ window.triggerGoogleLogin = async (buttonElement = null) => {
         const { error } = await window.supabaseClient.auth.signInWithOAuth({
             provider: 'google',
             options: { 
-                redirectTo: window.location.origin + '/',
+                redirectTo: window.location.href,
                 queryParams: { prompt: 'select_account' }
             }
         });
@@ -350,7 +401,7 @@ function setupStaticModalListeners() {
             const { error } = await window.supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: { 
-                    redirectTo: window.location.origin + '/',
+                    redirectTo: window.location.href,
                     queryParams: { prompt: 'select_account' } // Forzar selector para mayor claridad
                 }
             });

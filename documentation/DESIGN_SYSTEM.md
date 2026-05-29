@@ -64,10 +64,33 @@ Todas las ventanas modales deben seguir este patrón visual:
   - Los enlaces de redes sociales (Facebook, Instagram, TikTok) se integran al final del menú lateral en una sección dedicada "Síguenos" con botones cuadrados y efecto hover premium, visibles permanentemente para todos los usuarios.
 - **Footer Global:**
   - El footer se estructura en exactamente 3 columnas en escritorio (Marca, Explorar, Legal y Ayuda) y se reorganiza en 2 columnas en teléfonos móviles. No se permiten redes sociales ni secciones redundantes ("Síguenos") en el footer de ninguna página para evitar saturar la interfaz móvil.
-- **Tarjetas de Simuladores (Simulators Hub):**
-  - Poseen un tamaño profesional ampliado (`min-height: 320px`).
-  - Cuentan con un gradiente oscuro (`linear-gradient(180deg, rgba(5,5,5,0.25) 0%, rgba(5,5,5,0.85) 100%)`) a través de un pseudo-elemento `::before` para asegurar contraste tipográfico del texto blanco sobre las imágenes WebP.
-  - Utilizan fondos responsivos enlazados a `/assets/bg-sim-...webp`.
+- **Tarjetas de Simuladores (Simulators Hub) & Modos de Entrenamiento:**
+  - Las tarjetas de modo (`.mode-card`) poseen un diseño de vidrio soplado (glassmorphic) con `backdrop-filter: blur(12px)` y fondos oscuros (`rgba(10, 13, 18, 0.45)`).
+  - Los bordes están tintados translúcidos al 15% según el color de acento (`--accent-rgb`), y en hover se expanden con sombra brillante (`box-shadow`) y elevación vertical.
+  - La línea decorativa izquierda (`::before`) se dibuja desde el borde superior de la tarjeta y termina alineada exactamente con la base del título, creciendo dinámicamente en hover como micro-animación.
+  - La máscara de contraste (`::after`) utiliza un gradiente horizontal de izquierda (muy oscuro, para legibilidad del texto) a derecha (translúcido) con un foco radial en hover.
+  - Los botones `.mode-cta` están diseñados como píldoras de contorno (outline pills) translúcidas en reposo, y se rellenan completamente con su respectivo color de acento en hover.
+- **Filtro Activo / Resumen de Configuración (#active-config-summary):**
+  - Se descartan las alertas de color verde plano. Se adopta una barra de estado tipo cápsula oscura (`rgba(30, 41, 59, 0.22)`) con borde azul eléctrico y píldoras separadas (`.config-summary-pill`) para Target, Carrera/Dificultad y número de áreas, logrando modularidad visual.
+- **Rediseño del Hero y Panel de Estadísticas (PC & Celular):**
+  - Se implementó un panel de estadísticas modular (`.hero-stats-panel`) que organiza métricas clave de atracción (`1K+` Usuarios Activos, `120K+` Preguntas, `98%` Tasa de Satisfacción, `24/7` Tutoría) usando gradientes de cian a púrpura en los números.
+  - En móviles, el slider de hero (`#hero-slider`) tiene una altura mínima de `800px` y la imagen `portada-mobil.png` se ancla al final mediante `object-position: center bottom`. El título desplaza la palabra "Inteligente" a una línea propia en gradiente y todos los elementos se centran verticalmente con un amplio padding inferior (`320px`) para mantener visible la laptop.
+- **Tipografía y Claridad en Quizzes y Exámenes Resueltos:**
+  - Se unificó la tipografía `'Inter', sans-serif` en todas las pantallas de preguntas y respuestas.
+  - Se aumentó el tamaño y brillo de las opciones (`1.25rem`, color `#f1f5f9` para eliminar la opacidad) en el quiz activo, manteniendo el texto de la pregunta en `1.5rem`. La explicación (`#explanationText`) se fijó en `1.45rem !important` para estar a la par de la pregunta sin superarla.
+  - En la página de examen resuelto (Review Cards), las preguntas miden `1.4rem`, las opciones `1.2rem` (aclaradas a `#f1f5f9`), y la explicación se fijó en `1.35rem !important`.
+  - En móviles, se aplican escalas coherentes (quiz activo: pregunta `1.25rem`, opciones `1.05rem`, explicación `1.15rem`; revisión: pregunta `1.15rem`, opciones `1.05rem`, explicación `1.1rem`).
+
+- **Mitigación de Parpadeo de Carga (FOUC) en Barra Lateral:**
+  - Se vincula estáticamente `sidebar.css` en el `<head>` de todas las páginas HTML principales (`index`, `dashboard`, `simulator-dashboard`, etc.) para asegurar que el navegador cargue, analice y aplique las reglas de visualización y plegado antes de comenzar a renderizar el cuerpo de la página.
+- **Refinamiento de Tarjetas de Modos de Entrenamiento:**
+  - Se aumentó el padding superior de `.mode-card` a `3rem` en PC (`2.25rem` en móviles) para centrar verticalmente los bloques de título y descripción.
+  - La línea decorativa izquierda (`::before`) mide exactamente `5.6rem` (hover `6.2rem`) en PC y `4.45rem` (hover `5.0rem`) en móviles, alineándose con precisión matemática con la línea base del título.
+  - Se ajustó el breakpoint responsivo de encolado `.modes-grid` a `900px` para evitar saltos prematuros de cuadrícula.
+- **Tooltips Informativos de KPIs:**
+  - Se agregaron íconos informativos discretos `.kpi-info-container` en los tres gráficos de diagnóstico en `simulator-dashboard.html`.
+  - Diseñados en estilo vidrio soplado oscuro (`rgba(10,10,10,0.96)`) con bordes translúcidos y desenfoque (`backdrop-filter: blur(12px)`).
+  - Los textos se cargan dinámicamente en `simulator-dash.js` de acuerdo al contexto del módulo cargado (Especialidades Clínicas para Salud, Áreas Pedagógicas para Educación, Ejes Temáticos para Idiomas).
 
 ---
 

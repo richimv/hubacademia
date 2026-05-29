@@ -128,3 +128,25 @@ Para evitar el consumo desmedido de cuotas de LLM y prevenir errores 403 blocks 
     - Se establece `req.fallbackToStatic = true` en la petición.
 3.  **Generación de Fallback Estático:** El `analyticsController` detecta la bandera `req.fallbackToStatic` o el tier del usuario y retorna un diagnóstico clínico/pedagógico/lingüístico en formato HTML/CSS limpio directamente desde el backend.
 4.  **Clientes Invitados (Guest):** El dashboard (`simulator-dash.js`) maneja a los usuarios sin sesión de forma local en el cliente, adaptando sus KPIs y gráficos de evolución demo según el módulo activo.
+
+## 8. Gráficos Analíticos Avanzados (Nuevas Integraciones v3.0)
+
+### A. Gráfico de Tendencia Histórica Multi-Línea
+El gráfico lineal de evolución (`evolutionChart`) ha sido repotenciado para trazar hasta tres series cronológicas de forma paralela usando `spanGaps: true`:
+1.  **Línea Verde (`scores10`):** Representa los simulacros rápidos de 10 preguntas.
+2.  **Línea Azul (`scores20`):** Representa los simulacros de estudio de 20 preguntas.
+3.  **Línea Ámbar (`scoresReal`):** Representa los **Simulacros Reales** (evaluaciones completas de 50 o más preguntas según target).
+*   **Filtros de Toggles:** Integrados en la cabecera mediante la botonera de Modos ("Todos", "Rápido", "Estudio", "Simulacros") que controlan la visibilidad de los datasets del gráfico dinámicamente en el cliente mediante `chart.setDatasetVisibility()`.
+
+### B. Gráfico de Dona de Distribución por Temas
+Ubicado de manera responsiva a la derecha del gráfico lineal, el nuevo gráfico circular (`topicDoughnutChart`) muestra la distribución volumétrica de preguntas respondidas por el alumno:
+*   **MEDICINA (SERUMS):** Agrupa y muestra exclusivamente los 5 subtemas del **Grupo D (Salud Pública y Gestión)**: *Salud Pública*, *Cuidado Integral de Salud*, *Ética e Interculturalidad*, *Investigación* y *Gestión de Servicios de Salud*.
+*   **IDIOMAS:** Muestra los 4 subtemas transversales del módulo: *Grammar & Use of English*, *Vocabulary & Context*, *Reading Comprehension* y *Listening Comprehension*.
+*   **EDUCACION:** Consolida la sumatoria de preguntas agrupadas bajo los 4 ejes principales de la especialidad: *Enfoques y Principios del CNEB*, *Teorías y Procesos del Aprendizaje*, *Planificación y Evaluación* y *Clima Escolar e Inclusión*.
+*   **Diseño Limpio:** El gráfico no pinta nombres en los segmentos del lienzo, sino a través de una leyenda de colores y valores numéricos + porcentajes. El nombre de cada tema/grupo solo se expone al posar el cursor encima (hover) mediante el atributo `title` nativo y la interacción con tooltips.
+
+### C. Sincronización y Resiliencia en Simulacros Reales
+*   **Evasión de Filtro de Áreas:** En el inicio de un examen de Simulacro Real (`mode = 'real'`), los servicios de generación omiten la configuración guardada del usuario para forzar la selección equitativa de preguntas de todas las áreas disponibles de ese target.
+*   **Propagación de Áreas en Backend:** Los controladores devuelven en la respuesta de inicio (`start`) y lote (`next-batch`) el set completo de áreas evaluadas. Esto evita que el cliente mande un set recortado al guardar el examen.
+*   **Cola Offline (`simulator_pending_submissions`):** Si falla el envío final del examen debido a una caída de conexión a internet, se encolan los resultados localmente y se liberan recursos de inmediato. El despachador asíncrono `syncPendingSubmissions()` los procesará y subirá en cuanto regrese la conectividad.
+

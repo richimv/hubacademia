@@ -142,10 +142,10 @@ class SessionManager {
             const isValid = await AuthApiService.getMe();
             if (!isValid) {
                 console.warn('🕒 Sesión local detectada como EXPIRADA por el servidor. Forzando cierre de sesión...');
-                if (typeof window.handleLogout === 'function') {
-                    window.handleLogout();
-                } else {
-                    this.logout();
+                const isQuizPage = window.location.pathname.includes('quiz.html') || window.location.pathname.includes('simulator');
+                this.logout(!isQuizPage);
+                if (isQuizPage && window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+                    window.uiManager.showAuthPromptModal();
                 }
             }
         } catch (error) {
@@ -164,7 +164,7 @@ class SessionManager {
         this.notifyStateChange();
     }
 
-    async logout() {
+    async logout(shouldRedirect = true) {
         console.log('🚪 Iniciando cierre de sesión global...');
         try {
             // 1. Limpiar estado local de Supabase (y revocar si es posible)
@@ -185,8 +185,10 @@ class SessionManager {
         this.currentUser = null;
         this.notifyStateChange();
 
-        // 3. Redirigir solo cuando estemos limpios
-        window.location.href = '/';
+        // 3. Redirigir solo cuando estemos limpios y no se haya cancelado explícitamente
+        if (shouldRedirect) {
+            window.location.href = '/';
+        }
     }
 
     isLoggedIn() {

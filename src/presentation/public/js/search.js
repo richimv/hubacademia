@@ -489,13 +489,17 @@ class SearchComponent {
         const foundVideos = data.results.filter(item => item.type === 'video' || item.resource_type === 'video');
 
         // NUEVO: Documentos formales
-        const formalTypes = ['norma', 'guia', 'paper'];
+        const formalTypes = ['norma', 'guia'];
         const foundDocs = data.results.filter(item => formalTypes.includes(item.type) || formalTypes.includes(item.resource_type));
+
+        // Papers científicos independientes
+        const foundPapers = data.results.filter(item => item.type === 'paper' || item.resource_type === 'paper');
 
         // Artículos (lo que no sea libro, video, curso, o documento formal)
         const foundArticles = data.results.filter(item =>
             (item.type === 'article' || item.resource_type === 'article' || item.type === 'other' || item.resource_type === 'other') &&
-            !formalTypes.includes(item.type) && !formalTypes.includes(item.resource_type)
+            !formalTypes.includes(item.type) && !formalTypes.includes(item.resource_type) &&
+            item.type !== 'paper' && item.resource_type !== 'paper'
         );
 
         // Cursos (type 'course' o undefined)
@@ -505,17 +509,33 @@ class SearchComponent {
 
         let contentHTML = '';
 
-        // 0. SECCIÓN: DOCUMENTOS FORMALES (Normas, Guías, Papers)
+        // 0. SECCIÓN: DOCUMENTOS FORMALES (Normas y Guías Técnicas)
         if (foundDocs.length > 0) {
             const isFirst = contentHTML === '';
             const docsHTML = foundDocs.map(doc => createUnifiedResourceCardHTML(doc)).join('');
             contentHTML += `
                 <div class="search-result-group ${isFirst ? 'first-group' : ''}">
                     <div class="search-section-header">
-                        <h3 class="browse-title"><i class="fas fa-file-medical" style="color:var(--accent)"></i> Normas y Guías Técnicas (${foundDocs.length})</h3>
+                        <h3 class="browse-title"><i class="fas fa-balance-scale" style="color:var(--accent)"></i> Normas y Guías Técnicas (${foundDocs.length})</h3>
                     </div>
                     <div class="books-grid"> 
                         ${docsHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        // SECCIÓN: PAPERS CIENTÍFICOS (Independiente)
+        if (foundPapers.length > 0) {
+            const isFirst = contentHTML === '';
+            const papersHTML = foundPapers.map(paper => createUnifiedResourceCardHTML(paper)).join('');
+            contentHTML += `
+                <div class="search-result-group ${isFirst ? 'first-group' : ''}">
+                    <div class="search-section-header">
+                        <h3 class="browse-title"><i class="fas fa-microscope" style="color:var(--accent)"></i> Papers Científicos (${foundPapers.length})</h3>
+                    </div>
+                    <div class="books-grid"> 
+                        ${papersHTML}
                     </div>
                 </div>
             `;

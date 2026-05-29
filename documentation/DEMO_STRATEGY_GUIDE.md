@@ -47,11 +47,15 @@ Dado que el simulador guarda el progreso en `localStorage` para permitir recarga
 
 ## 🛠️ Implementación por Módulo
 
-### 🩺 Módulo de Simuladores (Médico y Educación)
+### 🩺 Módulo de Simuladores (Médico, Educación e Idiomas)
 - **Activación**: Al hacer clic en "Simulacro Rápido" (10 preguntas) como invitado.
 - **Targeting Forzado**: 
   - **Medicina**: Solo extrae preguntas del banco real con `target = 'SERUMS'`.
   - **Educación**: Solo extrae preguntas del banco real con `target = 'ASCENSO'`.
+  - **Idiomas**: Extrae preguntas del banco real con `target = 'IDIOMAS'` u homólogos de idiomas.
+- **Audios de Comprensión (Listening) en Modo Demo**:
+  - Para el módulo de Idiomas, la consulta a la base de datos para modo demo extrae y retorna de forma segura la columna `audio_text`.
+  - Esto habilita al frontend (PC y móviles) a reproducir los archivos de audio de comprensión auditiva llamando al endpoint `/api/tts` (que usa `optionalAuth` y está abierto a invitados) sin comprometer la seguridad de la cuenta.
 - **Mapeo de Dominios**: El frontend mapea automáticamente `MEDICINA -> medicine` y `EDUCACION -> education` para compatibilidad con el esquema de la DB.
 - **Configuración Gatekeeper**: Los invitados no pueden configurar áreas; reciben un "Popurrí" aleatorio de todo el banco del dominio seleccionado.
 

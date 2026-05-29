@@ -63,6 +63,10 @@ window.MarkdownRenderer = {
                 img.src = resolved;
             }
 
+            // Bypass hotlinking block for external images
+            img.referrerPolicy = 'no-referrer';
+            img.setAttribute('referrerpolicy', 'no-referrer');
+
             // Hacerla interactiva con el Visor Inmersivo de Hub Academia
             img.style.cursor = 'zoom-in';
             img.title = 'Hacer clic para abrir en el Visor Inmersivo';

@@ -135,6 +135,12 @@ class UIManager {
                         if (modal.style.display === 'none' || modal.style.display === 'flex') {
                             modal.style.display = '';
                         }
+                    } else if (modalId === 'note-modal-overlay') {
+                        if (window.libraryUI) {
+                            window.libraryUI.closeNoteModal();
+                        } else {
+                            modal.classList.remove('open');
+                        }
                     } else {
                         // Comportamiento regular para modales inyectados (como auth o video)
                         modal.style.display = 'none';
@@ -570,6 +576,7 @@ class UIManager {
             // Detección y Renderizado
             if (this.isImage(url)) {
                 if (img) {
+                    img.referrerPolicy = 'no-referrer';
                     img.src = resolvedUrl;
                     img.style.display = 'block';
                 }

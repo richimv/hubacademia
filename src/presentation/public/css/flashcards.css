@@ -152,13 +152,17 @@ body {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     border-radius: 24px;
-    background: var(--card-bg);
-    border: 1px solid #222;
+    background: linear-gradient(135deg, rgba(20, 20, 25, 0.8), rgba(10, 10, 12, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.02);
     /* Flexbox columna: badge | contenido | hint */
     display: flex;
     flex-direction: column;
     padding: 1rem 1.5rem 0.5rem 1.5rem; /* ✅ MÁXIMO ESPACIO: Top 1rem, Bottom 0.5rem */
     overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .fc-card-face--back { transform: rotateY(180deg); }
 
@@ -453,25 +457,65 @@ body {
 .controls.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
 
 .control-btn {
-    border: 1px solid #222;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     padding: 1.2rem 0.5rem;
     border-radius: 16px;
-    color: white;
+    color: #f8fafc;
     font-weight: 800;
     cursor: pointer;
-    background: #111;
-    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.015);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
 }
-.control-btn:hover { transform: translateY(-3px); }
+.control-btn:hover { 
+    transform: translateY(-4px); 
+    background: rgba(255, 255, 255, 0.04);
+}
 
-.btn-again { color: #f43f5e; border-color: rgba(244, 63, 94, 0.3); }
-.btn-hard { color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
-.btn-good { color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
-.btn-easy { color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
+.btn-again { 
+    color: #ef4444; 
+    border-color: rgba(239, 68, 68, 0.15); 
+}
+.btn-again:hover {
+    border-color: rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.btn-hard { 
+    color: #f97316; 
+    border-color: rgba(249, 115, 22, 0.15); 
+}
+.btn-hard:hover {
+    border-color: rgba(249, 115, 22, 0.4);
+    box-shadow: 0 0 15px rgba(249, 115, 22, 0.15);
+    color: #fb923c;
+}
+
+.btn-good { 
+    color: #3b82f6; 
+    border-color: rgba(59, 130, 246, 0.15); 
+}
+.btn-good:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.btn-easy { 
+    color: #10b981; 
+    border-color: rgba(16, 185, 129, 0.15); 
+}
+.btn-easy:hover {
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
 
 .sub-label { font-size: 0.65rem; opacity: 0.6; font-weight: 400; }
 

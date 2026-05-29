@@ -38,6 +38,25 @@ class DocenteService {
         const difficulty = categoryOptions.difficulty || null;
         let areas = categoryOptions.areas && categoryOptions.areas.length > 0 ? categoryOptions.areas : [];
 
+        if (categoryOptions.mode === 'real') {
+            const EDUCATION_AREAS_BY_TARGET = {
+                'ASCENSO': [
+                    'Enfoque por competencias', 'Enfoques transversales', 'Principios de la educación peruana',
+                    'Constructivismo y socioconstructivismo', 'Aprendizajes significativos', 'Activación y recojo de saberes previos', 'Conflicto o disonancia cognitiva y demanda cognitiva', 'Procesos auxiliares',
+                    'Planificación pedagógica', 'Evaluación formativa y retroalimentación',
+                    'Convivencia democrática y clima de aula', 'Educación inclusiva y DUA', 'Características y desarrollo del estudiante'
+                ],
+                'NOMBRAMIENTO': [
+                    'Comprensión Lectora', 'Razonamiento Lógico',
+                    'Teorías del Aprendizaje y Desarrollo', 'Principios del Currículo Nacional (CNEB)', 'Planificación Curricular (PCI, PCA, Unidades)', 'Evaluación Formativa y Retroalimentación', 'Convivencia Escolar y Clima de Aula', 'Principios de la Educación Peruana'
+                ],
+                'ACCESO_CARGOS': [
+                    'Liderazgo Pedagógico', 'Planificación Estratégica (PEI, PAT)', 'Gestión del Riesgo de Desastres', 'Monitoreo y Acompañamiento'
+                ]
+            };
+            areas = EDUCATION_AREAS_BY_TARGET[target] || EDUCATION_AREAS_BY_TARGET['ASCENSO'];
+        }
+
         const isGeneric = !areas || areas.length === 0 ||
             (areas.length === 1 && ['GENERAL', 'EDUCACION GENERAL', 'TODAS'].includes(areas[0].toUpperCase()));
 
@@ -144,7 +163,8 @@ class DocenteService {
         return {
             questions: balancedBatch.slice(0, limit),
             source: source,
-            topic: sampledAreas[0]
+            topic: sampledAreas[0],
+            areas: areas
         };
     }
 
@@ -209,8 +229,12 @@ class DocenteService {
         }
 
         if (limit) {
-            params.push(parseInt(limit, 10));
-            topicFilter += ` AND total_questions = $${params.length}`;
+            if (limit === 'real') {
+                topicFilter += ` AND total_questions >= 50`;
+            } else {
+                params.push(parseInt(limit, 10));
+                topicFilter += ` AND total_questions = $${params.length}`;
+            }
         }
 
         const qStats = await docenteRepository.getBasicQuizStats(userId, topicFilter, params, timeFilter, areas);

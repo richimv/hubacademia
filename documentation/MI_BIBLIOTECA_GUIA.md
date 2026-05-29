@@ -35,21 +35,23 @@ El sistema incluye un **Editor de Notas Premium** con las siguientes capacidades
 
 ---
 
-## 4. 🛠️ Detalles Técnicos y Arquitectura de Interfaz
-
-### Visualización y Navegación Dedicada (/library)
-- **Modo Página Completa**: Se ha eliminado el botón flotante lateral (`.library-toggle`) y el panel lateral deslizante en todas las vistas generales de la plataforma. La biblioteca ahora opera en una página web dedicada en `/library` (`library.html`).
+## 4. 🛠️ Deta### Visualización y Navegación Dedicada (/library)
+- **Modo Página Completa**: La biblioteca opera en una página web dedicada en `/library` (`library.html`).
 - **Control de Pestañas**: La interfaz se divide estrictamente en 4 pestañas de estudio/catálogo:
-  1. **Biblioteca de Recursos** (resources): Catálogo general público de recursos (libros, guías, normas, papers) y buscador avanzado. Disponible para todos los usuarios (incluyendo visitantes). Excluye cursos y videos de los resultados de búsqueda.
-  2. **Guardados** (saved): Recursos educativos guardados (requiere autenticación).
-  3. **Favoritos** (favorites): Cursos y recursos destacados con el ícono de corazón (requiere autenticación).
-  4. **Notas** (notes): Editor de Notas Premium y notas de texto (requiere autenticación).
+  1. **Biblioteca de Recursos** (resources): Catálogo general público de recursos (libros, guías, normas) y buscador avanzado. Disponible para todos los usuarios. Excluye cursos y videos de los resultados de búsqueda.
+  2. **Guardados** (saved): Recursos educativos guardados (requiere autenticación). Se muestran consistentemente en una grilla responsiva de alta calidad (6 columnas en PC / 3 en celulares) usando la plantilla premium universal de tarjetas de recursos (`createUnifiedResourceCardHTML`).
+  3. **Favoritos** (favorites): Cursos y recursos destacados con el ícono de corazón (requiere autenticación). Se muestran consistentemente en la misma grilla responsiva de alta calidad.
+  4. **Notas** (notes): Editor de Notas Premium y tablón moderno de notas personales (requiere autenticación).
+- **Tablón de Notas Moderno (UI/UX)**: Se ha eliminado el listado clásico con icono genérico por una grilla premium de tarjetas de notas (`.note-card`) con una barra decorativa de color dinámico y controles rápidos (editar/eliminar). Incorpora una barra de herramientas (`.notes-toolbar`) que permite:
+  - **Buscador interactivo**: Filtrado en caliente del listado según el título o contenido de la nota.
+  - **Selector de Ordenación**: Organizar notas dinámicamente por fecha de creación (Recientes/Antiguas), alfabéticamente (A-Z), por color asignado, o agrupadas por origen (Chat, Flashcard o Manual).
 - **Visibilidad y Control de Acceso**: Si el usuario no ha iniciado sesión, las pestañas privadas ("Guardados", "Favoritos" y "Notas") se ocultan automáticamente en el frontend. Si un visitante intenta forzar el acceso a ellas mediante parámetros de URL, se le redirige automáticamente a la pestaña pública "Biblioteca de Recursos".
 - **Sincronización del Estado**: La URL cambia dinámicamente utilizando `window.history.replaceState` al alternar entre pestañas (`/library?tab=resources`, `/library?tab=saved`, `/library?tab=favorites`, `/library?tab=notes`).
 
 ### Menú Lateral Global y Colapsable (Sidebar)
 - **Estructura Global**: La navegación del sitio se centraliza en una barra lateral global inyectada de forma dinámica por `js/ui/sidebar.js` y estilizada mediante `css/sidebar.css`.
-- **Integración de Biblioteca**: El sidebar ofrece accesos directos diferenciados: "Biblioteca de Recursos" (público, apunta a `/library?tab=resources`) y las pestañas privadas "Guardados" (apunta a `/library?tab=saved`), "Mis Favoritos" (apunta a `/library?tab=favorites`) y "Notas" (apunta a `/library?tab=notes`).
+- **Intercepción Local de Navegación**: Para evitar recargas completas del navegador al alternar entre pestañas de biblioteca desde el menú lateral (cuando el usuario ya está en `/library`), el script del sidebar intercepta los clics en los enlaces de biblioteca y conmuta la vista reactivamente usando `window.libraryUI.switchTab(tab)`.
+- **Restauración Inteligente de Scroll**: El sidebar guarda dinámicamente su posición de scroll en `localStorage` y la restaura en cada renderizado y sincronización de estado de sesión, evitando saltos molestos o reinicios de scroll a la parte superior de la página.
 - **Visibilidad Dinámica de Menús**: Los enlaces a pestañas privadas de biblioteca ("Guardados", "Mis Favoritos" y "Notas") se ocultan del sidebar dinámicamente si el usuario no tiene una sesión activa (`user === null`).
 - **Modo Colapsable (Desktop)**: La barra se expande a `260px` y se colapsa a `70px` (iconos-only) al hacer clic en el botón de hamburguesa (`☰`). El estado se persiste en `localStorage` mediante la clave `sidebar_collapsed`.
 - **Comportamiento Responsivo (Mobile)**: En dispositivos móviles (<= 768px), la barra se transforma en un panel deslizante lateral con un backdrop oscuro.
@@ -57,7 +59,7 @@ El sistema incluye un **Editor de Notas Premium** con las siguientes capacidades
 ### Base de Datos (PostgreSQL)
 - **Tabla `user_book_library`**: Gestiona la relación entre el usuario y los recursos (libros, videos, etc.).
 - **Tabla `user_notes`**: Almacena las notas de texto puro o provenientes del chat.
-  - Columnas: `id`, `user_id`, `title`, `content`, `type` ('chat' o 'manual'), `created_at`, `updated_at`.
+  - Columnas: `id`, `user_id`, `title`, `content`, `type` ('chat' o 'manual'), `created_at`, `updated_at`, `color`.
 
 ### Seguridad (RLS - Row Level Security)
 - Se han implementado políticas de **Supabase RLS** para asegurar que cada usuario SOLO pueda ver, crear, editar o eliminar sus propias notas y biblioteca.
@@ -77,5 +79,6 @@ El sistema incluye un **Editor de Notas Premium** con las siguientes capacidades
 ## 5. 🚀 Próximas Mejoras
 - [ ] Soporte para imágenes dentro de las notas.
 - [ ] Exportación de notas a PDF.
+- [ ] Vincular notas directamente a mazos de Flashcards para repaso espaciado.- [ ] Exportación de notas a PDF.
 - [ ] Vincular notas directamente a mazos de Flashcards para repaso espaciado.
 

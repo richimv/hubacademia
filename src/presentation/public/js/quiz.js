@@ -257,6 +257,7 @@ async function init() {
 
     state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'SERUMS');
     state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
+    state.mode = urlParams.get('mode') || '';
 
     const areasParam = urlParams.get('areas');
     if (areasParam) {
@@ -338,10 +339,10 @@ function loadSession() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return null;
         const data = JSON.parse(stored);
-        // Regla 1: Expiración por tiempo (1 hora = 3600000 ms)
+        // Regla 1: Expiración por tiempo de examen extendido (24 horas = 86400000 ms para soportar Simulacros Reales y pausas)
         const ageInMs = Date.now() - (data.savedAt || 0);
-        if (ageInMs > 3600000) {
-            console.log("♻️ Sesión expirada por antigüedad (> 1hr).");
+        if (ageInMs > 86400000) {
+            console.log("♻️ Sesión expirada por antigüedad (> 24hr).");
             clearSession();
             return null;
         }
@@ -442,7 +443,8 @@ async function startQuiz() {
             areas: state.areas,
             career: state.career,
             difficulty: state.difficulty,
-            limit: Math.min(5, state.maxQuestions)
+            limit: Math.min(5, state.maxQuestions),
+            mode: state.mode
         })
     };
 
@@ -632,6 +634,7 @@ async function fetchNextBatch() {
     if (urlParamsNext.get('demo') === 'true') return;
 
     state.isLoadingBatch = true;
+    state.batchLoadFailed = false; // Reset status
     console.log("🔄 Fetching next batch...");
 
     try {
@@ -645,7 +648,8 @@ async function fetchNextBatch() {
                 areas: state.areas,
                 career: state.career,
                 difficulty: state.difficulty,
-                seenIds: seenIds
+                seenIds: seenIds,
+                mode: state.mode
             })
         });
 
@@ -701,8 +705,9 @@ async function fetchNextBatch() {
         }
     } catch (error) {
         console.error("Error fetching batch:", error);
+        state.batchLoadFailed = true; // Marcar fallo de carga
         if (window.uiManager && window.uiManager.showToast) {
-            window.uiManager.showToast("Error de conexión al cargar más preguntas. Reintentando...", "warning");
+            window.uiManager.showToast("Error de conexión al cargar más preguntas.", "error");
         }
     } finally {
         state.isLoadingBatch = false;
@@ -714,6 +719,9 @@ async function fetchNextBatch() {
         // Si estábamos esperando el lote para mostrar la siguiente pregunta, renderizarla ahora
         if (state.questions[state.currentQuestionIndex]) {
             renderQuestion();
+        } else if (state.batchLoadFailed) {
+            // Si falló y no hay más preguntas cargadas, mostrar interfaz de reintento
+            showNetworkRetryOverlay();
         }
     }
 }
@@ -794,6 +802,10 @@ function renderQuestion() {
             `;
             document.body.appendChild(overlay);
             return; // Detenemos el renderizado de la pregunta hasta que cargue
+        } else if (state.batchLoadFailed) {
+            hideLoadingOverlay();
+            showNetworkRetryOverlay();
+            return;
         } else {
             // No more questions available, but we haven't hit maxQuestions.
             // Adjust maxQuestions to current length to show accurate results
@@ -1022,6 +1034,73 @@ function startMockTimer() {
 }
 
 // 6. Finalizar Quiz
+// ✅ Helper para encolar envíos fallidos de resultados de simulacros
+function savePendingSubmission(quizId, payload) {
+    try {
+        const pending = JSON.parse(localStorage.getItem('simulator_pending_submissions') || '[]');
+        if (!pending.some(p => p.quizId === quizId)) {
+            pending.push({ quizId, payload, savedAt: Date.now(), context: state.context });
+            localStorage.setItem('simulator_pending_submissions', JSON.stringify(pending));
+            console.log(`💾 [Queue] Simulacro ${quizId} guardado localmente en pendientes.`);
+        }
+    } catch (e) {
+        console.warn("Fallo guardando envío pendiente:", e);
+    }
+}
+
+function removePendingSubmission(quizId) {
+    try {
+        const pending = JSON.parse(localStorage.getItem('simulator_pending_submissions') || '[]');
+        const filtered = pending.filter(p => p.quizId !== quizId);
+        localStorage.setItem('simulator_pending_submissions', JSON.stringify(filtered));
+    } catch (e) {}
+}
+
+// ✅ Interfaz de Reintento ante caídas de conexión durante la carga de lotes
+function showNetworkRetryOverlay() {
+    const existing = document.getElementById('loading-overlay') || document.getElementById('network-retry-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'network-retry-overlay';
+    Object.assign(overlay.style, {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(20px)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: '10000',
+        color: 'white',
+        textAlign: 'center'
+    });
+
+    overlay.innerHTML = `
+        <div class="loader-content" style="padding: 3.5rem; border-radius: 2.5rem; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 1); max-width: 400px; width: 90%;">
+            <div style="font-size: 3rem; margin-bottom: 1.5rem; color: #f59e0b;">
+                <i class="fas fa-wifi"></i>
+            </div>
+            <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 800; color: #fff;">Error de Conexión</h3>
+            <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.5;">No pudimos cargar la siguiente ronda de preguntas. Revisa tu señal de internet.</p>
+            <button id="btn-retry-batch" style="background: #3b82f6; border: none; padding: 0.75rem 2rem; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-sync"></i> Reintentar Carga
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('btn-retry-batch').onclick = () => {
+        overlay.remove();
+        fetchNextBatch();
+    };
+}
+
 async function finishQuiz() {
     clearInterval(timerInterval);
 
@@ -1087,34 +1166,41 @@ async function finishQuiz() {
         return;
     }
 
+    const payload = {
+        topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : state.topic,
+        areas: state.areas,
+        target: state.targetExam,
+        career: state.career,
+        difficulty: state.difficulty,
+        score: state.score,
+        total_questions: state.currentQuestionIndex,
+        questions: state.questions.slice(0, state.currentQuestionIndex).map((q, idx) => ({
+            ...q,
+            userAnswer: state.answers[idx]?.userAnswer || 0,
+            topic: q.topic || state.topic
+        }))
+    };
+
     try {
         await window.NetworkService.fetch(`${API_URL}/submit`, {
             method: 'POST',
-            body: JSON.stringify({
-                topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : state.topic,
-                areas: state.areas,
-                target: state.targetExam,
-                career: state.career,
-                difficulty: state.difficulty,
-                score: state.score,
-                total_questions: state.currentQuestionIndex,
-                questions: state.questions.slice(0, state.currentQuestionIndex).map((q, idx) => ({
-                    ...q,
-                    userAnswer: state.answers[idx]?.userAnswer || 0,
-                    topic: q.topic || state.topic
-                }))
-            })
+            body: JSON.stringify(payload)
         });
 
         console.log("✅ Resultados guardados y Flashcards generadas.");
         clearSession(); // ✅ LIMPIAR SOLO SI TUVO ÉXITO
+        removePendingSubmission(state.quizId);
     } catch (error) {
         console.error("Error guardando resultados", error);
+        
+        savePendingSubmission(state.quizId, payload);
+        clearSession(); // Limpiar la sesión activa para permitir iniciar nuevos simulacros
+
         // Si falla definitivamente después de los reintentos de safeFetch
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: 'Error de Conexión',
-                text: 'No pudimos sincronizar tus resultados, pero no te preocupes, están guardados localmente. Los intentaremos subir automáticamente lo antes posible.',
+                text: 'No pudimos sincronizar tus resultados con el servidor debido a un fallo de red. No te preocupes, han sido guardados localmente y se subirán automáticamente en cuanto recuperes conexión.',
                 icon: 'warning',
                 background: 'rgba(20,20,20,0.95)'
             });

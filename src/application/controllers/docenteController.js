@@ -6,7 +6,7 @@ class DocenteController {
 
     async startQuiz(req, res) {
         try {
-            const { target, areas, round = 1, limit = 5, topic, career, difficulty } = req.body;
+            const { target, areas, round = 1, limit = 5, topic, career, difficulty, mode } = req.body;
             const user = req.user;
 
             const finalTarget = target || 'ASCENSO';
@@ -42,7 +42,7 @@ class DocenteController {
 
             console.log(`🎮 Generando Ronda ${round} de ${finalTarget} para ${user.name}. Limit: ${limit}`);
 
-            const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty };
+            const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode };
             const quizData = await docenteService.generateQuiz(categoryOptions, user.id, limit, user.subscriptionTier);
 
             const returnedTopic = quizData.topic || finalAreas[0];
@@ -52,7 +52,7 @@ class DocenteController {
             res.json({
                 success: true,
                 topic: returnedTopic,
-                areas: finalAreas,
+                areas: quizData.areas || finalAreas,
                 round: round,
                 questions: quizData.questions,
                 isPremium: isPremium,
@@ -139,14 +139,15 @@ class DocenteController {
                     total_correct: 145,
                     total_incorrect: 55,
                     mastered_cards: 12,
-                    strongest_topic: "Comprensión Lectora",
-                    weakest_topic: "Convivencia Escolar",
+                    strongest_topic: "Enfoque por competencias",
+                    weakest_topic: "Características y desarrollo del estudiante",
                     radar_data: [
-                        { subject: "Comprensión Lectora", accuracy: 88, correct: 42, total: 48 },
-                        { subject: "Razonamiento Lógico", accuracy: 75, correct: 36, total: 48 },
-                        { subject: "Evaluación Formativa", accuracy: 68, correct: 32, total: 47 },
-                        { subject: "Principios del CNEB", accuracy: 62, correct: 28, total: 45 },
-                        { subject: "Convivencia Escolar", accuracy: 45, correct: 18, total: 40 }
+                        { subject: "Enfoque por competencias", accuracy: 88, correct: 42, total: 48 },
+                        { subject: "Constructivismo y socioconstructivismo", accuracy: 75, correct: 36, total: 48 },
+                        { subject: "Planificación pedagógica", accuracy: 68, correct: 32, total: 47 },
+                        { subject: "Evaluación formativa y retroalimentación", accuracy: 62, correct: 28, total: 45 },
+                        { subject: "Convivencia democrática y clima de aula", accuracy: 55, correct: 22, total: 40 },
+                        { subject: "Características y desarrollo del estudiante", accuracy: 50, correct: 20, total: 40 }
                     ],
                     system_deck_id: "example-deck",
                     isGuest: true
@@ -186,6 +187,9 @@ class DocenteController {
             const data = await docenteRepository.getQuizEvolution(userId, target, limit, timeFilter, areaList);
             const chartData = {
                 labels: data.map(d => d.date_label),
+                scores10: data.map(d => d.total_questions === 10 ? parseFloat(d.score_20).toFixed(1) : null),
+                scores20: data.map(d => d.total_questions === 20 ? parseFloat(d.score_20).toFixed(1) : null),
+                scoresReal: data.map(d => (d.total_questions !== 10 && d.total_questions !== 20) ? parseFloat(d.score_20).toFixed(1) : null),
                 scores: data.map(d => parseFloat(d.score_20).toFixed(1))
             };
 
@@ -208,7 +212,7 @@ class DocenteController {
 
     async getNextBatch(req, res) {
         try {
-            const { target, areas, difficulty, topic, career, seenIds } = req.body;
+            const { target, areas, difficulty, topic, career, seenIds, mode } = req.body;
             const userId = req.user.id;
 
             const finalTarget = target || 'ASCENSO';
@@ -220,7 +224,7 @@ class DocenteController {
             }
 
             const result = await docenteService.generateQuiz(
-                { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty },
+                { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode },
                 userId,
                 5,
                 req.user.subscriptionTier,
@@ -230,7 +234,7 @@ class DocenteController {
             res.json({
                 success: true,
                 questions: result.questions,
-                areas: finalAreas,
+                areas: result.areas || finalAreas,
                 source: result.source
             });
 

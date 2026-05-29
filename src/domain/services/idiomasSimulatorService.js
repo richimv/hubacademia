@@ -38,6 +38,15 @@ class IdiomasSimulatorService {
         const difficulty = categoryOptions.difficulty || null;
         let areas = categoryOptions.areas && categoryOptions.areas.length > 0 ? categoryOptions.areas : [];
 
+        if (categoryOptions.mode === 'real') {
+            areas = [
+                'Grammar & Use of English',
+                'Vocabulary & Context',
+                'Reading Comprehension',
+                'Listening Comprehension'
+            ];
+        }
+
         const isGeneric = !areas || areas.length === 0 ||
             (areas.length === 1 && ['GENERAL', 'IDIOMAS', 'TODAS'].includes(areas[0].toUpperCase()));
 
@@ -143,7 +152,8 @@ class IdiomasSimulatorService {
         return {
             questions: balancedBatch.slice(0, limit),
             source: source,
-            topic: sampledAreas[0]
+            topic: sampledAreas[0],
+            areas: areas
         };
     }
 
@@ -208,8 +218,12 @@ class IdiomasSimulatorService {
         }
 
         if (limit) {
-            params.push(parseInt(limit, 10));
-            topicFilter += ` AND total_questions = $${params.length}`;
+            if (limit === 'real') {
+                topicFilter += ` AND total_questions >= 50`;
+            } else {
+                params.push(parseInt(limit, 10));
+                topicFilter += ` AND total_questions = $${params.length}`;
+            }
         }
 
         const qStats = await idiomasSimulatorRepository.getBasicQuizStats(userId, topicFilter, params, timeFilter, areas);

@@ -104,7 +104,8 @@ formatMessage(text)
          ├─ JSON Safety Net (centralizado)
          ├─ marked.js parse (breaks: true, gfm: true)
          ├─ wrapTables() → responsividad horizontal
-         └─ resolveImageUrl() → resolución de paths de GCS vía proxy
+         ├─ resolveImageUrl() → resolución de paths de GCS vía proxy
+         └─ referrerpolicy="no-referrer" → bypass contra bloqueo de hotlinking externo
     ↓
 <div class="message-body markdown-content">HTML renderizado</div>
     ↓

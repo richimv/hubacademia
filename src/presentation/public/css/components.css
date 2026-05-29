@@ -1554,8 +1554,8 @@
 .note-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(12px) !important;
     z-index: 10010;
     display: flex;
     align-items: center;
@@ -1563,6 +1563,7 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s;
+    overscroll-behavior: contain !important;
 }
 
 .note-modal-overlay.open {
@@ -1571,15 +1572,15 @@
 }
 
 .note-modal {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 16px;
+    background: #0a0a0a !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    border-radius: 24px !important;
     width: 90%;
     max-width: 600px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
     transform: translateY(20px) scale(0.95);
     transition: transform 0.3s;
 }
@@ -1590,7 +1591,7 @@
 
 .note-modal-header {
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1633,20 +1634,29 @@
     color: var(--text-main);
     font-size: 0.95rem;
     line-height: 1.7;
+    overscroll-behavior: contain !important;
 }
 
 /* Editor Styles */
 .note-editor-title {
     width: 100%;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-main);
+    background: rgba(15, 23, 42, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    color: var(--text-main) !important;
     font-size: 1.1rem;
     font-weight: 700;
-    padding: 8px 0;
+    padding: 0.75rem 1rem !important;
     margin-bottom: 1rem;
     outline: none;
+    transition: all 0.2s ease !important;
+    box-sizing: border-box !important;
+}
+
+.note-editor-title:focus {
+    border-color: var(--primary-light) !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.15) !important;
 }
 
 /* ✅ Estilos del Visor de Notas y Chats Unificados (Markdown Rico) */
@@ -1817,46 +1827,48 @@
 .note-editor-textarea {
     width: 100%;
     height: 300px;
-    background: transparent;
-    border: none;
-    color: var(--text-main);
+    background: rgba(15, 23, 42, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    color: var(--text-main) !important;
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 0.95rem;
     line-height: 1.6;
     resize: none;
     outline: none;
-    padding: 5px;
+    padding: 1rem !important;
+    box-sizing: border-box !important;
+    transition: all 0.2s ease !important;
 }
 
-.note-modal-body strong { color: #60a5fa; }
-.note-modal-body h2 { font-size: 1rem; color: #93c5fd; margin: 0.75rem 0 0.3rem; border-bottom: 1px solid rgba(99,102,241,0.2); padding-bottom: 0.2rem; }
-.note-modal-body h3 { font-size: 0.95rem; color: #a5b4fc; margin: 0.5rem 0 0.2rem; }
-.note-modal-body li { margin-bottom: 0.2rem; }
-.note-modal-body li::marker { color: var(--primary); }
-.note-modal-body blockquote { border-left: 3px solid var(--primary); padding: 0.4rem 0.6rem; background: rgba(59,130,246,0.05); border-radius: 0 6px 6px 0; font-style: italic; }
+.note-editor-textarea:focus {
+    border-color: var(--primary-light) !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.15) !important;
+}
 
 .note-modal-footer {
     padding: 0.75rem 1.25rem;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     gap: 8px;
     justify-content: flex-end;
 }
 
 .note-modal-footer button {
-    padding: 6px 16px;
-    border-radius: 8px;
+    padding: 8px 18px !important;
+    border-radius: 12px !important;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    border: 1px solid var(--border);
-    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
     color: var(--text-muted);
 }
 
 .note-modal-footer button:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08) !important;
     color: var(--text-main);
 }
 

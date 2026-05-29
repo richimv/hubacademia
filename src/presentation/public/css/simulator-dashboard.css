@@ -81,7 +81,7 @@
     margin-bottom: 2.5rem;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
     .modes-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -97,55 +97,67 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    padding: 1.5rem 1.75rem;
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    justify-content: flex-start;
+    padding: 3rem 1.75rem 1.5rem 1.75rem;
+    background: rgba(10, 13, 18, 0.45); /* Glassmorphism premium dark background */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--accent-rgb), 0.15); /* Tinted border matching the theme */
     border-radius: 20px;
     text-decoration: none;
     cursor: pointer;
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     aspect-ratio: 1 / 1;
-    /* Efecto humo inicial: Sombra interna suave */
+    /* Premium shadows & inner glow */
     box-shadow: 
-        0 8px 32px rgba(0,0,0,0.25);
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-/* Capa de Humo / Neblina Atmosférica */
+/* Capa de Contraste y Fusión de Imagen */
 .mode-card::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(10, 13, 18, 0.02) 0%, rgba(10, 13, 18, 0.4) 100%);
+    /* Gradiente horizontal de izquierda a derecha para legibilidad del texto */
+    background: linear-gradient(to right, rgba(10, 13, 18, 0.9) 0%, rgba(10, 13, 18, 0.6) 50%, rgba(10, 13, 18, 0.15) 100%);
     z-index: 2; /* Sobre la imagen (z1) pero bajo el texto (z5) */
     pointer-events: none;
     transition: all 0.5s ease;
 }
 
 .mode-card:hover::after {
-    background: radial-gradient(
-        circle at 70% 70%, 
-        rgba(var(--accent-rgb), 0.12) 0%, 
-        transparent 80%
-    );
+    background: linear-gradient(to right, rgba(10, 13, 18, 0.85) 0%, rgba(10, 13, 18, 0.5) 50%, rgba(10, 13, 18, 0.1) 100%),
+                radial-gradient(circle at 80% 50%, rgba(var(--accent-rgb), 0.22) 0%, transparent 70%);
 }
 
-/* Línea de acento lateral ultra-fina */
+/* Línea de acento lateral que termina a la altura del título */
 .mode-card::before {
     content: '';
     position: absolute;
-    left: 0; top: 25%; bottom: 25%;
-    width: 2px;
+    left: 0; 
+    top: 0;
+    height: 5.6rem; /* Aligned with top padding 3rem + title 2.6rem */
+    width: 3px;
     background: var(--accent);
-    border-radius: 0 2px 2px 0;
-    z-index: 2;
-    box-shadow: 0 0 6px var(--accent);
+    border-radius: 0 0 2px 0;
+    z-index: 3; /* Asegurar que se vea por encima del overlay */
+    box-shadow: 0 0 8px var(--accent);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mode-card:hover::before {
+    height: 6.2rem; /* Grows slightly on hover for micro-animation */
+    box-shadow: 0 0 15px var(--accent);
 }
 
 .mode-card:hover {
-    transform: scale(1.02);
-    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-4px); /* Premium lift */
+    border-color: rgba(var(--accent-rgb), 0.4); /* Colored glow border */
+    box-shadow: 
+        0 16px 40px rgba(var(--accent-rgb), 0.12),
+        0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
 /* Colores de acento */
@@ -161,7 +173,7 @@
     display: flex;
     flex-direction: column;
     width: 65%; 
-    /* No usamos gap aquí para controlar alturas fijas individualmente */
+    height: 100%; /* Fill container height to allow margin-top: auto */
 }
 
 .mode-title {
@@ -186,29 +198,32 @@
     align-items: flex-start;
 }
 
-/* Botón Minimalista Suave */
+/* Botón Minimalista Suave - Estilo Outline Pill */
 .mode-cta {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.35rem 0.75rem; /* Más compacto */
-    border-radius: 8px;
-    font-size: 0.7rem; /* Un poco más legible pero pequeño */
-    font-weight: 500;
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.03);
+    padding: 0.45rem 1rem; /* Botón píldora */
+    border-radius: 25px; /* Píldora */
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent); /* Texto coloreado */
+    border: 1px solid rgba(var(--accent-rgb), 0.3); /* Borde coloreado */
+    background: rgba(var(--accent-rgb), 0.05); /* Fondo coloreado translúcido */
     backdrop-filter: blur(8px);
     transition: all 0.3s ease;
     width: fit-content;
     white-space: nowrap; /* Evita que el texto salte de línea */
     text-transform: none; /* Todo en minúsculas/normal */
     letter-spacing: 0.01em;
+    margin-top: auto; /* Empujar hacia abajo al final del contenedor */
 }
 
 .mode-card:hover .mode-cta {
     background: var(--accent);
-    color: #ffffff;
+    border-color: var(--accent);
+    color: #ffffff !important;
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.45);
 }
 
 /* Imagen Temática (Fondo Nítido) */
@@ -236,11 +251,17 @@
 }
 
 @media (max-width: 768px) {
-    .mode-card { padding: 1.25rem; }
-    .mode-content { width: 80%; }
+    .mode-card { padding: 2.25rem 1.25rem 1.25rem 1.25rem; }
+    .mode-content { width: 85%; }
     .mode-title { font-size: 0.95rem; min-height: 2.2rem; }
     .mode-desc { font-size: 0.65rem; min-height: 2.8rem; margin-bottom: 0.5rem; }
-    .mode-cta { padding: 0.35rem 0.7rem; font-size: 0.6rem; }
+    .mode-cta { padding: 0.4rem 0.9rem; font-size: 0.65rem; }
+    .mode-card::before {
+        height: 4.45rem; /* Aligned with top padding 2.25rem + title 2.2rem */
+    }
+    .mode-card:hover::before {
+        height: 5.0rem;
+    }
 }
 
 /* Badges */
@@ -286,17 +307,78 @@
 }
 
 /* ── Active Config Summary ──────────────────────────────── */
+/* ── Active Config Summary (Premium Redesign) ── */
 #active-config-summary {
     display: none;
-    background: rgba(16,185,129,0.07) !important;
-    border: 1px solid rgba(16,185,129,0.2) !important;
-    border-radius: 10px;
-    padding: 0.6rem 1rem;
-    margin-bottom: 1.25rem;
-    font-size: 0.83rem;
-    color: #6ee7b7 !important;
     align-items: center;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    background: rgba(30, 41, 59, 0.22) !important; /* Translucent slate/blue base */
+    border: 1px solid rgba(96, 165, 250, 0.15) !important; /* Electric blue border */
+    border-radius: 12px;
+    padding: 0.55rem 0.9rem;
+    margin-bottom: 1.25rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    width: fit-content; /* Make it a pill group, not stretching unless filled */
+    max-width: 100%;
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    transition: all 0.3s ease;
+}
+
+#active-config-summary:hover {
+    border-color: rgba(96, 165, 250, 0.3) !important;
+    box-shadow: 
+        0 6px 24px rgba(96, 165, 250, 0.08),
+        0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.config-summary-icon {
+    color: #60a5fa; /* Electric blue */
+    font-size: 0.8rem;
+    margin-right: 0.2rem;
+    animation: config-pulse-glow 2s infinite alternate;
+}
+
+@keyframes config-pulse-glow {
+    0% { opacity: 0.7; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1.05); }
+}
+
+.config-summary-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8; /* Slate Gray */
+    margin-right: 0.25rem;
+}
+
+.config-summary-pill {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #cbd5e1; /* Light gray text */
+    border-radius: 20px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.config-summary-pill--accent {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.25);
+    color: #93c5fd; /* Soft Blue */
+}
+
+.config-summary-pill--count {
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.2);
+    color: #c4b5fd; /* Soft Purple */
 }
 
 /* ── KPI Stats Grid ─────────────────────────────────────── */
@@ -2095,6 +2177,91 @@
 
     .vocab-table-wrapper {
         max-height: 350px !important;
+    }
+}
+
+/* ==========================================================================
+   KPI INFO TOOLTIPS (Premium Glassmorphic Design)
+   ========================================================================== */
+
+.kpi-info-container {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 100;
+}
+
+.kpi-info-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 50%;
+}
+
+.kpi-info-btn:hover {
+    color: var(--primary, #3b82f6);
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.05);
+    transform: scale(1.1);
+}
+
+.kpi-tooltip-content {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    width: 280px;
+    background: rgba(10, 10, 10, 0.96);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.65), 
+        0 0 15px rgba(59, 130, 246, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    pointer-events: none;
+}
+
+.kpi-info-container:hover .kpi-tooltip-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.kpi-tooltip-content h5 {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #ffffff !important;
+    margin: 0 0 0.5rem 0 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.kpi-tooltip-content p {
+    font-size: 0.72rem;
+    color: #94a3b8 !important;
+    line-height: 1.45 !important;
+    margin: 0 !important;
+    font-weight: normal !important;
+}
+
+/* Adjust on smaller screens to avoid horizontal overflow */
+@media (max-width: 480px) {
+    .kpi-tooltip-content {
+        width: 220px;
     }
 }
 

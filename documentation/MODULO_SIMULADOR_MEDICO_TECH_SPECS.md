@@ -71,14 +71,15 @@ El usuario puede cruzar variables fundamentales:
 
 ---
 
-## 📡 Resiliencia y Offline UX (NUEVO)
-Para garantizar la continuidad en exámenes de alta exigencia (100q), el simulador incorpora un sistema de resiliencia avanzada:
+## 📡 Resiliencia y Offline UX (v3.0)
+Para garantizar la continuidad en exámenes de alta exigencia (100q) que duran entre 1 y 3 horas, el simulador incorpora un sistema de resiliencia avanzada:
 
-1. **Persistencia de Sesión (Local Storage)**: Cada respuesta marcada se serializa instantáneamente en el navegador. En caso de recarga accidental (F5) o pérdida de suministro eléctrico, al reabrir la ventana el examen se6.  **Estabilidad UX (Pulse & Sync):** Se corrigió el estado de 'falso negativo' del monitor de conexión mediante la sincronización del constructor de `UIManager` con `navigator.onLine`. Se resolvieron interferencias visuales aplicando `components.css` y se eliminó la necesidad de doble clic en flashcards mediante un bloqueo semafórico de interactividad durante la sincronización. Se erradicó el `ReferenceError` en el simulador mediante la estandarización de bloques catch y la invalidación de caché vía `v=20240410`.
- **Exponential Backoff**. Si el envío de un simulacro falla, el sistema reintenta automáticamente con intervalos crecientes (1s, 2s, 4s).
-4. **Validación de Integridad**: Al restaurar una sesión, el sistema verifica que el `quizId` y el mazo coincidan con la configuración actual para evitar colisiones de datos.
-5. **Batching Resiliente (v3.0)**: La carga de lotes (`fetchNextBatch`) ha sido refactorizada para ser tolerante a fallos. Si un lote falla por red, el sistema no aborta el examen; en su lugar, notifica al usuario vía Toast y permite reintentos, ajustando dinámicamente el progreso para garantizar que el alumno pueda finalizar su sesión sin pérdida de datos.
-6. **Estandarización de Errores**: Se eliminaron los `ReferenceError` mediante la migración a bloques `catch (error)` unificados y la invalidación de caché forzada (`v=20240410`).
+1. **Persistencia de Sesión (Local Storage):** Cada respuesta marcada se serializa instantáneamente en el navegador. En caso de recarga accidental (F5) o caída de energía, al reabrir la ventana el examen se recupera tal cual.
+2. **Longevidad Extendida de Sesión (24 Horas):** Se amplió el umbral de limpieza cronológica de `loadSession()` de 1 hora a 24 horas, eliminando descartes accidentales de exámenes de larga duración que se toman en varios bloques de tiempo.
+3. **Cola de Sincronización Offline:** Si el envío de un examen completado falla por red al final, los resultados se encolan en `simulator_pending_submissions` y se libera la sesión activa. Un trabajador en segundo plano en `app.js` sincroniza estas entregas en cuanto detecta conectividad (al cargar cualquier página o en el evento `online` del navegador).
+4. **Interfaz de Reintento ante Fallos de Lote:** Si la carga de lotes (`fetchNextBatch`) falla por corte de red, el sistema detiene el flujo de interacción mostrando un overlay con botón "Reintentar Carga" en lugar de finalizar y calificar prematuramente el simulacro.
+5. **Validación de Integridad:** Al restaurar una sesión, el sistema verifica que el mazo coincida con la configuración actual para evitar colisiones.
+6. **Estandarización de Errores:** Se eliminaron los `ReferenceError` mediante la migración a bloques `catch (error)` unificados y la invalidación de caché forzada (`v=20240410`).
 
 ---
 

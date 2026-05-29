@@ -6,6 +6,7 @@ body.quiz-body {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: 'Inter', sans-serif;
 }
 
 .quiz-container {
@@ -292,24 +293,25 @@ body.quiz-body {
 }
 
 .option-btn {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 1.25rem 1.5rem;
     border-radius: 18px;
-    color: #94a3b8;
+    color: #f1f5f9; /* Brighter/clearer text */
     text-align: left;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
-    font-size: 1.1rem;
+    font-size: 1.25rem; /* Increased size, stays below question text size (1.5rem) */
     display: flex;
     align-items: center;
     gap: 1.5rem;
+    font-family: 'Inter', sans-serif;
 }
 
 .option-letter {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     width: 42px;
     height: 42px;
@@ -317,8 +319,8 @@ body.quiz-body {
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    color: #64748b;
-    font-size: 0.9rem;
+    color: #f1f5f9; /* Brighter bubble text */
+    font-size: 0.95rem;
     flex-shrink: 0;
     transition: all 0.3s ease;
 }
@@ -391,6 +393,13 @@ body.quiz-body {
     border-color: rgba(239, 68, 68, 0.25);
 }
 
+#explanationText, #explanationText p {
+    font-size: 1.45rem !important; /* Matches active question text size (1.5rem) without exceeding it */
+    line-height: 1.6;
+    color: #f1f5f9;
+    font-family: 'Inter', sans-serif;
+}
+
 @keyframes slideUp {
     from {
         opacity: 0;
@@ -444,11 +453,11 @@ body.quiz-body {
 
 .results-card {
     background: rgba(31, 31, 31, 0.95);
-    padding: 3rem;
+    padding: 2.25rem;
     border-radius: 24px;
     text-align: center;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    max-width: 500px;
+    max-width: 420px;
     width: 90%;
     transform: scale(0.95) translateY(20px);
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -460,19 +469,19 @@ body.quiz-body {
 }
 
 .results-card h2 {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 800;
     background: linear-gradient(135deg, #f8fafc, #94a3b8);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 2rem;
+    margin-bottom: 1.25rem;
 }
 
 .score-circle-svg-container {
-    width: 140px;
-    height: 140px;
-    margin: 0 auto 2rem;
+    width: 110px;
+    height: 110px;
+    margin: 0 auto 1.25rem;
     position: relative;
     display: flex;
     align-items: center;
@@ -508,7 +517,7 @@ body.quiz-body {
 .score-value {
     position: relative;
     z-index: 1;
-    font-size: 3.5rem;
+    font-size: 2.5rem;
     font-weight: 800;
     color: #f8fafc;
     text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
@@ -531,16 +540,24 @@ body.quiz-body {
         align-self: flex-end;
     }
 
+    .question-text {
+        font-size: 1.25rem;
+    }
+
     .option-btn {
         padding: 0.85rem 1rem;
         gap: 1rem;
-        font-size: 0.95rem;
+        font-size: 1.05rem; /* Slightly below mobile question size (1.25rem) */
     }
 
     .option-letter {
         width: 32px;
         height: 32px;
         font-size: 0.85rem;
+    }
+
+    #explanationText, #explanationText p {
+        font-size: 1.15rem !important; /* Matches mobile question size without exceeding it */
     }
 }
 
@@ -568,7 +585,7 @@ body.quiz-body {
     color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.3);
     padding: 0.5rem 1rem;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -622,25 +639,27 @@ body.quiz-body {
 /* .review-card::before was deleted */
 
 .review-q-text {
-    font-size: 1.25rem;
+    font-size: 1.4rem; /* Proportional, slightly below active question (1.5rem) */
     color: #f8fafc;
     margin-bottom: 1.25rem;
     line-height: 1.6;
-    font-weight: 500;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
 }
 
 .review-opt {
     padding: 0.75rem 1rem;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.04);
     margin-bottom: 0.5rem;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #cbd5e1;
-    font-size: 1.1rem;
+    color: #f1f5f9;
+    font-size: 1.2rem; /* Increased size, slightly below review question (1.4rem) */
     transition: all 0.2s;
     display: flex;
     align-items: flex-start;
     gap: 1rem;
+    font-family: 'Inter', sans-serif;
 }
 
 .r-correct {
@@ -653,7 +672,7 @@ body.quiz-body {
 .r-wrong {
     background: rgba(239, 68, 68, 0.08);
     border-color: rgba(239, 68, 68, 0.4);
-    color: #cbd5e1;
+    color: #f1f5f9;
 }
 .r-wrong strong { color: #f87171; text-decoration: line-through; }
 
@@ -663,10 +682,14 @@ body.quiz-body {
     background: rgba(59, 130, 246, 0.05); /* Faint blue */
     border: 1px solid rgba(59, 130, 246, 0.1); /* Very subtle border */
     border-radius: 8px; /* Sharp corners */
-    color: #e2e8f0;
-    font-size: 1.05rem;
+    color: #f1f5f9; /* Brighter/clearer explanation text */
+    font-size: 1.35rem !important; /* Matches review question text size without exceeding it */
     line-height: 1.6;
-    /* Removed heavy left border for a flatter look */
+    font-family: 'Inter', sans-serif;
+}
+
+.review-explanation p {
+    font-size: 1.35rem !important;
 }
 
 @keyframes fadeIn {
@@ -685,7 +708,7 @@ body.quiz-body {
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 1rem 2rem;
-    border-radius: 8px; /* Sharper, modern */
+    border-radius: 12px;
     font-weight: 500;
     font-size: 1.05rem;
     cursor: pointer;
@@ -803,5 +826,18 @@ body.quiz-body {
     .review-card.has-image .review-options,
     .review-card.has-image .review-explanation {
         grid-column: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .review-q-text {
+        font-size: 1.15rem;
+    }
+    .review-opt {
+        font-size: 1.05rem;
+        padding: 0.65rem 0.85rem;
+    }
+    .review-explanation, .review-explanation p {
+        font-size: 1.1rem !important;
     }
 }

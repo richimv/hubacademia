@@ -54,8 +54,14 @@ class NetworkService {
                             window.uiManager.showToast('Tu sesión ha expirado. Por seguridad, debes volver a ingresar.', 'warning');
                         }
                         
+                        const isQuizPage = window.location.pathname.includes('quiz.html') || window.location.pathname.includes('simulator');
                         // Esperar un poco para que el toast sea visible si no estamos en un flujo crítico
-                        setTimeout(() => window.sessionManager.logout(), 2000);
+                        setTimeout(() => {
+                            window.sessionManager.logout(!isQuizPage);
+                            if (isQuizPage && window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+                                window.uiManager.showAuthPromptModal();
+                            }
+                        }, 2000);
                     }
                     
                     const error = new Error('Unauthorized');

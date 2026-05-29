@@ -65,7 +65,7 @@ class LibraryUI {
             // Leer tab por defecto de la URL (?tab=resources / saved / favorites / notes)
             const params = new URLSearchParams(window.location.search);
             const tabParam = params.get('tab');
-            const isLoggedIn = window.sessionManager?.isLoggedIn();
+            const isLoggedIn = !!(window.sessionManager?.isLoggedIn() || localStorage.getItem('authToken'));
             
             if (['resources', 'saved', 'favorites', 'notes'].includes(tabParam)) {
                 if (!isLoggedIn && ['saved', 'favorites', 'notes'].includes(tabParam)) {
@@ -312,23 +312,124 @@ class LibraryUI {
             return;
         }
 
-        container.innerHTML = items.map(item => this._createDrawerItemHTML(item)).join('');
+        if (this.isPageMode) {
+            // Render as unified resource cards in page mode for premium grid consistency
+            container.innerHTML = items.map(item => {
+                const mappedItem = {
+                    ...item,
+                    type: item._resourceType || item.resource_type || 'other'
+                };
+                return createUnifiedResourceCardHTML(mappedItem);
+            }).join('');
+            
+            // Sync saved/favorite states of the rendered resource cards
+            this.updateAllButtons();
+        } else {
+            // Keep compact layout for drawer
+            container.innerHTML = items.map(item => this._createDrawerItemHTML(item)).join('');
+        }
     }
 
     _renderNotesList() {
         const filterContainer = this.isPageMode ? document.getElementById(`${this.currentTab}-category-filters`) : document.querySelector('.library-category-filters');
         if (filterContainer) filterContainer.style.display = 'none';
 
-        const container = document.querySelector(this.selectors.listContainer);
+        if (this.isPageMode) {
+            const contentDiv = document.querySelector('#panel-notes .library-content');
+            if (!contentDiv) return;
+
+            // If toolbar doesn't exist, inject it
+            let toolbar = document.getElementById('notes-toolbar');
+            if (!toolbar) {
+                toolbar = document.createElement('div');
+                toolbar.id = 'notes-toolbar';
+                toolbar.className = 'notes-toolbar';
+                toolbar.innerHTML = `
+                    <div class="notes-search-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="notes-search-input" placeholder="Buscar en tus notas..." oninput="window.libraryUI.filterAndSortNotes()">
+                    </div>
+                    <div class="notes-sort-wrapper">
+                        <label for="notes-sort-select">Ordenar:</label>
+                        <select id="notes-sort-select" onchange="window.libraryUI.filterAndSortNotes()">
+                            <option value="recent">Recientes</option>
+                            <option value="oldest">Antiguas</option>
+                            <option value="title">Título (A-Z)</option>
+                            <option value="color">Por Color</option>
+                            <option value="source">Por Origen</option>
+                        </select>
+                    </div>
+                `;
+                contentDiv.insertBefore(toolbar, contentDiv.firstChild);
+            }
+
+            this.filterAndSortNotes();
+        } else {
+            const container = document.querySelector(this.selectors.listContainer);
+            if (!container) return;
+
+            const data = this.service.getLibraryData();
+            const notes = data.notes || [];
+
+            let html = `<button class="library-add-note-btn" onclick="window.libraryUI.openNoteEditor()"><i class="fas fa-plus"></i> Crear nota</button>`;
+
+            if (notes.length === 0) {
+                html += `<div class="empty-state"><i class="far fa-sticky-note"></i><p>No tienes notas guardadas.<br>Usa el ícono 🔖 en el chat para guardar respuestas.</p></div>`;
+            } else {
+                html += notes.map(note => this._createNoteItemHTML(note)).join('');
+            }
+
+            container.innerHTML = html;
+        }
+    }
+
+    filterAndSortNotes() {
+        const container = document.getElementById('notes-list-container');
         if (!container) return;
 
         const data = this.service.getLibraryData();
-        const notes = data.notes || [];
+        let notes = [...(data.notes || [])];
 
+        // 1. Apply Search Filter
+        const searchInput = document.getElementById('notes-search-input');
+        if (searchInput) {
+            const query = searchInput.value.toLowerCase().trim();
+            if (query) {
+                notes = notes.filter(note => 
+                    (note.title || '').toLowerCase().includes(query) || 
+                    (note.content || '').toLowerCase().includes(query)
+                );
+            }
+        }
+
+        // 2. Apply Sorting
+        const sortSelect = document.getElementById('notes-sort-select');
+        const sortBy = sortSelect ? sortSelect.value : 'recent';
+
+        notes.sort((a, b) => {
+            if (sortBy === 'recent') {
+                return new Date(b.created_at || b.updated_at) - new Date(a.created_at || a.updated_at);
+            }
+            if (sortBy === 'oldest') {
+                return new Date(a.created_at || a.updated_at) - new Date(b.created_at || b.updated_at);
+            }
+            if (sortBy === 'title') {
+                return (a.title || '').localeCompare(b.title || '');
+            }
+            if (sortBy === 'color') {
+                return (a.color || '').localeCompare(b.color || '');
+            }
+            if (sortBy === 'source') {
+                return (a.source_type || '').localeCompare(b.source_type || '');
+            }
+            return 0;
+        });
+
+        // 3. Render HTML
         let html = `<button class="library-add-note-btn" onclick="window.libraryUI.openNoteEditor()"><i class="fas fa-plus"></i> Crear nota</button>`;
 
         if (notes.length === 0) {
-            html += `<div class="empty-state"><i class="far fa-sticky-note"></i><p>No tienes notas guardadas.<br>Usa el ícono 🔖 en el chat para guardar respuestas.</p></div>`;
+            html += `<div class="empty-state" style="grid-column: span 6; text-align: center; padding: 3rem;"><i class="far fa-sticky-note" style="font-size: 2.5rem; color: var(--text-muted); opacity: 0.5; margin-bottom: 1rem; display: block;"></i><p>No se encontraron notas.</p></div>`;
         } else {
             html += notes.map(note => this._createNoteItemHTML(note)).join('');
         }
@@ -365,9 +466,9 @@ class LibraryUI {
     }
 
     _createNoteItemHTML(note) {
-        const preview = (note.content || '').substring(0, 120).replace(/[*#>\-\[\]]/g, '').trim();
+        const preview = (note.content || '').substring(0, 140).replace(/[*#>\-\[\]]/g, '').trim();
         const sourceLabel = note.source_type === 'chat' ? 'Chat' : (note.source_type === 'flashcard' ? 'Flashcard' : 'Manual');
-        const dateStr = new Date(note.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+        const dateStr = new Date(note.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
 
         let color = note.color || '#f59e0b';
         if (!note.color) {
@@ -377,18 +478,39 @@ class LibraryUI {
             else color = '#64748b';
         }
 
-        return `
-            <div class="library-item note-item" data-note-id="${note.id}" onclick="window.libraryUI.openNoteEditor('${note.id}')" style="border-left: 4px solid ${color};">
-                <div style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;background:${color}22;border-radius:10px;flex-shrink:0;font-size:1.2rem;color:${color};">
-                    <i class="fas fa-sticky-note"></i>
+        if (this.isPageMode) {
+            return `
+                <div class="note-card" data-note-id="${note.id}" onclick="window.libraryUI.openNoteEditor('${note.id}')" style="--note-color: ${color};">
+                    <div class="note-card-accent"></div>
+                    <div class="note-card-actions">
+                        <button class="note-card-action-btn edit" onclick="event.stopPropagation(); window.libraryUI.openNoteEditor('${note.id}')" title="Editar nota">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button class="note-card-action-btn delete" onclick="event.stopPropagation(); window.libraryUI.deleteNote('${note.id}')" title="Eliminar nota">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="note-card-content">
+                        <h4 class="note-card-title">${note.title || 'Sin título'}</h4>
+                        <p class="note-card-preview">${preview || 'Sin contenido...'}${note.content && note.content.length > 140 ? '...' : ''}</p>
+                    </div>
+                    <div class="note-card-footer">
+                        <span class="note-card-badge" style="background: ${color}15; color: ${color};">${sourceLabel}</span>
+                        <span class="note-card-date">${dateStr}</span>
+                    </div>
                 </div>
-                <div class="library-item-info">
-                    <div class="library-item-title">${note.title}</div>
-                    <div class="note-preview">${preview}...</div>
-                    <div class="note-source" style="color:${color}; font-weight:600;">${sourceLabel} <span style="color:#94a3b8; font-weight:normal;">· ${dateStr}</span></div>
+            `;
+        } else {
+            return `
+                <div class="library-item note-item" data-note-id="${note.id}" onclick="window.libraryUI.openNoteEditor('${note.id}')" style="border-left: 4px solid ${color};">
+                    <div class="library-item-info">
+                        <div class="library-item-title">${note.title}</div>
+                        <div class="note-preview">${preview}...</div>
+                        <div class="note-source" style="color:${color}; font-weight:600;">${sourceLabel} <span style="color:#94a3b8; font-weight:normal;">· ${dateStr}</span></div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
     }
 
     _syncTabVisibility(user) {
@@ -400,29 +522,6 @@ class LibraryUI {
         if (savedTab) savedTab.style.display = displayStyle;
         if (favoritesTab) favoritesTab.style.display = displayStyle;
         if (notesTab) notesTab.style.display = displayStyle;
-    }
-
-    _renderPageStructure() {
-        const container = document.getElementById('library-page-container');
-        if (!container) return;
-
-        container.innerHTML = `
-            <div class="library-header-page" style="margin-bottom: 1.5rem;">
-                <h1 style="font-size: 2.2rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Mi Biblioteca</h1>
-                <p style="color: #94a3b8; font-size: 1rem; margin-top: 0.25rem;">Gestiona tus recursos guardados, favoritos y notas personales</p>
-            </div>
-            <div class="library-tabs" style="margin-bottom: 1rem;">
-                <button class="library-tab active" data-tab="saved" onclick="window.libraryUI.switchTab('saved')">Guardados</button>
-                <button class="library-tab" data-tab="favorites" onclick="window.libraryUI.switchTab('favorites')">Favoritos</button>
-                <button class="library-tab" data-tab="notes" onclick="window.libraryUI.switchTab('notes')">Notas</button>
-            </div>
-            <div class="library-category-filters"></div>
-            <div class="library-content">
-                <div class="library-list" id="library-list-container">
-                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
-                </div>
-            </div>
-        `;
     }
 
     _renderDrawerStructure() {
@@ -530,8 +629,11 @@ class LibraryUI {
             document.getElementById('note-editor-title').value = note.title;
             document.getElementById('note-editor-textarea').value = note.content;
             this._renderColorOptions(note.color || '');
-            viewer.innerHTML = `<div class="markdown-content">${this._renderMarkdown(note.content)}</div>`;
-            headerText.innerHTML = `<i class="fas fa-sticky-note"></i> Ver Nota`;
+            viewer.innerHTML = `
+                <h3 class="note-viewer-title" style="margin-top: 0; margin-bottom: 1rem; color: var(--primary-light); font-size: 1.3rem; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem; text-align: left;">${window.escapeHtml(note.title || 'Sin título')}</h3>
+                <div class="markdown-content">${this._renderMarkdown(note.content)}</div>
+            `;
+            headerText.innerHTML = `<i class="fas fa-sticky-note" style="color: ${note.color || '#f59e0b'}"></i> ${window.escapeHtml(note.title || 'Ver Nota')}`;
 
             this.switchToViewer();
         } else {
@@ -545,21 +647,31 @@ class LibraryUI {
         }
 
         document.getElementById('note-modal-overlay').classList.add('open');
+        if (window.uiManager) {
+            window.uiManager.pushModalState('note-modal-overlay');
+        } else {
+            document.body.classList.add('modal-open');
+        }
     }
 
     _renderColorOptions(selectedColor) {
         const picker = document.getElementById('note-color-picker');
         if (!picker) return;
-        const colorInput = document.getElementById('note-editor-color');
-        colorInput.value = selectedColor;
 
         const options = ['#3b82f6', '#8b5cf6', '#10b981', '#64748b', '#f43f5e', '#f59e0b', '#0ea5e9', '#d946ef', '#14b8a6'];
-        picker.innerHTML = `<input type="hidden" id="note-editor-color" value="${selectedColor}">`;
+        
+        // Reset picker and create a new hidden input
+        picker.innerHTML = '';
+        const colorInput = document.createElement('input');
+        colorInput.type = 'hidden';
+        colorInput.id = 'note-editor-color';
+        colorInput.value = selectedColor;
+        picker.appendChild(colorInput);
 
         options.forEach(color => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.style.cssText = `width:20px; height:20px; border-radius:50%; border:2px solid ${color === colorInput.value ? 'white' : 'transparent'}; background:${color}; cursor:pointer;`;
+            btn.style.cssText = `width:20px; height:20px; border-radius:50%; border:2px solid ${color === selectedColor ? 'white' : 'transparent'}; background:${color}; cursor:pointer; transition: all 0.2s;`;
             btn.onclick = () => {
                 colorInput.value = color;
                 Array.from(picker.children).forEach(c => {
@@ -639,6 +751,11 @@ class LibraryUI {
 
     closeNoteModal() {
         document.getElementById('note-modal-overlay').classList.remove('open');
+        if (window.uiManager) {
+            window.uiManager.popModalState('note-modal-overlay');
+        } else {
+            document.body.classList.remove('modal-open');
+        }
         this.editingNoteId = null;
     }
 
@@ -650,7 +767,15 @@ class LibraryUI {
     }
 
     async deleteNote(noteId) {
-        const confirmed = await window.confirmationModal.show('¿Estás seguro de eliminar esta nota?', 'Eliminar Nota', 'Eliminar', 'Cancelar');
+        // Ensure window.confirmationModal is defined
+        if (!window.confirmationModal && typeof ConfirmationModal !== 'undefined') {
+            window.confirmationModal = new ConfirmationModal();
+        }
+
+        const confirmed = window.confirmationModal 
+            ? await window.confirmationModal.show('¿Estás seguro de eliminar esta nota?', 'Eliminar Nota', 'Eliminar', 'Cancelar')
+            : confirm('¿Estás seguro de eliminar esta nota?');
+            
         if (!confirmed) return;
 
         try {

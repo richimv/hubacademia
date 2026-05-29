@@ -8,6 +8,10 @@
 class ConfirmationModal {
     constructor() {
         this.modal = document.getElementById('confirmation-modal');
+        if (!this.modal) {
+            this._injectModalMarkup();
+            this.modal = document.getElementById('confirmation-modal');
+        }
         this.titleElement = document.getElementById('confirmation-modal-title');
         this.messageElement = document.getElementById('confirmation-modal-message');
         this.confirmBtn = document.getElementById('confirmation-modal-confirm');
@@ -17,6 +21,29 @@ class ConfirmationModal {
         this.resolvePromise = null;
 
         this.init();
+    }
+
+    _injectModalMarkup() {
+        const div = document.createElement('div');
+        div.id = 'confirmation-modal';
+        div.className = 'modal modal-overlay';
+        div.style.cssText = 'display: none; z-index: 2147483647;';
+        div.innerHTML = `
+            <div class="modal-content" style="max-width: 400px;">
+                <div class="modal-header">
+                    <h2 id="confirmation-modal-title">Confirmación</h2>
+                    <button class="modal-close-btn modal-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmation-modal-message">¿Estás seguro de realizar esta acción?</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirmation-modal-cancel" class="btn-secondary">Cancelar</button>
+                    <button id="confirmation-modal-confirm" class="btn-primary">Confirmar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(div);
     }
 
     init() {

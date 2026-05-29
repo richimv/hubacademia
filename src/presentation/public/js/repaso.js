@@ -819,9 +819,8 @@ class RepasoManager {
             card.style.cursor = 'pointer';
 
             if (deck.color) {
-                card.style.background = `linear-gradient(135deg, ${deck.color}2A, ${deck.color}10)`;
-                card.style.borderColor = `${deck.color}66`;
-                card.style.boxShadow = `0 4px 20px ${deck.color}15`;
+                card.style.setProperty('--deck-color', deck.color);
+                card.style.setProperty('--deck-color-glow', `${deck.color}25`);
             }
 
             const isSystem = deck.type === 'SYSTEM';

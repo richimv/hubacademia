@@ -224,8 +224,12 @@ class DocenteRepository {
         }
 
         if (limit) {
-            params.push(parseInt(limit, 10));
-            filter += ` AND total_questions = $${params.length}`;
+            if (limit === 'real') {
+                filter += ` AND total_questions >= 50`;
+            } else {
+                params.push(parseInt(limit, 10));
+                filter += ` AND total_questions = $${params.length}`;
+            }
         }
 
         if (areas && Array.isArray(areas) && areas.length > 0) {

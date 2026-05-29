@@ -49,11 +49,13 @@
 }
 
 .deck-card {
-    background: #0a0a0a; /* Sólido conforme al Design System */
-    border: 1px solid var(--border-glow);
-    border-radius: 20px;
+    background: rgba(10, 10, 10, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
     padding: 1.5rem;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, box-shadow 0.3s ease;
     position: relative;
     overflow: hidden;
     display: flex;
@@ -62,16 +64,31 @@
 
 @media (max-width: 768px) {
     .deck-card {
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        background: rgba(10, 10, 10, 0.95);
+        background: rgba(10, 10, 10, 0.75);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
+}
+
+.deck-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--deck-color, #3b82f6);
+    transition: width 0.25s ease;
 }
 
 .deck-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 15px var(--deck-color-glow, rgba(59, 130, 246, 0.15));
+}
+
+.deck-card:hover::before {
+    width: 6px;
 }
 
 .deck-icon {
@@ -249,18 +266,28 @@
 
 /* Add Deck Button */
 .add-deck-card {
-    border: 2px dashed rgba(255, 255, 255, 0.1);
-    background: transparent;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     min-height: 200px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.add-deck-card::before {
+    display: none !important; /* No left color line for add card */
 }
 
 .add-deck-card:hover {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(59, 130, 246, 0.03);
+    border-color: rgba(59, 130, 246, 0.45);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 15px rgba(59, 130, 246, 0.08);
+    transform: translateY(-5px);
 }
 
 .add-content {
@@ -301,29 +328,48 @@
 
 /* --- SRS Status Indicators for Card Rows --- */
 .card-row-item {
-    border-left: 6px solid transparent; /* Increased from 4px */
-    transition: all 0.25s ease;
-    border-radius: 8px; /* Added rounded corners for a more modern look */
+    display: grid;
+    grid-template-columns: 45px 1fr 1fr 80px;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    align-items: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: grab;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    border-left: 6px solid transparent;
+    user-select: none;
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 60px;
+    contain: layout paint;
+}
+
+.card-row-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(3px);
 }
 
 .srs-status-forgot {
-    border-left-color: #f87171; /* Brighter Red */
-    background: linear-gradient(90deg, rgba(248, 113, 113, 0.1) 0%, transparent 100%);
+    border-left-color: #ef4444; /* Brighter Red */
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.01) 100%);
 }
 
 .srs-status-hard {
-    border-left-color: #fb923c; /* Brighter Orange */
-    background: linear-gradient(90deg, rgba(251, 146, 60, 0.1) 0%, transparent 100%);
+    border-left-color: #f97316; /* Brighter Orange */
+    background: linear-gradient(90deg, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.01) 100%);
 }
 
 .srs-status-good {
-    border-left-color: #60a5fa; /* Brighter Blue */
-    background: linear-gradient(90deg, rgba(96, 165, 250, 0.1) 0%, transparent 100%);
+    border-left-color: #3b82f6; /* Brighter Blue */
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.01) 100%);
 }
 
 .srs-status-easy {
-    border-left-color: #34d399; /* Brighter Green */
-    background: linear-gradient(90deg, rgba(52, 211, 153, 0.1) 0%, transparent 100%);
+    border-left-color: #10b981; /* Brighter Green */
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.01) 100%);
 }
 
 .badge-mastered {
@@ -422,29 +468,7 @@
     background: rgba(139, 92, 246, 0.25);
 }
 
-.card-row-item {
-    display: grid;
-    grid-template-columns: 45px 1fr 1fr 80px;
-    gap: 1rem;
-    padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    align-items: center;
-    transition: background 0.2s ease, border-color 0.2s ease;
-    cursor: grab;
-    border-radius: 8px;
-    margin-bottom: 4px;
-    border-left: 4px solid transparent;
-    user-select: none;
-    /* ✅ OPTIMIZACIÓN CRÍTICA: Saltarse el renderizado de elementos fuera de vista */
-    content-visibility: auto;
-    contain-intrinsic-size: 1px 60px;
-    contain: layout paint;
-}
-
-.card-row-item:hover {
-    filter: brightness(1.15);
-    background: rgba(255, 255, 255, 0.02);
-}
+/* Consolidated in SRS status section above */
 
 .card-row-front {
     color: #cbd5e1;
@@ -566,23 +590,4 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ✅ PLASMA DISCOVERY PARTICLES (PREVIEW MODE) */
-.plasma-particle {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: linear-gradient(135deg, #3b82f6, #a855f7);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 2000;
-    filter: blur(0.5px);
-    box-shadow: 0 0 5px #3b82f6, 0 0 10px rgba(168, 85, 247, 0.3);
-    opacity: 0;
-    animation: plasmaRise 2.5s ease-out forwards;
-}
-
-@keyframes plasmaRise {
-    0% { transform: translate(0, 0) scale(1); opacity: 0; }
-    20% { opacity: 0.8; }
-    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
-}
+/* Removed old plasma particle animation code */

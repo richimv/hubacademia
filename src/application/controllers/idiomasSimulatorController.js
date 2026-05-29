@@ -6,7 +6,7 @@ class IdiomasSimulatorController {
 
     async startQuiz(req, res) {
         try {
-            const { target, areas, round = 1, limit = 5, topic, career, difficulty } = req.body;
+            const { target, areas, round = 1, limit = 5, topic, career, difficulty, mode } = req.body;
             const user = req.user;
 
             const finalTarget = target || 'MCER';
@@ -42,7 +42,7 @@ class IdiomasSimulatorController {
 
             console.log(`🎮 Generando Ronda ${round} de ${finalTarget} para ${user.name}. Limit: ${limit}`);
 
-            const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty };
+            const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode };
             const quizData = await idiomasSimulatorService.generateQuiz(categoryOptions, user.id, limit, user.subscriptionTier);
 
             const returnedTopic = quizData.topic || finalAreas[0];
@@ -52,7 +52,7 @@ class IdiomasSimulatorController {
             res.json({
                 success: true,
                 topic: returnedTopic,
-                areas: finalAreas,
+                areas: quizData.areas || finalAreas,
                 round: round,
                 questions: quizData.questions,
                 isPremium: isPremium,
@@ -185,6 +185,9 @@ class IdiomasSimulatorController {
             const data = await idiomasSimulatorRepository.getQuizEvolution(userId, target, limit, timeFilter, areaList);
             const chartData = {
                 labels: data.map(d => d.date_label),
+                scores10: data.map(d => d.total_questions === 10 ? parseFloat(d.score_20).toFixed(1) : null),
+                scores20: data.map(d => d.total_questions === 20 ? parseFloat(d.score_20).toFixed(1) : null),
+                scoresReal: data.map(d => (d.total_questions !== 10 && d.total_questions !== 20) ? parseFloat(d.score_20).toFixed(1) : null),
                 scores: data.map(d => parseFloat(d.score_20).toFixed(1))
             };
 
@@ -207,7 +210,7 @@ class IdiomasSimulatorController {
 
     async getNextBatch(req, res) {
         try {
-            const { target, areas, difficulty, topic, career, seenIds } = req.body;
+            const { target, areas, difficulty, topic, career, seenIds, mode } = req.body;
             const userId = req.user.id;
 
             const finalTarget = target || 'MCER';
@@ -219,7 +222,7 @@ class IdiomasSimulatorController {
             }
 
             const result = await idiomasSimulatorService.generateQuiz(
-                { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty },
+                { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode },
                 userId,
                 5,
                 req.user.subscriptionTier,
@@ -229,7 +232,7 @@ class IdiomasSimulatorController {
             res.json({
                 success: true,
                 questions: result.questions,
-                areas: finalAreas,
+                areas: result.areas || finalAreas,
                 source: result.source
             });
 

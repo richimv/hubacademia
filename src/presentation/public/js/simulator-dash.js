@@ -11,9 +11,11 @@ const SimulatorDash = (() => {
             title: 'Ciencias de la Salud',
             heroTitle: 'Ciencias de la Salud',
             quizParams: '', // Eliminado el fallback automático. Ahora se fuerza la configuración.
-            studyDesc: '20 preguntas. Para un aprendizaje profundo con explicación médica.',
-            realDesc: '100 preguntas con límite de tiempo. Simulación completa del SERUMS.',
+            studyDesc: '20 preguntas con explicación.',
+            realDesc: '100 preguntas integradas.',
             sectionIcon: 'fa-stethoscope',
+            barChartTitle: 'Dominio por Áreas Clínicas',
+            barChartEmptyDesc: 'Completa simulacros variados para ver tu dominio clínico por especialidad.',
             images: {
                 study: '/assets/Modo Estudio.webp',
                 flashcards: '/assets/Flashcards.webp',
@@ -35,9 +37,11 @@ const SimulatorDash = (() => {
             title: 'Docente Pro',
             heroTitle: 'Preparación Magisterial',
             quizParams: '', // Eliminado el fallback automático.
-            studyDesc: '20 preguntas. Enfoque en rúbricas y casos pedagógicos reales.',
-            realDesc: '60 preguntas integradas. Simulación exacta del examen de Ascenso Docente.',
+            studyDesc: '20 preguntas con explicación.',
+            realDesc: '60 preguntas integradas.',
             sectionIcon: 'fa-chalkboard-teacher',
+            barChartTitle: 'Dominio por Áreas Pedagógicas',
+            barChartEmptyDesc: 'Completa simulacros variados para ver tu dominio pedagógico por especialidad.',
             images: {
                 study: '/assets/Modo Estudio-v2.webp',
                 flashcards: '/assets/Flashcards-v2.webp',
@@ -64,7 +68,10 @@ const SimulatorDash = (() => {
             ],
             areas: [
                 { label: 'Habilidades Generales', areas: ['Comprensión Lectora', 'Razonamiento Lógico'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308', conditionalTarget: 'NOMBRAMIENTO' },
-                { label: 'Prueba Nacional Integrada', areas: ['Conocimientos Pedagógicos y de la Especialidad'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6', conditionalTarget: 'ASCENSO' },
+                { label: 'Enfoques y Principios del CNEB', areas: ['Enfoque por competencias', 'Enfoques transversales', 'Principios de la educación peruana'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308', conditionalTarget: 'ASCENSO' },
+                { label: 'Teorías y Procesos del Aprendizaje', areas: ['Constructivismo y socioconstructivismo', 'Aprendizajes significativos', 'Activación y recojo de saberes previos', 'Conflicto o disonancia cognitiva y demanda cognitiva', 'Procesos auxiliares'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6', conditionalTarget: 'ASCENSO' },
+                { label: 'Planificación y Evaluación', areas: ['Planificación pedagógica', 'Evaluación formativa y retroalimentación'], bg: 'rgba(99, 102, 241, 0.7)', border: '#6366f1', conditionalTarget: 'ASCENSO' },
+                { label: 'Clima Escolar e Inclusión', areas: ['Convivencia democrática y clima de aula', 'Educación inclusiva y DUA', 'Características y desarrollo del estudiante'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981', conditionalTarget: 'ASCENSO' },
                 { label: 'Conocimientos Pedagógicos y Curriculares', areas: ['Teorías del Aprendizaje y Desarrollo', 'Principios del Currículo Nacional (CNEB)', 'Planificación Curricular (PCI, PCA, Unidades)', 'Evaluación Formativa y Retroalimentación', 'Convivencia Escolar y Clima de Aula', 'Principios de la Educación Peruana'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6', conditionalTarget: 'NOMBRAMIENTO' },
                 { label: 'Gestión Institucional', areas: ['Liderazgo Pedagógico', 'Planificación Estratégica (PEI, PAT)', 'Gestión del Riesgo de Desastres', 'Monitoreo y Acompañamiento'], bg: 'rgba(249, 115, 22, 0.7)', border: '#f97316', conditionalTarget: 'ACCESO_CARGOS' }
             ]
@@ -73,9 +80,11 @@ const SimulatorDash = (() => {
             title: 'Language Hub',
             heroTitle: 'Mastery & Fluency',
             quizParams: '',
-            studyDesc: '20 preguntas. Análisis profundo de gramática e inmersión de vocabulario.',
-            realDesc: '80 preguntas. Examen simulado siguiendo estándares internacionales.',
+            studyDesc: '20 preguntas con explicación.',
+            realDesc: '80 preguntas integradas.',
             sectionIcon: 'fa-language',
+            barChartTitle: 'Dominio por Ejes Temáticos',
+            barChartEmptyDesc: 'Completa simulacros variados para ver tu dominio por ejes temáticos.',
             images: {
                 study: '/assets/Modo Estudio-v3.webp',
                 flashcards: '/assets/Flashcards-v3.webp',
@@ -114,6 +123,7 @@ const SimulatorDash = (() => {
     let activeDays = null;
     let lineChartInst = null;
     let radarChartInst = null;
+    let doughnutChartInst = null;
 
 
     // Se inicializará dinámicamente según el contexto
@@ -217,6 +227,94 @@ const SimulatorDash = (() => {
         });
     }
 
+    function renderDoughnutChart(doughnutData) {
+        if (doughnutChartInst) {
+            doughnutChartInst.destroy();
+            doughnutChartInst = null;
+        }
+
+        const emptyState = document.getElementById('doughnut-empty-state');
+        const wrapper = document.getElementById('doughnut-wrapper');
+        const legend = document.getElementById('doughnut-legend');
+        const canvas = document.getElementById('topicDoughnutChart');
+
+        if (!canvas) return;
+
+        const labels = Object.keys(doughnutData);
+        const values = Object.values(doughnutData);
+        const totalSum = values.reduce((a, b) => a + b, 0);
+
+        if (totalSum === 0) {
+            if (emptyState) emptyState.style.display = 'flex';
+            if (wrapper) wrapper.style.display = 'none';
+            if (legend) legend.style.display = 'none';
+            return;
+        }
+
+        if (emptyState) emptyState.style.display = 'none';
+        if (wrapper) wrapper.style.display = 'block';
+        if (legend) legend.style.display = 'flex';
+
+        let colors = [];
+        if (currentContext === 'MEDICINA') {
+            colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899'];
+        } else if (currentContext === 'IDIOMAS') {
+            colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
+        } else {
+            colors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981'];
+        }
+
+        legend.innerHTML = '';
+        labels.forEach((label, idx) => {
+            const val = values[idx];
+            const pct = Math.round((val / totalSum) * 100);
+            const color = colors[idx % colors.length];
+
+            const item = document.createElement('div');
+            item.className = 'doughnut-legend-item';
+            Object.assign(item.style, {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                cursor: 'pointer'
+            });
+            item.title = label;
+            item.innerHTML = `
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; display: inline-block;"></span>
+                <span style="font-weight: 600; color: #f8fafc;">${val} q <span style="font-weight: 400; opacity: 0.6; font-size: 0.7rem;">(${pct}%)</span></span>
+            `;
+            legend.appendChild(item);
+        });
+
+        const ctx = canvas.getContext('2d');
+        doughnutChartInst = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderWidth: 1,
+                    borderColor: 'rgba(0, 0, 0, 0.6)',
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => ` ${ctx.label}: ${ctx.parsed} q`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // ── Tabs de Modo (Todos / Rápido / Estudio) ────────────
     function setupModeTabs() {
         const tabs = document.querySelectorAll('.kpi-mode-tab');
@@ -237,7 +335,7 @@ const SimulatorDash = (() => {
                 tab.style.color = '#93c5fd';
 
                 const val = tab.dataset.mode;
-                activeMode = val === 'all' ? null : parseInt(val);
+                activeMode = val === 'all' ? null : (isNaN(val) ? val : parseInt(val, 10));
 
                 // Re-cargar stats con el nuevo filtro
                 const token = localStorage.getItem('authToken');
@@ -281,6 +379,33 @@ const SimulatorDash = (() => {
         });
     }
 
+    function renderConfigSummary(summaryBox, config) {
+        if (!summaryBox || !config) return;
+        summaryBox.style.display = 'flex';
+
+        let targetText = config.target || '';
+        let infoText = '';
+        if (config.career) {
+            infoText = config.career;
+        } else if (config.difficulty) {
+            infoText = config.difficulty;
+        }
+
+        const areasCount = config.areas ? config.areas.length : 0;
+
+        let pillsHtml = `<span class="config-summary-pill config-summary-pill--accent">${targetText}</span>`;
+        if (infoText) {
+            pillsHtml += ` <span class="config-summary-pill">${infoText}</span>`;
+        }
+        pillsHtml += ` <span class="config-summary-pill config-summary-pill--count">${areasCount} ${areasCount === 1 ? 'área' : 'áreas'}</span>`;
+
+        summaryBox.innerHTML = `
+            <i class="fas fa-filter config-summary-icon"></i>
+            <span class="config-summary-title">Filtro Activo:</span>
+            ${pillsHtml}
+        `;
+    }
+
     async function init() {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.getVoices();
@@ -308,6 +433,46 @@ const SimulatorDash = (() => {
         const iconEl = document.getElementById('ctx-icon');
 
         if (titleEl) titleEl.textContent = ctxConfig.title;
+
+        // Dynamic Bar Chart Labels based on Context
+        const barChartTitleEl = document.getElementById('bar-chart-title');
+        const barChartEmptyDescEl = document.getElementById('bar-chart-empty-desc');
+        if (barChartTitleEl && ctxConfig.barChartTitle) {
+            barChartTitleEl.textContent = ctxConfig.barChartTitle;
+        }
+        if (barChartEmptyDescEl && ctxConfig.barChartEmptyDesc) {
+            barChartEmptyDescEl.textContent = ctxConfig.barChartEmptyDesc;
+        }
+
+        // Dynamic KPI Tooltips based on Context
+        const evoTooltipDesc = document.getElementById('evolution-tooltip-desc');
+        if (evoTooltipDesc) {
+            evoTooltipDesc.textContent = 'Muestra la evolución de tus puntuaciones a lo largo del tiempo. Te permite medir tu curva de aprendizaje, identificar si tu rendimiento está mejorando y comparar resultados según el número de preguntas (10, 20 o simulacro real).';
+        }
+
+        const doughnutTooltipDesc = document.getElementById('doughnut-tooltip-desc');
+        if (doughnutTooltipDesc) {
+            if (ctxConfig.title === 'Language Hub' || window.location.search.includes('idiomas')) {
+                doughnutTooltipDesc.textContent = 'Muestra la proporción de preguntas practicadas por cada competencia o meta del idioma. Te ayuda a asegurar un entrenamiento balanceado en todas las habilidades lingüísticas.';
+            } else {
+                doughnutTooltipDesc.textContent = 'Muestra la proporción de preguntas respondidas por cada tema o área. Ayuda a identificar en qué temas has concentrado más práctica y a asegurar que cubras todo el temario de forma equilibrada.';
+            }
+        }
+
+        const barTooltipTitle = document.getElementById('bar-tooltip-title');
+        const barTooltipDesc = document.getElementById('bar-tooltip-desc');
+        if (barTooltipTitle && ctxConfig.barChartTitle) {
+            barTooltipTitle.textContent = ctxConfig.barChartTitle;
+        }
+        if (barTooltipDesc) {
+            if (ctxConfig.title === 'Docente Pro' || window.location.search.includes('educacion')) {
+                barTooltipDesc.textContent = 'Muestra tu porcentaje de acierto en cada área pedagógica. Sirve para detectar de manera precisa tus fortalezas y debilidades de cara a la evaluación docente.';
+            } else if (ctxConfig.title === 'Language Hub' || window.location.search.includes('idiomas')) {
+                barTooltipDesc.textContent = 'Muestra tu porcentaje de acierto en cada eje temático del idioma (lectura, vocabulario, gramática, audición). Te ayuda a conocer en qué competencia lingüística debes enfocarte.';
+            } else {
+                barTooltipDesc.textContent = 'Muestra tu porcentaje de acierto en cada especialidad o área clínica. Sirve para detectar de manera precisa tus fortalezas y tus puntos débiles específicos para priorizar tus repasos.';
+            }
+        }
 
         // Update analytics section icon based on domain
         const sectionHeading = document.querySelector('.section-heading');
@@ -468,18 +633,7 @@ const SimulatorDash = (() => {
 
         const summaryBox = document.getElementById('active-config-summary');
         if (summaryBox && activeConfig) {
-            summaryBox.style.display = 'flex';
-            let targetDisplay = activeConfig.career
-                ? `${activeConfig.target} (${activeConfig.career})`
-                : activeConfig.target;
-            if (activeConfig.difficulty) {
-                targetDisplay += ` [${activeConfig.difficulty}]`;
-            }
-
-            summaryBox.innerHTML = `
-                <i class="fas fa-filter"></i> 
-                <span><strong>Filtro Recuperado:</strong> ${targetDisplay} | ${activeConfig.areas ? activeConfig.areas.length : 0} áreas</span>
-            `;
+            renderConfigSummary(summaryBox, activeConfig);
         }
 
         // 3. Setup Links (Modes) with initial default
@@ -502,7 +656,7 @@ const SimulatorDash = (() => {
         }
 
         // 5. Tooltip para usuarios nuevos sin configuración
-        if (!activeConfig) showFirstVisitTip();
+        if (token && !activeConfig) showFirstVisitTip();
 
         // 6. Setup Language Navigation Tabs (Idiomas-only)
         setupLanguageTabs();
@@ -636,7 +790,7 @@ const SimulatorDash = (() => {
         const btnReal = document.getElementById('btn-mode-real');
         if (btnReal) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnReal.href = `quiz${baseParams}${separator}limit=100`;
+            btnReal.href = `quiz${baseParams}${separator}limit=100&mode=real`;
         }
     }
 
@@ -744,12 +898,6 @@ const SimulatorDash = (() => {
         const renderAreas = (target) => {
             areasGrid.innerHTML = '';
 
-            // For ASCENSO: It's an integrated exam, so we hide the grid and select the integrated area
-            if (target === 'ASCENSO') {
-                areasGrid.style.display = 'none';
-                return;
-            }
-
             areasGrid.style.display = 'flex';
             areasGrid.style.flexDirection = 'column';
             areasGrid.style.gap = '1rem';
@@ -768,16 +916,32 @@ const SimulatorDash = (() => {
             });
 
             groupsToRender.forEach(group => {
-                // Group header
+                // Group header with a styled check/uncheck checkbox
                 const header = document.createElement('div');
                 const accentColor = currentContext === 'EDUCACION' ? '#f97316' : '#60a5fa';
-                header.style.cssText = `font-size:0.75rem; color:${accentColor}; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; margin-top:0.25rem; padding-bottom:0.3rem; border-bottom:1px solid ${accentColor}26;`;
-                header.textContent = group.label;
+                header.style.cssText = `display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:${accentColor}; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; margin-top:0.25rem; padding-bottom:0.3rem; border-bottom:1px solid ${accentColor}26;`;
+
+                const headerLabel = document.createElement('label');
+                headerLabel.style.cssText = 'display:flex; align-items:center; gap:0.4rem; cursor:pointer; user-select:none;';
+
+                const headerCheckbox = document.createElement('input');
+                headerCheckbox.type = 'checkbox';
+                headerCheckbox.className = 'group-header-checkbox';
+                headerCheckbox.style.cssText = `accent-color:${accentColor}; cursor:pointer; margin: 0; width:12px; height:12px;`;
+
+                const headerTitle = document.createElement('span');
+                headerTitle.textContent = group.label;
+
+                headerLabel.appendChild(headerCheckbox);
+                headerLabel.appendChild(headerTitle);
+                header.appendChild(headerLabel);
                 areasGrid.appendChild(header);
 
                 // Checkbox grid for this group
                 const grid = document.createElement('div');
                 grid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;';
+
+                const childCheckboxes = [];
 
                 group.areas.forEach(area => {
                     const label = document.createElement('label');
@@ -788,8 +952,37 @@ const SimulatorDash = (() => {
                         isChecked = activeConfig.areas.includes(area);
                     }
 
-                    label.innerHTML = `<input type="checkbox" value="${area}" ${isChecked ? 'checked' : ''}> ${area}`;
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = area;
+                    checkbox.checked = isChecked;
+
+                    label.appendChild(checkbox);
+                    label.appendChild(document.createTextNode(` ${area}`));
                     grid.appendChild(label);
+                    childCheckboxes.push(checkbox);
+                });
+
+                // Update group header checkbox state initially
+                const updateHeaderState = () => {
+                    const allChecked = childCheckboxes.every(cb => cb.checked);
+                    headerCheckbox.checked = allChecked;
+                };
+                updateHeaderState();
+
+                // Group toggle event
+                headerCheckbox.addEventListener('change', (e) => {
+                    const checked = e.target.checked;
+                    childCheckboxes.forEach(cb => {
+                        cb.checked = checked;
+                    });
+                });
+
+                // Child checkbox event to update header state
+                childCheckboxes.forEach(cb => {
+                    cb.addEventListener('change', () => {
+                        updateHeaderState();
+                    });
                 });
 
                 areasGrid.appendChild(grid);
@@ -999,12 +1192,7 @@ const SimulatorDash = (() => {
         if (btnSave) {
             btnSave.onclick = async () => {
                 const target = document.querySelector('.exam-target-option input:checked').value;
-                let selectedAreas = Array.from(areasGrid.querySelectorAll('input:checked')).map(cb => cb.value);
-
-                // For ASCENSO: Force the integrated area
-                if (target === 'ASCENSO') {
-                    selectedAreas = ['Conocimientos Pedagógicos y de la Especialidad'];
-                }
+                let selectedAreas = Array.from(areasGrid.querySelectorAll('.area-checkbox-label input:checked')).map(cb => cb.value);
 
                 const careerSelectEl = document.getElementById('config-career');
                 const ctxCfg = contexts[currentContext] || contexts['MEDICINA'];
@@ -1062,18 +1250,12 @@ const SimulatorDash = (() => {
                 btnSave.disabled = false;
 
                 // Update UI Summary
-                summaryBox.style.display = 'flex';
-                let targetDisplay = career
-                    ? `${target} (${career})`
-                    : target;
-                if (difficulty) {
-                    targetDisplay += ` [${difficulty}]`;
-                }
-
-                summaryBox.innerHTML = `
-                    <i class="fas fa-filter"></i> 
-                    <span><strong>Filtro Activo:</strong> ${targetDisplay} | ${selectedAreas.length} áreas seleccionadas</span>
-                `;
+                renderConfigSummary(summaryBox, {
+                    target: target,
+                    career: career,
+                    difficulty: difficulty,
+                    areas: selectedAreas
+                });
 
                 // Update Links
                 updateModeLinks(contexts[currentContext] || contexts['MEDICINA']);
@@ -1149,30 +1331,53 @@ const SimulatorDash = (() => {
                     type: 'line',
                     data: {
                         labels: data.chart.labels,
-                        datasets: [{
-                            label: 'Puntaje (Base 20)',
-                            data: data.chart.scores,
-                            borderColor: '#8b5cf6',
-                            backgroundColor: (context) => {
-                                const chart = context.chart;
-                                const { ctx, chartArea } = chart;
-                                if (!chartArea) return null;
-                                let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                                gradient.addColorStop(0, 'rgba(139,92,246,0.01)');
-                                gradient.addColorStop(1, 'rgba(139,92,246,0.25)');
-                                return gradient;
+                        datasets: [
+                            {
+                                label: 'Modo Rápido (10 qs)',
+                                data: data.chart.scores10 || [],
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.03)',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#1e293b',
+                                pointBorderColor: '#34d399',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                tension: 0.4,
+                                fill: true,
+                                spanGaps: true
                             },
-                            borderWidth: 3,
-                            pointBackgroundColor: '#1e293b',
-                            pointBorderColor: '#a78bfa',
-                            pointBorderWidth: 2,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            pointHoverBackgroundColor: '#c4b5fd',
-                            pointHoverBorderColor: '#ffffff',
-                            tension: 0.4,
-                            fill: true
-                        }]
+                            {
+                                label: 'Modo Estudio (20 qs)',
+                                data: data.chart.scores20 || [],
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.03)',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#1e293b',
+                                pointBorderColor: '#60a5fa',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                tension: 0.4,
+                                fill: true,
+                                spanGaps: true
+                            },
+                            {
+                                label: 'Simulacros Reales',
+                                data: data.chart.scoresReal || [],
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.03)',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#1e293b',
+                                pointBorderColor: '#fbbf24',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                tension: 0.4,
+                                fill: true,
+                                spanGaps: true
+                            }
+                        ]
                     },
                     plugins: [approvalLine],
                     options: {
@@ -1186,7 +1391,7 @@ const SimulatorDash = (() => {
                             },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ` Nota: ${ctx.parsed.y.toFixed(1)} / 20`
+                                    label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} / 20`
                                 }
                             }
                         },
@@ -1221,6 +1426,26 @@ const SimulatorDash = (() => {
                         }
                     }
                 });
+
+                // Apply dataset visibility filters based on activeMode tab
+                if (activeMode === 10) {
+                    lineChartInst.setDatasetVisibility(0, true);
+                    lineChartInst.setDatasetVisibility(1, false);
+                    lineChartInst.setDatasetVisibility(2, false);
+                } else if (activeMode === 20) {
+                    lineChartInst.setDatasetVisibility(0, false);
+                    lineChartInst.setDatasetVisibility(1, true);
+                    lineChartInst.setDatasetVisibility(2, false);
+                } else if (activeMode === 'real') {
+                    lineChartInst.setDatasetVisibility(0, false);
+                    lineChartInst.setDatasetVisibility(1, false);
+                    lineChartInst.setDatasetVisibility(2, true);
+                } else {
+                    lineChartInst.setDatasetVisibility(0, true);
+                    lineChartInst.setDatasetVisibility(1, true);
+                    lineChartInst.setDatasetVisibility(2, true);
+                }
+                lineChartInst.update();
             } else {
                 if (evoCanvas) evoCanvas.style.display = 'none';
                 if (evoEmpty) evoEmpty.style.display = 'flex';
@@ -1317,7 +1542,6 @@ const SimulatorDash = (() => {
             }
 
             // --- Render Bar Chart (Áreas) ---
-            // --- Render Bar Chart (Áreas) ---
             if (kpis.radar_data && kpis.radar_data.length > 0) {
                 // 🧹 Sanitizar y agrupar historial viejo corrupto
                 const cleanRadarMap = {};
@@ -1339,6 +1563,50 @@ const SimulatorDash = (() => {
             } else {
                 renderBarChart({}); // Empty state handler
             }
+
+            // --- Render Doughnut Chart (Topics/Groups KPI) ---
+            const doughnutData = {};
+            if (currentContext === 'MEDICINA') {
+                const groupDTopics = ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'];
+                groupDTopics.forEach(t => doughnutData[t] = 0);
+                kpis.radar_data?.forEach(d => {
+                    let cleanSubject = d.subject || 'General';
+                    if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
+                    if (groupDTopics.includes(cleanSubject)) {
+                        doughnutData[cleanSubject] += parseInt(d.total || 0, 10);
+                    }
+                });
+            } else if (currentContext === 'IDIOMAS') {
+                const langTopics = ['Grammar & Use of English', 'Vocabulary & Context', 'Reading Comprehension', 'Listening Comprehension'];
+                langTopics.forEach(t => doughnutData[t] = 0);
+                kpis.radar_data?.forEach(d => {
+                    let cleanSubject = d.subject || 'General';
+                    if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
+                    if (langTopics.includes(cleanSubject)) {
+                        doughnutData[cleanSubject] += parseInt(d.total || 0, 10);
+                    }
+                });
+            } else if (currentContext === 'EDUCACION') {
+                const eduGroups = {
+                    'Enfoques y Principios del CNEB': ['Enfoque por competencias', 'Enfoques transversales', 'Principios de la educación peruana'],
+                    'Teorías y Procesos del Aprendizaje': ['Constructivismo y socioconstructivismo', 'Aprendizajes significativos', 'Activación y recojo de saberes previos', 'Conflicto o disonancia cognitiva y demanda cognitiva', 'Procesos auxiliares'],
+                    'Planificación y Evaluación': ['Planificación pedagógica', 'Evaluación formativa y retroalimentación'],
+                    'Clima Escolar e Inclusión': ['Convivencia democrática y clima de aula', 'Educación inclusiva y DUA', 'Características y desarrollo del estudiante']
+                };
+                const eduGroupLabels = Object.keys(eduGroups);
+                eduGroupLabels.forEach(g => doughnutData[g] = 0);
+                kpis.radar_data?.forEach(d => {
+                    let cleanSubject = d.subject || 'General';
+                    if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
+                    for (const gLabel of eduGroupLabels) {
+                        if (eduGroups[gLabel].includes(cleanSubject)) {
+                            doughnutData[gLabel] += parseInt(d.total || 0, 10);
+                            break;
+                        }
+                    }
+                });
+            }
+            renderDoughnutChart(doughnutData);
 
             // Ocultar Loading
             const loadingEl = document.getElementById('loading');
@@ -1687,71 +1955,73 @@ const SimulatorDash = (() => {
             };
 
             let demoLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May'];
-            let demoScores = [11, 13, 12, 15, 14.5];
-            let demoDatasetLabel = 'Puntaje (Demo)';
-            let demoLineColor = '#8b5cf6'; // default violet
-            let demoGradientStart = 'rgba(139, 92, 246, 0.01)';
-            let demoGradientEnd = 'rgba(139, 92, 246, 0.25)';
-            let demoPointBorderColor = '#a78bfa';
-            let demoPointHoverColor = '#c4b5fd';
+            let demoScores10 = [11.0, 13.0, 12.0, 15.0, 14.5];
+            let demoScores20 = [12.0, 11.5, 13.8, 14.2, 16.0];
+            let demoScoresReal = [10.0, 11.8, 12.5, 13.0, 14.2];
 
             if (currentContext === 'EDUCACION') {
                 demoLabels = ['Sesión 1', 'Sesión 2', 'Sesión 3', 'Sesión 4', 'Sesión 5'];
-                demoScores = [12.5, 13.8, 14.2, 15.0, 15.8];
-                demoDatasetLabel = 'Progreso Pedagógico (Demo)';
-                demoLineColor = '#3b82f6'; // blue
-                demoGradientStart = 'rgba(59, 130, 246, 0.01)';
-                demoGradientEnd = 'rgba(59, 130, 246, 0.25)';
-                demoPointBorderColor = '#60a5fa';
-                demoPointHoverColor = '#93c5fd';
+                demoScores10 = [12.5, 13.8, 14.2, 15.0, 15.8];
+                demoScores20 = [11.0, 12.5, 13.0, 14.5, 15.0];
+                demoScoresReal = [10.0, 11.5, 12.2, 13.8, 14.5];
             } else if (currentContext === 'IDIOMAS') {
                 demoLabels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5'];
-                demoScores = [10.5, 12.0, 11.8, 13.5, 14.5];
-                demoDatasetLabel = 'Nivel Lingüístico (Demo)';
-                demoLineColor = '#8b5cf6'; // violet
-                demoGradientStart = 'rgba(139, 92, 246, 0.01)';
-                demoGradientEnd = 'rgba(139, 92, 246, 0.25)';
-                demoPointBorderColor = '#a78bfa';
-                demoPointHoverColor = '#c4b5fd';
-            } else {
-                demoLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May'];
-                demoScores = [11, 13, 12, 15, 14.5];
-                demoDatasetLabel = 'Puntaje Médico (Demo)';
-                demoLineColor = '#10b981'; // emerald
-                demoGradientStart = 'rgba(16, 185, 129, 0.01)';
-                demoGradientEnd = 'rgba(16, 185, 129, 0.25)';
-                demoPointBorderColor = '#34d399';
-                demoPointHoverColor = '#6ee7b7';
+                demoScores10 = [10.5, 12.0, 11.8, 13.5, 14.5];
+                demoScores20 = [11.5, 11.0, 12.5, 14.0, 15.0];
+                demoScoresReal = [9.5, 10.8, 11.5, 12.2, 13.5];
             }
 
             lineChartInst = new Chart(evolutionCtx, {
                 type: 'line',
                 data: {
                     labels: demoLabels,
-                    datasets: [{
-                        label: demoDatasetLabel,
-                        data: demoScores,
-                        borderColor: demoLineColor,
-                        backgroundColor: (context) => {
-                            const chart = context.chart;
-                            const { ctx, chartArea } = chart;
-                            if (!chartArea) return null;
-                            let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                            gradient.addColorStop(0, demoGradientStart);
-                            gradient.addColorStop(1, demoGradientEnd);
-                            return gradient;
+                    datasets: [
+                        {
+                            label: 'Modo Rápido (10 qs) [Demo]',
+                            data: demoScores10,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.03)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#1e293b',
+                            pointBorderColor: '#34d399',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.4,
+                            fill: true,
+                            spanGaps: true
                         },
-                        borderWidth: 3,
-                        pointBackgroundColor: '#1e293b',
-                        pointBorderColor: demoPointBorderColor,
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        pointHoverBackgroundColor: demoPointHoverColor,
-                        pointHoverBorderColor: '#ffffff',
-                        tension: 0.4,
-                        fill: true
-                    }]
+                        {
+                            label: 'Modo Estudio (20 qs) [Demo]',
+                            data: demoScores20,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.03)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#1e293b',
+                            pointBorderColor: '#60a5fa',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.4,
+                            fill: true,
+                            spanGaps: true
+                        },
+                        {
+                            label: 'Simulacros Reales [Demo]',
+                            data: demoScoresReal,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.03)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#1e293b',
+                            pointBorderColor: '#fbbf24',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.4,
+                            fill: true,
+                            spanGaps: true
+                        }
+                    ]
                 },
                 plugins: [approvalLineDemo],
                 options: {
@@ -1766,11 +2036,39 @@ const SimulatorDash = (() => {
                         x: { grid: { display: false }, ticks: { color: '#475569' } }
                     },
                     plugins: {
-                        legend: { labels: { color: '#64748b', font: { size: 11 } } },
-                        tooltip: { callbacks: { label: (ctx) => ` Nota: ${ctx.parsed.y.toFixed(1)} / 20` } }
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { color: '#64748b', boxWidth: 12, font: { size: 11 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} / 20`
+                            }
+                        }
                     }
                 }
             });
+
+            // Apply dataset visibility filters based on activeMode tab for Demo
+            if (activeMode === 10) {
+                lineChartInst.setDatasetVisibility(0, true);
+                lineChartInst.setDatasetVisibility(1, false);
+                lineChartInst.setDatasetVisibility(2, false);
+            } else if (activeMode === 20) {
+                lineChartInst.setDatasetVisibility(0, false);
+                lineChartInst.setDatasetVisibility(1, true);
+                lineChartInst.setDatasetVisibility(2, false);
+            } else if (activeMode === 'real') {
+                lineChartInst.setDatasetVisibility(0, false);
+                lineChartInst.setDatasetVisibility(1, false);
+                lineChartInst.setDatasetVisibility(2, true);
+            } else {
+                lineChartInst.setDatasetVisibility(0, true);
+                lineChartInst.setDatasetVisibility(1, true);
+                lineChartInst.setDatasetVisibility(2, true);
+            }
+            lineChartInst.update();
         }
 
         // 4. Bar Chart Demo (Context-Aware Mock Data)
@@ -1780,12 +2078,12 @@ const SimulatorDash = (() => {
             'Reading Comprehension': { correct: 70, total: 100 },
             'Listening Comprehension': { correct: 65, total: 100 }
         } : (currentContext === 'EDUCACION' ? {
-            'Comprensión Lectora': { correct: 88, total: 100 },
-            'Razonamiento Lógico': { correct: 75, total: 100 },
-            'Evaluación Formativa': { correct: 68, total: 100 },
-            'Principios del CNEB': { correct: 62, total: 100 },
-            'Convivencia Escolar': { correct: 55, total: 100 },
-            'Estrategias de Enseñanza': { correct: 50, total: 100 }
+            'Enfoque por competencias': { correct: 88, total: 100 },
+            'Constructivismo y socioconstructivismo': { correct: 75, total: 100 },
+            'Planificación pedagógica': { correct: 68, total: 100 },
+            'Evaluación formativa y retroalimentación': { correct: 62, total: 100 },
+            'Convivencia democrática y clima de aula': { correct: 55, total: 100 },
+            'Características y desarrollo del estudiante': { correct: 50, total: 100 }
         } : {
             'Ginecología y Obstetricia': { correct: 90, total: 100 },
             'Medicina Interna': { correct: 85, total: 100 },
@@ -1795,6 +2093,26 @@ const SimulatorDash = (() => {
             'Cardiología': { correct: 50, total: 100 }
         });
         renderBarChart(demoAreasMap);
+
+        // 4b. Doughnut Chart Demo
+        const demoDoughnutData = currentContext === 'MEDICINA' ? {
+            'Salud Pública': 15,
+            'Cuidado Integral de Salud': 12,
+            'Ética e Interculturalidad': 8,
+            'Investigación': 6,
+            'Gestión de Servicios de Salud': 9
+        } : (currentContext === 'IDIOMAS' ? {
+            'Grammar & Use of English': 35,
+            'Vocabulary & Context': 25,
+            'Reading Comprehension': 20,
+            'Listening Comprehension': 15
+        } : {
+            'Enfoques y Principios del CNEB': 14,
+            'Teorías y Procesos del Aprendizaje': 22,
+            'Planificación y Evaluación': 18,
+            'Clima Escolar e Inclusión': 11
+        });
+        renderDoughnutChart(demoDoughnutData);
 
         // 5. Persistence: Check for local demo stats (Domain-Specific)
         const domainKey = currentContext.toLowerCase();
@@ -1819,6 +2137,44 @@ const SimulatorDash = (() => {
                         }
                     });
                     if (masteryEl) masteryEl.textContent = masteryCount;
+
+                    // Update Doughnut Chart based on areaStats
+                    const guestDoughnut = {};
+                    if (currentContext === 'MEDICINA') {
+                        const groupDTopics = ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'];
+                        groupDTopics.forEach(t => guestDoughnut[t] = 0);
+                        Object.keys(stats.areaStats).forEach(topic => {
+                            if (groupDTopics.includes(topic)) {
+                                guestDoughnut[topic] += parseInt(stats.areaStats[topic].total || 0, 10);
+                            }
+                        });
+                    } else if (currentContext === 'IDIOMAS') {
+                        const langTopics = ['Grammar & Use of English', 'Vocabulary & Context', 'Reading Comprehension', 'Listening Comprehension'];
+                        langTopics.forEach(t => guestDoughnut[t] = 0);
+                        Object.keys(stats.areaStats).forEach(topic => {
+                            if (langTopics.includes(topic)) {
+                                guestDoughnut[topic] += parseInt(stats.areaStats[topic].total || 0, 10);
+                            }
+                        });
+                    } else if (currentContext === 'EDUCACION') {
+                        const eduGroups = {
+                            'Enfoques y Principios del CNEB': ['Enfoque por competencias', 'Enfoques transversales', 'Principios de la educación peruana'],
+                            'Teorías y Procesos del Aprendizaje': ['Constructivismo y socioconstructivismo', 'Aprendizajes significativos', 'Activación y recojo de saberes previos', 'Conflicto o disonancia cognitiva y demanda cognitiva', 'Procesos auxiliares'],
+                            'Planificación y Evaluación': ['Planificación pedagógica', 'Evaluación formativa y retroalimentación'],
+                            'Clima Escolar e Inclusión': ['Convivencia democrática y clima de aula', 'Educación inclusiva y DUA', 'Características y desarrollo del estudiante']
+                        };
+                        const eduGroupLabels = Object.keys(eduGroups);
+                        eduGroupLabels.forEach(g => guestDoughnut[g] = 0);
+                        Object.keys(stats.areaStats).forEach(topic => {
+                            for (const gLabel of eduGroupLabels) {
+                                if (eduGroups[gLabel].includes(topic)) {
+                                    guestDoughnut[gLabel] += parseInt(stats.areaStats[topic].total || 0, 10);
+                                    break;
+                                }
+                            }
+                        });
+                    }
+                    renderDoughnutChart(guestDoughnut);
                 }
             } catch (e) { console.error("Error parsing local stats", e); }
         }
@@ -1966,15 +2322,7 @@ const SimulatorDash = (() => {
         // Update active config summary on the page
         const summaryBox = document.getElementById('active-config-summary');
         if (summaryBox) {
-            summaryBox.style.display = 'flex';
-            let targetDisplay = activeConfig.career ? `${activeConfig.target} (${activeConfig.career})` : activeConfig.target;
-            if (activeConfig.difficulty) {
-                targetDisplay += ` [${activeConfig.difficulty}]`;
-            }
-            summaryBox.innerHTML = `
-                <i class="fas fa-filter"></i> 
-                <span><strong>Filtro Activo:</strong> ${targetDisplay} | ${activeConfig.areas ? activeConfig.areas.length : 0} áreas seleccionadas</span>
-            `;
+            renderConfigSummary(summaryBox, activeConfig);
         }
 
         // Also update mode links
@@ -2406,7 +2754,7 @@ const SimulatorDash = (() => {
                     alert('Has alcanzado tus límites en la versión gratuita.');
                 }
                 if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                    window.sessionManager.refreshUser().catch(() => {});
+                    window.sessionManager.refreshUser().catch(() => { });
                 }
                 return;
             }
@@ -2483,7 +2831,7 @@ const SimulatorDash = (() => {
             window.uiManager?.showToast("Evaluación completada con éxito", "success");
 
             if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                window.sessionManager.refreshUser().catch(() => {});
+                window.sessionManager.refreshUser().catch(() => { });
             }
 
         } catch (err) {
@@ -2782,7 +3130,7 @@ const SimulatorDash = (() => {
                             alert('Has alcanzado tus límites en la versión gratuita.');
                         }
                         if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                            window.sessionManager.refreshUser().catch(() => {});
+                            window.sessionManager.refreshUser().catch(() => { });
                         }
                         return;
                     }
@@ -2793,7 +3141,7 @@ const SimulatorDash = (() => {
                         document.getElementById('vocab-definition').value = data.data.definition || '';
                         document.getElementById('vocab-example').value = data.data.example_sentence || '';
                         if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                            window.sessionManager.refreshUser().catch(() => {});
+                            window.sessionManager.refreshUser().catch(() => { });
                         }
                     } else {
                         alert(data.error || "No se pudo autocompletar.");
