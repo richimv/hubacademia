@@ -1126,9 +1126,29 @@ const SimulatorDash = (() => {
 
                 const careerSelect = document.getElementById('config-career');
                 if (activeConfig && activeConfig.career && careerSelect) {
-                    const careerParts = activeConfig.career.split(' - ');
-                    const level = (careerParts[0] && careerParts[1]) ? `${careerParts[0]} - ${careerParts[1]}` : careerParts[0];
-                    const specialty = careerParts[2] || null;
+                    let level = 'EBR - Primaria';
+                    let specialty = 'General';
+                    
+                    const cVal = activeConfig.career;
+                    if (cVal === 'EBR - Inicial') {
+                        level = 'EBR - Inicial';
+                    } else if (cVal === 'EBR - Primaria') {
+                        level = 'EBR - Primaria';
+                    } else if (cVal === 'EBR Primaria Profesor de Innovación Pedagógica') {
+                        level = 'EBR - Primaria';
+                        specialty = 'Profesor de Innovación Pedagógica';
+                    } else if (cVal === 'EBR Primaria Educación Física') {
+                        level = 'EBR - Primaria';
+                        specialty = 'Educación Física';
+                    } else if (cVal.startsWith('EBR - Secundaria')) {
+                        level = 'EBR - Secundaria';
+                        specialty = cVal.replace('EBR - Secundaria - ', '');
+                    } else {
+                        // Fallback parsing
+                        const careerParts = cVal.split(' - ');
+                        level = (careerParts[0] && careerParts[1]) ? `${careerParts[0]} - ${careerParts[1]}` : careerParts[0];
+                        specialty = careerParts[2] || 'General';
+                    }
 
                     careerSelect.value = level;
                     if (window._updateEduSpecialties) {
@@ -1207,7 +1227,17 @@ const SimulatorDash = (() => {
                         // Append specialty for Primaria (if not General) or Secundaria
                         const specSelect = document.getElementById('config-specialty');
                         if (specSelect && specSelect.value && specSelect.value !== 'General') {
-                            career = `${career} - ${specSelect.value}`;
+                            if (career === 'EBR - Primaria') {
+                                if (specSelect.value === 'Profesor de Innovación Pedagógica') {
+                                    career = 'EBR Primaria Profesor de Innovación Pedagógica';
+                                } else if (specSelect.value === 'Educación Física') {
+                                    career = 'EBR Primaria Educación Física';
+                                } else {
+                                    career = `EBR Primaria ${specSelect.value}`;
+                                }
+                            } else {
+                                career = `${career} - ${specSelect.value}`;
+                            }
                         }
                     }
                 }

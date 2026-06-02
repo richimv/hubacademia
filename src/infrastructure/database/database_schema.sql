@@ -2,8 +2,9 @@
 -- Updated: 2026-05-05
 
 -- Extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS vector;
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
 
 -- Enums (Note: These must be created before they are used in tables)
 -- CREATE TYPE ACADEMIC_AREA AS ENUM ('Medicina', 'Idiomas', 'Educación', 'Otros');
@@ -464,6 +465,67 @@ DROP POLICY IF EXISTS "Users can manage own vocabulary" ON public.user_vocabular
 CREATE POLICY "Users can manage own vocabulary" ON public.user_vocabularies
     FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
+ALTER TABLE public.careers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Careers" ON public.careers FOR SELECT USING (true);
+
+ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Courses" ON public.courses FOR SELECT USING (true);
+
+ALTER TABLE public.topics ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Topics" ON public.topics FOR SELECT USING (true);
+
+ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Resources" ON public.resources FOR SELECT USING (true);
+
+ALTER TABLE public.course_books ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Course Books" ON public.course_books FOR SELECT USING (true);
+
+ALTER TABLE public.course_careers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Course Careers" ON public.course_careers FOR SELECT USING (true);
+
+ALTER TABLE public.course_topics ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Course Topics" ON public.course_topics FOR SELECT USING (true);
+
+ALTER TABLE public.topic_resources ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Topic Resources" ON public.topic_resources FOR SELECT USING (true);
+
+ALTER TABLE public.question_bank ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Question Bank" ON public.question_bank FOR SELECT USING (true);
+
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own profile" ON public.users FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.users FOR UPDATE USING (auth.uid() = id);
+
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own conversations" ON public.conversations FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own messages" ON public.chat_messages FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM public.conversations c 
+        WHERE c.id = chat_messages.conversation_id AND c.user_id = auth.uid()
+    )
+);
+
+ALTER TABLE public.user_book_library ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own book library" ON public.user_book_library FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE public.user_course_library ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own course library" ON public.user_course_library FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE public.user_question_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own question history" ON public.user_question_history FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own feedback" ON public.feedback FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE public.search_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own search history" ON public.search_history FOR ALL USING (auth.uid() = user_id);
+
+ALTER TABLE public.page_views ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE public.web_traffic ENABLE ROW LEVEL SECURITY;
+
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_flashcards_user_review ON public.user_flashcards(user_id, next_review_at);
@@ -481,7 +543,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language 'plpgsql' SET search_path = public;
 
 CREATE TRIGGER update_user_notes_updated_at
     BEFORE UPDATE ON public.user_notes

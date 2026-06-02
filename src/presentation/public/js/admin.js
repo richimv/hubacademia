@@ -840,8 +840,24 @@ class AdminManager {
                         <select id="generic-career" class="form-input">
                             ${this.currentItem?.domain === 'education' ? `
                             <option value="EBR - Inicial" ${this.currentItem?.career === 'EBR - Inicial' ? 'selected' : ''}>EBR - Nivel Inicial</option>
-                            <option value="EBR - Primaria" ${this.currentItem?.career === 'EBR - Primaria' ? 'selected' : ''}>EBR - Nivel Primaria</option>
-                            <option value="EBR - Secundaria" ${(this.currentItem?.career || '').startsWith('EBR - Secundaria') ? 'selected' : ''}>EBR - Nivel Secundaria</option>
+                            <optgroup label="EBR - Nivel Primaria">
+                                <option value="EBR - Primaria" ${this.currentItem?.career === 'EBR - Primaria' ? 'selected' : ''}>EBR - Primaria (Regular)</option>
+                                <option value="EBR Primaria Profesor de Innovación Pedagógica" ${this.currentItem?.career === 'EBR Primaria Profesor de Innovación Pedagógica' ? 'selected' : ''}>EBR Primaria Profesor de Innovación Pedagógica</option>
+                                <option value="EBR Primaria Educación Física" ${this.currentItem?.career === 'EBR Primaria Educación Física' ? 'selected' : ''}>EBR Primaria Educación Física</option>
+                            </optgroup>
+                            <optgroup label="EBR - Nivel Secundaria">
+                                <option value="EBR - Secundaria - Arte y Cultura" ${this.currentItem?.career === 'EBR - Secundaria - Arte y Cultura' ? 'selected' : ''}>EBR - Secundaria - Arte y Cultura</option>
+                                <option value="EBR - Secundaria - Ciencias Sociales" ${this.currentItem?.career === 'EBR - Secundaria - Ciencias Sociales' ? 'selected' : ''}>EBR - Secundaria - Ciencias Sociales</option>
+                                <option value="EBR - Secundaria - Ciencia y Tecnología" ${this.currentItem?.career === 'EBR - Secundaria - Ciencia y Tecnología' ? 'selected' : ''}>EBR - Secundaria - Ciencia y Tecnología</option>
+                                <option value="EBR - Secundaria - Comunicación" ${this.currentItem?.career === 'EBR - Secundaria - Comunicación' ? 'selected' : ''}>EBR - Secundaria - Comunicación</option>
+                                <option value="EBR - Secundaria - Desarrollo Personal, Ciudadanía y Cívica" ${this.currentItem?.career === 'EBR - Secundaria - Desarrollo Personal, Ciudadanía y Cívica' ? 'selected' : ''}>EBR - Secundaria - Desarrollo Personal, Ciudadanía y Cívica</option>
+                                <option value="EBR - Secundaria - Educación Física" ${this.currentItem?.career === 'EBR - Secundaria - Educación Física' ? 'selected' : ''}>EBR - Secundaria - Educación Física</option>
+                                <option value="EBR - Secundaria - Educación Religiosa" ${this.currentItem?.career === 'EBR - Secundaria - Educación Religiosa' ? 'selected' : ''}>EBR - Secundaria - Educación Religiosa</option>
+                                <option value="EBR - Secundaria - Educación para el Trabajo" ${this.currentItem?.career === 'EBR - Secundaria - Educación para el Trabajo' ? 'selected' : ''}>EBR - Secundaria - Educación para el Trabajo</option>
+                                <option value="EBR - Secundaria - Inglés como Lengua Extranjera" ${this.currentItem?.career === 'EBR - Secundaria - Inglés como Lengua Extranjera' ? 'selected' : ''}>EBR - Secundaria - Inglés como Lengua Extranjera</option>
+                                <option value="EBR - Secundaria - Matemática" ${this.currentItem?.career === 'EBR - Secundaria - Matemática' ? 'selected' : ''}>EBR - Secundaria - Matemática</option>
+                                <option value="EBR - Secundaria - Profesor de Innovación Pedagógica" ${this.currentItem?.career === 'EBR - Secundaria - Profesor de Innovación Pedagógica' ? 'selected' : ''}>EBR - Secundaria - Profesor de Innovación Pedagógica</option>
+                            </optgroup>
                             ` : `
                             <option value="Medicina Humana" ${this.currentItem?.career === 'Medicina Humana' ? 'selected' : ''}>Medicina Humana</option>
                             <option value="Enfermería" ${this.currentItem?.career === 'Enfermería' ? 'selected' : ''}>Enfermería</option>
@@ -2503,7 +2519,17 @@ class AdminManager {
                         if (domainVal === 'education') {
                             const specEl = document.getElementById('ai-specialty');
                             if (specEl && specEl.value && specEl.value !== 'General') {
-                                careerVal = `${careerVal} - ${specEl.value}`;
+                                if (careerVal === 'EBR - Primaria') {
+                                    if (specEl.value === 'Profesor de Innovación Pedagógica') {
+                                        careerVal = 'EBR Primaria Profesor de Innovación Pedagógica';
+                                    } else if (specEl.value === 'Educación Física') {
+                                        careerVal = 'EBR Primaria Educación Física';
+                                    } else {
+                                        careerVal = `EBR Primaria ${specEl.value}`;
+                                    }
+                                } else {
+                                    careerVal = `${careerVal} - ${specEl.value}`;
+                                }
                             }
                         }
 
@@ -2933,13 +2959,13 @@ class AdminManager {
         if (!specialtyContainer || !specialtySelect) return;
 
         let options = [];
-        if (level === 'EBR Primaria') {
+        if (level === 'EBR Primaria' || level === 'EBR - Primaria') {
             options = [
                 { value: 'General', text: 'Primaria Regular' },
                 { value: 'Profesor de Innovación Pedagógica', text: 'Profesor de Innovación Pedagógica' },
                 { value: 'Educación Física', text: 'Educación Física' }
             ];
-        } else if (level === 'EBR Secundaria') {
+        } else if (level === 'EBR Secundaria' || level === 'EBR - Secundaria') {
             options = [
                 { value: 'Arte y Cultura', text: 'Arte y Cultura' },
                 { value: 'Ciencias Sociales', text: 'Ciencias Sociales' },
@@ -2981,10 +3007,27 @@ class AdminManager {
                 `;
             }
             if (careerSelect) {
+                const currentVal = this.currentItem?.career || '';
                 careerSelect.innerHTML = `
-                    <option value="EBR - Inicial">EBR - Nivel Inicial</option>
-                    <option value="EBR - Primaria">EBR - Nivel Primaria</option>
-                    <option value="EBR - Secundaria">EBR - Nivel Secundaria</option>
+                    <option value="EBR - Inicial" ${currentVal === 'EBR - Inicial' ? 'selected' : ''}>EBR - Nivel Inicial</option>
+                    <optgroup label="EBR - Nivel Primaria">
+                        <option value="EBR - Primaria" ${currentVal === 'EBR - Primaria' ? 'selected' : ''}>EBR - Primaria (Regular)</option>
+                        <option value="EBR Primaria Profesor de Innovación Pedagógica" ${currentVal === 'EBR Primaria Profesor de Innovación Pedagógica' ? 'selected' : ''}>EBR Primaria Profesor de Innovación Pedagógica</option>
+                        <option value="EBR Primaria Educación Física" ${currentVal === 'EBR Primaria Educación Física' ? 'selected' : ''}>EBR Primaria Educación Física</option>
+                    </optgroup>
+                    <optgroup label="EBR - Nivel Secundaria">
+                        <option value="EBR - Secundaria - Arte y Cultura" ${currentVal === 'EBR - Secundaria - Arte y Cultura' ? 'selected' : ''}>EBR - Secundaria - Arte y Cultura</option>
+                        <option value="EBR - Secundaria - Ciencias Sociales" ${currentVal === 'EBR - Secundaria - Ciencias Sociales' ? 'selected' : ''}>EBR - Secundaria - Ciencias Sociales</option>
+                        <option value="EBR - Secundaria - Ciencia y Tecnología" ${currentVal === 'EBR - Secundaria - Ciencia y Tecnología' ? 'selected' : ''}>EBR - Secundaria - Ciencia y Tecnología</option>
+                        <option value="EBR - Secundaria - Comunicación" ${currentVal === 'EBR - Secundaria - Comunicación' ? 'selected' : ''}>EBR - Secundaria - Comunicación</option>
+                        <option value="EBR - Secundaria - Desarrollo Personal, Ciudadanía y Cívica" ${currentVal === 'EBR - Secundaria - Desarrollo Personal, Ciudadanía y Cívica' ? 'selected' : ''}>EBR - Secundaria - Desarrollo Personal, Ciudadanía y Cívica</option>
+                        <option value="EBR - Secundaria - Educación Física" ${currentVal === 'EBR - Secundaria - Educación Física' ? 'selected' : ''}>EBR - Secundaria - Educación Física</option>
+                        <option value="EBR - Secundaria - Educación Religiosa" ${currentVal === 'EBR - Secundaria - Educación Religiosa' ? 'selected' : ''}>EBR - Secundaria - Educación Religiosa</option>
+                        <option value="EBR - Secundaria - Educación para el Trabajo" ${currentVal === 'EBR - Secundaria - Educación para el Trabajo' ? 'selected' : ''}>EBR - Secundaria - Educación para el Trabajo</option>
+                        <option value="EBR - Secundaria - Inglés como Lengua Extranjera" ${currentVal === 'EBR - Secundaria - Inglés como Lengua Extranjera' ? 'selected' : ''}>EBR - Secundaria - Inglés como Lengua Extranjera</option>
+                        <option value="EBR - Secundaria - Matemática" ${currentVal === 'EBR - Secundaria - Matemática' ? 'selected' : ''}>EBR - Secundaria - Matemática</option>
+                        <option value="EBR - Secundaria - Profesor de Innovación Pedagógica" ${currentVal === 'EBR - Secundaria - Profesor de Innovación Pedagógica' ? 'selected' : ''}>EBR - Secundaria - Profesor de Innovación Pedagógica</option>
+                    </optgroup>
                 `;
             }
             if (explImageGroup) explImageGroup.style.display = 'block';

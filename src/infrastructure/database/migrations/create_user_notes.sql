@@ -44,7 +44,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language 'plpgsql' SET search_path = public;
 
 CREATE TRIGGER update_user_notes_updated_at
     BEFORE UPDATE ON public.user_notes

@@ -201,7 +201,7 @@ RETURNS text AS
 $func$
 -- ✅ CORRECCIÓN FINAL: Usar la versión de un solo argumento de unaccent, que es más estándar y robusta.
 SELECT public.unaccent($1)
-$func$ LANGUAGE sql IMMUTABLE;
+$func$ LANGUAGE sql IMMUTABLE SET search_path = public;
 
 -- ✅ OPTIMIZACIÓN: Crear índices GIN en las columnas de texto que se usan para la búsqueda.
 -- Ahora usamos nuestra función inmutable `f_unaccent` para que PostgreSQL permita la creación del índice.

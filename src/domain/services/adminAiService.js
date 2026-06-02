@@ -527,9 +527,30 @@ class AdminAiService {
             const year = years[Math.floor(Math.random() * years.length)];
 
             if (isEducation) {
-                const parts = career.split(' - ');
-                const nivel = (parts[1] || "").trim();
-                const rawSpecialty = (parts[parts.length - 1] || "").trim();
+                let nivel = '';
+                let rawSpecialty = '';
+
+                if (career === 'EBR - Inicial') {
+                    nivel = 'Inicial';
+                    rawSpecialty = 'Inicial';
+                } else if (career === 'EBR - Primaria') {
+                    nivel = 'Primaria';
+                    rawSpecialty = 'Primaria';
+                } else if (career === 'EBR Primaria Profesor de Innovación Pedagógica') {
+                    nivel = 'Primaria';
+                    rawSpecialty = 'Profesor de Innovación Pedagógica';
+                } else if (career === 'EBR Primaria Educación Física') {
+                    nivel = 'Primaria';
+                    rawSpecialty = 'Educación Física';
+                } else if (career.startsWith('EBR - Secundaria')) {
+                    nivel = 'Secundaria';
+                    rawSpecialty = career.replace('EBR - Secundaria - ', '');
+                } else {
+                    // Fallback
+                    const parts = career.split(' - ');
+                    nivel = (parts[1] || "").trim();
+                    rawSpecialty = (parts[parts.length - 1] || "").trim();
+                }
 
                 const especialidad = rawSpecialty
                     .replace(/Profesor de /gi, '')
