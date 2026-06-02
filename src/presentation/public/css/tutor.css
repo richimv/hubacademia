@@ -1,12 +1,12 @@
 /* Variables de tema Tutor Premium */
 :root {
-    --tutor-bg: rgba(10, 10, 10, 0.98);
-    --tutor-primary: #6366f1; /* Indigo */
-    --tutor-secondary: #06b6d4; /* Cyan */
+    --tutor-bg: var(--bg-tertiary);
+    --tutor-primary: #6366f1; /* Indigo (exclusivo para branding del robot) */
+    --tutor-secondary: var(--info); /* Cyan */
     --tutor-accent: #818cf8;
-    --tutor-text: #f8fafc;
-    --tutor-text-muted: #94a3b8;
-    --tutor-border: rgba(255, 255, 255, 0.08);
+    --tutor-text: var(--text-main);
+    --tutor-text-muted: var(--text-muted);
+    --tutor-border: var(--border-color);
 }
 
 /* Botón Hermoso del Robot (Cápsula Premium) */

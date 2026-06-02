@@ -25,13 +25,22 @@ CREATE TABLE IF NOT EXISTS public.user_vocabularies (
     id UUID NOT NULL DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     language_code VARCHAR(10) NOT NULL REFERENCES public.languages(code) ON DELETE CASCADE,
-    level VARCHAR(10) NOT NULL, -- 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'
+    level VARCHAR(10) DEFAULT NULL, -- Nullable, not mandatory anymore
     word VARCHAR(100) NOT NULL,
     translation VARCHAR(255) NOT NULL,
     definition TEXT,
     example_sentence TEXT,
     audio_url TEXT,
+    part_of_speech VARCHAR(50) DEFAULT NULL,
+    is_variable BOOLEAN DEFAULT FALSE,
+    srs_state VARCHAR(20) DEFAULT 'new',
+    next_review_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    interval_days INT DEFAULT 0,
+    ease_factor NUMERIC(4, 2) DEFAULT 2.50,
+    practice_count INT DEFAULT 0,
+    metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     CONSTRAINT user_vocabularies_pkey PRIMARY KEY (id)
 );
 

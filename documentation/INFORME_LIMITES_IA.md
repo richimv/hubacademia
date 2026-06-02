@@ -106,3 +106,23 @@ El framework UI inyecta al vuelo -sin depender de scripts ni promesas externas- 
 - **Aislamiento Total:** El consumo de autoevaluaciones no descuenta del límite diario de Simuladores. Así se evita que el usuario agote sus exámenes simulados al realizar trivias cortas sobre recursos o lecturas individuales.
 - **Límite Universal (15/Día):** Todos los usuarios, sin importar su plan (Free, Basic, Advanced), tienen un tope diario estricto de **15 autoevaluaciones por día** controlado por el contador `daily_arena_usage` en PostgreSQL para mitigar abusos de costos de inferencia.
 - **Usuarios Free:** Cada partida exitosa descuenta adicionalmente **1 vida global** de su pool de 50 vidas (`usage_count`). En caso de agotar sus vidas o el límite de 15 cuestionarios diarios, se bloquea el inicio de forma segura.
+
+### 5. Límite de Módulo de Idiomas (Compartido con Chat Principal)
+- **Tutor de Idiomas y Práctica de Speaking:** Las interacciones del chat conversacional de idiomas y las evaluaciones del entrenador de speaking (`/api/languages/chat`, `/api/languages/practice/evaluate`, `/api/languages/practice/exercise`) comparten el mismo contador de límite de consultas de IA diaria en la base de datos (`daily_ai_usage`) regulado por el middleware `checkAILimits('chat_standard')`.
+- **Cuota:** Consumen 1 consulta de la cuota diaria global de Chat Standard (30 para Basic, 50 para Advanced). Los usuarios Free/Pending consumen vidas de su cuota de 50 vidas globales de prueba (`usage_count`).
+ 
+ 
++## 🏗️ 6. Unificación Arquitectónica de Límites (Junio 2026)
++
++Con el fin de evitar la dispersión de límites hardcodeados en la plataforma, se ha re-estructurado el control de cuotas:
++1. **Fuente Única de Verdad (Backend):** Se ha creado el archivo de configuración centralizado [limits.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/config/limits.js), el cual unifica las cuotas de IA (diarias y mensuales) por plan.
++2. **Inyección en Perfil (`getMe`):** El endpoint `/api/auth/me` añade de forma dinámica la clave `limits` en la respuesta JSON. De esta forma, el frontend conoce directamente qué cuotas aplicar sin duplicar constantes.
++3. **Panel Visual de Consumos en Perfil:** Se ha añadido una cuadrícula interactiva `#premium-usage-card` en `/profile` que dibuja el progreso de:
++   - **Tutor de IA y Voz** (`daily_ai_usage` vs cuota)
++   - **Simuladores de Examen** (`daily_simulator_usage` vs cuota)
++   - **Autoevaluaciones** (`daily_arena_usage` vs cuota)
++   - **Flashcards Mensuales** (`monthly_flashcards_usage` vs cuota)
++   - **Vidas Globales** (para usuarios de prueba en el Plan Free).
++4. **Integración con UIManager:** El validador en el cliente `validateFreemiumAction()` de [uiManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js) resuelve el límite dinámicamente desde el backend, garantizando modularidad y facilidad de mantenimiento.
++
+

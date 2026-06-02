@@ -6,13 +6,13 @@
     --sidebar-width-expanded: 260px;
     --sidebar-width-collapsed: 70px;
     --sidebar-width: var(--sidebar-width-expanded);
-    --sidebar-bg: #0a0a0a;
-    --sidebar-border: rgba(255, 255, 255, 0.06);
-    --sidebar-hover: rgba(255, 255, 255, 0.04);
+    --sidebar-bg: var(--bg-secondary);
+    --sidebar-border: var(--border-color);
+    --sidebar-hover: var(--surface-hover);
     --sidebar-active-bg: rgba(59, 130, 246, 0.08);
-    --sidebar-active-border: #3b82f6;
-    --sidebar-text: #f8fafc;
-    --sidebar-text-muted: #64748b;
+    --sidebar-active-border: var(--primary);
+    --sidebar-text: var(--text-main);
+    --sidebar-text-muted: var(--text-muted);
     --sidebar-transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -41,6 +41,7 @@ body.sidebar-collapsed {
 
 /* --- SIDEBAR CONTAINER --- */
 .global-sidebar {
+    font-family: var(--font-main);
     position: fixed;
     top: var(--trial-bar-height, 0px);
     left: 0;
@@ -168,6 +169,7 @@ body.sidebar-collapsed {
 
 /* --- SIDEBAR MENU ITEM --- */
 .sidebar-item {
+    font-family: var(--font-main);
     display: flex;
     align-items: center;
     padding: 0.75rem 0.85rem;
@@ -317,14 +319,6 @@ body.sidebar-collapsed .sidebar-header {
 
 body.sidebar-collapsed .sidebar-brand {
     justify-content: center;
-}
-
-body.sidebar-collapsed .sidebar-toggle-btn {
-    display: none; /* Hide header toggle in collapsed mode, collapse via brand hover or similar. 
-                      Actually, let's keep a floating toggle or let the brand handle it. 
-                      Wait, if we hide the toggle button, how does the user expand it?
-                      We should show the hamburger toggle inside the collapsed state! 
-                      Let's design it so the hamburger remains visible, or we show it centered. */
 }
 
 body.sidebar-collapsed .sidebar-header {

@@ -223,12 +223,12 @@ class GlobalSidebar {
 
         if (pathname === '/' || pathname === '/index.html' || pathname === '/index') {
             activePage = 'home';
-        } else if (pathname.includes('simulator-dashboard') || pathname.includes('simulators')) {
+        } else if (pathname.includes('simulator-dashboard') || pathname.includes('simulators') || pathname.includes('my-vocabulary') || pathname.includes('language-tutor')) {
             if (search.includes('domain=salud') || search.includes('context=MEDICINA')) {
                 activePage = 'salud';
             } else if (search.includes('domain=educacion') || search.includes('context=EDUCACION')) {
                 activePage = 'educacion';
-            } else if (search.includes('domain=idiomas') || search.includes('context=IDIOMAS')) {
+            } else {
                 activePage = 'idiomas';
             }
         } else if (pathname.includes('repaso') || pathname.includes('flashcards')) {

@@ -45,6 +45,15 @@ class ChatComponent {
         });
     }
 
+    getPersonaLabel() {
+        const labels = {
+            neutral: 'Neutro',
+            medicine: 'Médico',
+            education: 'Educación'
+        };
+        return labels[this.specialization] || 'Neutro';
+    }
+
     createChatInterface() {
         const chatHTML = `
             <!-- ✅ FASE III: Nueva estructura del chat con historial -->
@@ -65,9 +74,10 @@ class ChatComponent {
                         <button id="chatbot-history-toggle" class="chatbot-history-toggle">
                             <i class="fas fa-bars"></i>
                         </button>
-                        <div class="chatbot-title">
-                            <i id="chatbot-icon" class="fas fa-robot chatbot-icon-svg" data-persona="${this.specialization}"></i>
-                            <h3 id="chatbot-title-heading">Asistente</h3>
+                        <div class="chatbot-title-selector" id="chatbot-persona-trigger" role="button" aria-haspopup="listbox" aria-expanded="false" title="Cambiar modo del asistente" data-persona="${this.specialization}">
+                            <i id="chatbot-icon" class="${this.specialization === 'medicine' ? 'fas fa-stethoscope' : (this.specialization === 'education' ? 'fas fa-graduation-cap' : 'fas fa-robot')} chatbot-icon-svg" data-persona="${this.specialization}"></i>
+                            <h3 id="chatbot-title-heading" class="chatbot-title-heading">${this.getPersonaLabel()}</h3>
+                            <i class="fas fa-chevron-down chatbot-chevron"></i>
                         </div>
                         <div class="chatbot-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
                             <!-- Botón Pantalla Completa (Mejorado) -->
@@ -79,12 +89,32 @@ class ChatComponent {
                             </button>
                         </div>
                     </div>
-                    <!-- ✅ Nuevo Selector de Modos tipo Tabs Glassmorphic Horizontal -->
-                    <div class="chatbot-spec-tabs-container" id="chatbot-spec-tabs-container">
-                        <div class="spec-tabs-wrapper" role="tablist">
-                            <button class="spec-tab" role="tab" data-value="neutral" aria-selected="${this.specialization === 'neutral'}">NEUTRO</button>
-                            <button class="spec-tab" role="tab" data-value="medicine" aria-selected="${this.specialization === 'medicine'}">MÉDICO</button>
-                            <button class="spec-tab" role="tab" data-value="education" aria-selected="${this.specialization === 'education'}">EDUCACIÓN</button>
+
+                    <!-- Dropdown de Especialidad (Persona) -->
+                    <div class="chatbot-persona-dropdown" id="chatbot-persona-dropdown">
+                        <div class="dropdown-item" data-value="neutral" role="button">
+                            <div class="dropdown-item-icon"><i class="fas fa-robot"></i></div>
+                            <div class="dropdown-item-content">
+                                <span class="dropdown-item-title">Modo General</span>
+                                <span class="dropdown-item-desc">Asistente para consultas generales</span>
+                            </div>
+                            <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="dropdown-item" data-value="medicine" role="button">
+                            <div class="dropdown-item-icon medicine"><i class="fas fa-stethoscope"></i></div>
+                            <div class="dropdown-item-content">
+                                <span class="dropdown-item-title">Modo Médico</span>
+                                <span class="dropdown-item-desc">Exámenes Médicos y SERUMS</span>
+                            </div>
+                            <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="dropdown-item" data-value="education" role="button">
+                            <div class="dropdown-item-icon education"><i class="fas fa-graduation-cap"></i></div>
+                            <div class="dropdown-item-content">
+                                <span class="dropdown-item-title">Modo Educación</span>
+                                <span class="dropdown-item-desc">Ascenso y Nombramiento Docente</span>
+                            </div>
+                            <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
                         </div>
                     </div>
 
@@ -135,25 +165,35 @@ class ChatComponent {
         console.log('🎨 Estilos del chat cargados desde CSS centralizado.');
     }
 
-    /**
-     * ✅ NUEVO: Actualiza la interfaz según la persona activa.
-     */
     updatePersonaUI() {
         const icon = document.getElementById('chatbot-icon');
-        
         if (icon) {
             icon.dataset.persona = this.specialization;
+            const classes = {
+                neutral: 'fas fa-robot',
+                medicine: 'fas fa-stethoscope',
+                education: 'fas fa-graduation-cap'
+            };
+            icon.className = `${classes[this.specialization] || 'fas fa-robot'} chatbot-icon-svg`;
         }
 
-        // Actualizar el estado activo de los botones de especialidad
-        const tabs = document.querySelectorAll('.spec-tab');
-        tabs.forEach(tab => {
-            if (tab.dataset.value === this.specialization) {
-                tab.classList.add('active');
-                tab.setAttribute('aria-selected', 'true');
+        const heading = document.getElementById('chatbot-title-heading');
+        if (heading) {
+            heading.textContent = this.getPersonaLabel();
+        }
+
+        const trigger = document.getElementById('chatbot-persona-trigger');
+        if (trigger) {
+            trigger.dataset.persona = this.specialization;
+        }
+
+        // Actualizar el estado activo en el dropdown de especialidad
+        const items = document.querySelectorAll('.chatbot-persona-dropdown .dropdown-item');
+        items.forEach(item => {
+            if (item.dataset.value === this.specialization) {
+                item.classList.add('active');
             } else {
-                tab.classList.remove('active');
-                tab.setAttribute('aria-selected', 'false');
+                item.classList.remove('active');
             }
         });
 
@@ -234,11 +274,38 @@ class ChatComponent {
             });
         }
 
-        // ✅ Selector de especialidad (Pestañas/Tabs Glassmorphic)
-        const specTabs = document.querySelectorAll('.spec-tab');
-        specTabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const newValue = tab.dataset.value;
+        // ✅ Selector de especialidad (Dropdown de Persona)
+        const personaTrigger = document.getElementById('chatbot-persona-trigger');
+        const personaDropdown = document.getElementById('chatbot-persona-dropdown');
+
+        if (personaTrigger && personaDropdown) {
+            personaTrigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                personaDropdown.classList.toggle('open');
+                personaTrigger.classList.toggle('dropdown-active');
+            });
+
+            // Cerrar dropdown al hacer clic fuera
+            document.addEventListener('click', (e) => {
+                if (!personaTrigger.contains(e.target) && !personaDropdown.contains(e.target)) {
+                    personaDropdown.classList.remove('open');
+                    personaTrigger.classList.remove('dropdown-active');
+                }
+            });
+        }
+
+        const dropdownItems = document.querySelectorAll('.chatbot-persona-dropdown .dropdown-item');
+        dropdownItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                const newValue = item.dataset.value;
+                if (personaDropdown) {
+                    personaDropdown.classList.remove('open');
+                }
+                if (personaTrigger) {
+                    personaTrigger.classList.remove('dropdown-active');
+                }
+
                 if (this.specialization === newValue) return;
 
                 this.specialization = newValue;

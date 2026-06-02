@@ -6,16 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tutor Conversacional IA | Hub Academia</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/base.css?v=58586bc4">
-    <link rel="stylesheet" href="css/header.css?v=58586bc4">
-    <link rel="stylesheet" href="css/footer.css?v=58586bc4">
-    <link rel="stylesheet" href="css/modal.css?v=58586bc4">
-    <link rel="stylesheet" href="css/sidebar.css?v=58586bc4">
-    <link rel="stylesheet" href="css/components.css?v=58586bc4">
-    <link rel="stylesheet" href="css/markdown-content.css?v=58586bc4">
-    <link rel="stylesheet" href="css/language-tutor.css?v=58586bc4">
+    <link rel="stylesheet" href="/css/theme.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/base.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/header.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/footer.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/modal.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/sidebar.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/components.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/language-tutor.css?v=23b2f3c2">
 </head>
 
 <body class="hero-hidden">
@@ -72,23 +73,96 @@
                             <option value="C1">Nivel C1 (Avanzado)</option>
                             <option value="C2">Nivel C2 (Maestría)</option>
                         </select>
-                        <label class="cci-auto-send-container" title="Activa o desactiva el envío automático al terminar de hablar">
-                            <input type="checkbox" id="cci-auto-send-check">
-                            <span>Auto-enviar</span>
+                        <label class="cci-listening-mode-container" title="Oculta las respuestas escritas y las reproduce en audio automáticamente para practicar comprensión auditiva">
+                            <input type="checkbox" id="cci-listening-mode-check">
+                            <span>Modo Escucha 🎧</span>
                         </label>
                     </div>
                 </div>
-                <div id="cci-messages" class="cci-messages-box">
-                    <!-- Mensajes cargados dinámicamente -->
+                <div class="cci-tabs">
+                    <button id="cci-tab-chat" class="cci-tab-btn active"><i class="fas fa-comments"></i> Tutor Conversacional</button>
+                    <button id="cci-tab-speaking" class="cci-tab-btn"><i class="fas fa-microphone-lines"></i> Entrenador de Speaking</button>
                 </div>
-                <div class="cci-input-bar">
-                    <input type="text" id="cci-user-input" placeholder="Escribe un mensaje en el idioma seleccionado..." autocomplete="off">
-                    <button id="cci-mic-btn" class="btn-mic" title="Hablar (Speaking)">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button id="cci-send-btn" class="btn-send" title="Enviar mensaje">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+                <!-- VISTA 1: TUTOR CONVERSACIONAL (CHAT) -->
+                <div id="cci-chat-view" class="cci-tab-content active" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+                    <div id="cci-messages" class="cci-messages-box">
+                        <!-- Mensajes cargados dinámicamente -->
+                    </div>
+                    <div class="cci-input-bar">
+                        <input type="text" id="cci-user-input" placeholder="Escribe un mensaje en el idioma seleccionado..." autocomplete="off">
+                        <button id="cci-send-btn" class="btn-send" title="Enviar mensaje">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- VISTA 2: ENTRENADOR DE SPEAKING -->
+                <div id="cci-speaking-view" class="cci-tab-content" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+                    <div class="speaking-trainer-container">
+                        <!-- Opciones de Práctica -->
+                        <div class="speaking-options-bar">
+                            <div class="option-item">
+                                <label for="speaking-input-mode">Modo de Entrada:</label>
+                                <select id="speaking-input-mode" class="cci-select-sm">
+                                    <option value="voice" selected>🎤 Voz (Speaking)</option>
+                                    <option value="text">⌨️ Texto (Escritura)</option>
+                                </select>
+                            </div>
+                            <div class="option-item">
+                                <label for="speaking-case-type">Tipo de Ejercicio:</label>
+                                <select id="speaking-case-type" class="cci-select-sm">
+                                    <option value="random" selected>🔄 Alternar todos</option>
+                                    <option value="translation_full">📝 Traducción Completa</option>
+                                    <option value="translation_term">🔤 Traducción de Término</option>
+                                    <option value="cloze_completion">✏️ Completar Frase</option>
+                                    <option value="read_aloud">🗣️ Pronunciar Oración (Read Aloud)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Panel del Ejercicio Activo -->
+                        <div class="speaking-exercise-card glass-card">
+                            <div class="exercise-badge" id="speaking-exercise-badge">Caso 1</div>
+                            <h3 id="speaking-exercise-prompt" class="exercise-prompt-text">Presiona "Iniciar Práctica" para comenzar.</h3>
+                            
+                            <!-- Para completar espacios en blanco -->
+                            <div id="speaking-cloze-hint-container" class="cloze-hint-box" style="display: none;">
+                                <span class="tag-hint">Oración:</span>
+                                <code id="speaking-cloze-sentence-template"></code>
+                            </div>
+
+                            <!-- Para pronunciación estilo Duolingo -->
+                            <div id="speaking-target-sentence-container" class="target-sentence-box" style="display: none;"></div>
+                        </div>
+
+                        <!-- Caja de entrada y controles -->
+                        <div class="speaking-input-area">
+                            <input type="text" id="speaking-user-answer" placeholder="Haz clic en Iniciar o escribe tu respuesta aquí..." disabled autocomplete="off">
+                            <div id="speaking-wave-indicator" class="wave-indicator">
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                            </div>
+                            <button id="speaking-mic-btn" class="btn-mic-trainer" title="Grabar respuesta" style="display: none;">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button id="speaking-submit-btn" class="btn-submit-trainer" disabled>
+                                <i class="fas fa-paper-plane"></i> Enviar
+                            </button>
+                        </div>
+
+                        <!-- Área de Feedback / Evaluación -->
+                        <div id="speaking-feedback-card" class="speaking-feedback-card" style="display: none;">
+                            <!-- El contenido se cargará dinámicamente -->
+                        </div>
+
+                        <!-- Botón de control de flujo (Start / Next) -->
+                        <div class="speaking-flow-controls">
+                            <button id="speaking-next-btn" class="btn-flow-action">
+                                <i class="fas fa-play"></i> Iniciar Práctica
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -128,20 +202,20 @@
 
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/config.js?v=58586bc4"></script>
-    <script src="js/services/networkService.js?v=58586bc4"></script>
+    <script src="/js/config.js?v=23b2f3c2"></script>
+    <script src="/js/services/networkService.js?v=23b2f3c2"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="js/utils/markdown-renderer.js?v=58586bc4"></script>
-    <script src="js/services/authApiService.js?v=58586bc4"></script>
-    <script src="js/services/analyticsApiService.js?v=58586bc4"></script>
-    <script src="js/sessionManager.js?v=58586bc4"></script>
-    <script src="js/ui/uiManager.js?v=58586bc4"></script>
-    <script src="js/ui/components.js?v=58586bc4"></script>
-    <script src="js/ui/sidebar.js?v=58586bc4"></script>
-    <script src="js/app.js?v=58586bc4"></script>
+    <script src="/js/utils/markdown-renderer.js?v=23b2f3c2"></script>
+    <script src="/js/services/authApiService.js?v=23b2f3c2"></script>
+    <script src="/js/services/analyticsApiService.js?v=23b2f3c2"></script>
+    <script src="/js/sessionManager.js?v=23b2f3c2"></script>
+    <script src="/js/ui/uiManager.js?v=23b2f3c2"></script>
+    <script src="/js/ui/components.js?v=23b2f3c2"></script>
+    <script src="/js/ui/sidebar.js?v=23b2f3c2"></script>
+    <script src="/js/app.js?v=23b2f3c2"></script>
 
     <!-- Specific Page Script -->
-    <script src="js/language-tutor.js?v=58586bc4"></script>
+    <script src="/js/language-tutor.js?v=23b2f3c2"></script>
 </body>
 
 </html>

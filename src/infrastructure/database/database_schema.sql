@@ -106,15 +106,18 @@ CREATE TABLE IF NOT EXISTS public.user_language_progress (
 CREATE TABLE IF NOT EXISTS public.user_vocabularies (
     id UUID NOT NULL DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    language_code VARCHAR(10) NOT NULL REFERENCES public.languages(code) ON DELETE CASCADE,
-    level VARCHAR(10) NOT NULL, -- 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'
-    word VARCHAR(100) NOT NULL,
+    vocabulary_id UUID NOT NULL REFERENCES public.global_vocabularies(id) ON DELETE CASCADE,
     translation VARCHAR(255) NOT NULL,
-    definition TEXT,
-    example_sentence TEXT,
-    audio_url TEXT,
+    srs_state VARCHAR(20) DEFAULT 'new',
+    next_review_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    interval_days INT DEFAULT 0,
+    ease_factor NUMERIC(4, 2) DEFAULT 2.50,
+    practice_count INT DEFAULT 0,
+    metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    CONSTRAINT user_vocabularies_pkey PRIMARY KEY (id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    CONSTRAINT user_vocabularies_pkey PRIMARY KEY (id),
+    CONSTRAINT unique_user_vocabulary UNIQUE (user_id, vocabulary_id)
 );
 
 -- Table: decks

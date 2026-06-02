@@ -8,6 +8,7 @@ class LanguageSyllabusController {
         this.generateLesson = this.generateLesson.bind(this);
         this.evaluateLesson = this.evaluateLesson.bind(this);
         this.toggleProgress = this.toggleProgress.bind(this);
+        this.adminSaveLessonContent = this.adminSaveLessonContent.bind(this);
         console.log('✅ LanguageSyllabusController con Service inicializado');
     }
 
@@ -113,6 +114,29 @@ class LanguageSyllabusController {
         } catch (error) {
             console.error("❌ Error en LanguageSyllabusController.toggleProgress:", error);
             return res.status(500).json({ error: 'Ocurrió un error al actualizar el progreso.' });
+        }
+    }
+
+    /**
+     * Permite a un administrador guardar manualmente el contenido editado de una lección.
+     */
+    async adminSaveLessonContent(req, res) {
+        try {
+            const { id } = req.params;
+            const { content } = req.body;
+
+            if (!content) {
+                return res.status(400).json({ error: 'El contenido de la lección es requerido' });
+            }
+
+            const updated = await this.languageService.adminSaveLessonContent(id, content);
+            return res.json({ success: true, lesson: updated.content });
+        } catch (error) {
+            console.error("❌ Error en LanguageSyllabusController.adminSaveLessonContent:", error);
+            if (error.message === 'INVALID_CONTENT' || error.message === 'INVALID_CONTENT_SCHEMA') {
+                return res.status(400).json({ error: 'El formato del contenido enviado es inválido' });
+            }
+            return res.status(500).json({ error: 'Ocurrió un error al guardar los cambios en la lección.' });
         }
     }
 }

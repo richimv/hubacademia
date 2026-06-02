@@ -7,24 +7,21 @@
 
 /* ── Variables ──────────────────────────────────────────── */
 :root {
-    --bg-base:      #0a0d12;
-    --bg-surface:   #0f1219;
-    --bg-elevated:  #151b24;
+    --bg-base:      var(--bg-main);
+    --bg-surface:   var(--bg-secondary);
+    --bg-elevated:  var(--bg-tertiary);
     --bg-card:      rgba(255, 255, 255, 0.01);
-    --border:       rgba(255,255,255,0.07);
-    --border-hover: rgba(255,255,255,0.14);
-    --text-primary:   #f8fafc;
-    --text-secondary: #cbd5e1;
-    --text-muted:      #94a3b8;
+    --border:       var(--border-color);
+    --text-primary:   var(--text-main);
     --pink:   #ec4899;
-    --blue:   #3b82f6;
-    --amber:  #f59e0b;
-    --emerald:#10b981;
-    --violet: #8b5cf6;
-    --slate-400: #94a3b8;
+    --blue:   var(--primary);
+    --amber:  var(--warning);
+    --emerald:var(--success);
+    --violet: var(--accent-purple);
+    --slate-400: var(--text-muted);
     --slate-500: #64748b;
-    --radius-card: 22px;
-    --radius-sm: 12px;
+    --radius-card: var(--radius-2xl);
+    --radius-sm: var(--radius-lg);
     --transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -1575,6 +1572,20 @@
     margin-bottom: 1.25rem;
 }
 
+.lesson-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.25rem;
+}
+
+.lesson-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .lesson-badge-level {
     font-size: 0.65rem;
     font-weight: 700;
@@ -1641,6 +1652,40 @@
 
 .markdown-content p:last-child {
     margin-bottom: 0;
+}
+
+/* Tablas dentro de la Explicación Teórica */
+.markdown-content table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-collapse: collapse;
+    margin: 1.25rem 0;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(15, 23, 42, 0.2);
+}
+
+.markdown-content table th,
+.markdown-content table td {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.85rem;
+    text-align: left;
+}
+
+.markdown-content table th {
+    background: rgba(139, 92, 246, 0.1);
+    color: #c4b5fd;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.markdown-content table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.01);
 }
 
 
@@ -1836,10 +1881,7 @@
         max-height: none !important;
         overflow-y: visible !important;
     }
-    .syllabus-interactive-table th:nth-child(2),
-    .syllabus-interactive-table td:nth-child(2) {
-        display: none; /* Ocultar pistas secundarias en pantallas muy angostas */
-    }
+    /* Permite que todas las columnas personalizadas permanezcan visibles en móviles */
 }
 
 .syllabus-fill-blank-input {
@@ -2154,6 +2196,33 @@
         word-break: break-word !important;
     }
 
+    .lesson-header-flex {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+
+    .lesson-header-actions {
+        width: 100% !important;
+        justify-content: flex-start !important;
+    }
+
+    .lesson-header-actions button {
+        flex: 1 1 auto !important;
+        justify-content: center !important;
+    }
+
+    .syllabus-interactive-table th,
+    .syllabus-interactive-table td {
+        padding: 0.4rem 0.5rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .syllabus-interactive-table .syllabus-fill-blank-input {
+        width: 100% !important;
+        max-width: 140px !important;
+    }
+
     .syllabus-fill-blank-input {
         width: 90px !important;
         font-size: 0.8rem !important;
@@ -2263,6 +2332,43 @@
     .kpi-tooltip-content {
         width: 220px;
     }
+}
+
+/* Tablas Interactivas Rediseñadas y Feedback responsivo */
+.syllabus-table-wrapper {
+    width: 100%;
+    max-width: 750px; /* Evita que las tablas didácticas se estiren demasiado en desktop y dejen mucho espacio vacío */
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    margin-right: auto; /* Alinea a la izquierda dentro del panel de teoría */
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.2);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.syllabus-table-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+.syllabus-table-wrapper::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.01);
+}
+.syllabus-table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+.syllabus-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+.syllabus-interactive-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 480px; /* Fuerza barra de desplazamiento horizontal en móvil para evitar que se aplasten las celdas */
+}
+.syllabus-item-feedback-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 

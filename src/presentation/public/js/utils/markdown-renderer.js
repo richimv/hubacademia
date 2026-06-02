@@ -22,8 +22,12 @@ window.MarkdownRenderer = {
 
         let html = '';
         
-        // 2. Intentar usar marked.js (Soporte completo para Tablas, GFM, etc.)
-        if (window.marked && typeof window.marked.parse === 'function') {
+        // Determinar si el contenido ya es HTML (generado por TinyMCE u otro origen)
+        const isHtml = typeof cleanText === 'string' && cleanText.trimStart().startsWith('<');
+
+        if (isHtml) {
+            html = cleanText;
+        } else if (window.marked && typeof window.marked.parse === 'function') {
             window.marked.setOptions({
                 gfm: true,
                 breaks: true,
@@ -43,6 +47,7 @@ window.MarkdownRenderer = {
         // 3. Post-procesamiento via DOM (Tablas responsivas y Resolución de Imágenes)
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
+        this._sanitizeDom(tempDiv);
         
         // Envolver tablas
         tempDiv.querySelectorAll('table').forEach(table => {
@@ -118,5 +123,77 @@ window.MarkdownRenderer = {
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/\n/g, '<br>');
+    },
+
+    /**
+     * Removes active content from rendered Markdown before it is inserted into the page.
+     */
+    _sanitizeDom(root) {
+        if (!root || typeof root.querySelectorAll !== 'function') return;
+
+        const blockedSelector = [
+            'script',
+            'style',
+            'iframe',
+            'object',
+            'embed',
+            'form',
+            'input',
+            'button',
+            'select',
+            'textarea',
+            'meta',
+            'link',
+            'base'
+        ].join(',');
+
+        root.querySelectorAll(blockedSelector).forEach(node => node.remove());
+
+        const urlAttrs = new Set(['href', 'src', 'xlink:href', 'action', 'formaction']);
+
+        root.querySelectorAll('*').forEach(el => {
+            Array.from(el.attributes).forEach(attr => {
+                const name = attr.name.toLowerCase();
+                const value = attr.value || '';
+
+                if (name.startsWith('on') || name === 'srcdoc' || name === 'style') {
+                    el.removeAttribute(attr.name);
+                    return;
+                }
+
+                if (urlAttrs.has(name) && !this._isSafeUrl(value)) {
+                    el.removeAttribute(attr.name);
+                }
+            });
+
+            if (el.tagName === 'A' && el.getAttribute('target') === '_blank') {
+                el.setAttribute('rel', 'noopener noreferrer');
+            }
+        });
+    },
+
+    _isSafeUrl(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return true;
+
+        if (raw.startsWith('#') || raw.startsWith('/') || raw.startsWith('./') || raw.startsWith('../')) {
+            return true;
+        }
+
+        const compact = raw.replace(/[\u0000-\u001F\u007F\s]+/g, '').toLowerCase();
+        if (compact.startsWith('javascript:') || compact.startsWith('vbscript:')) {
+            return false;
+        }
+
+        if (compact.startsWith('data:')) {
+            return /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(raw);
+        }
+
+        try {
+            const url = new URL(raw, window.location.origin);
+            return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol);
+        } catch (e) {
+            return false;
+        }
     }
 };

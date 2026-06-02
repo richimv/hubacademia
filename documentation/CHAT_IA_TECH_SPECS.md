@@ -33,6 +33,12 @@ El sistema adapta su "personalidad" y base de conocimientos según la especialid
 - **Namespace:** N/A (sin RAG).
 - **Rol:** Tutor conversacional de Inglés e Italiano.
 - **Comportamiento:** Inmersión gradual, corrección amigable y **tablas gramaticales proactivas**.
+- **Infraestructura de Conversación (CCI v3.2):**
+  - **Aislamiento en `systemInstruction`:** Las directrices y reglas del tutor se inyectan a través del parámetro nativo `systemInstruction` de Gemini, previniendo la degradación de instrucciones a lo largo del historial.
+  - **Historial Estructurado (`contents`):** El historial de turnos se pasa utilizando la estructura nativa de Gemini (`contents` array), mapeando los roles correspondientes (`user` -> `user`, `assistant` -> `model`) para evitar mezclas e interferencias.
+  - **Límites de Corrección:** El tutor inspecciona errores *exclusivamente* en la última interacción del usuario, evitando listar o arrastrar errores ya corregidos en turnos previos del historial.
+  - **Inmersión del Idioma:** La propiedad `response` se redacta al 100% en el idioma objetivo, eliminando mezclas accidentales con el español, a menos que el usuario formule una duda teórica explícitamente en español.
+
 
 ## 4. Capacidades Multimedia e Inteligencia Visual
 El sistema gestiona una arquitectura de apoyo visual proactivo y especializado:
@@ -252,3 +258,11 @@ Inyectadas a TODOS los prompts vía `buildPrompt()`:
 
 ## 11. Archivo Deprecado
 - **`chat.html`**: Página standalone legacy que usa Bootstrap 5. **NO se usa** en la aplicación actual. El chat vive como widget flotante inyectado por `chat.js` en todas las páginas. Solo existe una ruta legacy en `vercel.json`. Candidato a eliminación.
+
+---
+
+## 12. Interfaz del Selector de Modos (Model Selector UI)
+Para maximizar el espacio útil de lectura en el widget de chat y profesionalizar la interfaz visual, se rediseñó el selector de especialidades:
+- **Selector de Cabecera (`#chatbot-persona-trigger`)**: Reemplaza el contenedor de pestañas por una cápsula interactiva dentro del encabezado que muestra el modo activo ("Neutro", "Médico" o "Educación") como subtítulo dinámico y un chevron de rotación.
+- **Menú Desplegable Flotante (`#chatbot-persona-dropdown`)**: Un popover glassmorphic con desenfoque de fondo al 94%, sombras pronunciadas y acentos de color contextuales según la especialidad seleccionada (Azul para General, Cian para Médico, Verde para Educación).
+- **Controlador de Cierre Automático**: Cierra el selector al cambiar de modo o si el usuario hace clic fuera de la cabecera o el panel desplegable.

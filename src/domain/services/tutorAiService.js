@@ -3,6 +3,7 @@ const RagService = require('./ragService');
 const chatPrompts = require('../prompts/chatPrompts');
 const BookRepository = require('../repositories/bookRepository');
 const db = require('../../infrastructure/database/db'); // Mover al inicio
+const securityUtils = require('../utils/securityUtils');
 
 /**
  * 🎓 TUTOR AI SERVICE V6.2: El Cerebro del Chat y Tutoría.
@@ -100,7 +101,7 @@ class TutorAiService {
      */
     async handleChat(userMessage, history = [], filters = {}) {
         // Sanitizar mensaje
-        const message = userMessage.replace(/^["']|["']$/g, '').trim();
+        const message = securityUtils.sanitizeInputForAI(userMessage, securityUtils.LIMITS.LONG_TEXT);
         const conversationId = filters.conversationId || 'default';
 
         const target = (filters.target || "ENAM").toUpperCase();

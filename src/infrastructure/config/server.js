@@ -94,6 +94,16 @@ class Server {
 
         // ✅ FIX: Habilitar trust proxy para Render (necesario para rate-limit)
         this.app.set('trust proxy', 1);
+        this.app.disable('x-powered-by');
+
+        // Basic security headers without a strict CSP, to avoid breaking OAuth/CDN flows.
+        this.app.use((req, res, next) => {
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+            res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+            res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+            res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
+            next();
+        });
 
         // ✅ CORS CONFIGURADO PARA VERCEL Y DOMINIO PROPIO (HubAcademia)
         this.app.use(cors({
@@ -191,7 +201,7 @@ class Server {
             'login', 'admin', 'chat', 'dashboard', 'self-evaluation',
             'pricing', 'privacy', 'terms', 'quiz', 'course', 'career', 'category',
             'profile', 'deck-editor', 'flashcards', 'repaso', 'simulator-dashboard',
-            'simulators', 'resource', 'language-tutor', 'library'
+            'simulators', 'resource', 'language-tutor', 'library', 'my-vocabulary'
         ];
 
         pages.forEach(page => {

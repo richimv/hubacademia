@@ -102,6 +102,14 @@ Para evitar la interrupción de exámenes largos (1-3 horas), se han aplicado la
 *   **Retorno Dinámico vía OAuth (`redirectTo`):** El flujo de inicio de sesión con Google ya no usa un destino fijo (`/`). Ahora apunta a `window.location.href`, permitiendo que el usuario regrese a la pantalla exacta en la que estaba tras re-autenticarse, y reanude su progreso de inmediato.
 
 ---
+
+## 7. Prevención de Doble Prompt (Google One Tap vs Acceso Manual)
+
+Para garantizar una coexistencia limpia entre Google One Tap (modal flotante) y el inicio de sesión manual con Google OAuth (botón "Acceder"):
+*   **Filtros de Inicialización (Guards):** Google One Tap no se inicializa ni se muestra si el usuario ya está autenticado (`sessionManager.isLoggedIn()`), si hay una autenticación manual activa (`_isAuthenticating`), o si se detecta un hash de retorno de Supabase en la URL (`#access_token` o `#id_token`), evitando ruidos visuales durante redirecciones.
+*   **Cancelación Reactiva de One Tap:** Se suscribe un callback a `sessionManager.onStateChange` que ejecuta `google.accounts.id.cancel()` inmediatamente cuando se detecta un usuario autenticado. Esto asegura que si el prompt flotante ya está en pantalla y el usuario se loguea manualmente, el prompt de One Tap se descarta automáticamente de la vista de forma inmediata.
+
+---
 **Elaborado por**: Antigravity AI - Expert Senior Team.
-**Versión**: 2.0 - Resiliencia de Sesión, Cola Offline y Dynamic OAuth Redirects.
+**Versión**: 2.1 - Coexistencia Limpia de Google One Tap y Auth Guards.
 

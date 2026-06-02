@@ -1,14 +1,14 @@
 /* --- AUTOEVALUACIÓN IA V3.0 (MANTA BLACK & NEON GLOW) --- */
 
 :root {
-    --self-eval-bg: #030303;
-    --self-eval-card: #111111;
-    --self-eval-border: rgba(255, 255, 255, 0.08);
-    --self-eval-text: #f8fafc;
-    --self-eval-text-dim: #94a3b8;
-    --self-eval-accent: #a855f7;
-    --self-eval-success: #10b981;
-    --self-eval-error: #ef4444;
+    --self-eval-bg: var(--bg-main);
+    --self-eval-card: var(--bg-secondary);
+    --self-eval-border: var(--border-color);
+    --self-eval-text: var(--text-main);
+    --self-eval-text-dim: var(--text-muted);
+    --self-eval-accent: var(--accent-purple);
+    --self-eval-success: var(--success);
+    --self-eval-error: var(--danger);
 }
 
 body.self-evaluation-body {

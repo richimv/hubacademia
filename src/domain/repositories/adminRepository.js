@@ -1,4 +1,5 @@
 const db = require('../../infrastructure/database/db');
+const { validateCSVExportParams } = require('../utils/securityUtils');
 
 class AdminRepository {
     async getOverallStats() {
@@ -136,6 +137,7 @@ class AdminRepository {
     }
 
     async exportTableToCSVBuffer(tableName, columns = '*') {
+        validateCSVExportParams(tableName, columns);
         const res = await db.query(`SELECT ${columns} FROM ${tableName}`);
         if (res.rows.length === 0) return null;
 

@@ -486,6 +486,9 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     let displayName = type === 'book' ? item.title : item.name;
     if (type === 'question') {
         displayName = item.question_text ? (item.question_text.substring(0, 80) + '...') : 'Pregunta sin texto';
+    } else if (type === 'vocabulary') {
+        displayName = item.word || 'Palabra sin texto';
+        subtitle = `${item.translation} - <span style="opacity: 0.85; font-style: italic;">${item.definition || 'Sin definición'}</span>`;
     }
 
     const resetPasswordButton = showResetPassword ? `<button class="reset-pass-btn-small" data-id="${item.id}" title="Restablecer Contraseña"><i class="fas fa-key"></i></button>` : '';
@@ -496,6 +499,9 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`;
     } else if (type === 'question') {
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--primary-light); padding: 2px 8px; border-radius: 4px; color: var(--text-dark); display:inline-block; margin-top:0.25rem;">${item.domain?.toUpperCase() || ''} | ${item.target || 'General'}</span>`;
+    } else if (type === 'vocabulary') {
+        const langLabel = item.language_code === 'it-IT' ? '🇮🇹 Italiano' : '🇺🇸 Inglés';
+        areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${langLabel} | ${item.part_of_speech?.toUpperCase() || 'NOUN'} | ${item.level || 'A1'}</span>`;
     }
 
     // Subtitulo formateado

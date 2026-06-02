@@ -3,21 +3,15 @@
     /* Local scoped variables for better control, falling back to app vars */
     --chat-primary: var(--primary, #3b82f6);
     --chat-primary-dark: var(--primary-hover, #2563eb);
-    --chat-bg: #0a0a0a;
-    /* Manta Black */
-    --chat-surface: #141414;
-    /* Dark Surface */
-    --chat-surface-hover: #1f1f1f;
-    /* Slate 700 */
-    --chat-text: #f8fafc;
-    /* Slate 50 */
-    --chat-text-muted: #94a3b8;
-    /* Slate 400 */
-    --chat-border: #334155;
-    /* Slate 700 */
-    --chat-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-    --chat-radius: 16px;
-    --chat-font: 'Inter', system-ui, sans-serif;
+    --chat-bg: var(--bg-secondary, #0a0a0a);
+    --chat-surface: var(--bg-tertiary, #141414);
+    --chat-surface-hover: var(--surface-hover, #1f1f1f);
+    --chat-text: var(--text-main, #f8fafc);
+    --chat-text-muted: var(--text-muted, #94a3b8);
+    --chat-border: var(--border-color, #334155);
+    --chat-shadow: var(--shadow-md);
+    --chat-radius: var(--radius-xl, 16px);
+    --chat-font: var(--font-main);
 }
 
 /* Base Container */
@@ -260,78 +254,226 @@
     letter-spacing: -0.01em;
 }
 
-/* ✅ Selector de Especialidad tipo Tabs/Pestañas Glassmorphic */
-.chatbot-spec-tabs-container {
-    padding: 12px 16px;
-    background: rgba(10, 10, 10, 0.4);
-    border-bottom: 1px solid var(--chat-border);
-    backdrop-filter: blur(12px);
+/* ✅ Selector de Especialidad Premium (Model Selector Dropdown) */
+.chatbot-title-selector {
     display: flex;
-    justify-content: center;
     align-items: center;
-    z-index: 105;
-}
-
-.spec-tabs-wrapper {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    max-width: 360px;
+    gap: 10px;
+    padding: 6px 14px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 14px;
-    padding: 6px 8px;
-    gap: 8px;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.02), 0 4px 15px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
-}
-
-.spec-tab {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.55);
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 10px 14px;
-    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    outline: none;
     user-select: none;
+    max-width: 220px;
 }
 
-.spec-tab:hover:not(.active) {
+/* Neon glow / highlight states for each mode on trigger */
+.chatbot-title-selector[data-persona="neutral"] {
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.03), inset 0 0 4px rgba(255, 255, 255, 0.02);
+}
+.chatbot-title-selector[data-persona="neutral"] .chatbot-title-heading {
+    color: #ffffff;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+}
+
+.chatbot-title-selector[data-persona="medicine"] {
+    border-color: rgba(6, 182, 212, 0.4);
+    background: rgba(6, 182, 212, 0.03);
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.25), inset 0 0 6px rgba(6, 182, 212, 0.1);
+}
+.chatbot-title-selector[data-persona="medicine"] .chatbot-title-heading {
+    color: #06b6d4;
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.45);
+}
+
+.chatbot-title-selector[data-persona="education"] {
+    border-color: rgba(249, 115, 22, 0.4);
+    background: rgba(249, 115, 22, 0.03);
+    box-shadow: 0 0 12px rgba(249, 115, 22, 0.25), inset 0 0 6px rgba(249, 115, 22, 0.1);
+}
+.chatbot-title-selector[data-persona="education"] .chatbot-title-heading {
+    color: #f97316;
+    text-shadow: 0 0 8px rgba(249, 115, 22, 0.45);
+}
+
+.chatbot-title-selector:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+.chatbot-title-selector[data-persona="neutral"]:hover {
+    border-color: rgba(255, 255, 255, 0.35);
+}
+.chatbot-title-selector[data-persona="medicine"]:hover {
+    border-color: rgba(6, 182, 212, 0.6);
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.35);
+}
+.chatbot-title-selector[data-persona="education"]:hover {
+    border-color: rgba(249, 115, 22, 0.6);
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.35);
+}
+
+.chatbot-title-selector.dropdown-active {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.25);
-    color: rgba(255, 255, 255, 0.85);
+}
+.chatbot-title-selector[data-persona="neutral"].dropdown-active {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+.chatbot-title-selector[data-persona="medicine"].dropdown-active {
+    border-color: rgba(6, 182, 212, 0.8);
+}
+.chatbot-title-selector[data-persona="education"].dropdown-active {
+    border-color: rgba(249, 115, 22, 0.8);
 }
 
-/* ✅ Estilos de Acento Premium para Pestaña Activa */
-.spec-tab[data-value="neutral"].active {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1.5px solid rgba(255, 255, 255, 0.85);
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.25), inset 0 0 6px rgba(255, 255, 255, 0.1);
+.chatbot-title-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    text-align: left;
 }
 
-.spec-tab[data-value="medicine"].active {
-    color: #ffffff;
-    background: rgba(6, 182, 212, 0.12);
-    border: 1.5px solid rgba(6, 182, 212, 0.8);
-    box-shadow: 0 0 16px rgba(6, 182, 212, 0.5), inset 0 0 8px rgba(6, 182, 212, 0.25);
+.chatbot-title-heading {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--chat-text);
+    line-height: 1.2;
 }
 
-.spec-tab[data-value="education"].active {
-    color: #ffffff;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1.5px solid rgba(16, 185, 129, 0.8);
-    box-shadow: 0 0 16px rgba(16, 185, 129, 0.5), inset 0 0 8px rgba(16, 185, 129, 0.25);
+.chatbot-chevron {
+    font-size: 0.7rem;
+    color: var(--chat-text-muted);
+    transition: transform 0.2s ease;
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+
+.chatbot-title-selector.dropdown-active .chatbot-chevron {
+    transform: rotate(180deg);
+}
+
+/* Panel Desplegable (Glassmorphic) */
+.chatbot-persona-dropdown {
+    position: absolute;
+    top: 60px;
+    left: 12px;
+    right: 12px;
+    background: rgba(10, 10, 10, 0.94);
+    border: 1px solid var(--chat-border);
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 210;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chatbot-persona-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.04);
+}
+
+.dropdown-item.active {
+    background: rgba(59, 130, 246, 0.06);
+    border-color: rgba(59, 130, 246, 0.15);
+}
+
+.dropdown-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--chat-text-muted);
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item.active .dropdown-item-icon {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.dropdown-item.active .dropdown-item-icon.medicine {
+    background: rgba(6, 182, 212, 0.15);
+    color: #06b6d4;
+}
+
+.dropdown-item.active .dropdown-item-icon.education {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+}
+
+.dropdown-item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    text-align: left;
+}
+
+.dropdown-item-title {
+    font-size: 0.82rem;
+    font-weight: 650;
+    color: var(--chat-text);
+}
+
+.dropdown-item-desc {
+    font-size: 0.68rem;
+    color: var(--chat-text-muted);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-item-check {
+    color: #3b82f6;
+    font-size: 0.8rem;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.dropdown-item.active .dropdown-item-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.dropdown-item.active[data-value="medicine"] .dropdown-item-check {
+    color: #06b6d4;
+}
+
+.dropdown-item.active[data-value="education"] .dropdown-item-check {
+    color: #f97316;
 }
 
 /* Color dinámico del Icono del Robot */
@@ -354,8 +496,8 @@
 }
 
 .chatbot-icon-svg[data-persona="education"] {
-    color: #10b981;
-    background: rgba(16, 185, 129, 0.15);
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.15);
 }
 
 .chatbot-icon-svg[data-persona="neutral"] {
@@ -383,21 +525,24 @@
         font-size: 0.9rem;
     }
 
-    .chatbot-spec-tabs-container {
-        padding: 8px 10px;
+    .chatbot-title-selector {
+        padding: 4px 10px;
+        border-radius: 10px;
+        max-width: 160px;
     }
 
-    .spec-tabs-wrapper {
-        gap: 4px;
-        padding: 4px 6px;
-        border-radius: 12px;
+    .chatbot-title-heading {
+        font-size: 0.8rem;
     }
 
-    .spec-tab {
-        font-size: 0.68rem;
-        padding: 8px 6px;
-        border-radius: 8px;
-        letter-spacing: 0.02em;
+    .chatbot-subtitle {
+        font-size: 0.62rem;
+    }
+
+    .chatbot-persona-dropdown {
+        top: 52px;
+        left: 8px;
+        right: 8px;
     }
 }
 

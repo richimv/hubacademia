@@ -14,13 +14,13 @@
    ========================================================================== */
 
 :root {
-    --bg-pure: #050505;
-    --card-bg: #111111;
-    --border-dim: rgba(255, 255, 255, 0.1);
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
-    --accent-color: #3b82f6;
-    --success-color: #22c55e;
+    --bg-pure: var(--bg-main);
+    --card-bg: var(--bg-secondary);
+    --border-dim: var(--border-color);
+    --text-primary: var(--text-main);
+    --text-secondary: var(--text-muted);
+    --accent-color: var(--primary);
+    --success-color: var(--success);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent !important; }

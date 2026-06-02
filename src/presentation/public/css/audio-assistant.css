@@ -5,13 +5,13 @@
 
 /* ─── VARIABLES LOCALES ─────────────────────────────── */
 :root {
-    --audio-primary: #8b5cf6;
-    --audio-secondary: #06b6d4;
-    --audio-bg: rgba(8, 8, 12, 0.97);
-    --audio-surface: rgba(255, 255, 255, 0.04);
-    --audio-border: rgba(255, 255, 255, 0.08);
-    --audio-text: #f1f5f9;
-    --audio-muted: #64748b;
+    --audio-primary: var(--accent-purple);
+    --audio-secondary: var(--info);
+    --audio-bg: var(--bg-tertiary);
+    --audio-surface: var(--surface-hover);
+    --audio-border: var(--border-color);
+    --audio-text: var(--text-main);
+    --audio-muted: var(--text-muted);
 }
 
 /* ─── BOTÓN FLOTANTE (FAB) ───────────────────────────── */

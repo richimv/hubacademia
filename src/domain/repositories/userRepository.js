@@ -23,7 +23,9 @@ class UserRepository {
             row.daily_ai_usage,
             row.daily_arena_usage,
             row.last_usage_reset,
-            row.last_name_change_at
+            row.last_name_change_at,
+            row.monthly_flashcards_usage,
+            row.daily_import_usage
         );
     }
 
@@ -73,7 +75,7 @@ class UserRepository {
                     DO UPDATE SET 
                         id = EXCLUDED.id,
                         updated_at = NOW()
-                    RETURNING id, email, password_hash, role, name, subscription_status, payment_id, usage_count, max_free_limit, subscription_tier, subscription_expires_at, daily_simulator_usage, daily_ai_usage, daily_arena_usage, last_usage_reset;
+                    RETURNING *;
                 `;
                 const manualRes = await db.query(manualQuery, [id, name, email.toLowerCase(), passwordHash, role]);
                 return this._mapRowToUser(manualRes.rows[0]);
@@ -86,7 +88,7 @@ class UserRepository {
                     UPDATE public.users 
                     SET id = $1, updated_at = NOW() 
                     WHERE lower(email) = $2
-                    RETURNING id, email, password_hash, role, name, subscription_status, payment_id, usage_count, max_free_limit, subscription_tier, subscription_expires_at, daily_simulator_usage, daily_ai_usage, daily_arena_usage, last_usage_reset;
+                    RETURNING *;
                   `;
                   // Pasamos solo ID y Email (el nombre ya no se toca si hay conflicto)
                   const updateRes = await db.query(updateQuery, [id, email.toLowerCase()]);
@@ -147,6 +149,12 @@ class UserRepository {
         const lastReset = userData.lastUsageReset !== undefined ? userData.lastUsageReset : userData.last_usage_reset;
         if (lastReset !== undefined) { fields.push(`last_usage_reset = $${idx++}`); values.push(lastReset); }
 
+        const monthlyFlashcardsUsage = userData.monthlyFlashcardsUsage !== undefined ? userData.monthlyFlashcardsUsage : userData.monthly_flashcards_usage;
+        if (monthlyFlashcardsUsage !== undefined) { fields.push(`monthly_flashcards_usage = $${idx++}`); values.push(monthlyFlashcardsUsage); }
+
+        const dailyImportUsage = userData.dailyImportUsage !== undefined ? userData.dailyImportUsage : userData.daily_import_usage;
+        if (dailyImportUsage !== undefined) { fields.push(`daily_import_usage = $${idx++}`); values.push(dailyImportUsage); }
+
         const lastNameChange = userData.lastNameChangeAt !== undefined ? userData.lastNameChangeAt : userData.last_name_change_at;
         if (lastNameChange !== undefined) { fields.push(`last_name_change_at = $${idx++}`); values.push(lastNameChange); }
 
@@ -181,6 +189,9 @@ const seedAdminUser = async () => {
         }
     } catch (error) { console.warn('⚠️ Seed Admin:', error.message); }
 };
-seedAdminUser();
+
+if (process.env.NODE_ENV !== 'test') {
+    seedAdminUser();
+}
 
 module.exports = UserRepository;

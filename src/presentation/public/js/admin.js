@@ -8,6 +8,7 @@ class AdminManager {
         this.allTopics = []; // Nuevo almacén para temas
         this.allBooks = []; // Nuevo almacén para libros
         this.allQuestions = []; // NUEVO: Almacén para preguntas
+        this.allVocabularies = []; // NUEVO: Almacén para vocabulario global
 
         // Estado de ordenamiento por pestaña
         this.tabSortState = {
@@ -16,7 +17,8 @@ class AdminManager {
             'tab-students': 'date-desc',
             'tab-topics': 'date-desc',
             'tab-books': 'date-desc',
-            'tab-questions': 'date-desc'
+            'tab-questions': 'date-desc',
+            'tab-vocabularies': 'date-desc'
         };
         this.previewTimer = null; // Debounce para previsualización
 
@@ -27,7 +29,8 @@ class AdminManager {
             'tab-students': { search: '', filter: 'all' },
             'tab-topics': { search: '', filter: 'all' },
             'tab-books': { search: '', filter: 'all' },
-            'tab-questions': { search: '', filter: 'all' }
+            'tab-questions': { search: '', filter: 'all' },
+            'tab-vocabularies': { search: '', filter: 'all' }
         };
         this.selectedIds = [];
         this.selectedType = '';
@@ -376,6 +379,7 @@ class AdminManager {
         if (tabId === 'tab-books') this.displayBooks();
         if (tabId === 'tab-careers') this.displayCareers();
         if (tabId === 'tab-questions') this.displayQuestions();
+        if (tabId === 'tab-vocabularies') this.displayVocabularies();
     }
 
     // ELIMINADO: _getAuthHeaders ahora es manejado automáticamente por NetworkService
@@ -430,16 +434,17 @@ class AdminManager {
                 questionsUrl.searchParams.append('search', this.currentQuestionSearch);
             }
 
-            const [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes] = await Promise.all([
+            const [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes, vocabulariesRes] = await Promise.all([
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/careers`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/students`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/topics`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?includeHidden=true`),
-                window.NetworkService.fetch(questionsUrl.toString())
+                window.NetworkService.fetch(questionsUrl.toString()),
+                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/vocabularies`)
             ]);
 
-            for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes]) {
+            for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes, vocabulariesRes]) {
                 if (!res.ok) throw new Error(`Failed to fetch ${res.url}: ${res.statusText}`);
             }
 
@@ -449,6 +454,7 @@ class AdminManager {
             this.allStudents = await studentsRes.json();
             this.allTopics = await topicsRes.json();
             this.allBooks = await booksRes.json(); // Cargar libros
+            this.allVocabularies = await vocabulariesRes.json(); // Cargar vocabulario
 
             // OPTIMIZACIÓN: No cargamos todas las preguntas de golpe aquí si queremos soporte dinámico,
             // pero para no romper el flujo actual, cargamos el primer lote.
@@ -461,6 +467,7 @@ class AdminManager {
             this.displayTopics();
             this.displayBooks();
             this.displayQuestions();
+            this.displayVocabularies();
 
         } catch (error) {
             console.error('❌ Error cargando datos iniciales:', error);
@@ -695,6 +702,48 @@ class AdminManager {
         }
     }
 
+    displayVocabularies() {
+        const container = document.getElementById('tab-vocabularies');
+        if (!container) return;
+
+        // Ordenar datos
+        const sortedVocab = this.sortData(this.allVocabularies, 'vocabulary', 'tab-vocabularies');
+        const itemsHTML = sortedVocab.map(vocab => createAdminItemCardHTML(vocab, 'vocabulary')).join('');
+
+        const langFilters = [
+            { id: 'all', name: 'Todos los Idiomas' },
+            { id: 'en-US', name: '🇺🇸 Inglés (USA)' },
+            { id: 'en-GB', name: '🇬🇧 Inglés (UK)' },
+            { id: 'it-IT', name: '🇮🇹 Italiano' }
+        ];
+
+        const headerHTML = `
+            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
+                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
+                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; min-width: 250px; height: 40px;">
+                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 15px; font-size: 0.9rem; position: static !important;"></i>
+                        <input type="text" class="admin-search-input" data-target-tab="tab-vocabularies" placeholder="Buscar palabras..." style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; padding: 5px 0;">
+                    </div>
+                    <select class="admin-type-filter" data-target-tab="tab-vocabularies" style="height: 40px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); padding: 0 10px; cursor: pointer;">
+                        ${langFilters.map(lf => `<option value="${lf.id}">${lf.name}</option>`).join('')}
+                    </select>
+                    <select class="tab-sort-select" data-tab="tab-vocabularies" style="height: 40px;">
+                        <option value="date-desc">📅 Más Recientes</option>
+                        <option value="alpha-asc">🔤 A-Z (Palabra)</option>
+                    </select>
+                </div>
+                <div class="action-buttons" style="display: flex; gap: 10px;">
+                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('vocabulary')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                        <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Palabra Global</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = headerHTML + (itemsHTML || '<p class="empty-state">No hay palabras en el diccionario global.</p>');
+        this.applySearchFilterForTab('tab-vocabularies');
+    }
+
     async openGenericModal(type, id = null) {
         this.genericForm.reset();
         this.genericForm.dataset.type = type;
@@ -854,6 +903,62 @@ class AdminManager {
                     const txtE = document.getElementById('generic-explanation');
                     if (txtQ) txtQ.rows = 3;
                     if (txtE) txtE.rows = 2;
+                }, 0);
+                break;
+            }
+
+            case 'vocabulary': {
+                title.textContent = id ? 'Editar Palabra Global' : 'Añadir Palabra Global';
+                if (id) this.currentItem = this.allVocabularies.find(v => String(v.id) === String(id));
+
+                const languages = [
+                    { id: 'en-US', name: '🇺🇸 Inglés (USA)' },
+                    { id: 'en-GB', name: '🇬🇧 Inglés (UK)' },
+                    { id: 'it-IT', name: '🇮🇹 Italiano' }
+                ];
+
+                const partsOfSpeech = [
+                    { id: 'noun', name: 'Sustantivo' },
+                    { id: 'verb', name: 'Verbo' },
+                    { id: 'adjective', name: 'Adjetivo' },
+                    { id: 'adverb', name: 'Adverbio' },
+                    { id: 'pronoun', name: 'Pronombre' },
+                    { id: 'preposition', name: 'Preposición' },
+                    { id: 'conjunction', name: 'Conjunción' },
+                    { id: 'determiner', name: 'Determinante' },
+                    { id: 'interjection', name: 'Interjección' }
+                ];
+
+                const levels = [
+                    { id: 'A1', name: 'Nivel A1' },
+                    { id: 'A2', name: 'Nivel A2' },
+                    { id: 'B1', name: 'Nivel B1' },
+                    { id: 'B2', name: 'Nivel B2' },
+                    { id: 'C1', name: 'Nivel C1' },
+                    { id: 'C2', name: 'Nivel C2' }
+                ];
+
+                fieldsHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        ${this.createFormGroup('text', 'generic-word', 'Palabra / Lema Canónico (*)', this.currentItem?.word || '', true)}
+                        ${this.createFormGroup('text', 'generic-translation', 'Traducción Base (*)', this.currentItem?.translation || '', true)}
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        ${this.createSelect('generic-language-code', 'Idioma (*)', languages, this.currentItem?.language_code || 'en-US', false)}
+                        ${this.createSelect('generic-part-of-speech', 'Categoría Gramatical (*)', partsOfSpeech, this.currentItem?.part_of_speech || 'noun', false)}
+                        ${this.createSelect('generic-level', 'Nivel MCER (*)', levels, this.currentItem?.level || 'A1', false)}
+                    </div>
+                    <div style="margin-top: 15px;">
+                        ${this.createFormGroup('textarea', 'generic-definition', 'Definición (*)', this.currentItem?.definition || '', true)}
+                        ${this.createFormGroup('textarea', 'generic-example-sentence', 'Ejemplo de Uso (Opcional)', this.currentItem?.example_sentence || '', false)}
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    const txtDef = document.getElementById('generic-definition');
+                    const txtEx = document.getElementById('generic-example-sentence');
+                    if (txtDef) txtDef.rows = 3;
+                    if (txtEx) txtEx.rows = 2;
                 }, 0);
                 break;
             }
@@ -2144,6 +2249,8 @@ class AdminManager {
 
         if (type === 'question') {
             url = id ? `${window.AppConfig.API_URL}/api/admin/question/${id}` : `${window.AppConfig.API_URL}/api/admin/question`;
+        } else if (type === 'vocabulary') {
+            url = id ? `${window.AppConfig.API_URL}/api/admin/vocabularies/${id}` : `${window.AppConfig.API_URL}/api/admin/vocabularies`;
         }
 
         let body = {};
@@ -2572,6 +2679,18 @@ class AdminManager {
                         }
                     }
                 }
+                
+                case 'vocabulary':
+                    body = {
+                        word: document.getElementById('generic-word').value.trim(),
+                        translation: document.getElementById('generic-translation').value.trim(),
+                        language_code: document.getElementById('generic-language-code').value,
+                        part_of_speech: document.getElementById('generic-part-of-speech').value,
+                        level: document.getElementById('generic-level').value,
+                        definition: document.getElementById('generic-definition').value.trim(),
+                        example_sentence: document.getElementById('generic-example-sentence').value.trim()
+                    };
+                    break;
 
                 default:
                     throw new Error(`Tipo de entidad no manejado: ${type}`);
@@ -2627,6 +2746,8 @@ class AdminManager {
             let url = `${window.AppConfig.API_URL}/api/${type}s/${id}`;
             if (type === 'question') {
                 url = `${window.AppConfig.API_URL}/api/admin/question/${id}`;
+            } else if (type === 'vocabulary') {
+                url = `${window.AppConfig.API_URL}/api/admin/vocabularies/${id}`;
             }
 
             const response = await window.NetworkService.fetch(url, {

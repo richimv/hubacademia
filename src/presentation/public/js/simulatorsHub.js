@@ -106,6 +106,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     actionColor: '#7c3aed',
                     actionIcon: 'fa-comments',
                     enabled: true
+                },
+                {
+                    title: 'Mi Vocabulario',
+                    desc: 'Colecciona y practica palabras. Domina tiempos verbales, conjugaciones y flexiones con feedback en tiempo real de la IA.',
+                    href: '/my-vocabulary',
+                    cssClass: 'card-lang-vocab',
+                    actionText: 'Ingresar',
+                    actionColor: '#10b981',
+                    actionIcon: 'fa-arrow-right',
+                    enabled: true
                 }
             ]
         }
@@ -143,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.uiManager.showToast(card.toast);
                 }
             });
-        } else if (card.title === 'Tutor Conversacional IA') {
+        } else if (card.title === 'Tutor Conversacional IA' || card.title === 'Mi Vocabulario') {
             a.addEventListener('click', (e) => {
                 const token = localStorage.getItem('authToken');
                 if (!token) {

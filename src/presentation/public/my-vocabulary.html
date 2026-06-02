@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Vocabulario Inteligente | Hub Academia</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/theme.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/base.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/header.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/footer.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/dashboard.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/modal.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/sidebar.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/components.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/quiz.css?v=23b2f3c2">
+    <style>
+        /* CSS adicional para el Vocabulario Independiente y su Modal de Práctica */
+        .vocab-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .vocab-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .lang-select-dropdown {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .lang-select-dropdown:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+        
+        /* Badges de Categoría Gramatical */
+        .pos-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .pos-verb { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .pos-noun { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .pos-adjective { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .pos-pronoun { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .pos-determiner { background: rgba(236, 72, 153, 0.15); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.2); }
+        .pos-adverb { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.2); }
+        .pos-preposition { background: rgba(107, 114, 128, 0.15); color: #9ca3af; border: 1px solid rgba(107, 114, 128, 0.2); }
+        .pos-conjunction { background: rgba(75, 85, 99, 0.15); color: #cbd5e1; border: 1px solid rgba(75, 85, 99, 0.2); }
+        .pos-interjection { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        /* Badges de SRS state */
+        .srs-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 3px 8px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .srs-new { background: rgba(156, 163, 175, 0.1); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.15); }
+        .srs-learning { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .srs-review { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .srs-mastered { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); box-shadow: 0 0 10px rgba(16, 185, 129, 0.15); }
+
+        /* Botón de Práctica de Fila */
+        .btn-vocab-practice {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34d399;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .btn-vocab-practice:hover {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.35) 100%);
+            border-color: #34d399;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Conjugaciones Grid */
+        .conjugations-wrapper {
+            margin-top: 1rem;
+            padding: 1.25rem;
+            background: rgba(20, 20, 20, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+        }
+        .conjugations-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: 0.02em;
+        }
+        .conjugations-groups-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            margin-top: 0.75rem;
+        }
+        .conjugations-group {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(4px);
+        }
+        
+        /* Accents por tipos de grupo */
+        .conjugations-group.group-verb {
+            border-left: 3px solid #60a5fa;
+        }
+        .conjugations-group.group-verb:hover {
+            border-color: rgba(96, 165, 250, 0.3);
+            border-left-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.03);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        .conjugations-group.group-verb .conjugations-group-title {
+            color: #60a5fa;
+        }
+
+        .conjugations-group.group-noun {
+            border-left: 3px solid #34d399;
+        }
+        .conjugations-group.group-noun:hover {
+            border-color: rgba(52, 211, 153, 0.3);
+            border-left-color: #34d399;
+            background: rgba(52, 211, 153, 0.03);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        .conjugations-group.group-noun .conjugations-group-title {
+            color: #34d399;
+        }
+
+        .conjugations-group.group-adj {
+            border-left: 3px solid #fbbf24;
+        }
+        .conjugations-group.group-adj:hover {
+            border-color: rgba(251, 191, 36, 0.3);
+            border-left-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.03);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        .conjugations-group.group-adj .conjugations-group-title {
+            color: #fbbf24;
+        }
+
+        .conjugations-group.group-other {
+            border-left: 3px solid #f472b6;
+        }
+        .conjugations-group.group-other:hover {
+            border-color: rgba(244, 114, 182, 0.3);
+            border-left-color: #f472b6;
+            background: rgba(244, 114, 182, 0.03);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        .conjugations-group.group-other .conjugations-group-title {
+            color: #f472b6;
+        }
+
+        .conjugations-group-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .conjugations-group-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.6rem;
+        }
+        .conjugation-item {
+            background: rgba(10, 10, 10, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 0.6rem 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .conjugation-item:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(15, 15, 15, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+        .conjugation-label {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.7rem;
+            display: block;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        .conjugation-form {
+            color: #e9d5ff;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+        .btn-conj-play {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-conj-play:hover {
+            background: rgba(167, 139, 250, 0.15);
+            border-color: rgba(167, 139, 250, 0.3);
+            color: #c084fc;
+            transform: scale(1.15);
+        }
+
+        /* Modal de Práctica y Speaking */
+        .practice-challenge-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.25rem;
+            text-align: center;
+            font-size: 1.05rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+        }
+        .practice-challenge-text {
+            font-weight: 600;
+            color: #3b82f6;
+            margin-top: 0.35rem;
+        }
+        
+        /* Conmutador de Práctica */
+        .practice-mode-selector {
+            display: flex;
+            background: rgba(10, 10, 10, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 1rem;
+        }
+        .practice-mode-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .practice-mode-btn.active {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Speaking Mic Button & Wave Animation */
+        .practice-mic-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem 0;
+            gap: 1rem;
+        }
+        .btn-practice-mic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            color: #fff;
+            font-size: 1.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+        .btn-practice-mic.recording {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0.2), 0 6px 20px rgba(239, 68, 68, 0.4);
+            transform: scale(1.05);
+            animation: pulseRecord 1.5s infinite;
+        }
+        @keyframes pulseRecord {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4), 0 6px 20px rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0), 0 6px 20px rgba(239, 68, 68, 0.4); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 6px 20px rgba(239, 68, 68, 0.4); }
+        }
+        
+        .practice-wave-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            height: 24px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .practice-wave-indicator.active {
+            opacity: 1;
+        }
+        .practice-wave-bar {
+            width: 3px;
+            height: 6px;
+            background-color: #ef4444;
+            border-radius: 50px;
+            animation: bounceWave 0.8s ease-in-out infinite alternate;
+        }
+        .practice-wave-bar:nth-child(2) { animation-delay: 0.15s; height: 12px; }
+        .practice-wave-bar:nth-child(3) { animation-delay: 0.3s; height: 18px; }
+        .practice-wave-bar:nth-child(4) { animation-delay: 0.45s; height: 10px; }
+        .practice-wave-bar:nth-child(5) { animation-delay: 0.6s; height: 4px; }
+        @keyframes bounceWave {
+            from { transform: scaleY(1); }
+            to { transform: scaleY(2.2); }
+        }
+
+        .practice-mic-status {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Input de texto */
+        .practice-input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .practice-text-textarea {
+            width: 100%;
+            min-height: 80px;
+            background: rgba(10, 10, 10, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-main);
+            padding: 0.75rem;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+            outline: none;
+        }
+        .practice-text-textarea:focus {
+            border-color: #3b82f6;
+        }
+
+        /* Tarjeta de Feedback */
+        .practice-feedback-card {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-top: 1rem;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+        .practice-feedback-card.correct-glow {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+        }
+        .practice-feedback-card.incorrect-glow {
+            border-color: rgba(239, 68, 68, 0.4);
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.15);
+        }
+
+        .feedback-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .feedback-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+        .feedback-precision {
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        /* Correcciones de ortografía estilo diff */
+        .corrections-diff-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+        .diff-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .diff-text {
+            font-family: inherit;
+        }
+        .diff-wrong {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            padding: 1px 4px;
+            border-radius: 4px;
+            text-decoration: line-through;
+        }
+        .diff-right {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* Dropdown de Sugerencias */
+        .vocab-suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            margin-top: 4px;
+        }
+        .vocab-suggestion-item {
+            padding: 0.6rem 0.8rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            transition: background 0.15s ease;
+        }
+        .vocab-suggestion-item:last-child {
+            border-bottom: none;
+        }
+        .vocab-suggestion-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .vocab-suggestion-word {
+            font-weight: 600;
+            color: #fff;
+            font-size: 0.85rem;
+        }
+        .vocab-suggestion-translation {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+        .vocab-suggestion-pos {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(167, 139, 250, 0.15);
+            color: #c084fc;
+        }
+    </style>
+</head>
+
+<body class="hero-hidden">
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Hub Academia</span>
+            </a>
+        </div>
+        <div class="header-nav">
+            <div id="user-session-controls">
+                <span class="loading-user">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Loading -->
+        <div id="loading" style="text-align: center; padding: 4rem;">
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #10b981;"></i>
+        </div>
+
+        <!-- Content -->
+        <div id="dashboard-content" style="display: none;">
+            
+            <!-- Page Header -->
+            <div class="vocab-page-header">
+                <div class="vocab-header-left">
+                    <h1 class="ctx-title-compact" style="margin: 0;">Mi Vocabulario Inteligente</h1>
+                </div>
+                <div class="vocab-header-right">
+                    <select id="vocab-lang-select" class="lang-select-dropdown">
+                        <option value="en-US">Inglés Americano (US)</option>
+                        <option value="en-GB">Inglés Británico (UK)</option>
+                        <option value="it-IT">Italiano</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Workspace Card -->
+            <div class="cci-vocab-container glass-card">
+                <div class="vocab-header-actions">
+                    <div class="vocab-title-meta">
+                        <h4>Colección de Vocabulario</h4>
+                        <p class="vocab-subtitle" id="vocab-meta-info">Filtra, añade y practica términos en base a Repetición Espaciada (SRS).</p>
+                    </div>
+                    <div class="vocab-buttons">
+                        <button id="btn-open-vocab-add" class="btn-premium btn-premium-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #10b981;">
+                            <i class="fas fa-plus"></i> Agregar Palabra
+                        </button>
+                        <button id="btn-export-vocab-flashcards" class="btn-premium btn-premium-ia" disabled>
+                            <i class="fas fa-clone"></i> Exportar a Flashcards (<span id="selected-vocab-count">0</span>)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="vocab-table-wrapper">
+                    <table class="vocab-table" id="vocab-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align: center;">
+                                    <input type="checkbox" id="vocab-select-all">
+                                </th>
+                                <th>Palabra</th>
+                                <th>Traducción</th>
+                                <th class="desktop-only">Categoría</th>
+                                <th style="width: 150px; text-align: center;">Progreso SRS</th>
+                                <th style="width: 180px; text-align: center;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vocab-table-body">
+                            <!-- Rellenado dinámicamente -->
+                        </tbody>
+                    </table>
+                    <div id="vocab-empty-state" class="vocab-empty-state" style="display: none;">
+                        <div class="empty-icon" style="color: #10b981;"><i class="fas fa-spell-check"></i></div>
+                        <h4>Tu vocabulario está vacío</h4>
+                        <p>Agrega palabras que desees practicar. Puedes autocompletar su traducción, categoría gramatical y ejemplos usando Inteligencia Artificial.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Palabra de Vocabulario -->
+    <div id="vocab-modal-overlay" class="modal-overlay">
+        <div class="config-modal" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-plus-circle"></i> Agregar Palabra
+                </h3>
+                <button id="btn-close-vocab-modal" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem 0;">
+                <div class="form-group vocab-word-row">
+                    <div style="flex-grow: 1; position: relative;">
+                        <label class="modal-section-title" style="margin-bottom:0.4rem; display:block;">Palabra / Expresión</label>
+                        <input type="text" id="vocab-word" placeholder="Ej. environment, mangiare, etc." autocomplete="off">
+                        <!-- Dropdown de sugerencias global -->
+                        <div id="vocab-suggestions-dropdown" class="vocab-suggestions-dropdown" style="display: none;"></div>
+                    </div>
+                    <button id="btn-vocab-ai-fill" class="btn-premium btn-premium-ia" title="Rellenar automáticamente usando Gemini">
+                        <i class="fas fa-magic"></i> Rellenar con IA
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label class="modal-section-title" style="margin-bottom:0.4rem; display:block;">Categoría Gramatical</label>
+                    <select id="vocab-pos" style="width: 100%; padding: 0.6rem; border-radius: 8px; background: rgba(10,10,10,0.6); border: 1px solid var(--border-color); color: #fff;">
+                        <option value="verb">Verbo (Variable)</option>
+                        <option value="noun">Sustantivo (Variable)</option>
+                        <option value="adjective">Adjetivo (Variable)</option>
+                        <option value="pronoun">Pronombre (Variable)</option>
+                        <option value="determiner">Determinante (Variable)</option>
+                        <option value="adverb">Adverbio (Invariable)</option>
+                        <option value="preposition">Preposición (Invariable)</option>
+                        <option value="conjunction">Conjunción (Invariable)</option>
+                        <option value="interjection">Interjección (Invariable)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="modal-section-title" style="margin-bottom:0.4rem; display:block;">Traducción al Español</label>
+                    <input type="text" id="vocab-translation" placeholder="Ej. Medio ambiente, comer">
+                </div>
+
+                <div class="form-group">
+                    <label class="modal-section-title" style="margin-bottom:0.4rem; display:block;">Definición (Opcional)</label>
+                    <textarea id="vocab-definition" placeholder="Ej. Conjunto de elementos físicos, químicos y biológicos..." style="min-height:80px; resize:vertical;"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="modal-section-title" style="margin-bottom:0.4rem; display:block;">Oración de Ejemplo (Opcional)</label>
+                    <textarea id="vocab-example" placeholder="Ej. We must work together to protect the environment." style="min-height:60px; resize:vertical;"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); display:flex; justify-content:flex-end; gap:0.5rem;">
+                <button id="btn-cancel-vocab-save" class="btn-premium btn-premium-secondary">
+                    Cancelar
+                </button>
+                <button id="btn-save-vocab" class="btn-premium btn-premium-primary" style="background: #10b981; border-color: #10b981;">
+                    Guardar Palabra
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Práctica de Vocabulario (Feedback IA + Speaking Wave) -->
+    <div id="practice-modal-overlay" class="modal-overlay">
+        <div class="config-modal" style="max-width: 600px; animation: scaleUp 0.3s ease;">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-graduation-cap"></i> Práctica Inteligente
+                </h3>
+                <button id="btn-close-practice-modal" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem 0;">
+                
+                <!-- Palabra e info -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                    <div>
+                        <span id="practice-word-title" style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-right: 0.5rem;">--</span>
+                        <span id="practice-pos-badge" class="pos-badge pos-verb">--</span>
+                    </div>
+                    <div id="practice-translation-sub" style="font-size: 0.95rem; color: var(--text-muted);">--</div>
+                </div>
+
+                <!-- Challenge syntáctico del Tutor de IA -->
+                <div class="practice-challenge-box">
+                    <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Reto del Tutor:</div>
+                    <div id="practice-challenge-desc" class="practice-challenge-text">Cargando reto de práctica...</div>
+                </div>
+
+                <!-- Conmutador de Entrada (Escritura vs Habla) -->
+                <div class="practice-mode-selector">
+                    <button id="btn-mode-text" class="practice-mode-btn active">
+                        <i class="fas fa-keyboard"></i> Escritura (Texto)
+                    </button>
+                    <button id="btn-mode-voice" class="practice-mode-btn">
+                        <i class="fas fa-microphone"></i> Habla (Voz)
+                    </button>
+                </div>
+
+                <!-- Input area: Text Mode -->
+                <div id="practice-text-input-container" class="practice-input-container">
+                    <label class="modal-section-title" style="font-size: 0.8rem;">Escribe una oración completa usando el término:</label>
+                    <textarea id="practice-text-answer" class="practice-text-textarea" placeholder="Ej. Escribe tu oración aquí..."></textarea>
+                </div>
+
+                <!-- Input area: Voice Mode -->
+                <div id="practice-voice-input-container" class="practice-mic-container" style="display: none;">
+                    <div class="practice-wave-indicator" id="practice-wave-indicator">
+                        <div class="practice-wave-bar"></div>
+                        <div class="practice-wave-bar"></div>
+                        <div class="practice-wave-bar"></div>
+                        <div class="practice-wave-bar"></div>
+                        <div class="practice-wave-bar"></div>
+                    </div>
+                    <button id="btn-practice-mic" class="btn-practice-mic" title="Presionar para grabar">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <div id="practice-mic-status" class="practice-mic-status">Presiona el botón para empezar a hablar</div>
+                    
+                    <!-- Campo oculto para ver lo capturado por el transcriptor -->
+                    <textarea id="practice-voice-transcript" class="practice-text-textarea" style="margin-top: 0.5rem; min-height: 50px; font-size: 0.85rem;" readonly placeholder="Tu transcripción de voz aparecerá aquí..."></textarea>
+                </div>
+
+                <!-- Didactic Feedback Card (Gemini Response) -->
+                <div id="practice-feedback-card" class="practice-feedback-card">
+                    <div class="feedback-title-row">
+                        <div class="feedback-status" id="feedback-status-text">
+                            <i class="fas fa-check-circle" style="color:#10b981;"></i> Corrección
+                        </div>
+                        <div class="feedback-precision" id="feedback-precision-score">90%</div>
+                    </div>
+
+                    <!-- Spelling corrections diff -->
+                    <div id="feedback-diff-box" class="corrections-diff-box" style="display: none;">
+                        <div class="diff-label">Diferencias detectadas (Ortografía):</div>
+                        <div class="diff-text" id="feedback-diff-text"></div>
+                    </div>
+
+                    <!-- Explicación Didáctica -->
+                    <div class="markdown-content" id="feedback-pedagogical" style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.45;"></div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer" style="padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); display:flex; justify-content:flex-end; gap:0.5rem;">
+                <button id="btn-practice-cancel" class="btn-premium btn-premium-secondary">
+                    Cerrar
+                </button>
+                <button id="btn-practice-submit" class="btn-premium btn-premium-primary" style="background: #3b82f6; border-color: #3b82f6;">
+                    Evaluar Oración
+                </button>
+                <button id="btn-practice-retry" class="btn-premium btn-premium-primary" style="background: #f59e0b; border-color: #f59e0b; display: none;">
+                    Intentar de Nuevo
+                </button>
+                <button id="btn-practice-finish" class="btn-premium btn-premium-primary" style="background: #10b981; border-color: #10b981; display: none;">
+                    Completar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Injection -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="/assets/logo.png" alt="Hub Academia Logo">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">Tu plataforma de aprendizaje inteligente. Simulacros, flashcards y asistente interactivo para salud, educación e idiomas.</p>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Explorar</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="/library" class="footer-link">Mi biblioteca</a></li>
+                    <li><a href="pricing" class="footer-link">Precios</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <ul class="footer-links-list">
+                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
+        </div>
+    </footer>
+
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/config.js?v=23b2f3c2"></script>
+    <script src="/js/services/networkService.js?v=23b2f3c2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/js/utils/markdown-renderer.js?v=23b2f3c2"></script>
+    <script src="/js/services/authApiService.js?v=23b2f3c2"></script>
+    <script src="/js/services/analyticsApiService.js?v=23b2f3c2"></script>
+    <script src="/js/sessionManager.js?v=23b2f3c2"></script>
+    <script src="/js/ui/uiManager.js?v=23b2f3c2"></script>
+    <script src="/js/ui/components.js?v=23b2f3c2"></script>
+    <script src="/js/ui/sidebar.js?v=23b2f3c2"></script>
+    <script src="/js/app.js?v=23b2f3c2"></script>
+
+    <!-- Specific Script for standalone vocabulary page -->
+    <script src="/js/my-vocabulary.js?v=23b2f3c2"></script>
+</body>
+
+</html>

@@ -1,4 +1,5 @@
 const AuthService = require('../../domain/services/authService');
+const { LIMITS } = require('../../infrastructure/config/limits');
 
 class AuthController {
     constructor(authService) {
@@ -24,7 +25,12 @@ class AuthController {
             }
             // Omitimos passwordHash por seguridad
             const { passwordHash, ...userWithoutPassword } = user;
-            res.json(userWithoutPassword);
+            const userLimits = LIMITS[user.subscriptionTier] || LIMITS.free;
+
+            res.json({
+                ...userWithoutPassword,
+                limits: userLimits
+            });
         } catch (error) {
             console.error('Error en getMe:', error);
             res.status(500).json({ error: 'Error interno al obtener datos.' });

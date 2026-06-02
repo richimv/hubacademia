@@ -5,12 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Perfil - Hub Academia</title>
-    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="css/base.css?v=58586bc4">
-    <link rel="stylesheet" href="css/auth.css?v=58586bc4"> <!-- Reusing Auth styles -->
-    <link rel="stylesheet" href="css/header.css?v=58586bc4">
-    <link rel="stylesheet" href="css/footer.css?v=58586bc4">
+    <link rel="stylesheet" href="/css/theme.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/base.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/auth.css?v=23b2f3c2"> <!-- Reusing Auth styles -->
+    <link rel="stylesheet" href="/css/header.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/footer.css?v=23b2f3c2">
     <style>
         /* Premium Profile Styles */
         :root {
@@ -360,9 +362,76 @@
         .btn-danger:hover {
             transform: scale(1.05);
         }
+
+        /* Usage dashboard style conforming to Design System */
+        .usage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .usage-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .usage-item:hover {
+            border-color: rgba(59, 130, 246, 0.2);
+            background: rgba(255, 255, 255, 0.03);
+            transform: translateY(-2px);
+        }
+
+        .usage-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .usage-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .usage-count-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #60a5fa;
+        }
+
+        .usage-progress-bg {
+            height: 6px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .usage-progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+            transition: width 0.5s ease-in-out;
+        }
+
+        .usage-footer {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
-    <link rel="stylesheet" href="/css/modal.css?v=58586bc4">
-    <link rel="stylesheet" href="/css/sidebar.css?v=58586bc4">
+    <link rel="stylesheet" href="/css/modal.css?v=23b2f3c2">
+    <link rel="stylesheet" href="/css/sidebar.css?v=23b2f3c2">
 </head>
 
 <body>
@@ -400,22 +469,17 @@
                 <div class="loading-placeholder" style="color: #94a3b8; font-style: italic;">Cargando detalles del plan...</div>
             </div>
         </div>
-
-        <div class="settings-grid">
-            <!-- Coming Soon: Preferences -->
-            <div class="settings-card" style="opacity: 0.7; pointer-events: none;">
-                <div class="card-header">
-                    <i class="fas fa-sliders-h" style="color: #94a3b8;"></i> Preferencias (Pronto)
-                </div>
-                <p class="card-desc">
-                    Personaliza tu experiencia de aprendizaje y notificaciones.
-                </p>
-                <button class="btn-action"
-                    style="background: rgba(255,255,255,0.05); color: #64748b; border:none; cursor: not-allowed;">
-                    Próximamente
-                </button>
+        
+        <!-- Sección: Mi Consumo de IA (Dinámica para todos los planes) -->
+        <div id="premium-usage-card" class="settings-card" style="grid-column: 1 / -1; margin-bottom: 2rem; display: none;">
+            <div class="card-header" style="color: #60a5fa;">
+                <i class="fas fa-chart-pie"></i> Mi Consumo de IA
+            </div>
+            <div id="premium-usage-container" class="usage-grid">
+                <div style="color: #94a3b8; font-style: italic;">Cargando estadísticas de consumo...</div>
             </div>
         </div>
+
 
         <!-- Danger Zone -->
         <div class="settings-card danger-zone">
@@ -478,14 +542,14 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=58586bc4"></script>
-    <script src="/js/services/networkService.js?v=58586bc4"></script>
-    <script src="/js/services/authApiService.js?v=58586bc4"></script>
-    <script src="/js/sessionManager.js?v=58586bc4"></script>
+    <script src="/js/config.js?v=23b2f3c2"></script>
+    <script src="/js/services/networkService.js?v=23b2f3c2"></script>
+    <script src="/js/services/authApiService.js?v=23b2f3c2"></script>
+    <script src="/js/sessionManager.js?v=23b2f3c2"></script>
 
-    <script src="/js/ui/sidebar.js?v=58586bc4"></script>
+    <script src="/js/ui/sidebar.js?v=23b2f3c2"></script>
     <!-- Reuse Header Logic (Basic injection for now) -->
-    <script src="/js/profile.js?v=58586bc4"></script>
+    <script src="/js/profile.js?v=23b2f3c2"></script>
 
 </body>
 

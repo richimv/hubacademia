@@ -1,5 +1,6 @@
 const { VertexAI } = require('@google-cloud/vertexai');
 const trainingRepository = require('../repositories/flashcardRepository');
+const securityUtils = require('../utils/securityUtils');
 
 // CONFIGURACIÓN VERTEX AI
 const project = process.env.GOOGLE_CLOUD_PROJECT;
@@ -102,9 +103,10 @@ class FlashcardService {
      */
     async generateFlashcardsFromTopic(topic, count = 10) {
         try {
+            const cleanTopic = securityUtils.sanitizeInputForAI(topic, securityUtils.LIMITS.SHORT_TEXT);
             const prompt = `
             Actúa como un experto pedagogogía y diseño instruccional.
-            Crea entre 1 y 15 Flashcards educativas sobre el tema: "${topic}".
+            Crea entre 1 y 15 Flashcards educativas sobre el tema: "${cleanTopic}".
             
             🚨 REGLA DE INTELIGENCIA ADAPTATIVA:
             - Si el usuario solicita EXPLÍCITAMENTE una cantidad en el tema (ej: "3 tarjetas"), cumple con esa cantidad exacta SIEMPRE QUE esté entre 1 y 15.

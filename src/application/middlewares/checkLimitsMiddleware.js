@@ -1,4 +1,5 @@
 const pool = require('../../infrastructure/database/db');
+const { LIMITS } = require('../../infrastructure/config/limits');
 
 /**
  * Middleware para controlar los límites de uso de IA (Diarios normales vs Mensuales complejos)
@@ -120,11 +121,6 @@ const checkAILimits = (type) => {
             // 🧠 FLASHCARDS (Mensual): Se mide por INTENTOS de generación (Adaptativos 1-15 tjs/int).
             // - Básico: 10 intentos/mes.
             // - Avanzado: 30 intentos/mes.
-            const LIMITS = {
-                free: { chat_standard: 5, monthly_flashcards: 1, simulator: 0, batch_import: 1, audio_assistant: 5, self_evaluation: 15 },
-                basic: { chat_standard: 30, monthly_flashcards: 10, simulator: 15, batch_import: 10, audio_assistant: 30, self_evaluation: 15 },
-                advanced: { chat_standard: 50, monthly_flashcards: 30, simulator: 50, batch_import: 10, audio_assistant: 50, self_evaluation: 15 }
-            };
 
             const userLimits = LIMITS[user.subscription_tier] || LIMITS.free;
 

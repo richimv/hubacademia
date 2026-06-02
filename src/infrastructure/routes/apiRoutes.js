@@ -94,19 +94,32 @@ router.post('/chat/train-model', auth, adminOnly, chatController.trainModel);
 
 // --- Rutas de Idiomas ---
 router.post('/languages/chat', auth, checkAILimits('chat_standard'), languageChatController.processChat);
+router.post('/languages/practice/exercise', auth, checkAILimits('chat_standard'), (req, res) => languageChatController.getPracticeExercise(req, res));
+router.post('/languages/practice/evaluate', auth, checkAILimits('chat_standard'), (req, res) => languageChatController.evaluatePracticeAnswer(req, res));
 
 // Temario y Lecciones
 router.get('/languages/syllabus', optionalAuth, languageSyllabusController.getSyllabus);
 router.post('/languages/syllabus/lesson/learn', auth, languageSyllabusController.generateLesson);
 router.post('/languages/syllabus/lesson/evaluate', auth, checkAILimits('chat_standard'), languageSyllabusController.evaluateLesson);
 router.post('/languages/syllabus/progress', auth, languageSyllabusController.toggleProgress);
+router.put('/admin/languages/syllabus/:id', auth, adminOnly, languageSyllabusController.adminSaveLessonContent);
 
 // Vocabulario Privado
 router.get('/languages/vocabulary', auth, languageVocabularyController.getVocabulary);
+router.get('/languages/vocabulary/search-suggestions', auth, languageVocabularyController.getSearchSuggestions);
 router.post('/languages/vocabulary', auth, languageVocabularyController.addWord);
 router.post('/languages/vocabulary/generate', auth, checkAILimits('chat_standard'), languageVocabularyController.generateWordDetails);
 router.delete('/languages/vocabulary/:id', auth, languageVocabularyController.deleteWord);
 router.post('/languages/vocabulary/export-flashcards', auth, languageVocabularyController.exportToFlashcards);
+router.get('/languages/vocabulary/:id/challenge', auth, languageVocabularyController.getChallenge);
+router.post('/languages/vocabulary/:id/practice', auth, usageMiddleware, checkAILimits('chat_standard'), languageVocabularyController.practiceWord);
+router.get('/languages/vocabulary/:id/conjugations', auth, languageVocabularyController.getConjugations);
+
+// Vocabulario Global (Gestión de Administrador)
+router.get('/admin/vocabularies', auth, adminOnly, languageVocabularyController.adminGetVocabularies);
+router.post('/admin/vocabularies', auth, adminOnly, languageVocabularyController.adminAddVocabulary);
+router.put('/admin/vocabularies/:id', auth, adminOnly, languageVocabularyController.adminUpdateVocabulary);
+router.delete('/admin/vocabularies/:id', auth, adminOnly, languageVocabularyController.adminDeleteVocabulary);
 
 // --- Rutas Públicas ---
 router.get('/buscar', optionalAuth, coursesController.searchCourses);

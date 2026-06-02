@@ -1,6 +1,7 @@
 const AnalyticsService = require('../../domain/services/analyticsService');
 const UserRepository = require('../../domain/repositories/userRepository'); // 1. Importar la CLASE del repositorio.
 const { VertexAI } = require('@google-cloud/vertexai'); // ✅ NUEVO: Importar Vertex para el Analizador
+const securityUtils = require('../../domain/utils/securityUtils');
 
 // CONFIGURACIÓN VERTEX AI
 const project = process.env.GOOGLE_CLOUD_PROJECT;
@@ -221,11 +222,23 @@ class AnalyticsController {
         try {
             const userId = req.user.id;
             const tier = req.userTier || 'free';
-            const { stats, context = 'MEDICINA' } = req.body; // Llega cacheado desde el front (radar_data, avg_score, accuracy)
+            const { stats: rawStats, context: rawContext = 'MEDICINA' } = req.body;
 
-            // Validación de datos estadísticos mínimos
-            if (!stats || !stats.radar_data) {
+            // Sanitizar/Validar entrada de contexto
+            const context = typeof rawContext === 'string' 
+                ? rawContext.replace(/[^A-Z]/g, '').substring(0, 20) 
+                : 'MEDICINA';
+
+            // Validación de datos estadísticos mínimos y sanitización
+            if (!rawStats || !rawStats.radar_data) {
                 return res.status(400).json({ error: 'Faltan datos estadísticos para analizar.' });
+            }
+
+            let stats;
+            try {
+                stats = securityUtils.validateDiagnosticStats(rawStats);
+            } catch (err) {
+                return res.status(400).json({ error: 'Datos estadísticos inválidos o corruptos.' });
             }
 
             // Retornar Diagnóstico Estático para cuentas no Premium (free, pending, etc.) o si se forzó el fallback

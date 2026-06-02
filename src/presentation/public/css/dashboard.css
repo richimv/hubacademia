@@ -1,14 +1,9 @@
 :root {
-    --bg-page: #050505;
+    --bg-page: var(--bg-main);
     --bg-card: rgba(10, 10, 10, 0.4);
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --accent-primary: #3b82f6;
-    --accent-success: #10b981;
-    --accent-warning: #f59e0b;
-    --accent-purple: #8b5cf6;
-    --border-color: rgba(255, 255, 255, 0.08);
-    --border-glow: rgba(59, 130, 246, 0.2);
+    --accent-primary: var(--primary);
+    --accent-success: var(--success);
+    --accent-warning: var(--warning);
 }
 
 * {

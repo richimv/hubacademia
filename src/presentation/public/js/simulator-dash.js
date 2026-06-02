@@ -663,6 +663,7 @@ const SimulatorDash = (() => {
         if (currentContext === 'IDIOMAS') {
             initVocabEvents();
         }
+        setupLessonEditor();
     }
 
     function showFirstVisitTip() {
@@ -2548,14 +2549,17 @@ const SimulatorDash = (() => {
 
             activeLesson = { ...topic, ...data.lesson };
 
-            // Inyectar botón de regenerar para administradores en el encabezado si la lección cargó con éxito
+            // Inyectar botón de regenerar y editar para administradores en el encabezado si la lección cargó con éxito
             const headerActions = document.getElementById('lesson-header-actions');
             if (headerActions) {
                 const oldAdminBtn = document.getElementById('btn-lesson-admin-regenerate');
                 if (oldAdminBtn) oldAdminBtn.remove();
+                const oldEditBtn = document.getElementById('btn-lesson-admin-edit');
+                if (oldEditBtn) oldEditBtn.remove();
 
                 const user = window.sessionManager ? window.sessionManager.getUser() : null;
                 if (user && user.role === 'admin') {
+                    // Botón Regenerar con IA
                     const adminBtn = document.createElement('button');
                     adminBtn.id = 'btn-lesson-admin-regenerate';
                     adminBtn.className = 'btn-premium btn-premium-secondary';
@@ -2563,6 +2567,15 @@ const SimulatorDash = (() => {
                     adminBtn.innerHTML = '<i class="fas fa-sync"></i> Regenerar con IA';
                     adminBtn.onclick = () => triggerAdminLessonGeneration(topic, true);
                     headerActions.appendChild(adminBtn);
+
+                    // Botón Editar Contenido
+                    const editBtn = document.createElement('button');
+                    editBtn.id = 'btn-lesson-admin-edit';
+                    editBtn.className = 'btn-premium btn-premium-secondary';
+                    editBtn.style.cssText = 'background:rgba(59, 130, 246, 0.1) !important; border:1px solid rgba(59, 130, 246, 0.3) !important; color:#60a5fa !important; padding:0.5rem 0.8rem; border-radius:8px; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; gap:0.4rem; margin-left:0.5rem;';
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i> Editar Contenido';
+                    editBtn.onclick = () => openLessonEditorModal(topic);
+                    headerActions.appendChild(editBtn);
                 }
             }
 
@@ -2626,9 +2639,9 @@ const SimulatorDash = (() => {
             `;
 
             if (type === 'table') {
-                const headers = ex.headers || ['Ejercicio', 'Pista', 'Tu respuesta'];
+                const headers = ex.headers || ['Ejercicio', 'Tu respuesta'];
                 html += `
-                    <div style="overflow-x: auto;">
+                    <div class="syllabus-table-wrapper">
                         <table class="syllabus-interactive-table">
                             <thead>
                                 <tr>
@@ -2640,25 +2653,58 @@ const SimulatorDash = (() => {
 
                 ex.items.forEach(item => {
                     const template = item.sentence_template || '';
-                    const parts = template.split('[_____]');
-                    let cellContent = template;
+                    const cells = template.split('|').map(c => c.trim());
+                    
+                    let rowCellsHtml = '';
+                    let inputCounter = 0;
+                    const correctAnswersList = (item.correct_answer || '').split('|').map(a => a.trim());
 
-                    if (parts.length > 1) {
-                        cellContent = parts.reduce((acc, part, i) => {
-                            if (i === 0) return part;
-                            return acc + `<input type="text" class="syllabus-fill-blank-input" data-item-id="${item.id}" data-correct="${item.correct_answer}" placeholder="..." autocomplete="off">` + part;
-                        }, '');
-                    } else {
-                        cellContent = template + ` <input type="text" class="syllabus-fill-blank-input" data-item-id="${item.id}" data-correct="${item.correct_answer}" placeholder="..." autocomplete="off">`;
+                    cells.forEach(cellText => {
+                        let cellContent = cellText;
+                        if (cellText.includes('[_____]') || cellText === '[_____]') {
+                            const parts = cellText.split('[_____]');
+                            let cellHtml = '';
+                            if (parts.length > 1) {
+                                cellHtml = parts.reduce((acc, part, i) => {
+                                    if (i === 0) return part;
+                                    const correctAns = correctAnswersList[inputCounter] || item.correct_answer || '';
+                                    const inputId = `${item.id}_${inputCounter}`;
+                                    const inputHtml = `<input type="text" class="syllabus-fill-blank-input" data-item-id="${inputId}" data-correct="${correctAns}" data-hint="${escapeHtml(item.hint || '')}" data-context="${escapeHtml(item.context || '')}" placeholder="..." autocomplete="off" style="width: 100%; max-width: 180px; margin: 0 4px; display: inline-block;">`;
+                                    inputCounter++;
+                                    return acc + inputHtml + part;
+                                }, '');
+                            } else {
+                                const correctAns = correctAnswersList[inputCounter] || item.correct_answer || '';
+                                const inputId = `${item.id}_${inputCounter}`;
+                                const inputHtml = `<input type="text" class="syllabus-fill-blank-input" data-item-id="${inputId}" data-correct="${correctAns}" data-hint="${escapeHtml(item.hint || '')}" data-context="${escapeHtml(item.context || '')}" placeholder="..." autocomplete="off" style="width: 100%; max-width: 180px; margin: 0; display: inline-block;">`;
+                                inputCounter++;
+                                cellHtml = inputHtml;
+                            }
+                            
+                            const primaryInputId = `${item.id}_0`;
+                            
+                            cellContent = `
+                                <div style="display: flex; flex-direction: column; gap: 0.3rem; align-items: flex-start; min-width: 150px; width: 100%;">
+                                    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; width: 100%; line-height: 1.6;">
+                                        ${cellHtml}
+                                        ${item.hint ? `<span style="font-size:1.1rem; cursor:help; color:#a78bfa;" title="${escapeHtml(item.hint)}"><i class="far fa-lightbulb"></i></span>` : ''}
+                                    </div>
+                                    <div class="syllabus-item-feedback" id="feedback-${primaryInputId}" style="margin-top: 0.2rem; padding: 0.3rem 0.5rem; display: none; width: 100%; box-sizing: border-box;"></div>
+                                </div>
+                            `;
+                        }
+                        rowCellsHtml += `<td>${cellContent}</td>`;
+                    });
+
+                    // Pad cells if they are fewer than headers
+                    const diff = headers.length - cells.length;
+                    for (let i = 0; i < diff; i++) {
+                        rowCellsHtml += `<td></td>`;
                     }
 
                     html += `
                         <tr data-item-id="${item.id}">
-                            <td>${cellContent}</td>
-                            <td><span style="font-size:0.8rem; color:var(--text-muted);"><i class="far fa-lightbulb"></i> ${item.hint}</span></td>
-                            <td>
-                                <div class="syllabus-item-feedback" id="feedback-${item.id}"></div>
-                            </td>
+                            ${rowCellsHtml}
                         </tr>
                     `;
                 });
@@ -2680,10 +2726,10 @@ const SimulatorDash = (() => {
                     if (parts.length > 1) {
                         sentenceContent = parts.reduce((acc, part, i) => {
                             if (i === 0) return part;
-                            return acc + `<input type="text" class="syllabus-fill-blank-input" data-item-id="${item.id}" data-correct="${item.correct_answer}" placeholder="..." autocomplete="off">` + part;
+                            return acc + `<input type="text" class="syllabus-fill-blank-input" data-item-id="${item.id}_0" data-correct="${item.correct_answer}" data-hint="${escapeHtml(item.hint || '')}" data-context="${escapeHtml(item.context || '')}" placeholder="..." autocomplete="off">` + part;
                         }, '');
                     } else {
-                        sentenceContent = template + ` <input type="text" class="syllabus-fill-blank-input" data-item-id="${item.id}" data-correct="${item.correct_answer}" placeholder="..." autocomplete="off">`;
+                        sentenceContent = template + ` <input type="text" class="syllabus-fill-blank-input" data-item-id="${item.id}_0" data-correct="${item.correct_answer}" data-hint="${escapeHtml(item.hint || '')}" data-context="${escapeHtml(item.context || '')}" placeholder="..." autocomplete="off">`;
                     }
 
                     html += `
@@ -2693,7 +2739,7 @@ const SimulatorDash = (() => {
                                 <span><i class="far fa-lightbulb" style="color: #a78bfa;"></i> Pista: ${item.hint}</span>
                                 ${item.context ? `<span style="opacity: 0.8;"><i class="fas fa-language"></i> ${item.context}</span>` : ''}
                             </div>
-                            <div class="syllabus-item-feedback" id="feedback-${item.id}"></div>
+                            <div class="syllabus-item-feedback" id="feedback-${item.id}_0"></div>
                         </div>
                     `;
                 });
@@ -2704,11 +2750,11 @@ const SimulatorDash = (() => {
             html += `</div>`;
         });
 
-        // Botón de verificar al final con IA
+        // Botón de verificar al final (Local)
         html += `
             <div style="display:flex; flex-direction:column; gap:1rem; margin-top:1.5rem;">
-                <button id="btn-lesson-verify-exercises" class="btn-premium btn-premium-ia" style="width:100%; justify-content:center; padding:0.8rem 1.5rem; font-size:0.9rem;">
-                    <i class="fas fa-spell-check"></i> Verificar
+                <button id="btn-lesson-verify-exercises" class="btn-premium btn-premium-primary" style="width:100%; justify-content:center; padding:0.8rem 1.5rem; font-size:0.9rem; background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important; color:#fff !important; cursor:pointer; border:none; border-radius:8px;">
+                    <i class="fas fa-spell-check"></i> Verificar Respuestas
                 </button>
                 <div id="lesson-evaluation-summary-box" style="display:none;"></div>
             </div>
@@ -2719,128 +2765,100 @@ const SimulatorDash = (() => {
         // Asignar click
         const btnVerify = document.getElementById('btn-lesson-verify-exercises');
         if (btnVerify) {
-            btnVerify.onclick = () => evaluateExercisesWithAi();
+            btnVerify.onclick = () => evaluateExercisesLocally();
         }
     }
 
-    async function evaluateExercisesWithAi() {
+    function evaluateExercisesLocally() {
         const btnVerify = document.getElementById('btn-lesson-verify-exercises');
         const summaryBox = document.getElementById('lesson-evaluation-summary-box');
         if (!btnVerify || !activeLesson) return;
 
-        // Recopilar respuestas
         const inputs = document.querySelectorAll('.syllabus-fill-blank-input');
-        const answers = Array.from(inputs).map(inp => ({
-            id: inp.dataset.itemId,
-            user_answer: inp.value.trim()
-        }));
+        if (inputs.length === 0) return;
 
-        try {
-            btnVerify.disabled = true;
-            btnVerify.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Evaluando tus respuestas...';
+        let correctCount = 0;
+        const total = inputs.length;
 
-            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/languages/syllabus/lesson/evaluate`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    topicId: activeLesson.id,
-                    answers
-                })
-            });
+        // Normalización local robusta (insensible a mayúsculas, minúsculas, acentos, puntuación y espacios)
+        const normalize = (str) => {
+            if (!str) return '';
+            return str.toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+                .trim();
+        };
 
-            if (res.status === 403) {
-                if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                    window.uiManager.showPaywallModal(null, 'languages');
-                } else {
-                    alert('Has alcanzado tus límites en la versión gratuita.');
+        inputs.forEach(inp => {
+            const itemId = inp.dataset.itemId;
+            const userAnswer = (inp.value || '').trim();
+            const correctAnswer = (inp.dataset.correct || '').trim();
+            const itemContext = (inp.dataset.context || '').trim();
+            const feedbackDiv = document.getElementById(`feedback-${itemId}`);
+
+            inp.classList.remove('correct', 'wrong');
+
+            const userNorm = normalize(userAnswer);
+            const correctNormOptions = correctAnswer.split(/[\/,]/).map(o => normalize(o));
+            const isCorrect = userNorm !== '' && correctNormOptions.includes(userNorm);
+
+            if (isCorrect) {
+                correctCount++;
+                inp.classList.add('correct');
+                if (feedbackDiv) {
+                    feedbackDiv.className = 'syllabus-item-feedback correct';
+                    feedbackDiv.innerHTML = `<i class="fas fa-check-circle"></i> ¡Correcto! ${itemContext ? `<br><span style="font-size:0.75rem; opacity:0.85; font-weight: 500;">Explicación: ${itemContext}</span>` : ''}`;
+                    feedbackDiv.style.display = 'block';
                 }
-                if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                    window.sessionManager.refreshUser().catch(() => { });
-                }
-                return;
-            }
-
-            if (!res.ok) throw new Error("HTTP " + res.status);
-            const data = await res.json();
-            if (!data.success || !data.evaluation) throw new Error("Evaluación fallida");
-
-            const evaluation = data.evaluation;
-
-            // Renderizar feedback por item
-            inputs.forEach(inp => {
-                const itemId = inp.dataset.itemId;
-                const itemEval = evaluation.items.find(item => item.id === itemId);
-                const feedbackDiv = document.getElementById(`feedback-${itemId}`);
-
-                if (itemEval) {
-                    inp.classList.remove('correct', 'wrong');
-                    if (itemEval.is_correct) {
-                        inp.classList.add('correct');
-                        if (feedbackDiv) {
-                            feedbackDiv.className = 'syllabus-item-feedback correct';
-                            feedbackDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${itemEval.explanation}`;
-                        }
-                    } else {
-                        inp.classList.add('wrong');
-                        if (feedbackDiv) {
-                            feedbackDiv.className = 'syllabus-item-feedback wrong';
-                            feedbackDiv.innerHTML = `<i class="fas fa-times-circle"></i> ${itemEval.explanation}`;
-                        }
-                    }
-                }
-            });
-
-            // Mostrar resumen
-            if (summaryBox) {
-                summaryBox.style.display = 'flex';
-                const total = inputs.length;
-                const correctCount = evaluation.score !== undefined ? evaluation.score : evaluation.items.filter(i => i.is_correct).length;
-                const pct = Math.round((correctCount / total) * 100);
-
-                if (pct === 100) {
-                    summaryBox.className = 'syllabus-evaluation-summary';
-                    summaryBox.style.background = 'rgba(16, 185, 129, 0.06)';
-                    summaryBox.style.borderColor = 'rgba(16, 185, 129, 0.2)';
-                    summaryBox.style.color = '#a7f3d0';
-                    summaryBox.innerHTML = `
-                        <div style="font-size:1.5rem; color:#34d399;"><i class="fas fa-trophy"></i></div>
-                        <div>
-                            <strong>¡Puntaje perfecto! ${correctCount}/${total} correctas (${pct}%)</strong><br>
-                            Excelente comprensión del tema. Has completado con éxito la práctica interactiva.
-                        </div>
-                    `;
-                    // Auto-marcar como completado
-                    const completeBtn = document.getElementById('btn-lesson-complete');
-                    if (completeBtn && !completeBtn.classList.contains('completed')) {
-                        completeBtn.click();
-                    }
-                } else {
-                    summaryBox.className = 'syllabus-evaluation-summary';
-                    summaryBox.style.background = 'rgba(239, 68, 68, 0.06)';
-                    summaryBox.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-                    summaryBox.style.color = '#fecaca';
-                    summaryBox.innerHTML = `
-                        <div style="font-size:1.5rem; color:#f87171;"><i class="fas fa-redo"></i></div>
-                        <div>
-                            <strong>Has obtenido ${correctCount}/${total} correctas (${pct}%)</strong><br>
-                            Revisa las correcciones de la IA para aprender de tus errores y vuelve a intentarlo.
-                        </div>
-                    `;
+            } else {
+                inp.classList.add('wrong');
+                if (feedbackDiv) {
+                    feedbackDiv.className = 'syllabus-item-feedback wrong';
+                    feedbackDiv.innerHTML = `<i class="fas fa-times-circle"></i> Incorrecto (Es: <strong>${correctAnswer}</strong>) ${itemContext ? `<br><span style="font-size:0.75rem; opacity:0.85; font-weight: 500;">Explicación: ${itemContext}</span>` : ''}`;
+                    feedbackDiv.style.display = 'block';
                 }
             }
+        });
 
-            window.uiManager?.showToast("Evaluación completada con éxito", "success");
+        // Mostrar resumen
+        if (summaryBox) {
+            summaryBox.style.display = 'flex';
+            const pct = Math.round((correctCount / total) * 100);
 
-            if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                window.sessionManager.refreshUser().catch(() => { });
+            if (pct === 100) {
+                summaryBox.className = 'syllabus-evaluation-summary';
+                summaryBox.style.background = 'rgba(16, 185, 129, 0.06)';
+                summaryBox.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                summaryBox.style.color = '#a7f3d0';
+                summaryBox.innerHTML = `
+                    <div style="font-size:1.5rem; color:#34d399;"><i class="fas fa-trophy"></i></div>
+                    <div>
+                        <strong>¡Puntaje perfecto! ${correctCount}/${total} correctas (${pct}%)</strong><br>
+                        Excelente comprensión del tema. Has completado con éxito la práctica interactiva.
+                    </div>
+                `;
+                // Auto-marcar como completado
+                const completeBtn = document.getElementById('btn-lesson-complete');
+                if (completeBtn && !completeBtn.classList.contains('completed')) {
+                    completeBtn.click();
+                }
+            } else {
+                summaryBox.className = 'syllabus-evaluation-summary';
+                summaryBox.style.background = 'rgba(239, 68, 68, 0.06)';
+                summaryBox.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                summaryBox.style.color = '#fecaca';
+                summaryBox.innerHTML = `
+                    <div style="font-size:1.5rem; color:#f87171;"><i class="fas fa-redo"></i></div>
+                    <div>
+                        <strong>Has acertado ${correctCount} de ${total} (${pct}%)</strong><br>
+                        Revisa los campos marcados en rojo y vuelve a intentarlo.
+                    </div>
+                `;
             }
-
-        } catch (err) {
-            console.error("Error al evaluar respuestas:", err);
-            window.uiManager?.showToast("No se pudo evaluar con la IA. Verifica tu conexión.", "error");
-        } finally {
-            btnVerify.disabled = false;
-            btnVerify.innerHTML = '<i class="fas fa-spell-check"></i> Verificar';
         }
+
+        window.uiManager?.showToast("Respuestas verificadas", "success");
     }
 
     function switchLessonFooterTab(tab) {
@@ -3247,7 +3265,620 @@ const SimulatorDash = (() => {
         }
     }
 
+    // ============================================================
+    // 🛠️ EDITOR DE LECCIONES Y EJERCICIOS INTERACTIVOS DE TEORÍA (ADMIN)
+    // ============================================================
+    let editingLesson = null;
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function openLessonEditorModal(topic) {
+        const modal = document.getElementById('lesson-editor-modal-overlay');
+        if (!modal) return;
+
+        // Clonar el contenido actual de la lección para evitar edición accidental
+        editingLesson = JSON.parse(JSON.stringify(activeLesson || {}));
+        if (!editingLesson.id) {
+            editingLesson.id = topic.id;
+            editingLesson.title = topic.topic_name;
+            editingLesson.explanation = '';
+            editingLesson.exercises = [];
+        }
+
+        // Popular campos básicos
+        const titleInput = document.getElementById('editor-lesson-title');
+        const explanationInput = document.getElementById('editor-lesson-explanation');
+        if (titleInput) titleInput.value = editingLesson.title || editingLesson.topic_name || '';
+        if (explanationInput) explanationInput.value = editingLesson.explanation || '';
+
+        // Resetear a pestaña inicial "theory"
+        document.querySelectorAll('#lesson-editor-modal-overlay .editor-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.borderBottomColor = 'transparent';
+            btn.style.color = '#94a3b8';
+        });
+        const firstTab = document.querySelector('#lesson-editor-modal-overlay .editor-tab-btn[data-tab="theory"]');
+        if (firstTab) {
+            firstTab.classList.add('active');
+            firstTab.style.borderBottomColor = '#a78bfa';
+            firstTab.style.color = '#a78bfa';
+        }
+
+        document.querySelectorAll('#lesson-editor-modal-overlay .editor-panel').forEach(p => {
+            p.classList.remove('active');
+            p.style.display = 'none';
+        });
+        const firstPanel = document.getElementById('editor-panel-theory');
+        if (firstPanel) {
+            firstPanel.classList.add('active');
+            firstPanel.style.display = 'flex';
+        }
+
+        // Mostrar overlay
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        modal.style.visibility = 'visible';
+        modal.style.zIndex = '99999';
+        modal.style.opacity = '1';
+
+        // Inicializar TinyMCE 6
+        if (window.tinymce) {
+            if (tinymce.get('editor-lesson-explanation')) {
+                tinymce.get('editor-lesson-explanation').remove();
+            }
+            tinymce.init({
+                selector: '#editor-lesson-explanation',
+                toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | table image media | removeformat | help',
+                height: 350,
+                menubar: 'edit insert view format table tools help',
+                plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                ],
+                skin: 'oxide-dark',
+                content_css: 'dark',
+                branding: false,
+                promotion: false,
+                images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+                    const blob = blobInfo.blob();
+                    const fileName = blobInfo.filename();
+                    const formData = new FormData();
+                    formData.append('file', blob, fileName);
+
+                    window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/upload-editor`, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(async response => {
+                        if (!response.ok) {
+                            const errText = await response.text();
+                            throw new Error(`Servidor retorno ${response.status}: ${errText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(json => {
+                        if (json && json.location) {
+                            resolve(json.location);
+                        } else {
+                            reject('Respuesta de servidor inválida');
+                        }
+                    })
+                    .catch(err => {
+                        reject(`Fallo en la subida: ${err.message}`);
+                    });
+                }),
+                automatic_uploads: true,
+                images_reuse_filename: true,
+                paste_data_images: true,
+                relative_urls: false,
+                remove_script_host: false,
+                convert_urls: false,
+                placeholder: 'Escribe la explicación teórica aquí...',
+                content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: #f8fafc; padding: 10px; } ' +
+                    'table { border-collapse: collapse; width: 100%; margin-bottom: 10px; } ' +
+                    'table th, table td { border: 1px solid #475569; padding: 8px; } ' +
+                    'table th { background-color: #334155; }',
+                setup: (editor) => {
+                    editor.on('init', () => {
+                        const htmlContent = window.MarkdownRenderer.render(editingLesson.explanation || '');
+                        editor.setContent(htmlContent);
+                    });
+                    editor.on('change KeyUp', () => {
+                        if (editingLesson) {
+                            editingLesson.explanation = editor.getContent();
+                        }
+                    });
+                }
+            });
+        }
+
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('lesson-editor-modal-overlay');
+        }
+    }
+
+    function closeLessonEditorModal() {
+        const modal = document.getElementById('lesson-editor-modal-overlay');
+        if (!modal) return;
+
+        // Destruir TinyMCE para evitar fugas de memoria
+        if (window.tinymce && tinymce.get('editor-lesson-explanation')) {
+            tinymce.get('editor-lesson-explanation').remove();
+        }
+
+        if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
+            window.uiManager.popModalState('lesson-editor-modal-overlay');
+        }
+        modal.classList.remove('active');
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+        setTimeout(() => { modal.style.display = 'none'; }, 300);
+    }
+
+    function renderExercisesEditor() {
+        const container = document.getElementById('editor-blocks-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (!editingLesson.exercises) {
+            editingLesson.exercises = [];
+        }
+
+        if (editingLesson.exercises.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem; border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; color: var(--text-muted);">
+                    <i class="fas fa-cubes fa-2x" style="margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                    <p style="font-size: 0.85rem;">No hay bloques de ejercicios definidos para esta lección.</p>
+                </div>
+            `;
+            return;
+        }
+
+        editingLesson.exercises.forEach((block, blockIndex) => {
+            const blockDiv = document.createElement('div');
+            blockDiv.className = 'editor-block-card';
+            blockDiv.style.cssText = 'background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.25rem; position: relative; display: flex; flex-direction: column; gap: 1rem;';
+            
+            const type = block.type || 'sentences';
+            const instructions = block.instructions || '';
+            const headers = Array.isArray(block.headers) ? block.headers.join(', ') : '';
+
+            // Header del bloque
+            let blockHtml = `
+                <div style="display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                    <h4 style="margin: 0; color: #a78bfa; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; font-weight:700;">
+                        <i class="fas fa-cubes"></i> Bloque #${blockIndex + 1}
+                    </h4>
+                    <button type="button" class="btn-editor-delete-block" data-block-index="${blockIndex}" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem; outline: none;">
+                        <i class="fas fa-trash-alt"></i> Eliminar Bloque
+                    </button>
+                </div>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Instrucciones / Título del Ejercicio</label>
+                        <input type="text" class="block-instructions" value="${escapeHtml(instructions)}" style="background: rgba(10, 10, 10, 0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.5rem 0.75rem; color: #fff; font-size: 0.9rem; outline: none; width: 100%;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Tipo de Bloque</label>
+                        <select class="block-type" style="background: rgba(10, 10, 10, 0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.5rem 0.75rem; color: #fff; font-size: 0.9rem; outline: none; cursor: pointer;">
+                            <option value="sentences" ${type === 'sentences' ? 'selected' : ''}>Oraciones Incompletas</option>
+                            <option value="table" ${type === 'table' ? 'selected' : ''}>Tabla Interactiva</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="block-headers-group" style="display: ${type === 'table' ? 'flex' : 'none'}; flex-direction: column; gap: 0.4rem;">
+                    <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">Cabeceras de Tabla (Separadas por comas)</label>
+                    <input type="text" class="block-headers" value="${escapeHtml(headers)}" placeholder="UPPERCASE, LOWERCASE, NAME (IPA)" style="background: rgba(10, 10, 10, 0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.5rem 0.75rem; color: #fff; font-size: 0.9rem; outline: none; width: 100%;">
+                </div>
+            `;
+
+            blockDiv.innerHTML = blockHtml;
+
+            // Contenedor de ítems
+            const itemsWrapper = document.createElement('div');
+            itemsWrapper.style.cssText = 'margin-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;';
+            
+            const itemsHeader = document.createElement('div');
+            itemsHeader.style.cssText = 'display:flex; justify-content: space-between; align-items:center;';
+            itemsHeader.innerHTML = `
+                <span style="font-size: 0.85rem; color: #cbd5e1; font-weight: 600;"><i class="fas fa-list-ol"></i> Ítems de Práctica</span>
+                <button type="button" class="btn-editor-add-item btn-premium btn-premium-secondary" data-block-index="${blockIndex}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                    <i class="fas fa-plus"></i> Añadir Ítem
+                </button>
+            `;
+            itemsWrapper.appendChild(itemsHeader);
+
+            const itemsContainer = document.createElement('div');
+            itemsContainer.className = 'block-items-container';
+            itemsContainer.style.cssText = 'display: flex; flex-direction: column; gap: 1rem;';
+
+            const items = block.items || [];
+            items.forEach((item, itemIndex) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'editor-item-card';
+                itemDiv.style.cssText = 'background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.25rem 1rem 1rem 1rem; position: relative; display: flex; flex-direction: column; gap: 0.75rem;';
+                
+                const isTable = type === 'table';
+                const labelText = isTable 
+                    ? "Celdas de la Fila (Separadas por '|'. Debe contener [_____] para la celda interactiva)" 
+                    : "Oración / Celda (Debe contener [_____] para interactivo)";
+                const exampleText = isTable
+                    ? `<span style="font-size: 0.75rem; color: #a78bfa; margin-top: 0.1rem; display: block;"><i class="fas fa-info-circle"></i> Ejemplo: go | ir | [_____]</span>`
+                    : `<span style="font-size: 0.75rem; color: #a78bfa; margin-top: 0.1rem; display: block;"><i class="fas fa-info-circle"></i> Ejemplo: This is [_____] book.</span>`;
+
+                itemDiv.innerHTML = `
+                    <button type="button" class="btn-editor-delete-item" data-block-index="${blockIndex}" data-item-index="${itemIndex}" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: rgba(239, 68, 68, 0.7); cursor: pointer; font-size: 0.95rem; outline: none; transition: color 0.2s;" title="Eliminar Ítem">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                            <label style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">${labelText}</label>
+                            <textarea class="item-template" rows="2" style="background: rgba(10,10,10,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 0.5rem; color: #fff; font-size: 0.85rem; font-family: inherit; width: 100%; outline: none; resize: vertical; min-height: 40px;">${escapeHtml(item.sentence_template || '')}</textarea>
+                            ${exampleText}
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                            <label style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">Respuesta Correcta</label>
+                            <input type="text" class="item-answer" value="${escapeHtml(item.correct_answer || '')}" style="background: rgba(10,10,10,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 0.4rem 0.5rem; color: #fff; font-size: 0.85rem; outline: none;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                            <label style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">Pista</label>
+                            <input type="text" class="item-hint" value="${escapeHtml(item.hint || '')}" style="background: rgba(10,10,10,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 0.4rem 0.5rem; color: #fff; font-size: 0.85rem; outline: none;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                            <label style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">Contexto / Explicación Didáctica</label>
+                            <input type="text" class="item-context" value="${escapeHtml(item.context || '')}" style="background: rgba(10,10,10,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 0.4rem 0.5rem; color: #fff; font-size: 0.85rem; outline: none;">
+                        </div>
+                    </div>
+                `;
+                itemsContainer.appendChild(itemDiv);
+            });
+
+            itemsWrapper.appendChild(itemsContainer);
+            blockDiv.appendChild(itemsWrapper);
+            container.appendChild(blockDiv);
+        });
+
+        attachBlockInputListeners();
+    }
+
+    function attachBlockInputListeners() {
+        const container = document.getElementById('editor-blocks-container');
+        if (!container) return;
+
+        // Escuchar botones de eliminar bloque
+        container.querySelectorAll('.btn-editor-delete-block').forEach(btn => {
+            btn.onclick = () => {
+                const blockIndex = parseInt(btn.getAttribute('data-block-index'));
+                editingLesson.exercises.splice(blockIndex, 1);
+                renderExercisesEditor();
+            };
+        });
+
+        // Escuchar botones de añadir ítem
+        container.querySelectorAll('.btn-editor-add-item').forEach(btn => {
+            btn.onclick = () => {
+                const blockIndex = parseInt(btn.getAttribute('data-block-index'));
+                if (!editingLesson.exercises[blockIndex].items) {
+                    editingLesson.exercises[blockIndex].items = [];
+                }
+                editingLesson.exercises[blockIndex].items.push({
+                    id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 5),
+                    sentence_template: '',
+                    correct_answer: '',
+                    hint: '',
+                    context: ''
+                });
+                renderExercisesEditor();
+            };
+        });
+
+        // Escuchar botones de eliminar ítem
+        container.querySelectorAll('.btn-editor-delete-item').forEach(btn => {
+            btn.onclick = () => {
+                const blockIndex = parseInt(btn.getAttribute('data-block-index'));
+                const itemIndex = parseInt(btn.getAttribute('data-item-index'));
+                editingLesson.exercises[blockIndex].items.splice(itemIndex, 1);
+                renderExercisesEditor();
+            };
+        });
+
+        // Escuchar cambio en select de tipo de bloque
+        container.querySelectorAll('.block-type').forEach((select, selectIndex) => {
+            select.onchange = () => {
+                editingLesson.exercises[selectIndex].type = select.value;
+                if (select.value === 'table') {
+                    if (!editingLesson.exercises[selectIndex].headers) {
+                        editingLesson.exercises[selectIndex].headers = [];
+                    }
+                }
+                renderExercisesEditor();
+            };
+        });
+
+        // Escuchar inputs de texto de bloques y sus ítems en tiempo real para actualizar editingLesson
+        container.querySelectorAll('.editor-block-card').forEach((card, blockIndex) => {
+            const instInput = card.querySelector('.block-instructions');
+            if (instInput) {
+                instInput.oninput = () => {
+                    editingLesson.exercises[blockIndex].instructions = instInput.value;
+                };
+            }
+
+            const headersInput = card.querySelector('.block-headers');
+            if (headersInput) {
+                headersInput.oninput = () => {
+                    editingLesson.exercises[blockIndex].headers = headersInput.value
+                        .split(',')
+                        .map(h => h.trim())
+                        .filter(h => h.length > 0);
+                };
+            }
+
+            card.querySelectorAll('.editor-item-card').forEach((itemCard, itemIndex) => {
+                const templateText = itemCard.querySelector('.item-template');
+                const answerInput = itemCard.querySelector('.item-answer');
+                const hintInput = itemCard.querySelector('.item-hint');
+                const contextInput = itemCard.querySelector('.item-context');
+
+                if (templateText) {
+                    templateText.oninput = () => {
+                        editingLesson.exercises[blockIndex].items[itemIndex].sentence_template = templateText.value;
+                    };
+                }
+                if (answerInput) {
+                    answerInput.oninput = () => {
+                        editingLesson.exercises[blockIndex].items[itemIndex].correct_answer = answerInput.value;
+                    };
+                }
+                if (hintInput) {
+                    hintInput.oninput = () => {
+                        editingLesson.exercises[blockIndex].items[itemIndex].hint = hintInput.value;
+                    };
+                }
+                if (contextInput) {
+                    contextInput.oninput = () => {
+                        editingLesson.exercises[blockIndex].items[itemIndex].context = contextInput.value;
+                    };
+                }
+            });
+        });
+    }
+
+    function syncFormToJSON() {
+        const errorEl = document.getElementById('editor-json-error-msg');
+        if (errorEl) errorEl.style.display = 'none';
+
+        const jsonStr = JSON.stringify({
+            title: editingLesson.title || '',
+            explanation: editingLesson.explanation || '',
+            exercises: editingLesson.exercises || []
+        }, null, 4);
+
+        const textarea = document.getElementById('editor-raw-json-textarea');
+        if (textarea) textarea.value = jsonStr;
+    }
+
+    function syncJSONToForm() {
+        const textarea = document.getElementById('editor-raw-json-textarea');
+        const errorEl = document.getElementById('editor-json-error-msg');
+        if (!textarea) return true;
+
+        try {
+            const parsed = JSON.parse(textarea.value);
+            if (!parsed || typeof parsed !== 'object') throw new Error('El JSON debe ser un objeto');
+            if (!parsed.title || !parsed.explanation || !Array.isArray(parsed.exercises)) {
+                throw new Error('Estructura inválida. Debe contener "title", "explanation" y "exercises" (array).');
+            }
+            
+            editingLesson.title = parsed.title;
+            editingLesson.explanation = parsed.explanation;
+            editingLesson.exercises = parsed.exercises;
+
+            // Actualizar campos
+            const titleInput = document.getElementById('editor-lesson-title');
+            const explanationInput = document.getElementById('editor-lesson-explanation');
+            if (titleInput) titleInput.value = editingLesson.title;
+            if (explanationInput) explanationInput.value = editingLesson.explanation;
+            if (window.tinymce && tinymce.get('editor-lesson-explanation')) {
+                tinymce.get('editor-lesson-explanation').setContent(editingLesson.explanation || '');
+            }
+
+            if (errorEl) errorEl.style.display = 'none';
+            return true;
+        } catch (e) {
+            console.error("Invalid JSON syntax:", e);
+            if (errorEl) {
+                errorEl.innerText = `❌ JSON inválido: ${e.message}`;
+                errorEl.style.display = 'block';
+            }
+            return false;
+        }
+    }
+
+    async function saveLessonContent() {
+        if (window.tinymce && tinymce.get('editor-lesson-explanation')) {
+            editingLesson.explanation = tinymce.get('editor-lesson-explanation').getContent();
+        }
+
+        const activeTabBtn = document.querySelector('#lesson-editor-modal-overlay .editor-tab-btn.active');
+        const activeTab = activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'theory';
+        
+        if (activeTab === 'raw-json') {
+            const isValid = syncJSONToForm();
+            if (!isValid) {
+                window.uiManager?.showToast("Por favor, corrige los errores de sintaxis en el JSON antes de guardar.", "error");
+                return;
+            }
+        }
+
+        if (!editingLesson.title || !editingLesson.title.trim()) {
+            window.uiManager?.showToast("El título de la lección es obligatorio.", "error");
+            return;
+        }
+
+        if (!editingLesson.explanation || !editingLesson.explanation.trim()) {
+            window.uiManager?.showToast("La explicación teórica es obligatoria.", "error");
+            return;
+        }
+
+        const btnSave = document.getElementById('btn-editor-save');
+        if (btnSave) {
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
+        }
+
+        try {
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/languages/syllabus/${editingLesson.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    content: {
+                        title: editingLesson.title,
+                        explanation: editingLesson.explanation,
+                        exercises: editingLesson.exercises
+                    }
+                })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || "HTTP " + res.status);
+            }
+
+            const data = await res.json();
+            if (!data.success) throw new Error("Guardado fallido");
+
+            window.uiManager?.showToast("Lección actualizada correctamente", "success");
+            
+            closeLessonEditorModal();
+            
+            // Recargar la lección para reflejar los cambios en el dashboard
+            learnTopic({
+                id: editingLesson.id,
+                topic_name: editingLesson.title,
+                level: editingLesson.level || activeLesson.level,
+                completed: activeLesson.completed
+            });
+
+        } catch (err) {
+            console.error("Error saving edited lesson:", err);
+            window.uiManager?.showToast(`Error al guardar cambios: ${err.message}`, "error");
+        } finally {
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+            }
+        }
+    }
+
+    function setupLessonEditor() {
+        const modal = document.getElementById('lesson-editor-modal-overlay');
+        const btnClose = document.getElementById('btn-close-lesson-editor');
+        const btnCancel = document.getElementById('btn-editor-cancel');
+        const btnSave = document.getElementById('btn-editor-save');
+        const btnAddBlock = document.getElementById('btn-editor-add-block');
+
+        if (!modal) return;
+
+        if (btnClose) btnClose.onclick = closeLessonEditorModal;
+        if (btnCancel) btnCancel.onclick = closeLessonEditorModal;
+        modal.onclick = (e) => { if (e.target === modal) closeLessonEditorModal(); };
+
+        if (btnSave) btnSave.onclick = saveLessonContent;
+
+        if (btnAddBlock) {
+            btnAddBlock.onclick = () => {
+                if (!editingLesson.exercises) editingLesson.exercises = [];
+                editingLesson.exercises.push({
+                    id: Date.now().toString(),
+                    instructions: 'Completa los espacios en blanco:',
+                    type: 'sentences',
+                    items: []
+                });
+                renderExercisesEditor();
+            };
+        }
+
+        // Alternancia de pestañas
+        document.querySelectorAll('#lesson-editor-modal-overlay .editor-tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                const currentActiveTab = document.querySelector('#lesson-editor-modal-overlay .editor-tab-btn.active');
+                if (currentActiveTab) {
+                    const currentTabName = currentActiveTab.getAttribute('data-tab');
+                    if (currentTabName === 'raw-json') {
+                        const isValid = syncJSONToForm();
+                        if (!isValid) return; // Detener navegación si JSON es inválido
+                    }
+                }
+
+                // Sincronizar explicación desde TinyMCE
+                if (window.tinymce && tinymce.get('editor-lesson-explanation')) {
+                    editingLesson.explanation = tinymce.get('editor-lesson-explanation').getContent();
+                }
+
+                const targetTab = btn.getAttribute('data-tab');
+
+                document.querySelectorAll('#lesson-editor-modal-overlay .editor-tab-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.borderBottomColor = 'transparent';
+                    b.style.color = '#94a3b8';
+                });
+                btn.classList.add('active');
+                btn.style.borderBottomColor = '#a78bfa';
+                btn.style.color = '#a78bfa';
+
+                document.querySelectorAll('#lesson-editor-modal-overlay .editor-panel').forEach(p => {
+                    p.classList.remove('active');
+                    p.style.display = 'none';
+                });
+                
+                const targetPanel = document.getElementById(`editor-panel-${targetTab}`);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                    if (targetTab === 'theory') {
+                        targetPanel.style.display = 'flex';
+                        // Sincronizar contenido en TinyMCE
+                        if (window.tinymce && tinymce.get('editor-lesson-explanation')) {
+                            const htmlContent = window.MarkdownRenderer.render(editingLesson.explanation || '');
+                            tinymce.get('editor-lesson-explanation').setContent(htmlContent);
+                        }
+                    } else if (targetTab === 'exercises') {
+                        targetPanel.style.display = 'flex';
+                        renderExercisesEditor();
+                    } else if (targetTab === 'raw-json') {
+                        targetPanel.style.display = 'flex';
+                        syncFormToJSON();
+                    }
+                }
+            };
+        });
+
+        // Escucha en tiempo real de inputs de teoría
+        const titleInput = document.getElementById('editor-lesson-title');
+        const explanationInput = document.getElementById('editor-lesson-explanation');
+        if (titleInput) {
+            titleInput.oninput = () => {
+                if (editingLesson) editingLesson.title = titleInput.value;
+            };
+        }
+        if (explanationInput) {
+            explanationInput.oninput = () => {
+                if (editingLesson) editingLesson.explanation = explanationInput.value;
+            };
+        }
+    }
 
     return { init };
 })();

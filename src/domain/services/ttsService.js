@@ -46,6 +46,44 @@ class TtsService {
     }
 
     /**
+     * Resuelve el nombre de la voz configurada para un idioma.
+     * @param {string} lang - Código de idioma (es-ES, en-GB, etc.)
+     * @returns {Promise<string>} Nombre de la voz neuronal configurada
+     */
+    async resolveVoiceName(lang) {
+        try {
+            const LanguageRepository = require('../repositories/languageRepository');
+            const languageRepo = new LanguageRepository();
+            const dbVoice = await languageRepo.getLanguageVoice(lang);
+            if (dbVoice) {
+                return dbVoice;
+            }
+        } catch (dbErr) {
+            console.warn('⚠️ [TtsService] Error al consultar idiomas en BD, usando voiceMap:', dbErr.message);
+        }
+
+        let voiceConfig = this.voiceMap[lang];
+        if (!voiceConfig) {
+            const prefix = lang.split('-')[0];
+            voiceConfig = Object.values(this.voiceMap).find(v => v.languageCode.startsWith(prefix)) || this.voiceMap['es-ES'];
+        }
+        return voiceConfig.name || 'default';
+    }
+
+    /**
+     * Genera de forma centralizada la ruta de caché en GCS para evitar colisiones.
+     * @param {string} text - El texto a sintetizar
+     * @param {string} lang - Código de idioma
+     * @returns {Promise<string>} Ruta relativa de GCS
+     */
+    async getCachePath(text, lang) {
+        const cleanText = text.replace(/[*_#`]/g, '').trim();
+        const voiceName = await this.resolveVoiceName(lang);
+        const textHash = crypto.createHash('md5').update(`${cleanText}_${lang}_${voiceName}`).digest('hex');
+        return `tts_cache/${lang}_${voiceName}_${textHash}.mp3`;
+    }
+
+    /**
      * Convierte texto a audio MP3
      * @param {string} text - El texto a sintetizar
      * @param {string} lang - Código de idioma (es-ES, en-GB, etc.)
@@ -54,10 +92,7 @@ class TtsService {
     async synthesize(text, lang = 'es-ES') {
         try {
             const cleanText = text.replace(/[*_#`]/g, '').trim();
-            
-            // 1. GENERAR HASH ÚNICO Y VERIFICAR CACHÉ EN GCS
-            const textHash = crypto.createHash('md5').update(`${cleanText}_${lang}`).digest('hex');
-            const gcsPath = `tts_cache/${lang}_${textHash}.mp3`;
+            const gcsPath = await this.getCachePath(cleanText, lang);
             const bucket = this.storage.bucket(this.bucketName);
             const file = bucket.file(gcsPath);
 
@@ -72,32 +107,12 @@ class TtsService {
                 console.warn('⚠️ [TtsService] Error al consultar caché en GCS:', gcsErr.message);
             }
 
-            // 2. RESOLVER CONFIGURACIÓN DE VOZ
-            let voiceConfig = null;
-            try {
-                const LanguageRepository = require('../repositories/languageRepository');
-                const languageRepo = new LanguageRepository();
-                const dbVoice = await languageRepo.getLanguageVoice(lang);
-                if (dbVoice) {
-                    voiceConfig = {
-                        languageCode: lang,
-                        name: dbVoice,
-                        ssmlGender: dbVoice.includes('-M') ? 'MALE' : 'FEMALE'
-                    };
-                }
-            } catch (dbErr) {
-                console.warn('⚠️ [TtsService] Error al consultar idiomas en BD, usando voiceMap:', dbErr.message);
-            }
-
-            if (!voiceConfig) {
-                // Buscar voz exacta o por prefijo (es-MX -> es-ES) o default
-                voiceConfig = this.voiceMap[lang];
-            }
-            
-            if (!voiceConfig) {
-                const prefix = lang.split('-')[0];
-                voiceConfig = Object.values(this.voiceMap).find(v => v.languageCode.startsWith(prefix)) || this.voiceMap['es-ES'];
-            }
+            const voiceName = await this.resolveVoiceName(lang);
+            const voiceConfig = {
+                languageCode: lang,
+                name: voiceName,
+                ssmlGender: voiceName.includes('-M') ? 'MALE' : 'FEMALE'
+            };
             
             const request = {
                 input: { text: cleanText },
@@ -109,11 +124,11 @@ class TtsService {
                 },
             };
 
-            console.log(`🗣️ [TtsService] Sintetizando de forma remota (${lang}): "${cleanText.substring(0, 30)}..."`);
+            console.log(`🗣️ [TtsService] Sintetizando de forma remota (${lang} - ${voiceName}): "${cleanText.substring(0, 30)}..."`);
             const [response] = await this.client.synthesizeSpeech(request);
             const buffer = response.audioContent;
 
-            // 3. GUARDAR ASÍNCRONAMENTE EN EL CACHÉ DE GCS
+            // Guardar asíncronamente en el caché de GCS
             file.save(buffer, {
                 metadata: {
                     contentType: 'audio/mpeg',

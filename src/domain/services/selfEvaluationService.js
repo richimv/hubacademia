@@ -1,4 +1,5 @@
 const { VertexAI } = require('@google-cloud/vertexai');
+const securityUtils = require('../utils/securityUtils');
 
 // CONFIGURACIÓN VERTEX AI
 const project = process.env.GOOGLE_CLOUD_PROJECT;
@@ -19,13 +20,14 @@ class SelfEvaluationService {
 
     async generateQuizFromResource(title, content, count = 5, difficulty = 'intermediate', resourceUrl = null, domain = 'medicine') {
         try {
-            console.log(`🤖 [Autoevaluacion IA] Generando quiz dinámico para recurso: ${title} | Dificultad: ${difficulty}`);
+            const cleanTitle = securityUtils.sanitizeInputForAI(title, securityUtils.LIMITS.TOPIC);
+            console.log(`🤖 [Autoevaluacion IA] Generando quiz dinámico para recurso: ${cleanTitle} | Dificultad: ${difficulty}`);
 
             let contextForAI = "";
             const plainText = content ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
             const isContentShort = plainText && plainText.length > 0 && plainText.length < 15000;
 
-            const subtopicsPrompt = `Actúa como un experto docente. Extrae 5 subtemas o conceptos muy específicos a evaluar del siguiente recurso: "${title}". Devuelve SOLO una lista separada por comas, sin numeración ni introducciones.`;
+            const subtopicsPrompt = `Actúa como un experto docente. Extrae 5 subtemas o conceptos muy específicos a evaluar del siguiente recurso: "${cleanTitle}". Devuelve SOLO una lista separada por comas, sin numeración ni introducciones.`;
             let subtopicsStr = "Conceptos generales";
             try {
                 const subResp = await modelCreativeLite.generateContent(subtopicsPrompt);
@@ -53,10 +55,10 @@ class SelfEvaluationService {
 
                 contextForAI = await questionRagService.getStyleContextByKeywords(
                     domain,
-                    [`${title} ${selectedSubtopics}`],
+                    [`${cleanTitle} ${selectedSubtopics}`],
                     8,
                     null,
-                    title
+                    cleanTitle
                 );
 
                 if (!contextForAI || contextForAI.trim() === '') {
@@ -65,7 +67,7 @@ class SelfEvaluationService {
                         contextForAI = plainText.substring(0, 20000);
                     } else {
                         console.warn(`⚠️ [Autoevaluacion IA] Fallback semántico falló, usando fallback AI pura.`);
-                        contextForAI = `Resumen básico del recurso: ${title}. Temas a evaluar: ${selectedSubtopics}`;
+                        contextForAI = `Resumen básico del recurso: ${cleanTitle}. Temas a evaluar: ${selectedSubtopics}`;
                     }
                 }
             }
@@ -74,7 +76,7 @@ class SelfEvaluationService {
             Actúa como un experto docente y Quiz Master.
             Tu tarea es generar EXACTAMENTE ${count} preguntas de evaluación de opción múltiple (Active Recall) basadas EXCLUSIVAMENTE en el siguiente material de estudio:
             
-            TÍTULO DEL RECURSO: "${title}"
+            TÍTULO DEL RECURSO: "${cleanTitle}"
             ENFOQUE DINÁMICO (Priorizar estos temas si están en el material): ${selectedSubtopics}
             NIVEL DE DIFICULTAD: ${difficulty.toUpperCase()} (Si es 'basic' o 'easy': conceptos directos y definiciones clave. Si es 'advanced' o 'hard': análisis crítico, casos prácticos de aplicación, diagnóstico y toma de decisiones).
             
@@ -90,7 +92,7 @@ class SelfEvaluationService {
             5. EXPLICACIONES: Añade una breve explicación educativa (1-2 líneas) de por qué la respuesta es correcta.
             
             JSON ESTRICTO (No incluyas explicaciones fuera del JSON):
-            [{"question_text":"¿Cuál es el principal concepto...?","options":["Opción 1", "Opción 2", "Opción 3", "Opción 4"],"correct_option_index":0,"explanation":"Explicación corta.","topic":"${title}","visual_support_recommendation":""}]
+            [{"question_text":"¿Cuál es el principal concepto...?","options":["Opción 1", "Opción 2", "Opción 3", "Opción 4"],"correct_option_index":0,"explanation":"Explicación corta.","topic":"${cleanTitle}","visual_support_recommendation":""}]
             `;
 
             const result = await modelCreativeLite.generateContent(prompt);
@@ -134,11 +136,12 @@ class SelfEvaluationService {
 
     async generateGeneralQuestionsAI(topics, count = 5, subscriptionTier = 'free') {
         try {
-            console.log(`🤖 [Autoevaluacion IA] Generando preguntas AI puras para temas: ${topics.join(', ')}`);
+            const cleanTopics = (topics || []).map(t => securityUtils.sanitizeInputForAI(t, securityUtils.LIMITS.TOPIC));
+            console.log(`🤖 [Autoevaluacion IA] Generando preguntas AI puras para temas: ${cleanTopics.join(', ')}`);
             const prompt = `
             Actúa como un experto docente y Quiz Master.
             Tu tarea es generar EXACTAMENTE ${count} preguntas de evaluación de opción múltiple (Active Recall) sobre los siguientes temas:
-            TEMAS: ${topics.join(', ')}
+            TEMAS: ${cleanTopics.join(', ')}
             
             🚨 REGLAS DE ORO:
             1. VERACIDAD: Todas las preguntas deben ser correctas y precisas técnicamente.
@@ -148,7 +151,7 @@ class SelfEvaluationService {
             5. EXPLICACIONES: Añade una breve explicación educativa (1-2 líneas) de por qué la respuesta es correcta.
             
             JSON ESTRICTO (No incluyas explicaciones fuera del JSON):
-            [{"question_text":"¿Cuál es el principal concepto...?","options":["Opción 1", "Opción 2", "Opción 3", "Opción 4"],"correct_option_index":0,"explanation":"Explicación corta.","topic":"${topics[0]}","visual_support_recommendation":""}]
+            [{"question_text":"¿Cuál es el principal concepto...?","options":["Opción 1", "Opción 2", "Opción 3", "Opción 4"],"correct_option_index":0,"explanation":"Explicación corta.","topic":"${cleanTopics[0] || 'General'}","visual_support_recommendation":""}]
             `;
 
             const result = await modelCreativeLite.generateContent(prompt);
