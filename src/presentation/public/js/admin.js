@@ -795,7 +795,8 @@ class AdminManager {
 
                 const domains = [
                     { id: 'medicine', name: 'Medicina' },
-                    { id: 'education', name: 'Educación' }
+                    { id: 'education', name: 'Educación' },
+                    { id: 'languages', name: 'Idiomas' }
                 ];
 
                 fieldsHTML = `
@@ -826,6 +827,13 @@ class AdminManager {
                                 <option value="NOMBRAMIENTO" ${this.currentItem?.target === 'NOMBRAMIENTO' ? 'selected' : ''}>NOMBRAMIENTO</option>
                                 <option value="ASCENSO" ${this.currentItem?.target === 'ASCENSO' ? 'selected' : ''}>ASCENSO</option>
                                 <option value="ACCESO_CARGOS" ${this.currentItem?.target === 'ACCESO_CARGOS' ? 'selected' : ''}>ACCESO A CARGOS</option>
+                                ` : this.currentItem?.domain === 'languages' ? `
+                                <option value="TOEFL" ${this.currentItem?.target === 'TOEFL' ? 'selected' : ''}>TOEFL</option>
+                                <option value="IELTS" ${this.currentItem?.target === 'IELTS' ? 'selected' : ''}>IELTS</option>
+                                <option value="TECH_ENGLISH" ${this.currentItem?.target === 'TECH_ENGLISH' ? 'selected' : ''}>TECH_ENGLISH</option>
+                                <option value="MCER" ${this.currentItem?.target === 'MCER' ? 'selected' : ''}>MCER</option>
+                                <option value="CELI" ${this.currentItem?.target === 'CELI' ? 'selected' : ''}>CELI</option>
+                                <option value="CILS" ${this.currentItem?.target === 'CILS' ? 'selected' : ''}>CILS</option>
                                 ` : `
                                 <option value="ENAM" ${this.currentItem?.target === 'ENAM' ? 'selected' : ''}>ENAM</option>
                                 <option value="SERUMS" ${this.currentItem?.target === 'SERUMS' ? 'selected' : ''}>SERUMS</option>
@@ -858,6 +866,10 @@ class AdminManager {
                                 <option value="EBR - Secundaria - Matemática" ${this.currentItem?.career === 'EBR - Secundaria - Matemática' ? 'selected' : ''}>EBR - Secundaria - Matemática</option>
                                 <option value="EBR - Secundaria - Profesor de Innovación Pedagógica" ${this.currentItem?.career === 'EBR - Secundaria - Profesor de Innovación Pedagógica' ? 'selected' : ''}>EBR - Secundaria - Profesor de Innovación Pedagógica</option>
                             </optgroup>
+                            ` : this.currentItem?.domain === 'languages' ? `
+                            <option value="en-US" ${this.currentItem?.career === 'en-US' ? 'selected' : ''}>English (USA)</option>
+                            <option value="en-GB" ${this.currentItem?.career === 'en-GB' ? 'selected' : ''}>English (UK)</option>
+                            <option value="it-IT" ${this.currentItem?.career === 'it-IT' ? 'selected' : ''}>Italiano (IT)</option>
                             ` : `
                             <option value="Medicina Humana" ${this.currentItem?.career === 'Medicina Humana' ? 'selected' : ''}>Medicina Humana</option>
                             <option value="Enfermería" ${this.currentItem?.career === 'Enfermería' ? 'selected' : ''}>Enfermería</option>
@@ -999,7 +1011,7 @@ class AdminManager {
                                 <div class="import-icon-box excel-icon"><i class="fas fa-file-excel"></i></div>
                                 <span class="import-method-title">Subida Masiva Excel / CSV</span>
                             </div>
-                            <p class="import-method-desc">Sube tu archivo oficial respetando las 16 columnas del formato actualizado (Incluye Imágenes y Recomendaciones).</p>
+                            <p class="import-method-desc">Sube tu archivo oficial respetando las 17 columnas del formato actualizado (Incluye Imágenes y Recomendaciones).</p>
                             
                             <div style="display: flex; gap: 10px; margin-top: 10px;">
                                 <button type="button" class="btn-secondary" style="flex:1; font-size: 0.85rem;" onclick="window.adminManager.downloadExcelTemplate()">
@@ -2056,60 +2068,7 @@ class AdminManager {
         }
     }
 
-    /**
-     * ✅ NUEVO: Manejador de visibilidad condicional en el modal según Dominio
-     */
-    handleDomainChangeInModal(domain) {
-        const isTrivia = domain === 'GENERAL_TRIVIA';
-        const isEducation = domain === 'education';
-
-        const targetContainer = document.getElementById('generic-target-container');
-        const careerWrapper = document.getElementById('generic-career-wrapper');
-        const explImageWrapper = document.getElementById('generic-explanation-image-upload-group');
-
-        if (targetContainer) targetContainer.style.display = isTrivia ? 'none' : 'block';
-        if (careerWrapper) careerWrapper.style.display = isTrivia ? 'none' : 'block';
-        if (explImageWrapper) explImageWrapper.style.display = isTrivia ? 'none' : 'block';
-
-        // Swap target options based on domain
-        const targetSelect = document.getElementById('generic-target');
-        if (targetSelect) {
-            if (isEducation) {
-                targetSelect.innerHTML = `
-                    <option value="NOMBRAMIENTO" selected>NOMBRAMIENTO</option>
-                    <option value="ASCENSO">ASCENSO</option>
-                    <option value="ACCESO_CARGOS">ACCESO A CARGOS</option>
-                `;
-            } else if (!isTrivia) {
-                targetSelect.innerHTML = `
-                    <option value="ENAM" selected>ENAM</option>
-                    <option value="SERUMS">SERUMS</option>
-                    <option value="RESIDENTADO">RESIDENTADO</option>
-                    <option value="N/A">N/A (Quiz Arena)</option>
-                `;
-            }
-            // Hide option E for non-Residentado
-            const optEWrap = document.getElementById('generic-opt4-wrapper');
-            if (optEWrap) optEWrap.style.display = 'none';
-        }
-
-        // Swap career options based on domain
-        const careerSelect = document.getElementById('generic-career');
-        if (careerSelect) {
-            if (isEducation) {
-                careerSelect.innerHTML = `
-                    <option value="EBR - Inicial">EBR - Nivel Inicial</option>
-                    <option value="EBR - Primaria" selected>EBR - Nivel Primaria</option>
-                    <option value="EBR - Secundaria">EBR - Nivel Secundaria</option>
-                `;
-            } else if (!isTrivia) {
-                careerSelect.innerHTML = `
-                    <option value="Medicina Humana" selected>Medicina Humana</option>
-                    <option value="Enfermería">Enfermería</option>
-                `;
-            }
-        }
-    }
+    // consolidated handleDomainChangeInModal is defined below in the manual question editor section.
 
     /**
      * ✅ NUEVO: Manejador de cambio de dominio en el modal de Generación IA
@@ -2440,6 +2399,12 @@ class AdminManager {
                                 document.getElementById('generic-opt3').value,
                                 document.getElementById('generic-opt4').value
                             ]
+                            : (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(qTarget))
+                            ? [
+                                document.getElementById('generic-opt0').value,
+                                document.getElementById('generic-opt1').value,
+                                document.getElementById('generic-opt2').value
+                            ]
                             : [
                                 document.getElementById('generic-opt0').value,
                                 document.getElementById('generic-opt1').value,
@@ -2595,19 +2560,24 @@ class AdminManager {
                                     // Omitir la fila 0 (encabezados)
                                     const parsed = rows.slice(1).filter(row => row.length > 0 && row[0]).map((cols, i) => {
                                         if (!cols[0]) return null;
+                                        const targetVal = cols[2] ? String(cols[2]).trim().toUpperCase() : '';
                                         return {
                                             question_text: String(cols[0] || '').trim(),
                                             domain: String(cols[1] || 'medicine').trim(), // El usuario especificará GENERAL_TRIVIA en el Excel
                                             target: cols[2] ? String(cols[2]).trim() : null,
                                             career: cols[3] ? String(cols[3]).trim() : null,
                                             topic: String(cols[4] || 'General').trim(),
-                                            difficulty: 'Senior',
-                                            options: (String(cols[2] || '').trim().toUpperCase() === 'RESIDENTADO') ? [
+                                            difficulty: cols[5] ? String(cols[5]).trim() : 'Senior',
+                                            options: (targetVal === 'RESIDENTADO') ? [
                                                 String(cols[6] || 'Opción A').trim(),
                                                 String(cols[7] || 'Opción B').trim(),
                                                 String(cols[8] || 'Opción C').trim(),
                                                 String(cols[9] || 'Opción D').trim(),
                                                 String(cols[10] || 'Opción E').trim()
+                                            ] : (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(targetVal)) ? [
+                                                String(cols[6] || 'Opción A').trim(),
+                                                String(cols[7] || 'Opción B').trim(),
+                                                String(cols[8] || 'Opción C').trim()
                                             ] : [
                                                 String(cols[6] || 'Opción A').trim(),
                                                 String(cols[7] || 'Opción B').trim(),
@@ -2896,12 +2866,144 @@ class AdminManager {
     downloadExcelTemplate() {
         if (typeof window.XLSX !== 'undefined') {
             const ws_data = [
-                ['PREGUNTA (*)', 'DOMINIO (medicine/english)', 'TARGET (ENAM/SERUMS/RESIDENTADO)', 'CARRERA (Solo SERUMS)', 'AREA_ESTUDIO (*)', 'DIFICULTAD (Estándar Senior)', 'OPCION_A (*)', 'OPCION_B (*)', 'OPCION_C (*)', 'OPCION_D (*)', 'OPCION_E (Solo RESIDENTADO)', 'INDEX_CORRECTA (0 al 4) (*)', 'EXPLICACION', 'URL_IMAGEN_ENUNCIADO', 'SUBTEMA (OPCIONAL)', 'URL_IMAGEN_EXPLICACION', 'RECOMENDACION_APOYO_VISUAL'],
-                ['¿Fármaco de elección en tormenta tiroidea?', 'medicine', 'ENAM', '', 'Cardiología', 'Senior', 'Propiltiouracilo', 'Metimazol', 'Yodo', 'Propranolol', '', '0', 'Bloquea la conversión periférica de T4 a T3 urgentemente.', '', 'Emergencias Endocrinas', '', 'Esquema de síntesis de hormonas tiroideas'],
-                ['¿Qué vacuna se aplica a la gestante según calendario PAI SERUMS?', 'medicine', 'SERUMS', 'Enfermería', 'Inmunizaciones', 'Senior', 'Hepatitis B', 'dTpa', 'Rotavirus', 'VPH', '', '1', 'La dTpa se aplica entre la semana 27 y 36 de gestación.', '', 'PAI', '', 'Imagen de técnica de aplicación IM'],
-                ['¿Causa más frecuente de absceso hepático piógeno?', 'medicine', 'RESIDENTADO', '', 'Gastroenterología', 'Senior', 'E. Coli', 'K. pneumoniae', 'Bacteroides fragilis', 'Streptococcus milleri', 'Entamoeba histolytica', '1', 'Klebsiella pneumoniae es actualmente el principal agente causal, especialmente en diabéticos (Harrison).', '', 'Cirugía Hepatobiliar', '', 'Ecografía de absceso en lóbulo derecho']
+                [
+                    'PREGUNTA (*)', 
+                    'DOMINIO (medicine/education/languages)', 
+                    'TARGET (ENAM/SERUMS/RESIDENTADO/ASCENSO/NOMBRAMIENTO/TECH_ENGLISH/MCER)', 
+                    'CARRERA / MODALIDAD / IDIOMA (Solo SERUMS, Educación o Idiomas)', 
+                    'AREA_ESTUDIO / EJE TEMÁTICO (*)', 
+                    'DIFICULTAD (Senior / A1-C2 para Idiomas)', 
+                    'OPCION_A (*)', 
+                    'OPCION_B (*)', 
+                    'OPCION_C (*)', 
+                    'OPCION_D (Vacío en Educación)', 
+                    'OPCION_E (Solo RESIDENTADO)', 
+                    'INDEX_CORRECTA (0=A, 1=B, 2=C, 3=D, 4=E) (*)', 
+                    'EXPLICACION', 
+                    'URL_IMAGEN_ENUNCIADO', 
+                    'SUBTEMA (OPCIONAL)', 
+                    'URL_IMAGEN_EXPLICACION', 
+                    'RECOMENDACION_APOYO_VISUAL'
+                ],
+                [
+                    '¿Fármaco de elección en tormenta tiroidea?', 
+                    'medicine', 
+                    'ENAM', 
+                    '', 
+                    'Cardiología', 
+                    'Senior', 
+                    'Propiltiouracilo', 
+                    'Metimazol', 
+                    'Yodo', 
+                    'Propranolol', 
+                    '', 
+                    '0', 
+                    'Bloquea la conversión periférica de T4 a T3 urgentemente.', 
+                    '', 
+                    'Emergencias Endocrinas', 
+                    '', 
+                    'Esquema de síntesis de hormonas tiroideas'
+                ],
+                [
+                    '¿Qué vacuna se aplica a la gestante según calendario PAI SERUMS?', 
+                    'medicine', 
+                    'SERUMS', 
+                    'Enfermería', 
+                    'Inmunizaciones', 
+                    'Senior', 
+                    'Hepatitis B', 
+                    'dTpa', 
+                    'Rotavirus', 
+                    'VPH', 
+                    '', 
+                    '1', 
+                    'La dTpa se aplica entre la semana 27 y 36 de gestación.', 
+                    '', 
+                    'PAI', 
+                    '', 
+                    'Imagen de técnica de aplicación IM'
+                ],
+                [
+                    '¿Causa más frecuente de absceso hepático piógeno?', 
+                    'medicine', 
+                    'RESIDENTADO', 
+                    '', 
+                    'Gastroenterología', 
+                    'Senior', 
+                    'E. Coli', 
+                    'K. pneumoniae', 
+                    'Bacteroides fragilis', 
+                    'Streptococcus milleri', 
+                    'Entamoeba histolytica', 
+                    '1', 
+                    'Klebsiella pneumoniae es actualmente el principal agente causal, especialmente en diabéticos (Harrison).', 
+                    '', 
+                    'Cirugía Hepatobiliar', 
+                    '', 
+                    'Ecografía de absceso en lóbulo derecho'
+                ],
+                [
+                    'Un docente desea que sus estudiantes de Primaria construyan activamente el concepto de fuerza. ¿Cuál de las siguientes acciones es más pertinente para iniciar este proceso?', 
+                    'education', 
+                    'ASCENSO', 
+                    'EBR - Primaria', 
+                    'Teorías y Procesos del Aprendizaje', 
+                    'Senior', 
+                    'Pedir a los estudiantes que empujen diferentes objetos del aula y describan qué sintieron o qué observaron en los objetos al realizar esta acción.', 
+                    'Explicar en la pizarra que la fuerza es la interacción entre dos cuerpos y luego resolver un cuestionario con ejemplos de fuerzas.', 
+                    'Mostrar un video animado donde se definen los tipos de fuerza y pedir a los estudiantes que copien las definiciones en sus cuadernos.', 
+                    '', 
+                    '', 
+                    '0', 
+                    'El constructivismo implica que los estudiantes experimenten directamente para construir el conocimiento a partir de sus saberes previos.', 
+                    '', 
+                    'Principios Constructivistas', 
+                    '', 
+                    'Esquema del ciclo del aprendizaje vivencial'
+                ],
+                [
+                    'Choose the correct option to complete the sentence: "If she _______ harder, she would have passed the exam."', 
+                    'languages', 
+                    'MCER', 
+                    'en-US', 
+                    'Grammar & Use of English', 
+                    'B2', 
+                    'studied', 
+                    'had studied', 
+                    'would study', 
+                    'has studied', 
+                    '', 
+                    '1', 
+                    'This is a third conditional sentence, which requires the past perfect in the "if" clause (had + past participle).', 
+                    '', 
+                    'Conditionals', 
+                    '', 
+                    'Graphic showing timelines for conditional structures'
+                ]
             ];
             const ws = window.XLSX.utils.aoa_to_sheet(ws_data);
+            
+            // Configurar anchos de columna para que sea fácil de visualizar
+            ws['!cols'] = [
+                { wch: 45 }, // PREGUNTA
+                { wch: 15 }, // DOMINIO
+                { wch: 15 }, // TARGET
+                { wch: 25 }, // CARRERA
+                { wch: 25 }, // AREA_ESTUDIO
+                { wch: 15 }, // DIFICULTAD
+                { wch: 20 }, // OPCION_A
+                { wch: 20 }, // OPCION_B
+                { wch: 20 }, // OPCION_C
+                { wch: 20 }, // OPCION_D
+                { wch: 20 }, // OPCION_E
+                { wch: 15 }, // INDEX_CORRECTA
+                { wch: 40 }, // EXPLICACION
+                { wch: 25 }, // URL_IMAGEN_ENUNCIADO
+                { wch: 20 }, // SUBTEMA
+                { wch: 25 }, // URL_IMAGEN_EXPLICACION
+                { wch: 30 }  // RECOMENDACION_APOYO_VISUAL
+            ];
+
             const wb = window.XLSX.utils.book_new();
             window.XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Preguntas");
             window.XLSX.writeFile(wb, "HubAcademia_Plantilla_Banco_Preguntas.xlsx");
@@ -2997,6 +3099,15 @@ class AdminManager {
         const targetSelect = document.getElementById('generic-target');
         const careerSelect = document.getElementById('generic-career');
         const explImageGroup = document.getElementById('generic-explanation-image-upload-group');
+        
+        const targetContainer = document.getElementById('generic-target-container');
+        const careerWrapper = document.getElementById('generic-career-wrapper');
+
+        const isTrivia = domain === 'GENERAL_TRIVIA';
+
+        if (targetContainer) targetContainer.style.display = isTrivia ? 'none' : 'block';
+        if (careerWrapper) careerWrapper.style.display = isTrivia ? 'none' : 'block';
+        if (explImageGroup) explImageGroup.style.display = isTrivia ? 'none' : 'block';
 
         if (domain === 'education') {
             if (targetSelect) {
@@ -3030,7 +3141,6 @@ class AdminManager {
                     </optgroup>
                 `;
             }
-            if (explImageGroup) explImageGroup.style.display = 'block';
             this.handleQuestionTargetChange('ASCENSO');
         } else if (domain === 'medicine') {
             if (targetSelect) {
@@ -3041,17 +3151,35 @@ class AdminManager {
                     <option value="N/A">N/A (Quiz Arena)</option>
                 `;
             }
+            if (careerSelect) {
+                const currentVal = this.currentItem?.career || '';
                 careerSelect.innerHTML = `
-                    <option value="Medicina Humana">Medicina Humana</option>
-                    <option value="Enfermería">Enfermería</option>
+                    <option value="Medicina Humana" ${currentVal === 'Medicina Humana' ? 'selected' : ''}>Medicina Humana</option>
+                    <option value="Enfermería" ${currentVal === 'Enfermería' ? 'selected' : ''}>Enfermería</option>
                 `;
-            if (explImageGroup) explImageGroup.style.display = 'block';
+            }
             this.handleQuestionTargetChange('SERUMS');
+        } else if (domain === 'languages') {
+            if (targetSelect) {
+                targetSelect.innerHTML = `
+                    <option value="TOEFL">TOEFL</option>
+                    <option value="IELTS">IELTS</option>
+                    <option value="TECH_ENGLISH" selected>TECH_ENGLISH</option>
+                    <option value="MCER">MCER</option>
+                    <option value="CELI">CELI</option>
+                    <option value="CILS">CILS</option>
+                `;
+            }
+            if (careerSelect) {
+                const currentVal = this.currentItem?.career || '';
+                careerSelect.innerHTML = `
+                    <option value="en-US" ${currentVal === 'en-US' ? 'selected' : ''}>English (USA)</option>
+                    <option value="en-GB" ${currentVal === 'en-GB' ? 'selected' : ''}>English (UK)</option>
+                    <option value="it-IT" ${currentVal === 'it-IT' ? 'selected' : ''}>Italiano (IT)</option>
+                `;
+            }
+            this.handleQuestionTargetChange('TECH_ENGLISH');
         } else {
-            // General Trivia
-            if (targetSelect) targetSelect.parentElement.style.display = 'none';
-            if (careerSelect) careerSelect.parentElement.style.display = 'none';
-            if (explImageGroup) explImageGroup.style.display = 'none';
             this.handleQuestionTargetChange('N/A');
         }
     }
@@ -3060,29 +3188,29 @@ class AdminManager {
         const optionDContainer = document.getElementById('opt3-container');
         const optionDInput = document.getElementById('generic-opt3');
         const optionsSelect = document.getElementById('generic-correct-ans');
-        const isEducation = target === 'ASCENSO' || target === 'NOMBRAMIENTO';
+        const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
 
         if (optionDContainer) {
             if (isEducation) {
                 optionDContainer.style.display = 'none';
                 if (optionDInput) {
-                    optionDInput.removeAttribute('required');
+                     optionDInput.removeAttribute('required');
                 }
                 // If correct answer was 3 (Option D), reset to 0
                 if (optionsSelect && optionsSelect.value === '3') {
-                    optionsSelect.value = '0';
+                     optionsSelect.value = '0';
                 }
                 // Hide option D in correct answer select
                 if (optionsSelect && optionsSelect.options[3]) {
-                    optionsSelect.options[3].style.display = 'none';
+                     optionsSelect.options[3].style.display = 'none';
                 }
             } else {
                 optionDContainer.style.display = 'block';
                 if (optionDInput) {
-                    optionDInput.setAttribute('required', 'required');
+                     optionDInput.setAttribute('required', 'required');
                 }
                 if (optionsSelect && optionsSelect.options[3]) {
-                    optionsSelect.options[3].style.display = 'block';
+                     optionsSelect.options[3].style.display = 'block';
                 }
             }
         }

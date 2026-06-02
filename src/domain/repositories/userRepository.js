@@ -176,22 +176,6 @@ class UserRepository {
     }
 }
 
-// Semilla admin (simplificada)
-const seedAdminUser = async () => {
-    try {
-        const adminEmail = 'admin@uc.edu';
-        const res = await db.query('SELECT id FROM users WHERE email = $1', [adminEmail]);
-        if (res.rows.length === 0) {
-            console.log('🌱 Creando Admin...');
-            const id = crypto.randomUUID();
-            const hash = await bcrypt.hash('admin123', 10);
-            await db.query('INSERT INTO users(id, name, email, password_hash, role) VALUES($1, $2, $3, $4, $5)', [id, 'Admin UC', adminEmail, hash, 'admin']);
-        }
-    } catch (error) { console.warn('⚠️ Seed Admin:', error.message); }
-};
 
-if (process.env.NODE_ENV !== 'test') {
-    seedAdminUser();
-}
 
 module.exports = UserRepository;

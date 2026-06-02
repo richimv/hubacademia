@@ -210,7 +210,7 @@ BEGIN
 
     -- public.f_unaccent
     BEGIN
-        ALTER FUNCTION public.f_unaccent(text) SET search_path = public;
+        ALTER FUNCTION public.f_unaccent(text) SET search_path = public, extensions;
     EXCEPTION WHEN OTHERS THEN
         RAISE NOTICE 'No se pudo alterar search_path para f_unaccent: %', SQLERRM;
     END;

@@ -126,7 +126,13 @@ class AdminService {
     }
 
     async addSingleQuestion(data) {
-        const expectedOptions = (data.target === 'RESIDENTADO') ? 5 : 4;
+        let expectedOptions = 4;
+        if (data.target === 'RESIDENTADO') {
+            expectedOptions = 5;
+        } else if (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(data.target)) {
+            expectedOptions = 3;
+        }
+
         if (!Array.isArray(data.options) || data.options.length !== expectedOptions) {
             throw new Error(`El target ${data.target} requiere exactamente ${expectedOptions} opciones.`);
         }
@@ -151,7 +157,13 @@ class AdminService {
     }
 
     async updateSingleQuestion(id, data) {
-        const expectedOptions = (data.target === 'RESIDENTADO') ? 5 : 4;
+        let expectedOptions = 4;
+        if (data.target === 'RESIDENTADO') {
+            expectedOptions = 5;
+        } else if (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(data.target)) {
+            expectedOptions = 3;
+        }
+
         if (!Array.isArray(data.options) || data.options.length !== expectedOptions) {
             console.warn(`⚠️ Mismatch de opciones en update: Expected ${expectedOptions}, got ${data.options.length}`);
         }

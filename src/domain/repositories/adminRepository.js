@@ -197,7 +197,24 @@ class AdminRepository {
                 const exactSubtopic = q.subtopic || null;           // Subtema clínico (nullable)
                 const difficulty = canonicalDifficulty(q.difficulty);
                 const question_text = String(q.question_text || q.question);
-                const optionsStr = JSON.stringify(q.options || []);
+                
+                let options = q.options;
+                if (!Array.isArray(options)) {
+                    const a = q.option_a || q.opcion_a || q.OPCION_A || q.optionA || q.opcionA || '';
+                    const b = q.option_b || q.opcion_b || q.OPCION_B || q.optionB || q.opcionB || '';
+                    const c = q.option_c || q.opcion_c || q.OPCION_C || q.optionC || q.opcionC || '';
+                    const d = q.option_d || q.opcion_d || q.OPCION_D || q.optionD || q.opcionD || '';
+                    const e = q.option_e || q.opcion_e || q.OPCION_E || q.optionE || q.opcionE || '';
+                    if (a || b || c) {
+                        options = [a, b, c];
+                        if (d) options.push(d);
+                        if (e) options.push(e);
+                    } else {
+                        options = [];
+                    }
+                }
+                const optionsStr = JSON.stringify(options || []);
+                
                 const correct_option_index = parseInt(q.correct_option_index !== undefined ? q.correct_option_index : (q.correct_answer !== undefined ? q.correct_answer : (q.correctAnswerIndex || 0)), 10);
                 const explanation = q.explanation || '';
                 const explanation_image_url = q.explanation_image_url || q.EXPLICACION_IMAGEN || null;
