@@ -228,43 +228,92 @@ body.quiz-body {
 /* 🏆 CLASES PREMIUM PARA MEDIOS */
 .q-image-container-premium {
     text-align: center;
-    background: #000;
+    background: var(--bg-secondary);
     border-radius: 16px;
-    padding: 0;
+    padding: 0.5rem;
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
     margin-bottom: 0;
     width: 100%;
     max-width: 450px;
-    aspect-ratio: 1 / 1; /* ✅ Relación 1:1 Cuadrada Perfecta */
+    max-height: 400px;
     overflow: hidden;
-    cursor: pointer;
+    cursor: zoom-in;
+    position: relative;
+    transition: all 0.3s ease;
 }
 
 .q-image-container-premium img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* ✅ Cubre el cuadrado perfectamente */
+    max-width: 100%;
+    max-height: 380px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 12px;
     transition: transform 0.4s ease;
 }
 
-.q-image-container-premium img:hover {
-    transform: scale(1.02);
+.q-image-container-premium::before,
+.q-explanation-image-container-premium::before,
+.review-q-image-container::before,
+.review-explanation-image-container::before {
+    content: '\f00e'; /* fa-search-plus code */
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+.q-image-container-premium:hover::before,
+.q-explanation-image-container-premium:hover::before,
+.review-q-image-container:hover::before,
+.review-explanation-image-container:hover::before {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.q-image-container-premium img:hover,
+.q-explanation-image-container-premium img:hover,
+.review-q-image-container img:hover,
+.review-explanation-image-container img:hover {
+    transform: scale(1.01);
 }
 
 .q-explanation-image-container-premium {
     margin-top: 1rem;
     margin-bottom: 1.5rem;
     text-align: center;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bg-secondary);
     border-radius: 12px;
-    padding: 10px;
+    padding: 0.5rem;
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    cursor: zoom-in;
+    position: relative;
+    max-width: 100%;
+    transition: all 0.3s ease;
 }
 
 .q-explanation-image-container-premium img {
@@ -284,13 +333,13 @@ body.quiz-body {
     .q-image-container-premium {
         width: 100%;
         max-width: 100%;
-        aspect-ratio: 1 / 1; 
+        max-height: 320px;
         border-radius: 12px;
     }
 
     .q-image-container-premium img {
-        object-fit: cover; 
-        object-position: center;
+        max-height: 300px;
+        object-fit: contain; 
     }
 
     .question-layout-grid.has-image .question-text {
@@ -808,26 +857,53 @@ body.quiz-body {
 .review-q-image-container {
     text-align: center;
     margin-bottom: 1.5rem;
-    background: #000;
+    background: var(--bg-secondary);
     border-radius: 12px;
-    padding: 0;
+    padding: 0.5rem;
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
     width: 100%;
     max-width: 400px;
-    aspect-ratio: 1 / 1;
+    max-height: 350px;
     overflow: hidden;
-    cursor: pointer;
+    cursor: zoom-in;
+    position: relative;
+    transition: all 0.3s ease;
 }
 
 .review-q-image-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    max-width: 100%;
+    max-height: 330px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
     border-radius: 8px;
     box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
+}
+
+.review-explanation-image-container {
+    text-align: center;
+    margin-top: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    cursor: zoom-in;
+    position: relative;
+    max-width: 100%;
+    transition: all 0.3s ease;
+}
+
+.review-explanation-image-container img {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 8px;
+    object-fit: contain;
 }
 
 @media (max-width: 900px) {
@@ -839,6 +915,15 @@ body.quiz-body {
     .review-card.has-image .review-options,
     .review-card.has-image .review-explanation {
         grid-column: 1;
+    }
+
+    .review-q-image-container {
+        max-width: 100%;
+        max-height: 300px;
+    }
+
+    .review-q-image-container img {
+        max-height: 280px;
     }
 }
 
@@ -853,4 +938,141 @@ body.quiz-body {
     .review-explanation, .review-explanation p {
         font-size: 1.1rem !important;
     }
+}
+
+/* 🖼️ Visor Lightbox Premium (Glassmorphism / Dark Theme) */
+.lightbox-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 5, 5, 0.96);
+    backdrop-filter: blur(20px);
+    z-index: 11000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.lightbox-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: all 0.2s ease;
+    z-index: 11010;
+}
+
+.lightbox-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+    transform: scale(1.05);
+}
+
+.lightbox-controls {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    display: flex;
+    gap: 1rem;
+    z-index: 11010;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-controls button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.lightbox-controls button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.lightbox-viewport {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+}
+
+.lightbox-viewport.dragging {
+    cursor: grabbing;
+}
+
+.lightbox-viewport img {
+    max-width: 92%;
+    max-height: 85%;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+    transform-origin: center center;
+    transition: transform 0.15s cubic-bezier(0.1, 0.8, 0.3, 1);
+    border-radius: 8px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+/* 🖼️ Estilos para Imágenes Insertadas Inline (Markdown/HTML) en Enunciados y Explicaciones */
+.question-text img,
+#explanationText img,
+.review-q-text img,
+.review-explanation img {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+    border-radius: 12px;
+    cursor: zoom-in;
+    display: block;
+    margin: 1.5rem auto;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    padding: 0.5rem;
+    transition: border-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.question-text img:hover,
+#explanationText img:hover,
+.review-q-text img:hover,
+.review-explanation img:hover {
+    border-color: var(--primary-light);
+    transform: scale(1.005);
 }

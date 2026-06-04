@@ -258,6 +258,7 @@ async function init() {
     state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'SERUMS');
     state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
     state.mode = urlParams.get('mode') || '';
+    state.configType = urlParams.get('configType') || (savedConfig && savedConfig.configType ? savedConfig.configType : 'default');
 
     const areasParam = urlParams.get('areas');
     if (areasParam) {
@@ -304,9 +305,31 @@ async function init() {
         const recovered = loadSession();
         if (recovered && recovered.questions && recovered.questions.length > 0) {
             console.log("♻️ Sesión recuperada de localStorage.");
-            Object.assign(state, recovered);
-            renderQuestion();
-            if (state.maxQuestions === 100) startMockTimer();
+            
+            let resume = true;
+            // Solo preguntamos si el examen no ha expirado
+            if (recovered.timeLeft !== undefined && recovered.timeLeft <= 0) {
+                resume = true; // Forzar reanudación para calificar automáticamente
+            } else if (window.confirmationModal && typeof window.confirmationModal.show === 'function') {
+                const configText = recovered.targetExam || 'examen';
+                resume = await window.confirmationModal.show(
+                    `Tienes un simulacro de ${configText} iniciado previamente. ¿Deseas continuar respondiéndolo o prefieres comenzar uno nuevo?`,
+                    'Simulacro en progreso',
+                    'Continuar anterior',
+                    'Iniciar nuevo'
+                );
+            }
+            
+            if (resume) {
+                Object.assign(state, recovered);
+                renderQuestion();
+                if (state.maxQuestions === 100) startMockTimer();
+            } else {
+                console.log("🆕 Descartando sesión anterior por elección del usuario.");
+                clearSession();
+                state.quizId = Date.now().toString(36); // Generar ID único
+                await startQuiz();
+            }
         } else {
             console.log("🆕 Iniciando sesión nueva (sin estado previo).");
             // Inicialización limpia
@@ -319,6 +342,7 @@ async function init() {
         alert('Se detectó un examen dañado en memoria. Hemos limpiado el caché de seguridad de tu navegador. Por favor, intenta iniciar el simulacro nuevamente y ya debería funcionar.');
         window.location.href = '/';
     }
+    initLightbox();
 }
 
 /**
@@ -347,6 +371,13 @@ function loadSession() {
             return null;
         }
 
+        // Si es un Simulacro Real (100qs) y tiene tiempo restante guardado, descontar tiempo real transcurrido
+        if (data.maxQuestions === 100 && data.timeLeft !== undefined && data.timeLeft !== null) {
+            const elapsedSeconds = Math.floor(ageInMs / 1000);
+            data.timeLeft = Math.max(0, data.timeLeft - elapsedSeconds);
+            console.log(`⏱️ Persistencia del cronómetro: se descontaron ${elapsedSeconds}s de inactividad. Tiempo restante: ${data.timeLeft}s.`);
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
 
         // ✅ NUEVO: Si estamos en modo DEMO, nunca cargamos sesión previa (evita conflictos con sesiones de usuarios registrados)
@@ -364,12 +395,52 @@ function loadSession() {
             return null;
         }
 
-        // Regla 3: Validar que el mazo/tema sea el mismo (para no cargar un examen viejo en un contexto nuevo)
-        const currentAreas = String(urlParams.get('areas') || '').split(',').sort().join(',');
-        const storedAreas = (data.areas || []).sort().join(',');
+        // Regla 3: Validar contexto (MEDICINA vs EDUCACION vs IDIOMAS)
+        const currentContext = (state.context || 'MEDICINA').toUpperCase();
+        const storedContext = (data.context || 'MEDICINA').toUpperCase();
+        if (currentContext !== storedContext) {
+            console.log("♻️ Sesión descartada por desajuste de contexto.");
+            clearSession();
+            return null;
+        }
+
+        // Regla 4: Validar target del examen (SERUMS, ENAM, NOMBRAMIENTO, etc.)
+        const currentTarget = (state.targetExam || '').trim().toUpperCase();
+        const storedTarget = (data.targetExam || '').trim().toUpperCase();
+        if (currentTarget !== storedTarget) {
+            console.log("♻️ Sesión descartada por desajuste de target del examen.");
+            clearSession();
+            return null;
+        }
+
+        // Regla 5: Validar carrera / modalidad (EBR - Inicial vs EBR - Primaria vs etc.)
+        const currentCareer = (state.career || '').trim().toUpperCase();
+        const storedCareer = (data.career || '').trim().toUpperCase();
+        if (currentCareer !== storedCareer) {
+            console.log("♻️ Sesión descartada por desajuste de carrera/modalidad.");
+            clearSession();
+            return null;
+        }
+
+        // Regla 6: Validar dificultad
+        const currentDifficulty = (state.difficulty || '').trim().toUpperCase();
+        const storedDifficulty = (data.difficulty || '').trim().toUpperCase();
+        if (currentDifficulty !== storedDifficulty) {
+            console.log("♻️ Sesión descartada por desajuste de dificultad.");
+            clearSession();
+            return null;
+        }
+
+        // Regla 7: Validar que el mazo/tema/áreas sea el mismo
+        const currentAreas = (state.areas || []).sort().join(',').toUpperCase();
+        const storedAreas = (data.areas || []).sort().join(',').toUpperCase();
 
         if (currentAreas === storedAreas && data.questions.length > 0) {
             return data;
+        } else {
+            console.log("♻️ Sesión descartada por desajuste de áreas de estudio.");
+            clearSession();
+            return null;
         }
     } catch (error) { console.warn("Fallo cargando sesión previa", error); }
     return null;
@@ -379,22 +450,14 @@ function clearSession() {
     localStorage.removeItem(STORAGE_KEY);
 }
 
-// 1.5 Helper para Obtener Token Fresco (Evita 401 en exámenes largos)
-async function getValidToken() {
-    // 1. Intentar usar supabase client si existe (Frontend)
-    if (window.supabaseClient) {
-        try {
-            const { data, error } = await window.supabaseClient.auth.getSession();
-            if (data && data.session) {
-                const freshToken = data.session.access_token;
-                localStorage.setItem('authToken', freshToken); // Actualizar local
-                return freshToken;
-            }
-        } catch (error) { console.warn("Error refreshing token via supabase UI", error); }
-    }
-    // 2. Fallback al token clásico
-    return localStorage.getItem('authToken');
-}
+// Exponer función para iniciar nuevo examen limpiando caché sin race conditions
+window.startNewExam = function () {
+    console.log("🆕 Iniciando nuevo examen (limpiando sesión activa).");
+    clearSession();
+    location.reload();
+};
+
+
 
 // 2. Iniciar Quiz (Llamada al Backend)
 async function startQuiz() {
@@ -444,7 +507,8 @@ async function startQuiz() {
             career: state.career,
             difficulty: state.difficulty,
             limit: Math.min(5, state.maxQuestions),
-            mode: state.mode
+            mode: state.mode,
+            configType: state.configType
         })
     };
 
@@ -649,7 +713,8 @@ async function fetchNextBatch() {
                 career: state.career,
                 difficulty: state.difficulty,
                 seenIds: seenIds,
-                mode: state.mode
+                mode: state.mode,
+                configType: state.configType
             })
         });
 
@@ -1004,10 +1069,18 @@ function startMockTimer() {
     const updateDisplay = () => {
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
         const s = (timeLeft % 60).toString().padStart(2, '0');
-        if (elements.timerDisplay) elements.timerDisplay.textContent = `${m}:${s}`;
+        if (elements.timer) elements.timer.textContent = `${m}:${s}`;
     };
 
     updateDisplay(); // Mostrar inicial
+
+    // Si el tiempo ya expiró al iniciar o recuperar, entregamos automáticamente de inmediato
+    if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        alert("⏰ ¡El tiempo límite de este simulacro ha expirado! Procederemos a calificar tus respuestas guardadas.");
+        finishQuiz();
+        return;
+    }
 
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
@@ -1021,8 +1094,8 @@ function startMockTimer() {
 
         // Alerta visual de los últimos 5 minutos
         if (timeLeft === 300) {
-            elements.timerDisplay.parentElement.style.background = 'rgba(239, 68, 68, 0.4)'; // Rojo más intenso
-            elements.timerDisplay.parentElement.style.animation = 'pulse-ring 2s infinite';
+            elements.timer.parentElement.style.background = 'rgba(239, 68, 68, 0.4)'; // Rojo más intenso
+            elements.timer.parentElement.style.animation = 'pulse-ring 2s infinite';
         }
 
         if (timeLeft <= 0) {
@@ -1212,4 +1285,241 @@ async function finishQuiz() {
 // Auto-init
 document.addEventListener('DOMContentLoaded', init);
 
-console.log("💎 Module quiz.js loaded successfully. showExamReview is ready.");
+// --- 🖼️ Visor Lightbox Premium (Zoom, Drag, Gestos) ---
+function initLightbox() {
+    const modal = document.getElementById('lightboxModal');
+    const closeBtn = document.getElementById('lightboxClose');
+    const zoomInBtn = document.getElementById('lightboxZoomIn');
+    const zoomOutBtn = document.getElementById('lightboxZoomOut');
+    const zoomResetBtn = document.getElementById('lightboxZoomReset');
+    const viewport = document.getElementById('lightboxViewport');
+    const image = document.getElementById('lightboxImage');
+
+    if (!modal || !image) {
+        console.warn("⚠️ Elementos del Lightbox no encontrados en el DOM. Reintentando en 500ms...");
+        setTimeout(initLightbox, 500);
+        return;
+    }
+
+    let zoomLevel = 1;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let translateX = 0, translateY = 0;
+    
+    // Para pinch to zoom
+    let initialTouchDist = 0;
+    let lastZoomLevel = 1;
+
+    // Función de actualización de transformación
+    function updateTransform() {
+        // Limitar zoom entre 0.5 y 6
+        zoomLevel = Math.min(6, Math.max(0.5, zoomLevel));
+        
+        // Limitar arrastre para que la imagen no desaparezca de la pantalla
+        const maxTranslateX = window.innerWidth * zoomLevel;
+        const maxTranslateY = window.innerHeight * zoomLevel;
+        translateX = Math.min(maxTranslateX, Math.max(-maxTranslateX, translateX));
+        translateY = Math.min(maxTranslateY, Math.max(-maxTranslateY, translateY));
+
+        image.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomLevel})`;
+    }
+
+    // Resetear posición y escala
+    function resetZoom() {
+        zoomLevel = 1;
+        translateX = 0;
+        translateY = 0;
+        updateTransform();
+    }
+
+    // Abrir Lightbox con imagen específica
+    window.openLightbox = function(src) {
+        if (!src) return;
+        image.src = src;
+        modal.classList.add('active');
+        resetZoom();
+        document.body.style.overflow = 'hidden'; // Bloquear scroll de fondo
+    };
+
+    // Cerrar Lightbox
+    function closeLightbox() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        setTimeout(() => {
+            image.src = '';
+        }, 300); // Esperar transición CSS
+    }
+
+    // Eventos de botones
+    closeBtn.onclick = closeLightbox;
+    
+    zoomInBtn.onclick = () => {
+        zoomLevel += 0.25;
+        updateTransform();
+    };
+
+    zoomOutBtn.onclick = () => {
+        zoomLevel -= 0.25;
+        updateTransform();
+    };
+
+    zoomResetBtn.onclick = resetZoom;
+
+    // Cerrar al hacer click en el fondo vacío del viewport
+    viewport.onclick = (e) => {
+        if (e.target === viewport || e.target === modal) {
+            closeLightbox();
+        }
+    };
+
+    // --- Arrastre (Drag) con Ratón ---
+    viewport.addEventListener('mousedown', (e) => {
+        if (e.target !== image && e.target !== viewport) return;
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+        viewport.classList.add('dragging');
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        translateX = e.clientX - startX;
+        translateY = e.clientY - startY;
+        updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            viewport.classList.remove('dragging');
+        }
+    });
+
+    // --- Soporte Móvil (Touch Events) ---
+    viewport.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            // Un dedo: Arrastre
+            isDragging = true;
+            startX = e.touches[0].clientX - translateX;
+            startY = e.touches[0].clientY - translateY;
+            viewport.classList.add('dragging');
+        } else if (e.touches.length === 2) {
+            // Dos dedos: Pellizcar para Zoom
+            isDragging = false;
+            initialTouchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            lastZoomLevel = zoomLevel;
+        }
+    }, { passive: true });
+
+    viewport.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches.length === 1) {
+            translateX = e.touches[0].clientX - startX;
+            translateY = e.touches[0].clientY - startY;
+            updateTransform();
+        } else if (e.touches.length === 2 && initialTouchDist > 0) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const factor = dist / initialTouchDist;
+            zoomLevel = lastZoomLevel * factor;
+            updateTransform();
+        }
+    }, { passive: true });
+
+    viewport.addEventListener('touchend', () => {
+        isDragging = false;
+        viewport.classList.remove('dragging');
+        initialTouchDist = 0;
+    });
+
+    // Zoom con la rueda del ratón (Mouse Wheel)
+    viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 0.1 : -0.1;
+        zoomLevel += factor;
+        updateTransform();
+    }, { passive: false });
+
+    // Doble click para zoom inteligente toggle (1x <-> 2.5x)
+    viewport.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        if (zoomLevel > 1) {
+            resetZoom();
+        } else {
+            zoomLevel = 2.5;
+            const rect = viewport.getBoundingClientRect();
+            const clickX = e.clientX - rect.left - rect.width/2;
+            const clickY = e.clientY - rect.top - rect.height/2;
+            translateX = -clickX * 1.5;
+            translateY = -clickY * 1.5;
+            updateTransform();
+        }
+    });
+
+    // Soporte Teclado: Escape para cerrar
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeLightbox();
+        }
+    });
+
+    // Vincular clicks a los elementos de imagen interactivos existentes (metadata image_url)
+    const bindImageClick = (elementId) => {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.addEventListener('click', () => {
+                if (el.src) window.openLightbox(el.src);
+            });
+        }
+    };
+
+    bindImageClick('questionImage');
+    bindImageClick('explanationImage');
+
+    // Delegación para imágenes inline en enunciados y explicaciones
+    const qText = document.getElementById('questionText');
+    if (qText) {
+        qText.addEventListener('click', (e) => {
+            if (e.target.tagName === 'IMG' && e.target.src) {
+                window.openLightbox(e.target.src);
+            }
+        });
+    }
+
+    const expText = document.getElementById('explanationText');
+    if (expText) {
+        expText.addEventListener('click', (e) => {
+            if (e.target.tagName === 'IMG' && e.target.src) {
+                window.openLightbox(e.target.src);
+            }
+        });
+    }
+
+    // Delegación global en el feed de revisión
+    const reviewFeed = document.getElementById('reviewFeed');
+    if (reviewFeed) {
+        reviewFeed.addEventListener('click', (e) => {
+            // Si hacen click directo en cualquier elemento de imagen
+            if (e.target.tagName === 'IMG' && e.target.src) {
+                window.openLightbox(e.target.src);
+                return;
+            }
+            
+            // Fallback para clicks en el contenedor
+            const container = e.target.closest('.review-q-image-container, .review-explanation-image-container');
+            if (container) {
+                const img = container.querySelector('img');
+                if (img && img.src) {
+                    window.openLightbox(img.src);
+                }
+            }
+        });
+    }
+}
+
+console.log("💎 Module quiz.js loaded successfully. showExamReview is ready with Zoom Lightbox.");

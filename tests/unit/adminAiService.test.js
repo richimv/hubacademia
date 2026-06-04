@@ -243,5 +243,204 @@ describe('AdminAiService', () => {
             expect(questionRagService.getTechnicalBasis).toHaveBeenCalled();
             expect(questionRagService.getStyleContextByKeywords).toHaveBeenCalled();
         });
+
+        it('should run full RAG pipeline even when isUserRequest is true', async () => {
+            db.query
+                .mockResolvedValueOnce({ rows: [] })
+                .mockResolvedValueOnce({ rows: [] });
+
+            questionRagService.getSyllabusContext.mockResolvedValue("1.1 Estrategias pedagógicas.");
+            questionRagService.getTechnicalBasis.mockResolvedValue("Teoría sobre estrategias.");
+            questionRagService.getStyleContextByKeywords.mockResolvedValue("Molde de examen real.");
+
+            const mockSelectionResponse = {
+                selectedTopic: "Estrategias de aprendizaje",
+                searchTerms: ["estrategia", "aprendizaje"]
+            };
+
+            const mockQuestionResponse = {
+                question_text: "Un docente desea promover el aprendizaje autónomo. ¿Qué estrategia debe usar?",
+                options: [
+                    "Promover el debate estructurado y autoevaluación continua.",
+                    "Entregar una lista exhaustiva de conceptos de memoria.",
+                    "Dictar clases magistrales sin interactuar con los alumnos."
+                ],
+                correct_option_index: 0,
+                explanation: "La autoevaluación continua fomenta la reflexión metacognitiva y autonomía.",
+                topic: "Estrategias pedagógicas",
+                difficulty: "Senior",
+                career: "EBR - Primaria"
+            };
+
+            mockGenerateContent
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(mockSelectionResponse) }] } }]
+                    }
+                })
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(mockQuestionResponse) }] } }]
+                    }
+                });
+
+            const result = await adminAiService.generateRAGQuestions(
+                'ASCENSO',
+                'Estrategias pedagógicas',
+                'EBR - Primaria',
+                1,
+                true, // isUserRequest = true
+                'Senior'
+            );
+
+            expect(result).toHaveLength(1);
+            expect(questionRagService.getSyllabusContext).toHaveBeenCalled();
+            expect(questionRagService.getTechnicalBasis).toHaveBeenCalled();
+            expect(questionRagService.getStyleContextByKeywords).toHaveBeenCalled();
+        });
+
+        it('should reject and trigger refinement when a question has a highly repetitive opening style/prefix', async () => {
+            // DB returns historical question with repetitive prefix
+            db.query
+                .mockResolvedValueOnce({ rows: [] }) // For globalHistory
+                .mockResolvedValueOnce({
+                    rows: [
+                        { question_text: "- ¡Mira mi torre de bloques!, le dice Juan a su compañero Pedro, quien intenta acoplar..." }
+                    ]
+                });
+
+            questionRagService.getSyllabusContext.mockResolvedValue("1.1 Juego y aprendizaje.");
+            questionRagService.getTechnicalBasis.mockResolvedValue("Teoría sobre el juego libre.");
+            questionRagService.getStyleContextByKeywords.mockResolvedValue("Molde de examen.");
+
+            const mockSelectionResponse = {
+                selectedTopic: "Juego libre",
+                searchTerms: ["juego", "libre"]
+            };
+
+            // First attempt: Repetitive starter
+            const badQuestionResponse = {
+                question_text: "- ¡Mira mi torre de bloques!, le dice Juan a su compañero Pedro, quien intenta acoplar una pieza adicional. ¿Qué principio pedagógico se evidencia?",
+                options: [
+                    "Constructivismo y andamiaje activo.",
+                    "Instrucción tradicional repetitiva.",
+                    "Aprendizaje pasivo y receptivo."
+                ],
+                correct_option_index: 0,
+                explanation: "El andamiaje se produce en la interacción cooperativa.",
+                topic: "Estrategias pedagógicas",
+                difficulty: "Senior",
+                career: "EBR - Primaria"
+            };
+
+            // Second attempt: Refined/original starter
+            const refinedQuestionResponse = {
+                question_text: "Durante el juego libre, Juan y Pedro colaboran para edificar una estructura compleja. ¿Qué principio pedagógico se evidencia?",
+                options: [
+                    "Constructivismo y andamiaje activo.",
+                    "Instrucción tradicional repetitiva.",
+                    "Aprendizaje pasivo y receptivo."
+                ],
+                correct_option_index: 0,
+                explanation: "El andamiaje se produce en la interacción cooperativa.",
+                topic: "Estrategias pedagógicas",
+                difficulty: "Senior",
+                career: "EBR - Primaria"
+            };
+
+            mockGenerateContent
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(mockSelectionResponse) }] } }]
+                    }
+                })
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(badQuestionResponse) }] } }]
+                    }
+                })
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(refinedQuestionResponse) }] } }]
+                    }
+                });
+
+            const result = await adminAiService.generateRAGQuestions(
+                'ASCENSO',
+                'Estrategias pedagógicas',
+                'EBR - Primaria',
+                1,
+                false,
+                'Senior'
+            );
+
+            expect(result).toHaveLength(1);
+            expect(result[0].question_text).toBe("Durante el juego libre, Juan y Pedro colaboran para edificar una estructura compleja. ¿Qué principio pedagógico se evidencia?");
+            expect(mockGenerateContent).toHaveBeenCalledTimes(3); // selection, bad generation, refinement
+        });
+
+        it('should generate multiple questions in parallel chunks of up to 5', async () => {
+            db.query
+                .mockResolvedValueOnce({ rows: [] }) // For globalHistory
+                .mockResolvedValueOnce({ rows: [] });
+
+            questionRagService.getSyllabusContext.mockResolvedValue("1.1 Estrategias pedagógicas.");
+            questionRagService.getTechnicalBasis.mockResolvedValue("Teoría sobre estrategias.");
+            questionRagService.getStyleContextByKeywords.mockResolvedValue("Molde de examen real.");
+
+            const mockSelectionResponse1 = { selectedTopic: "Estrategias de aprendizaje A", searchTerms: ["estrategia", "A"] };
+            const mockSelectionResponse2 = { selectedTopic: "Estrategias de aprendizaje B", searchTerms: ["estrategia", "B"] };
+
+            const mockQuestionResponse1 = {
+                question_text: "En el aula de Primaria, el docente observa que... ¿Qué estrategia debe usar?",
+                options: ["Opción Correcta A", "Distractor A1", "Distractor A2"],
+                correct_option_index: 0,
+                explanation: "Explicación detallada A.",
+                topic: "Estrategias pedagógicas",
+                difficulty: "Senior",
+                career: "EBR - Primaria",
+                subtopic: "Estrategias de aprendizaje A"
+            };
+
+            const mockQuestionResponse2 = {
+                question_text: "Durante una sesión de aprendizaje, los estudiantes... ¿Qué estrategia debe usar?",
+                options: ["Opción Correcta B", "Distractor B1", "Distractor B2"],
+                correct_option_index: 0,
+                explanation: "Explicación detallada B.",
+                topic: "Estrategias pedagógicas",
+                difficulty: "Senior",
+                career: "EBR - Primaria",
+                subtopic: "Estrategias de aprendizaje B"
+            };
+
+            // Setup the parallel predictions using a robust mockImplementation
+            let selectionCount = 0;
+            mockGenerateContent.mockImplementation((promptObj) => {
+                const promptText = typeof promptObj === 'string' ? promptObj : (promptObj.contents?.[0]?.parts?.[0]?.text || "");
+                if (promptText.includes("selectedTopic") || promptText.includes("Director Académico")) {
+                    selectionCount++;
+                    const selectionData = selectionCount === 1 ? mockSelectionResponse1 : mockSelectionResponse2;
+                    return { response: { candidates: [{ content: { parts: [{ text: JSON.stringify(selectionData) }] } }] } };
+                } else {
+                    const isQ2 = promptText.includes("Estrategias de aprendizaje B");
+                    const questionData = isQ2 ? mockQuestionResponse2 : mockQuestionResponse1;
+                    return { response: { candidates: [{ content: { parts: [{ text: JSON.stringify(questionData) }] } }] } };
+                }
+            });
+
+            const result = await adminAiService.generateRAGQuestions(
+                'ASCENSO',
+                'Estrategias pedagógicas',
+                'EBR - Primaria',
+                2, // Generate 2 questions
+                true, // isUserRequest = true
+                'Senior'
+            );
+
+            expect(result).toHaveLength(2);
+            expect(result[0].subtopic).toBe("Estrategias de aprendizaje A");
+            expect(result[1].subtopic).toBe("Estrategias de aprendizaje B");
+            expect(mockGenerateContent).toHaveBeenCalledTimes(4); // 2 selections + 2 generations
+        });
     });
 });

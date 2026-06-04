@@ -38,7 +38,8 @@ describe('IdiomasSimulatorService', () => {
                 target: 'MCER',
                 career: 'en-US',
                 difficulty: 'B2',
-                areas: ['Grammar & Use of English']
+                areas: ['Grammar & Use of English'],
+                configType: 'custom'
             };
 
             const result = await idiomasSimulatorService.generateQuiz(options, 'user-123', 5, 'free', []);
@@ -79,7 +80,8 @@ describe('IdiomasSimulatorService', () => {
                 target: 'MCER',
                 career: 'en-US',
                 difficulty: 'B2',
-                areas: ['Vocabulary & Context']
+                areas: ['Vocabulary & Context'],
+                configType: 'custom'
             };
 
             const result = await idiomasSimulatorService.generateQuiz(options, 'user-123', 5, 'free', []);
@@ -122,7 +124,7 @@ describe('IdiomasSimulatorService', () => {
             ]);
             expect(idiomasSimulatorRepository.findQuestionsInBankBatch).toHaveBeenCalledWith(
                 'MCER',
-                ['GRAMMAR & USE OF ENGLISH', 'VOCABULARY & CONTEXT', 'READING COMPREHENSION', 'LISTENING COMPREHENSION'],
+                ['*'],
                 50,
                 'user-123',
                 'en-US',

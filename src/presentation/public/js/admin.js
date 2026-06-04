@@ -800,7 +800,7 @@ class AdminManager {
                 ];
 
                 fieldsHTML = `
-                    ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', this.currentItem?.question_text || '', true)}
+                    ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', this.formatPlainTextToHtml(this.currentItem?.question_text || ''), true)}
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         ${this.createSelect('generic-domain', 'Dominio (*)', domains, this.currentItem?.domain || 'medicine', false)}
                         <div id="generic-target-container" style="display: block;">
@@ -899,7 +899,7 @@ class AdminManager {
                 ], correctAns, false)}
                         </div>
                     </fieldset>
-                    ${this.createFormGroup('textarea', 'generic-explanation', 'Explicación (Opcional)', this.currentItem?.explanation || '', false)}
+                    ${this.createFormGroup('textarea', 'generic-explanation', 'Explicación (Opcional)', this.formatPlainTextToHtml(this.currentItem?.explanation || ''), false)}
                     
                     <!-- ✅ NUEVO: Recomendación Visual de la IA (Solo Informativo) -->
                     <div id="visual-recommendation-wrapper" style="display: ${this.currentItem?.visual_support_recommendation ? 'block' : 'none'}; margin-bottom: 20px; padding: 12px; border-radius: 12px; background: rgba(168, 85, 247, 0.1); border: 1px dashed #a855f7;">
@@ -1521,6 +1521,7 @@ class AdminManager {
                 }
 
                 tinymce.init({
+                    entity_encoding: 'raw',
                     toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | table image media | removeformat | help',
                     selector: '#generic-content-html',
                     height: 400,
@@ -1611,6 +1612,7 @@ class AdminManager {
                     }
 
                     tinymce.init({
+                        entity_encoding: 'raw',
                         selector: `#${fieldId}`,
                         height: 250,
                         menubar: false,
@@ -1782,18 +1784,44 @@ class AdminManager {
         });
     }
 
+    formatPlainTextToHtml(text) {
+        if (!text) return '';
+        if (typeof text === 'string' && text.trimStart().startsWith('<')) {
+            return text;
+        }
+        const clean = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const paragraphs = clean.split(/\n\n+/);
+        const html = paragraphs.map(p => {
+            const pClean = p.trim().replace(/\n/g, '<br>');
+            return pClean ? `<p>${pClean}</p>` : '';
+        }).filter(Boolean).join('');
+        return html;
+    }
+
     createFormGroup(type, id, label, value = '', required = false) {
         const req = required ? 'required' : '';
+        const escapedValue = this.escapeHtml(value);
         const inputHTML = type === 'textarea'
-            ? `<textarea id="${id}" name="${id}" ${req}>${value}</textarea>`
-            : `<input type="${type}" id="${id}" name="${id}" value="${value}" ${req}>`;
+            ? `<textarea id="${id}" name="${id}" ${req}>${escapedValue}</textarea>`
+            : `<input type="${type}" id="${id}" name="${id}" value="${escapedValue}" ${req}>`;
         return `<div class="form-group"><label for="${id}">${label}</label>${inputHTML}</div>`;
+    }
+
+    escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     createImageUploadGroup(id, label, value = '') {
         const isExternal = value.startsWith('http');
         const token = localStorage.getItem('authToken');
         const previewUrl = value ? (isExternal ? value : `${window.AppConfig.API_URL}/api/media/preview?path=${value}&token=${token}`) : '';
+        const escapedValue = this.escapeHtml(value);
 
         return `
             <div class="form-group image-upload-group" style="margin-bottom: 20px; border: 1px dashed var(--border-color); padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.02);">
@@ -1804,7 +1832,7 @@ class AdminManager {
                 <input type="hidden" id="${id}-delete-flag" value="false">
 
                 <div class="image-upload-actions">
-                    <input type="text" id="${id}-url" name="${id}-url" value="${value}" 
+                    <input type="text" id="${id}-url" name="${id}-url" value="${escapedValue}" 
                         placeholder="Ruta GCS o URL externa" 
                         style="flex: 1;"
                         oninput="window.adminManager.updateLivePreview('${id}')">
@@ -1812,7 +1840,7 @@ class AdminManager {
                     <button type="button" class="remove-img-btn" title="Eliminar Imagen" onclick="window.adminManager.removeImage('${id}')">
                         <i class="fas fa-trash-alt"></i>
                     </button>
-
+ 
                     <input type="file" id="${id}-file" name="${id}-file" style="display: none;" accept="image/*">
                     <button type="button" class="upload-img-btn" onclick="document.getElementById('${id}-file').click()">
                         <i class="fas fa-upload"></i> <span class="hide-mobile">Subir Local</span>
@@ -2815,9 +2843,11 @@ class AdminManager {
         const container = document.getElementById('resources-container');
         const div = document.createElement('div');
         div.className = 'resource-field'; div.dataset.type = type;
+        const escapedName = this.escapeHtml(name);
+        const escapedUrl = this.escapeHtml(url);
         div.innerHTML = `
-                <input type="text" placeholder="Nombre del ${type}" value="${name}" class="resource-name">
-                    <input type="text" placeholder="URL del recurso" value="${url}" class="resource-url">
+                <input type="text" placeholder="Nombre del ${type}" value="${escapedName}" class="resource-name">
+                    <input type="text" placeholder="URL del recurso" value="${escapedUrl}" class="resource-url">
                         <button type="button" class="remove-resource-btn">❌</button>
                         `;
         container.appendChild(div);

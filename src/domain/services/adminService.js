@@ -133,6 +133,9 @@ class AdminService {
             expectedOptions = 3;
         }
 
+        data.question_text = adminRepository.decodeHtmlEntities(data.question_text || '');
+        data.explanation = adminRepository.decodeHtmlEntities(data.explanation || '');
+
         if (!Array.isArray(data.options) || data.options.length !== expectedOptions) {
             throw new Error(`El target ${data.target} requiere exactamente ${expectedOptions} opciones.`);
         }
@@ -163,6 +166,9 @@ class AdminService {
         } else if (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(data.target)) {
             expectedOptions = 3;
         }
+
+        data.question_text = adminRepository.decodeHtmlEntities(data.question_text || '');
+        data.explanation = adminRepository.decodeHtmlEntities(data.explanation || '');
 
         if (!Array.isArray(data.options) || data.options.length !== expectedOptions) {
             console.warn(`⚠️ Mismatch de opciones en update: Expected ${expectedOptions}, got ${data.options.length}`);

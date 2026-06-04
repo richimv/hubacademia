@@ -1,6 +1,47 @@
 const db = require('../../infrastructure/database/db');
 const { validateCSVExportParams } = require('../utils/securityUtils');
 
+function formatPlainTextToHtml(text) {
+    if (!text) return '';
+    const str = String(text);
+    // Si ya empieza con tags HTML, lo dejamos tal cual
+    if (str.trimStart().startsWith('<')) {
+        return str;
+    }
+    
+    // Normalizar saltos de línea a \n
+    const clean = str.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    
+    // Dividir por doble salto de línea (o más) para párrafos
+    const paragraphs = clean.split(/\n\n+/);
+    
+    // Para cada párrafo, reemplazar saltos de línea simples con <br> y envolver en <p>
+    const html = paragraphs.map(p => {
+        const pClean = p.trim().replace(/\n/g, '<br>');
+        return pClean ? `<p>${pClean}</p>` : '';
+    }).filter(Boolean).join('');
+    
+    return html;
+}
+
+function decodeHtmlEntities(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&aacute;/g, 'á').replace(/&Aacute;/g, 'Á')
+        .replace(/&eacute;/g, 'é').replace(/&Eacute;/g, 'É')
+        .replace(/&iacute;/g, 'í').replace(/&Iacute;/g, 'Í')
+        .replace(/&oacute;/g, 'ó').replace(/&Oacute;/g, 'Ó')
+        .replace(/&uacute;/g, 'ú').replace(/&Uacute;/g, 'Ú')
+        .replace(/&ntilde;/g, 'ñ').replace(/&Ntilde;/g, 'Ñ')
+        .replace(/&uuml;/g, 'ü').replace(/&Uuml;/g, 'Ü')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&ldquo;/g, '"').replace(/&rdquo;/g, '"')
+        .replace(/&lsquo;/g, "'").replace(/&rsquo;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&iquest;/g, '¿')
+        .replace(/&iexcl;/g, '¡');
+}
+
 class AdminRepository {
     async getOverallStats() {
         const [usersRes, premiumRes, searchesRes, chatsRes, topCoursesRes, topResourcesRes] = await Promise.all([
@@ -69,7 +110,7 @@ class AdminRepository {
             RETURNING id;
         `;
         const values = [
-            question_text, JSON.stringify(options), correct_answer, explanation, explanation_image_url,
+            decodeHtmlEntities(question_text), JSON.stringify(options), correct_answer, decodeHtmlEntities(explanation), explanation_image_url,
             domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation
         ];
 
@@ -104,7 +145,7 @@ class AdminRepository {
             RETURNING id;
         `;
         const values = [
-            question_text, JSON.stringify(options), correct_answer, explanation, explanation_image_url,
+            decodeHtmlEntities(question_text), JSON.stringify(options), correct_answer, decodeHtmlEntities(explanation), explanation_image_url,
             domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation, id
         ];
 
@@ -196,7 +237,7 @@ class AdminRepository {
                 const exactTopic = q.topic || 'General';            // Área de estudio
                 const exactSubtopic = q.subtopic || null;           // Subtema clínico (nullable)
                 const difficulty = canonicalDifficulty(q.difficulty);
-                const question_text = String(q.question_text || q.question);
+                const question_text = decodeHtmlEntities(formatPlainTextToHtml(String(q.question_text || q.question || '')));
                 
                 let options = q.options;
                 if (!Array.isArray(options)) {
@@ -216,7 +257,7 @@ class AdminRepository {
                 const optionsStr = JSON.stringify(options || []);
                 
                 const correct_option_index = parseInt(q.correct_option_index !== undefined ? q.correct_option_index : (q.correct_answer !== undefined ? q.correct_answer : (q.correctAnswerIndex || 0)), 10);
-                const explanation = q.explanation || '';
+                const explanation = decodeHtmlEntities(formatPlainTextToHtml(q.explanation || ''));
                 const explanation_image_url = q.explanation_image_url || q.EXPLICACION_IMAGEN || null;
                 const image_url = q.image_url || null;
                 const career = q.career || null;
@@ -243,6 +284,14 @@ class AdminRepository {
         } finally {
             client.release();
         }
+    }
+
+    formatPlainTextToHtml(text) {
+        return formatPlainTextToHtml(text);
+    }
+
+    decodeHtmlEntities(text) {
+        return decodeHtmlEntities(text);
     }
 }
 

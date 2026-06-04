@@ -69,10 +69,8 @@ function buildEducationAdminPrompt(target, area, career, context, historyText = 
            - Si dice "Inicial", los protagonistas son obligatoriamente docentes y niños de 3 a 5 años (PROHIBIDO hablar de Secundaria).
            - Si dice "Primaria", son niños de 6 a 11 años. 
            - Si dice "Secundaria", son adolescentes.
-        2. **APERTURA DINÁMICA (ANTI-MONOTONÍA)**: PROHIBIDO empezar el caso con la típica frase "La docente de [Nivel], [Nombre]...". DEBES variar radicalmente el inicio de cada pregunta. Ejemplos de inicios válidos:
-           - Acción directa: "Durante el momento de juego libre en los sectores, dos niños..."
-           - Contexto de problema: "En el marco de la planificación del proyecto del mes, los estudiantes..."
-           - Diálogo inmediato: "- ¡Mira mi dibujo!, exclama un estudiante mientras..."
+        2. **APERTURA DINÁMICA (ANTI-MONOTONÍA)**: PROHIBIDO empezar el caso con la típica frase repetitiva "La docente de [Nivel], [Nombre]...". DEBES variar radicalmente el inicio de cada pregunta.
+           🚨 REGLA DE ORO DE UNICIDAD: Queda estrictamente prohibido utilizar de forma literal o muy similar las frases de inicio dadas como ejemplos ilustrativos en otras partes (tales como "Durante el momento de juego libre", "- ¡Mira mi dibujo!", "Durante la asamblea de aula", "¡Mira mi torre de bloques!"). Diseña una apertura situacional 100% inédita para cada pregunta, alternando libremente entre descripciones situacionales, diálogos de aprendizaje directo, debates de estudiantes o dilemas pedagógicos concretos basados en los moldes oficiales.
         2.5 **DINAMISMO VISUAL (OBLIGATORIO)**: Si las preguntas previas han sido planas, tú DEBES usar Markdown para insertar un CUADRO COMPARATIVO o un DIÁLOGO realista.
            - **INTEGRIDAD**: Si decides usar una tabla, debe contener al menos 2 filas de datos reales. No dejes cuadros vacíos.
         3. **ADVERTENCIA DEL CIRUJANO (PSICOMETRÍA)**: 
@@ -138,6 +136,7 @@ function buildMedicineAdminPrompt(target, area, career, context, historyText = "
            ${rules.targetRules}
         3. **VARIEDAD DE APERTURA (ANTI-MONOTONÍA)**: PROHIBIDO empezar siempre con "Paciente de...". Varía radicalmente los inicios basándote en esta galería:
            ${rules.starterGallery}
+           🚨 REGLA DE ORO DE UNICIDAD: Queda estrictamente prohibido copiar de forma literal o similar las frases de inicio dadas en la galería anterior. Diseña una situación clínica, administrativa, de diálogo o de gestión totalmente inédita para esta pregunta.
         4. **ADVERTENCIA DEL CIRUJANO (PSICOMETRÍA)**:
            - **SIMETRÍA EXTREMA**: Las ${optionsCount} opciones deben tener una extensión casi idéntica.
            - **PROHIBICIÓN**: La respuesta correcta NO puede destacar por ser más larga o detallada.
@@ -277,12 +276,8 @@ function buildRefinementPrompt(questionJson, issues = []) {
         DEVUELVE SOLO EL JSON SIN MARKDOWN:`;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// INTERFAZ PÚBLICA
-// ═══════════════════════════════════════════════════════════════
-
 const GENERATION_PROMPTS = {
-    getAdminPrompt: (target, area, career, context, history = [], targetQuestionNum = null) => {
+    getUnifiedPrompt: (target, area, career, context, history = [], targetQuestionNum = null) => {
         const isEducationDomain = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
 
         let historyText = "No hay contexto de repetición.";
@@ -296,14 +291,7 @@ const GENERATION_PROMPTS = {
         if (isEducationDomain) {
             return buildEducationAdminPrompt(target, area, career, context, historyText, targetQuestionNum);
         }
-        // Default: Medicina (SERUMS, ENAM, RESIDENTADO)
         return buildMedicineAdminPrompt(target, area, career, context, historyText, targetQuestionNum);
-    },
-
-    getUserPrompt: (target, area, career, historyText, selectedSubtopic = null) => {
-        const isEducationDomain = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
-        if (isEducationDomain) return buildEducationUserPrompt(target, area, career, historyText, selectedSubtopic);
-        return buildMedicineUserPrompt(target, area, career, historyText, selectedSubtopic);
     },
 
     getLanguagePrompt: (target, area, career, cefrLevel, history = []) => {
@@ -319,92 +307,5 @@ const GENERATION_PROMPTS = {
 
     buildRefinementPrompt
 };
-
-// ═══════════════════════════════════════════════════════════════
-// PROMPTS DE USUARIO (CALIDAD PREMIUM V3)
-// ═══════════════════════════════════════════════════════════════
-
-function buildMedicineUserPrompt(target, area, career, historyText, selectedSubtopic = null) {
-    const subtopicName = selectedSubtopic || "Caso Clínico";
-    const isResidentado = target === 'RESIDENTADO';
-    const optionsCount = isResidentado ? 5 : 4;
-    const rules = getMedicineAdminRules(target, area, career);
-
-    return `Eres un Redactor de Exámenes Médicos Senior para exámenes oficiales (${target}). Genera una pregunta de alto nivel clínico para la carrera: ${career}.
-    La pregunta debe basarse estrictamente en este TEMA del prospecto oficial: "${subtopicName}".
-
-    ### REGLAS DE ORO DE CONSTRUCCIÓN CLÍNICA (CRÍTICO):
-    1. **APERTURA DINÁMICA (ANTI-MONOTONÍA)**: Varía el inicio del caso clínico. Evita iniciar siempre con "Paciente masculino de 45 años..." o "Mujer de 30 años...". Introduce el caso con la presentación de la urgencia, el ingreso a consultorio, o hallazgos clínicos inmediatos de forma fluida.
-    2. **DINAMISMO VISUAL (Markdown)**: Si es pertinente, inyecta los resultados de exámenes de laboratorio o signos vitales en formato de lista en Markdown o tabla para dar una experiencia de examen real de alta fidelidad.
-    3. **SIMETRÍA EXTREMA (PSICOMETRÍA)**: Todas las opciones de respuesta deben tener una extensión similar y simétrica (máximo +/- 40 caracteres de diferencia). La respuesta correcta NO puede destacar por ser más larga, detallada o fundamentada.
-    4. **ESTRUCTURA DE PREGUNTA Y CONSIGNA (DOBLE BARRERA - OBLIGATORIO)**:
-       El campo "question_text" DEBE redactarse en dos partes separadas obligatoriamente por un salto de línea doble:
-       - *Parte 1 (Caso Clínico)*: Anamnesis, antecedentes, signos vitales, exploración física y resultados auxiliares.
-       - *Parte 2 (Consigna Final)*: Un párrafo final claro y directo con signos de interrogación (¿...?) o indicaciones directas imperativas (ej: "Señale el diagnóstico más probable...", "Determine la conducta inmediata...", "Indique el tratamiento de elección..."). NUNCA dejes el caso clínico sin consigna.
-    5. **EXPLICACIÓN LIMPIA (SIN LETRAS)**: La fundamentación médica debe ser rigurosa y fisiopatológica. Está TERMINANTEMENTE PROHIBIDO mencionar letras de alternativas (A, B, C, D, E) o decir cosas como "La opción D es correcta" en la explicación conceptual.
-    6. **ESCAPADO JSON DE SALTOS DE LÍNEA**: Si usas saltos de línea para datos de laboratorio o signos vitales, debes usar obligatoriamente "\\n" (barra invertida y n). Nunca presiones 'Enter' real dentro de un valor string de JSON.
-    7. **VALOR DE SUBTOPIC (IMPERATIVO)**: El campo 'subtopic' en el JSON devuelto debe ser exactamente: "${subtopicName}".
-
-    ### HISTORIAL TEMAS EVITAR (PROHIBIDOS):
-    ${historyText}
-
-    DEVUELVE EXACTAMENTE UN JSON ARRAY CON 1 OBJETO QUE TENGA ESTA ESTRUCTURA (${optionsCount} OPCIONES OBLIGATORIAS):
-    [
-      {
-        "domain": "medicine",
-        "target": "${target}",
-        "career": "${career}",
-        "topic": "${area}",
-        "subtopic": "${subtopicName}",
-        "difficulty": "Senior",
-        "question_text": "Caso clínico... \\n\\n¿Cuál es la conducta inmediata más adecuada?",
-        "options": [${Array.from({ length: optionsCount }, (_, i) => `"Opción ${i + 1}"`).join(', ')}],
-        "correct_option_index": 0,
-        "explanation": "El tratamiento de elección se fundamenta en...",
-        "explanation_image_url": null
-      }
-    ]`;
-}
-
-function buildEducationUserPrompt(target, area, career, historyText, selectedSubtopic = null) {
-    const subtopicName = selectedSubtopic || "Análisis Casuístico";
-    return `Eres un Especialista del MINEDU de alto nivel pedagógico. Genera una pregunta de Casuística de ${target} para la especialidad/nivel: ${career}.
-    La pregunta debe basarse estrictamente en este TEMA del prospecto oficial: "${subtopicName}".
-
-    ### REGLAS DE ORO DE CONSTRUCCIÓN ACADÉMICA (CRÍTICO):
-    1. **APERTURA DINÁMICA (ANTI-MONOTONÍA)**: Prohibido iniciar el caso con la típica frase descriptiva repetitiva ("La docente de...", "El docente..."). DEBES variar el inicio. Ejemplos de inicios válidos:
-       - Acción directa o diálogo: "Durante una asamblea de aula, los estudiantes debaten..."
-       - Contexto inmediato: "- ¡Mira mi torre de bloques!, le dice Juan a..."
-       - Planteamiento inmediato: "En el recreo, dos estudiantes de Primaria se empujan..."
-    2. **DINAMISMO VISUAL (Markdown)**: Inserta diálogos de aprendizaje (con guiones o formato de conversación) o un cuadro/tabla comparativo en Markdown con al menos 2 filas de datos para hacer la pregunta visualmente atractiva y realista.
-    3. **SIMETRÍA EXTREMA (PSICOMETRÍA)**: Todas las opciones de respuesta deben tener una extensión similar y simétrica (máximo +/- 40 caracteres de diferencia). La respuesta correcta NO puede ser excesivamente más larga ni más detallada que los distractores.
-    4. **ESTRUCTURA DE PREGUNTA Y CONSIGNA (DOBLE BARRERA - OBLIGATORIO)**:
-       El campo "question_text" DEBE redactarse en dos partes separadas obligatoriamente por un salto de línea doble:
-       - *Parte 1 (Caso/Escenario)*: El contexto pedagógico, diálogos y situación de conflicto cognitivo.
-       - *Parte 2 (Consigna Final)*: Un párrafo final claro y directo con signos de interrogación (¿...?) o verbos imperativos (ej. "indique", "señale", "determine", "seleccione", "identifique"). NUNCA termines la casuística sin plantear la consigna exacta de forma obligatoria.
-    5. **EXPLICACIÓN LIMPIA (SIN LETRAS)**: La explicación técnica debe basarse en teorías del aprendizaje y pedagogía. Está TERMINANTEMENTE PROHIBIDO mencionar letras de alternativas (A, B, C) o frases como "La opción A es..." dado que las alternativas se barajan de manera aleatoria.
-    6. **ESCAPADO JSON DE SALTOS DE LÍNEA**: Si usas saltos de línea para diálogos o tablas, debes usar obligatoriamente "\\n" (barra invertida y n). Nunca presiones 'Enter' real dentro de un valor string de JSON.
-    7. **VALOR DE SUBTOPIC (IMPERATIVO)**: El campo 'subtopic' en el JSON devuelto debe ser exactamente: "${subtopicName}".
-
-    ### HISTORIAL TEMAS EVITAR (PROHIBIDOS):
-    ${historyText}
-
-    DEVVELVE EXACTAMENTE UN JSON ARRAY CON 1 OBJETO QUE TENGA ESTA ESTRUCTURA (3 OPCIONES OBLIGATORIAS):
-    [
-      {
-        "domain": "education",
-        "target": "${target}",
-        "career": "${career}",
-        "topic": "${area}",
-        "subtopic": "${subtopicName}",
-        "difficulty": "Senior",
-        "question_text": "Caso pedagógico... \\n\\n¿Cuál es la acción docente pertinente para...?",
-        "options": ["Opción 1", "Opción 2", "Opción 3"],
-        "correct_option_index": 0,
-        "explanation": "La retroalimentación es clave porque...",
-        "explanation_image_url": null
-      }
-    ]`;
-}
 
 module.exports = GENERATION_PROMPTS;

@@ -2371,4 +2371,26 @@
     gap: 0.25rem;
 }
 
+/* Config Mode Toggle Selection */
+.mode-toggle-option {
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: rgba(255, 255, 255, 0.01) !important;
+}
+.mode-toggle-option:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+.mode-toggle-option.active {
+    background: rgba(59, 130, 246, 0.08) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.05);
+}
+.mode-toggle-option.active span:first-of-type {
+    color: #60a5fa !important;
+}
+.mode-toggle-option.active span:first-of-type i {
+    filter: drop-shadow(0 0 5px rgba(96, 165, 250, 0.5));
+}
+
+
 

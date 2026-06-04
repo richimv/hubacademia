@@ -208,6 +208,65 @@ class AdminAiService {
             issues.push("La pregunta generada es un duplicado o clon muy similar a una pregunta ya existente en la base de datos o en la tanda actual.");
         }
 
+        // 6. Prevención de Repetición Estilística de Apertura (Antirrepetición de escenario)
+        const cleanStarter = (str) => {
+            return str
+                .toLowerCase()
+                .replace(/^[-—\s¡¿"']+/g, '') // Quitar guiones, signos de admiración/interrogación y espacios al inicio
+                .replace(/[^a-z0-9áéíóúüñ]/gi, ' ') // Quedarse con alfanuméricos y letras acentuadas
+                .trim();
+        };
+
+        const currentStarter = cleanStarter(text);
+        const currentWords = currentStarter.split(/\s+/).filter(Boolean);
+        const currentPrefixWords = currentWords.slice(0, 10); // primeras 10 palabras
+
+        let hasRepetitivePrefix = false;
+        if (currentPrefixWords.length >= 3) {
+            for (const histItem of combinedHistory) {
+                if (!histItem) continue;
+                let histText = "";
+                if (typeof histItem === 'string') {
+                    if (histItem.startsWith('TEMA:')) continue;
+                    histText = histItem;
+                } else {
+                    histText = histItem.question_text || "";
+                }
+
+                const histStarter = cleanStarter(histText);
+                const histWords = histStarter.split(/\s+/).filter(Boolean);
+                const histPrefixWords = histWords.slice(0, 10);
+
+                // A. Coincidencia exacta de las primeras 4 palabras
+                if (currentPrefixWords.length >= 4 && histPrefixWords.length >= 4) {
+                    const firstFourCurrent = currentPrefixWords.slice(0, 4).join(' ');
+                    const firstFourHist = histPrefixWords.slice(0, 4).join(' ');
+                    if (firstFourCurrent === firstFourHist) {
+                        hasRepetitivePrefix = true;
+                        break;
+                    }
+                }
+
+                // B. Similitud Jaccard en las primeras 10 palabras > 0.40
+                if (currentPrefixWords.length > 0 && histPrefixWords.length > 0) {
+                    const setGen = new Set(currentPrefixWords);
+                    const setHist = new Set(histPrefixWords);
+                    const intersection = new Set([...setGen].filter(x => setHist.has(x)));
+                    const union = new Set([...setGen, ...setHist]);
+                    const jaccard = intersection.size / union.size;
+                    
+                    if (jaccard > 0.40) {
+                        hasRepetitivePrefix = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (hasRepetitivePrefix) {
+            issues.push("La formulación o el escenario de inicio de la pregunta es idéntico o muy similar a una pregunta del historial. Reescribe el caso usando una situación o diálogo completamente diferente.");
+        }
+
         return {
             isValid: issues.length === 0,
             issuesList: issues
@@ -240,24 +299,67 @@ class AdminAiService {
             });
             let batchHistory = [...globalHistory]; // Memoria dinámica que crecerá
 
-            let totalAttempts = 0;
+            const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS'];
+            const isLanguage = (normalizedTarget && LANGUAGE_TARGETS.includes(normalizedTarget)) || normalizedTarget === 'LANGUAGES';
+
+            // 1. Generación en Paralelo por Chunks
+            const chunkSize = 5;
+            for (let i = 0; i < amount && allQuestions.length < amount; i += chunkSize) {
+                const chunkLength = Math.min(chunkSize, amount - i);
+                const chunkIndices = Array.from({ length: chunkLength }, (_, idx) => i + idx);
+                console.log(`⚡ [Paralelo] Iniciando bloque de ${chunkLength} preguntas en paralelo...`);
+                
+                const chunkPromises = chunkIndices.map(async (globalIdx, localIdx) => {
+                    const area = areasArray[globalIdx % areasArray.length];
+                    try {
+                        const q = await this._generateSingleQuestion(normalizedTarget, area, career, [...batchHistory], isUserRequest, difficulty, globalIdx);
+                        return { area, question: q };
+                    } catch (e) {
+                        console.error(`❌ Error en tarea paralela para área ${area}:`, e.message);
+                        return { area, question: null };
+                    }
+                });
+
+                const resolved = await Promise.all(chunkPromises);
+
+                for (const item of resolved) {
+                    if (item.question && allQuestions.length < amount) {
+                        const status = this._checkQuality(item.question, normalizedTarget, item.area, career, difficulty, isLanguage, batchHistory);
+                        if (status.isValid) {
+                            allQuestions.push(item.question);
+                            batchHistory.push(item.question.question_text);
+                            if (item.question.subtopic) batchHistory.push(`TEMA: ${item.question.subtopic}`);
+                            console.log(`✅ [Paralelo] Pregunta añadida. Progreso: ${allQuestions.length}/${amount}`);
+                        } else {
+                            console.warn(`⚠️ [Fallo Calidad Batch] Pregunta rechazada por duplicado/estilo contra el lote actual.`);
+                        }
+                    }
+                }
+            }
+
+            // 2. Fallback Secuencial para Rellenar la Cuota si es necesario
+            let totalAttempts = allQuestions.length;
             const maxAttempts = amount * 2; // Límite de seguridad para evitar bucles infinitos
 
             while (allQuestions.length < amount && totalAttempts < maxAttempts) {
                 totalAttempts++;
-
                 const area = areasArray[allQuestions.length % areasArray.length];
-                console.log(`📝 [Generando ${allQuestions.length + 1}/${amount}] Área: ${area} (Intento: ${totalAttempts})`);
+                console.log(`📝 [Generando Secuencial ${allQuestions.length + 1}/${amount}] Área: ${area} (Intento: ${totalAttempts})`);
 
-                const q = await this._generateSingleQuestion(normalizedTarget, area, career, batchHistory, isUserRequest, difficulty);
+                const q = await this._generateSingleQuestion(normalizedTarget, area, career, batchHistory, isUserRequest, difficulty, totalAttempts);
 
                 if (q) {
-                    allQuestions.push(q);
-                    batchHistory.push(q.question_text);
-                    if (q.subtopic) batchHistory.push(`TEMA: ${q.subtopic}`);
-                    console.log(`✅ [Éxito] Pregunta añadida. Progreso: ${allQuestions.length}/${amount}`);
+                    const status = this._checkQuality(q, normalizedTarget, area, career, difficulty, isLanguage, batchHistory);
+                    if (status.isValid) {
+                        allQuestions.push(q);
+                        batchHistory.push(q.question_text);
+                        if (q.subtopic) batchHistory.push(`TEMA: ${q.subtopic}`);
+                        console.log(`✅ [Éxito Secuencial] Pregunta añadida. Progreso: ${allQuestions.length}/${amount}`);
+                    } else {
+                        console.warn(`⚠️ [Fallo Calidad Secuencial] Pregunta rechazada.`);
+                    }
                 } else {
-                    console.warn(`⚠️ [Fallo] Intento fallido para la pregunta ${allQuestions.length + 1}. Reintentando...`);
+                    console.warn(`⚠️ [Fallo Generación Secuencial] Intento fallido. Reintentando...`);
                 }
 
                 if (allQuestions.length < amount && !isUserRequest) {
@@ -279,7 +381,7 @@ class AdminAiService {
     /**
      * REFACTORIZADO: Flujo unificado de generación de pregunta individual con auditoría por IA.
      */
-    async _generateSingleQuestion(target, area, career, history = [], isUserRequest = false, difficulty = null) {
+    async _generateSingleQuestion(target, area, career, history = [], isUserRequest = false, difficulty = null, parallelIndex = 0) {
         try {
             const db = require('../../infrastructure/database/db');
             const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS'];
@@ -342,6 +444,9 @@ class AdminAiService {
                 HISTORIAL DE PREGUNTAS (CONTEXTO):
                 ${history.filter(h => !h.startsWith('TEMA:')).slice(-5).join('\n')}
                 
+                VARIACIÓN DE PROCESO (Evita duplicados):
+                Fuerza la variación eligiendo un subtema del fragmento número ${(parallelIndex % 5) + 1} de la lista de fragmentos del prospecto provistos para evitar colisiones con otros procesos concurrentes.
+                
                 TAREAS:
                 1. Analiza el temario y elige UN subtema específico de la carrera "${career}" que pertenezca ESTRICTAMENTE al área: "${area}".
                 2. Si el temario muestra temas de otras áreas o carreras, IGNÓRALOS. Solo puedes elegir subtemas de "${area}" para "${career}".
@@ -362,56 +467,43 @@ class AdminAiService {
                 // FASE 2: RAG Dual (Teoría + Estructura de Examen Real)
                 let fullContext = { syllabus: selectedSubtopic };
 
-                if (!isUserRequest) {
-                    const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
-                    const maxQuestions = isEducation ? 60 : 100;
-                    const randomQuestionNum = Math.floor(Math.random() * maxQuestions) + 1;
-                    const year = isEducation ? (Math.random() > 0.5 ? '2025' : '2024') : '2025';
+                const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
+                const maxQuestions = isEducation ? 60 : 100;
+                const randomQuestionNum = Math.floor(Math.random() * maxQuestions) + 1;
+                const year = isEducation ? (Math.random() > 0.5 ? '2025' : '2024') : '2025';
 
-                    let examIdentity = "";
-                    let styleSearchTerms = [];
+                let examIdentity = "";
+                let styleSearchTerms = [];
 
-                    if (isEducation) {
-                        const level = career.replace('EBR - ', '').trim();
-                        examIdentity = `Prueba ${target} EBR ${level} ${area} Año ${year} Pregunta ${randomQuestionNum}`;
-                        styleSearchTerms = [examIdentity];
-                    } else {
-                        const isNursing = career.toLowerCase().includes('enfermeria');
-                        const careerTag = isNursing ? 'Enfermería' : 'Medicina Humana';
-                        examIdentity = `${target} ${careerTag} Item ${randomQuestionNum}`;
-                        styleSearchTerms = [
-                            `${randomQuestionNum}.`,
-                            `${target} ${careerTag} 2025`,
-                            `${target} ${careerTag} ${area}`
-                        ];
-                    }
-
-                    console.log(`📚 [Fase 2] Investigando Teoría para: ${selectedSubtopic}`);
-                    console.log(`🎭 [Fase 2] Capturando Moldes Reales de: ${examIdentity}`);
-
-                    const [theoryContext, styleContext] = await Promise.all([
-                        this.ragService.getTechnicalBasis(namespace, selectedSubtopic, technicalSearchTerms, 5),
-                        this.ragService.getStyleContextByKeywords(namespace, styleSearchTerms, 15)
-                    ]);
-
-                    fullContext.style = styleContext;
-                    fullContext.basis = theoryContext;
-                }
-
-                // FASE 3: Constructor de pregunta
-                console.log(`🏗️ [Fase 3] Construyendo pregunta (isUserRequest: ${isUserRequest})...`);
-                if (isUserRequest) {
-                    let historyText = "No hay contexto de repetición.";
-                    if (combinedHistory && combinedHistory.length > 0) {
-                        historyText = combinedHistory.map(item => {
-                            const text = typeof item === 'string' ? item : (item.question_text || "");
-                            return `- Escenario usado: "${text.substring(0, 150)}..."`;
-                        }).join('\n');
-                    }
-                    initialPrompt = genPrompts.getUserPrompt(target, area, career, historyText, selectedSubtopic);
+                if (isEducation) {
+                    const level = career.replace('EBR - ', '').trim();
+                    examIdentity = `Prueba ${target} EBR ${level} ${area} Año ${year} Pregunta ${randomQuestionNum}`;
+                    styleSearchTerms = [examIdentity];
                 } else {
-                    initialPrompt = genPrompts.getAdminPrompt(target, area, career, fullContext, combinedHistory, null);
+                    const isNursing = career.toLowerCase().includes('enfermeria');
+                    const careerTag = isNursing ? 'Enfermería' : 'Medicina Humana';
+                    examIdentity = `${target} ${careerTag} Item ${randomQuestionNum}`;
+                    styleSearchTerms = [
+                        `${randomQuestionNum}.`,
+                        `${target} ${careerTag} 2025`,
+                        `${target} ${careerTag} ${area}`
+                    ];
                 }
+
+                console.log(`📚 [Fase 2] Investigando Teoría para: ${selectedSubtopic}`);
+                console.log(`🎭 [Fase 2] Capturando Moldes Reales de: ${examIdentity}`);
+
+                const [theoryContext, styleContext] = await Promise.all([
+                    this.ragService.getTechnicalBasis(namespace, selectedSubtopic, technicalSearchTerms, 5),
+                    this.ragService.getStyleContextByKeywords(namespace, styleSearchTerms, 15)
+                ]);
+
+                fullContext.style = styleContext;
+                fullContext.basis = theoryContext;
+
+                // FASE 3: Constructor de pregunta (Unificado)
+                console.log(`🏗️ [Fase 3] Construyendo pregunta (isUserRequest: ${isUserRequest})...`);
+                initialPrompt = genPrompts.getUnifiedPrompt(target, area, career, fullContext, combinedHistory, null);
             }
 
             // 3. Generar pregunta y ejecutar Bucle de Auditoría por IA (Fase 4)
@@ -502,96 +594,7 @@ class AdminAiService {
         }
     }
 
-    /**
-     * Extrae palabras clave del texto del temario para la búsqueda en cascada.
-     */
-    _extractKeywordsFromSyllabus(text, defaultArea) {
-        if (!text) return defaultArea;
-        const words = text.split(/\s+/)
-            .filter(w => w.length > 4)
-            .filter(w => !['FRAGMENTO', 'TEMARIO', 'OFICIAL', 'FUENTE'].includes(w.toUpperCase()))
-            .slice(0, 10);
 
-        return words.length > 0 ? words.join(' ') : defaultArea;
-    }
-
-    /**
-     * 🔎 SNIPER RAG: Genera términos de búsqueda directos y aleatorios.
-     */
-    async _generateSearchKeywords(target, area, career) {
-        try {
-            const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
-            const maxQuestions = isEducation ? 60 : 100;
-            const randomQuestionNum = Math.floor(Math.random() * maxQuestions) + 1;
-            const years = isEducation ? ["2025", "2024"] : ["2025"];
-            const year = years[Math.floor(Math.random() * years.length)];
-
-            if (isEducation) {
-                let nivel = '';
-                let rawSpecialty = '';
-
-                if (career === 'EBR - Inicial') {
-                    nivel = 'Inicial';
-                    rawSpecialty = 'Inicial';
-                } else if (career === 'EBR - Primaria') {
-                    nivel = 'Primaria';
-                    rawSpecialty = 'Primaria';
-                } else if (career === 'EBR Primaria Profesor de Innovación Pedagógica') {
-                    nivel = 'Primaria';
-                    rawSpecialty = 'Profesor de Innovación Pedagógica';
-                } else if (career === 'EBR Primaria Educación Física') {
-                    nivel = 'Primaria';
-                    rawSpecialty = 'Educación Física';
-                } else if (career.startsWith('EBR - Secundaria')) {
-                    nivel = 'Secundaria';
-                    rawSpecialty = career.replace('EBR - Secundaria - ', '');
-                } else {
-                    // Fallback
-                    const parts = career.split(' - ');
-                    nivel = (parts[1] || "").trim();
-                    rawSpecialty = (parts[parts.length - 1] || "").trim();
-                }
-
-                const especialidad = rawSpecialty
-                    .replace(/Profesor de /gi, '')
-                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                    .replace(/ /g, '_');
-
-                const especialidadSuffix = (especialidad.toLowerCase() === nivel.toLowerCase()) ? "" : `_${especialidad}`;
-                const normalizedTarget = target.charAt(0).toUpperCase() + target.slice(1).toLowerCase();
-                const sourceFile = `Prueba_${normalizedTarget}_EBR_${nivel}${especialidadSuffix}_${year}.pdf`;
-
-                return [
-                    `Prueba ${normalizedTarget} EBR ${nivel} ${especialidad} Año ${year} Pregunta ${randomQuestionNum}`,
-                    `${area} ${nivel} ${especialidad} casuística enfoque pedagógico`,
-                    sourceFile
-                ];
-            } else {
-                const isNursing = career.toLowerCase().includes('enfermeria');
-                const careerTag = isNursing ? 'enfermeria' : 'medicina';
-
-                let sourceFile = null;
-                if (target === 'SERUMS') {
-                    const pool = isNursing
-                        ? ["SERUMS-enfermeria.pdf", "SERUMS-enfermeria-tipo-a.pdf", "SERUMS-enfermeria-tipo-b.pdf"]
-                        : ["SERUMS-medicina.pdf", "SERUMS-medicina-tipo-a.pdf", "SERUMS-medicina-tipo-b.pdf"];
-
-                    sourceFile = pool[Math.floor(Math.random() * pool.length)];
-                }
-
-                const styleTerm = `${target} ${careerTag} ${randomQuestionNum}.`;
-
-                return [
-                    styleTerm,
-                    `${area} ${careerTag} casuística manejo clínico oficial`,
-                    sourceFile
-                ];
-            }
-        } catch (error) {
-            console.error("❌ Error en Sniper Keywords:", error.message);
-            return [`${target} ${career} ${area}`];
-        }
-    }
 }
 
 module.exports = new AdminAiService();

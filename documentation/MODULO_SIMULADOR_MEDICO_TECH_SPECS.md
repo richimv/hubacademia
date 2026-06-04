@@ -103,3 +103,18 @@ Para evitar la duplicidad de preguntas durante las sesiones de estudio y simulac
 2. **Exclusión Dinámica**: Al generar preguntas (`generateQuiz`), el backend consulta las preguntas respondidas en las últimas 24 horas y las excluye de la búsqueda. Si el stock del banco local se agota, se activa la reposición con IA (RAG) para generar reactivos inéditos.
 3. **Exclusión en la Misma Sesión**: Al solicitar lotes adicionales (`/next-batch`) en un mismo examen, el cliente envía la lista de IDs de preguntas actualmente presentadas en la sesión (`seenIds`). El backend concatena este vector con las preguntas de las últimas 24 horas para garantizar la exclusión absoluta de preguntas ya mostradas en la sesión activa actual.
 4. **Detección de Duplicados en IA (Jaccard & Normalización)**: En los flujos de generación asistida por IA (Admin y User), el backend recupera hasta 50 preguntas existentes de la base de datos para la misma área y target. Estas preguntas se inyectan en el prompt como historial prohibido. Adicionalmente, se ejecuta un algoritmo de similitud por palabras (coeficiente Jaccard > 0.65) en la fase de auditoría de calidad (`checkQuality`) que, de ser activado, obliga a la IA a regenerar el reactivo en un ciclo de refinamiento iterativo.
+
+---
+
+## 9. Visualización Responsiva de Imágenes e Integración de Visor Lightbox Premium (Junio 2026)
+Para asegurar que cuentos, infografías y diagramas largos inyectados como imágenes en `question_text` o `explanation` no sufran recortes y mantengan una legibilidad impecable en dispositivos móviles, se implementó el siguiente flujo de visualización:
+1. **Desactivación de Recorte Forzado (Flexible Aspect-Ratio)**: Se eliminó la relación de aspecto rígida `1:1` (`aspect-ratio`) en los contenedores de imágenes (`.q-image-container-premium`, `.q-explanation-image-container-premium`, y `.review-q-image-container`) a favor de una adaptación fluida. Las imágenes se pintan en su proporción original sin deformación utilizando `object-fit: contain`.
+2. **Visor Interactivo Lightbox (Zoom & Pan)**: Al hacer clic o tocar una imagen, se despliega una modal premium translúcida (`.lightbox-modal`) con controles flotantes de zoom.
+3. **Controles y Gestos Integrados**:
+   - **Controles UI**: Botones flotantes de Acercar (`+`), Alejar (`-`) y Restablecer (`1:1`).
+   - **Gestos Móviles (Pinch-to-Zoom)**: Soporte nativo para pellizcar con dos dedos y escalar la imagen con fluidez.
+   - **Arrastre (Drag/Pan)**: Permite navegar el contenido arrastrándolo de forma intuitiva con un dedo o el cursor del ratón.
+   - **Doble Click / Doble Tap**: Amplía la imagen de forma inteligente a `2.5x` o la restablece si ya tiene zoom.
+   - **Teclado**: Cierre inmediato mediante la tecla `Escape`.
+4. **Micro-interacciones**: Al pasar el cursor sobre las miniaturas de imágenes en dispositivos de escritorio, se muestra un indicador flotante de lupa premium (`fa-search-plus`) y el cursor de ayuda `zoom-in`.
+

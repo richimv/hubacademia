@@ -391,13 +391,18 @@ const SimulatorDash = (() => {
             infoText = config.difficulty;
         }
 
+        const isDefault = config.configType === 'default' || !config.configType;
         const areasCount = config.areas ? config.areas.length : 0;
 
         let pillsHtml = `<span class="config-summary-pill config-summary-pill--accent">${targetText}</span>`;
         if (infoText) {
             pillsHtml += ` <span class="config-summary-pill">${infoText}</span>`;
         }
-        pillsHtml += ` <span class="config-summary-pill config-summary-pill--count">${areasCount} ${areasCount === 1 ? 'área' : 'áreas'}</span>`;
+        if (isDefault) {
+            pillsHtml += ` <span class="config-summary-pill config-summary-pill--count">Examen Oficial (Todas las áreas)</span>`;
+        } else {
+            pillsHtml += ` <span class="config-summary-pill config-summary-pill--count">${areasCount} ${areasCount === 1 ? 'área' : 'áreas'}</span>`;
+        }
 
         summaryBox.innerHTML = `
             <i class="fas fa-filter config-summary-icon"></i>
@@ -602,22 +607,32 @@ const SimulatorDash = (() => {
 
                 if (prefData && prefData.data) {
                     activeConfig = prefData.data;
+                    if (activeConfig) activeConfig.configType = activeConfig.configType || 'default';
                     // Keep localStorage in sync for legacy code
                     localStorage.setItem(`simActiveConfig_${currentContext}`, JSON.stringify(activeConfig));
                 } else {
                     // Fallback to localStorage if API has nothing
                     const savedConfig = localStorage.getItem(`simActiveConfig_${currentContext}`);
-                    if (savedConfig) activeConfig = JSON.parse(savedConfig);
+                    if (savedConfig) {
+                        activeConfig = JSON.parse(savedConfig);
+                        if (activeConfig) activeConfig.configType = activeConfig.configType || 'default';
+                    }
                 }
             } catch (e) {
                 console.error("Error loading saved config from API", e);
                 // Fallback to localStorage
                 const savedConfig = localStorage.getItem(`simActiveConfig_${currentContext}`);
-                if (savedConfig) activeConfig = JSON.parse(savedConfig);
+                if (savedConfig) {
+                    activeConfig = JSON.parse(savedConfig);
+                    if (activeConfig) activeConfig.configType = activeConfig.configType || 'default';
+                }
             }
         } else {
             const savedConfig = localStorage.getItem(`simActiveConfig_${currentContext}`);
-            if (savedConfig) activeConfig = JSON.parse(savedConfig);
+            if (savedConfig) {
+                activeConfig = JSON.parse(savedConfig);
+                if (activeConfig) activeConfig.configType = activeConfig.configType || 'default';
+            }
         }
 
         // Set default configuration in init() if currentContext === 'IDIOMAS' and !activeConfig
@@ -758,16 +773,14 @@ const SimulatorDash = (() => {
         // Append Custom Config if active
         if (activeConfig) {
             baseParams = `?target=${encodeURIComponent(activeConfig.target)}&areas=${encodeURIComponent(activeConfig.areas.join(','))}&context=${currentContext}`;
-            if (activeConfig.target === 'SERUMS' && activeConfig.career) {
+            if (activeConfig.configType) {
+                baseParams += `&configType=${encodeURIComponent(activeConfig.configType)}`;
+            }
+            if (activeConfig.career) {
                 baseParams += `&career=${encodeURIComponent(activeConfig.career)}`;
             }
-            if (currentContext === 'IDIOMAS') {
-                if (activeConfig.career) {
-                    baseParams += `&career=${encodeURIComponent(activeConfig.career)}`;
-                }
-                if (activeConfig.difficulty) {
-                    baseParams += `&difficulty=${encodeURIComponent(activeConfig.difficulty)}`;
-                }
+            if (activeConfig.difficulty) {
+                baseParams += `&difficulty=${encodeURIComponent(activeConfig.difficulty)}`;
             }
         }
 
@@ -895,6 +908,58 @@ const SimulatorDash = (() => {
 
         if (!modal || !btnOpen || !areasGrid) return; // Guard for non-dashboard pages
 
+        const updateConfigModeUI = () => {
+            const selectedMode = document.querySelector('input[name="configMode"]:checked')?.value || 'default';
+            
+            // Toggle active class on option labels
+            const options = document.querySelectorAll('.mode-toggle-option');
+            options.forEach(opt => {
+                const radio = opt.querySelector('input');
+                if (radio && radio.checked) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+
+            const checkboxes = areasGrid.querySelectorAll('input[type="checkbox"]');
+            if (selectedMode === 'default') {
+                checkboxes.forEach(cb => {
+                    cb.checked = true;
+                    cb.disabled = true;
+                });
+            } else {
+                checkboxes.forEach(cb => {
+                    cb.disabled = false;
+                });
+                // Restore checked state based on activeConfig.areas
+                if (activeConfig && activeConfig.areas && activeConfig.configType === 'custom') {
+                    checkboxes.forEach(cb => {
+                        if (cb.classList.contains('group-header-checkbox')) return;
+                        cb.checked = activeConfig.areas.includes(cb.value);
+                    });
+                }
+                // Update header checkboxes
+                const headers = areasGrid.querySelectorAll('.group-header-checkbox');
+                headers.forEach(hCb => {
+                    const nextGrid = hCb.closest('label').closest('div').nextElementSibling;
+                    if (nextGrid && nextGrid.style.display === 'grid') {
+                        const childCbs = Array.from(nextGrid.querySelectorAll('input[type="checkbox"]'));
+                        hCb.checked = childCbs.every(cb => cb.checked);
+                    }
+                });
+            }
+        };
+
+        const modeRadioButtons = document.getElementsByName('configMode');
+        if (modeRadioButtons.length > 0) {
+            modeRadioButtons.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    updateConfigModeUI();
+                });
+            });
+        }
+
         // Render grouped checkboxes with sub-headers
         const renderAreas = (target) => {
             areasGrid.innerHTML = '';
@@ -966,6 +1031,13 @@ const SimulatorDash = (() => {
 
                 // Update group header checkbox state initially
                 const updateHeaderState = () => {
+                    const selectedMode = document.querySelector('input[name="configMode"]:checked')?.value || 'default';
+                    if (selectedMode === 'default') {
+                        headerCheckbox.checked = true;
+                        headerCheckbox.disabled = true;
+                        return;
+                    }
+                    headerCheckbox.disabled = false;
                     const allChecked = childCheckboxes.every(cb => cb.checked);
                     headerCheckbox.checked = allChecked;
                 };
@@ -973,6 +1045,8 @@ const SimulatorDash = (() => {
 
                 // Group toggle event
                 headerCheckbox.addEventListener('change', (e) => {
+                    const selectedMode = document.querySelector('input[name="configMode"]:checked')?.value || 'default';
+                    if (selectedMode === 'default') return;
                     const checked = e.target.checked;
                     childCheckboxes.forEach(cb => {
                         cb.checked = checked;
@@ -988,6 +1062,9 @@ const SimulatorDash = (() => {
 
                 areasGrid.appendChild(grid);
             });
+
+            // Re-apply toggle state after rendering
+            updateConfigModeUI();
         };
 
         // Render exam target radio buttons dynamically
@@ -1192,6 +1269,16 @@ const SimulatorDash = (() => {
                     if (serumsInfo) serumsInfo.style.display = finalTarget === 'SERUMS' ? 'block' : 'none';
                 }
 
+                // Preselect configMode based on activeConfig.configType
+                const modeVal = (activeConfig && activeConfig.configType) ? activeConfig.configType : 'default';
+                const radioDefault = document.querySelector('input[name="configMode"][value="default"]');
+                const radioCustom = document.querySelector('input[name="configMode"][value="custom"]');
+                if (modeVal === 'default') {
+                    if (radioDefault) radioDefault.checked = true;
+                } else {
+                    if (radioCustom) radioCustom.checked = true;
+                }
+
                 renderAreas(finalTarget);
             };
         }
@@ -1213,7 +1300,14 @@ const SimulatorDash = (() => {
         if (btnSave) {
             btnSave.onclick = async () => {
                 const target = document.querySelector('.exam-target-option input:checked').value;
-                let selectedAreas = Array.from(areasGrid.querySelectorAll('.area-checkbox-label input:checked')).map(cb => cb.value);
+                const configType = document.querySelector('input[name="configMode"]:checked')?.value || 'default';
+                
+                let selectedAreas;
+                if (configType === 'default') {
+                    selectedAreas = Array.from(areasGrid.querySelectorAll('.area-checkbox-label input')).map(cb => cb.value);
+                } else {
+                    selectedAreas = Array.from(areasGrid.querySelectorAll('.area-checkbox-label input:checked')).map(cb => cb.value);
+                }
 
                 const careerSelectEl = document.getElementById('config-career');
                 const ctxCfg = contexts[currentContext] || contexts['MEDICINA'];
@@ -1258,8 +1352,9 @@ const SimulatorDash = (() => {
                     if (diffSelect) difficulty = diffSelect.value;
                 }
 
-                activeConfig = { target, areas: selectedAreas, career, difficulty };
+                activeConfig = { configType, target, areas: selectedAreas, career, difficulty };
                 localStorage.setItem(`simActiveConfig_${currentContext}`, JSON.stringify(activeConfig)); // Persist locally
+                localStorage.removeItem('simulator_active_session'); // Clear any pending quiz session on config change
 
                 const token = localStorage.getItem('authToken');
                 if (token) {

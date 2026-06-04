@@ -74,19 +74,28 @@ class DocenteService {
         const areaMap = new Map();
         areas.forEach(a => areaMap.set(a.trim().toUpperCase(), a.trim()));
 
-        console.log(`📡 [DocenteService] Target: ${target} | Áreas: ${areas.join(', ')}`);
+        const isDefault = categoryOptions.configType === 'default' || !categoryOptions.configType;
+        const queryAreas = isDefault ? ['*'] : normalizedAllAreas;
 
-        const rawBankQuestions = await docenteRepository.findQuestionsInBankBatch(target, normalizedAllAreas, 50, userId, career, difficulty, seenIds);
+        console.log(`📡 [DocenteService] Target: ${target} | Career: ${career} | Config: ${categoryOptions.configType || 'default'} | QueryAreas: ${queryAreas.join(', ')}`);
+
+        const rawBankQuestions = await docenteRepository.findQuestionsInBankBatch(target, queryAreas, 50, userId, career, difficulty, seenIds);
 
         const questionsByArea = {};
+        const returnedTopics = new Set();
         rawBankQuestions.forEach(q => {
             const shuffledQ = this.shuffleOptions(q);
             const topicKey = shuffledQ.topic ? shuffledQ.topic.toUpperCase() : 'GENERAL';
             if (!questionsByArea[topicKey]) questionsByArea[topicKey] = [];
             questionsByArea[topicKey].push(shuffledQ);
+            returnedTopics.add(topicKey);
         });
 
-        const areasWithStock = normalizedAllAreas.filter(area => questionsByArea[area] && questionsByArea[area].length > 0);
+        const activeAreas = (isDefault && returnedTopics.size > 0)
+            ? Array.from(returnedTopics)
+            : normalizedAllAreas;
+
+        const areasWithStock = activeAreas.filter(area => questionsByArea[area] && questionsByArea[area].length > 0);
 
         let bankSampledAreas;
         if (areasWithStock.length >= 5) {
@@ -94,7 +103,7 @@ class DocenteService {
         } else if (areasWithStock.length > 0) {
             bankSampledAreas = [...areasWithStock];
         } else {
-            bankSampledAreas = normalizedAllAreas.length > 5 ? normalizedAllAreas.sort(() => 0.5 - Math.random()).slice(0, 5) : normalizedAllAreas;
+            bankSampledAreas = activeAreas.length > 5 ? activeAreas.sort(() => 0.5 - Math.random()).slice(0, 5) : activeAreas;
         }
 
         let balancedBatch = [];
@@ -105,7 +114,7 @@ class DocenteService {
         }
 
         if (balancedBatch.length < limit) {
-            const searchOrder = [...areasWithStock, ...normalizedAllAreas];
+            const searchOrder = [...areasWithStock, ...activeAreas];
             for (const area of searchOrder) {
                 while (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
                     balancedBatch.push(questionsByArea[area].shift());
@@ -116,7 +125,7 @@ class DocenteService {
         const bankCount = balancedBatch.length;
         let batchIsHealthy = bankCount === limit;
 
-        if (normalizedAllAreas.length >= 5 && areasWithStock.length < 5) {
+        if (!isDefault && normalizedAllAreas.length >= 5 && areasWithStock.length < 5) {
             batchIsHealthy = false;
         }
         let source = 'BANK';

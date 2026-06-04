@@ -485,7 +485,8 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     // SOLUCIÓN: Usar 'item.title' si el tipo es 'book', de lo contrario usar 'item.name'.
     let displayName = type === 'book' ? item.title : item.name;
     if (type === 'question') {
-        displayName = item.question_text ? (item.question_text.substring(0, 80) + '...') : 'Pregunta sin texto';
+        const cleanText = item.question_text ? item.question_text.replace(/<[^>]*>/g, '') : '';
+        displayName = cleanText ? (cleanText.substring(0, 80) + '...') : 'Pregunta sin texto';
     } else if (type === 'vocabulary') {
         displayName = item.word || 'Palabra sin texto';
         subtitle = `${item.translation} - <span style="opacity: 0.85; font-style: italic;">${item.definition || 'Sin definición'}</span>`;
@@ -881,7 +882,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
         const resolvedImg = safeResolve(question.image_url);
         imageHTML = `
         <div class="review-q-image-container">
-            <img src="${resolvedImg}" loading="lazy" style="max-height: 250px; border-radius: 8px;">
+            <img src="${resolvedImg}" loading="lazy">
         </div>`;
     }
 
@@ -917,8 +918,8 @@ window.UIComponents.createReviewCardHTML = function (config) {
         const safeResolve = window.resolveImageUrl || (url => url);
         const resolvedExpImg = safeResolve(question.explanation_image_url);
         expImageHTML = `
-        <div style="text-align:center; margin-top:1.5rem;">
-            <img src="${resolvedExpImg}" loading="lazy" style="max-width:100%; max-height:250px; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <div class="review-explanation-image-container">
+            <img src="${resolvedExpImg}" loading="lazy">
         </div>`;
     }
 

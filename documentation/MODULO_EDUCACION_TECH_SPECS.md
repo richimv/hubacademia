@@ -322,3 +322,12 @@ Para refinar la experiencia de configuración de estudio y los simulacros intera
 4. **Remoción de Glow en Demo**: Se ocultó la animación pulsante (neon pulse glow) y el tooltip de sugerencia sobre el botón "Configurar Examen" para visitantes que no hayan iniciado sesión (`!token`), reduciendo el ruido visual para los usuarios demo.
 
 
+## 13. Evasión de Sesiones Cruzadas y Modal de Reanudación (Junio 2026)
+Para optimizar el flujo de usuarios al realizar simulacros y evitar conflictos de persistencia (ej. quedar atrapado en el examen de Inicial tras cambiar la configuración a Primaria), se realizaron las siguientes mejoras:
+1. **Propagación Universal de Filtros en URL**: Se modificó `updateModeLinks` en `simulator-dash.js` para propagar dinámicamente `career` y `difficulty` en todos los contextos (incluyendo Educación) si están activos en la configuración, asegurando que `quiz.html` siempre reciba los parámetros de la configuración seleccionada.
+2. **Limpieza Activa al Guardar**: Al guardar una nueva configuración de simulador en el panel principal (`btnSave.onclick`), se borra proactivamente cualquier examen sin terminar en caché local (`localStorage.removeItem('simulator_active_session')`).
+3. **Validación Estricta de Sesión (`loadSession`)**: En `quiz.js`, la función de recuperación de caché ahora contrasta rigurosamente la sesión almacenada con el contexto (`context`), examen objetivo (`targetExam`), nivel/modalidad (`career`), dificultad y áreas seleccionadas actualmente. Si existe alguna discrepancia, el caché viejo se limpia automáticamente y se inicia un examen fresco.
+4. **Confirmación Interactiva de Reanudación**: Si la configuración del examen actual coincide perfectamente con el simulacro incompleto en caché, se despliega el modal premium de confirmación (`window.confirmationModal`) consultando al usuario de forma clara si desea continuar con el examen anterior o comenzar uno limpio desde cero.
+
+
+

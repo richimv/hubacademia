@@ -53,22 +53,27 @@ El último filtro antes de la base de datos.
 
 ---
 
-## ⚡ Dualidad de Flujos: Lote Industrial (Admin) vs. RAG Flash Lite (Usuario)
+## ⚡ Arquitectura Unificada de Generación RAG (Usuario y Admin)
 
-Para optimizar la latencia y la experiencia de usuario sin comprometer el rigor pedagógico, el sistema divide la generación en dos pipelines con propósitos diferenciados:
+Con el fin de evitar desviaciones estilísticas y asegurar que todas las preguntas generadas en Hub Academia cuenten con el mismo rigor pedagógico y variedad casuística, se ha unificado el pipeline de generación para que tanto el flujo en lote (Admin) como la generación en vivo (Usuario) ejecuten las **5 Fases Completas de RAG**:
 
-### 1. Flujo de Lote Industrial (Admin)
-*   **Propósito**: Pre-poblar de forma masiva y asíncrona la base de datos oficial a través del panel de administración (`adminAiService.js` / `getAdminPrompt`).
-*   **Latencia**: Alta (2-3 minutos por lote).
-*   **Mecánica**: Ejecuta de manera secuencial e implacable las **5 Fases Completas**: consulta de RAG pesado (Teoría + Identidad), inyección teórica exhaustiva, tanda anti-repetición y bucle cerrado de hasta 3 intentos de auditoría psicométrica.
+1. **Fase 1 (El Scout - Temario Dinámico)**: Selecciona un subtema inédito cruzándolo con el historial.
+2. **Fase 2 (El Investigador - RAG Dual)**: Realiza búsquedas quirúrgicas en Pinecone para inyectar Teoría (el qué) y moldes reales de examen de Identidad/Estilo (el cómo) tanto para usuario como admin.
+3. **Fase 3 (El Diseñador Creativo)**: Emplea el prompt unificado de RAG (`generationPrompts.js` / `getUnifiedPrompt`) con restricciones psicométricas y visuales estrictas.
+4. **Fase 4 & 5 (El Auditor de Calidad)**: Realiza la auditoría en bucle cerrado de hasta 3 intentos de refinamiento por la IA, validando asimetría, duplicados, ausencia de consignas y el filtro de letras en la explicación.
 
-### 2. Flujo Flash Lite / Fast RAG (Usuario en Vivo)
-*   **Propósito**: Generar preguntas de 1 en 1 en tiempo real cuando un alumno agota el banco local disponible para un subtema del simulador, o cuando el administrador inicia una generación rápida desde el panel de gestión.
-*   **Latencia**: Baja (pocos segundos) para mantener una experiencia interactiva fluida.
-*   **Mecánica**: Conserva la esencia pedagógica y estructural del motor industrial al tiempo que optimiza los tiempos de respuesta mediante las siguientes fases:
-    *   **Fase 1 (RAG de Temario Dinámico)**: Realiza búsquedas vectoriales quirúrgicas únicamente sobre los prospectos oficiales para dotar a la IA del contexto específico del subtema seleccionado y prevenir repeticiones.
-    *   **Fase 3 Adaptada (Prompts de Interfaz Pública)**: Ejecuta los prompts optimizados para usuario de `generationPrompts.js` (`getUserPrompt`), los cuales encapsulan con precisión quirúrgica las reglas de oro de redacción (aperturas dinámicas in media res, diálogos formativos, tablas comparativas y estructura de doble barrera con consigna explícita).
-    *   **Fase 4 & 5 Adaptada (Auditoría Rápida)**: Pasa la pregunta por un filtro psicométrico rápido de 1 ciclo. Esto asegura que la opción correcta cumpla con el umbral de simetría calibrada (+/- 40 caracteres) y valida mediante expresiones regulares avanzadas que la fundamentación no contenga menciones directas a letras de alternativas (A, B, C, D) debido al barajado dinámico.
+### ⚡ Optimización de Rendimiento mediante Paralelización por Bloques (Chunking)
+Para maximizar la velocidad de generación y evitar latencias altas (esperas de más de 30 segundos), el sistema implementa la paralelización por bloques de hasta 5 elementos (`chunkSize = 5`):
+* **Llamadas Concurrentes**: Las preguntas dentro de cada bloque se resuelven de forma simultánea empleando `Promise.all` para los flujos asíncronos y consultas RAG.
+* **Mitigación de Colisiones Temáticas (Variación Paralela)**: Para evitar que las tareas concurrentes elijan los mismos subtemas, se inyecta en el prompt de selección académica (`selectionPrompt`) una directriz basada en el índice paralelo (`parallelIndex`):
+  * `"Fuerza la variación eligiendo un subtema del fragmento número (index % 5) + 1 de la lista de fragmentos..."`. Esto induce a los hilos de ejecución a apuntar a diferentes secciones del temario oficial.
+* **Auditoría Cruzada Post-Generación**: Al resolverse el bloque de promesas concurrentes, cada pregunta exitosa se audita de forma secuencial y ordenada en memoria contra las ya aceptadas. Si alguna colisiona estilísticamente o es un duplicado, se descarta inmediatamente.
+* **Bucle de Relleno Secuencial**: Si existen descartes o fallos en el bloque paralelo, el sistema activa un fallback secuencial estricto para generar y rellenar las preguntas faltantes de la cuota.
+
+### 🛡️ Auditoría Antirrepetición Estilística de Escenario
+Para mitigar el colapso de variedad y evitar que la IA use siempre las mismas aperturas o diálogos repetitivos (ej. "- ¡Mira mi torre de bloques!", "¡Mira mi dibujo!"), el validador realiza una doble barrera antirrepetición en la Fase 4:
+* **Coincidencia Exacta de Prefijo**: Rechaza enunciados cuyas primeras 4 palabras coincidan exactamente con alguna pregunta del historial.
+* **Similitud Jaccard de Apertura**: Calcula la intersección de palabras en el prefijo inicial (primeras 10 palabras). Si la similitud Jaccard es mayor a `0.40`, se levanta una alerta de calidad, forzando a la IA a reescribir por completo la formulación inicial.
 
 ---
 

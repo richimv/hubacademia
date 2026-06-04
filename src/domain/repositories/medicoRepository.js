@@ -14,8 +14,11 @@ class MedicoRepository {
 
         console.log(`🔎 [MedicoRepo] Usuario ${userId} ha visto ${seenIds.length} preguntas (24h + sesión actual).`);
 
-        let whereClauses = `WHERE domain = 'medicine' AND unaccent(UPPER(topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))
-                            AND ($2::text IS NULL OR target = $2)`;
+        const filterTopics = topics && topics.length > 0 && !topics.includes('*') && !topics.includes('ALL') && !topics.includes('all');
+        let whereClauses = `WHERE domain = 'medicine' AND ($2::text IS NULL OR target = $2)`;
+        if (filterTopics) {
+            whereClauses += ` AND unaccent(UPPER(topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))`;
+        }
 
         const params = [topics, target];
         let paramIdx = 3;
