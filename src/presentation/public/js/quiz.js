@@ -77,6 +77,7 @@ const elements = {
     feedbackBox: document.getElementById('feedbackBox'),
     explanationText: document.getElementById('explanationText'),
     nextBtn: document.getElementById('nextBtn'),
+    nextBtnContainer: document.getElementById('nextBtnContainer'),
     resultsOverlay: document.getElementById('resultsOverlay'),
     scoreCircle: document.getElementById('scoreCircle'),
     svgScoreProgress: document.getElementById('svgScoreProgress'),
@@ -108,6 +109,11 @@ window.showExamReview = async function () {
 
         const fBox = document.getElementById('feedbackBox');
         if (fBox) fBox.style.display = 'none';
+
+        const nextContainer = elements.nextBtnContainer || document.getElementById('nextBtnContainer');
+        if (nextContainer) {
+            nextContainer.classList.add('hidden');
+        }
 
         const reviewContainer = document.getElementById('reviewContainer');
         if (reviewContainer) reviewContainer.classList.remove('hidden');
@@ -231,6 +237,12 @@ let API_URL = `${window.AppConfig.API_URL}/api/medico`; // Default fallback
 
 // 1. Inicialización
 async function init() {
+    // Re-bind elements to guarantee they are correctly resolved after DOM is fully parsed
+    Object.keys(elements).forEach(key => {
+        const el = document.getElementById(key);
+        if (el) elements[key] = el;
+    });
+
     // Obtener parámetros de URL
     const urlParams = new URLSearchParams(window.location.search);
     state.topic = urlParams.get('topic') || '';
@@ -320,15 +332,19 @@ async function init() {
                 );
             }
             
-            if (resume) {
+            if (resume === true) {
                 Object.assign(state, recovered);
                 renderQuestion();
                 if (state.maxQuestions === 100) startMockTimer();
-            } else {
+            } else if (resume === false) {
                 console.log("🆕 Descartando sesión anterior por elección del usuario.");
                 clearSession();
                 state.quizId = Date.now().toString(36); // Generar ID único
                 await startQuiz();
+            } else {
+                console.log("🚪 El usuario cerró el modal sin seleccionar. Retornando al dashboard...");
+                handleExit();
+                return;
             }
         } else {
             console.log("🆕 Iniciando sesión nueva (sin estado previo).");
@@ -793,6 +809,7 @@ async function fetchNextBatch() {
 
 // 3. Renderizar Pregunta
 function renderQuestion() {
+    window.scrollTo({ top: 0, behavior: 'instant' });
     if (window.currentQuizAudio) {
         try {
             window.currentQuizAudio.pause();
@@ -941,6 +958,9 @@ function renderQuestion() {
     elements.optionsGrid.innerHTML = '';
     elements.feedbackBox.style.display = 'none';
     elements.feedbackBox.classList.remove('error');
+    if (elements.nextBtnContainer) {
+        elements.nextBtnContainer.classList.add('hidden');
+    }
 
     // Render Opciones
     if (!q.options || !Array.isArray(q.options)) {
@@ -1007,47 +1027,27 @@ function handleAnswer(selectedIndex, btnElement) {
     saveSession(); // ✅ PERSISTENCIA INMEDIATA
 
     // --- Retroalimentación Visual ---
-    if (isCorrect) {
-        btnElement.classList.add('correct');
-        state.score++;
+    if (state.maxQuestions === 100) {
+        // MODO SIMULACRO REAL (100q): Selección neutra blanca, sin feedback de acierto/error inmediato.
+        btnElement.classList.add('neutral-selected');
+        if (isCorrect) {
+            state.score++;
+        }
     } else {
-        btnElement.classList.add('wrong');
-        const correctIdx = q.correct_option_index !== undefined ? q.correct_option_index : q.correct_index;
-        if (correctIdx !== undefined && allBtns[correctIdx]) {
-            allBtns[correctIdx].classList.add('correct');
+        // MODO ESTUDIO (20q) o RÁPIDO (10q): Feedback inmediato rojo/azul
+        if (isCorrect) {
+            btnElement.classList.add('correct');
+            state.score++;
+        } else {
+            btnElement.classList.add('wrong');
+            const correctIdx = q.correct_option_index !== undefined ? q.correct_option_index : q.correct_index;
+            if (correctIdx !== undefined && allBtns[correctIdx]) {
+                allBtns[correctIdx].classList.add('correct');
+            }
         }
     }
 
-    // 🚀 BIFURCACIÓN DE COMPORTAMIENTO
-    if (state.maxQuestions === 10) {
-        // MODO RÁPIDO: Solo feedback visual en botones, no muestra feedbackBox, solo avanza tras delay
-        setTimeout(() => {
-            state.currentQuestionIndex++;
-            if (state.currentQuestionIndex >= state.maxQuestions) {
-                finishQuiz();
-            } else {
-                renderQuestion();
-            }
-        }, 1000); // 1 segundo para ver el acierto/error
-        return;
-    }
-
-    // Mostrar explicación y caja de feedback en Modos de Aprendizaje (20qs +)
-
-    // 📚 MODO ESTUDIO (20qs): Comportamiento de Aprendizaje Profundo
-    elements.explanationText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.") : (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
-
-    if (q.explanation_image_url) {
-        elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);
-        elements.explanationImageContainer.classList.remove('hidden');
-    } else {
-        elements.explanationImageContainer.classList.add('hidden');
-        elements.explanationImage.src = '';
-    }
-
-    elements.feedbackBox.style.display = 'block';
-    if (!isCorrect) elements.feedbackBox.classList.add('error');
-
+    // Configurar acción del botón Siguiente
     elements.nextBtn.onclick = () => {
         state.currentQuestionIndex++;
         if (state.currentQuestionIndex >= state.maxQuestions) {
@@ -1056,6 +1056,45 @@ function handleAnswer(selectedIndex, btnElement) {
             renderQuestion();
         }
     };
+
+    // 🚀 BIFURCACIÓN DE COMPORTAMIENTO PARA FEEDBACK / SIGUIENTE
+    if (state.maxQuestions === 20) {
+        // MODO ESTUDIO (20q): Mostrar explicación y el botón siguiente
+        elements.explanationText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.") : (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
+
+        if (q.explanation_image_url) {
+            elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);
+            elements.explanationImageContainer.classList.remove('hidden');
+        } else {
+            elements.explanationImageContainer.classList.add('hidden');
+            elements.explanationImage.src = '';
+        }
+
+        elements.feedbackBox.style.display = 'block';
+        if (!isCorrect) {
+            elements.feedbackBox.classList.add('error');
+        } else {
+            elements.feedbackBox.classList.remove('error');
+        }
+
+        if (elements.nextBtnContainer) {
+            elements.nextBtnContainer.classList.remove('hidden');
+        }
+    } else {
+        // MODO RÁPIDO (10q) o SIMULACRO REAL (100q): Ocultamos explicación/feedback box, mostramos solo botón siguiente
+        elements.feedbackBox.style.display = 'none';
+        if (elements.nextBtnContainer) {
+            elements.nextBtnContainer.classList.remove('hidden');
+        }
+    }
+
+    // 📜 Desplazamiento suave y ligero de pantalla hacia el botón Siguiente
+    setTimeout(() => {
+        const nextContainer = elements.nextBtnContainer || document.getElementById('nextBtnContainer');
+        if (nextContainer) {
+            smoothScrollTo(nextContainer, 2200); // 2200ms de scroll muy suave, gradual e imperceptible (easeInOutQuad)
+        }
+    }, 500); // 500ms de espera para permitir digerir el feedback visual (colores de las opciones)
 }
 
 // 5. Temporizador Real Mock (Maestro)
@@ -1339,19 +1378,29 @@ function initLightbox() {
         modal.classList.add('active');
         resetZoom();
         document.body.style.overflow = 'hidden'; // Bloquear scroll de fondo
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('lightboxModal');
+        }
     };
 
     // Cerrar Lightbox
-    function closeLightbox() {
+    function closeLightbox(isFromPopState = false) {
         modal.classList.remove('active');
         document.body.style.overflow = '';
         setTimeout(() => {
             image.src = '';
         }, 300); // Esperar transición CSS
+        
+        if (!isFromPopState && window.uiManager && typeof window.uiManager.popModalState === 'function') {
+            window.uiManager.popModalState('lightboxModal');
+        }
     }
 
+    // Exponer globalmente para la integración con UIManager
+    window.closeLightbox = closeLightbox;
+
     // Eventos de botones
-    closeBtn.onclick = closeLightbox;
+    closeBtn.onclick = () => closeLightbox(false);
     
     zoomInBtn.onclick = () => {
         zoomLevel += 0.25;
@@ -1368,7 +1417,7 @@ function initLightbox() {
     // Cerrar al hacer click en el fondo vacío del viewport
     viewport.onclick = (e) => {
         if (e.target === viewport || e.target === modal) {
-            closeLightbox();
+            closeLightbox(false);
         }
     };
 
@@ -1464,7 +1513,7 @@ function initLightbox() {
     // Soporte Teclado: Escape para cerrar
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeLightbox();
+            closeLightbox(false);
         }
     });
 
@@ -1520,6 +1569,34 @@ function initLightbox() {
             }
         });
     }
+}
+
+// Helper for custom smooth and gentle scrolling (easeInOutQuad)
+function smoothScrollTo(element, duration = 2200) {
+    if (!element) return;
+    const targetY = element.getBoundingClientRect().top + window.scrollY;
+    const startY = window.scrollY;
+    const distance = targetY - startY - 40; // offset by 40px for safety spacing
+    let startTime = null;
+
+    function animation(currentTime) {
+        if (startTime === null) startTime = currentTime;
+        const timeElapsed = currentTime - startTime;
+        const run = easeInOutQuad(Math.min(timeElapsed, duration), startY, distance, duration);
+        window.scrollTo(0, run);
+        if (timeElapsed < duration) {
+            requestAnimationFrame(animation);
+        }
+    }
+
+    function easeInOutQuad(t, b, c, d) {
+        t /= d / 2;
+        if (t < 1) return c / 2 * t * t + b;
+        t--;
+        return -c / 2 * (t * (t - 2) - 1) + b;
+    }
+
+    requestAnimationFrame(animation);
 }
 
 console.log("💎 Module quiz.js loaded successfully. showExamReview is ready with Zoom Lightbox.");

@@ -64,4 +64,4 @@ Cuando se activa el modo "Estudiar", el sistema despliega una capa superior tác
 ---
 
 > [!IMPORTANT]
-> **Estado de Implementación:** Completado. La arquitectura de visualización de recursos está operativa, incluyendo el editor enriquecido TinyMCE 6 para la gestión de contenidos y el sistema de renderizado responsivo para datos complejos.
+> **Estado de Implementación:** Completado. La arquitectura de visualización de recursos está operativa, incluyendo el editor enriquecido TinyMCE 6 para la gestión de contenidos, el sistema de renderizado responsivo para datos complejos, y el procesamiento seguro de videos (auto-conversión de enlaces de YouTube a iframes y whitelist selectiva en el sanitizador para reproducir en modal inmersivo).

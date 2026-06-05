@@ -11,10 +11,10 @@
     <!-- CSS Moderno (Glassmorphism) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Centralized Design System Tokens -->
-    <link rel="stylesheet" href="/css/theme.css?v=e29730d9">
-    <link rel="stylesheet" href="/css/quiz.css?v=e29730d9">
-    <link rel="stylesheet" href="/css/modal.css?v=e29730d9">
-    <link rel="stylesheet" href="/css/components.css?v=e29730d9">
+    <link rel="stylesheet" href="/css/theme.css?v=601ca93f">
+    <link rel="stylesheet" href="/css/quiz.css?v=601ca93f">
+    <link rel="stylesheet" href="/css/modal.css?v=601ca93f">
+    <link rel="stylesheet" href="/css/components.css?v=601ca93f">
 </head>
 
 <body class="quiz-body">
@@ -80,8 +80,10 @@
             <div id="explanationImageContainer" class="hidden q-explanation-image-container-premium">
                 <img id="explanationImage" src="" alt="Imagen explicativa" loading="lazy">
             </div>
-            <button id="nextBtn"
-                style="margin-top: 1rem; background: rgba(255,255,255,0.1); border: none; padding: 0.5rem 1.5rem; border-radius: 8px; color: white; cursor: pointer;">
+        </div>
+
+        <div id="nextBtnContainer" class="next-btn-container hidden">
+            <button id="nextBtn" class="btn-next-premium">
                 Siguiente Pregunta <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>
             </button>
         </div>
@@ -203,20 +205,20 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/js/config.js?v=e29730d9"></script>
+    <script src="/js/config.js?v=601ca93f"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/utils/markdown-renderer.js?v=e29730d9"></script>
-    <script src="/js/services/networkService.js?v=e29730d9"></script>
-    <script src="/js/services/authApiService.js?v=e29730d9"></script>
-    <script src="/js/services/analyticsApiService.js?v=e29730d9"></script>
-    <script src="/js/sessionManager.js?v=e29730d9"></script>
-    <script src="/js/ui/components.js?v=e29730d9"></script>
-    <script src="/js/ui/confirmationModal.js?v=e29730d9"></script>
-    <script src="/js/ui/uiManager.js?v=e29730d9"></script>
-    <script src="/js/app.js?v=e29730d9"></script>
-    <script type="module" src="/js/quiz.js?v=e29730d9"></script>
+    <script src="/js/utils/markdown-renderer.js?v=601ca93f"></script>
+    <script src="/js/services/networkService.js?v=601ca93f"></script>
+    <script src="/js/services/authApiService.js?v=601ca93f"></script>
+    <script src="/js/services/analyticsApiService.js?v=601ca93f"></script>
+    <script src="/js/sessionManager.js?v=601ca93f"></script>
+    <script src="/js/ui/components.js?v=601ca93f"></script>
+    <script src="/js/ui/confirmationModal.js?v=601ca93f"></script>
+    <script src="/js/ui/uiManager.js?v=601ca93f"></script>
+    <script src="/js/app.js?v=601ca93f"></script>
+    <script type="module" src="/js/quiz.js?v=601ca93f"></script>
 </body>
 
 </html>

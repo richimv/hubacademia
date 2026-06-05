@@ -80,6 +80,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // En lugar de usar Regex (que es frágil ante diferentes codificaciones HTML de TinyMCE),
         // parseamos el HTML real y reescribimos los sources explícitamente para saltarnos Vercel.
         let safeHTML = resource.content_html || defaultContent;
+        if (safeHTML !== defaultContent) {
+            safeHTML = convertYoutubeLinksToEmbeds(safeHTML);
+        }
         if (window.MarkdownRenderer && safeHTML !== defaultContent) {
             safeHTML = window.MarkdownRenderer.render(safeHTML);
         }
@@ -216,6 +219,90 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
         }, 0);
+    }
+
+    /**
+     * Convierte enlaces y URLs de YouTube en iframes
+     */
+    function convertYoutubeLinksToEmbeds(html) {
+        if (!html) return '';
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // 1. Convertir todas las etiquetas <a> que apunten a YouTube
+            const anchors = doc.querySelectorAll('a');
+            anchors.forEach(a => {
+                const href = a.getAttribute('href') || '';
+                const videoId = _extractYoutubeId(href);
+                if (videoId) {
+                    const iframe = doc.createElement('iframe');
+                    iframe.setAttribute('src', `https://www.youtube.com/embed/${videoId}`);
+                    iframe.setAttribute('width', '100%');
+                    iframe.setAttribute('height', '360');
+                    iframe.setAttribute('frameborder', '0');
+                    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                    iframe.setAttribute('allowfullscreen', 'true');
+                    
+                    const parent = a.parentNode;
+                    if (parent && parent.tagName.toLowerCase() === 'p' && parent.children.length === 1 && parent.textContent.trim() === a.textContent.trim()) {
+                        parent.parentNode.replaceChild(iframe, parent);
+                    } else {
+                        a.parentNode.replaceChild(iframe, a);
+                    }
+                }
+            });
+
+            // 2. Escanear nodos de texto buscando URLs de YouTube sueltas
+            const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+            let node;
+            while (node = walker.nextNode()) {
+                const text = node.nodeValue || '';
+                const youtubeRegex = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)[a-zA-Z0-9_-]{11})/g;
+                if (youtubeRegex.test(text)) {
+                    const parentTag = node.parentNode ? node.parentNode.tagName.toLowerCase() : '';
+                    if (parentTag !== 'a' && parentTag !== 'script' && parentTag !== 'style' && parentTag !== 'iframe') {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(textNode => {
+                const text = textNode.nodeValue || '';
+                const youtubeRegex = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)[a-zA-Z0-9_-]{11})/g;
+                const parts = text.split(youtubeRegex);
+                const parent = textNode.parentNode;
+                if (!parent) return;
+
+                const fragment = doc.createDocumentFragment();
+                parts.forEach(part => {
+                    if (youtubeRegex.test(part)) {
+                        const videoId = _extractYoutubeId(part);
+                        if (videoId) {
+                            const iframe = doc.createElement('iframe');
+                            iframe.setAttribute('src', `https://www.youtube.com/embed/${videoId}`);
+                            iframe.setAttribute('width', '100%');
+                            iframe.setAttribute('height', '360');
+                            iframe.setAttribute('frameborder', '0');
+                            iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                            iframe.setAttribute('allowfullscreen', 'true');
+                            fragment.appendChild(iframe);
+                        } else {
+                            fragment.appendChild(doc.createTextNode(part));
+                        }
+                    } else {
+                        fragment.appendChild(doc.createTextNode(part));
+                    }
+                });
+                parent.replaceChild(fragment, textNode);
+            });
+
+            return doc.body.innerHTML;
+        } catch (e) {
+            console.error('Error al convertir enlaces de YouTube:', e);
+            return html;
+        }
     }
 
     /**

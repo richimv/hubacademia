@@ -1064,9 +1064,8 @@ body.quiz-body {
     margin: 1.5rem auto;
     border: 1px solid var(--border-color);
     background: var(--bg-secondary);
-    padding: 0.5rem;
-    transition: border-color 0.3s ease, transform 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+    transition: all 0.3s ease;
 }
 
 .question-text img:hover,
@@ -1075,4 +1074,142 @@ body.quiz-body {
 .review-explanation img:hover {
     border-color: var(--primary-light);
     transform: scale(1.005);
+}
+
+.review-q-image-container img {
+    max-width: 100%;
+    max-height: 330px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
+}
+
+.review-explanation-image-container {
+    text-align: center;
+    margin-top: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    cursor: zoom-in;
+    position: relative;
+    max-width: 100%;
+    transition: all 0.3s ease;
+}
+
+.review-explanation-image-container img {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+@media (max-width: 900px) {
+    .review-card.has-image {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .review-card.has-image .review-options,
+    .review-card.has-image .review-explanation {
+        grid-column: 1;
+    }
+
+    .review-q-image-container {
+        max-width: 100%;
+        max-height: 300px;
+    }
+
+    .review-q-image-container img {
+        max-height: 280px;
+    }
+}
+
+@media (max-width: 768px) {
+    .review-q-text {
+        font-size: 1.15rem;
+    }
+    .review-opt {
+        font-size: 1.05rem;
+        padding: 0.65rem 0.85rem;
+    }
+    .review-explanation, .review-explanation p {
+        font-size: 1.1rem !important;
+    }
+}
+
+
+
+/* 🔘 Premium Next Button and Glow Animation */
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.7), 0 0 30px rgba(99, 102, 241, 0.5);
+        background: linear-gradient(135deg, rgba(59, 130, 246, 1), rgba(99, 102, 241, 1));
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.4);
+    }
+}
+
+.next-btn-container {
+    margin-top: 2.5rem;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    transition: opacity 0.3s ease;
+}
+
+.btn-next-premium {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.85), rgba(99, 102, 241, 0.85));
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 0.6rem 1.4rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    animation: pulse-glow 2s infinite;
+    min-width: 140px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-next-premium:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 1), rgba(99, 102, 241, 1));
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.8), 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.btn-next-premium i {
+    transition: transform 0.2s ease;
+}
+
+.btn-next-premium:hover i {
+    transform: translateX(4px);
+}
+
+/* ⚪ Neutral Selected Option for Real Mock (100qs) */
+.option-btn.neutral-selected {
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.12) !important;
+}
+
+.option-btn.neutral-selected .option-letter {
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
 }

@@ -129,7 +129,13 @@ class UIManager {
             this.openModals.forEach(modalId => {
                 const modal = document.getElementById(modalId);
                 if (modal) {
-                    if (modal.classList.contains('active')) {
+                    if (modalId === 'lightboxModal') {
+                        if (typeof window.closeLightbox === 'function') {
+                            window.closeLightbox(true);
+                        } else if (modal.classList.contains('active')) {
+                            modal.classList.remove('active');
+                        }
+                    } else if (modal.classList.contains('active')) {
                         modal.classList.remove('active');
                         // Limpiar posible estilo inline residual para no romper futuras aperturas dependientes de la clase CSS
                         if (modal.style.display === 'none' || modal.style.display === 'flex') {
@@ -464,13 +470,11 @@ class UIManager {
         const titleEl = document.getElementById('video-modal-title-text');
 
         if (modal && container) {
-            // Limpiar y preparar contenido con un "safe area" inferior
             container.innerHTML = `
-                <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; background: #000; border-radius: 12px; overflow: hidden; max-height: calc(100vh - 80px);">
+                <div class="video-container-responsive">
                     <iframe 
-                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&playsinline=1&fs=0&modestbranding=1" 
+                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&playsinline=1&fs=1&modestbranding=1" 
                         title="${title || 'Video Hub Academia'}" 
-                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                         allowfullscreen>
                     </iframe>
@@ -563,12 +567,21 @@ class UIManager {
         const fullLinkBtn = document.getElementById('media-viewer-full-link');
         const body = document.getElementById('media-viewer-body');
 
+        const zoomInBtn = document.getElementById('media-viewer-zoom-in');
+        const zoomOutBtn = document.getElementById('media-viewer-zoom-out');
+        const zoomResetBtn = document.getElementById('media-viewer-zoom-reset');
+
         if (modal && body) {
-            // USAR  RESOLUTOR UNIVERSAL
+            // USAR RESOLUTOR UNIVERSAL
             const resolvedUrl = window.resolveImageUrl(url);
 
-            // Limpiar visor de restos de iframes anteriores
-            if (img) img.style.display = 'none';
+            // Limpiar visor de restos de iframes anteriores y destruir zoom anterior
+            this.destroyImageZoomAndPan();
+            if (img) {
+                img.style.display = 'none';
+                img.style.transform = '';
+                img.className = '';
+            }
             body.querySelectorAll('iframe, video, audio').forEach(el => el.remove());
 
             if (titleEl) titleEl.innerText = title || 'Visualizando Recurso';
@@ -580,38 +593,36 @@ class UIManager {
                     img.src = resolvedUrl;
                     img.style.display = 'block';
                 }
-            } else if (this.isVideo(url)) {
-                const video = document.createElement('video');
-                video.controls = true;
-                video.style.width = '100%';
-                video.style.maxHeight = '85vh';
-                video.style.borderRadius = '8px';
-                video.style.backgroundColor = '#000';
-                video.src = resolvedUrl;
-                body.appendChild(video);
-            } else if (this.isPDF(url)) {
-                const iframe = document.createElement('iframe');
-                iframe.src = resolvedUrl;
-                iframe.style.width = '100%';
-                iframe.style.height = '85vh';
-                iframe.style.border = 'none';
-                iframe.style.borderRadius = '8px';
-                iframe.style.backgroundColor = '#fff'; // Necesario para que algunos PDFs no queden transparentes
-                body.appendChild(iframe);
-            } else if (this.isOffice(url)) {
-                const iframe = document.createElement('iframe');
-                // Google Docs Viewer (Requiere URL Absoluta accesible publicamente para el motor de Google)
-                const absoluteUrl = resolvedUrl.startsWith('http') ? resolvedUrl : `${window.location.origin}${resolvedUrl}`;
-                iframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=true`;
-                iframe.style.width = '100%';
-                iframe.style.height = '85vh';
-                iframe.style.border = 'none';
-                iframe.style.borderRadius = '8px';
-                body.appendChild(iframe);
+                if (zoomInBtn) zoomInBtn.style.display = 'flex';
+                if (zoomOutBtn) zoomOutBtn.style.display = 'flex';
+                if (zoomResetBtn) zoomResetBtn.style.display = 'flex';
+
+                // Inicializar zoom y pan interactivo
+                this.setupImageZoomAndPan(img);
             } else {
-                // Fallback de seguridad
-                window.open(resolvedUrl, '_blank');
-                return;
+                if (zoomInBtn) zoomInBtn.style.display = 'none';
+                if (zoomOutBtn) zoomOutBtn.style.display = 'none';
+                if (zoomResetBtn) zoomResetBtn.style.display = 'none';
+
+                if (this.isVideo(url)) {
+                    const video = document.createElement('video');
+                    video.controls = true;
+                    video.src = resolvedUrl;
+                    body.appendChild(video);
+                } else if (this.isPDF(url)) {
+                    const iframe = document.createElement('iframe');
+                    iframe.src = resolvedUrl;
+                    iframe.style.backgroundColor = '#fff'; // Evitar transparencias
+                    body.appendChild(iframe);
+                } else if (this.isOffice(url)) {
+                    const iframe = document.createElement('iframe');
+                    const absoluteUrl = resolvedUrl.startsWith('http') ? resolvedUrl : `${window.location.origin}${resolvedUrl}`;
+                    iframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=true`;
+                    body.appendChild(iframe);
+                } else {
+                    window.open(resolvedUrl, '_blank');
+                    return;
+                }
             }
 
             if (fullLinkBtn) {
@@ -620,18 +631,16 @@ class UIManager {
 
             if (downloadBtn) {
                 downloadBtn.onclick = () => {
-                    // Si es un recurso interno, forzar descarga mediante el proxy
                     if (this.isOurResource(url)) {
                         const downloadUrl = resolvedUrl + (resolvedUrl.includes('?') ? '&' : '?') + 'download=true';
                         window.open(downloadUrl, '_blank');
                     } else {
-                        // Enlace externo (Drive, etc.), fallback estándar a pestaña nueva
                         window.open(resolvedUrl, '_blank');
                     }
                 };
             }
 
-            // Experiencia Inmersiva: Ocultar scrool, Chat y Botones Flotantes
+            // Experiencia Inmersiva: Ocultar scroll, Chat y Botones Flotantes
             document.body.style.overflow = 'hidden';
 
             const chatContainer = document.getElementById('chatbot-container');
@@ -645,7 +654,6 @@ class UIManager {
             modal.style.display = 'flex';
             this.pushModalState('media-viewer-modal');
         } else {
-            // 3. FALLBACK SI NO INYECTÓ HTML
             window.open(url, '_blank');
         }
     }
@@ -655,12 +663,18 @@ class UIManager {
         const body = document.getElementById('media-viewer-body');
         if (modal) {
             modal.style.display = 'none';
+            
+            // Destruir controladores de zoom/pan
+            this.destroyImageZoomAndPan();
+
             if (body) {
                 body.querySelectorAll('iframe, video, audio').forEach(el => el.remove());
                 const img = document.getElementById('media-viewer-img');
                 if (img) {
                     img.src = '';
                     img.style.display = 'none';
+                    img.style.transform = '';
+                    img.className = '';
                 }
             }
 
@@ -679,6 +693,192 @@ class UIManager {
         }
     }
 
+    setupImageZoomAndPan(img) {
+        if (!img) return;
+
+        this.zoomState = {
+            scale: 1,
+            x: 0,
+            y: 0,
+            isDragging: false,
+            startX: 0,
+            startY: 0,
+            lastTouchDist: 0
+        };
+
+        const updateTransform = () => {
+            img.style.transform = `translate(${this.zoomState.x}px, ${this.zoomState.y}px) scale(${this.zoomState.scale})`;
+            if (this.zoomState.scale > 1) {
+                img.classList.add('zoom-active');
+            } else {
+                img.classList.remove('zoom-active');
+            }
+        };
+
+        const resetZoom = () => {
+            this.zoomState.scale = 1;
+            this.zoomState.x = 0;
+            this.zoomState.y = 0;
+            img.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+            updateTransform();
+        };
+
+        // Botón Zoom In
+        const zoomInBtn = document.getElementById('media-viewer-zoom-in');
+        if (zoomInBtn) {
+            zoomInBtn.onclick = () => {
+                this.zoomState.scale = Math.min(this.zoomState.scale * 1.5, 6);
+                img.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+                updateTransform();
+            };
+        }
+
+        // Botón Zoom Out
+        const zoomOutBtn = document.getElementById('media-viewer-zoom-out');
+        if (zoomOutBtn) {
+            zoomOutBtn.onclick = () => {
+                this.zoomState.scale = Math.max(this.zoomState.scale / 1.5, 1);
+                if (this.zoomState.scale === 1) {
+                    resetZoom();
+                } else {
+                    img.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+                    updateTransform();
+                }
+            };
+        }
+
+        // Botón Zoom Reset
+        const zoomResetBtn = document.getElementById('media-viewer-zoom-reset');
+        if (zoomResetBtn) {
+            zoomResetBtn.onclick = resetZoom;
+        }
+
+        // Drag / Pan con el Mouse
+        const onMouseDown = (e) => {
+            if (this.zoomState.scale <= 1) return;
+            e.preventDefault();
+            this.zoomState.isDragging = true;
+            this.zoomState.startX = e.clientX - this.zoomState.x;
+            this.zoomState.startY = e.clientY - this.zoomState.y;
+            img.style.transition = 'none';
+        };
+
+        const onMouseMove = (e) => {
+            if (!this.zoomState.isDragging) return;
+            e.preventDefault();
+            this.zoomState.x = e.clientX - this.zoomState.startX;
+            this.zoomState.y = e.clientY - this.zoomState.startY;
+            updateTransform();
+        };
+
+        const onMouseUp = () => {
+            this.zoomState.isDragging = false;
+            img.style.transition = 'transform 0.1s ease-out';
+        };
+
+        img.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+
+        // Zoom con la Rueda (Wheel)
+        const onWheel = (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 1.2 : 0.8;
+            this.zoomState.scale = Math.max(1, Math.min(this.zoomState.scale * delta, 6));
+
+            if (this.zoomState.scale === 1) {
+                this.zoomState.x = 0;
+                this.zoomState.y = 0;
+            }
+            img.style.transition = 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1)';
+            updateTransform();
+        };
+        img.addEventListener('wheel', onWheel);
+
+        // Doble Clic para Zoom Rápido
+        const onDblClick = () => {
+            if (this.zoomState.scale > 1) {
+                resetZoom();
+            } else {
+                this.zoomState.scale = 2.5;
+                img.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+                updateTransform();
+            }
+        };
+        img.addEventListener('dblclick', onDblClick);
+
+        // Soporte Táctil (Pinch-to-zoom y Arrastre en Móviles)
+        const onTouchStart = (e) => {
+            if (e.touches.length === 1 && this.zoomState.scale > 1) {
+                this.zoomState.isDragging = true;
+                this.zoomState.startX = e.touches[0].clientX - this.zoomState.x;
+                this.zoomState.startY = e.touches[0].clientY - this.zoomState.y;
+                img.style.transition = 'none';
+            } else if (e.touches.length === 2) {
+                this.zoomState.isDragging = false;
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                this.zoomState.lastTouchDist = dist;
+            }
+        };
+
+        const onTouchMove = (e) => {
+            if (this.zoomState.isDragging && e.touches.length === 1) {
+                e.preventDefault();
+                this.zoomState.x = e.touches[0].clientX - this.zoomState.startX;
+                this.zoomState.y = e.touches[0].clientY - this.zoomState.startY;
+                updateTransform();
+            } else if (e.touches.length === 2) {
+                e.preventDefault();
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const factor = dist / this.zoomState.lastTouchDist;
+                this.zoomState.lastTouchDist = dist;
+
+                this.zoomState.scale = Math.max(1, Math.min(this.zoomState.scale * factor, 6));
+                if (this.zoomState.scale === 1) {
+                    this.zoomState.x = 0;
+                    this.zoomState.y = 0;
+                }
+                img.style.transition = 'none';
+                updateTransform();
+            }
+        };
+
+        const onTouchEnd = () => {
+            this.zoomState.isDragging = false;
+            img.style.transition = 'transform 0.15s ease-out';
+        };
+
+        img.addEventListener('touchstart', onTouchStart);
+        img.addEventListener('touchmove', onTouchMove, { passive: false });
+        img.addEventListener('touchend', onTouchEnd);
+
+        // Guardar destructora de eventos
+        this._zoomCleanup = () => {
+            img.removeEventListener('mousedown', onMouseDown);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            img.removeEventListener('wheel', onWheel);
+            img.removeEventListener('dblclick', onDblClick);
+            img.removeEventListener('touchstart', onTouchStart);
+            img.removeEventListener('touchmove', onTouchMove);
+            img.removeEventListener('touchend', onTouchEnd);
+        };
+    }
+
+    destroyImageZoomAndPan() {
+        if (typeof this._zoomCleanup === 'function') {
+            this._zoomCleanup();
+            this._zoomCleanup = null;
+        }
+        this.zoomState = null;
+    }
+
     injectMediaViewerHTML() {
         if (document.getElementById('media-viewer-modal')) return;
 
@@ -688,6 +888,9 @@ class UIManager {
                     <div class="media-viewer-header">
                         <span id="media-viewer-title" class="media-viewer-title-text">Visualizando Recurso</span>
                         <div class="media-viewer-actions">
+                            <button id="media-viewer-zoom-in" class="media-btn-action" title="Acercar"><i class="fas fa-search-plus"></i></button>
+                            <button id="media-viewer-zoom-out" class="media-btn-action" title="Alejar"><i class="fas fa-search-minus"></i></button>
+                            <button id="media-viewer-zoom-reset" class="media-btn-action" title="Restaurar zoom"><i class="fas fa-sync-alt"></i></button>
                             <a id="media-viewer-full-link" href="#" target="_blank" class="media-btn-download" title="Ver original"><i class="fas fa-external-link-alt"></i></a>
                             <button id="media-viewer-download" class="media-btn-download" title="Descargar"><i class="fas fa-download"></i></button>
                             <button class="media-btn-close" onclick="window.uiManager.closeMediaViewer()">&times;</button>
@@ -705,81 +908,148 @@ class UIManager {
                 .media-viewer-overlay {
                     display: none;
                     position: fixed;
-                    top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(0,0,0,0.95);
-                    backdrop-filter: blur(15px);
-                    z-index: 999999; /* Z-Index extremo para asegurar Full Screen */
+                    top: 0; left: 0; width: 100vw; height: 100vh;
+                    background: rgba(10, 10, 10, 0.98);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    z-index: 9999999;
                     justify-content: center;
                     align-items: center;
+                    animation: fadeInMedia 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                @keyframes fadeInMedia {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
                 }
                 .media-viewer-container {
-                    width: 95%;
-                    max-width: 1400px; /* Mas ancho para pdfs y videos */
-                    height: 95vh;      /* Ocupa casi todo el alto */
+                    width: 96%;
+                    max-width: 1200px;
+                    height: 94vh;
                     display: flex;
                     flex-direction: column;
-                    gap: 15px;
+                    background: rgba(20, 20, 20, 0.5);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 20px;
+                    overflow: hidden;
+                    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8);
+                    backdrop-filter: blur(10px);
+                    -webkit-backdrop-filter: blur(10px);
                 }
                 .media-viewer-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    color: white;
-                    padding: 0 10px;
+                    color: #f1f5f9;
+                    padding: 15px 24px;
+                    background: rgba(10, 10, 10, 0.6);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    backdrop-filter: blur(5px);
                 }
                 .media-viewer-title-text {
                     font-weight: 600;
-                    font-size: 1.1rem;
+                    font-size: 1.15rem;
+                    color: #f8fafc;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 50%;
                 }
                 .media-viewer-actions {
                     display: flex;
-                    gap: 15px;
+                    gap: 10px;
                     align-items: center;
                 }
-                .media-btn-download, .media-btn-close {
-                    background: rgba(255,255,255,0.1);
-                    border: none;
-                    color: white;
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
+                .media-btn-action, .media-btn-download, .media-btn-close {
+                    background: rgba(255, 255, 255, 0.06);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    color: #e2e8f0;
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 10px;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 1.2rem;
-                    transition: all 0.2s;
+                    font-size: 1.1rem;
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                    text-decoration: none;
                 }
-                .media-btn-download:hover { background: #3b82f6; }
-                .media-btn-close:hover { background: #ef4444; }
+                .media-btn-action:hover, .media-btn-download:hover {
+                    background: #3b82f6;
+                    color: #fff;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+                }
+                .media-btn-close {
+                    background: rgba(239, 68, 68, 0.1);
+                    border: 1px solid rgba(239, 68, 68, 0.2);
+                    color: #f87171;
+                }
+                .media-btn-close:hover {
+                    background: #ef4444;
+                    color: #fff;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+                }
                 .media-viewer-body {
                     flex: 1;
-                    overflow: hidden; /* Evitar scroll interno del Modal */
+                    overflow: hidden;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    background: transparent;
+                    background: #050505;
+                    position: relative;
                 }
                 .media-viewer-body img {
                     max-width: 100%;
-                    max-height: 85vh;
+                    max-height: 100%;
                     object-fit: contain;
-                    border-radius: 8px;
+                    border-radius: 4px;
+                    cursor: grab;
+                    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                    user-select: none;
+                    -webkit-user-drag: none;
                 }
-                .media-viewer-body iframe {
+                .media-viewer-body img.zoom-active {
+                    cursor: grabbing;
+                }
+                .media-viewer-body iframe, .media-viewer-body video {
                     width: 100%;
-                    height: 75vh;
+                    height: 100%;
                     border: none;
-                    border-radius: 8px;
-                    display: none;
+                    outline: none;
+                    background: transparent;
                 }
                 .media-loader {
-                    color: white;
+                    position: absolute;
+                    color: #94a3b8;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 10px;
+                    gap: 12px;
                     font-size: 1rem;
+                    pointer-events: none;
+                    z-index: 10;
+                }
+                @media (max-width: 768px) {
+                    .media-viewer-container {
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 0;
+                        border: none;
+                    }
+                    .media-viewer-header {
+                        padding: 10px 15px;
+                    }
+                    .media-viewer-title-text {
+                        font-size: 1rem;
+                        max-width: 40%;
+                    }
+                    .media-btn-action, .media-btn-download, .media-btn-close {
+                        width: 34px;
+                        height: 34px;
+                        font-size: 1rem;
+                    }
                 }
             </style>
         `;

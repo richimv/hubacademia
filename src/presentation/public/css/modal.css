@@ -333,7 +333,7 @@ body.modal-open {
 
 /* --- VIDEO PLAYER MODAL (GLOBAL UX) --- */
 .video-modal-overlay {
-    z-index: 10001; /* High but below Chatbot (10000) */
+    z-index: 9999999 !important; /* Cinematic Fullscreen z-index */
     background: rgba(0, 0, 0, 0.96) !important; /* Deep cinematic background */
     backdrop-filter: blur(12px);
     position: fixed;
@@ -470,4 +470,88 @@ body.modal-open {
         display: none;
         /* Hide title to save space */
     }
+}
+
+/* 📌 Estilos Premium para Confirmation Modal (Design System) */
+#confirmation-modal .modal-content {
+    background: #0a0a0a !important;
+    border: 1px solid rgba(59, 130, 246, 0.25) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.95), 0 0 20px rgba(59, 130, 246, 0.15) !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+#confirmation-modal-title {
+    font-size: 1.3rem !important;
+    font-weight: 800 !important;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+#confirmation-modal-message {
+    color: #cbd5e1 !important;
+    font-size: 1.05rem !important;
+    line-height: 1.6 !important;
+}
+
+#confirmation-modal .modal-footer {
+    background: transparent !important;
+    border-top: none !important;
+    padding-bottom: 2rem !important;
+}
+
+#confirmation-modal #confirmation-modal-confirm {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1.75rem !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#confirmation-modal #confirmation-modal-confirm:hover {
+    transform: translateY(-2px) !important;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa) !important;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.45) !important;
+}
+
+#confirmation-modal #confirmation-modal-confirm:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.4), 0 8px 25px rgba(139, 92, 246, 0.45) !important;
+}
+
+#confirmation-modal #confirmation-modal-cancel {
+    background: rgba(255, 255, 255, 0.03) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1.75rem !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#confirmation-modal #confirmation-modal-cancel:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #f8fafc !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+}
+
+#confirmation-modal .modal-close:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
 }

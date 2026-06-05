@@ -147,7 +147,17 @@ window.MarkdownRenderer = {
             'base'
         ].join(',');
 
-        root.querySelectorAll(blockedSelector).forEach(node => node.remove());
+        root.querySelectorAll(blockedSelector).forEach(node => {
+            if (node.tagName.toLowerCase() === 'iframe') {
+                const src = node.getAttribute('src') || '';
+                const isYoutube = src.includes('youtube.com') || src.includes('youtu.be') || src.includes('youtube-nocookie.com');
+                const isVimeo = src.includes('player.vimeo.com');
+                if (isYoutube || isVimeo) {
+                    return; // Keep safe video iframe
+                }
+            }
+            node.remove();
+        });
 
         const urlAttrs = new Set(['href', 'src', 'xlink:href', 'action', 'formaction']);
 
