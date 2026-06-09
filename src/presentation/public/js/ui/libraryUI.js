@@ -556,7 +556,7 @@ class LibraryUI {
         if (document.querySelector('.library-toggle')) return;
         const btn = document.createElement('div');
         btn.className = 'library-toggle';
-        btn.innerHTML = `<i class="fas fa-layer-group"></i>`;
+        btn.innerHTML = `<i class="fas fa-book"></i>`;
         btn.onclick = () => this.toggleDrawer();
         document.body.appendChild(btn);
     }

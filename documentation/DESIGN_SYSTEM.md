@@ -94,6 +94,16 @@ Todas las ventanas modales deben seguir este patrón visual:
 
 ---
 
+## 5. 🎨 Iconografía (Font Awesome 6.4.0)
+- **Biblioteca Estándar:** Para mantener un rendimiento óptimo y coherencia visual en toda la plataforma, el proyecto utiliza de forma exclusiva y unificada **Font Awesome v6.4.0** a través de CDN.
+- **Enlace CDN Único:** Todas las páginas HTML deben cargar exactamente el siguiente stylesheet en su cabecera `<head>`:
+  `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">`
+- **Uso Estándar:** La iconografía debe implementarse mediante la sintaxis nativa de Font Awesome (ej. `<i class="fas fa-search"></i>`), evitando librerías alternativas como Lucide para garantizar la ligereza y velocidad de carga de la plataforma.
+- **Asignación de Icono de Biblioteca:** El icono de la **Biblioteca de Recursos** (tanto en el menú lateral global como en el botón flotante del drawer) se ha unificado bajo la clase `fas fa-book` (Libro clásico cerrado) en lugar del icono anterior de capas apiladas (`fas fa-layer-group`).
+
+---
+
 > [!IMPORTANT]
 > Ningún elemento debe usar bordes de colores sólidos o brillantes a menos que sea un estado de error (`#ef4444`) o éxito (`#10b981`). Los bordes deben ser siempre translúcidos para integrarse con el fondo negro.
+
 

@@ -96,7 +96,7 @@ class GlobalSidebar {
                     <span class="sidebar-section-title">Biblioteca</span>
                     
                     <a href="/library?tab=resources" class="sidebar-item" data-page="library-resources">
-                        <i class="fas fa-layer-group"></i>
+                        <i class="fas fa-book"></i>
                         <span class="sidebar-item-label">Biblioteca de Recursos</span>
                     </a>
 
