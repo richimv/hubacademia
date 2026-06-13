@@ -38,6 +38,29 @@ class NetworkService {
             headers
         };
 
+        // Detectar si es un endpoint que consume vidas para free/pending
+        const isConsumptionEndpoint = 
+            (url.includes('/api/chat') && !url.includes('/conversations')) ||
+            url.includes('/api/languages/') ||
+            url.includes('/api/medico/') ||
+            url.includes('/api/docente/') ||
+            url.includes('/api/idiomas-simulator/') ||
+            url.includes('/api/decks') ||
+            url.includes('/api/self-evaluation/') ||
+            url.includes('/api/analytics/diagnostic');
+
+        const isWriteMethod = options.method === 'POST' || options.method === 'PUT' || options.method === 'PATCH';
+
+        let optimisticallyDecremented = false;
+
+        if (isConsumptionEndpoint && isWriteMethod && window.sessionManager) {
+            const currentUser = window.sessionManager.getUser();
+            if (currentUser && currentUser.subscriptionStatus !== 'active' && currentUser.role !== 'admin') {
+                window.sessionManager.decrementUsage(1);
+                optimisticallyDecremented = true;
+            }
+        }
+
         let retries = 1;
         while (true) {
             try {
@@ -69,8 +92,19 @@ class NetworkService {
                     throw error;
                 }
 
+                // Sincronizar vidas en segundo plano tras respuesta exitosa, o revertir si falló
+                if (response.ok && isConsumptionEndpoint && isWriteMethod && window.sessionManager) {
+                    window.sessionManager.refreshUser().catch(() => {});
+                } else if (!response.ok && optimisticallyDecremented && window.sessionManager) {
+                    window.sessionManager.refreshUser().catch(() => {});
+                }
+
                 return response;
             } catch (error) {
+                if (optimisticallyDecremented && window.sessionManager) {
+                    window.sessionManager.refreshUser().catch(() => {});
+                }
+
                 // Manejo de errores de red (offline, DNS, Wake-Up delay, etc.)
                 if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
                     if (retries > 0) {

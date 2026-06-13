@@ -3272,9 +3272,7 @@ const SimulatorDash = (() => {
                         } else {
                             alert('Has alcanzado tus límites en la versión gratuita.');
                         }
-                        if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                            window.sessionManager.refreshUser().catch(() => { });
-                        }
+                        // Sincronización gestionada por NetworkService
                         return;
                     }
 
@@ -3283,9 +3281,7 @@ const SimulatorDash = (() => {
                         document.getElementById('vocab-translation').value = data.data.translation || '';
                         document.getElementById('vocab-definition').value = data.data.definition || '';
                         document.getElementById('vocab-example').value = data.data.example_sentence || '';
-                        if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                            window.sessionManager.refreshUser().catch(() => { });
-                        }
+                        // Sincronización gestionada por NetworkService
                     } else {
                         alert(data.error || "No se pudo autocompletar.");
                     }

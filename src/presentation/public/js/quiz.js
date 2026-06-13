@@ -643,6 +643,8 @@ async function startQuiz() {
             alert("Hubo un error interno en el servidor. Por favor, intenta de nuevo o contacta a soporte técnico.");
             return;
         }
+
+        // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
     }
 
     if (!data.success) {
@@ -1300,6 +1302,9 @@ async function finishQuiz() {
         });
 
         console.log("✅ Resultados guardados y Flashcards generadas.");
+
+        // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
+
         clearSession(); // ✅ LIMPIAR SOLO SI TUVO ÉXITO
         removePendingSubmission(state.quizId);
     } catch (error) {

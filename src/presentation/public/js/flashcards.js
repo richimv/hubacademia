@@ -193,6 +193,8 @@ const FlashcardManager = (() => {
 
         const data = await res.json();
 
+        // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
+
         if (data.cards && data.cards.length > 0) {
             queue = data.cards;
             updatePendingCount();

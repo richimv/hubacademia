@@ -173,7 +173,8 @@ exports.handleWebhook = async (req, res) => {
                             daily_arena_usage = 0,
                             daily_simulator_usage = 0,
                             last_usage_reset = $4,
-                            payment_id = $2
+                            payment_id = $2,
+                            last_free_renewal = CURRENT_TIMESTAMP
                         WHERE id = $3
                     `;
 

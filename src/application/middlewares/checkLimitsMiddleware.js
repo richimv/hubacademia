@@ -24,7 +24,8 @@ const checkAILimits = (type) => {
                     daily_arena_usage, 
                     daily_simulator_usage,
                     daily_import_usage,
-                    last_usage_reset
+                    last_usage_reset,
+                    last_free_renewal
                 FROM users 
                 WHERE id = $1
             `, [userId]);
@@ -34,7 +35,28 @@ const checkAILimits = (type) => {
             }
 
             let user = result.rows[0];
-            const tier = user.subscription_tier || 'free';
+            let tier = user.subscription_tier || 'free';
+
+            // 0. RENOVACIÓN SEMANAL DE VIDAS (USUARIOS FREE)
+            if (tier === 'free') {
+                try {
+                    await pool.query(`
+                        UPDATE users 
+                        SET usage_count = 0, last_free_renewal = CURRENT_TIMESTAMP 
+                        WHERE id = $1 
+                          AND (last_free_renewal IS NULL OR last_free_renewal < NOW() - INTERVAL '7 days')
+                    `, [userId]);
+                    
+                    // Recargar los valores actualizados de user
+                    const reloadRes = await pool.query("SELECT usage_count, last_free_renewal FROM users WHERE id = $1", [userId]);
+                    if (reloadRes.rows.length > 0) {
+                        user.usage_count = reloadRes.rows[0].usage_count;
+                        user.last_free_renewal = reloadRes.rows[0].last_free_renewal;
+                    }
+                } catch (e) {
+                    console.error('⚠️ Error al renovar vidas semanales en middleware:', e.message);
+                }
+            }
 
             // --- LOGICA DE RESETEO ROBUSTA ---
             const now = new Date();
@@ -55,10 +77,11 @@ const checkAILimits = (type) => {
                     const expiresAt = new Date(user.subscription_expires_at);
                     if (Date.now() > expiresAt.getTime()) {
                         // ✅ CORRECCIÓN CRÍTICA: Rebajar Tier Y Status, y resetear vidas como beneficio de fidelización
-                        await pool.query("UPDATE users SET subscription_tier = 'free', subscription_status = 'expired', usage_count = 0 WHERE id = $1", [userId]);
+                        await pool.query("UPDATE users SET subscription_tier = 'free', subscription_status = 'expired', usage_count = 0, last_free_renewal = CURRENT_TIMESTAMP WHERE id = $1", [userId]);
                         user.subscription_tier = 'free';
                         user.subscription_status = 'expired';
                         user.usage_count = 0;
+                        user.last_free_renewal = new Date();
                     }
                 }
             }

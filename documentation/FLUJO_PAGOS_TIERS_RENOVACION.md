@@ -39,8 +39,9 @@ El navegador del usuario no aprueba la transacción jamás. Es **Mercado Pago qu
 En ese mismo milisegundo de aprobación, se dispara un `UPDATE users` titánico en PostgreSQL que:
 1. Pone `subscription_tier`: `'advanced'` o `'basic'` dependiendo del ID de Mercado Pago.
 2. Pone `subscription_status`: `'active'`.
-3. Pone todas las cuotas a cero `daily_ai_usage = 0`, `monthly_flashcards_usage = 0` (Le resetea los consumos diarios/mensuales que tuvo gratis en el pasado si los tuvo erróneamente para reiniciar en limpio).
-4. Cómputo Automático de Caducidad usando un reloj Universal (UTC): Inyecta a la Columna de Expiración el comando nativo `NOW() + INTERVAL '6 months'` (Advanced) o `INTERVAL '2 months'` (Basic). Así el servidor Base de Datos calcula hasta el segundo y día exacto su vencimiento a futuro, descartando fallos por años bisiestos.
+3. Pone todas las cuotas a cero `daily_ai_usage = 0`, `monthly_flashcards_usage = 0`, etc.
+4. Cómputo Automático de Caducidad usando un reloj Universal (UTC): Inyecta a la Columna de Expiración el comando nativo `NOW() + INTERVAL '6 months'` (Advanced) o `INTERVAL '2 months'` (Basic).
+5. **Fecha de Renovación Gratuita**: Inicializa `last_free_renewal` con `CURRENT_TIMESTAMP` para que comience un ciclo limpio cuando culmine su suscripción.
 
 ## FASE 4.5: El Retorno Triunfal a la Aplicación (Frontend Callback)
 Una vez pagado el plan en la pasarela, Mercado Pago redirige automáticamente al usuario a nuestra web a través de la URL de éxito parametrizada `/?payment=success` (configurada en `paymentController.js`).
@@ -56,6 +57,7 @@ A partir de este momento, cada acción es auditada por `checkLimitsMiddleware.js
     1. Se rebaja el usuario a `subscription_tier: 'free'`.
     2. Se cambia el status a `subscription_status: 'expired'`.
     3. **Reseteo de Vidas (usage_count = 0)**: Como beneficio por haber sido cliente, al regresar a la capa gratuita se le otorgan **50 nuevas vidas** para garantizar que pueda seguir usando la plataforma de forma limitada.
+    4. **Actualización de Ciclo Semanal**: Se actualiza `last_free_renewal = CURRENT_TIMESTAMP`, de forma que sus 7 días de cuota gratuita comiencen a contar desde el instante en que volvió a la capa Free.
 
 ---
 

@@ -28,6 +28,9 @@ class RepasoManager {
         this._sharedRequests = {
             decks: {} // { parentId: Promise }
         };
+
+        // ✅ NUEVO: Pestaña activa por defecto
+        this.activeTab = localStorage.getItem('repaso_active_tab') || 'official';
     }
 
     // --- Auth Helpers ---
@@ -219,6 +222,40 @@ class RepasoManager {
                 this.loadFolder(this.currentDeck.id, false);
             }
         });
+
+        // Sincronizar selectores de idioma dinámicos según el estado del checkbox
+        const ttsFront = document.getElementById('card-tts-front');
+        const ttsBack = document.getElementById('card-tts-back');
+        if (ttsFront) ttsFront.addEventListener('change', () => this.syncTtsLanguageSelectors());
+        if (ttsBack) ttsBack.addEventListener('change', () => this.syncTtsLanguageSelectors());
+    }
+
+    syncTtsLanguageSelectors() {
+        const ttsFront = document.getElementById('card-tts-front');
+        const langFront = document.getElementById('card-tts-lang-front');
+        if (ttsFront && langFront) {
+            const container = langFront.closest('.settings-lang-select-container');
+            if (ttsFront.checked) {
+                langFront.disabled = false;
+                if (container) container.classList.add('enabled');
+            } else {
+                langFront.disabled = true;
+                if (container) container.classList.remove('enabled');
+            }
+        }
+
+        const ttsBack = document.getElementById('card-tts-back');
+        const langBack = document.getElementById('card-tts-lang-back');
+        if (ttsBack && langBack) {
+            const container = langBack.closest('.settings-lang-select-container');
+            if (ttsBack.checked) {
+                langBack.disabled = false;
+                if (container) container.classList.add('enabled');
+            } else {
+                langBack.disabled = true;
+                if (container) container.classList.remove('enabled');
+            }
+        }
     }
 
     // --- Views ---
@@ -322,14 +359,9 @@ class RepasoManager {
     }
 
     invalidateCache(deckId = null) {
-        if (deckId) {
-            delete this._cache.folderData[deckId];
-            const deck = this.currentDeck;
-            if (deck && deck.parent_id) delete this._cache.folderData[deck.parent_id];
-            else this._cache.decks = {}; // Clear root cache
-        } else {
-            this._cache = { decks: {}, folderData: {}, cards: {} };
-        }
+        // Clear all memory caches and shared request pools to guarantee real-time updates on any CRUD operation
+        this._cache = { decks: {}, folderData: {}, cards: {} };
+        this._sharedRequests.decks = {};
     }
 
     /**
@@ -367,8 +399,23 @@ class RepasoManager {
         const container = document.getElementById('dashboard-view');
         if (!container) return;
 
+        // Asegurar la inicialización del tab activo
+        if (!this.activeTab) {
+            this.activeTab = localStorage.getItem('repaso_active_tab') || 'official';
+        }
+
         container.innerHTML = `
-            <h2 style="margin-bottom:1.5rem">Mis Mazos</h2>
+            <div class="repaso-dashboard-header" style="margin-bottom: 2rem;">
+                <h2 style="margin-bottom: 1.25rem;">Centro de Repaso</h2>
+                <div class="repaso-tabs">
+                    <button class="repaso-tab-btn ${this.activeTab === 'official' ? 'active' : ''}" onclick="window.repasoManager.switchTab('official')">
+                        <i class="fas fa-graduation-cap"></i> Mazos Oficiales
+                    </button>
+                    <button class="repaso-tab-btn ${this.activeTab === 'personal' ? 'active' : ''}" onclick="window.repasoManager.switchTab('personal')">
+                        <i class="fas fa-user"></i> Mis Mazos Creados
+                    </button>
+                </div>
+            </div>
             <div id="root-decks-grid" class="decks-grid">
                 <div class="deck-skeleton-card"></div>
                 <div class="deck-skeleton-card"></div>
@@ -381,13 +428,28 @@ class RepasoManager {
             const grid = document.getElementById('root-decks-grid');
             if (grid) {
                 grid.innerHTML = '';
-                this.renderDeckCards(decks, grid, null);
+                
+                // Filtrar según pestaña activa
+                let filteredDecks = [];
+                if (this.activeTab === 'official') {
+                    filteredDecks = decks.filter(d => d.type === 'SYSTEM');
+                } else {
+                    filteredDecks = decks.filter(d => d.type !== 'SYSTEM');
+                }
+                
+                this.renderDeckCards(filteredDecks, grid, null);
             }
         } catch (e) {
             console.error('[renderRootDecks] Error:', e);
             const grid = document.getElementById('root-decks-grid');
             if (grid) grid.innerHTML = '<p style="color:var(--accent-warning)">Error al cargar mazos</p>';
         }
+    }
+
+    switchTab(tab) {
+        this.activeTab = tab;
+        localStorage.setItem('repaso_active_tab', tab);
+        this.renderRootDecks();
     }
 
     async renderCommunityDecks(page = 1) {
@@ -424,11 +486,7 @@ class RepasoManager {
                 card.style.padding = '1rem';
                 card.style.cursor = 'pointer'; // Changed to pointer since it's clickable
 
-                if (deck.color) {
-                    card.style.background = `linear-gradient(135deg, ${deck.color}2A, ${deck.color}10)`;
-                    card.style.borderColor = `${deck.color}66`;
-                    card.style.boxShadow = `0 4px 20px ${deck.color}15`;
-                }
+
 
                 const iconHtml = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder');
 
@@ -572,7 +630,7 @@ class RepasoManager {
                 // Reload explorer to show new deck
                 this.explorer.loadTree();
                 if (window.sessionManager) {
-                    await window.sessionManager.refreshUser(); // Refrescar vidas en UI
+                    // Sincronización gestionada por NetworkService
                 }
             } else {
                 const err = await res.json().catch(() => ({}));
@@ -628,7 +686,7 @@ class RepasoManager {
                             ` : ''}
 
                             ${localStorage.getItem('authToken') ? `
-                            <button class="btn-premium btn-premium-secondary" onclick="window.repasoManager.openAddCardModal()">
+                            <button class="btn-premium btn-premium-secondary btn-add-card-glow" onclick="window.repasoManager.openAddCardModal()">
                                 <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
                             </button>
                             <button class="btn-premium btn-premium-ia" onclick="window.repasoManager.openAiModal()">
@@ -716,6 +774,7 @@ class RepasoManager {
 
             if (res.ok) {
                 window.uiManager.showToast(makePublic ? 'Mazo publicado en la comunidad' : 'Mazo hecho privado', 'success');
+                this.invalidateCache(deckId);
                 // Actualizamos la vista actual
                 this.loadFolder(deckId, false);
             } else {
@@ -786,8 +845,20 @@ class RepasoManager {
         container.innerHTML = '';
         const fragment = document.createDocumentFragment();
 
-        // --- 1. NEW: Add "Create Deck" Card (Only for Logged Users) ---
+        // --- 1. NEW: Add "Create Deck" Card (Only for Logged Users and NOT for SYSTEM / Official Decks) ---
+        let showCreateCard = false;
         if (this.token) {
+            if (parentId === null) {
+                // At root level, only show if active tab is personal
+                showCreateCard = (this.activeTab === 'personal');
+            } else {
+                // At subdeck level, show if parent deck is NOT a system/official deck
+                const isParentSystem = this.currentDeck && this.currentDeck.type === 'SYSTEM';
+                showCreateCard = !isParentSystem;
+            }
+        }
+
+        if (showCreateCard) {
             const addCard = document.createElement('div');
             addCard.className = 'deck-card add-deck-card';
             addCard.onclick = () => DeckExplorer.openCreateModal(parentId);
@@ -818,10 +889,7 @@ class RepasoManager {
             card.style.padding = '1rem';
             card.style.cursor = 'pointer';
 
-            if (deck.color) {
-                card.style.setProperty('--deck-color', deck.color);
-                card.style.setProperty('--deck-color-glow', `${deck.color}25`);
-            }
+
 
             const isSystem = deck.type === 'SYSTEM';
             const mastery = deck.mastery_percentage || 0;
@@ -1400,6 +1468,9 @@ class RepasoManager {
         if (preview) preview.style.display = 'none';
         const fileInput = document.getElementById('bulk-flashcard-input');
         if (fileInput) fileInput.value = '';
+
+        // Sincronizar el estado visual de selectores de idioma
+        this.syncTtsLanguageSelectors();
     }
 
     openAddCardModal() {
@@ -1641,13 +1712,7 @@ class RepasoManager {
                     } else {
                         await this.refreshView();
                     }
-                    if (window.sessionManager) {
-                        const user = window.sessionManager.getUser();
-                        const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
-                        if (tier === 'free' || tier === 'pending') {
-                            await window.sessionManager.refreshUser();
-                        }
-                    }
+                    // Sincronización gestionada por NetworkService
                 } else {
                     window.uiManager.showToast('❌ Error al actualizar mazo');
                 }
@@ -1671,13 +1736,7 @@ class RepasoManager {
                     this.invalidateCache(parentId);
                     if (parentId) await this.loadFolder(parentId, false);
                     else await this.loadDashboard(false);
-                    if (window.sessionManager) {
-                        const user = window.sessionManager.getUser();
-                        const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
-                        if (tier === 'free' || tier === 'pending') {
-                            await window.sessionManager.refreshUser();
-                        }
-                    }
+                    // Sincronización gestionada por NetworkService
                 } else {
                     window.uiManager.showToast('❌ Error al crear mazo');
                 }
@@ -1711,9 +1770,6 @@ class RepasoManager {
 
         if (window.DeckExplorer) {
             window.DeckExplorer.renderIconPicker(currentIcon || 'fas fa-layer-group');
-            if (window.DeckExplorer.renderColorPicker) {
-                window.DeckExplorer.renderColorPicker(currentColor || '');
-            }
         }
 
         const submitBtn = document.getElementById('btn-save-deck');
@@ -1842,13 +1898,7 @@ class RepasoManager {
                 this.closeCardModal();
                 this.loadFolder(deckId, false);
                 this._pendingBulkCards = [];
-                if (window.sessionManager) {
-                    const user = window.sessionManager.getUser();
-                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
-                    if (tier === 'free' || tier === 'pending') {
-                        await window.sessionManager.refreshUser();
-                    }
-                }
+                // Sincronización gestionada por NetworkService
             } else {
                 const errorData = await res.json().catch(() => ({}));
                 window.uiManager.showToast(`❌ Error al guardar tarjeta: ${errorData.error || res.statusText}`);
@@ -1944,6 +1994,9 @@ class RepasoManager {
         const tabs = document.getElementById('card-modal-tabs');
         if (tabs) tabs.style.display = 'none';
         this.switchCardMode('individual');
+
+        // Sincronizar selectores de idioma
+        this.syncTtsLanguageSelectors();
 
         if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
             window.uiManager.pushModalState('card-modal');
@@ -2149,13 +2202,7 @@ class RepasoManager {
                 this._pendingBulkCards = [];
                 this.closeCardModal();
                 this.loadFolder(deckId);
-                if (window.sessionManager) {
-                    const user = window.sessionManager.getUser();
-                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
-                    if (tier === 'free' || tier === 'pending') {
-                        await window.sessionManager.refreshUser();
-                    }
-                }
+                // Sincronización gestionada por NetworkService
                 if (window.uiManager.showToast) window.uiManager.showToast('¡Carga masiva completada con éxito!', 'success');
             } else {
                 const data = await res.json();
@@ -2204,13 +2251,7 @@ class RepasoManager {
                 const data = await res.json().catch(() => ({ count: 5 }));
                 this.closeAiModal();
                 this.loadFolder(this.currentDeck.id);
-                if (window.sessionManager) {
-                    const user = window.sessionManager.getUser();
-                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
-                    if (tier === 'free' || tier === 'pending') {
-                        await window.sessionManager.refreshUser();
-                    }
-                }
+                // Sincronización gestionada por NetworkService
 
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -2313,6 +2354,7 @@ class RepasoManager {
             });
 
             if (res.ok) {
+                this.invalidateCache(deckId);
                 // Refresh Tree and Dashboard
                 await this.explorer.loadTree();
 
@@ -2325,13 +2367,7 @@ class RepasoManager {
                 } else {
                     this.loadDashboard();
                 }
-                if (window.sessionManager) {
-                    const user = window.sessionManager.getUser();
-                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
-                    if (tier === 'free' || tier === 'pending') {
-                        await window.sessionManager.refreshUser();
-                    }
-                }
+                // Sincronización gestionada por NetworkService
             } else {
                 window.uiManager.showToast('❌ No se pudo eliminar el mazo');
             }

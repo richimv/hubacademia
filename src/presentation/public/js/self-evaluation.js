@@ -94,6 +94,9 @@ const SelfEvaluation = (function () {
             }
 
             resetGame();
+            
+            // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
+
             ui.screens.loading.classList.add('hidden');
             ui.screens.gameplay.classList.remove('hidden');
             

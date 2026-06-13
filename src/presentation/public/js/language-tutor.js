@@ -407,9 +407,7 @@
             cciChatHistory.push({ role: 'user', content: message });
             cciChatHistory.push({ role: 'assistant', content: data.response });
 
-            if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                window.sessionManager.refreshUser().catch(() => {});
-            }
+            // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
 
         } catch (err) {
             console.error("Error sending message to CCI:", err);
@@ -1170,9 +1168,7 @@
             // Habilitar el flujo siguiente
             nextBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Siguiente Ejercicio';
 
-            if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
-                window.sessionManager.refreshUser().catch(() => {});
-            }
+            // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
 
             // RE-HABILITAR CONTROLES PARA PERMITIR CORRECCIONES/REINTENTOS
             if (inputModeVal === 'text') {

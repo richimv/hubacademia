@@ -32,7 +32,8 @@ describe('UserRepository', () => {
                 last_usage_reset: '2026-06-02',
                 last_name_change_at: null,
                 monthly_flashcards_usage: 4,
-                daily_import_usage: 1
+                daily_import_usage: 1,
+                last_free_renewal: '2026-06-12T12:00:00Z'
             };
 
             db.query.mockResolvedValue({ rows: [mockRow] });
@@ -47,6 +48,7 @@ describe('UserRepository', () => {
             expect(result.email).toBe('test@example.com');
             expect(result.monthlyFlashcardsUsage).toBe(4);
             expect(result.dailyImportUsage).toBe(1);
+            expect(result.lastFreeRenewal).toBe('2026-06-12T12:00:00Z');
         });
     });
 

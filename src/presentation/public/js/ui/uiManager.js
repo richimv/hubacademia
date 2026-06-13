@@ -1499,6 +1499,7 @@ class UIManager {
                     align-items: center;
                     gap: 5px;
                     white-space: nowrap;
+                    transition: all 0.3s ease;
                 }
                 .upgrade-btn-small {
                     background: linear-gradient(45deg, #ffd700, #ffa500);
@@ -1573,9 +1574,9 @@ class UIManager {
                 }
                 .freemium-toast i { color: #ffd700; }
             </style>
-            <div id="freemium-status-bar" class="freemium-status-bar">
+            <div id="freemium-status-bar" class="freemium-status-bar" title="Tus créditos de vidas se restablecen a 50 cada 7 días automáticamente">
                 <div class="status-content">
-                    <span class="probation-text">⚡ <span class="hide-mobile">MODO </span>PRUEBA</span>
+                    <span class="probation-text">⚡ <span class="hide-mobile">PLAN </span>GRATUITO</span>
                     <div class="usage-pill">
                         <i class="fas fa-bolt"></i> <span id="free-usage-count">--/--</span>
                     </div>
@@ -1634,11 +1635,32 @@ class UIManager {
         const remaining = Math.max(0, limit - usage);
 
         if (countSpan) {
-            countSpan.textContent = `${remaining}/${limit}`;
+            const prevText = countSpan.textContent;
+            const newText = `${remaining}/${limit}`;
+            
+            if (prevText !== newText && prevText !== '--/--') {
+                // Agregar animación de rebote y destello dorado
+                const pill = countSpan.closest('.usage-pill');
+                if (pill) {
+                    pill.style.transform = 'scale(1.15)';
+                    pill.style.background = 'rgba(255, 215, 0, 0.35)';
+                    pill.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.5)';
+                    setTimeout(() => {
+                        pill.style.transform = 'scale(1)';
+                        pill.style.background = remaining <= 1 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.1)';
+                        pill.style.boxShadow = 'none';
+                    }, 300);
+                }
+            }
+            
+            countSpan.textContent = newText;
             // Alerta visual si queda poco
             if (remaining <= 1) {
                 countSpan.parentElement.style.background = 'rgba(239, 68, 68, 0.2)'; // Red tint
                 countSpan.style.color = '#f87171';
+            } else {
+                countSpan.parentElement.style.background = 'rgba(255, 255, 255, 0.1)';
+                countSpan.style.color = '#ffd700';
             }
         }
     }
@@ -1658,25 +1680,42 @@ class UIManager {
             }, 3000);
         }
     }
-
     /**
-     * Muestra el modal de bienvenida si es la primera vez.
+     * Muestra el modal de bienvenida o renovación de vidas semanal para usuarios free.
      */
     checkAndShowWelcomeModal(user) {
         if (!user) return;
-        // Solo para usuarios free/pending
-        if (user.subscriptionStatus === 'active') return;
+        // Solo para usuarios free/pending (o cuentas expiradas que quedan free)
+        const tier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
+        const status = user.subscriptionStatus || user.subscription_status;
+        if (tier !== 'free' || status === 'active') return;
 
-        // ✅ REGLA UX: Solo mostrar si usage_count es 0 (Usuario Nuevo)
-        // Esto evita que salga si ya gastó vidas
+        // Solo mostrar si usage_count es 0 (indica vidas completas, es decir, inicio o renovación)
         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
         if (usage > 0) return;
 
-        const hasSeen = localStorage.getItem('hasSeenFreemiumWelcome_v2');
-        if (hasSeen) return;
+        const lastRenewalStr = user.lastFreeRenewal || user.last_free_renewal;
+        if (!lastRenewalStr) return;
 
+        // Estandarizar la fecha a string simple (YYYY-MM-DD)
+        const lastRenewalDate = (lastRenewalStr instanceof Date)
+            ? lastRenewalStr.toISOString().split('T')[0]
+            : String(lastRenewalStr).split('T')[0];
+
+        const lastSeen = localStorage.getItem('lastSeenFreeRenewal');
+
+        // Si el usuario ya vio la renovación/bienvenida de esta fecha específica, no hacemos nada
+        if (lastSeen === lastRenewalDate) return;
+
+        const isRenewal = !!lastSeen; // Si ya vio alguna renovación antes, esta es una renovación semanal
         const modalId = 'welcome-freemium-modal';
         if (document.getElementById(modalId)) return;
+
+        const titleText = isRenewal ? '¡Tus 50 vidas semanales están listas!' : 'Bienvenido a Hub Academia';
+        const bodyText = isRenewal 
+            ? 'Hemos renovado tu cuenta. Recibiste de regalo <strong>50 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA esta semana.'
+            : 'Tu cuenta ha sido configurada correctamente. Dispones de <strong>50 créditos de uso</strong> para explorar todas las herramientas de estudio y productividad de la plataforma.';
+        const buttonText = isRenewal ? '¡A estudiar!' : 'Acceder al Hub';
 
         const modalHTML = `
             <div id="${modalId}" class="auth-prompt-modal" style="display:flex; backdrop-filter: blur(15px); background: rgba(0,0,0,0.5);">
@@ -1694,16 +1733,16 @@ class UIManager {
                     </div>
 
                     <h2 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; margin-bottom: 1rem; letter-spacing: -0.01em;">
-                        Bienvenido a Hub Academia
+                        ${titleText}
                     </h2>
                     
                     <div style="margin-bottom: 2.5rem; text-align: center;">
                         <p style="color: #94a3b8; font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem;">
-                            Tu cuenta ha sido configurada correctamente. Dispones de <strong>50 créditos de uso</strong> para explorar todas las herramientas de estudio y productividad de la plataforma.
+                            ${bodyText}
                         </p>
                     </div>
 
-                    <button class="btn-primary" onclick="window.uiManager.closeWelcomeModal('${modalId}')" style="
+                    <button class="btn-primary" onclick="window.uiManager.closeWelcomeModal('${modalId}', '${lastRenewalDate}')" style="
                         width: 100%; 
                         background: #3b82f6; 
                         color: white; 
@@ -1715,21 +1754,24 @@ class UIManager {
                         cursor: pointer;
                         transition: background 0.2s;
                     " onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
-                        Acceder al Hub
+                        ${buttonText}
                     </button>
                 </div>
             </div>`;
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        localStorage.setItem('hasSeenFreemiumWelcome_v2', 'true');
         this.pushModalState(modalId);
     }
 
-    closeWelcomeModal(id) {
+    closeWelcomeModal(id, lastRenewalDate) {
         const modal = document.getElementById(id);
         if (modal) {
             modal.style.display = 'none';
             this.popModalState(id);
+        }
+        if (lastRenewalDate) {
+            localStorage.setItem('lastSeenFreeRenewal', lastRenewalDate);
+            localStorage.setItem('hasSeenFreemiumWelcome_v2', 'true');
         }
     }
 }

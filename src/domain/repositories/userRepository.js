@@ -25,7 +25,8 @@ class UserRepository {
             row.last_usage_reset,
             row.last_name_change_at,
             row.monthly_flashcards_usage,
-            row.daily_import_usage
+            row.daily_import_usage,
+            row.last_free_renewal
         );
     }
 
@@ -69,8 +70,8 @@ class UserRepository {
                 
                 // Estrategia: Intentar insertar por ID, pero si el EMAIL ya existe, actualizar el registro existente.
                 const manualQuery = `
-                    INSERT INTO public.users (id, name, email, password_hash, role, subscription_status, subscription_tier, usage_count, max_free_limit, last_usage_reset, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, 'pending', 'free', 0, 50, CURRENT_DATE, NOW())
+                    INSERT INTO public.users (id, name, email, password_hash, role, subscription_status, subscription_tier, usage_count, max_free_limit, last_usage_reset, last_free_renewal, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, 'pending', 'free', 0, 50, CURRENT_DATE, NOW(), NOW())
                     ON CONFLICT (email) 
                     DO UPDATE SET 
                         id = EXCLUDED.id,
@@ -157,6 +158,9 @@ class UserRepository {
 
         const lastNameChange = userData.lastNameChangeAt !== undefined ? userData.lastNameChangeAt : userData.last_name_change_at;
         if (lastNameChange !== undefined) { fields.push(`last_name_change_at = $${idx++}`); values.push(lastNameChange); }
+
+        const lastFreeRenewal = userData.lastFreeRenewal !== undefined ? userData.lastFreeRenewal : userData.last_free_renewal;
+        if (lastFreeRenewal !== undefined) { fields.push(`last_free_renewal = $${idx++}`); values.push(lastFreeRenewal); }
 
         if (fields.length === 0) return this.findById(id);
 

@@ -266,3 +266,17 @@ Para maximizar el espacio útil de lectura en el widget de chat y profesionaliza
 - **Selector de Cabecera (`#chatbot-persona-trigger`)**: Reemplaza el contenedor de pestañas por una cápsula interactiva dentro del encabezado que muestra el modo activo ("Neutro", "Médico" o "Educación") como subtítulo dinámico y un chevron de rotación.
 - **Menú Desplegable Flotante (`#chatbot-persona-dropdown`)**: Un popover glassmorphic con desenfoque de fondo al 94%, sombras pronunciadas y acentos de color contextuales según la especialidad seleccionada (Azul para General, Cian para Médico, Verde para Educación).
 - **Controlador de Cierre Automático**: Cierra el selector al cambiar de modo o si el usuario hace clic fuera de la cabecera o el panel desplegable.
+
+---
+
+## 13. Burbuja de Invitación Animada (Chat Tooltip UX)
+Para guiar al usuario e invitarlo a interactuar con el Tutor IA de manera amigable, se implementó una burbuja de diálogo interactiva, diferida y optimizada para rendimiento extremo (60 FPS):
+- **Inyección HTML (`#chat-invitation-bubble`)**: El widget flotante inyecta el contenedor de la burbuja como elemento hermano directo (fuera de `#chatbot-toggle`). Esto elimina el acoplamiento de renderizado, evitando que la burbuja sufra las transformaciones de escala y rotación aplicadas al botón durante el hover.
+- **Despliegue Diferido (3 segundos)**: Al cargar cualquier página que instancie `ChatComponent`, se activa un temporizador de 3 segundos antes de mostrar la burbuja de invitación.
+- **Persistencia de Descarte (Local Storage)**: Si el usuario pulsa la "X" de cierre de la burbuja, se detiene la propagación para evitar abrir el chat, se oculta la burbuja de inmediato y se guarda en `localStorage` la clave `chat_invitation_dismissed: 'true'`, previniendo futuras activaciones de la invitación para no perturbar su experiencia de estudio.
+- **Acceso Rápido Integrado**: Si el usuario pulsa en cualquier otra parte de la burbuja, se inicia automáticamente el flujo de apertura del chat y se remueve la clase activa de la burbuja.
+- **Aceleración por Hardware y Fluidez a 60 FPS (`chat.css`)**:
+  - Posicionamiento `position: fixed` fijo en pantalla con override responsivo para móviles (`bottom: 95px; right: 24px` en escritorio, `bottom: 86px; right: 20px` en móvil) para evitar recálculos de flujo (reflow).
+  - Uso de las directivas `will-change: transform, opacity;` y `transform-style: preserve-3d;` con `backface-visibility: hidden;` para forzar la composición en capas independientes de la GPU.
+  - La animación `@keyframes bubble-float` mantiene explícitamente la escala constante (`scale(1)`) en sus keyframes, evitando colisiones con el estado inicial de escalado en la transición de entrada.
+

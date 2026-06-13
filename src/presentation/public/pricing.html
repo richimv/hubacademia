@@ -5,19 +5,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso Premium - Hub Academia</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <!-- CSS Base (Variables Hub Academia) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/theme.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/base.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/modal.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/components.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/footer.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/sidebar.css?v=3b5debab">
+    <link rel="stylesheet" href="/css/theme.css?v=19949b89">
+    <link rel="stylesheet" href="/css/base.css?v=19949b89">
+    <link rel="stylesheet" href="/css/header.css?v=19949b89">
+    <link rel="stylesheet" href="/css/modal.css?v=19949b89">
+    <link rel="stylesheet" href="/css/components.css?v=19949b89">
+    <link rel="stylesheet" href="/css/footer.css?v=19949b89">
+    <link rel="stylesheet" href="/css/sidebar.css?v=19949b89">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/pricing.css?v=3b5debab">
+    <link rel="stylesheet" href="/css/pricing.css?v=19949b89">
 </head>
 
 <body>
+    <!-- Header with Nav -->
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Hub Academia</span>
+            </a>
+        </div>
+        <div class="header-nav">
+            <div id="user-session-controls">
+                <!-- Injected via NavLoader -->
+            </div>
+        </div>
+    </header>
 
     <div id="pricing-wrapper" class="pricing-container">
         <!-- Contenido Pricing (Visible por defecto si no es Premium) -->
@@ -36,7 +52,7 @@
                     <ul class="plan-benefits">
                         <li><i class="fas fa-check-circle"></i> <span>15 Simulacros Completados/Día (Banco + IA)</span></li>
                         <li><i class="fas fa-check-circle"></i> <span>Flashcards Manuales + IA (10 pedidos/mes)</span></li>
-                        <li><i class="fas fa-check-circle"></i> <span>Tutor Académico con IA (RAG) (30 msg/día)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span>Tutor Académico con IA (RAG) (50 msg/día)</span></li>
                         <li><i class="fas fa-check-circle"></i> <span>Diagnostico Estadístico (Estático)</span></li>
                     </ul>
 
@@ -54,7 +70,7 @@
                     <ul class="plan-benefits">
                         <li><i class="fas fa-check-circle"></i> <span>50 Simulacros Completados/Día (Banco + IA)</span></li>
                         <li><i class="fas fa-check-circle"></i> <span>Flashcards Manuales + IA (30 pedidos/mes)</span></li>
-                        <li><i class="fas fa-check-circle"></i> <span>Tutor Académico con IA (RAG) (50 msg/día)</span></li>
+                        <li><i class="fas fa-check-circle"></i> <span>Tutor Académico con IA (RAG) (100 msg/día)</span></li>
                         <li><i class="fas fa-check-circle"></i> <span>Diagnostico Estadístico (Avanzado)</span></li>
                     </ul>
 
@@ -138,15 +154,15 @@
 
     <!-- Configuration Script (Load AFTER Supabase to avoid warning) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=3b5debab"></script>
-    <script src="/js/services/networkService.js?v=3b5debab"></script>
-    <script src="/js/services/authApiService.js?v=3b5debab"></script>
-    <script src="/js/sessionManager.js?v=3b5debab"></script>
-    <script src="/js/ui/uiManager.js?v=3b5debab"></script>
-    <script src="/js/ui/sidebar.js?v=3b5debab"></script>
-    <script src="/js/app.js?v=3b5debab"></script>
+    <script src="/js/config.js?v=19949b89"></script>
+    <script src="/js/services/networkService.js?v=19949b89"></script>
+    <script src="/js/services/authApiService.js?v=19949b89"></script>
+    <script src="/js/sessionManager.js?v=19949b89"></script>
+    <script src="/js/ui/uiManager.js?v=19949b89"></script>
+    <script src="/js/ui/sidebar.js?v=19949b89"></script>
+    <script src="/js/app.js?v=19949b89"></script>
 
-    <script src="/js/pricing.js?v=3b5debab"></script>
+    <script src="/js/pricing.js?v=19949b89"></script>
 </body>
 
 </html>

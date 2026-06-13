@@ -128,17 +128,24 @@ body {
     width: 100%;
     max-width: 850px;
     height: 440px;
-    perspective: 2000px;
     margin-bottom: 2rem;
+    position: relative;
+    border-radius: 24px;
+    /* Stacked deck card shadow effect */
+    box-shadow: 
+        0 4px 0 -2px rgba(255, 255, 255, 0.04),
+        0 8px 0 -4px rgba(255, 255, 255, 0.04),
+        0 12px 0 -6px rgba(255, 255, 255, 0.03),
+        0 20px 40px rgba(0, 0, 0, 0.65);
 }
 
 .card {
     width: 100%;
     height: 100%;
     position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
+    transform-style: preserve-3d;
 }
 .card.is-flipped { transform: rotateY(180deg); }
 
@@ -153,10 +160,10 @@ body {
     -webkit-backface-visibility: hidden;
     border-radius: 24px;
     background: linear-gradient(135deg, rgba(20, 20, 25, 0.8), rgba(10, 10, 12, 0.95));
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.02);
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02);
     /* Flexbox columna: badge | contenido | hint */
     display: flex;
     flex-direction: column;

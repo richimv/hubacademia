@@ -1,4 +1,26 @@
 const AuthService = require('../../src/domain/services/authService');
+const db = require('../../src/infrastructure/database/db');
+
+jest.mock('../../src/infrastructure/database/db', () => {
+    return {
+        query: jest.fn()
+    };
+});
+
+jest.mock('@supabase/supabase-js', () => {
+    return {
+        createClient: jest.fn().mockReturnValue({
+            auth: {
+                admin: {
+                    getUserById: jest.fn().mockResolvedValue({
+                        data: { user: { email_confirmed_at: '2026-06-01T00:00:00Z' } },
+                        error: null
+                    })
+                }
+            }
+        })
+    };
+});
 
 const mockFindById = jest.fn();
 const mockCreate = jest.fn();
@@ -146,6 +168,30 @@ describe('AuthService', () => {
             const result = await authService.updateProfile(userId, { name: 'New Admin' });
 
             expect(result.name).toBe('New Admin');
+        });
+    });
+
+    describe('getUserWithStatus', () => {
+        it('should execute weekly free lives renewal query and fetch user', async () => {
+            const userId = 'user-123';
+            const mockUser = {
+                id: userId,
+                email: 'test@example.com',
+                subscriptionTier: 'free',
+                usageCount: 5
+            };
+
+            db.query.mockResolvedValue({ rows: [] });
+            mockFindById.mockResolvedValue(mockUser);
+
+            const result = await authService.getUserWithStatus(userId);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('UPDATE public.users'),
+                [userId]
+            );
+            expect(mockFindById).toHaveBeenCalledWith(userId);
+            expect(result).toEqual(mockUser);
         });
     });
 });

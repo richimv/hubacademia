@@ -27,7 +27,7 @@ class LanguageChatController {
             try {
                 if (req.usageType === 'usage_count') {
                     // Chat de Idiomas (gratuito) consume 1 vida
-                    await this.usageService.checkAndIncrementUsage(userId, 'usage_count', 1);
+                    await this.usageService.checkAndIncrementUsage(userId, 1);
                     console.log(`📉 Límite de usage_count incrementado (+1) para usuario ${userId} en Chat de Idiomas.`);
                 } else if (req.usageType) {
                     const pool = require('../../infrastructure/database/db');
@@ -76,7 +76,7 @@ class LanguageChatController {
             try {
                 const userId = req.user.id;
                 if (req.usageType === 'usage_count') {
-                    await this.usageService.checkAndIncrementUsage(userId, 'usage_count', 1);
+                    await this.usageService.checkAndIncrementUsage(userId, 1);
                 } else if (req.usageType) {
                     const pool = require('../../infrastructure/database/db');
                     await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);

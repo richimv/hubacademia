@@ -46,5 +46,13 @@ Se eliminó la restricción que ocultaba la tabla de precios a usuarios con susc
 - **Prevención de Errores**: El botón de compra del plan que el usuario ya posee se deshabilita automáticamente, indicando "Plan Activo".
 - **Mensaje de Éxito**: Solo los usuarios en el nivel máximo (**Advanced**) ven el modal de "Ya eres Premium".
 
+## 5. Rediseño Minimalista y Responsivo (Junio 2026)
+Se realizó un rediseño integral de la página de precios (`pricing.html` y `pricing.css`) para adaptarla a la estética premium del sistema:
+- **Integración de Cabecera Global**: Se integró `<header class="main-header">` y `/css/header.css` en `pricing.html` para permitir acceso al menú lateral (sidebar) en celulares y desplegar controles de perfil del usuario de forma uniforme.
+- **Estética Glassmorphic Cyber-Minimalist**: Las tarjetas de precios se maquetaron con fondo oscuro translúcido, desenfoque de fondo (`backdrop-filter`), bordes translúcidos de acento y sombreado profundo. El fondo de la página incluye gradientes radiales de luz sutiles.
+- **Alineación Editorial**: La información dentro de las tarjetas (título, precio, beneficios y botones) se alineó a la izquierda para un estilo de maquetación SaaS premium.
+- **Badge Recomendado Compacto**: Se descartó la banda diagonal de esquina por una cápsula minimalista de degradado tecnológico en la parte superior derecha de la tarjeta.
+- **Optimización Móvil**: En pantallas móviles (`<= 768px`), las tarjetas colapsan en una sola columna adaptándose al ancho total con márgenes reducidos y tipografías optimizadas para legibilidad y confort táctil.
+
 ---
-*Ultima actualización: 13 de marzo de 2026*
+*Ultima actualización: 12 de junio de 2026*

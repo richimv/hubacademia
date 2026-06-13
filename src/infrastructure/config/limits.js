@@ -13,19 +13,19 @@ const LIMITS = {
         self_evaluation: 15
     },
     basic: {
-        chat_standard: 30,
+        chat_standard: 50,
         monthly_flashcards: 10,
         simulator: 15,
         batch_import: 10,
-        audio_assistant: 30,
+        audio_assistant: 50,
         self_evaluation: 15
     },
     advanced: {
-        chat_standard: 50,
+        chat_standard: 100,
         monthly_flashcards: 30,
         simulator: 50,
         batch_import: 10,
-        audio_assistant: 50,
+        audio_assistant: 100,
         self_evaluation: 15
     }
 };

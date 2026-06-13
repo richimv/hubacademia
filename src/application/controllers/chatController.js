@@ -164,7 +164,7 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
             try {
                 if (!isEphemeral && req.usageType === 'usage_count') {
                     // ✅ NUEVA REGLA: El Chat con RAG cuesta 2 vidas
-                    await this.usageService.checkAndIncrementUsage(userId, 'usage_count', 2);
+                    await this.usageService.checkAndIncrementUsage(userId, 2);
                     console.log(`📉 Límite de usage_count incrementado (+2) para usuario ${userId}.`);
                 } else if (!isEphemeral && req.usageType) {
                     // Para otros límites (daily_ai_usage), cobro normal de 1

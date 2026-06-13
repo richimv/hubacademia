@@ -118,15 +118,25 @@ class SessionManager {
             console.log('🔄 Refrescando sesión de usuario en segundo plano...');
             const updatedUser = await AuthApiService.getMe();
                 if (updatedUser) {
-                // Solo notificar si cambió el conteo de uso o el tier (ahorro de renders)
-                const usageChanged = this.currentUser.usageCount !== updatedUser.usageCount;
+                // Solo notificar si cambió el conteo de uso (Free/Pending) o contadores premium o el tier
+                const usageChanged = 
+                    this.currentUser.usageCount !== updatedUser.usageCount ||
+                    this.currentUser.dailyAiUsage !== updatedUser.dailyAiUsage ||
+                    this.currentUser.dailySimulatorUsage !== updatedUser.dailySimulatorUsage ||
+                    this.currentUser.dailyArenaUsage !== updatedUser.dailyArenaUsage ||
+                    this.currentUser.monthlyFlashcardsUsage !== updatedUser.monthlyFlashcardsUsage ||
+                    this.currentUser.usage_count !== updatedUser.usage_count ||
+                    this.currentUser.daily_ai_usage !== updatedUser.daily_ai_usage ||
+                    this.currentUser.daily_simulator_usage !== updatedUser.daily_simulator_usage ||
+                    this.currentUser.daily_arena_usage !== updatedUser.daily_arena_usage ||
+                    this.currentUser.monthly_flashcards_usage !== updatedUser.monthly_flashcards_usage;
                 const tierChanged = this.currentUser.subscriptionTier !== updatedUser.subscriptionTier;
                 
                 this.currentUser = updatedUser;
                 if (usageChanged || tierChanged) {
                     this.notifyStateChange();
                 }
-                console.log('✅ Sesión refrescada. Vidas:', updatedUser.usageCount);
+                console.log('✅ Sesión refrescada. Vidas:', updatedUser.usageCount, 'Daily AI:', updatedUser.dailyAiUsage);
             }
         } catch (error) {
             console.warn('⚠️ Falló el refresco silencioso de sesión:', error);
@@ -163,6 +173,26 @@ class SessionManager {
         this.currentUser = user;
         this.notifyStateChange();
     }
+
+    decrementUsage(amount = 1) {
+        if (this.currentUser) {
+            const usage = this.currentUser.usageCount !== undefined ? this.currentUser.usageCount : (this.currentUser.usage_count || 0);
+            const limit = this.currentUser.maxFreeLimit !== undefined ? this.currentUser.maxFreeLimit : (this.currentUser.max_free_limit || 50);
+            
+            const isFree = this.currentUser.subscriptionStatus !== 'active' && this.currentUser.role !== 'admin';
+            if (isFree) {
+                const newUsage = Math.min(limit, usage + amount);
+                if (this.currentUser.usageCount !== undefined) {
+                    this.currentUser.usageCount = newUsage;
+                } else {
+                    this.currentUser.usage_count = newUsage;
+                }
+                console.log(`⚡ [SessionManager] Descuento optimista aplicado localmente: ${limit - newUsage}/${limit}`);
+                this.notifyStateChange();
+            }
+        }
+    }
+
 
     async logout(shouldRedirect = true) {
         console.log('🚪 Iniciando cierre de sesión global...');

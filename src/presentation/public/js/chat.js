@@ -104,7 +104,7 @@ class ChatComponent {
                             <div class="dropdown-item-icon medicine"><i class="fas fa-stethoscope"></i></div>
                             <div class="dropdown-item-content">
                                 <span class="dropdown-item-title">Modo Médico</span>
-                                <span class="dropdown-item-desc">Exámenes Médicos y SERUMS</span>
+                                <span class="dropdown-item-desc">Consultas Médicas Especializadas</span>
                             </div>
                             <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
                         </div>
@@ -112,7 +112,7 @@ class ChatComponent {
                             <div class="dropdown-item-icon education"><i class="fas fa-graduation-cap"></i></div>
                             <div class="dropdown-item-content">
                                 <span class="dropdown-item-title">Modo Educación</span>
-                                <span class="dropdown-item-desc">Ascenso y Nombramiento Docente</span>
+                                <span class="dropdown-item-desc">Consultas Educativas Especializadas</span>
                             </div>
                             <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
                         </div>
@@ -147,6 +147,14 @@ class ChatComponent {
                 <i class="fas fa-robot"></i>
                 <span class="chatbot-notification" id="chatbot-notification" style="display: none;"></span>
             </button>
+            
+            <!-- Burbuja de Invitación animada (Fuera del botón para fluidez extrema) -->
+            <div id="chat-invitation-bubble" class="chat-invitation-bubble">
+                <span class="chat-invitation-text">¿Tienes dudas? ¡Pregúntame!</span>
+                <button type="button" class="chat-invitation-close" aria-label="Cerrar invitación" onclick="event.stopPropagation(); document.getElementById('chat-invitation-bubble').classList.remove('active'); localStorage.setItem('chat_invitation_dismissed', 'true');">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         `;
 
         const targetEl = document.querySelector(this.targetSelector);
@@ -253,6 +261,19 @@ class ChatComponent {
             });
         }
 
+        // BURBUJA DE INVITACIÓN - Clic abre el chat
+        const bubbleEl = document.getElementById('chat-invitation-bubble');
+        if (bubbleEl) {
+            bubbleEl.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.uiManager.checkAuthAndExecute(() => {
+                    console.log('🎯 Burbuja de invitación clickeada');
+                    this.toggleChat();
+                });
+            });
+        }
+
         // ✅ MEJORA UI/UX MÓVIL: Listener para el botón hardware 'Atrás'
         window.addEventListener('popstate', this.handlePopState);
 
@@ -310,12 +331,12 @@ class ChatComponent {
 
                 this.specialization = newValue;
                 localStorage.setItem('chatbot_specialization', this.specialization);
-                
+
                 // Actualizar UI visualmente
                 this.updatePersonaUI();
 
                 console.log(`🎯 Especialidad cambiada a: ${this.specialization}`);
-                
+
                 if (window.uiManager && window.uiManager.showToast) {
                     const names = { neutral: 'Neutro', medicine: 'Médico', education: 'Educación' };
                     window.uiManager.showToast(`Modo: Experto ${names[this.specialization]}`, 'info');
@@ -459,7 +480,7 @@ class ChatComponent {
                     const feedbackContainer = feedbackBtn.closest('.feedback-container');
                     const feedbackBtns = feedbackContainer.querySelectorAll('.feedback-btn');
                     feedbackBtns.forEach(btn => btn.remove());
-                    
+
                     const thanksSpan = document.createElement('span');
                     thanksSpan.className = 'feedback-thanks';
                     thanksSpan.textContent = '¡Gracias!';
@@ -475,7 +496,7 @@ class ChatComponent {
                         thanksSpan.style.opacity = '0';
                         setTimeout(() => thanksSpan.remove(), 500);
                     }, 3000);
-                    
+
                     return;
                 }
 
@@ -554,6 +575,15 @@ class ChatComponent {
                 }
             });
         }
+
+        // Mostrar burbuja de invitación de forma diferida (3 segundos)
+        setTimeout(() => {
+            const bubble = document.getElementById('chat-invitation-bubble');
+            const dismissed = localStorage.getItem('chat_invitation_dismissed');
+            if (bubble && !dismissed && !this.isOpen) {
+                bubble.classList.add('active');
+            }
+        }, 3000);
     }
 
     // ✅ NUEVO: Lógica para manejar el botón físico "Atrás" en móviles
@@ -579,6 +609,10 @@ class ChatComponent {
         toggleBtn.setAttribute('aria-expanded', this.isOpen);
 
         if (this.isOpen) {
+            // Ocultar burbuja al abrir
+            const bubble = document.getElementById('chat-invitation-bubble');
+            if (bubble) bubble.classList.remove('active');
+
             // ✅ Fix OVERSCROLL: Si el usuario usa móvil, bloquear scroll de body siempre por precaución
             if (window.innerWidth <= 750 || this.isFullScreen) {
                 document.body.style.overflow = 'hidden';
@@ -797,20 +831,7 @@ class ChatComponent {
 
             this.addMessage(data.respuesta, 'bot', { ...data, messageId: data.messageId });
 
-            // ✅ CRÍTICO: Actualizar sesión para reflejar el consumo de vidas (usageCount)
-            // Envolvemos en try/catch independiente para que un fallo aquí NO muestre error de chat
-            if (window.sessionManager) {
-                try {
-                    // Forzamos actualización silenciosa del usuario
-                    await window.sessionManager.refreshUser();
-
-                    // Si existe un componente de header que muestre las vidas, intentar actualizarlo
-                    const headerEvent = new CustomEvent('session-updated', { detail: window.sessionManager.getUser() });
-                    window.dispatchEvent(headerEvent);
-                } catch (sessionError) {
-                    console.warn('⚠️ No se pudo refrescar la sesión post-chat (No crítico):', sessionError);
-                }
-            }
+            // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
 
             if (data.sugerencias && data.sugerencias.length > 0) {
                 this.showFollowUpSuggestions(data.sugerencias);
@@ -1234,11 +1255,11 @@ class ChatComponent {
             const container = btn.closest('.message');
             const textToCopy = container.dataset.response || '';
             await navigator.clipboard.writeText(textToCopy);
-            
+
             const icon = btn.querySelector('i');
             icon.className = 'fas fa-check';
             btn.style.color = '#10b981'; // Success Green
-            
+
             setTimeout(() => {
                 icon.className = 'far fa-copy';
                 btn.style.color = '';

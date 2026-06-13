@@ -49,13 +49,13 @@
 }
 
 .deck-card {
-    background: rgba(10, 10, 10, 0.55);
+    background: linear-gradient(180deg, rgba(10, 10, 10, 0.65) 0%, rgba(5, 5, 5, 0.9) 100%), url('/assets/deck.webp') center/cover no-repeat;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 16px;
     padding: 1.5rem;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
     position: relative;
     overflow: hidden;
     display: flex;
@@ -64,31 +64,76 @@
 
 @media (max-width: 768px) {
     .deck-card {
-        background: rgba(10, 10, 10, 0.75);
+        background: linear-gradient(to right, rgba(10, 10, 10, 0.85) 0%, rgba(5, 5, 5, 0.6) 60%, rgba(10, 10, 10, 0.85) 100%), url('/assets/deck.webp') center/cover no-repeat;
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
     }
 }
 
-.deck-card::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--deck-color, #3b82f6);
-    transition: width 0.25s ease;
-}
-
 .deck-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 15px var(--deck-color-glow, rgba(59, 130, 246, 0.15));
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(59, 130, 246, 0.15);
+    background: linear-gradient(180deg, rgba(10, 10, 10, 0.55) 0%, rgba(5, 5, 5, 0.85) 100%), url('/assets/deck.webp') center/cover no-repeat;
 }
 
-.deck-card:hover::before {
-    width: 6px;
+/* --- Premium Repaso Tabs --- */
+.repaso-tabs {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.35rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    width: fit-content;
+}
+
+.repaso-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.repaso-tab-btn i {
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.repaso-tab-btn:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.repaso-tab-btn:hover i {
+    transform: scale(1.1);
+}
+
+.repaso-tab-btn.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+@media (max-width: 640px) {
+    .repaso-tabs {
+        width: 100%;
+        display: flex;
+    }
+    .repaso-tab-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
+    }
 }
 
 .deck-icon {
@@ -591,3 +636,247 @@
 }
 
 /* Removed old plasma particle animation code */
+
+/* --- Explorer Sidebar Nodes Categorization --- */
+
+/* 1. Highlight Comunidad */
+.tree-content.node-community {
+    background: rgba(59, 130, 246, 0.05) !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.05);
+}
+
+.tree-content.node-community:hover {
+    background: rgba(59, 130, 246, 0.12) !important;
+    border-color: rgba(59, 130, 246, 0.35) !important;
+    color: #93c5fd !important;
+}
+
+.tree-content.node-community.active {
+    background: rgba(59, 130, 246, 0.15) !important;
+    border-color: rgba(59, 130, 246, 0.45) !important;
+    color: #ffffff !important;
+}
+
+/* Hide default active left vertical bar for categories and community */
+.tree-content.node-community.active::before,
+.tree-content.node-system.active::before,
+.tree-content.node-cloned.active::before,
+.tree-content.node-public.active::before,
+.tree-content.node-personal.active::before {
+    display: none !important;
+}
+
+/* 2. Category styling */
+.tree-content.node-system {
+    border-left: 3px solid rgba(16, 185, 129, 0.5) !important;
+    background: rgba(16, 185, 129, 0.02);
+}
+.tree-content.node-system:hover {
+    background: rgba(16, 185, 129, 0.06);
+    color: #34d399;
+}
+.tree-content.node-system.active {
+    background: rgba(16, 185, 129, 0.1) !important;
+    border-left-color: #10b981 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.tree-content.node-cloned {
+    border-left: 3px solid rgba(168, 85, 247, 0.5) !important;
+    background: rgba(168, 85, 247, 0.02);
+}
+.tree-content.node-cloned:hover {
+    background: rgba(168, 85, 247, 0.06);
+    color: #c084fc;
+}
+.tree-content.node-cloned.active {
+    background: rgba(168, 85, 247, 0.1) !important;
+    border-left-color: #a855f7 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.tree-content.node-public {
+    border-left: 3px solid rgba(59, 130, 246, 0.5) !important;
+    background: rgba(59, 130, 246, 0.02);
+}
+.tree-content.node-public:hover {
+    background: rgba(59, 130, 246, 0.06);
+    color: #60a5fa;
+}
+.tree-content.node-public.active {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-left-color: #3b82f6 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.tree-content.node-personal {
+    border-left: 3px solid rgba(148, 163, 184, 0.2) !important;
+}
+.tree-content.node-personal:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+.tree-content.node-personal.active {
+    background: rgba(148, 163, 184, 0.1) !important;
+    border-left-color: #94a3b8 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+/* --- Add Card Modal Face Redesign & Button Glow --- */
+.modal-card-face {
+    background: rgba(15, 23, 42, 0.45);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-card-face.face-front {
+    border: 1px solid rgba(59, 130, 246, 0.18);
+    box-shadow: inset 0 0 12px rgba(59, 130, 246, 0.02);
+}
+.modal-card-face.face-front:focus-within {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.08), inset 0 0 12px rgba(59, 130, 246, 0.04);
+}
+
+.modal-card-face.face-back {
+    border: 1px solid rgba(139, 92, 246, 0.18);
+    box-shadow: inset 0 0 12px rgba(139, 92, 246, 0.02);
+}
+.modal-card-face.face-back:focus-within {
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.08), inset 0 0 12px rgba(139, 92, 246, 0.04);
+}
+
+.modal-card-face-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    padding-bottom: 0.5rem;
+}
+
+.modal-card-face-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.modal-card-face.face-front .modal-card-face-title {
+    color: #60a5fa;
+}
+
+.modal-card-face.face-back .modal-card-face-title {
+    color: #c084fc;
+}
+
+.modal-card-face-subtitle {
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: normal;
+}
+
+.modal-card-face-settings {
+    margin-top: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.settings-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    user-select: none;
+}
+
+.settings-checkbox-group label {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.settings-checkbox-group input[type="checkbox"]:checked + label {
+    color: #f1f5f9;
+}
+
+.settings-lang-select-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.4;
+    pointer-events: none;
+    transition: all 0.25s ease;
+}
+
+.settings-lang-select-container.enabled {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.settings-lang-select {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: #cbd5e1;
+    font-size: 0.75rem;
+    padding: 3px 6px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.settings-lang-select:focus {
+    border-color: #3b82f6;
+}
+
+.modal-card-face.face-back .settings-lang-select:focus {
+    border-color: #8b5cf6;
+}
+
+/* Add Card Button Pulse Glow */
+.btn-add-card-glow {
+    position: relative;
+    border-color: rgba(59, 130, 246, 0.45) !important;
+    animation: btn-pulse-glow 2.5s infinite;
+}
+
+@keyframes btn-pulse-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.2), inset 0 0 0px rgba(59, 130, 246, 0);
+        border-color: rgba(59, 130, 246, 0.35) !important;
+    }
+    50% {
+        box-shadow: 0 0 14px rgba(59, 130, 246, 0.6), inset 0 0 4px rgba(59, 130, 246, 0.25);
+        border-color: rgba(59, 130, 246, 0.8) !important;
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.2), inset 0 0 0px rgba(59, 130, 246, 0);
+        border-color: rgba(59, 130, 246, 0.35) !important;
+    }
+}
+

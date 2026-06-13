@@ -175,6 +175,8 @@ const LanguagesSimulator = (function() {
                 if (!data.success) {
                     throw new Error(data.error || "Error al cargar las preguntas.");
                 }
+
+                // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
             }
 
             state.questions = data.questions;
@@ -411,6 +413,8 @@ const LanguagesSimulator = (function() {
 
                 const resData = await response.json();
                 if (!resData.success) throw new Error(resData.error || "Fallo del servidor");
+
+                // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
 
                 hideLoader();
                 showResults();

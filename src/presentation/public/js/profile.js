@@ -219,7 +219,7 @@ function renderUsageDetails(user) {
     if (isPremium) {
         // Cuotas Premium (Basic / Advanced)
         // 1. Tutor IA
-        const aiLimit = limits.chat_standard || (tier === 'basic' ? 30 : 50);
+        const aiLimit = limits.chat_standard || (tier === 'basic' ? 50 : 100);
         const aiUsed = user.dailyAiUsage !== undefined ? user.dailyAiUsage : (user.daily_ai_usage || 0);
         const aiRemaining = Math.max(0, aiLimit - aiUsed);
         const aiPct = Math.min(100, (aiUsed / aiLimit) * 100);
@@ -310,19 +310,40 @@ function renderUsageDetails(user) {
         const remaining = Math.max(0, maxFreeLimit - usageCount);
         const pct = Math.min(100, (remaining / maxFreeLimit) * 100);
 
+        const lastRenewalStr = user.lastFreeRenewal || user.last_free_renewal;
+        let renewalDateText = "";
+        if (lastRenewalStr) {
+            try {
+                const lastRenewalDate = new Date(lastRenewalStr);
+                const nextRenewalDate = new Date(lastRenewalDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                const formattedDate = nextRenewalDate.toLocaleDateString('es-ES', options);
+                const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+                renewalDateText = `Próxima renovación: ${capitalizedDate}`;
+            } catch (e) {
+                console.warn('⚠️ Error al formatear fecha de renovación:', e);
+            }
+        }
+
         container.innerHTML = `
             <div class="usage-item" style="grid-column: 1 / -1;">
                 <div class="usage-info">
-                    <span class="usage-title"><i class="fas fa-bolt" style="color: #fbbf24; margin-right: 8px;"></i>Créditos de Prueba del Sistema (Vidas)</span>
+                    <span class="usage-title"><i class="fas fa-bolt" style="color: #fbbf24; margin-right: 8px;"></i>Créditos Semanales (Vidas)</span>
                     <span class="usage-count-val" style="color: #fbbf24;">${remaining}/${maxFreeLimit}</span>
                 </div>
                 <div class="usage-progress-bg" style="height: 10px; margin: 0.5rem 0;">
                     <div class="usage-progress-bar" style="width: ${pct}%; background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);"></div>
                 </div>
                 <div class="usage-footer">
-                    <span>Créditos totales de bienvenida para explorar Hub Academia</span>
+                    <span>Créditos semanales para explorar e interactuar en Hub Academia</span>
                     <span style="color: #fbbf24; font-weight: 800;">Quedan: ${remaining} créditos</span>
                 </div>
+                ${renewalDateText ? `
+                <div class="usage-renewal-footer" style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed rgba(255,255,255,0.1); font-size: 0.85rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                    <span><i class="far fa-calendar-alt" style="margin-right: 6px; color: #60a5fa;"></i>Tu pool de vidas se reinicia automáticamente cada 7 días.</span>
+                    <span style="color: #60a5fa; font-weight: 600;">${renewalDateText}</span>
+                </div>
+                ` : ''}
             </div>
         `;
     }

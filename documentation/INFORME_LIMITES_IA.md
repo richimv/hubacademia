@@ -13,7 +13,7 @@ El sistema ahora soporta matemática rígida (Planes y Tokens).
 | Característica | **Plan Básico (Free / Entry)** | **Plan Avanzado (Pro / Premium)** |
 | :--- | :--- | :--- |
 | **Costo / Duración** | S/ 9.90 (2 Meses) | S/ 24.90 (6 Meses) |
-| **Tutor IA (Chat + Voz)** | Chat y Voz Estándar (30 msg/día) | RAG + Chat y Voz Avanzado (50 msg/día) |
+| **Tutor IA (Chat + Voz)** | Chat y Voz Estándar (50 msg/día) | RAG + Chat y Voz Avanzado (100 msg/día) |
 | **Analítica de Patrones** | Estático (Sin IA) | Diagnóstico Clínico (Modelo Lite) |
 | **Flashcards (IA)** | 10 intentos / mes (1-20 tjs/int) | 30 intentos / mes (1-20 tjs/int) |
 | **Simulador de Exámenes** | **CAP 15/Día (Lite)** | **CAP 50/Día (Lite)** |
@@ -87,7 +87,7 @@ Todo el software ha culminado el hito de protección de ingresos. **Cualquier us
 ### 1. El Beneficio "Tutor IA Clínico RAG"
 - **Acceso Exclusivo a Biblioteca (Chat):** El usuario **Advanced** es el único que activa el motor RAG en el Chat, permitiendo que la IA fundamente sus respuestas en Harrison, NTS o GPC.
 - **Diagnóstico Clínico (Advanced):** Es un análisis de **Patrones Estadísticos**. La IA analiza los resultados de los exámenes para dar consejos de estudio. **No utiliza RAG**, sino procesamiento de datos masivos del alumno.
-- **Costo:** Ambas funciones consumen de la cuota de 50 mensajes diarios del Chat.
+- **Costo:** Ambas funciones consumen de la cuota de 100 mensajes diarios del Chat.
 
 ### 2. Generación de Exámenes (Sin RAG para Usuarios)
 Por diseño y velocidad de respuesta:
@@ -109,20 +109,26 @@ El framework UI inyecta al vuelo -sin depender de scripts ni promesas externas- 
 
 ### 5. Límite de Módulo de Idiomas (Compartido con Chat Principal)
 - **Tutor de Idiomas y Práctica de Speaking:** Las interacciones del chat conversacional de idiomas y las evaluaciones del entrenador de speaking (`/api/languages/chat`, `/api/languages/practice/evaluate`, `/api/languages/practice/exercise`) comparten el mismo contador de límite de consultas de IA diaria en la base de datos (`daily_ai_usage`) regulado por el middleware `checkAILimits('chat_standard')`.
-- **Cuota:** Consumen 1 consulta de la cuota diaria global de Chat Standard (30 para Basic, 50 para Advanced). Los usuarios Free/Pending consumen vidas de su cuota de 50 vidas globales de prueba (`usage_count`).
+- **Cuota:** Consumen 1 consulta de la cuota diaria global de Chat Standard (50 para Basic, 100 para Advanced). Los usuarios Free/Pending consumen vidas de su cuota de 50 vidas globales de prueba (`usage_count`).
  
  
-+## 🏗️ 6. Unificación Arquitectónica de Límites (Junio 2026)
-+
-+Con el fin de evitar la dispersión de límites hardcodeados en la plataforma, se ha re-estructurado el control de cuotas:
-+1. **Fuente Única de Verdad (Backend):** Se ha creado el archivo de configuración centralizado [limits.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/config/limits.js), el cual unifica las cuotas de IA (diarias y mensuales) por plan.
-+2. **Inyección en Perfil (`getMe`):** El endpoint `/api/auth/me` añade de forma dinámica la clave `limits` en la respuesta JSON. De esta forma, el frontend conoce directamente qué cuotas aplicar sin duplicar constantes.
-+3. **Panel Visual de Consumos en Perfil:** Se ha añadido una cuadrícula interactiva `#premium-usage-card` en `/profile` que dibuja el progreso de:
-+   - **Tutor de IA y Voz** (`daily_ai_usage` vs cuota)
-+   - **Simuladores de Examen** (`daily_simulator_usage` vs cuota)
-+   - **Autoevaluaciones** (`daily_arena_usage` vs cuota)
-+   - **Flashcards Mensuales** (`monthly_flashcards_usage` vs cuota)
-+   - **Vidas Globales** (para usuarios de prueba en el Plan Free).
-+4. **Integración con UIManager:** El validador en el cliente `validateFreemiumAction()` de [uiManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js) resuelve el límite dinámicamente desde el backend, garantizando modularidad y facilidad de mantenimiento.
-+
+## 🏗️ 6. Unificación Arquitectónica de Límites (Junio 2026)
+
+Con el fin de evitar la dispersión de límites hardcodeados en la plataforma, se ha re-estructurado el control de cuotas:
+1. **Fuente Única de Verdad (Backend):** Se ha creado el archivo de configuración centralizado [limits.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/config/limits.js), el cual unifica las cuotas de IA (diarias y mensuales) por plan.
+2. **Inyección en Perfil (`getMe`):** El endpoint `/api/auth/me` añade de forma dinámica la clave `limits` en la respuesta JSON. De esta forma, el frontend conoce directamente qué cuotas aplicar sin duplicar constantes.
+3. **Panel Visual de Consumos en Perfil:** Se ha añadido una cuadrícula interactiva `#premium-usage-card` en `/profile` que dibuja el progreso de:
+   - **Tutor de IA y Voz** (`daily_ai_usage` vs cuota)
+   - **Simuladores de Examen** (`daily_simulator_usage` vs cuota)
+   - **Autoevaluaciones** (`daily_arena_usage` vs cuota)
+   - **Flashcards Mensuales** (`monthly_flashcards_usage` vs cuota)
+   - **Vidas Globales** (para usuarios de prueba en el Plan Free).
+4. **Integración con UIManager:** El validador en el cliente `validateFreemiumAction()` de [uiManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js) resuelve el límite dinámicamente desde el backend, garantizando modularidad y facilidad de mantenimiento.
+
+## 🛠️ 7. Corrección de Consumo y Sincronización en Tiempo Real (Junio 2026)
+
+Se corrigieron dos fallas críticas relacionadas con el descuento y visibilidad de las vidas para usuarios Free/Pending:
+1. **Corrección de Firma en Backend:** Se corrigieron los controladores de chatbot (`chatController.js`, `LanguageChatController.js`, `LanguageSyllabusController.js`, `LanguageVocabularyController.js`) que invocaban incorrectamente a `usageService.checkAndIncrementUsage` pasando `'usage_count'` como segundo argumento en lugar de la cantidad numérica (`1` o `2`), lo cual producía valores de comparación `NaN` y evitaba registrar el descuento en PostgreSQL. Ahora la base de datos registra de forma íntegra e inequívoca la resta de vidas/créditos de prueba.
+2. **Sincronización en Frontend (Client Sync):** Se integró la llamada a `window.sessionManager.refreshUser()` en los simuladores de exámenes, autoevaluaciones y repasos de flashcards (`quiz.js`, `languages-simulator.js`, `self-evaluation.js`, `flashcards.js`) tras llamadas exitosas a `/start` y `/submit`. Esto permite que la interfaz del alumno refleje instantáneamente el cobro de vidas en la barra flotante y la página de perfil sin requerir recargar la página.
+
 

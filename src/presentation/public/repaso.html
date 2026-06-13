@@ -15,15 +15,15 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Shared CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/base.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/header.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/footer.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/dashboard.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/repaso.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/modal.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/sidebar.css?v=3b5debab">
-    <link rel="stylesheet" href="/css/components.css?v=3b5debab">
+    <link rel="stylesheet" href="/css/theme.css?v=19949b89">
+    <link rel="stylesheet" href="/css/base.css?v=19949b89">
+    <link rel="stylesheet" href="/css/header.css?v=19949b89">
+    <link rel="stylesheet" href="/css/footer.css?v=19949b89">
+    <link rel="stylesheet" href="/css/dashboard.css?v=19949b89">
+    <link rel="stylesheet" href="/css/repaso.css?v=19949b89">
+    <link rel="stylesheet" href="/css/modal.css?v=19949b89">
+    <link rel="stylesheet" href="/css/sidebar.css?v=19949b89">
+    <link rel="stylesheet" href="/css/components.css?v=19949b89">
 
     <!-- Rich Text Editor (Mini-Word) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
@@ -256,18 +256,12 @@
                     </div>
                 </div>
 
-                <!-- Color Picker -->
-                <div class="form-group">
-                    <label class="form-label">Color del Mazo (Opcional)</label>
-                    <input type="hidden" id="new-deck-color" value="">
-                    <div id="color-picker-grid" style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem;">
-                        <!-- Colores inyectados por JS -->
-                    </div>
-                </div>
-
                 <!-- Hidden IDs -->
                 <input type="hidden" id="new-deck-id">
                 <input type="hidden" id="new-deck-parent">
+                <input type="hidden" id="new-deck-color" value="">
+
+
 
                 <div
                     style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-bottom: 0.5rem;">
@@ -411,64 +405,61 @@
                     <!-- Scrollable Content Wrapper -->
                     <div
                         style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding: 0.5rem; margin-bottom: 1rem; scrollbar-width: thin; scrollbar-color: #3b82f6 transparent;">
+                        
                         <!-- CARA FRONTAL (ANVERSO) -->
-                        <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label class="form-label"
-                                style="display:flex; justify-content:space-between; align-items:center;">
-                                <span>Frente (Pregunta)</span>
-                                <span style="font-size:0.7rem; color:#64748b; font-weight:normal;">Texto y/o
-                                    Imagen</span>
-                            </label>
-                            <textarea class="form-input" id="card-front" placeholder="Ej: ¿Qué es el mitocondria?"
-                                style="min-height: 80px;"></textarea>
-
-                            <!-- Checkbox TTS Frente -->
-                            <div
-                                style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-                                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                    <input type="checkbox" id="card-tts-front"
-                                        style="width: 14px; height: 14px; cursor: pointer;">
-                                    <label for="card-tts-front"
-                                        style="font-size: 0.75rem; color: #94a3b8; cursor: pointer;">Generar audio
-                                        TTS</label>
-                                </div>
-
-                                <select id="card-tts-lang-front" class="form-input-premium"
-                                    style="padding: 2px 2rem 2px 8px !important; font-size: 0.75rem !important;">
-                                    <option value="es-ES">🇪🇸 Español (ES)</option>
-                                    <option value="es-US">🇲🇽 Español (US-LAT)</option>
-                                    <option value="en-US">🇺🇸 Inglés (US)</option>
-                                    <option value="en-GB">🇬🇧 Inglés (UK)</option>
-                                    <option value="it-IT">🇮🇹 Italiano</option>
-                                    <option value="fr-FR">🇫🇷 Francés</option>
-                                    <option value="de-DE">🇩🇪 Alemán</option>
-                                    <option value="pt-BR">🇧🇷 Portugués</option>
-                                </select>
-
-                                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                    <input type="checkbox" id="card-hide-text-front"
-                                        style="width: 13px; height: 13px; cursor: pointer;">
-                                    <label for="card-hide-text-front"
-                                        style="font-size: 0.7rem; color: #64748b; cursor: pointer;">Ocultar
-                                        texto</label>
-                                </div>
+                        <div class="modal-card-face face-front">
+                            <div class="modal-card-face-header">
+                                <span class="modal-card-face-title"><i class="fas fa-question-circle"></i> Frente (Pregunta)</span>
+                                <span class="modal-card-face-subtitle">Texto y/o Imagen</span>
                             </div>
+                            
+                            <textarea class="form-input" id="card-front" placeholder="Ej: ¿Qué es el mitocondria?"
+                                style="min-height: 80px; resize: vertical; margin-bottom: 0.5rem;"></textarea>
 
                             <!-- Indicador de Audio Existente -->
                             <div id="audio-status-front"
-                                style="display: none; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.75rem; color: #10b981;">
+                                style="display: none; align-items: center; gap: 0.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; color: #10b981; background: rgba(16, 185, 129, 0.05); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.15);">
                                 <i class="fas fa-volume-up"></i> <span>Audio premium activo</span>
                                 <button type="button" onclick="window.repasoManager.removeAudio('front')"
-                                    style="background: none; border: none; color: #f43f5e; cursor: pointer; text-decoration: underline; font-size: 0.7rem; margin-left: 0.5rem;">Eliminar</button>
+                                    style="background: none; border: none; color: #f43f5e; cursor: pointer; text-decoration: underline; font-size: 0.7rem; margin-left: auto;">Eliminar</button>
                             </div>
                             <input type="hidden" id="card-delete-audio-front" value="false">
+
+                            <!-- Checkboxes y TTS Ajustados y Alineados -->
+                            <div class="modal-card-face-settings">
+                                <div class="settings-row">
+                                    <div class="settings-checkbox-group">
+                                        <input type="checkbox" id="card-tts-front" style="width: 15px; height: 15px; cursor: pointer;">
+                                        <label for="card-tts-front">Generar audio TTS</label>
+                                    </div>
+                                    <div class="settings-lang-select-container">
+                                        <i class="fas fa-language" style="color: #64748b; font-size: 0.85rem;"></i>
+                                        <select id="card-tts-lang-front" class="settings-lang-select">
+                                            <option value="es-ES">🇪🇸 Español (ES)</option>
+                                            <option value="es-US">🇲🇽 Español (US-LAT)</option>
+                                            <option value="en-US">🇺🇸 Inglés (US)</option>
+                                            <option value="en-GB">🇬🇧 Inglés (UK)</option>
+                                            <option value="it-IT">🇮🇹 Italiano</option>
+                                            <option value="fr-FR">🇫🇷 Francés</option>
+                                            <option value="de-DE">🇩🇪 Alemán</option>
+                                            <option value="pt-BR">🇧🇷 Portugués</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="settings-row" style="border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 0.5rem; margin-top: 0.2rem;">
+                                    <div class="settings-checkbox-group">
+                                        <input type="checkbox" id="card-hide-text-front" style="width: 15px; height: 15px; cursor: pointer;">
+                                        <label for="card-hide-text-front">Ocultar texto al estudiar (solo audio)</label>
+                                    </div>
+                                </div>
+                            </div>
 
                             <!-- Upload Anverso -->
                             <div class="card-upload-area" style="margin-top: 0.8rem;">
                                 <input type="file" id="card-image-input-front" accept="image/*" style="display: none;"
                                     onchange="window.repasoManager.handleImageUpload(this, 'front')">
                                 <input type="hidden" id="card-image-url-front">
-                                <div id="preview-front" class="image-preview-box" style="display: none;">
+                                <div id="preview-front" class="image-preview-box" style="display: none; margin-bottom: 0.5rem;">
                                     <img id="img-front" src=""
                                         style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
                                     <button type="button" onclick="window.repasoManager.removeImage('front')"
@@ -476,71 +467,66 @@
                                 </div>
                                 <button type="button" id="btn-trigger-front"
                                     onclick="document.getElementById('card-image-input-front').click()"
-                                    class="btn-upload-minimal">
+                                    class="btn-upload-minimal" style="width: 100%;">
                                     <i class="fas fa-image"></i> <span>Añadir Imagen al Frente</span>
                                 </button>
                             </div>
                         </div>
 
                         <!-- CARA TRASERA (REVERSO) -->
-                        <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label class="form-label"
-                                style="display:flex; justify-content:space-between; align-items:center;">
-                                <span>Dorso (Respuesta)</span>
-                                <span style="font-size:0.7rem; color:#64748b; font-weight:normal;">Texto e/o
-                                    Imagen</span>
-                            </label>
-                            <textarea class="form-input" id="card-back"
-                                placeholder="Ej: La central energética de la célula."
-                                style="min-height: 80px;"></textarea>
-
-                            <!-- Checkbox TTS Dorso -->
-                            <div
-                                style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-                                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                    <input type="checkbox" id="card-tts-back"
-                                        style="width: 14px; height: 14px; cursor: pointer;">
-                                    <label for="card-tts-back"
-                                        style="font-size: 0.75rem; color: #94a3b8; cursor: pointer;">Generar audio
-                                        TTS</label>
-                                </div>
-
-                                <select id="card-tts-lang-back" class="form-input-premium"
-                                    style="padding: 2px 2rem 2px 8px !important; font-size: 0.75rem !important;">
-                                    <option value="es-ES">🇪🇸 Español (ES)</option>
-                                    <option value="es-US">🇲🇽 Español (US-LAT)</option>
-                                    <option value="en-US">🇺🇸 Inglés (US)</option>
-                                    <option value="en-GB">🇬🇧 Inglés (UK)</option>
-                                    <option value="it-IT">🇮🇹 Italiano</option>
-                                    <option value="fr-FR">🇫🇷 Francés</option>
-                                    <option value="de-DE">🇩🇪 Alemán</option>
-                                    <option value="pt-BR">🇧🇷 Portugués</option>
-                                </select>
-
-                                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                    <input type="checkbox" id="card-hide-text-back"
-                                        style="width: 13px; height: 13px; cursor: pointer;">
-                                    <label for="card-hide-text-back"
-                                        style="font-size: 0.7rem; color: #64748b; cursor: pointer;">Ocultar
-                                        texto</label>
-                                </div>
+                        <div class="modal-card-face face-back">
+                            <div class="modal-card-face-header">
+                                <span class="modal-card-face-title"><i class="fas fa-check-circle"></i> Dorso (Respuesta)</span>
+                                <span class="modal-card-face-subtitle">Texto e/o Imagen</span>
                             </div>
+                            
+                            <textarea class="form-input" id="card-back" placeholder="Ej: La central energética de la célula."
+                                style="min-height: 80px; resize: vertical; margin-bottom: 0.5rem;"></textarea>
 
                             <!-- Indicador de Audio Existente -->
                             <div id="audio-status-back"
-                                style="display: none; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.75rem; color: #10b981;">
+                                style="display: none; align-items: center; gap: 0.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; color: #10b981; background: rgba(16, 185, 129, 0.05); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.15);">
                                 <i class="fas fa-volume-up"></i> <span>Audio premium activo</span>
                                 <button type="button" onclick="window.repasoManager.removeAudio('back')"
-                                    style="background: none; border: none; color: #f43f5e; cursor: pointer; text-decoration: underline; font-size: 0.7rem; margin-left: 0.5rem;">Eliminar</button>
+                                    style="background: none; border: none; color: #f43f5e; cursor: pointer; text-decoration: underline; font-size: 0.7rem; margin-left: auto;">Eliminar</button>
                             </div>
                             <input type="hidden" id="card-delete-audio-back" value="false">
+
+                            <!-- Checkboxes y TTS Ajustados y Alineados -->
+                            <div class="modal-card-face-settings">
+                                <div class="settings-row">
+                                    <div class="settings-checkbox-group">
+                                        <input type="checkbox" id="card-tts-back" style="width: 15px; height: 15px; cursor: pointer;">
+                                        <label for="card-tts-back">Generar audio TTS</label>
+                                    </div>
+                                    <div class="settings-lang-select-container">
+                                        <i class="fas fa-language" style="color: #64748b; font-size: 0.85rem;"></i>
+                                        <select id="card-tts-lang-back" class="settings-lang-select">
+                                            <option value="es-ES">🇪🇸 Español (ES)</option>
+                                            <option value="es-US">🇲🇽 Español (US-LAT)</option>
+                                            <option value="en-US">🇺🇸 Inglés (US)</option>
+                                            <option value="en-GB">🇬🇧 Inglés (UK)</option>
+                                            <option value="it-IT">🇮🇹 Italiano</option>
+                                            <option value="fr-FR">🇫🇷 Francés</option>
+                                            <option value="de-DE">🇩🇪 Alemán</option>
+                                            <option value="pt-BR">🇧🇷 Portugués</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="settings-row" style="border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 0.5rem; margin-top: 0.2rem;">
+                                    <div class="settings-checkbox-group">
+                                        <input type="checkbox" id="card-hide-text-back" style="width: 15px; height: 15px; cursor: pointer;">
+                                        <label for="card-hide-text-back">Ocultar texto al estudiar (solo audio)</label>
+                                    </div>
+                                </div>
+                            </div>
 
                             <!-- Upload Reverso -->
                             <div class="card-upload-area" style="margin-top: 0.8rem;">
                                 <input type="file" id="card-image-input-back" accept="image/*" style="display: none;"
                                     onchange="window.repasoManager.handleImageUpload(this, 'back')">
                                 <input type="hidden" id="card-image-url-back">
-                                <div id="preview-back" class="image-preview-box" style="display: none;">
+                                <div id="preview-back" class="image-preview-box" style="display: none; margin-bottom: 0.5rem;">
                                     <img id="img-back" src=""
                                         style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
                                     <button type="button" onclick="window.repasoManager.removeImage('back')"
@@ -548,7 +534,7 @@
                                 </div>
                                 <button type="button" id="btn-trigger-back"
                                     onclick="document.getElementById('card-image-input-back').click()"
-                                    class="btn-upload-minimal">
+                                    class="btn-upload-minimal" style="width: 100%;">
                                     <i class="fas fa-image"></i> <span>Añadir Imagen al Dorso</span>
                                 </button>
                             </div>
@@ -802,17 +788,17 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=3b5debab"></script>
+    <script src="/js/config.js?v=19949b89"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=3b5debab"></script>
-    <script src="/js/services/networkService.js?v=3b5debab"></script>
-    <script src="/js/services/authApiService.js?v=3b5debab"></script>
-    <script src="/js/services/analyticsApiService.js?v=3b5debab"></script>
-    <script src="/js/sessionManager.js?v=3b5debab"></script>
-    <script src="/js/ui/uiManager.js?v=3b5debab"></script>
-    <script src="/js/ui/components.js?v=3b5debab"></script>
-    <script src="/js/ui/sidebar.js?v=3b5debab"></script>
-    <script src="/js/app.js?v=3b5debab"></script>
+    <script src="/js/utils/markdown-renderer.js?v=19949b89"></script>
+    <script src="/js/services/networkService.js?v=19949b89"></script>
+    <script src="/js/services/authApiService.js?v=19949b89"></script>
+    <script src="/js/services/analyticsApiService.js?v=19949b89"></script>
+    <script src="/js/sessionManager.js?v=19949b89"></script>
+    <script src="/js/ui/uiManager.js?v=19949b89"></script>
+    <script src="/js/ui/components.js?v=19949b89"></script>
+    <script src="/js/ui/sidebar.js?v=19949b89"></script>
+    <script src="/js/app.js?v=19949b89"></script>
 
     <!-- Polyfill for Mobile Drag and Drop -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
@@ -827,9 +813,9 @@
         });
     </script>
 
-    <script src="/js/heatmap.js?v=3b5debab"></script> <!-- Optional for Stats -->
-    <script src="/js/deck-explorer.js?v=3b5debab"></script> <!-- NEW -->
-    <script src="/js/repaso.js?v=3b5debab"></script>
+    <script src="/js/heatmap.js?v=19949b89"></script> <!-- Optional for Stats -->
+    <script src="/js/deck-explorer.js?v=19949b89"></script> <!-- NEW -->
+    <script src="/js/repaso.js?v=19949b89"></script>
 </body>
 
 </html>

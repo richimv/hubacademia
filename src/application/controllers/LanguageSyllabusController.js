@@ -68,7 +68,7 @@ class LanguageSyllabusController {
             try {
                 const userId = req.user.id;
                 if (req.usageType === 'usage_count') {
-                    await this.usageService.checkAndIncrementUsage(userId, 'usage_count', 1);
+                    await this.usageService.checkAndIncrementUsage(userId, 1);
                     console.log(`📉 Límite de usage_count incrementado (+1) para usuario ${userId} en Evaluación de Ejercicios.`);
                 } else if (req.usageType) {
                     const pool = require('../../infrastructure/database/db');

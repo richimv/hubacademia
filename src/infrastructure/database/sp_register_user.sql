@@ -19,11 +19,11 @@ BEGIN
         id, name, email, password_hash, role, 
         subscription_status, subscription_tier, 
         usage_count, max_free_limit, last_usage_reset, 
-        created_at, updated_at
+        last_free_renewal, created_at, updated_at
     ) 
     VALUES (
         p_id, p_name, lower(p_email), p_password_hash, p_role, 
-        'pending', 'free', 0, 50, CURRENT_DATE, NOW(), NOW()
+        'pending', 'free', 0, 50, CURRENT_DATE, NOW(), NOW(), NOW()
     )
     ON CONFLICT (email) 
     DO UPDATE SET
