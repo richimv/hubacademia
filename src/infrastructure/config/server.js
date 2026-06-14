@@ -105,15 +105,31 @@ class Server {
             next();
         });
 
-        // ✅ CORS CONFIGURADO PARA VERCEL Y DOMINIO PROPIO (HubAcademia)
+        // ✅ CORS CONFIGURADO PARA VERCEL, DOMINIO PROPIO Y PREVISUALIZACIONES MÓVILES (EXPO)
         this.app.use(cors({
-            origin: [
-                'http://localhost:3000',
-                'https://chatbot-tutor-uc.vercel.app',
-                'https://hubacademia.vercel.app',
-                'https://hubacademia.com',
-                'https://www.hubacademia.com'
-            ],
+            origin: (origin, callback) => {
+                const allowedOrigins = [
+                    'http://localhost:3000',
+                    'https://chatbot-tutor-uc.vercel.app',
+                    'https://hubacademia.vercel.app',
+                    'https://hubacademia.com',
+                    'https://www.hubacademia.com'
+                ];
+                
+                // Las peticiones sin origen (ej. apps móviles nativas, curl, postman) se permiten
+                if (!origin) return callback(null, true);
+                
+                // Permitir orígenes locales para desarrollo y pruebas (Expo, etc.)
+                const isLocal = origin.startsWith('http://localhost:') || 
+                                origin.startsWith('http://127.0.0.1:') || 
+                                /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/.test(origin);
+                                
+                if (isLocal || allowedOrigins.includes(origin)) {
+                    callback(null, true);
+                } else {
+                    callback(null, false);
+                }
+            },
             credentials: true
         }));
 

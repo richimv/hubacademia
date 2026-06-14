@@ -50,6 +50,11 @@ Hub Academia sigue un enfoque de defensa en profundidad, donde cada capa del sis
 *   **Validación de Firmas HMAC-SHA256:** Se ha integrado la comprobación de firmas criptográficas nativas usando la librería `crypto` de NodeJS en `paymentController.js`.
 *   **Seguridad contra Suplantación:** Se lee la cabecera `x-signature` y se calcula el hash HMAC a partir del cuerpo del webhook utilizando el token secreto privado del proveedor. Si la firma es incorrecta, la petición se bloquea con código `401 Unauthorized` inmediatamente, evitando la simulación de transacciones aprobadas.
 
+### 3.5. Configuración de CORS Dinámica y Segura (Local & Cloud)
+*   **Origen Dinámico:** El middleware `cors` en `server.js` valida el origen de cada solicitud en caliente.
+*   **Permiso a Entornos Locales:** Para facilitar las pruebas de la aplicación móvil (en Expo Go, emuladores y previsualizaciones web en `localhost:8081`), se permiten de forma dinámica orígenes locales que comiencen con `http://localhost:`, `http://127.0.0.1:` y rangos locales de red (`http://192.168.x.x:`).
+*   **Aislamiento en Producción:** Las solicitudes provenientes de orígenes no locales e IPs externas no listadas en el arreglo de producción (`hubacademia.com`, etc.) son rechazadas silenciosamente por la política CORS del navegador, protegiendo las APIs frente a solicitudes no autorizadas en dominios de terceros.
+
 ---
 
 ## 4. 🗄️ Seguridad de la Base de Datos (PostgreSQL & Supabase)
