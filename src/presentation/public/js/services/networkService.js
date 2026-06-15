@@ -11,6 +11,9 @@ class NetworkService {
      * @returns {Promise<Response>}
      */
     static async fetch(url, options = {}) {
+        if (url && typeof url !== 'string') {
+            url = url.toString();
+        }
         // 1. Asegurar que tenemos el token más fresco de Supabase
         let token = null;
         if (window.AuthApiService) {

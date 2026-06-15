@@ -680,7 +680,7 @@ class AdminManager {
                 url.searchParams.append('search', this.currentQuestionSearch);
             }
 
-            const res = await window.NetworkService.fetch(url);
+            const res = await window.NetworkService.fetch(url.toString());
             if (!res.ok) throw new Error('Failed to fetch questions');
 
             this.allQuestions = await res.json();
