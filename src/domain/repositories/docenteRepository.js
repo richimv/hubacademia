@@ -215,7 +215,7 @@ class DocenteRepository {
         return quizHistoryId;
     }
 
-    async getQuizEvolution(userId, target, limit, timeFilter = '', areas = null) {
+    async getQuizEvolution(userId, target, limit, timeFilter = '', areas = null, career = null) {
         let filter = '';
         const params = [userId];
 
@@ -224,6 +224,15 @@ class DocenteRepository {
             filter += ` AND target = $${params.length}`;
         } else {
             filter += ` AND target IN ('NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS')`;
+        }
+
+        if (career) {
+            params.push(career);
+            if (career === 'EBR - Primaria') {
+                filter += ` AND (career = $${params.length} OR career IS NULL)`;
+            } else {
+                filter += ` AND career = $${params.length}`;
+            }
         }
 
         if (limit) {

@@ -129,7 +129,7 @@ class IdiomasSimulatorController {
 
     async getStats(req, res) {
         try {
-            const { context, target, limit, days, areas } = req.query;
+            const { context, target, limit, days, areas, career } = req.query;
             const areaList = areas ? areas.split(',') : null;
 
             if (!req.user) {
@@ -153,7 +153,7 @@ class IdiomasSimulatorController {
                 return res.json({ success: true, kpis: exampleKpis });
             }
 
-            const kpis = await idiomasSimulatorService.getUserQuizStats(req.user.id, context || 'IDIOMAS', target, limit, days, areaList);
+            const kpis = await idiomasSimulatorService.getUserQuizStats(req.user.id, context || 'IDIOMAS', target, limit, days, areaList, career);
             res.json({ success: true, kpis });
         } catch (error) {
             console.error('Error en getStats (Idiomas):', error);
@@ -163,7 +163,7 @@ class IdiomasSimulatorController {
 
     async getEvolution(req, res) {
         try {
-            const { context, target, limit, days, areas } = req.query;
+            const { context, target, limit, days, areas, career } = req.query;
             const areaList = areas ? areas.split(',') : null;
 
             if (!req.user) {
@@ -182,7 +182,7 @@ class IdiomasSimulatorController {
                 timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
             }
 
-            const data = await idiomasSimulatorRepository.getQuizEvolution(userId, target, limit, timeFilter, areaList);
+            const data = await idiomasSimulatorRepository.getQuizEvolution(userId, target, limit, timeFilter, areaList, career);
             const chartData = {
                 labels: data.map(d => d.date_label),
                 scores10: data.map(d => d.total_questions === 10 ? parseFloat(d.score_20).toFixed(1) : null),

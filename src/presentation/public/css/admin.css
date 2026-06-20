@@ -3,11 +3,13 @@
 .admin-container {
     max-width: var(--max-width, 1440px);
     width: 95%;
-    margin: 20px auto 40px;
-    background: var(--surface);
+    margin: 2rem auto 3rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 16px;
-    padding: 30px 35px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    padding: 2rem 2.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
 }
 
 /* ✅ FIX: Override global body padding because Admin Header is NOT fixed */
@@ -51,57 +53,184 @@ body {
 
 .admin-tabs {
     display: flex;
-    flex-wrap: wrap;
-    /* Allow wrapping on small screens */
-    gap: 1rem;
-    /* Proper gap between buttons */
-    border-bottom: 2px solid var(--border);
-    margin-bottom: var(--spacing-lg);
-    padding-bottom: 0.5rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: 0.75rem;
+    scrollbar-width: none; /* Firefox */
+}
+
+.admin-tabs::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
 }
 
 .tab-link {
-    padding: 0.75rem 1.25rem;
-    border: none;
-    background: var(--surface-alt);
-    /* Button-like background */
+    padding: 0.6rem 1.25rem;
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--text-muted);
     cursor: pointer;
-    border-radius: 8px;
-    /* Rounded corners */
+    border-radius: 20px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: center;
+    white-space: nowrap;
+    font-size: 0.9rem;
 }
 
 .tab-link:hover {
-    background: var(--surface);
-    color: var(--accent);
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .tab-link.active {
-    background: var(--accent);
-    color: white;
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary-light);
+    border-color: rgba(59, 130, 246, 0.2);
     font-weight: 600;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.05);
 }
 
-.tab-header {
+/* --- Tab Header Controls & Filters Layout --- */
+.tab-header-controls {
     display: flex;
-    /* ✅ MEJORA: Alinear la barra de búsqueda a la izquierda y el botón a la derecha */
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-lg);
-    flex-wrap: wrap;
-    /* Para que se ajuste en pantallas pequeñas */
+    margin-bottom: 1.5rem;
     gap: 1rem;
+    flex-wrap: wrap;
+    width: 100%;
 }
 
-.tab-header .btn-primary {
-    padding: 0.5rem 1rem;
+.search-sort-wrapper {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex: 1;
+    flex-wrap: wrap;
 }
 
-/* Removed duplicate tab-link styles that caused contrast issues */
+.search-bar-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0 12px;
+    min-width: 260px;
+    height: 42px;
+    flex: 1;
+    max-width: 400px;
+    transition: all 0.25s ease;
+    box-sizing: border-box;
+}
+
+.search-bar-container:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    background: var(--surface-hover);
+}
+
+.search-bar-container .fa-search {
+    color: var(--text-muted);
+    margin-right: 12px;
+    font-size: 0.9rem;
+    position: static !important;
+}
+
+.admin-search-input,
+.admin-search-input-dynamic {
+    border: none !important;
+    background: transparent !important;
+    flex: 1;
+    color: var(--text-main) !important;
+    outline: none !important;
+    font-size: 0.9rem !important;
+    padding: 6px 0 !important;
+    box-shadow: none !important;
+    height: 100% !important;
+    margin: 0 !important;
+}
+
+.admin-type-filter,
+.tab-sort-select {
+    height: 42px;
+    padding: 0 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.25s ease;
+}
+
+.admin-type-filter:hover,
+.tab-sort-select:hover,
+.admin-type-filter:focus,
+.tab-sort-select:focus {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Rediseño de Botones */
+.btn-primary,
+.btn-secondary {
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--surface-hover);
+    color: var(--text-main);
+    border-color: var(--primary);
+}
 
 .tab-content:not(.active) {
     display: none;
@@ -109,8 +238,6 @@ body {
 
 /* --- Grid Layout Redesign --- */
 /* --- Compact Row Layout (Professional & Space Efficient) --- */
-/* ✅ CORRECCIÓN: Aplicar estilos solo cuando la pestaña está activa o es una lista interna */
-/* ✅ CORRECCIÓN: Aplicar estilos a los contenedores de pestaña activos */
 #tab-careers.active,
 #tab-courses.active,
 #tab-students.active,
@@ -127,13 +254,13 @@ body {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    background: var(--surface-alt);
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--accent);
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: var(--bg-tertiary);
+    padding: 1.2rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--primary);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     min-height: auto;
 }
 
@@ -237,37 +364,25 @@ body {
     background: none;
     border: none;
     color: var(--text-main, #ffffff);
-    /* ✅ FIX: Color blanco para visibilidad en fondo oscuro */
     cursor: pointer;
     font-size: 1rem;
     padding: 0.25rem;
-    transition: color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .edit-btn-small:hover {
     color: var(--warning);
+    transform: scale(1.15);
 }
 
 .delete-btn-small:hover {
     color: var(--danger);
+    transform: scale(1.15);
 }
 
 .reset-pass-btn-small:hover {
     color: var(--accent);
-}
-
-.btn-secondary {
-    background: #6b7280;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.btn-secondary:hover {
-    background: #4b5563;
+    transform: scale(1.15);
 }
 
 .loading-state,
@@ -475,39 +590,78 @@ body {
     scrollbar-color: var(--border) var(--surface);
 }
 
-/* --- ✅ NUEVO: Estilos para la barra de búsqueda del panel de admin --- */
+/* --- Premium Modal Overrides & Form Controls --- */
+.modal {
+    background-color: rgba(5, 5, 5, 0.6) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    transition: all 0.3s ease;
+}
 
-.search-bar-container {
-    position: relative;
-    display: flex;
-    align-items: center;
+.modal-content {
+    background: #0f0f13 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+    padding: 2rem !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding-bottom: 1rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding-top: 1.25rem !important;
+    margin-top: 1.5rem !important;
+}
+
+.modal-close-btn {
+    font-size: 1.75rem !important;
+    color: var(--text-muted) !important;
+    transition: color 0.2s !important;
+}
+
+.modal-close-btn:hover {
+    color: var(--danger) !important;
+}
+
+/* Estilos de inputs de formularios */
+.modal-body input[type="text"],
+.modal-body input[type="email"],
+.modal-body input[type="password"],
+.modal-body select,
+.modal-body textarea,
+.form-input {
     width: 100%;
-    max-width: 400px;
-    /* Ancho máximo para la barra */
+    height: 42px;
+    padding: 0 12px;
+    background: var(--bg-tertiary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    color: var(--text-main) !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+    outline: none !important;
+    box-sizing: border-box;
 }
 
-.search-bar-container .fa-search {
-    position: absolute;
-    left: 1rem;
-    color: var(--text-muted);
+.modal-body input:focus,
+.modal-body select:focus,
+.modal-body textarea:focus,
+.form-input:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
 }
 
-.admin-search-input {
-    width: 100%;
-    padding: 0.6rem 1rem 0.6rem 2.5rem;
-    /* Espacio para el ícono */
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background-color: var(--surface);
-    color: var(--text-main);
-    font-size: 0.9rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.admin-search-input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+.modal-body label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    display: block;
 }
 
 /* --- Mobile Responsiveness for Admin Panel --- */
@@ -518,39 +672,53 @@ body {
         width: 95%;
     }
 
-    .tab-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-    }
-
     .tab-header-controls {
         flex-direction: column;
-        width: 100%;
+        align-items: stretch;
+        gap: 0.75rem;
     }
 
     .search-sort-wrapper {
         flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
         width: 100%;
     }
 
     .search-bar-container {
         width: 100%;
         max-width: none;
+        min-width: 0;
+    }
+
+    .action-buttons {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .action-buttons button,
+    .action-buttons .btn-primary,
+    .action-buttons .btn-secondary {
+        width: 100% !important;
+        justify-content: center;
     }
 
     .item-card {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+        align-items: stretch;
+        gap: 0.75rem;
+        padding: 1rem;
     }
 
     .item-actions {
         width: 100%;
         justify-content: flex-end;
-        border-top: 1px solid var(--border);
-        padding-top: 0.5rem;
-        margin-top: 0.5rem;
+        border-top: 1px solid var(--border-color);
+        padding-top: 0.75rem;
+        margin-top: 0.25rem;
+        gap: 1rem;
     }
 
     .generic-modal .modal-content {
@@ -917,5 +1085,14 @@ body {
     flex-shrink: 0;
 }
 
+/* Botón especial de Generación IA */
+.btn-primary.btn-ai {
+    background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+}
 
-
+.btn-primary.btn-ai:hover {
+    background: linear-gradient(135deg, #9333ea 0%, #4f46e5 100%);
+    box-shadow: 0 6px 16px rgba(168, 85, 247, 0.35);
+}

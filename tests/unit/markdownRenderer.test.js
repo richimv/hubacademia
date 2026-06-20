@@ -200,4 +200,32 @@ describe('MarkdownRenderer URL safety', () => {
         const vimeoRendered = window.MarkdownRenderer.render(vimeoInput);
         expect(vimeoRendered).toContain('https://player.vimeo.com/video/12345');
     });
+
+    it('correctly renders markdown tables even when mixed with HTML tags', () => {
+        const input = '<p>Some text</p><p>| Header 1 | Header 2 |<br>|---|---|<br>| Cell 1 | Cell 2 |</p>';
+        const rendered = window.MarkdownRenderer.render(input);
+        expect(rendered).toContain('class="premium-table"');
+        expect(rendered).toContain('<th>Header 1</th>');
+        expect(rendered).toContain('<td>Cell 1</td>');
+        expect(rendered).toContain('class="table-wrapper"');
+    });
+
+    it('renders the user comparison table correctly', () => {
+        const input = `<p>En el tercer ciclo de primaria, los estudiantes de cuarto grado están trabajando en un proyecto sobre la historia local. Durante una sesión, el docente presenta a los estudiantes un cuadro comparativo con información sobre dos periodos históricos distintos de su comunidad, incluyendo fechas clave, personajes importantes y eventos significativos.</p><p>El docente tiene como propósito que los estudiantes comprendan la noción de secuencia temporal y la utilicen para organizar la información histórica.</p><p>| Periodo Histórico | Fechas Clave | Personajes Importantes | Eventos Significativos |<br>|---|---|---|---|<br>| Fundación de la Ciudad | 1535 - 1550 | Francisco Pizarro, Diego de Almagro | Establecimiento del Cabildo, Reparto de encomiendas |<br>| Independencia Regional | 1821 - 1824 | Simón Bolívar, José de San Martín | Batalla de Junín, Batalla de Ayacucho |</p><p>Considerando el propósito del docente y la información presentada, ¿cuál de las siguientes acciones pedagógicas es más pertinente para que los estudiantes ejerciten el uso de categorías temporales y desarrollen la competencia relacionada con la comprensión de la historia?</p>`;
+        const rendered = window.MarkdownRenderer.render(input);
+        console.log("RENDERED OUTPUT:", rendered);
+        expect(rendered).toContain('class="premium-table"');
+        expect(rendered).toContain('<th>Periodo Histórico</th>');
+    });
+
+    it('parses inline markdown inside cells and preserves <br> within cells', () => {
+        const input = '<p>| **Header 1** | *Header 2* |<br>|---|---|<br>| Cell 1 <br> Line 2 | `code-cell` |</p>';
+        const rendered = window.MarkdownRenderer.render(input);
+        expect(rendered).toContain('<strong>Header 1</strong>');
+        expect(rendered).toContain('<em>Header 2</em>');
+        expect(rendered).toContain('<td>Cell 1 <br> Line 2</td>');
+        expect(rendered).toContain('<code>code-cell</code>');
+    });
 });
+
+

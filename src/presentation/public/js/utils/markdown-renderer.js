@@ -44,6 +44,9 @@ window.MarkdownRenderer = {
             html = this._basicRender(cleanText);
         }
 
+        // Pre-procesar tablas markdown contenidas en el HTML (TinyMCE/IA mix)
+        html = this.renderMarkdownTables(html);
+
         // 3. Post-procesamiento via DOM (Tablas responsivas y Resolución de Imágenes)
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
@@ -51,10 +54,25 @@ window.MarkdownRenderer = {
         
         // Envolver tablas
         tempDiv.querySelectorAll('table').forEach(table => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'table-wrapper';
-            table.parentNode.insertBefore(wrapper, table);
-            wrapper.appendChild(table);
+            if (table.classList) {
+                table.classList.add('premium-table');
+            } else if (typeof table.className === 'string' && !table.className.includes('premium-table')) {
+                table.className = (table.className + ' premium-table').trim();
+            }
+
+            const parent = table.parentNode;
+            const parentHasWrapper = parent && (
+                (parent.classList && typeof parent.classList.contains === 'function' && parent.classList.contains('table-wrapper')) ||
+                (typeof parent.className === 'string' && parent.className.includes('table-wrapper')) ||
+                (typeof parent.getAttribute === 'function' && (parent.getAttribute('class') || '').includes('table-wrapper'))
+            );
+
+            if (!parentHasWrapper) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'table-wrapper';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+            }
         });
 
         // Resolver URLs de imágenes y hacerlas clicables
@@ -94,13 +112,135 @@ window.MarkdownRenderer = {
     },
 
     /**
-     * Envuelve las tablas en un div con scroll horizontal para móviles.
+     * Envuelve las tablas en un div con scroll horizontal para móviles y añade clases premium.
      */
     wrapTables(html) {
         if (!html || !html.includes('<table')) return html;
-        return html.replace(/<table[\s\S]*?<\/table>/g, (match) => {
+        let processed = html.replace(/<table([\s\S]*?)>/gi, (match, attrs) => {
+            if (!attrs.includes('premium-table')) {
+                return `<table${attrs} class="premium-table">`;
+            }
+            return match;
+        });
+        return processed.replace(/<table[\s\S]*?<\/table>/gi, (match) => {
             return `<div class="table-wrapper">${match}</div>`;
         });
+    },
+
+    /**
+     * Detecta y renderiza tablas en sintaxis Markdown mezcladas con HTML.
+     */
+    renderMarkdownTables(html) {
+        if (typeof html !== 'string' || !html.includes('|')) return html;
+
+        // 1. Normalizar saltos de línea para elementos de bloque y <br> (solo si separan filas)
+        const normalized = html
+            .replace(/<br\s*\/?>\s*(?=\|)/gi, '\n')
+            .replace(/(\|\s*)<br\s*\/?>/gi, '$1\n')
+            .replace(/(<\/p>|<\/div>|<\/h[1-6]>|<\/li>|<\/tr>)/gi, '$1\n')
+            .replace(/(<p>|<div>|<h[1-6]>|<li>|<tr>)/gi, '\n$1');
+
+        const lines = normalized.split('\n');
+        let inTable = false;
+        let tableRows = [];
+        let resultLines = [];
+
+        const cleanLine = (line) => {
+            return line.replace(/^(?:<p>|<div>|<span[^>]*>)+/i, '')
+                       .replace(/(?:<\/p>|<\/div>|<\/span>)+$/i, '')
+                       .trim();
+        };
+
+        const isSeparatorRow = (line) => {
+            const cleaned = cleanLine(line);
+            return /^\|\s*[:\-]+\s*\|\s*([:\-]+\s*\|)*\s*$/.test(cleaned);
+        };
+
+        const isTableRow = (line) => {
+            const cleaned = cleanLine(line);
+            return cleaned.startsWith('|') && cleaned.endsWith('|') && cleaned.length > 2;
+        };
+
+        const parseRow = (line) => {
+            const cleaned = cleanLine(line);
+            const content = cleaned.substring(1, cleaned.length - 1);
+            return content.split('|').map(cell => cell.trim());
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            if (isTableRow(line)) {
+                if (!inTable) {
+                    // Verificar si la siguiente línea es un separador de tabla
+                    if (i + 1 < lines.length && isSeparatorRow(lines[i + 1])) {
+                        inTable = true;
+                        tableRows = [parseRow(line)];
+                    } else {
+                        resultLines.push(line);
+                    }
+                } else {
+                    if (isSeparatorRow(line)) {
+                        // Omitir fila separadora
+                    } else {
+                        tableRows.push(parseRow(line));
+                    }
+                }
+            } else {
+                if (inTable) {
+                    resultLines.push(this._generateHtmlTable(tableRows));
+                    inTable = false;
+                    tableRows = [];
+                }
+                resultLines.push(line);
+            }
+        }
+
+        if (inTable) {
+            resultLines.push(this._generateHtmlTable(tableRows));
+        }
+
+        return resultLines.join('\n');
+    },
+
+    _generateHtmlTable(rows) {
+        if (rows.length === 0) return '';
+
+        let html = '<div class="table-wrapper"><table class="premium-table">';
+        
+        // Cabecera
+        html += '<thead><tr>';
+        rows[0].forEach(cell => {
+            html += `<th>${this._parseCellInline(cell)}</th>`;
+        });
+        html += '</tr></thead>';
+
+        // Cuerpo
+        if (rows.length > 1) {
+            html += '<tbody>';
+            for (let i = 1; i < rows.length; i++) {
+                html += '<tr>';
+                rows[i].forEach(cell => {
+                    html += `<td>${this._parseCellInline(cell)}</td>`;
+                });
+                html += '</tr>';
+            }
+            html += '</tbody>';
+        }
+
+        html += '</table></div>';
+        return html;
+    },
+
+    /**
+     * Parsea markdown básico de manera inline para celdas.
+     */
+    _parseCellInline(cell) {
+        if (!cell) return '';
+        return cell
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code>$1</code>');
     },
 
     /**

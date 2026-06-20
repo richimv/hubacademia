@@ -12,17 +12,84 @@ class AdminAiService {
         const project = process.env.GOOGLE_CLOUD_PROJECT;
         const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
         this.vertex_ai = new VertexAI({ project, location });
+        
+        // Modelo primario Gemini 3.1 con razonamiento habilitado y temperatura 1.0
         this.model = this.vertex_ai.getGenerativeModel({
+            model: 'gemini-3.1-flash-lite',
+            generationConfig: {
+                maxOutputTokens: 16384,
+                temperature: 1.0, // Recomendación de Google para razonamiento en Gemini 3
+                responseMimeType: "application/json",
+                thinkingConfig: {
+                    thinkingBudget: 1024
+                }
+            }
+        });
+
+        // Modelo de respaldo (fallback de emergencia) en caso de limitaciones de región/proyecto en Vertex AI
+        this.fallbackModel = this.vertex_ai.getGenerativeModel({
             model: 'gemini-2.5-flash-lite',
             generationConfig: {
                 maxOutputTokens: 16384,
-                temperature: 0.4, // Mayor variedad para evitar repeticiones
+                temperature: 0.4,
                 responseMimeType: "application/json"
             }
         });
 
         // Asignar el servicio RAG (ya es una instancia exportada como Singleton)
         this.ragService = QuestionRagService;
+    }
+
+    /**
+     * 🧠 LLAMADOR DE MODELO DUAL Y RESILIENTE (AI CHANNELER)
+     * Ejecuta la llamada a Gemini 3.1 Flash-Lite utilizando la API REST de Google AI Studio (si hay GEMINI_API_KEY)
+     * o mediante Vertex AI. Cuenta con fallback automático a Gemini 2.5 Flash-Lite en caso de errores de acceso o región.
+     */
+    async _callModel(prompt) {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (apiKey) {
+            try {
+                const axios = require('axios');
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        thinkingConfig: {
+                            thinkingBudget: 1024
+                        }
+                    }
+                };
+                console.log("📡 [REST] Llamando a gemini-3.1-flash-lite a través de Google AI Studio...");
+                const res = await axios.post(url, payload, { timeout: 15000 });
+                if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
+                    const text = res.data.candidates[0].content.parts[0].text;
+                    return {
+                        response: {
+                            candidates: [{
+                                content: { parts: [{ text }] }
+                            }]
+                        }
+                    };
+                }
+            } catch (err) {
+                console.warn("⚠️ [REST Fallo] Error al llamar a gemini-3.1-flash-lite vía REST:", err.message);
+            }
+        }
+
+        // Intento por Vertex AI (Canal Secundario)
+        try {
+            console.log("📡 [VertexAI] Llamando a gemini-3.1-flash-lite...");
+            return await this.model.generateContent(prompt);
+        } catch (err) {
+            // Si el error es 404 (modelo no disponible en la región/proyecto) o cualquier otro error crítico, hacer downgrade
+            const isNotAvailable = err.message && (err.message.includes('404') || err.message.includes('NOT_FOUND') || err.message.includes('access'));
+            if (isNotAvailable) {
+                console.warn("🚨 [VertexAI Fallback] gemini-3.1-flash-lite no disponible en tu región/proyecto. Aplicando downgrade de emergencia a gemini-2.5-flash-lite...");
+                return await this.fallbackModel.generateContent(prompt);
+            }
+            throw err; // Relanzar si es otro tipo de error (ej: rate limits o conexión)
+        }
     }
 
     _parseJSON(text) {
@@ -158,6 +225,77 @@ class AdminAiService {
             const hasPlaceholder = text.includes('_____') || text.includes('____') || text.includes('___');
             if (needsPlaceholder && !hasPlaceholder) {
                 issues.push(`El enunciado de la pregunta (question_text) para el área '${area}' DEBE incluir un espacio en blanco '_____' (cinco guiones bajos) para indicar la palabra a completar.`);
+            }
+        }
+
+        // 3.5. Prevención de Redundancia/Colisión Verbal Adyacente (Solo para Idiomas - Gramática/Vocabulario)
+        if (isLanguage && ['Grammar & Use of English', 'Vocabulary & Context'].includes(area)) {
+            const text = question.question_text || "";
+            const options = question.options || [];
+            const correctIdx = question.correct_option_index;
+            if (options.length > 0 && correctIdx >= 0 && correctIdx < options.length) {
+                const correctOption = String(options[correctIdx]).toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
+                
+                // Encontrar el placeholder y extraer las palabras que lo rodean
+                const parts = text.split(/_{3,}/);
+                if (parts.length > 1) {
+                    const beforeText = parts[0].trim();
+                    const afterText = parts[1].trim();
+
+                    const getAdjacentWord = (str, fromStart) => {
+                        const words = str.split(/\s+/).map(w => w.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "")).filter(Boolean);
+                        if (words.length === 0) return "";
+                        return fromStart ? words[0] : words[words.length - 1];
+                    };
+
+                    const prevWord = getAdjacentWord(beforeText, false); // última palabra antes del blanco
+                    const nextWord = getAdjacentWord(afterText, true);   // primera palabra después del blanco
+
+                    const getCommonPrefixLength = (s1, s2) => {
+                        let len = 0;
+                        const minL = Math.min(s1.length, s2.length);
+                        for (let i = 0; i < minL; i++) {
+                            if (s1[i] === s2[i]) len++;
+                            else break;
+                        }
+                        return len;
+                    };
+
+                    const checkCollision = (word) => {
+                        if (!word || word.length < 3 || correctOption.length < 3) return false;
+                        const prefixLen = getCommonPrefixLength(correctOption, word);
+                        // Si comparten una raíz léxica común (mínimo 4 letras) o son la misma palabra/prefijo total (mínimo 3 letras)
+                        if (prefixLen >= 4 || (prefixLen >= 3 && (prefixLen === correctOption.length || prefixLen === word.length))) {
+                            return true;
+                        }
+                        return false;
+                    };
+
+                    if (checkCollision(nextWord) || checkCollision(prevWord)) {
+                        const badWord = checkCollision(nextWord) ? nextWord : prevWord;
+                        issues.push(`Colisión de raíz/Redundancia verbal detectada. La opción correcta '${options[correctIdx]}' comparte la misma raíz con la palabra adyacente '${badWord}'. Reestructura la oración o usa una opción que no repita el verbo.`);
+                    }
+                }
+            }
+        }
+
+        // 3.6. Prevención de Redundancia de Saludo/Respuesta (Solo para Idiomas - Gramática/Vocabulario)
+        if (isLanguage && ['Grammar & Use of English', 'Vocabulary & Context'].includes(area)) {
+            const text = (question.question_text || "").toLowerCase();
+            const options = question.options || [];
+            
+            // Si la pregunta contiene un interrogativo de estado/saludo en italiano o inglés
+            const hasGreetingQuestion = /\b(?:come|how)\b/.test(text);
+            if (hasGreetingQuestion) {
+                // Adverbios o palabras de respuesta de estado redundantes
+                const badWordsRegex = /\b(?:bene|well|fine|good)\b/i;
+                
+                // Verificar si alguna de las opciones contiene la palabra redundante
+                const hasRedundancy = options.some(opt => badWordsRegex.test(String(opt || '')));
+                
+                if (hasRedundancy) {
+                    issues.push("Redundancia de saludo/respuesta detectada. El enunciado contiene el interrogativo 'come'/'how' pero las opciones contienen palabras de respuesta de estado ('bene'/'well'/'fine'/'good'). Esto formaría una oración incorrecta (ej: 'Come sta bene'). Elimina dicho adverbio de las opciones.");
+                }
             }
         }
 
@@ -457,11 +595,13 @@ class AdminAiService {
                 RESPONDE SOLO EN JSON:
                 { "selectedTopic": "Nombre del tema", "searchTerms": ["termino 1", "termino 2"] }`;
 
-                const selectionResult = await this.model.generateContent(selectionPrompt);
+                const selectionResult = await this._callModel(selectionPrompt);
                 const selectionData = this._parseJSON(selectionResult.response.candidates[0].content.parts[0].text);
 
-                selectedSubtopic = selectionData.selectedTopic;
-                const technicalSearchTerms = selectionData.searchTerms.join(' ');
+                selectedSubtopic = selectionData.selectedTopic || area;
+                const technicalSearchTerms = Array.isArray(selectionData.searchTerms)
+                    ? selectionData.searchTerms.join(' ')
+                    : (typeof selectionData.searchTerms === 'string' ? selectionData.searchTerms : selectedSubtopic);
                 console.log(`🎯 [Fase 1] Tema Elegido: ${selectedSubtopic}`);
 
                 // FASE 2: RAG Dual (Teoría + Estructura de Examen Real)
@@ -507,7 +647,7 @@ class AdminAiService {
             }
 
             // 3. Generar pregunta y ejecutar Bucle de Auditoría por IA (Fase 4)
-            const result = await this.model.generateContent(initialPrompt);
+            const result = await this._callModel(initialPrompt);
             const responseText = result.response.candidates[0].content.parts[0].text;
             let questionObj = this._parseJSON(responseText);
             let question = Array.isArray(questionObj) ? questionObj[0] : questionObj;
@@ -529,7 +669,7 @@ class AdminAiService {
 
                 const refinementPrompt = genPrompts.buildRefinementPrompt(question, status.issuesList);
                 try {
-                    const refinedResult = await this.model.generateContent(refinementPrompt);
+                    const refinedResult = await this._callModel(refinementPrompt);
                     const refinedText = refinedResult.response.candidates[0].content.parts[0].text;
                     const parsedRefined = this._parseJSON(refinedText);
                     question = Array.isArray(parsedRefined) ? parsedRefined[0] : parsedRefined;

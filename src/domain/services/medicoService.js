@@ -214,7 +214,7 @@ class MedicoService {
         await medicoRepository.incrementSimulatorUsage(userId);
     }
 
-    async getUserQuizStats(userId, context, target, limit, days = null, areas = null) {
+    async getUserQuizStats(userId, context, target, limit, days = null, areas = null, career = null) {
         let topicFilter = ` AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado')`;
         let timeFilter = '';
         const params = [userId];
@@ -226,6 +226,15 @@ class MedicoService {
         if (target) {
             params.push(target);
             topicFilter = ` AND (target = $${params.length} OR (target IS NULL AND difficulty = $${params.length}))`;
+        }
+
+        if (career) {
+            params.push(career);
+            if (career === 'Medicina Humana') {
+                topicFilter += ` AND (career = $${params.length} OR career IS NULL)`;
+            } else {
+                topicFilter += ` AND career = $${params.length}`;
+            }
         }
 
         if (limit) {

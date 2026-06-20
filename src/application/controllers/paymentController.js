@@ -153,7 +153,7 @@ exports.handleWebhook = async (req, res) => {
                 const plan = PLANS[planId] || PLANS.basic;
 
                 if (paidAmount >= plan.price - 0.1) { // Tolerancia decimal
-                    const todayDate = new Date().toISOString().split('T')[0];
+                    const todayDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' });
                     
                     // 🔄 LÓGICA DE ACTIVACIÓN / UPGRADE:
                     // 1. Si el usuario ya es Basic y compra Advanced -> SUMAR tiempo (Upgrade con regalo).

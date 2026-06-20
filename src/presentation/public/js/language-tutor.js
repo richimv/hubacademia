@@ -8,6 +8,17 @@
     let cciInitialized = false;
     let welcomeMessagePlayed = false;
 
+    function scrollToBottom() {
+        const msgContainer = document.getElementById('cci-messages');
+        if (msgContainer) {
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+        const inputBar = document.querySelector('.cci-input-bar');
+        if (inputBar) {
+            inputBar.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    }
+
     // Configuración por defecto si no existe en localStorage
     const DEFAULT_CONFIG = {
         languageCode: 'en-US',
@@ -303,7 +314,7 @@
         msgContainer.appendChild(msgDiv);
         
         // Auto scroll
-        msgContainer.scrollTop = msgContainer.scrollHeight;
+        scrollToBottom();
 
         // Auto-play TTS if in listening mode, assistant role, and chat tab is active
         if (role === 'assistant' && isListening) {
@@ -369,7 +380,7 @@
         typingDiv.className = 'cci-message bot-msg cci-typing-indicator';
         typingDiv.innerHTML = `<div class="cci-message-text"><i class="fas fa-ellipsis-h fa-pulse"></i> Tutor está respondiendo...</div>`;
         msgContainer.appendChild(typingDiv);
-        msgContainer.scrollTop = msgContainer.scrollHeight;
+        scrollToBottom();
 
         try {
             const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/languages/chat`, {
@@ -417,7 +428,7 @@
             errorDiv.className = 'cci-message bot-msg';
             errorDiv.innerHTML = `<div class="cci-message-text" style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> No se pudo enviar el mensaje. Verifica tu conexión e intenta de nuevo.</div>`;
             msgContainer.appendChild(errorDiv);
-            msgContainer.scrollTop = msgContainer.scrollHeight;
+            scrollToBottom();
         } finally {
             userInput.disabled = false;
             sendBtn.disabled = false;

@@ -551,7 +551,7 @@ En la versión 4.0 se integraron y alinearon las barreras de uso y cobro de IA p
 
 ### 15.1 Alineación y Verificación de Límites
 - **Sincronización de Contadores:** Los endpoints `/api/languages/chat`, `/api/languages/practice/exercise` y `/api/languages/practice/evaluate` consumen la cuota diaria universal de IA del usuario (`daily_ai_usage`).
-- **Límite de Tier Avanzado:** El límite diario de mensajes e interacciones estándar/voz está fijado de forma estricta en **50 mensajes/día** para los usuarios del plan Avanzado (Premium), de acuerdo con la matemática especificada en `INFORME_LIMITES_IA.md` y `checkLimitsMiddleware.js`.
+- **Límite de Tier Avanzado:** El límite diario de mensajes e interacciones estándar/voz está fijado de forma estricta en **50 mensajes/día** para los usuarios del plan Avanzado (Premium), de acuerdo con la matemática especificada en `SISTEMA_MONETIZACION_LIMITES_Y_SUSCRIPCIONES.md` y `checkLimitsMiddleware.js`.
 - **Alineación de Simulador en Frontend:** Se corrigió una discrepancia en `uiManager.js` (dentro de `validateFreemiumAction`), donde el límite de exámenes simulados diarios del plan Avanzado estaba hardcodeado a 40 en el frontend. Se actualizó a **50**, coincidiendo con la cuota establecida en el backend y la documentación técnica.
 
 ### 15.2 Experiencia Personalizada de Modal de Paywall para Idiomas
@@ -860,8 +860,23 @@ En la versión 4.17 se implementó una serie de optimizaciones visuales y de dis
 - Se programó en el sistema de diseño la clase `.markdown-content table` para asegurar que las tablas gramaticales estáticas inyectadas en la explicación teórica no desborden la tarjeta principal.
 - Estas tablas ahora cuentan con bordes sutiles semi-transparentes, colores de cabecera en tonos lavanda (`#c4b5fd`), fondo oscuro contrastado (`rgba(15, 23, 42, 0.2)`), filas alternas cebra y un contenedor de desplazamiento de bloques independiente (`display: block; overflow-x: auto;`), emulando los estándares de plataformas líderes como Cambridge.
 
+
+---
+
+## 32. Reglas de Calidad Psicométrica y Evitación de Redundancia de Saludos (V4.18) [COMPLETED]
+
+Se implementó una serie de optimizaciones y restricciones en el motor de generación e inspección de calidad de preguntas de idioma (Target `MCER`, `TOEFL`, `IELTS`):
+- **Evitación de Redundancia de Saludo/Respuesta (Golden Rule #10)**:
+  - Se prohibió explícitamente en el prompt de idiomas (`buildLanguagePrompt`) la inclusión de adverbios o palabras de respuesta de estado (como `"bene"`, `"well"`, `"fine"`, `"good"`) dentro de las opciones de respuesta cuando la pregunta de saludo ya utiliza un interrogativo de estado/modo (como `"Come"` en italiano o `"How"` en inglés).
+  - Esto evita la creación de oraciones gramaticalmente redundantes o incorrectas como *"Come sta bene lei oggi?"*.
+- **Auditoría Psicométrica de Saludos**:
+  - Se implementó un validador programático en la Fase 4 de la auditoría de calidad (`_checkQuality` en `adminAiService.js`).
+  - Al escanear una pregunta de idioma, si el enunciado contiene el interrogativo `"come"` o `"how"`, el validador comprueba mediante expresiones regulares si alguna de las opciones contiene los adverbios de respuesta redundantes.
+  - En caso positivo, se invalida la pregunta y se inyecta la incidencia detallada guiando a la IA a refinar las alternativas en el bucle de corrección.
+- **Suite de Pruebas**: Se añadió una prueba unitaria específica en `adminAiService.test.js` que simula este error de redundancia y verifica que el ciclo de refinamiento se active correctamente.
+
 ---
 **Autor:** Antigravity AI  
-**Documento de Especificaciones Técnicas de Idiomas v4.17** 🌎✨
+**Documento de Especificaciones Técnicas de Idiomas v4.18** 🌎✨
 
 

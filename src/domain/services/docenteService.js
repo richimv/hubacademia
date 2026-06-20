@@ -223,7 +223,7 @@ class DocenteService {
         await docenteRepository.incrementSimulatorUsage(userId);
     }
 
-    async getUserQuizStats(userId, context, target, limit, days = null, areas = null) {
+    async getUserQuizStats(userId, context, target, limit, days = null, areas = null, career = null) {
         let topicFilter = ` AND target IN ('NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS')`;
         let timeFilter = '';
         const params = [userId];
@@ -235,6 +235,15 @@ class DocenteService {
         if (target) {
             params.push(target);
             topicFilter = ` AND target = $${params.length}`;
+        }
+
+        if (career) {
+            params.push(career);
+            if (career === 'EBR - Primaria') {
+                topicFilter += ` AND (career = $${params.length} OR career IS NULL)`;
+            } else {
+                topicFilter += ` AND career = $${params.length}`;
+            }
         }
 
         if (limit) {

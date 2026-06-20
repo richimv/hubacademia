@@ -556,13 +556,13 @@ class AdminManager {
 
         // CUSTOM HEADER with Drive Sync Button
         const headerHTML = `
-            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
-                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
-                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; min-width: 250px; height: 40px;">
-                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 15px; font-size: 0.9rem; position: static !important;"></i>
-                        <input type="text" class="admin-search-input" data-target-tab="tab-books" placeholder="Buscar recursos..." style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; padding: 5px 0;">
+            <div class="tab-header-controls">
+                <div class="search-sort-wrapper">
+                    <div class="search-bar-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="admin-search-input" data-target-tab="tab-books" placeholder="Buscar recursos...">
                     </div>
-                    <select class="admin-type-filter" data-target-tab="tab-books" style="height: 40px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); padding: 0 10px; cursor: pointer;">
+                    <select class="admin-type-filter" data-target-tab="tab-books">
                         <option value="all">Todos los Tipos</option>
                         <option value="book">Libro/Manual</option>
                         <option value="paper">Paper Científico</option>
@@ -571,16 +571,16 @@ class AdminManager {
                         <option value="video">Video</option>
                         <option value="other">Imagen/Otro</option>
                     </select>
-                    <select class="tab-sort-select" data-tab="tab-books" style="height: 40px;">
+                    <select class="tab-sort-select" data-tab="tab-books">
                         <option value="date-desc">📅 Más Recientes</option>
                         <option value="alpha-asc">🔤 A-Z</option>
                     </select>
                 </div>
-                <div class="action-buttons" style="display: flex; gap: 10px;">
-                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('drive-sync')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('drive-sync')">
                         <i class="fab fa-google-drive"></i> <span class="hide-mobile">Sincronizar Drive</span>
                     </button>
-                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('book')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('book')">
                         <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Recurso</span>
                     </button>
                 </div>
@@ -605,18 +605,17 @@ class AdminManager {
 
         // Custom header with Bulk Import button and DOMAIN SELECTOR
         const content = `
-            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
-                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
-                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; min-width: 250px; height: 40px; transition: border-color 0.2s;">
-                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 15px; font-size: 0.9rem; position: static !important;"></i>
+            <div class="tab-header-controls">
+                <div class="search-sort-wrapper">
+                    <div class="search-bar-container">
+                        <i class="fas fa-search"></i>
                         <input type="text" class="admin-search-input-dynamic" 
                             placeholder="Buscar preguntas (Servidor)..." 
                             value="${this.currentQuestionSearch}"
-                            oninput="window.adminManager.handleDynamicSearch(this.value)"
-                            style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem; padding: 5px 0;">
+                            oninput="window.adminManager.handleDynamicSearch(this.value)">
                     </div>
 
-                    <select class="form-input" style="width: auto; height: 40px; min-width: 180px;" 
+                    <select class="form-input" style="width: auto; min-width: 180px;" 
                         onchange="window.adminManager.handleDomainChange(this.value)">
                         ${domains.map(d => `<option value="${d.id}" ${this.currentQuestionDomain === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
                     </select>
@@ -626,14 +625,14 @@ class AdminManager {
                     </div>
                 </div>
 
-                <div class="action-buttons" style="display: flex; gap: 10px;">
-                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-question')">
                         <i class="fas fa-file-import"></i> <span class="hide-mobile">Importar</span>
                     </button>
-                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('ai-question')" style="background: linear-gradient(135deg, #a855f7, #6366f1); border-color: transparent; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                    <button class="btn-primary btn-ai" onclick="window.adminManager.openGenericModal('ai-question')">
                         <i class="fas fa-robot"></i> <span class="hide-mobile">Generar IA</span>
                     </button>
-                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')">
                         <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva</span>
                     </button>
                 </div>
@@ -718,22 +717,22 @@ class AdminManager {
         ];
 
         const headerHTML = `
-            <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
-                <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
-                    <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; min-width: 250px; height: 40px;">
-                        <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 15px; font-size: 0.9rem; position: static !important;"></i>
-                        <input type="text" class="admin-search-input" data-target-tab="tab-vocabularies" placeholder="Buscar palabras..." style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; padding: 5px 0;">
+            <div class="tab-header-controls">
+                <div class="search-sort-wrapper">
+                    <div class="search-bar-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="admin-search-input" data-target-tab="tab-vocabularies" placeholder="Buscar palabras...">
                     </div>
-                    <select class="admin-type-filter" data-target-tab="tab-vocabularies" style="height: 40px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); padding: 0 10px; cursor: pointer;">
+                    <select class="admin-type-filter" data-target-tab="tab-vocabularies">
                         ${langFilters.map(lf => `<option value="${lf.id}">${lf.name}</option>`).join('')}
                     </select>
-                    <select class="tab-sort-select" data-tab="tab-vocabularies" style="height: 40px;">
+                    <select class="tab-sort-select" data-tab="tab-vocabularies">
                         <option value="date-desc">📅 Más Recientes</option>
                         <option value="alpha-asc">🔤 A-Z (Palabra)</option>
                     </select>
                 </div>
-                <div class="action-buttons" style="display: flex; gap: 10px;">
-                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('vocabulary')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
+                <div class="action-buttons">
+                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('vocabulary')">
                         <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Palabra Global</span>
                     </button>
                 </div>
@@ -772,8 +771,13 @@ class AdminManager {
                 if (id) this.currentItem = this.allCareers.find(c => c.id === parseInt(id, 10));
 
                 const domains = [
-                    { id: 'medicine', name: 'Salud Professional' },
+                    { id: 'medicine', name: 'Salud Profesional' },
                     { id: 'education', name: 'Educación Docente' }
+                ];
+
+                const areas = [
+                    { id: 'Ciencias de la Salud', name: 'Ciencias de la Salud' },
+                    { id: 'Educación', name: 'Educación' }
                 ];
 
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre de la Carrera (*)', this.currentItem?.name || '', true) +
@@ -2871,25 +2875,22 @@ class AdminManager {
                         ` : '';
 
         return `
-                        <div class="tab-header-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
-                            <div class="search-sort-wrapper" style="display: flex; gap: 10px; align-items: center; flex: 1;">
-                                <!-- ✅ UX MEJORA: Barra de búsqueda con ancho fijo y mejor padding para evitar solapamiento del icono -->
-                                <div class="search-bar-container" style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; width: 300px; height: 40px; transition: border-color 0.2s;">
-                                    <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 15px; font-size: 0.9rem; position: static !important;"></i>
-                                    <input type="text"
-                                        class="admin-search-input"
-                                        placeholder="Buscar..."
-                                        data-target-tab="${tabId}"
-                                        style="border: none; background: transparent; flex: 1; color: var(--text-primary); outline: none; font-size: 0.9rem; padding: 5px 0;">
-                                </div>
-
-                                ${sortSelectHTML}
-                            </div>
-                            <button class="btn-primary" onclick="window.adminManager.openGenericModal('${type}')" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px;">
-                                <i class="fas fa-plus"></i> <span>${buttonLabel}</span>
-                            </button>
-                        </div>
-                        `;
+            <div class="tab-header-controls">
+                <div class="search-sort-wrapper">
+                    <div class="search-bar-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text"
+                            class="admin-search-input"
+                            placeholder="Buscar..."
+                            data-target-tab="${tabId}">
+                    </div>
+                    ${sortSelectHTML}
+                </div>
+                <button class="btn-primary" onclick="window.adminManager.openGenericModal('${type}')">
+                    <i class="fas fa-plus"></i> <span>${buttonLabel}</span>
+                </button>
+            </div>
+        `;
     }
 
     // NUEVO: Generador dinámico de Plantilla Excel para usuarios

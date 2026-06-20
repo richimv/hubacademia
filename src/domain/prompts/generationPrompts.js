@@ -187,7 +187,7 @@ function buildLanguagePrompt(target, area, career, cefrLevel, historyText) {
 
     let areaInstructions = "";
     if (area === 'Grammar & Use of English') {
-        areaInstructions = `Focus on grammar, syntax, word order, verb conjugations, prepositions, or sentence structure appropriate for CEFR level ${cefrLevel}. The question text MUST contain exactly one blank space represented by '_____' (5 underscores) where the correct option fits.`;
+        areaInstructions = `Focus on grammar, syntax, word order, verb conjugations, prepositions, or sentence structure appropriate for CEFR level ${cefrLevel}. The question text MUST contain exactly one blank space represented by '_____' (5 underscores) where the correct option fits. CRITICAL: If you are testing verb conjugations, do not write the target verb in its base/infinitive form next to the blank space as part of the running sentence (e.g. do not write "Io _____ leggere ogni giorno"). Instead, either omit it completely (e.g., "Io _____ ogni giorno" with options "leggo", "legge", "leggono") or put the target verb in parentheses as a hint (e.g., "Io _____ (leggere) ogni giorno").`;
     } else if (area === 'Vocabulary & Context') {
         areaInstructions = `Focus on vocabulary, word choice, synonyms/antonyms, phrasal verbs, idioms, or contextual meaning appropriate for CEFR level ${cefrLevel}. The question text MUST contain exactly one blank space represented by '_____' (5 underscores) where the correct option fits.`;
     } else if (area === 'Reading Comprehension') {
@@ -206,13 +206,14 @@ function buildLanguagePrompt(target, area, career, cefrLevel, historyText) {
     
     🚨 REGLAS DE ORO DE IDIOMAS:
     1. El enunciado de la pregunta (question_text), el pasaje de lectura (si aplica), el script de audio (si aplica) y todas las opciones de respuesta (options) DEBEN estar escritos 100% en el idioma objetivo (${career.split('-')[0]}). No incluyas español en estas partes.
-    2. La explicación (explanation) DEBE estar escrita en ESPAÑOL, explicando de forma clara y didáctica la gramática, vocabulario o justificación de la respuesta correcta.
+    2. La explicación (explanation) DEBE estar escrita en ESPAÑOL, explaining de forma clara y didáctica la gramática, vocabulario o justificación de la respuesta correcta.
     3. Genera exactamente 4 opciones de respuesta. Evita el sesgo de longitud: TODAS las 4 opciones de respuesta deben tener una longitud similar (aproximadamente el mismo número de palabras). La opción correcta NO debe ser más de una frase más larga o descriptiva que los distractores.
     4. Sin letras (A, B, C, D) al inicio de las opciones.
     5. Escapa correctamente cualquier comilla doble interna usando \\" para que no se rompa el JSON.
     6. Para preguntas que NO sean de 'Listening Comprehension', el campo 'audio_text' debe ser nulo.
     7. Para las áreas 'Grammar & Use of English' y 'Vocabulary & Context', el enunciado de la pregunta ('question_text') DEBE incluir obligatoriamente un espacio en blanco representado exactamente por 5 guiones bajos ('_____') para que el usuario sepa dónde completar el conector, palabra o frase correspondiente.
-    8. EVITAR DUPLICADOS Y CLONES: Revisa el historial de preguntas ya existentes que se proporciona abajo y genera una pregunta completamente nueva sobre un tema, situación, vocabulario o contexto diferente. No repitas ni adaptes levemente las preguntas existentes.
+    9. EVITAR REDUNDANCIA Y COLISIÓN VERBAL: La opción correcta (correct_option_index) y las palabras adyacentes al espacio en blanco ('_____') NO deben ser redundantes ni compartir la misma raíz verbal (por ejemplo, evita "Io leggo leggere ogni giorno"). Si el espacio en blanco precede a un verbo en infinitivo, la respuesta correcta y distractores deben ser verbos modales/auxiliares compatibles (e.g., "voglio", "posso", "devo") y no formas conjugadas de ese mismo infinitivo.
+    10. EVITAR REDUNDANCIA DE SALUDO/RESPUESTA: Si la pregunta de idioma utiliza un interrogativo de estado/modo (como "Come" en italiano o "How" en inglés), las opciones de respuesta NO deben incluir adverbios o palabras de respuesta de estado (como "bene", "well", "fine", "good"). Por ejemplo, para "Come _____ oggi?", las alternativas deben evaluar la conjugación (ej: "sta", "stai", "state") o pronombre ("sta Lei", "stai tu") pero nunca contener el adverbio (evitar "sta bene lei", ya que formaría la frase redundante e incorrecta "Come sta bene lei oggi?").
     
     ${historyText}
     

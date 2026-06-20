@@ -215,7 +215,7 @@ class IdiomasSimulatorRepository {
         return quizHistoryId;
     }
 
-    async getQuizEvolution(userId, target, limit, timeFilter = '', areas = null) {
+    async getQuizEvolution(userId, target, limit, timeFilter = '', areas = null, career = null) {
         let filter = '';
         const params = [userId];
 
@@ -224,6 +224,15 @@ class IdiomasSimulatorRepository {
             filter += ` AND target = $${params.length}`;
         } else {
             filter += ` AND target IN ('MCER', 'TOEFL', 'IELTS', 'TECH_ENGLISH', 'CELI', 'CILS')`;
+        }
+
+        if (career) {
+            params.push(career);
+            if (career === 'en-US') {
+                filter += ` AND (career = $${params.length} OR career IS NULL)`;
+            } else {
+                filter += ` AND career = $${params.length}`;
+            }
         }
 
         if (limit) {

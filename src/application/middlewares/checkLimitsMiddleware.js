@@ -44,7 +44,7 @@ const checkAILimits = (type) => {
                         UPDATE users 
                         SET usage_count = 0, last_free_renewal = CURRENT_TIMESTAMP 
                         WHERE id = $1 
-                          AND (last_free_renewal IS NULL OR last_free_renewal < NOW() - INTERVAL '7 days')
+                          AND (last_free_renewal IS NULL OR (last_free_renewal AT TIME ZONE 'America/Lima')::date <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '7 days')::date)
                     `, [userId]);
                     
                     // Recargar los valores actualizados de user
@@ -60,7 +60,7 @@ const checkAILimits = (type) => {
 
             // --- LOGICA DE RESETEO ROBUSTA ---
             const now = new Date();
-            const todayDate = now.toISOString().split('T')[0]; // Hoy en UTC: "YYYY-MM-DD"
+            const todayDate = now.toLocaleDateString('sv-SE', { timeZone: 'America/Lima' }); // Hoy en Perú: "YYYY-MM-DD"
 
             let lastResetDateStr = "";
             if (user.last_usage_reset) {

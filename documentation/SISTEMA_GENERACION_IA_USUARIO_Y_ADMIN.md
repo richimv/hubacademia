@@ -100,6 +100,21 @@ Al detectar un target de idiomas (ej. `MCER`, `TOEFL`, `IELTS`), el servicio de 
 * **Placeholder Obligatorio**: Para las áreas de *Grammar & Use of English* y *Vocabulary & Context*, se valida y exige la inyección de exactamente un espacio en blanco (`_____`) en el enunciado de la pregunta.
 * **Soporte de Audio**: En la habilidad *Listening Comprehension*, se crea un script pedagógico (máx. 100 palabras) almacenado en la columna `audio_text` para su posterior síntesis por el motor TTS.
 * **Auditoría Psicométrica de Idiomas**: Comprueba asimetrías de longitud entre la alternativa correcta y los distractores (máximo 15 caracteres de desviación respecto a la media de distractores) y el formato JSON. Sanea referencias a letras (`A`, `B`, `C`, `D`) de manera determinista al final del flujo.
+* **Directrices de Evitación de Redundancia Verbal (Golden Rule #9)**: Se instruye al modelo a no repetir la raíz o infinitivo del verbo a conjugar de forma corrida en la oración (evitando enunciados erróneos como `"Io _____ leggere ogni giorno"` con opción correcta `"leggo"`). El infinitivo del verbo a evaluar debe ser omitido o ir encerrado en paréntesis.
+* **Validación de Adyacencia Léxica**: El auditor psicométrico (`_checkQuality`) localiza el espacio en blanco y extrae las palabras inmediatamente contiguas (anterior y posterior). Si la respuesta correcta comparte una raíz o prefijo común de $\ge 4$ caracteres (o coincidencia total para raíces cortas $\ge 3$ caracteres) con alguna de estas palabras adyacentes, la pregunta es catalogada como inválida (`isValid: false`) y rechazada para refinamiento.
+* **Evitación de Redundancia de Saludo/Respuesta (Golden Rule #10)**: Si la pregunta de idioma contiene un interrogativo de estado/modo (como `"come"` o `"how"`), se prohíbe que las opciones de respuesta contengan adverbios o palabras de respuesta de estado (como `"bene"`, `"well"`, `"fine"`, `"good"`). El auditor de calidad psicométrica valida esto programáticamente, obligando a la IA a refinar y limpiar las opciones redundantes (ej: cambiar `"sta bene lei"` a `"sta Lei"` o simplemente `"sta"`).
+
+---
+
+## 🧠 Evolución y Configuración de Modelos IA (Junio 2026)
+
+Para elevar el rigor de razonamiento pedagógico y la calidad de las justificaciones en las explicaciones, se ha actualizado la generación de preguntas en todos los módulos (Medicina, Educación e Idiomas) al modelo **`gemini-3.1-flash-lite`**:
+
+* **Razonamiento Interno (Thinking)**: Se habilita la configuración de pensamiento (`thinkingConfig`) asignando un presupuesto de tokens (`thinkingBudget: 1024`). Esto permite que el modelo procese y razone internamente sus deducciones conceptuales antes de retornar el JSON estructurado.
+* **Temperatura Calibrada (1.0)**: Siguiendo las directrices oficiales de Google para modelos de la familia Gemini 3 con razonamiento activado, se fija la temperatura de generación en `1.0`. Esto previene fallos de rendimiento y bucles infinitos en el motor de inferencia.
+* **Arquitectura de Conexión de Canal Dual**:
+  * **Canal Principal (Google AI Studio REST)**: Si la clave `GEMINI_API_KEY` se encuentra presente en el archivo `.env`, el sistema efectúa peticiones HTTP POST directas vía Axios a la API de Google AI Studio. Este canal garantiza acceso inmediato y nativo a `gemini-3.1-flash-lite` con razonamiento y latencia reducida.
+  * **Canal Secundario (Vertex AI Fallback)**: En ausencia de la API key o ante fallos del canal REST, se invoca Vertex AI. Si la API de Vertex AI devuelve un error de tipo `404` (modelo no disponible o falta de acceso en el proyecto/región), se intercepta el fallo y se aplica un downgrade controlado de emergencia a `gemini-2.5-flash-lite` (a temperatura `0.4`), manteniendo el simulador operativo sin pérdida de servicio.
 
 
 

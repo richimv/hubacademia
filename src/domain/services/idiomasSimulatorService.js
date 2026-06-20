@@ -212,7 +212,7 @@ class IdiomasSimulatorService {
         await idiomasSimulatorRepository.incrementSimulatorUsage(userId);
     }
 
-    async getUserQuizStats(userId, context, target, limit, days = null, areas = null) {
+    async getUserQuizStats(userId, context, target, limit, days = null, areas = null, career = null) {
         let topicFilter = ` AND target IN ('MCER', 'TOEFL', 'IELTS', 'TECH_ENGLISH', 'CELI', 'CILS')`;
         let timeFilter = '';
         const params = [userId];
@@ -224,6 +224,15 @@ class IdiomasSimulatorService {
         if (target) {
             params.push(target);
             topicFilter = ` AND target = $${params.length}`;
+        }
+
+        if (career) {
+            params.push(career);
+            if (career === 'en-US') {
+                topicFilter += ` AND (career = $${params.length} OR career IS NULL)`;
+            } else {
+                topicFilter += ` AND career = $${params.length}`;
+            }
         }
 
         if (limit) {

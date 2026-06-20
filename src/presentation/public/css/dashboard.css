@@ -726,4 +726,23 @@ textarea.form-input {
     .header-title-text {
         display: none !important;
     }
+
+    /* Fix dashboard header logo overlap on mobile */
+    .main-header .logo {
+        position: static !important;
+        transform: none !important;
+        margin: 0 !important;
+    }
+    .main-header .header-start {
+        gap: 0.5rem;
+    }
+    .main-header .logo-text {
+        font-size: 1rem !important;
+    }
+    .main-header #btn-update-ai {
+        margin-left: 0.5rem !important;
+        font-size: 0.85rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
 }
+

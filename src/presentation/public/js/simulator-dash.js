@@ -1408,6 +1408,13 @@ const SimulatorDash = (() => {
             if (activeConfig && activeConfig.areas && activeConfig.areas.length > 0) {
                 qs += `&areas=${encodeURIComponent(activeConfig.areas.join(','))}`;
             }
+            let careerVal = (activeConfig && activeConfig.career) ? activeConfig.career : null;
+            if (!careerVal) {
+                if (currentContext === 'MEDICINA') careerVal = 'Medicina Humana';
+                else if (currentContext === 'EDUCACION') careerVal = 'EBR - Primaria';
+                else if (currentContext === 'IDIOMAS') careerVal = 'en-US';
+            }
+            if (careerVal) qs += `&career=${encodeURIComponent(careerVal)}`;
             if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo
             if (activeDays) qs += `&days=${activeDays}`;     // Filtro por tiempo
 
@@ -1594,6 +1601,13 @@ const SimulatorDash = (() => {
             if (activeConfig && activeConfig.areas && activeConfig.areas.length > 0) {
                 qs += `&areas=${encodeURIComponent(activeConfig.areas.join(','))}`;
             }
+            let careerVal = (activeConfig && activeConfig.career) ? activeConfig.career : null;
+            if (!careerVal) {
+                if (currentContext === 'MEDICINA') careerVal = 'Medicina Humana';
+                else if (currentContext === 'EDUCACION') careerVal = 'EBR - Primaria';
+                else if (currentContext === 'IDIOMAS') careerVal = 'en-US';
+            }
+            if (careerVal) qs += `&career=${encodeURIComponent(careerVal)}`;
             if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo (10 = Rápido, 20 = Estudio)
             if (activeDays) qs += `&days=${activeDays}`;     // Filtro por tiempo (7, 30)
 

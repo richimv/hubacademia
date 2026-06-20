@@ -20,6 +20,21 @@ const state = {
 // Exponer estado para diagnóstico
 window.__quizState = state;
 
+// Control del Scroll Automático
+let currentScrollAnimationId = null;
+let activeScrollCleanup = null;
+
+function cancelCurrentScroll() {
+    if (currentScrollAnimationId && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(currentScrollAnimationId);
+        currentScrollAnimationId = null;
+    }
+    if (activeScrollCleanup) {
+        activeScrollCleanup();
+        activeScrollCleanup = null;
+    }
+}
+
 const STORAGE_KEY = 'simulator_active_session';
 
 // 💡 TIPS DINÁMICOS PARA LA ESPERA (Evitar aburrimiento)
@@ -91,6 +106,7 @@ const elements = {
 // ==========================================
 window.showExamReview = async function () {
     console.log("🚀 Iniciando renderizado de revisión...");
+    cancelCurrentScroll();
     try {
         const resOverlay = document.getElementById('resultsOverlay');
         if (resOverlay) resOverlay.classList.remove('active');
@@ -117,6 +133,9 @@ window.showExamReview = async function () {
 
         const reviewContainer = document.getElementById('reviewContainer');
         if (reviewContainer) reviewContainer.classList.remove('hidden');
+
+        const quizContainer = document.querySelector('.quiz-container');
+        if (quizContainer) quizContainer.classList.add('review-mode');
 
         const feed = document.getElementById('reviewFeed');
         if (!feed) {
@@ -811,6 +830,7 @@ async function fetchNextBatch() {
 
 // 3. Renderizar Pregunta
 function renderQuestion() {
+    cancelCurrentScroll();
     window.scrollTo({ top: 0, behavior: 'instant' });
     if (window.currentQuizAudio) {
         try {
@@ -1051,6 +1071,7 @@ function handleAnswer(selectedIndex, btnElement) {
 
     // Configurar acción del botón Siguiente
     elements.nextBtn.onclick = () => {
+        cancelCurrentScroll();
         state.currentQuestionIndex++;
         if (state.currentQuestionIndex >= state.maxQuestions) {
             finishQuiz();
@@ -1579,18 +1600,54 @@ function initLightbox() {
 // Helper for custom smooth and gentle scrolling (easeInOutQuad)
 function smoothScrollTo(element, duration = 2200) {
     if (!element) return;
+    
+    // Cancel any ongoing scroll animation first
+    cancelCurrentScroll();
+
     const targetY = element.getBoundingClientRect().top + window.scrollY;
     const startY = window.scrollY;
     const distance = targetY - startY - 40; // offset by 40px for safety spacing
     let startTime = null;
+    let userInterrupted = false;
+
+    // Detect user interruption
+    const interruptHandler = () => {
+        userInterrupted = true;
+        cancelCurrentScroll();
+    };
+
+    const cleanup = () => {
+        window.removeEventListener('wheel', interruptHandler);
+        window.removeEventListener('touchmove', interruptHandler);
+        window.removeEventListener('touchstart', interruptHandler);
+        window.removeEventListener('mousedown', interruptHandler);
+        window.removeEventListener('pointerdown', interruptHandler);
+        window.removeEventListener('keydown', interruptHandler);
+        activeScrollCleanup = null;
+    };
+
+    window.addEventListener('wheel', interruptHandler, { passive: true });
+    window.addEventListener('touchmove', interruptHandler, { passive: true });
+    window.addEventListener('touchstart', interruptHandler, { passive: true });
+    window.addEventListener('mousedown', interruptHandler, { passive: true });
+    window.addEventListener('pointerdown', interruptHandler, { passive: true });
+    window.addEventListener('keydown', interruptHandler, { passive: true });
+
+    activeScrollCleanup = cleanup;
 
     function animation(currentTime) {
+        if (userInterrupted) return; // Stop if user interrupted
         if (startTime === null) startTime = currentTime;
         const timeElapsed = currentTime - startTime;
         const run = easeInOutQuad(Math.min(timeElapsed, duration), startY, distance, duration);
         window.scrollTo(0, run);
         if (timeElapsed < duration) {
-            requestAnimationFrame(animation);
+            if (typeof requestAnimationFrame === 'function') {
+                currentScrollAnimationId = requestAnimationFrame(animation);
+            }
+        } else {
+            cleanup();
+            currentScrollAnimationId = null;
         }
     }
 
@@ -1601,7 +1658,11 @@ function smoothScrollTo(element, duration = 2200) {
         return -c / 2 * (t * (t - 2) - 1) + b;
     }
 
-    requestAnimationFrame(animation);
+    if (typeof requestAnimationFrame === 'function') {
+        currentScrollAnimationId = requestAnimationFrame(animation);
+    } else {
+        window.scrollTo(0, targetY - 40);
+    }
 }
 
 console.log("💎 Module quiz.js loaded successfully. showExamReview is ready with Zoom Lightbox.");

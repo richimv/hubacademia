@@ -215,7 +215,7 @@ class MedicoRepository {
         return quizHistoryId;
     }
 
-    async getQuizEvolution(userId, target, limit, timeFilter = '', areas = null) {
+    async getQuizEvolution(userId, target, limit, timeFilter = '', areas = null, career = null) {
         let filter = '';
         const params = [userId];
 
@@ -224,6 +224,15 @@ class MedicoRepository {
             filter += ` AND (target = $${params.length} OR (target IS NULL AND difficulty = $${params.length}))`;
         } else {
             filter += ` AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado')`;
+        }
+
+        if (career) {
+            params.push(career);
+            if (career === 'Medicina Humana') {
+                filter += ` AND (career = $${params.length} OR career IS NULL)`;
+            } else {
+                filter += ` AND career = $${params.length}`;
+            }
         }
 
         if (limit) {

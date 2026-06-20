@@ -185,6 +185,112 @@ describe('AdminAiService', () => {
             expect(result[0].explanation).toBe("El comparativo simple de 'tall' es 'taller'. Por ello se utiliza esta opción.");
             expect(mockGenerateContent).toHaveBeenCalledTimes(2); // Dispatched refinement to AI
         });
+
+        it('should trigger AI refinement when there is a verbal prefix redundancy / stem collision near the blank', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+
+            // Initial response has verbal redundancy (leggo / leggere)
+            const badQuestion = {
+                question_text: "Mi piace molto questo libro. Io _____ leggere ogni giorno.",
+                options: ["leggo", "leggono", "legge", "leggere"],
+                correct_option_index: 0,
+                explanation: "El sujeto es Io, por lo tanto usamos la conjugación leggo del verbo leggere.",
+                topic: "Grammar & Use of English",
+                difficulty: "A1",
+                career: "it-IT",
+                audio_text: null
+            };
+
+            // Refined response resolves the issue (removes the redundant infinitive)
+            const refinedQuestion = {
+                question_text: "Mi piace molto questo libro. Io _____ ogni giorno.",
+                options: ["leggo", "leggono", "legge", "leggere"],
+                correct_option_index: 0,
+                explanation: "En este caso, se conjuga directamente el verbo leggere para la primera persona: Io leggo.",
+                topic: "Grammar & Use of English",
+                difficulty: "A1",
+                career: "it-IT",
+                audio_text: null
+            };
+
+            mockGenerateContent
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(badQuestion) }] } }]
+                    }
+                })
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(refinedQuestion) }] } }]
+                    }
+                });
+
+            const result = await adminAiService.generateRAGQuestions(
+                'MCER',
+                'Grammar & Use of English',
+                'it-IT',
+                1,
+                false,
+                'A1'
+            );
+
+            expect(result).toHaveLength(1);
+            expect(result[0].question_text).toBe("Mi piace molto questo libro. Io _____ ogni giorno.");
+            expect(mockGenerateContent).toHaveBeenCalledTimes(2); // Dispatched refinement to AI
+        });
+
+        it('should trigger AI refinement when there is a greeting/response redundancy (come/bene)', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+
+            // Initial response has greeting redundancy (Come _____ oggi? / sta bene lei)
+            const badQuestion = {
+                question_text: "Buongiorno, Signora Bianchi! Come _____ oggi?",
+                options: ["stanno bene loro", "sta bene lei", "stai bene tu", "state bene voi"],
+                correct_option_index: 1,
+                explanation: "En italiano, cuando nos dirigimos a una persona de manera formal usamos la tercera persona del singular ('Lei').",
+                topic: "Grammar & Use of English",
+                difficulty: "A1",
+                career: "it-IT",
+                audio_text: null
+            };
+
+            // Refined response resolves the issue (removes 'bene' from the options)
+            const refinedQuestion = {
+                question_text: "Buongiorno, Signora Bianchi! Come _____ oggi?",
+                options: ["stanno loro", "sta Lei", "stai tu", "state voi"],
+                correct_option_index: 1,
+                explanation: "En italiano, cuando nos dirigimos a una persona de manera formal usamos la tercera persona del singular ('Lei'). Por lo tanto, se usa 'sta Lei' o simplemente 'sta'.",
+                topic: "Grammar & Use of English",
+                difficulty: "A1",
+                career: "it-IT",
+                audio_text: null
+            };
+
+            mockGenerateContent
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(badQuestion) }] } }]
+                    }
+                })
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(refinedQuestion) }] } }]
+                    }
+                });
+
+            const result = await adminAiService.generateRAGQuestions(
+                'MCER',
+                'Grammar & Use of English',
+                'it-IT',
+                1,
+                false,
+                'A1'
+            );
+
+            expect(result).toHaveLength(1);
+            expect(result[0].options[1]).toBe("sta Lei");
+            expect(mockGenerateContent).toHaveBeenCalledTimes(2); // Dispatched refinement to AI
+        });
     });
 
     describe('generateRAGQuestions - Non-Languages (Syllabus/Standard Flow)', () => {
@@ -441,6 +547,57 @@ describe('AdminAiService', () => {
             expect(result[0].subtopic).toBe("Estrategias de aprendizaje A");
             expect(result[1].subtopic).toBe("Estrategias de aprendizaje B");
             expect(mockGenerateContent).toHaveBeenCalledTimes(4); // 2 selections + 2 generations
+        });
+
+        it('should handle malformed selectionData gracefully when searchTerms is missing or not an array', async () => {
+            db.query
+                .mockResolvedValueOnce({ rows: [] }) // For globalHistory
+                .mockResolvedValueOnce({ rows: [] });
+
+            questionRagService.getSyllabusContext.mockResolvedValue("1.1 Estrategias pedagógicas.");
+            questionRagService.getTechnicalBasis.mockResolvedValue("Teoría sobre estrategias.");
+            questionRagService.getStyleContextByKeywords.mockResolvedValue("Molde de examen real.");
+
+            const malformedSelection = {
+                selectedTopic: "Estrategias de aprendizaje A"
+                // searchTerms is missing
+            };
+
+            const mockQuestionResponse = {
+                question_text: "En el aula de Primaria, el docente observa que... ¿Qué estrategia debe usar?",
+                options: ["Opción Correcta A", "Distractor A1", "Distractor A2"],
+                correct_option_index: 0,
+                explanation: "Explicación detallada A.",
+                topic: "Estrategias pedagógicas",
+                difficulty: "Senior",
+                career: "EBR - Primaria",
+                subtopic: "Estrategias de aprendizaje A"
+            };
+
+            mockGenerateContent
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(malformedSelection) }] } }]
+                    }
+                })
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify(mockQuestionResponse) }] } }]
+                    }
+                });
+
+            const result = await adminAiService.generateRAGQuestions(
+                'ASCENSO',
+                'Estrategias pedagógicas',
+                'EBR - Primaria',
+                1,
+                true,
+                'Senior'
+            );
+
+            expect(result).toHaveLength(1);
+            expect(result[0].subtopic).toBe("Estrategias de aprendizaje A");
+            expect(mockGenerateContent).toHaveBeenCalledTimes(2);
         });
     });
 });
