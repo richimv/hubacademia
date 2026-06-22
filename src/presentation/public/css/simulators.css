@@ -11,36 +11,7 @@
     padding-top: 2rem !important;
 }
 
-/* Distinct Header Style */
-.header-glass {
-    background: rgba(10, 10, 10, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--sim-border);
-    border-radius: 16px;
-    padding: 1rem 1.5rem;
-    margin-bottom: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: var(--shadow-sm);
-}
-
-.btn-back {
-    color: var(--text-muted);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-    transition: all 0.2s;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-}
-
-.btn-back:hover {
-    color: var(--text-main);
-    background: rgba(255, 255, 255, 0.05);
-}
+/* Distinct Header Style - Cleaned up obsolete header-glass / btn-back */
 
 .header-clean {
     margin-bottom: 1.5rem;
@@ -64,12 +35,49 @@
     }
 }
 
+/* Card variables for accents */
+.sim-card.card-med {
+    --accent: #3b82f6;
+    --accent-rgb: 59, 130, 246;
+}
+.sim-card.card-img-sim {
+    --accent: #eab308;
+    --accent-rgb: 234, 179, 8;
+}
+.sim-card.card-dx-sim {
+    --accent: #10b981;
+    --accent-rgb: 16, 185, 129;
+}
+.sim-card.card-edu-nom {
+    --accent: #f97316;
+    --accent-rgb: 249, 115, 22;
+}
+.sim-card.card-edu-sesion {
+    --accent: #eab308;
+    --accent-rgb: 234, 179, 8;
+}
+.sim-card.card-edu-rubrica {
+    --accent: #10b981;
+    --accent-rgb: 16, 185, 129;
+}
+.sim-card.card-lang-exam {
+    --accent: #a855f7;
+    --accent-rgb: 168, 85, 247;
+}
+.sim-card.card-lang-chat {
+    --accent: #7c3aed;
+    --accent-rgb: 124, 58, 237;
+}
+.sim-card.card-lang-vocab {
+    --accent: #10b981;
+    --accent-rgb: 16, 185, 129;
+}
+
 .sim-card {
-    background-color: var(--sim-card-bg);
-    /* Premium matte dark fallback */
+    background-color: rgba(10, 13, 18, 0.45);
     background-size: cover;
     background-position: center;
-    border: 1px solid var(--sim-border);
+    border: 1px solid rgba(var(--accent-rgb), 0.15);
     border-radius: 24px;
     padding: 2.2rem 2rem;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -83,44 +91,18 @@
     flex-direction: column;
     justify-content: space-between;
     min-height: 320px;
-    /* Large professional size */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-}
-
-/* Dark gradient mask for premium legibility over WebP images */
-.sim-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(5, 5, 5, 0.25) 0%, rgba(5, 5, 5, 0.85) 100%);
-    transition: background 0.4s ease;
-    z-index: 1;
-}
-
-/* Elevate children so they sit above the overlay mask */
-.sim-card>* {
-    position: relative;
-    z-index: 2;
-}
-
-.sim-card:hover {
-    transform: translateY(-8px) scale(1.01);
-    border-color: rgba(255, 255, 255, 0.18);
-}
-
-.sim-card:hover::before {
-    background: linear-gradient(180deg, rgba(5, 5, 5, 0.15) 0%, rgba(5, 5, 5, 0.8) 100%);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 /* Background Images for Salud Módulo */
 .sim-card.card-med {
     background-image: url('/assets/bg-sim-health.webp');
 }
-
 .sim-card.card-img-sim {
     background-image: url('/assets/bg-sim-med-images.webp');
 }
-
 .sim-card.card-dx-sim {
     background-image: url('/assets/bg-sim-med-dx.webp');
 }
@@ -129,11 +111,9 @@
 .sim-card.card-edu-nom {
     background-image: url('/assets/bg-sim-edu-ascenso.webp');
 }
-
 .sim-card.card-edu-sesion {
     background-image: url('/assets/bg-sim-edu-sessions.webp');
 }
-
 .sim-card.card-edu-rubrica {
     background-image: url('/assets/bg-sim-edu-rubrics.webp');
 }
@@ -142,51 +122,61 @@
 .sim-card.card-lang-exam {
     background-image: url('/assets/bg-sim-lang-exams.webp');
 }
-
 .sim-card.card-lang-chat {
     background-image: url('/assets/bg-sim-lang-tutor.webp');
 }
-
 .sim-card.card-lang-vocab {
     background-image: url('/assets/bg-sim-lang-vocab.webp');
 }
 
-/* Domain-specific Hover Glows */
-.sim-card.card-med:hover,
-.sim-card.card-img-sim:hover,
-.sim-card.card-dx-sim:hover {
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.12), 0 0 0 1px rgba(96, 165, 250, 0.1);
+/* Dark gradient mask for premium legibility over WebP images */
+.sim-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(5, 5, 5, 0.3) 0%, rgba(5, 5, 5, 0.85) 100%);
+    transition: all 0.5s ease;
+    z-index: 1;
 }
 
-.sim-card.card-edu-nom:hover,
-.sim-card.card-edu-sesion:hover,
-.sim-card.card-edu-rubrica:hover {
-    box-shadow: 0 10px 20px rgba(249, 115, 22, 0.12), 0 0 0 1px rgba(249, 115, 22, 0.1);
+/* Elevate children so they sit above the overlay mask */
+.sim-card > * {
+    position: relative;
+    z-index: 4;
 }
 
-.sim-card.card-lang-exam:hover,
-.sim-card.card-lang-chat:hover {
-    box-shadow: 0 10px 20px rgba(168, 85, 247, 0.12), 0 0 0 1px rgba(168, 85, 247, 0.1);
+/* Vertical Left Accent Line */
+.sim-card::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 4.8rem; /* Aligned with top padding 2.2rem + title */
+    width: 3px;
+    background: var(--accent);
+    z-index: 5;
+    box-shadow: 0 0 8px var(--accent);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0.8;
 }
 
-.sim-card.card-lang-vocab:hover {
-    box-shadow: 0 10px 20px rgba(16, 185, 129, 0.15), 0 0 0 1px rgba(16, 185, 129, 0.15);
+.sim-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(var(--accent-rgb), 0.45);
+    box-shadow: 
+        0 16px 40px rgba(var(--accent-rgb), 0.15),
+        0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
-.sim-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    margin-bottom: 1.5rem;
-    transition: transform 0.3s ease;
+.sim-card:hover::before {
+    background: linear-gradient(180deg, rgba(5, 5, 5, 0.2) 0%, rgba(5, 5, 5, 0.75) 100%),
+                radial-gradient(circle at 80% 20%, rgba(var(--accent-rgb), 0.15) 0%, transparent 60%);
 }
 
-.sim-card:hover .sim-icon {
-    transform: scale(1.1);
+.sim-card:hover::after {
+    height: 5.4rem;
+    box-shadow: 0 0 15px var(--accent);
+    opacity: 1;
 }
 
 .sim-title {
@@ -194,7 +184,12 @@
     font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+    transition: color 0.3s ease;
+}
+
+.sim-card:hover .sim-title {
+    color: #ffffff;
 }
 
 .sim-desc {
@@ -203,6 +198,30 @@
     line-height: 1.5;
     margin-bottom: 2rem;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Call-to-action Link */
+.sim-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: auto;
+    width: fit-content;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sim-cta i {
+    transition: transform 0.3s ease;
+}
+
+.sim-card:hover .sim-cta {
+    text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.4);
+}
+
+.sim-card:hover .sim-cta i {
+    transform: translateX(4px);
 }
 
 .sim-badge {
@@ -217,57 +236,37 @@
     font-weight: 600;
     color: #e2e8f0;
     backdrop-filter: blur(4px);
-}
-
-/* Color Variations */
-.color-med {
-    background: rgba(59, 130, 246, 0.2);
-    color: #60a5fa;
-    backdrop-filter: blur(4px);
-}
-
-.color-img {
-    background: rgba(248, 113, 113, 0.2);
-    color: #f87171;
-    backdrop-filter: blur(4px);
-}
-
-.color-eng {
-    background: rgba(52, 211, 153, 0.2);
-    color: #34d399;
-    backdrop-filter: blur(4px);
+    z-index: 6;
 }
 
 /* --- Mobile / Responsive: Compact Simulator Cards --- */
 @media (max-width: 768px) {
     .sim-card {
         min-height: auto !important;
-        /* Allow card height to adapt dynamically */
         padding: 1.5rem 1.25rem !important;
-        /* Less padding to save space */
         border-radius: 16px !important;
-        /* Slightly more compact corners */
+        border-color: rgba(var(--accent-rgb), 0.25) !important;
+        box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
     }
 
-    .sim-icon {
-        width: 44px !important;
-        height: 44px !important;
-        border-radius: 12px !important;
-        font-size: 1.4rem !important;
-        margin-bottom: 1rem !important;
+    .sim-card::after {
+        height: 3.5rem !important; /* Adjusted for mobile */
+    }
+
+    .sim-card:hover::after {
+        height: 4.0rem !important;
     }
 
     .sim-title {
         font-size: 1.25rem !important;
-        /* Smaller title */
         margin-bottom: 0.35rem !important;
     }
 
     .sim-desc {
         font-size: 0.85rem !important;
-        /* Smaller description */
         margin-bottom: 1.25rem !important;
-        /* Significantly reduced margin to action link */
         line-height: 1.4 !important;
     }
 }

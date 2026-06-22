@@ -8,8 +8,8 @@ const SimulatorDash = (() => {
     // Configuración Extendida de Dominios (v3.0)
     const contexts = {
         'MEDICINA': {
-            title: 'Ciencias de la Salud',
-            heroTitle: 'Ciencias de la Salud',
+            title: 'Entrenamiento Médico',
+            heroTitle: 'Entrenamiento Médico',
             quizParams: '', // Eliminado el fallback automático. Ahora se fuerza la configuración.
             studyDesc: '20 preguntas con explicación.',
             realDesc: '100 preguntas integradas.',
@@ -34,7 +34,7 @@ const SimulatorDash = (() => {
             ]
         },
         'EDUCACION': {
-            title: 'Docente Pro',
+            title: 'Preparación Magisterial',
             heroTitle: 'Preparación Magisterial',
             quizParams: '', // Eliminado el fallback automático.
             studyDesc: '20 preguntas con explicación.',
@@ -77,8 +77,8 @@ const SimulatorDash = (() => {
             ]
         },
         'IDIOMAS': {
-            title: 'Language Hub',
-            heroTitle: 'Mastery & Fluency',
+            title: 'Centro de Idiomas',
+            heroTitle: 'Centro de Idiomas',
             quizParams: '',
             studyDesc: '20 preguntas con explicación.',
             realDesc: '80 preguntas integradas.',
@@ -438,6 +438,7 @@ const SimulatorDash = (() => {
         const iconEl = document.getElementById('ctx-icon');
 
         if (titleEl) titleEl.textContent = ctxConfig.title;
+        document.title = `${ctxConfig.title} | Hub Academia`;
 
         // Dynamic Bar Chart Labels based on Context
         const barChartTitleEl = document.getElementById('bar-chart-title');

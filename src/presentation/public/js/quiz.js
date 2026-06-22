@@ -40,7 +40,7 @@ const STORAGE_KEY = 'simulator_active_session';
 // 💡 TIPS DINÁMICOS PARA LA ESPERA (Evitar aburrimiento)
 const LOADING_RESOURCES = {
     'MEDICINA': {
-        title: 'Preparando tu entrenamiento',
+        title: 'Preparando tu Entrenamiento Médico',
         subtitle: 'Sincronizando con Biblioteca Médica...',
         tips: [
             "El lavado de manos es la medida más costo-efectiva en salud pública.",
@@ -52,7 +52,7 @@ const LOADING_RESOURCES = {
         ]
     },
     'EDUCACION': {
-        title: 'Preparando tu entrenamiento',
+        title: 'Preparando tu Entrenamiento Magisterial',
         subtitle: 'Analizando Casuística Pedagógica...',
         tips: [
             "La retroalimentación descriptiva es la más efectiva para el aprendizaje autónomo.",
@@ -64,7 +64,7 @@ const LOADING_RESOURCES = {
         ]
     },
     'IDIOMAS': {
-        title: 'Preparando tu entrenamiento',
+        title: 'Preparando tu Entrenamiento de Idiomas',
         subtitle: 'Cargando Módulo de Idiomas...',
         tips: [
             "La repetición espaciada es clave para memorizar vocabulario a largo plazo.",
@@ -132,7 +132,15 @@ window.showExamReview = async function () {
         }
 
         const reviewContainer = document.getElementById('reviewContainer');
-        if (reviewContainer) reviewContainer.classList.remove('hidden');
+        if (reviewContainer) {
+            reviewContainer.classList.remove('hidden');
+            const reviewTitleEl = reviewContainer.querySelector('.review-header h2');
+            if (reviewTitleEl) {
+                const ctxUpper = state.context.toUpperCase();
+                const ctxTitleSuffix = ctxUpper === 'IDIOMAS' ? 'de Idiomas' : (ctxUpper === 'EDUCACION' ? 'Magisterial' : 'Médico');
+                reviewTitleEl.innerHTML = `<i class="fas fa-clipboard-check"></i> Corrección de Simulacro ${ctxTitleSuffix}`;
+            }
+        }
 
         const quizContainer = document.querySelector('.quiz-container');
         if (quizContainer) quizContainer.classList.add('review-mode');
@@ -267,8 +275,12 @@ async function init() {
     state.topic = urlParams.get('topic') || '';
     state.context = urlParams.get('context') || 'MEDICINA'; // Default
 
-    // Configurar API_URL dinámicamente según contexto
+    // Set dynamic tab title based on context
     const ctxUpper = state.context.toUpperCase();
+    const ctxTitle = ctxUpper === 'IDIOMAS' ? 'Simulador de Idiomas' : (ctxUpper === 'EDUCACION' ? 'Simulador Magisterial' : 'Simulador Médico');
+    document.title = `${ctxTitle} | Hub Academia`;
+
+    // Configurar API_URL dinámicamente según contexto
     if (ctxUpper === 'EDUCACION') {
         API_URL = `${window.AppConfig.API_URL}/api/docente`;
     } else if (ctxUpper === 'IDIOMAS') {
@@ -286,7 +298,7 @@ async function init() {
 
     state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || (savedConfig && savedConfig.difficulty ? savedConfig.difficulty : (state.context === 'IDIOMAS' ? 'B2' : 'Senior'));
 
-    state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : 'SERUMS');
+    state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : (state.context === 'IDIOMAS' ? 'MCER' : (state.context === 'EDUCACION' ? 'ASCENSO' : 'SERUMS')));
     state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
     state.mode = urlParams.get('mode') || '';
     state.configType = urlParams.get('configType') || (savedConfig && savedConfig.configType ? savedConfig.configType : 'default');
@@ -618,7 +630,7 @@ async function startQuiz() {
             });
 
             // Ajustar el tema para la UI
-            const target = domainParam === 'education' ? 'ASCENSO' : 'SERUMS';
+            const target = domainParam === 'education' ? 'ASCENSO' : (domainParam === 'languages' ? 'MCER' : 'SERUMS');
             data.topic = `DEMO: ${target}`;
 
         } catch (demoErr) {

@@ -13,16 +13,13 @@ class AdminAiService {
         const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
         this.vertex_ai = new VertexAI({ project, location });
         
-        // Modelo primario Gemini 3.1 con razonamiento habilitado y temperatura 1.0
+        // Modelo primario Gemini 3.1 sin razonamiento para optimización de costos
         this.model = this.vertex_ai.getGenerativeModel({
             model: 'gemini-3.1-flash-lite',
             generationConfig: {
                 maxOutputTokens: 16384,
-                temperature: 1.0, // Recomendación de Google para razonamiento en Gemini 3
-                responseMimeType: "application/json",
-                thinkingConfig: {
-                    thinkingBudget: 1024
-                }
+                temperature: 0.4,
+                responseMimeType: "application/json"
             }
         });
 
@@ -38,6 +35,9 @@ class AdminAiService {
 
         // Asignar el servicio RAG (ya es una instancia exportada como Singleton)
         this.ragService = QuestionRagService;
+
+        // Bandera de caché en memoria para disponibilidad del modelo 3.1 en Vertex AI
+        this.vertexModel31Supported = true;
     }
 
     /**
@@ -55,9 +55,7 @@ class AdminAiService {
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
                         responseMimeType: "application/json",
-                        thinkingConfig: {
-                            thinkingBudget: 1024
-                        }
+                        temperature: 0.4
                     }
                 };
                 console.log("📡 [REST] Llamando a gemini-3.1-flash-lite a través de Google AI Studio...");
@@ -77,6 +75,12 @@ class AdminAiService {
             }
         }
 
+        // Si ya sabemos que Vertex no soporta 3.1, saltar directamente al fallback 2.5
+        if (!this.vertexModel31Supported) {
+            console.log("📡 [VertexAI Bypass] gemini-3.1-flash-lite marcado como no soportado. Usando gemini-2.5-flash-lite directamente...");
+            return await this.fallbackModel.generateContent(prompt);
+        }
+
         // Intento por Vertex AI (Canal Secundario)
         try {
             console.log("📡 [VertexAI] Llamando a gemini-3.1-flash-lite...");
@@ -85,6 +89,7 @@ class AdminAiService {
             // Si el error es 404 (modelo no disponible en la región/proyecto) o cualquier otro error crítico, hacer downgrade
             const isNotAvailable = err.message && (err.message.includes('404') || err.message.includes('NOT_FOUND') || err.message.includes('access'));
             if (isNotAvailable) {
+                this.vertexModel31Supported = false; // Marcar en memoria
                 console.warn("🚨 [VertexAI Fallback] gemini-3.1-flash-lite no disponible en tu región/proyecto. Aplicando downgrade de emergencia a gemini-2.5-flash-lite...");
                 return await this.fallbackModel.generateContent(prompt);
             }

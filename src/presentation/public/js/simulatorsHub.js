@@ -8,11 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const DOMAINS = {
         salud: {
-            title: 'Centro de Simuladores',
+            title: 'Centro de Entrenamiento Médico',
             subtitle: 'Selecciona tu área de entrenamiento especializado',
             cards: [
                 {
-                    title: 'Simulacro de Exámenes',
+                    title: 'Simulacro Médico',
                     desc: 'Preparación intensiva para el Examen Nacional del SERUMS con bancos oficiales.',
                     href: '/simulator-dashboard?context=MEDICINA',
                     cssClass: 'card-med',
@@ -166,11 +166,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         a.innerHTML = `
-            <div>
+            <div class="sim-card-body">
                 <h3 class="sim-title">${card.title}</h3>
                 <p class="sim-desc">${card.desc}</p>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; color: ${card.actionColor}; font-size: 0.9rem; font-weight: 600; margin-top: auto;">
+            <div class="sim-cta" style="color: ${card.actionColor};">
                 ${card.actionText} <i class="fas ${card.actionIcon}"></i>
             </div>
         `;

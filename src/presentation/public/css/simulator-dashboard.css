@@ -248,7 +248,13 @@
 }
 
 @media (max-width: 768px) {
-    .mode-card { padding: 2.25rem 1.25rem 1.25rem 1.25rem; }
+    .mode-card { 
+        padding: 2.25rem 1.25rem 1.25rem 1.25rem; 
+        border-color: rgba(var(--accent-rgb), 0.25) !important;
+        box-shadow: 
+            0 8px 24px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+    }
     .mode-content { width: 85%; }
     .mode-title { font-size: 0.95rem; min-height: 2.2rem; }
     .mode-desc { font-size: 0.65rem; min-height: 2.8rem; margin-bottom: 0.5rem; }

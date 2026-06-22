@@ -33,9 +33,20 @@ class IdiomasSimulatorService {
     }
 
     async generateQuiz(categoryOptions, userId, limit = 5, subscriptionTier = 'free', seenIds = []) {
-        const target = categoryOptions.target || 'MCER';
-        const career = categoryOptions.career || 'en-US';
-        const difficulty = categoryOptions.difficulty || null;
+        const LANGUAGE_TARGETS = ['MCER', 'TOEFL', 'IELTS', 'TECH_ENGLISH', 'CELI', 'CILS'];
+        const target = (categoryOptions.target && LANGUAGE_TARGETS.includes(categoryOptions.target.toUpperCase()))
+            ? categoryOptions.target.toUpperCase()
+            : 'MCER';
+
+        const validCareers = ['en-US', 'en-GB', 'it-IT'];
+        const career = (categoryOptions.career && validCareers.includes(categoryOptions.career))
+            ? categoryOptions.career
+            : 'en-US';
+
+        const validDifficulties = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+        const difficulty = (categoryOptions.difficulty && validDifficulties.includes(categoryOptions.difficulty.toUpperCase()))
+            ? categoryOptions.difficulty.toUpperCase()
+            : 'B2';
         let areas = categoryOptions.areas && categoryOptions.areas.length > 0 ? categoryOptions.areas : [];
 
         if (categoryOptions.mode === 'real') {
