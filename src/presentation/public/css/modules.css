@@ -4,9 +4,12 @@
 
 /* Contenedor General */
 .homepage-sections-container {
+    position: relative;
     width: 100%;
     background-color: #05070f;
-    overflow-x: hidden;
+    overflow: hidden;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
 }
 
 /* Base de Secciones Animadas al Scroll */
@@ -23,7 +26,7 @@
 
     /* Estado Inicial de Animación */
     opacity: 0;
-    transform: translateY(50px);
+    transform: translateY(30px);
     transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1), 
                 transform 1s cubic-bezier(0.22, 1, 0.36, 1);
     will-change: transform, opacity;
@@ -54,6 +57,20 @@
     background: radial-gradient(circle at 75% 40%, rgba(217, 70, 239, 0.12) 0%, transparent 50%),
                 radial-gradient(circle at 20% 80%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
                 #060813;
+}
+
+/* 🎨 SECCIÓN 4: REPASO (Flashcards) - Fondo Profundo con Acentos Naranja/Amber */
+#repaso-section {
+    background: radial-gradient(circle at 75% 30%, rgba(249, 115, 22, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 20% 70%, rgba(234, 179, 8, 0.08) 0%, transparent 50%),
+                #05060f;
+}
+
+/* 🎨 SECCIÓN 5: BIBLIOTECA (Biblioteca) - Fondo Profundo con Acentos Teal */
+#biblioteca-section {
+    background: radial-gradient(circle at 75% 30%, rgba(20, 184, 166, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 20% 70%, rgba(13, 148, 136, 0.08) 0%, transparent 50%),
+                #05080c;
 }
 
 /* ─── Grid de Sección ────────────────────────────────────────── */
@@ -125,6 +142,13 @@
     box-shadow: 0 0 15px rgba(217, 70, 239, 0.15);
 }
 
+.badge-repaso {
+    background: rgba(249, 115, 22, 0.1);
+    color: #fdba74;
+    border-color: rgba(249, 115, 22, 0.25);
+    box-shadow: 0 0 15px rgba(249, 115, 22, 0.15);
+}
+
 /* Títulos */
 .section-main-title {
     font-size: 2.6rem;
@@ -155,6 +179,18 @@
 
 .accent-pink-text {
     background: linear-gradient(135deg, #f472b6 0%, #d946ef 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+.accent-orange-text {
+    background: linear-gradient(135deg, #fdba74 0%, #f97316 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+.accent-teal-text {
+    background: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 100%) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
 }
@@ -248,6 +284,22 @@
     transform: translateY(-2px);
 }
 
+.btn-repaso-theme {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+.btn-repaso-theme:hover {
+    box-shadow: 0 12px 35px rgba(249, 115, 22, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-teal-theme {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+}
+.btn-teal-theme:hover {
+    box-shadow: 0 12px 35px rgba(20, 184, 166, 0.4);
+    transform: translateY(-2px);
+}
+
 .btn-premium-cta:active {
     transform: translateY(1px);
 }
@@ -275,12 +327,36 @@
     position: relative;
     overflow: hidden;
     transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-                border-color 0.4s ease;
+                border-color 0.4s ease,
+                box-shadow 0.4s ease;
 }
 
 .preview-card-glass:hover {
     transform: translateY(-6px) scale(1.01);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Hover glow effects customized per section theme color */
+#docente-section:hover .preview-card-glass {
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px rgba(139, 92, 246, 0.18);
+}
+#salud-section:hover .preview-card-glass {
+    border-color: rgba(14, 165, 233, 0.35);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px rgba(14, 165, 233, 0.18);
+}
+#idiomas-section:hover .preview-card-glass {
+    border-color: rgba(217, 70, 239, 0.35);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px rgba(217, 70, 239, 0.18);
+}
+#repaso-section:hover .preview-card-glass {
+    border-color: rgba(249, 115, 22, 0.35);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px rgba(249, 115, 22, 0.18);
+}
+
+#biblioteca-section:hover .preview-card-glass {
+    border-color: rgba(20, 184, 166, 0.35);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px rgba(20, 184, 166, 0.18);
 }
 
 /* Decoraciones Neón */
@@ -363,56 +439,8 @@
 .fill-edu { background: #8b5cf6; width: 75%; }
 .fill-med { background: #0ea5e9; width: 90%; }
 .fill-lang { background: #d946ef; width: 60%; }
-
-/* Simulador de Chat de Idiomas (Especial para la sección 3) */
-.chat-mockup-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    width: 100%;
-    border-radius: 16px;
-    padding: 1rem;
-    background: rgba(5, 7, 15, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    min-height: 220px;
-    box-sizing: border-box;
-    justify-content: center;
-}
-
-.chat-bubble {
-    padding: 0.75rem 1rem;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    max-width: 85%;
-    line-height: 1.4;
-    box-sizing: border-box;
-}
-
-.chat-bubble.assistant {
-    background: rgba(124, 58, 237, 0.1);
-    border: 1px solid rgba(124, 58, 237, 0.2);
-    color: #cbd5e1;
-    align-self: flex-start;
-    border-bottom-left-radius: 2px;
-}
-
-.chat-bubble.user {
-    background: rgba(217, 70, 239, 0.15);
-    border: 1px solid rgba(217, 70, 239, 0.25);
-    color: #ffffff;
-    align-self: flex-end;
-    border-bottom-right-radius: 2px;
-}
-
-.chat-feedback {
-    font-size: 0.75rem;
-    color: #10b981;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 2px;
-    font-weight: 600;
-}
+.fill-repaso { background: #f97316; width: 80%; }
+.fill-teal { background: #14b8a6; width: 85%; }
 
 /* ─── Responsividad General Móvil ──────────────────────────────── */
 @media (max-width: 991px) {
@@ -435,7 +463,8 @@
     }
 
     .scroll-animate-section {
-        padding: 4rem 1.5rem;
+        padding: 3rem 1.5rem !important;
+        min-height: auto !important;
         overflow: visible !important;
     }
     
@@ -454,7 +483,7 @@
     }
 
     .section-main-title {
-        font-size: 2.1rem;
+        font-size: 2.1rem !important;
     }
 
     .section-description {
@@ -464,7 +493,7 @@
 
 @media (max-width: 480px) {
     .section-main-title {
-        font-size: 1.75rem;
+        font-size: 1.75rem !important;
     }
     
     .preview-card-glass {

@@ -751,7 +751,9 @@ async function fetchNextBatch() {
     console.log("🔄 Fetching next batch...");
 
     try {
-        const seenIds = state.questions.map(q => q.id);
+        const seenIds = state.questions
+            .map(q => q.id)
+            .filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
 
         const response = await window.NetworkService.fetch(`${API_URL}/next-batch`, {
             method: 'POST',

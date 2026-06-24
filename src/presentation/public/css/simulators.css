@@ -8,14 +8,23 @@
 }
 
 .dashboard-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
     padding-top: 2rem !important;
 }
 
 /* Distinct Header Style - Cleaned up obsolete header-glass / btn-back */
 
 .header-clean {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2.5rem;
     text-align: center;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 var(--page-padding-x);
 }
 
 .header-clean h1 {
@@ -269,4 +278,101 @@
         margin-bottom: 1.25rem !important;
         line-height: 1.4 !important;
     }
+
+    #sim-hub-title {
+        font-size: 1.9rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    #sim-hub-subtitle {
+        font-size: 0.95rem !important;
+        line-height: 1.4 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #sim-hub-title {
+        font-size: 1.65rem !important;
+    }
+}
+
+/* ============================================================
+   DYNAMIC THEMING & IMPROVEMENTS FOR SIMULATOR SECTIONS
+   ============================================================ */
+
+/* Volver al Inicio Premium Back Button */
+.btn-back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    color: var(--text-muted);
+    text-decoration: none !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 1.2rem;
+    border-radius: 50px;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.btn-back-home:hover {
+    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateX(-4px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.btn-back-home i {
+    font-size: 0.8rem;
+}
+
+/* Dynamic Accent Title Text */
+.accent-sim-text {
+    background: linear-gradient(135deg, #ffffff 40%, var(--accent-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: filter 0.3s ease;
+}
+
+.scroll-animate-section:hover .accent-sim-text {
+    filter: drop-shadow(0 0 10px rgba(var(--accent-rgb), 0.35));
+}
+
+/* Dynamic Glassmorphic Badge */
+.badge-sim-theme {
+    background: rgba(var(--accent-rgb), 0.1) !important;
+    color: var(--accent-light) !important;
+    border: 1px solid rgba(var(--accent-rgb), 0.25) !important;
+    box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.15);
+}
+
+/* Dynamic Premium CTA Button */
+.btn-sim-theme {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%) !important;
+}
+
+.btn-sim-theme:hover {
+    box-shadow: 0 12px 35px rgba(var(--accent-rgb), 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Dynamic Hover Glow for Preview Cards */
+.scroll-animate-section:hover .preview-card-glass {
+    border-color: rgba(var(--accent-rgb), 0.35) !important;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px rgba(var(--accent-rgb), 0.18) !important;
+}
+
+/* Dynamic Simulator Section Summary Text */
+.section-summary-text {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin-bottom: 2.2rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }

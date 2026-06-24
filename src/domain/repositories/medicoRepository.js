@@ -12,6 +12,9 @@ class MedicoRepository {
             seenIds = [...new Set([...seenIds, ...sessionSeenIds])];
         }
 
+        // Sanitize to only valid UUID strings
+        seenIds = seenIds.filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
+
         console.log(`🔎 [MedicoRepo] Usuario ${userId} ha visto ${seenIds.length} preguntas (24h + sesión actual).`);
 
         const filterTopics = topics && topics.length > 0 && !topics.includes('*') && !topics.includes('ALL') && !topics.includes('all');
@@ -85,6 +88,12 @@ class MedicoRepository {
     }
 
     async getRandomDemoQuestions(limit = 10, excludeIds = [], target = null) {
+        // Sanitize excludeIds to only valid UUID strings
+        let sanitizedExcludeIds = [];
+        if (excludeIds && Array.isArray(excludeIds)) {
+            sanitizedExcludeIds = excludeIds.filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
+        }
+
         let query = `
             SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, domain, topic, target
             FROM question_bank
@@ -99,9 +108,9 @@ class MedicoRepository {
             paramIdx++;
         }
 
-        if (excludeIds && excludeIds.length > 0) {
+        if (sanitizedExcludeIds.length > 0) {
             query += ` AND id <> ALL($${paramIdx}::uuid[]) `;
-            params.push(excludeIds);
+            params.push(sanitizedExcludeIds);
             paramIdx++;
         }
 
@@ -158,9 +167,12 @@ class MedicoRepository {
                 ]);
                 if (res.rows.length > 0) {
                     newIds.push(res.rows[0].id);
+                } else {
+                    newIds.push(null);
                 }
             } catch (e) {
                 console.error("Error guardando pregunta de medicina:", e.message);
+                newIds.push(null);
             }
         }
         return newIds;
