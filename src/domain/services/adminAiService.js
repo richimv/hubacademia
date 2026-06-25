@@ -321,8 +321,9 @@ class AdminAiService {
             if (options.length > 0 && correctIdx >= 0 && correctIdx < options.length) {
                 const correctOption = String(options[correctIdx]).toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
                 
-                // Encontrar el placeholder y extraer las palabras que lo rodean
-                const parts = text.split(/_{3,}/);
+                // Encontrar el placeholder y extraer las palabras que lo rodean (limpiando expresiones/pistas entre paréntesis o corchetes)
+                const textWithoutHelpers = text.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '');
+                const parts = textWithoutHelpers.split(/_{3,}/);
                 if (parts.length > 1) {
                     const beforeText = parts[0].trim();
                     const afterText = parts[1].trim();
@@ -737,6 +738,11 @@ class AdminAiService {
             let questionObj = this._parseJSON(responseText);
             let question = Array.isArray(questionObj) ? questionObj[0] : questionObj;
 
+            if (!question) {
+                console.error(`🚨 [Generación] La pregunta decodificada es null o undefined para el área ${area}`);
+                return null;
+            }
+
             // Forzar metadatos correctos post-generación
             question.topic = area;
             if (isLanguage) {
@@ -758,6 +764,11 @@ class AdminAiService {
                     const refinedText = refinedResult.response.candidates[0].content.parts[0].text;
                     const parsedRefined = this._parseJSON(refinedText);
                     question = Array.isArray(parsedRefined) ? parsedRefined[0] : parsedRefined;
+
+                    if (!question) {
+                        console.error(`🚨 [Refinamiento] La pregunta refinada es null o undefined para el área ${area}`);
+                        return null;
+                    }
 
                     // Mantener consistencia de metadatos
                     question.topic = area;

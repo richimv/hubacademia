@@ -1290,12 +1290,43 @@ class AdminManager {
                 break;
 
 
-            case 'student':
+            case 'student': {
                 title.textContent = id ? 'Editar Alumno' : 'Añadir Alumno';
                 if (id) this.currentItem = this.allStudents.find(i => i.id === id);
+                
+                const tiers = [
+                    { id: 'free', name: 'Gratuito (Free)' },
+                    { id: 'basic', name: 'Plan Básico' },
+                    { id: 'advanced', name: 'Plan Avanzado' }
+                ];
+
+                const statuses = [
+                    { id: 'inactive', name: 'Inactivo' },
+                    { id: 'active', name: 'Activo' },
+                    { id: 'expired', name: 'Expirado' }
+                ];
+
+                let currentExpiresDate = '';
+                const rawDate = this.currentItem?.subscriptionExpiresAt || this.currentItem?.subscription_expires_at;
+                if (rawDate) {
+                    try {
+                        currentExpiresDate = new Date(rawDate).toISOString().substring(0, 10);
+                    } catch (e) {
+                        console.error("Error parseando fecha de expiración:", e);
+                    }
+                }
+
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Alumno (*)', this.currentItem?.name || '', true) +
-                    this.createFormGroup('email', 'generic-email', 'Email (*)', this.currentItem?.email || '', true);
+                    this.createFormGroup('email', 'generic-email', 'Email (*)', this.currentItem?.email || '', true) +
+                    `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                        ${this.createSelect('generic-subscription-tier', 'Nivel de Membresía', tiers, this.currentItem?.subscriptionTier || this.currentItem?.subscription_tier || 'free', false)}
+                        ${this.createSelect('generic-subscription-status', 'Estado de Suscripción', statuses, this.currentItem?.subscriptionStatus || this.currentItem?.subscription_status || 'inactive', false)}
+                    </div>` +
+                    `<div style="margin-top: 10px;">
+                        ${this.createFormGroup('date', 'generic-subscription-expires-at', 'Fecha de Expiración', currentExpiresDate, false)}
+                    </div>`;
                 break;
+            }
             case 'book': {
                 title.textContent = id ? 'Editar Recurso' : 'Añadir Recurso';
                 if (id) this.currentItem = this.allBooks.find(b => b.id === parseInt(id, 10));
@@ -1515,6 +1546,54 @@ class AdminManager {
 
         fieldsContainer.innerHTML = fieldsHTML;
         this.genericModal.style.display = 'flex';
+
+        // LÓGICA DE SUSCRIPCIONES DINÁMICAS Y CONSISTENCIA PARA ESTUDIANTES
+        if (type === 'student') {
+            const tierSelect = document.getElementById('generic-subscription-tier');
+            const statusSelect = document.getElementById('generic-subscription-status');
+            const expiresInput = document.getElementById('generic-subscription-expires-at');
+
+            if (tierSelect && statusSelect && expiresInput) {
+                const getFutureDate = (months) => {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() + months);
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
+
+                tierSelect.addEventListener('change', () => {
+                    const tier = tierSelect.value;
+                    if (tier === 'basic') {
+                        statusSelect.value = 'active';
+                        expiresInput.value = getFutureDate(2);
+                    } else if (tier === 'advanced') {
+                        statusSelect.value = 'active';
+                        expiresInput.value = getFutureDate(6);
+                    } else if (tier === 'free') {
+                        if (statusSelect.value === 'active') {
+                            statusSelect.value = 'pending';
+                        }
+                        expiresInput.value = '';
+                    }
+                });
+
+                statusSelect.addEventListener('change', () => {
+                    const status = statusSelect.value;
+                    const tier = tierSelect.value;
+                    if (status === 'pending' || status === 'expired') {
+                        tierSelect.value = 'free';
+                        expiresInput.value = '';
+                    } else if (status === 'active') {
+                        if (tier === 'free') {
+                            tierSelect.value = 'basic';
+                            expiresInput.value = getFutureDate(2);
+                        }
+                    }
+                });
+            }
+        }
 
         // NUEVO: Inicializar TinyMCE 6 si es un recurso de tipo 'book'
         if (type === 'book') {
@@ -2347,12 +2426,17 @@ class AdminManager {
                         email: document.getElementById('generic-email').value
                     };
                     break;
-                case 'student':
+                case 'student': {
+                    const expiresAtVal = document.getElementById('generic-subscription-expires-at').value;
                     body = {
                         name: document.getElementById('generic-name').value,
-                        email: document.getElementById('generic-email').value
+                        email: document.getElementById('generic-email').value,
+                        subscriptionTier: document.getElementById('generic-subscription-tier').value,
+                        subscriptionStatus: document.getElementById('generic-subscription-status').value,
+                        subscriptionExpiresAt: expiresAtVal ? expiresAtVal : null
                     };
                     break;
+                }
                 case 'topic':
                     // SOLUCIÓN: Enviar un array
                     const selectedBooksTopic = Array.from(document.querySelectorAll('input[name="generic-books"]:checked')).map(cb => cb.value);

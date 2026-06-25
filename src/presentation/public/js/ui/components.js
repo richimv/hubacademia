@@ -503,6 +503,48 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     } else if (type === 'vocabulary') {
         const langLabel = item.language_code === 'it-IT' ? '🇮🇹 Italiano' : '🇺🇸 Inglés';
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${langLabel} | ${item.part_of_speech?.toUpperCase() || 'NOUN'} | ${item.level || 'A1'}</span>`;
+    } else if (type === 'student') {
+        const tier = (item.subscriptionTier || item.subscription_tier || 'free').toUpperCase();
+        const status = (item.subscriptionStatus || item.subscription_status || 'inactive').toUpperCase();
+        const expiresAt = item.subscriptionExpiresAt || item.subscription_expires_at;
+        
+        let tierColor = 'var(--text-muted)';
+        let tierBg = 'var(--bg-secondary)';
+        if (tier === 'BASIC') {
+            tierColor = '#3b82f6';
+            tierBg = 'rgba(59, 130, 246, 0.15)';
+        } else if (tier === 'ADVANCED') {
+            tierColor = '#a78bfa';
+            tierBg = 'rgba(139, 92, 246, 0.15)';
+        }
+        
+        let statusColor = '#94a3b8';
+        let statusBg = 'rgba(148, 163, 184, 0.1)';
+        if (status === 'ACTIVE') {
+            statusColor = '#10b981';
+            statusBg = 'rgba(16, 185, 129, 0.15)';
+        } else if (status === 'EXPIRED') {
+            statusColor = '#ef4444';
+            statusBg = 'rgba(239, 68, 68, 0.15)';
+        }
+
+        let dateStr = '';
+        if (expiresAt) {
+            const formattedDate = new Date(expiresAt).toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            dateStr = `📅 Expira: ${formattedDate}`;
+        }
+        
+        areaBadge = `
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.35rem; align-items: center;">
+                <span class="subscription-tier-badge" style="font-size: 0.7rem; font-weight: 700; background: ${tierBg}; padding: 2px 8px; border-radius: 4px; color: ${tierColor}; display:inline-block; border: 1px solid rgba(${tier === 'ADVANCED' ? '139, 92, 246' : tier === 'BASIC' ? '59, 130, 246' : '148, 163, 184'}, 0.25);">${tier}</span>
+                <span class="subscription-status-badge" style="font-size: 0.7rem; font-weight: 700; background: ${statusBg}; padding: 2px 8px; border-radius: 4px; color: ${statusColor}; display:inline-block; border: 1px solid rgba(${status === 'ACTIVE' ? '16, 185, 129' : '239, 68, 68'}, 0.25);">${status}</span>
+                ${dateStr ? `<span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">${dateStr}</span>` : ''}
+            </div>
+        `;
     }
 
     // Subtitulo formateado

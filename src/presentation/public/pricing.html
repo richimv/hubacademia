@@ -8,15 +8,15 @@
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <!-- CSS Base (Variables Hub Academia) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/theme.css?v=21c49b5e">
-    <link rel="stylesheet" href="/css/base.css?v=21c49b5e">
-    <link rel="stylesheet" href="/css/header.css?v=21c49b5e">
-    <link rel="stylesheet" href="/css/modal.css?v=21c49b5e">
-    <link rel="stylesheet" href="/css/components.css?v=21c49b5e">
-    <link rel="stylesheet" href="/css/footer.css?v=21c49b5e">
-    <link rel="stylesheet" href="/css/sidebar.css?v=21c49b5e">
+    <link rel="stylesheet" href="/css/theme.css?v=c1fda0ed">
+    <link rel="stylesheet" href="/css/base.css?v=c1fda0ed">
+    <link rel="stylesheet" href="/css/header.css?v=c1fda0ed">
+    <link rel="stylesheet" href="/css/modal.css?v=c1fda0ed">
+    <link rel="stylesheet" href="/css/components.css?v=c1fda0ed">
+    <link rel="stylesheet" href="/css/footer.css?v=c1fda0ed">
+    <link rel="stylesheet" href="/css/sidebar.css?v=c1fda0ed">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/pricing.css?v=21c49b5e">
+    <link rel="stylesheet" href="/css/pricing.css?v=c1fda0ed">
 </head>
 
 <body>
@@ -80,6 +80,23 @@
                 </div>
             </div> <!-- End .pricing-cards-container -->
 
+            <!-- Alternativa Yape / Plin -->
+            <div class="yape-alternative-container">
+                <div class="yape-alt-card">
+                    <div class="yape-alt-brands">
+                        <img src="/assets/yape.png" alt="Yape" class="brand-logo-img">
+                        <img src="/assets/plin.png" alt="Plin" class="brand-logo-img">
+                    </div>
+                    <div class="yape-alt-info">
+                        <h3>¿Prefieres pagar por Yape o Plin?</h3>
+                        <p>Transfiere de forma directa a nuestro número oficial y activa tu acceso Premium al instante vía WhatsApp.</p>
+                    </div>
+                    <button class="btn-yape-trigger" onclick="openManualPaymentModal('advanced')">
+                        Pagar con Yape / Plin <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
             <div class="trust-badges" style="margin-top: 2rem;">
                 <div class="secure-text">
                     <i class="fas fa-lock"></i> Pago procesado de forma segura por Mercado Pago
@@ -110,8 +127,68 @@
                 </a>
             </div>
         </div>
+    </div>
 
-        <a href="#" onclick="logout()" class="logout-link">Cerrar Sesión</a>
+    <!-- Modal Pago Manual (Yape/Plin) -->
+    <div id="manual-payment-modal" class="modal-overlay manual-payment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-qrcode"></i> Pago Manual vía Yape / Plin</h3>
+                <button class="modal-close-btn" onclick="closeManualPaymentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-intro">Elige el plan que deseas adquirir para ver los detalles del pago:</p>
+                
+                <div class="payment-tabs">
+                    <button id="tab-basic" class="payment-tab" onclick="selectManualPlan('basic')">
+                        <span class="tab-title">Plan Básico</span>
+                        <span class="tab-price">S/ 9.90</span>
+                        <span class="tab-duration">2 Meses</span>
+                    </button>
+                    <button id="tab-advanced" class="payment-tab active" onclick="selectManualPlan('advanced')">
+                        <span class="tab-title">Plan Avanzado</span>
+                        <span class="tab-price">S/ 24.90</span>
+                        <span class="tab-duration">6 Meses</span>
+                    </button>
+                </div>
+                
+                <div class="yape-card-container">
+                    <div class="yape-premium-card">
+                        <div class="yape-card-brands">
+                            <img src="/assets/yape.png" alt="Yape" class="modal-brand-logo">
+                            <span class="brand-divider">|</span>
+                            <img src="/assets/plin.png" alt="Plin" class="modal-brand-logo">
+                        </div>
+                        <div class="yape-qr-wrapper">
+                            <img src="/assets/yape-qr.jpeg" alt="QR Yape HubAcademia" class="yape-qr-img">
+                        </div>
+                        <div class="yape-card-details">
+                            <div class="yape-phone">980 844 817</div>
+                            <div class="yape-owner">Ricardo M. (HubAcademia)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="payment-instructions">
+                    <h4><i class="fas fa-info-circle"></i> Pasos para activar tu plan:</h4>
+                    <ol>
+                        <li>Abre tu app de <strong>Yape</strong> o <strong>Plin</strong> y escanea el código QR de arriba, o yapea directamente al número <strong>980 844 817</strong>.</li>
+                        <li>Transfiere el monto exacto: <strong id="instruction-amount" style="color: var(--primary-light);">S/ 24.90</strong>.</li>
+                        <li>Haz clic en el botón de abajo para enviar el comprobante de pago por WhatsApp indicando tu correo electrónico.</li>
+                    </ol>
+                </div>
+                
+                <div class="user-email-indicator">
+                    <i class="fas fa-user-circle"></i> Cuenta a activar: <span id="payment-user-email">Cargando correo de usuario...</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeManualPaymentModal()">Cerrar</button>
+                <button class="btn-whatsapp-confirm" onclick="redirectToWhatsappPayment()">
+                    <i class="fab fa-whatsapp"></i> Enviar Comprobante por WhatsApp
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Footer Standard Injection -->
@@ -154,15 +231,15 @@
 
     <!-- Configuration Script (Load AFTER Supabase to avoid warning) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=21c49b5e"></script>
-    <script src="/js/services/networkService.js?v=21c49b5e"></script>
-    <script src="/js/services/authApiService.js?v=21c49b5e"></script>
-    <script src="/js/sessionManager.js?v=21c49b5e"></script>
-    <script src="/js/ui/uiManager.js?v=21c49b5e"></script>
-    <script src="/js/ui/sidebar.js?v=21c49b5e"></script>
-    <script src="/js/app.js?v=21c49b5e"></script>
+    <script src="/js/config.js?v=c1fda0ed"></script>
+    <script src="/js/services/networkService.js?v=c1fda0ed"></script>
+    <script src="/js/services/authApiService.js?v=c1fda0ed"></script>
+    <script src="/js/sessionManager.js?v=c1fda0ed"></script>
+    <script src="/js/ui/uiManager.js?v=c1fda0ed"></script>
+    <script src="/js/ui/sidebar.js?v=c1fda0ed"></script>
+    <script src="/js/app.js?v=c1fda0ed"></script>
 
-    <script src="/js/pricing.js?v=21c49b5e"></script>
+    <script src="/js/pricing.js?v=c1fda0ed"></script>
 </body>
 
 </html>

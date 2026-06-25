@@ -195,3 +195,77 @@ document.querySelectorAll('.plan-select-btn').forEach(button => {
         }
     });
 });
+
+// ==========================================
+// YAPE / PLIN MANUAL PAYMENT FUNCTIONS
+// ==========================================
+
+let currentSelectedManualPlan = 'advanced';
+
+function openManualPaymentModal(defaultPlan = 'advanced') {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        if (window.uiManager) window.uiManager.showAuthPromptModal();
+        else window.location.href = 'login?redirect=pricing';
+        return;
+    }
+
+    const modal = document.getElementById('manual-payment-modal');
+    if (modal) {
+        modal.classList.add('active');
+        selectManualPlan(defaultPlan);
+        
+        // Cargar email del usuario logueado
+        const user = window.sessionManager ? window.sessionManager.getUser() : null;
+        const emailSpan = document.getElementById('payment-user-email');
+        if (emailSpan) {
+            emailSpan.textContent = user ? (user.email || 'No disponible') : 'Cargando...';
+        }
+    }
+}
+
+function closeManualPaymentModal() {
+    const modal = document.getElementById('manual-payment-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function selectManualPlan(planId) {
+    currentSelectedManualPlan = planId;
+    
+    // Activar/desactivar botones de pestañas
+    const tabBasic = document.getElementById('tab-basic');
+    const tabAdvanced = document.getElementById('tab-advanced');
+    const instructionAmount = document.getElementById('instruction-amount');
+    
+    if (planId === 'basic') {
+        if (tabBasic) tabBasic.classList.add('active');
+        if (tabAdvanced) tabAdvanced.classList.remove('active');
+        if (instructionAmount) instructionAmount.textContent = 'S/ 9.90';
+    } else {
+        if (tabBasic) tabBasic.classList.remove('active');
+        if (tabAdvanced) tabAdvanced.classList.add('active');
+        if (instructionAmount) instructionAmount.textContent = 'S/ 24.90';
+    }
+}
+
+function redirectToWhatsappPayment() {
+    const user = window.sessionManager ? window.sessionManager.getUser() : null;
+    const email = user ? (user.email || 'mi_correo@ejemplo.com') : 'mi_correo@ejemplo.com';
+    const planName = currentSelectedManualPlan === 'basic' ? 'Básico (S/ 9.90 - 2 Meses)' : 'Avanzado (S/ 24.90 - 6 Meses)';
+    
+    const phoneNumber = '51980844817';
+    const message = `¡Hola! Quiero activar mi Plan ${planName} de Hub Academia.\n\nMi correo registrado es: ${email}\n\nAdjunto la captura del pago por Yape.`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+}
+
+// Exponer explícitamente al scope global window
+window.openManualPaymentModal = openManualPaymentModal;
+window.closeManualPaymentModal = closeManualPaymentModal;
+window.selectManualPlan = selectManualPlan;
+window.redirectToWhatsappPayment = redirectToWhatsappPayment;

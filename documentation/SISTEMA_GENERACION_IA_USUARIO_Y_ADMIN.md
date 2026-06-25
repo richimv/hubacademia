@@ -245,8 +245,9 @@ Para garantizar la precisión técnica, el sistema utiliza dos prospectos base e
 
 ---
 
-**Documentación Integrada (Medicina + Educación + Idiomas) - 25 de Junio, 2026.**
+**Documentación Integrada (Medicina + Educación + Idiomas) - Actualizado el 25 de Junio, 2026.**
 
-### 🛡️ Robustez de Generación de Idiomas en Producción (V4.19)
+### 🛡️ Robustez de Generación de Idiomas en Producción (V4.20)
 * **Manejo de Bypass de RAG de Idiomas**: El motor de generación en `adminAiService.js` conmuta a la lógica pura de generación de lenguaje al detectar targets de la lista de idiomas. Se robusteció la lista blanca agregando explícitamente `'IDIOMAS'` y `'LANGUAGES'` a `LANGUAGE_TARGETS`, impidiendo que peticiones con estos nombres colapsen en el flujo RAG de medicina/educación por falta de archivos en Pinecone.
-* **Sanidad de `question_text`**: Se añadieron validaciones estrictas de existencia y tipo para `question_text` en `_checkQuality` y `_generateSingleQuestion` para mitigar excepciones de puntero nulo (`TypeError`) en producción cuando la IA devuelve formatos incompletos.
+* **Sanidad de `question_text` y Control de Nulos**: Se añadieron validaciones estrictas de existencia para `question` en `_checkQuality` y `_generateSingleQuestion` (tanto en la fase inicial como en el bucle de refinamiento de la IA) para mitigar excepciones de puntero nulo (`TypeError` al asignar metadatos como `.topic`, `.difficulty`, etc.) cuando la API de Gemini devuelve formatos de respuesta vacíos, nulos o malformados en produccion.
+* **Ignorado de Pistas y Parentesis en Colisiones Verbales**: Para evitar falsos positivos y rechazos sistemáticos infinitos en preguntas de gramática/vocabulario de idiomas (donde el verbo base a conjugar se especifica formalmente entre paréntesis al lado del blanco, p.ej. `Io _____ (leggere) ogni giorno` frente a la respuesta `leggo`), el auditor de calidad psicométrica de adyacencia léxica remueve dinámicamente bloques entre paréntesis `(...)` y corchetes `[...]` de la pregunta antes de extraer las palabras contiguas al espacio en blanco `_____`. Esto permite que el sistema acepte y apruebe las preguntas didácticas de idiomas válidas sin entrar en descartes fallidos continuos.

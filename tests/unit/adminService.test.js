@@ -121,3 +121,89 @@ describe('AdminService - syncResource', () => {
         expect(maxActiveCalls).toBe(1);
     });
 });
+
+describe('AdminService - update subscription consistency', () => {
+    let mockUserRepo;
+
+    beforeEach(() => {
+        mockUserRepo = {
+            findById: jest.fn(),
+            update: jest.fn()
+        };
+        adminService.repositories.user = mockUserRepo;
+    });
+
+    it('should force free tier to pending status when active is requested', async () => {
+        mockUserRepo.findById.mockResolvedValue({ id: 'u1', subscriptionTier: 'free', subscriptionStatus: 'inactive' });
+        mockUserRepo.update.mockResolvedValue({ id: 'u1', subscriptionTier: 'free', subscriptionStatus: 'pending' });
+
+        const result = await adminService.update('student', 'u1', {
+            subscriptionTier: 'free',
+            subscriptionStatus: 'active'
+        });
+
+        expect(mockUserRepo.update).toHaveBeenCalledWith('u1', expect.objectContaining({
+            subscriptionTier: 'free',
+            subscriptionStatus: 'pending',
+            subscriptionExpiresAt: null
+        }));
+    });
+
+    it('should force basic tier to active and calculate 2 months expiration if not provided', async () => {
+        mockUserRepo.findById.mockResolvedValue({ id: 'u1', subscriptionTier: 'free', subscriptionStatus: 'pending' });
+        mockUserRepo.update.mockResolvedValue({ id: 'u1', subscriptionTier: 'basic', subscriptionStatus: 'active' });
+
+        const result = await adminService.update('student', 'u1', {
+            subscriptionTier: 'basic'
+        });
+
+        const expectedExpires = new Date();
+        expectedExpires.setMonth(expectedExpires.getMonth() + 2);
+
+        expect(mockUserRepo.update).toHaveBeenCalledWith('u1', expect.objectContaining({
+            subscriptionTier: 'basic',
+            subscriptionStatus: 'active'
+        }));
+        
+        const updateArg = mockUserRepo.update.mock.calls[0][1];
+        expect(updateArg.subscriptionExpiresAt).toBeInstanceOf(Date);
+        // Verificar que la diferencia es de aproximadamente 2 meses (en ms)
+        const diffMonths = (updateArg.subscriptionExpiresAt - new Date()) / (1000 * 60 * 60 * 24 * 30);
+        expect(diffMonths).toBeCloseTo(2, 0);
+    });
+
+    it('should force advanced tier to active and calculate 6 months expiration if not provided', async () => {
+        mockUserRepo.findById.mockResolvedValue({ id: 'u1', subscriptionTier: 'free', subscriptionStatus: 'pending' });
+        mockUserRepo.update.mockResolvedValue({ id: 'u1', subscriptionTier: 'advanced', subscriptionStatus: 'active' });
+
+        const result = await adminService.update('student', 'u1', {
+            subscriptionTier: 'advanced'
+        });
+
+        expect(mockUserRepo.update).toHaveBeenCalledWith('u1', expect.objectContaining({
+            subscriptionTier: 'advanced',
+            subscriptionStatus: 'active'
+        }));
+
+        const updateArg = mockUserRepo.update.mock.calls[0][1];
+        expect(updateArg.subscriptionExpiresAt).toBeInstanceOf(Date);
+        const diffMonths = (updateArg.subscriptionExpiresAt - new Date()) / (1000 * 60 * 60 * 24 * 30);
+        expect(diffMonths).toBeCloseTo(6, 0);
+    });
+
+    it('should force tier to free and expires_at to null when expired status is set', async () => {
+        mockUserRepo.findById.mockResolvedValue({ id: 'u1', subscriptionTier: 'basic', subscriptionStatus: 'active', subscriptionExpiresAt: new Date() });
+        mockUserRepo.update.mockResolvedValue({ id: 'u1', subscriptionTier: 'free', subscriptionStatus: 'expired' });
+
+        const result = await adminService.update('student', 'u1', {
+            subscriptionStatus: 'expired'
+        });
+
+        expect(mockUserRepo.update).toHaveBeenCalledWith('u1', expect.objectContaining({
+            subscriptionTier: 'free',
+            subscriptionStatus: 'expired',
+            subscriptionExpiresAt: null
+        }));
+    });
+});
+

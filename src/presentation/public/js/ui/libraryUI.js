@@ -633,7 +633,9 @@ class LibraryUI {
                 <h3 class="note-viewer-title" style="margin-top: 0; margin-bottom: 1rem; color: var(--primary-light); font-size: 1.3rem; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem; text-align: left;">${window.escapeHtml(note.title || 'Sin título')}</h3>
                 <div class="markdown-content">${this._renderMarkdown(note.content)}</div>
             `;
-            headerText.innerHTML = `<i class="fas fa-sticky-note" style="color: ${note.color || '#f59e0b'}"></i> ${window.escapeHtml(note.title || 'Ver Nota')}`;
+            
+            const sourceLabel = note.source_type === 'chat' ? 'Nota de Chat' : (note.source_type === 'flashcard' ? 'Nota de Repaso' : 'Nota');
+            headerText.innerHTML = `<i class="fas fa-sticky-note" style="color: ${note.color || '#f59e0b'}"></i> ${sourceLabel}`;
 
             this.switchToViewer();
         } else {
@@ -688,6 +690,11 @@ class LibraryUI {
         document.getElementById('note-modal-editor').style.display = 'block';
         document.getElementById('note-view-actions').style.display = 'none';
         document.getElementById('note-edit-actions').style.display = 'block';
+        
+        const headerText = document.getElementById('note-modal-header-text');
+        if (headerText) {
+            headerText.innerHTML = `<i class="fas fa-edit"></i> Editar Nota`;
+        }
     }
 
     switchToViewer() {
@@ -699,6 +706,16 @@ class LibraryUI {
         document.getElementById('note-modal-editor').style.display = 'none';
         document.getElementById('note-view-actions').style.display = 'block';
         document.getElementById('note-edit-actions').style.display = 'none';
+
+        const headerText = document.getElementById('note-modal-header-text');
+        if (headerText) {
+            const data = this.service.getLibraryData();
+            const note = (data.notes || []).find(n => n.id == this.editingNoteId);
+            if (note) {
+                const sourceLabel = note.source_type === 'chat' ? 'Nota de Chat' : (note.source_type === 'flashcard' ? 'Nota de Repaso' : 'Nota');
+                headerText.innerHTML = `<i class="fas fa-sticky-note" style="color: ${note.color || '#f59e0b'}"></i> ${sourceLabel}`;
+            }
+        }
     }
 
     insertFormat(prefix, suffix) {

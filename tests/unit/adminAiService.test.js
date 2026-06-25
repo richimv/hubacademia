@@ -291,6 +291,78 @@ describe('AdminAiService', () => {
             expect(result[0].options[1]).toBe("sta Lei");
             expect(mockGenerateContent).toHaveBeenCalledTimes(2); // Dispatched refinement to AI
         });
+
+        it('should bypass collision detection when the redundant verb is enclosed in parentheses', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+
+            const validQuestionWithParenthesizedHelp = {
+                question_text: "Mi piace molto questo libro. Io _____ (leggere) ogni giorno.",
+                options: ["leggo", "leggono", "legge", "leggere"],
+                correct_option_index: 0,
+                explanation: "En este caso, se conjuga directamente el verbo leggere para la primera persona: Io leggo.",
+                topic: "Grammar & Use of English",
+                difficulty: "A1",
+                career: "it-IT",
+                audio_text: null
+            };
+
+            mockGenerateContent.mockResolvedValueOnce({
+                response: {
+                    candidates: [{ content: { parts: [{ text: JSON.stringify(validQuestionWithParenthesizedHelp) }] } }]
+                }
+            });
+
+            const result = await adminAiService.generateRAGQuestions(
+                'MCER',
+                'Grammar & Use of English',
+                'it-IT',
+                1,
+                false,
+                'A1'
+            );
+
+            expect(result).toHaveLength(1);
+            expect(result[0].question_text).toBe("Mi piace molto questo libro. Io _____ (leggere) ogni giorno.");
+            expect(mockGenerateContent).toHaveBeenCalledTimes(1); // No refinement dispatched!
+        });
+
+        it('should handle null/undefined question gracefully during generation', async () => {
+            db.query.mockResolvedValue({ rows: [] });
+
+            // Returns null/invalid JSON first, then a valid question in sequential fallback
+            mockGenerateContent
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: "null" }] } }]
+                    }
+                })
+                .mockResolvedValueOnce({
+                    response: {
+                        candidates: [{ content: { parts: [{ text: JSON.stringify({
+                            question_text: "Mi piace molto questo libro. Io _____ ogni giorno.",
+                            options: ["leggo", "leggono", "legge", "leggere"],
+                            correct_option_index: 0,
+                            explanation: "En este caso, se conjuga directamente el verbo leggere para la primera persona: Io leggo.",
+                            topic: "Grammar & Use of English",
+                            difficulty: "A1",
+                            career: "it-IT",
+                            audio_text: null
+                        }) }] } }]
+                    }
+                });
+
+            const result = await adminAiService.generateRAGQuestions(
+                'MCER',
+                'Grammar & Use of English',
+                'it-IT',
+                1,
+                false,
+                'A1'
+            );
+
+            expect(result).toHaveLength(1);
+            expect(result[0].question_text).toBe("Mi piace molto questo libro. Io _____ ogni giorno.");
+        });
     });
 
     describe('generateRAGQuestions - Non-Languages (Syllabus/Standard Flow)', () => {

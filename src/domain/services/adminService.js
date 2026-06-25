@@ -9,6 +9,45 @@ const TopicRepository = require('../../domain/repositories/topicRepository');
 const BookRepository = require('../../domain/repositories/bookRepository');
 const UserRepository = require('../../domain/repositories/userRepository');
 
+function resolveSubscriptionConsistency(tier, status, expiresAt) {
+    let finalTier = tier;
+    let finalStatus = status;
+    let finalExpiresAt = expiresAt;
+
+    // Reglas de negocio:
+    // Si el estado es 'pending' o 'expired', el tier DEBE ser 'free'
+    if (finalStatus === 'pending' || finalStatus === 'expired') {
+        finalTier = 'free';
+        finalExpiresAt = null;
+    } 
+    // Si el tier es 'free', el estado DEBE ser 'pending' o 'expired' (nunca 'active')
+    else if (finalTier === 'free') {
+        if (finalStatus === 'active') {
+            finalStatus = 'pending';
+        }
+        finalExpiresAt = null;
+    }
+    // Si el tier es 'basic' o 'advanced', el estado DEBE ser 'active'
+    else if (finalTier === 'basic' || finalTier === 'advanced') {
+        finalStatus = 'active';
+        
+        // Si no se proporcionó fecha de expiración, la calculamos (2 meses basic, 6 meses advanced)
+        if (!finalExpiresAt) {
+            const d = new Date();
+            const months = finalTier === 'basic' ? 2 : 6;
+            d.setMonth(d.getMonth() + months);
+            finalExpiresAt = d;
+        }
+    }
+
+    return {
+        subscriptionTier: finalTier,
+        subscriptionStatus: finalStatus,
+        subscriptionExpiresAt: finalExpiresAt
+    };
+}
+
+
 class AdminService {
     constructor() {
         // Instanciar todos los repositorios para la gestión de contenido
@@ -71,10 +110,29 @@ class AdminService {
 
     async create(entityType, newData) {
         if (['student', 'admin'].includes(entityType)) {
-            const { name, email } = newData;
+            const { name, email, subscriptionTier, subscriptionStatus, subscriptionExpiresAt } = newData;
             const tempPassword = Math.random().toString(36).slice(-8);
             console.log(`🔑 Contraseña temporal generada para ${email}: ${tempPassword}`);
-            const newUser = await this.repositories.user.create(email, tempPassword, name, entityType);
+            
+            // ✅ BUGFIX: UserRepository.create recibe un objeto userData unificado, no argumentos posicionales
+            let newUser = await this.repositories.user.create({
+                id: null,
+                email: email.toLowerCase(),
+                name: name,
+                role: entityType
+            });
+
+            // Si se definieron campos de suscripción en la creación manual, actualizamos al usuario
+            if (newUser && newUser.id && (subscriptionTier || subscriptionStatus || subscriptionExpiresAt)) {
+                newUser = await this.update(entityType, newUser.id, {
+                    name,
+                    email,
+                    subscriptionTier,
+                    subscriptionStatus,
+                    subscriptionExpiresAt
+                });
+            }
+
             return { ...newUser, tempPassword };
         }
         const repo = this._getRepository(entityType);
@@ -84,8 +142,63 @@ class AdminService {
 
     async update(entityType, id, updatedData) {
         if (['student', 'admin'].includes(entityType)) {
-            const { name, email } = updatedData;
-            return this.repositories.user.update(id, { name, email, role: entityType });
+            const { name, email, subscriptionTier, subscriptionStatus, subscriptionExpiresAt } = updatedData;
+            
+            const updatePayload = {
+                name,
+                email,
+                role: entityType
+            };
+
+            let tier = subscriptionTier;
+            let status = subscriptionStatus;
+            let expiresAt = subscriptionExpiresAt;
+
+            // Mapeo opcional de campos de suscripción si vienen en el request
+            if (tier !== undefined || status !== undefined) {
+                const currentUser = await this.repositories.user.findById(id);
+                if (currentUser) {
+                    // Si se pasó tier de pago pero el status no se definió o era inactivo/pendiente/expirado, lo forzamos a active
+                    if (tier === 'basic' || tier === 'advanced') {
+                        if (status === undefined || status === 'pending' || status === 'expired' || status === 'inactive') {
+                            status = 'active';
+                        }
+                    }
+                    // Si se pasó status de baja/pendiente/expirado pero el tier no se definió o era de pago, forzamos tier a free
+                    if (status === 'pending' || status === 'expired' || status === 'inactive') {
+                        if (tier === undefined || tier === 'basic' || tier === 'advanced') {
+                            tier = 'free';
+                        }
+                    }
+
+                    if (tier === undefined) tier = currentUser.subscriptionTier || currentUser.subscription_tier || 'free';
+                    if (status === undefined) status = currentUser.subscriptionStatus || currentUser.subscription_status || 'inactive';
+                    if (expiresAt === undefined) {
+                        expiresAt = currentUser.subscriptionExpiresAt || currentUser.subscription_expires_at || null;
+                    } else {
+                        expiresAt = (expiresAt === '' || expiresAt === 'null') ? null : expiresAt;
+                    }
+                }
+                
+                const resolved = resolveSubscriptionConsistency(tier, status, expiresAt);
+                updatePayload.subscriptionTier = resolved.subscriptionTier;
+                updatePayload.subscriptionStatus = resolved.subscriptionStatus;
+                updatePayload.subscriptionExpiresAt = resolved.subscriptionExpiresAt;
+            } else if (expiresAt !== undefined) {
+                updatePayload.subscriptionExpiresAt = (expiresAt === '' || expiresAt === 'null') ? null : expiresAt;
+            }
+
+            // ✅ FIDELIZACIÓN: Si el plan se activa manualmente (es decir, pasa a ser 'active'), reseteamos todos los consumos a cero
+            if (updatePayload.subscriptionStatus === 'active') {
+                updatePayload.usageCount = 0;
+                updatePayload.dailyAiUsage = 0;
+                updatePayload.dailyArenaUsage = 0;
+                updatePayload.dailySimulatorUsage = 0;
+                updatePayload.monthlyFlashcardsUsage = 0;
+                updatePayload.lastFreeRenewal = new Date();
+            }
+
+            return this.repositories.user.update(id, updatePayload);
         }
         const repo = this._getRepository(entityType);
         const updatedItem = await repo.update(id, updatedData);

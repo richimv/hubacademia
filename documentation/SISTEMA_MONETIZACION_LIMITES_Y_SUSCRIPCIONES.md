@@ -44,6 +44,20 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
     *   Resetea todos los consumos a cero (`0`).
     *   Actualiza la fecha de caducidad en formato UTC: `subscription_expires_at = NOW() + INTERVAL '6 months'` (ó 2 meses).
 
+### Fase 2.3.1: Pago Manual vía Yape/Plin (Alternativa WhatsApp)
+*   **Interfaz pricing.html**: Ofrece un banner destacado que abre un modal con el código QR de Yape real cargado de forma local (`/assets/yape-qr.jpeg`), asociado a la cuenta de **Ricardo M.** y al número celular oficial **+51 980844817** (HubAcademia).
+*   **Pestañas de Planes**: Permite seleccionar dinámicamente el plan básico (S/ 9.90 por 2 meses) o el plan avanzado (S/ 24.90 por 6 meses) y actualiza automáticamente los montos e instrucciones en tiempo real.
+*   **Redirección Dinámica**: Mediante `pricing.js` y el `SessionManager`, se captura el email registrado del usuario para pre-llenar un mensaje de WhatsApp personalizado al hacer clic en "Enviar Comprobante por WhatsApp".
+*   **Activación y Consistencia Interactiva en el Panel de Gestión (`admin.js`)**: El administrador puede editar el registro de cualquier estudiante desde el Panel de Gestión. El sistema automatiza y restringe los valores en el cliente en tiempo real:
+    *   Si selecciona `basic`, el estado cambia a `active` y se calcula la fecha actual + 2 meses.
+    *   Si selecciona `advanced`, el estado cambia a `active` y se calcula la fecha actual + 6 meses.
+    *   Si selecciona `free`, el estado cambia a `pending`/`expired` y se limpia la fecha.
+    *   Si el estado se cambia manualmente a `pending` o `expired`, el tier se degrada automáticamente a `free` y la fecha de expiración se borra.
+*   **Reglas de Validación y Fidelización en Backend (`adminService.js`)**: El backend actúa como una red de seguridad atómica para garantizar que no existan combinaciones inconsistentes en base de datos. Cuando se activa el estado a `'active'` de manera manual en el panel, el backend automáticamente:
+    *   Fuerza los tiers y estados a ser consistentes (no permite planes premium en estado `pending`).
+    *   Autocalcula la expiración del plan si no fue provista (+2 meses para basic, +6 meses para advanced).
+    *   Resetea todos los contadores de consumo diario y mensual a cero (`usageCount = 0`, `dailyAiUsage = 0`, etc.) simulando exactamente el webhook de Mercado Pago para inicializar el pool limpio.
+
 ### Fase 2.4: Retorno al Cliente y Sincronización
 *   El usuario es redirigido de regreso a la aplicación a la URL `/?payment=success`.
 *   El frontend intercepta este parámetro, refresca el token JWT del usuario (`sessionManager.refreshUser()`) y dispara una confirmación visual (SweetAlert) actualizando los límites de inmediato sin requerir re-autenticación.
@@ -116,4 +130,4 @@ El sistema utiliza prefijos informativos para auditar los consumos en Express:
 *   `🛡️ [IA RAG]`: Invocación del RAG oficial (reservado para Advanced/Admin).
 
 ---
-*Última actualización de la documentación consolidada: 19 de junio de 2026*
+*Última actualización de la documentación consolidada: 25 de junio de 2026*
