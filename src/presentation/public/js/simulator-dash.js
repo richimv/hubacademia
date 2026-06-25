@@ -817,8 +817,6 @@ const SimulatorDash = (() => {
                 btn.addEventListener('click', (e) => {
                     const token = localStorage.getItem('authToken');
 
-
-
                     // 1. Visitante check (Redirección Únete)
                     if (!token && window.uiManager) {
                         // EXCEPCIÓN: Permitir Modo Rápido (Arcade) para Invitados con LÍMITE
@@ -840,6 +838,33 @@ const SimulatorDash = (() => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 window.uiManager.showAuthPromptModal();
+                                return;
+                            }
+
+                            // 🛡️ Bloqueo si no hay configuración aplicada para visitante
+                            if (!activeConfig) {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                const btnOpen = document.getElementById('btn-start-config');
+                                if (btnOpen) {
+                                    btnOpen.click(); // Abrimos el modal
+
+                                    // Efecto visual para hacer énfasis en que deben configurar
+                                    const modalContent = document.querySelector('.config-modal-content');
+                                    if (modalContent) {
+                                        modalContent.style.animation = 'shake 0.4s ease-in-out';
+                                        setTimeout(() => modalContent.style.animation = '', 400);
+                                    }
+
+                                    // Si no existe la animación global, la añadimos dinámicamente
+                                    if (!document.getElementById('shake-anim')) {
+                                        const style = document.createElement('style');
+                                        style.id = 'shake-anim';
+                                        style.textContent = `@keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }`;
+                                        document.head.appendChild(style);
+                                    }
+                                }
                                 return;
                             }
                         } else {
@@ -953,6 +978,17 @@ const SimulatorDash = (() => {
         if (modeRadioButtons.length > 0) {
             modeRadioButtons.forEach(radio => {
                 radio.addEventListener('change', () => {
+                    const token = localStorage.getItem('authToken');
+                    if (!token && radio.value === 'custom' && radio.checked) {
+                        // Revert to default configuration mode for guests
+                        const defaultRadio = document.querySelector('input[name="configMode"][value="default"]');
+                        if (defaultRadio) defaultRadio.checked = true;
+                        updateConfigModeUI();
+                        if (window.uiManager) {
+                            window.uiManager.showAuthPromptModal();
+                        }
+                        return;
+                    }
                     updateConfigModeUI();
                 });
             });
@@ -1142,12 +1178,6 @@ const SimulatorDash = (() => {
         if (btnOpen) {
             btnOpen.onclick = (e) => {
                 const token = localStorage.getItem('authToken');
-                if (!token && window.uiManager) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.uiManager.showAuthPromptModal();
-                    return;
-                }
 
                 e.preventDefault();
                 console.log("Abriendo modal de configuración...");
@@ -1267,8 +1297,8 @@ const SimulatorDash = (() => {
                     if (serumsInfo) serumsInfo.style.display = finalTarget === 'SERUMS' ? 'block' : 'none';
                 }
 
-                // Preselect configMode based on activeConfig.configType
-                const modeVal = (activeConfig && activeConfig.configType) ? activeConfig.configType : 'default';
+                // Preselect configMode based on activeConfig.configType (force default for guests)
+                const modeVal = (activeConfig && activeConfig.configType && token) ? activeConfig.configType : 'default';
                 const radioDefault = document.querySelector('input[name="configMode"][value="default"]');
                 const radioCustom = document.querySelector('input[name="configMode"][value="custom"]');
                 if (modeVal === 'default') {

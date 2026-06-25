@@ -155,8 +155,8 @@ class MedicoService {
                     throw new Error("AI_GENERATION_EMPTY");
                 }
             } catch (aiErr) {
-                console.error("❌ Error Crítico en Reposición IA (Medico):", aiErr.message);
-                throw new Error("AI_REPLENISHMENT_FAILED");
+                console.error("❌ Error Crítico en Reposición IA (Medico):", aiErr);
+                throw new Error("AI_REPLENISHMENT_FAILED", { cause: aiErr });
             }
         }
 

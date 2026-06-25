@@ -87,7 +87,7 @@ class IdiomasSimulatorRepository {
         }));
     }
 
-    async getRandomDemoQuestions(limit = 10, excludeIds = [], target = null) {
+    async getRandomDemoQuestions(limit = 10, excludeIds = [], target = null, career = null, difficulty = null, areas = null) {
         // Sanitize excludeIds to only valid UUID strings
         let sanitizedExcludeIds = [];
         if (excludeIds && Array.isArray(excludeIds)) {
@@ -106,6 +106,27 @@ class IdiomasSimulatorRepository {
             query += ` AND target = $${paramIdx} `;
             params.push(target);
             paramIdx++;
+        }
+
+        if (career) {
+            query += ` AND (career IS NULL OR career = $${paramIdx}) `;
+            params.push(career);
+            paramIdx++;
+        }
+
+        if (difficulty) {
+            query += ` AND difficulty = $${paramIdx} `;
+            params.push(difficulty);
+            paramIdx++;
+        }
+
+        if (areas) {
+            const areasArray = Array.isArray(areas) ? areas : String(areas).split(',').map(a => a.trim()).filter(Boolean);
+            if (areasArray.length > 0) {
+                query += ` AND unaccent(UPPER(topic)) = ANY(SELECT unaccent(UPPER(unnest($${paramIdx}::text[])))) `;
+                params.push(areasArray);
+                paramIdx++;
+            }
         }
 
         if (sanitizedExcludeIds.length > 0) {

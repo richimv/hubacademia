@@ -1392,7 +1392,7 @@ class UIManager {
                         </div>
 
                         <div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 5px; line-height: 1.5; padding: 0 10px;">
-                            Registra tu progreso real, accede a analítica avanzada y desbloquea +5,000 preguntas.
+                            Únete hoy de forma gratuita para guardar tu progreso, analizar tus estadísticas y probar todos los simuladores y servicios de la plataforma.
                         </div>
                     </div>
 

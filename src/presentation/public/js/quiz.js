@@ -520,6 +520,10 @@ async function startQuiz() {
         const domainParam = contextMap[state.context || 'MEDICINA'] || 'medicine';
         const seenIds = JSON.parse(localStorage.getItem(`guest_seen_ids_${domainParam}`) || '[]');
         fetchUrl = `${API_URL}/demo?domain=${domainParam}&limit=${state.maxQuestions}&excludeIds=${seenIds.join(',')}`;
+        if (state.targetExam) fetchUrl += `&target=${encodeURIComponent(state.targetExam)}`;
+        if (state.career) fetchUrl += `&career=${encodeURIComponent(state.career)}`;
+        if (state.difficulty) fetchUrl += `&difficulty=${encodeURIComponent(state.difficulty)}`;
+        if (state.areas && state.areas.length > 0) fetchUrl += `&areas=${encodeURIComponent(state.areas.join(','))}`;
 
         try {
             console.log(`📡 Iniciando Demo Engine para dominio: ${domainParam}`);

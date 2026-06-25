@@ -58,6 +58,27 @@ class Server {
         try {
             // ✅ CORRECCIÓN: Importar 'db' aquí para asegurar que .env se haya cargado.
             const db = require('../database/db');
+
+            // ✅ SANITIZACIÓN GLOBAL DE CREDENCIALES DE GOOGLE CLOUD
+            // Evita que rutas locales de Windows copiadas a producción (Render/Linux) causen fallos críticos ENOENT
+            let keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+            if (keyPath) {
+                const fs = require('fs');
+                const isLocalWindowsPath = keyPath.startsWith('C:') || keyPath.includes('\\') || keyPath.includes('Users/');
+                const fileExists = fs.existsSync(keyPath);
+                if (isLocalWindowsPath || !fileExists) {
+                    console.warn(`⚠️ [AuthSanitizer] La ruta GOOGLE_APPLICATION_CREDENTIALS (${keyPath}) es inválida o no existe en este servidor.`);
+                    const fallbackRootKey = path.join(__dirname, '../../../service-account-key.json');
+                    if (fs.existsSync(fallbackRootKey)) {
+                        console.log(`✅ [AuthSanitizer] Cargando archivo de credenciales de respaldo de la raíz: ${fallbackRootKey}`);
+                        process.env.GOOGLE_APPLICATION_CREDENTIALS = fallbackRootKey;
+                    } else {
+                        console.warn(`🚨 [AuthSanitizer] No se encontró service-account-key.json de respaldo. Limpiando variable para evitar fallos ENOENT.`);
+                        delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+                    }
+                }
+            }
+
             // Realizar una consulta simple para verificar la conexión
             const client = await db.query('SELECT NOW()'); // query() ahora llama a getPool() internamente
 

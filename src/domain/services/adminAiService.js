@@ -9,6 +9,26 @@ const genPrompts = require('../prompts/generationPrompts');
  */
 class AdminAiService {
     constructor() {
+        // Sanitizar GOOGLE_APPLICATION_CREDENTIALS si es una ruta local de Windows o no existe
+        const fs = require('fs');
+        const path = require('path');
+        let keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        if (keyPath) {
+            const isLocalWindowsPath = keyPath.startsWith('C:') || keyPath.includes('\\') || keyPath.includes('Users/');
+            const fileExists = fs.existsSync(keyPath);
+            if (isLocalWindowsPath || !fileExists) {
+                console.warn(`⚠️ [VertexAuth] La ruta GOOGLE_APPLICATION_CREDENTIALS (${keyPath}) es inválida o no existe en este entorno.`);
+                const fallbackRootKey = path.join(__dirname, '../../../service-account-key.json');
+                if (fs.existsSync(fallbackRootKey)) {
+                    console.log(`✅ [VertexAuth] Usando archivo de credenciales de respaldo: ${fallbackRootKey}`);
+                    process.env.GOOGLE_APPLICATION_CREDENTIALS = fallbackRootKey;
+                } else {
+                    console.warn(`🚨 [VertexAuth] No se encontró service-account-key.json de respaldo. Limpiando variable para evitar fallos ENOENT.`);
+                    delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+                }
+            }
+        }
+
         const project = process.env.GOOGLE_CLOUD_PROJECT;
         const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
         this.vertex_ai = new VertexAI({ project, location });
@@ -47,6 +67,8 @@ class AdminAiService {
      */
     async _callModel(prompt) {
         const apiKey = process.env.GEMINI_API_KEY;
+        let restError = null;
+
         if (apiKey) {
             try {
                 const axios = require('axios');
@@ -71,14 +93,57 @@ class AdminAiService {
                     };
                 }
             } catch (err) {
+                restError = err;
                 console.warn("⚠️ [REST Fallo] Error al llamar a gemini-3.1-flash-lite vía REST:", err.message);
+                if (err.response && err.response.data) {
+                    console.warn("❌ [REST Detalles]:", JSON.stringify(err.response.data));
+                }
+                
+                // REST Fallback a gemini-2.5-flash-lite si la 3.1 falló (pero la API key es válida)
+                const isAuthError = err.response && (err.response.status === 400 || err.response.status === 403);
+                if (!isAuthError) {
+                    try {
+                        const axios = require('axios');
+                        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+                        const payload = {
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: {
+                                responseMimeType: "application/json",
+                                temperature: 0.4
+                            }
+                        };
+                        console.log("📡 [REST Fallback] Reintentando con gemini-2.5-flash-lite vía REST...");
+                        const fallbackRes = await axios.post(fallbackUrl, payload, { timeout: 15000 });
+                        if (fallbackRes.data && fallbackRes.data.candidates && fallbackRes.data.candidates[0] && fallbackRes.data.candidates[0].content) {
+                            const text = fallbackRes.data.candidates[0].content.parts[0].text;
+                            return {
+                                response: {
+                                    candidates: [{
+                                        content: { parts: [{ text }] }
+                                    }]
+                                }
+                            };
+                        }
+                    } catch (fallbackErr) {
+                        console.warn("⚠️ [REST Fallback Fallo] Error con gemini-2.5-flash-lite vía REST:", fallbackErr.message);
+                        if (fallbackErr.response && fallbackErr.response.data) {
+                            console.warn("❌ [REST Fallback Detalles]:", JSON.stringify(fallbackErr.response.data));
+                        }
+                    }
+                }
             }
         }
 
         // Si ya sabemos que Vertex no soporta 3.1, saltar directamente al fallback 2.5
         if (!this.vertexModel31Supported) {
             console.log("📡 [VertexAI Bypass] gemini-3.1-flash-lite marcado como no soportado. Usando gemini-2.5-flash-lite directamente...");
-            return await this.fallbackModel.generateContent(prompt);
+            try {
+                return await this.fallbackModel.generateContent(prompt);
+            } catch (vertexErr) {
+                console.error("❌ [VertexAI Fallo Crítico] Falló fallbackModel en Vertex:", vertexErr);
+                if (restError) throw restError;
+                throw vertexErr;
+            }
         }
 
         // Intento por Vertex AI (Canal Secundario)
@@ -91,9 +156,20 @@ class AdminAiService {
             if (isNotAvailable) {
                 this.vertexModel31Supported = false; // Marcar en memoria
                 console.warn("🚨 [VertexAI Fallback] gemini-3.1-flash-lite no disponible en tu región/proyecto. Aplicando downgrade de emergencia a gemini-2.5-flash-lite...");
-                return await this.fallbackModel.generateContent(prompt);
+                try {
+                    return await this.fallbackModel.generateContent(prompt);
+                } catch (vertexErr) {
+                    console.error("❌ [VertexAI Fallo Crítico] Falló fallbackModel en Vertex tras downgrade:", vertexErr);
+                    if (restError) throw restError;
+                    throw vertexErr;
+                }
             }
-            throw err; // Relanzar si es otro tipo de error (ej: rate limits o conexión)
+            // Si Vertex falla por credenciales u otros errores de infraestructura, y teníamos un error de REST, lanzamos el de REST que es más informativo.
+            if (restError) {
+                console.error("❌ [VertexAI Fallo] Fallo de infraestructura Vertex AI. Lanzando error original de REST.");
+                throw restError;
+            }
+            throw err;
         }
     }
 
@@ -198,8 +274,8 @@ class AdminAiService {
             const minLen = Math.min(...lengths);
 
             if (isLanguage) {
-                // Umbral más estricto para idiomas
-                if (Math.abs(correctLen - avgDistractorLen) > 15 || (maxLen - minLen) > 25) {
+                // Umbral más realista para idiomas
+                if (Math.abs(correctLen - avgDistractorLen) > 30 || (maxLen - minLen) > 40) {
                     issues.push(`Asimetría detectada en opciones de idiomas. Opción correcta: ${correctLen} letras, Distractores promedio: ${Math.round(avgDistractorLen)}. Deben ser similares en extensión y detalle.`);
                 }
             } else {
@@ -458,7 +534,7 @@ class AdminAiService {
                         const q = await this._generateSingleQuestion(normalizedTarget, area, career, [...batchHistory], isUserRequest, difficulty, globalIdx);
                         return { area, question: q };
                     } catch (e) {
-                        console.error(`❌ Error en tarea paralela para área ${area}:`, e.message);
+                        console.error(`❌ Error en tarea paralela para área ${area}:`, e);
                         return { area, question: null };
                     }
                 });
@@ -516,7 +592,7 @@ class AdminAiService {
 
             return allQuestions;
         } catch (error) {
-            console.error('❌ Error en AdminAiService:', error.message);
+            console.error('❌ Error en AdminAiService:', error);
             throw error;
         }
     }
@@ -689,7 +765,7 @@ class AdminAiService {
 
                     status = this._checkQuality(question, target, area, career, difficulty, isLanguage, combinedHistory);
                 } catch (refineErr) {
-                    console.error(`⚠️ Error en auditoría/refinamiento (intento ${auditAttempts}):`, refineErr.message);
+                    console.error(`⚠️ Error en auditoría/refinamiento (intento ${auditAttempts}):`, refineErr);
                     break;
                 }
             }
@@ -734,7 +810,7 @@ class AdminAiService {
 
             return question;
         } catch (error) {
-            console.error(`⚠️ Error en generación individual p/ ${area}:`, error.message);
+            console.error(`⚠️ Error en generación individual p/ ${area}:`, error);
             return null;
         }
     }

@@ -61,6 +61,9 @@ class IdiomasSimulatorController {
 
         } catch (error) {
             console.error('❌ [Error] startQuiz (Idiomas):', error);
+            if (error.cause) {
+                console.error('🔍 [Causa Original]:', error.cause);
+            }
 
             if (error.message === "AI_REPLENISHMENT_FAILED" || error.message === "AI_GENERATION_EMPTY") {
                 return res.status(500).json({
@@ -252,13 +255,18 @@ class IdiomasSimulatorController {
                 ? req.query.excludeIds.split(',').filter(id => id && id.length > 30)
                 : [];
             
+            const target = req.query.target || 'MCER';
+            const career = req.query.career || null;
+            const difficulty = req.query.difficulty || null;
+            const areas = req.query.areas || null;
+
             const idiomasSimulatorRepository = require('../../domain/repositories/idiomasSimulatorRepository');
-            const questions = await idiomasSimulatorRepository.getRandomDemoQuestions(limit, excludeIds, 'MCER');
+            const questions = await idiomasSimulatorRepository.getRandomDemoQuestions(limit, excludeIds, target, career, difficulty, areas);
 
             res.json({
                 success: true,
                 questions: questions,
-                topic: `DEMO: MCER`,
+                topic: `DEMO: ${target}`,
                 isPremium: false,
                 source: 'BANK'
             });

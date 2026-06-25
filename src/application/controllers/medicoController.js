@@ -61,6 +61,9 @@ class MedicoController {
 
         } catch (error) {
             console.error('❌ [Error] startQuiz (Medico):', error);
+            if (error.cause) {
+                console.error('🔍 [Causa Original]:', error.cause);
+            }
 
             if (error.message === "AI_REPLENISHMENT_FAILED" || error.message === "AI_GENERATION_EMPTY") {
                 return res.status(500).json({
@@ -253,13 +256,18 @@ class MedicoController {
                 ? req.query.excludeIds.split(',').filter(id => id && id.length > 30)
                 : [];
             
+            const target = req.query.target || 'SERUMS';
+            const career = req.query.career || null;
+            const difficulty = req.query.difficulty || null;
+            const areas = req.query.areas || null;
+
             const medicoRepository = require('../../domain/repositories/medicoRepository');
-            const questions = await medicoRepository.getRandomDemoQuestions(limit, excludeIds, 'SERUMS');
+            const questions = await medicoRepository.getRandomDemoQuestions(limit, excludeIds, target, career, difficulty, areas);
 
             res.json({
                 success: true,
                 questions: questions,
-                topic: `DEMO: SERUMS`,
+                topic: `DEMO: ${target}`,
                 isPremium: false,
                 source: 'BANK'
             });
