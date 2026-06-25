@@ -2062,6 +2062,7 @@ const SimulatorDash = (() => {
         const scoreEl = document.getElementById('stat-score');
         const accuracyEl = document.getElementById('stat-accuracy');
         const countsEl = document.getElementById('stat-counts-text');
+        const masteryEl = document.getElementById('stat-mastery');
 
         let currentAvgScore = '14.5';
         if (scoreEl) scoreEl.textContent = currentAvgScore;

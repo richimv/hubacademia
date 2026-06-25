@@ -256,6 +256,10 @@ class AdminAiService {
         const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
         const requiredCount = isLanguage ? 4 : (isEducation ? 3 : (target === 'RESIDENTADO' ? 5 : 4));
 
+        if (!question.question_text || typeof question.question_text !== 'string' || question.question_text.trim() === '') {
+            issues.push("La pregunta debe incluir un enunciado ('question_text') no vacío.");
+        }
+
         if (!question.options || question.options.length !== requiredCount) {
             issues.push(`La pregunta debe tener exactamente ${requiredCount} opciones. Actualmente tiene ${question.options ? question.options.length : 0}.`);
         }
@@ -518,7 +522,7 @@ class AdminAiService {
             });
             let batchHistory = [...globalHistory]; // Memoria dinámica que crecerá
 
-            const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS'];
+            const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS', 'IDIOMAS', 'LANGUAGES'];
             const isLanguage = (normalizedTarget && LANGUAGE_TARGETS.includes(normalizedTarget)) || normalizedTarget === 'LANGUAGES';
 
             // 1. Generación en Paralelo por Chunks
@@ -603,7 +607,7 @@ class AdminAiService {
     async _generateSingleQuestion(target, area, career, history = [], isUserRequest = false, difficulty = null, parallelIndex = 0) {
         try {
             const db = require('../../infrastructure/database/db');
-            const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS'];
+            const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS', 'IDIOMAS', 'LANGUAGES'];
             const isLanguage = (target && LANGUAGE_TARGETS.includes(target.toUpperCase())) || target === 'languages';
 
             // 1. Obtener historial específico para duplicados
@@ -798,6 +802,7 @@ class AdminAiService {
             if (isLanguage) {
                 question.subtopic = question.subtopic || 'Language Practice';
                 if (['Grammar & Use of English', 'Vocabulary & Context'].includes(area) &&
+                    question.question_text &&
                     !question.question_text.includes('_____') && !question.question_text.includes('___')) {
                     question.question_text += ' _____';
                 }

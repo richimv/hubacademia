@@ -877,6 +877,17 @@ Se implementó una serie de optimizaciones y restricciones en el motor de genera
 
 ---
 **Autor:** Antigravity AI  
-**Documento de Especificaciones Técnicas de Idiomas v4.18** 🌎✨
+**Documento de Especificaciones Técnicas de Idiomas v4.19** 🌎✨
+
+
+
+---
+
+## 33. Corrección de Target Matching y Robustez de Enunciados en Producción (V4.19) [COMPLETED]
+
+Se implementó una serie de mejoras críticas en el servicio de generación de preguntas por inteligencia artificial (`adminAiService.js`) para resolver fallos internos `500` en producción:
+- **Target Matching Robustecido**: Se agregaron explícitamente `'IDIOMAS'` y `'LANGUAGES'` a la lista blanca de `LANGUAGE_TARGETS` tanto en el método principal `generateRAGQuestions` como en el sub-generador `_generateSingleQuestion`. Esto asegura que cualquier llamada iniciada con estos targets identifique el dominio de lenguas correctamente y omita el pipeline de búsqueda vectorial en Pinecone (el cual carece de documentos de idiomas y causaba abortos de generación al buscar temarios médicos/pedagógicos).
+- **Validación Estricta de Enunciados (`question_text`)**: Se incorporó un filtro de sanidad en el auditor psicométrico (`_checkQuality`) que valida que la pregunta devuelta por la IA posea un enunciado no vacío y de tipo `string`.
+- **Prevención de Excepciones de Acceso (`TypeError`)**: Se inyectó una salvaguarda condicional antes del formateo final del placeholder de idiomas. De esta forma, si el enunciado `question_text` por algún motivo es nulo o indefinido en un intento de generación, se previene que la llamada a `.includes()` cause un error de puntero nulo y aborte todo el proceso del lote de preguntas.
 
 

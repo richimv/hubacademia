@@ -245,4 +245,8 @@ Para garantizar la precisión técnica, el sistema utiliza dos prospectos base e
 
 ---
 
-**Documentación Integrada (Medicina + Educación) - 11 de Mayo, 2026.**
+**Documentación Integrada (Medicina + Educación + Idiomas) - 25 de Junio, 2026.**
+
+### 🛡️ Robustez de Generación de Idiomas en Producción (V4.19)
+* **Manejo de Bypass de RAG de Idiomas**: El motor de generación en `adminAiService.js` conmuta a la lógica pura de generación de lenguaje al detectar targets de la lista de idiomas. Se robusteció la lista blanca agregando explícitamente `'IDIOMAS'` y `'LANGUAGES'` a `LANGUAGE_TARGETS`, impidiendo que peticiones con estos nombres colapsen en el flujo RAG de medicina/educación por falta de archivos en Pinecone.
+* **Sanidad de `question_text`**: Se añadieron validaciones estrictas de existencia y tipo para `question_text` en `_checkQuality` y `_generateSingleQuestion` para mitigar excepciones de puntero nulo (`TypeError`) en producción cuando la IA devuelve formatos incompletos.
