@@ -208,27 +208,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         section.innerHTML = `
-            <div class="section-grid ${isInverted ? 'grid-inverted' : ''}">
-                <div class="section-info-zone">
+            <div class="section-grid-new ${isInverted ? 'grid-inverted' : ''}">
+                <div class="section-main-column">
                     <h2 class="section-main-title">
                         <span class="accent-sim-text">${card.title}</span>
                     </h2>
                     <p class="section-description">${card.desc}</p>
-                    <p class="section-summary-text">${card.summary}</p>
-                    ${buttonHtml}
-                </div>
-
-                <div class="section-preview-zone">
-                    <div class="preview-card-glass">
-                        <img src="${card.image}" alt="${card.title}" class="mockup-banner-bg" style="object-fit: cover;">
-                        <div class="mockup-overlay-sim">
-                            <span class="sim-tag">${config.title}</span>
-                            <h3 class="sim-title">${card.title}</h3>
-                            <div class="sim-progress-bar">
-                                <div class="sim-progress-fill" style="background: var(--accent); width: ${card.enabled ? '85%' : '0%'};"></div>
+                    <div class="section-preview-zone">
+                        <div class="preview-card-glass">
+                            <img src="${card.image}" alt="${card.title}" class="mockup-banner-bg" style="object-fit: cover;">
+                            <div class="mockup-overlay-sim">
+                                <span class="sim-tag">${config.title}</span>
+                                <h3 class="sim-title">${card.title}</h3>
+                                <div class="sim-progress-bar">
+                                    <div class="sim-progress-fill" style="background: var(--accent); width: ${card.enabled ? '85%' : '0%'};"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="section-features-column">
+                    <div class="simulator-summary-card">
+                        <h4 class="summary-card-title">
+                            <i class="fas fa-info-circle" style="color: var(--accent);"></i> Resumen
+                        </h4>
+                        <p class="summary-card-text">${card.summary}</p>
+                    </div>
+                    ${buttonHtml}
                 </div>
             </div>
         `;
