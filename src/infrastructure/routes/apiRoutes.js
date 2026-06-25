@@ -110,7 +110,6 @@ router.get('/languages/vocabulary/search-suggestions', auth, languageVocabularyC
 router.post('/languages/vocabulary', auth, languageVocabularyController.addWord);
 router.post('/languages/vocabulary/generate', auth, checkAILimits('chat_standard'), languageVocabularyController.generateWordDetails);
 router.delete('/languages/vocabulary/:id', auth, languageVocabularyController.deleteWord);
-router.post('/languages/vocabulary/export-flashcards', auth, languageVocabularyController.exportToFlashcards);
 router.get('/languages/vocabulary/:id/challenge', auth, languageVocabularyController.getChallenge);
 router.post('/languages/vocabulary/:id/practice', auth, usageMiddleware, checkAILimits('chat_standard'), languageVocabularyController.practiceWord);
 router.get('/languages/vocabulary/:id/conjugations', auth, languageVocabularyController.getConjugations);
@@ -241,8 +240,7 @@ router.delete('/cards/:cardId', auth, DeckController.deleteCard);
 // --- Rutas de Repaso de Flashcards ---
 router.get('/flashcard/due', auth, flashcardController.getDueFlashcards);
 router.post('/flashcard/review', auth, flashcardController.reviewFlashcard);
-router.post('/flashcard/check-saved', auth, flashcardController.checkSavedFlashcards);
-router.post('/flashcard/save-from-question', auth, flashcardController.saveFlashcardFromQuestion);
+
 
 // --- Rutas del Módulo de Autoevaluación ---
 router.post('/self-evaluation/start', auth, checkAILimits('self_evaluation'), selfEvaluationController.startGame);

@@ -399,22 +399,10 @@ class RepasoManager {
         const container = document.getElementById('dashboard-view');
         if (!container) return;
 
-        // Asegurar la inicialización del tab activo
-        if (!this.activeTab) {
-            this.activeTab = localStorage.getItem('repaso_active_tab') || 'official';
-        }
-
         container.innerHTML = `
             <div class="repaso-dashboard-header" style="margin-bottom: 2rem;">
-                <h2 style="margin-bottom: 1.25rem;">Centro de Repaso</h2>
-                <div class="repaso-tabs">
-                    <button class="repaso-tab-btn ${this.activeTab === 'official' ? 'active' : ''}" onclick="window.repasoManager.switchTab('official')">
-                        <i class="fas fa-graduation-cap"></i> Mazos Oficiales
-                    </button>
-                    <button class="repaso-tab-btn ${this.activeTab === 'personal' ? 'active' : ''}" onclick="window.repasoManager.switchTab('personal')">
-                        <i class="fas fa-user"></i> Mis Mazos Creados
-                    </button>
-                </div>
+                <h2 style="margin-bottom: 0.5rem;">Centro de Repaso</h2>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Gestiona y repasa tus mazos personales de flashcards.</p>
             </div>
             <div id="root-decks-grid" class="decks-grid">
                 <div class="deck-skeleton-card"></div>
@@ -429,13 +417,8 @@ class RepasoManager {
             if (grid) {
                 grid.innerHTML = '';
                 
-                // Filtrar según pestaña activa
-                let filteredDecks = [];
-                if (this.activeTab === 'official') {
-                    filteredDecks = decks.filter(d => d.type === 'SYSTEM');
-                } else {
-                    filteredDecks = decks.filter(d => d.type !== 'SYSTEM');
-                }
+                // Solo mostrar mazos personales
+                const filteredDecks = decks.filter(d => d.type !== 'SYSTEM');
                 
                 this.renderDeckCards(filteredDecks, grid, null);
             }
@@ -446,11 +429,6 @@ class RepasoManager {
         }
     }
 
-    switchTab(tab) {
-        this.activeTab = tab;
-        localStorage.setItem('repaso_active_tab', tab);
-        this.renderRootDecks();
-    }
 
     async renderCommunityDecks(page = 1) {
         const container = document.getElementById('community-view');
@@ -845,17 +823,10 @@ class RepasoManager {
         container.innerHTML = '';
         const fragment = document.createDocumentFragment();
 
-        // --- 1. NEW: Add "Create Deck" Card (Only for Logged Users and NOT for SYSTEM / Official Decks) ---
+        // --- 1. NEW: Add "Create Deck" Card (Only for Logged Users) ---
         let showCreateCard = false;
         if (this.token) {
-            if (parentId === null) {
-                // At root level, only show if active tab is personal
-                showCreateCard = (this.activeTab === 'personal');
-            } else {
-                // At subdeck level, show if parent deck is NOT a system/official deck
-                const isParentSystem = this.currentDeck && this.currentDeck.type === 'SYSTEM';
-                showCreateCard = !isParentSystem;
-            }
+            showCreateCard = true;
         }
 
         if (showCreateCard) {

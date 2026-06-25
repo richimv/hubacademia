@@ -267,61 +267,6 @@ class LanguageRepository {
     }
 
     /**
-     * Obtiene una lista de palabras de vocabulario por ID para un usuario.
-     */
-    /**
-     * Obtiene una lista de palabras de vocabulario por ID para un usuario con JOIN global.
-     */
-    async getVocabularyWordsByIds(userId, ids) {
-        if (!ids || ids.length === 0) return [];
-        const placeholders = ids.map((_, i) => `$${i + 2}`).join(',');
-        const query = `
-            SELECT uv.id, 
-                   uv.user_id, 
-                   uv.vocabulary_id,
-                   uv.translation, 
-                   uv.srs_state, 
-                   uv.next_review_at, 
-                   uv.interval_days, 
-                   uv.ease_factor, 
-                   uv.practice_count, 
-                   uv.metadata, 
-                   uv.created_at, 
-                   uv.updated_at,
-                   gv.word, 
-                   gv.language_code, 
-                   gv.definition, 
-                   gv.example_sentence, 
-                   gv.audio_url, 
-                   gv.part_of_speech, 
-                   gv.is_variable,
-                   gv.level
-            FROM public.user_vocabularies uv
-            JOIN public.global_vocabularies gv ON uv.vocabulary_id = gv.id
-            WHERE uv.user_id = $1 AND uv.id IN (${placeholders});
-        `;
-        const { rows } = await db.query(query, [userId, ...ids]);
-        return rows;
-    }
-
-    /**
-     * Inserta una flashcard en la colección del usuario.
-     */
-    async insertFlashcard(userId, deckId, frontContent, backContent, topic, audioUrl, languageCode) {
-        const query = `
-            INSERT INTO public.user_flashcards (
-                user_id, deck_id, front_content, back_content, topic, 
-                audio_url_frente, tts_lang_frente
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id;
-        `;
-        const { rows } = await db.query(query, [
-            userId, deckId, frontContent, backContent, topic, audioUrl, languageCode
-        ]);
-        return rows[0];
-    }
-
-    /**
      * Obtiene una palabra de vocabulario por su ID con JOIN global.
      */
     async getVocabularyWordById(id, userId) {

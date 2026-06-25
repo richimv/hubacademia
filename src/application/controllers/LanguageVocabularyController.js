@@ -8,7 +8,6 @@ class LanguageVocabularyController {
         this.addWord = this.addWord.bind(this);
         this.generateWordDetails = this.generateWordDetails.bind(this);
         this.deleteWord = this.deleteWord.bind(this);
-        this.exportToFlashcards = this.exportToFlashcards.bind(this);
         this.getChallenge = this.getChallenge.bind(this);
         this.practiceWord = this.practiceWord.bind(this);
         this.getConjugations = this.getConjugations.bind(this);
@@ -122,28 +121,7 @@ class LanguageVocabularyController {
         }
     }
 
-    /**
-     * Exporta palabras de vocabulario seleccionadas al mazo SRS delegando al servicio.
-     */
-    async exportToFlashcards(req, res) {
-        try {
-            const { ids, deckId } = req.body;
-            const userId = req.user.id;
 
-            if (!ids || !Array.isArray(ids) || ids.length === 0) {
-                return res.status(400).json({ error: 'Debes proporcionar al menos un ID de palabra a exportar' });
-            }
-
-            const count = await this.languageService.exportToFlashcards(userId, ids, deckId);
-            return res.json({ success: true, count });
-        } catch (error) {
-            console.error("❌ Error en LanguageVocabularyController.exportToFlashcards:", error);
-            if (error.message === 'NO_WORDS_FOUND') {
-                return res.status(404).json({ error: 'No se encontraron las palabras especificadas' });
-            }
-            return res.status(500).json({ error: 'Ocurrió un error al exportar a flashcards.' });
-        }
-    }
 
     /**
      * Obtiene un reto de práctica en español para la palabra.

@@ -294,9 +294,6 @@ class MedicoService {
         }
 
         let deckId = null;
-        if (context) {
-            deckId = await flashcardRepository.ensureSystemDeck(userId, context);
-        }
 
         return {
             avg_score: avgScore20.toFixed(1),

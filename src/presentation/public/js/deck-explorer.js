@@ -42,10 +42,9 @@ class DeckExplorer {
 
     async loadTree() {
         try {
-            // ✅ NUEVO: Carga del árbol completo en una sola petición (Elimina N+1)
             const res = await window.NetworkService.fetch(`${this.api}/tree`);
             const data = await res.json();
-            this.flatTree = data.decks || [];
+            this.flatTree = (data.decks || []).filter(d => d.type !== 'SYSTEM');
 
             // Declarative Rendering: The state dictates the UI
             this.renderTree();
@@ -80,12 +79,8 @@ class DeckExplorer {
         // 2. Filtrar raíces desde flatTree
         const roots = this.flatTree.filter(d => !d.parent_id);
 
-        // Render System Decks first
-        const systems = roots.filter(d => d.type === 'SYSTEM');
-        const users = roots.filter(d => d.type !== 'SYSTEM');
-
         // Render standard nodes recursivamente basado en el estado
-        [...systems, ...users].forEach(deck => {
+        roots.forEach(deck => {
             fragment.appendChild(this.renderNodeRecursive(deck, 0));
         });
 

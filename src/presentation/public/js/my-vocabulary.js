@@ -5,7 +5,6 @@
 
 const MyVocabulary = (function () {
     let activeLang = sessionStorage.getItem('vocab_active_lang') || 'en-US';
-    let selectedVocabIds = [];
     let currentVocabAudio = null;
     let recognition = null;
     let isRecording = false;
@@ -30,8 +29,6 @@ const MyVocabulary = (function () {
             langSelect.addEventListener('change', (e) => {
                 activeLang = e.target.value;
                 sessionStorage.setItem('vocab_active_lang', activeLang);
-                selectedVocabIds = [];
-                updateVocabSelection();
                 loadVocabulary();
             });
         }
@@ -52,14 +49,14 @@ const MyVocabulary = (function () {
 
     // --- Cargar Vocabulario de base de datos ---
     async function loadVocabulary() {
+        const table = document.getElementById('vocab-table');
         const tbody = document.getElementById('vocab-table-body');
         const emptyState = document.getElementById('vocab-empty-state');
-        const table = document.getElementById('vocab-table');
         const metaInfo = document.getElementById('vocab-meta-info');
 
         if (!tbody || !emptyState || !table) return;
 
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin"></i> Cargando vocabulario...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin"></i> Cargando vocabulario...</td></tr>';
         emptyState.style.display = 'none';
         table.style.display = 'table';
 
@@ -74,16 +71,11 @@ const MyVocabulary = (function () {
                 vocabularyList = [];
                 table.style.display = 'none';
                 emptyState.style.display = 'flex';
-                selectedVocabIds = [];
-                updateVocabSelection();
                 return;
             }
 
             vocabularyList = data.vocabulary;
             tbody.innerHTML = '';
-            const existingIds = data.vocabulary.map(w => String(w.id));
-            selectedVocabIds = selectedVocabIds.filter(id => existingIds.includes(String(id)));
-            updateVocabSelection();
 
             data.vocabulary.forEach(w => {
                 const tr = document.createElement('tr');
@@ -93,8 +85,6 @@ const MyVocabulary = (function () {
                 const playBtn = w.audio_url
                     ? `<button class="btn-vocab-play" title="Escuchar pronunciación" onclick="event.stopPropagation(); MyVocabulary.playVocabAudio(this, '${w.audio_url}')"><i class="fas fa-volume-up"></i></button>`
                     : '';
-
-                const isChecked = selectedVocabIds.includes(String(w.id)) ? 'checked' : '';
 
                 // Traducciones de POS
                 const posLabels = {
@@ -122,9 +112,6 @@ const MyVocabulary = (function () {
                 const srsText = srsLabels[w.srs_state] || 'Nuevo';
 
                 tr.innerHTML = `
-                    <td style="text-align: center;" onclick="event.stopPropagation();">
-                        <input type="checkbox" class="vocab-row-check" value="${w.id}" ${isChecked}>
-                    </td>
                     <td>
                         <div class="vocab-word-cell">
                             <strong>${w.word}</strong>
@@ -152,40 +139,9 @@ const MyVocabulary = (function () {
                 tbody.appendChild(tr);
             });
 
-            // Bindeo de fila checks
-            document.querySelectorAll('.vocab-row-check').forEach(chk => {
-                chk.addEventListener('change', () => {
-                    const id = String(chk.value);
-                    if (chk.checked) {
-                        if (!selectedVocabIds.includes(id)) selectedVocabIds.push(id);
-                    } else {
-                        selectedVocabIds = selectedVocabIds.filter(x => x !== id);
-                    }
-                    updateVocabSelection();
-                });
-            });
-
-            const selectAllChk = document.getElementById('vocab-select-all');
-            if (selectAllChk) {
-                selectAllChk.checked = false;
-                selectAllChk.onclick = () => {
-                    const checked = selectAllChk.checked;
-                    document.querySelectorAll('.vocab-row-check').forEach(chk => {
-                        chk.checked = checked;
-                        const id = String(chk.value);
-                        if (checked) {
-                            if (!selectedVocabIds.includes(id)) selectedVocabIds.push(id);
-                        } else {
-                            selectedVocabIds = selectedVocabIds.filter(x => x !== id);
-                        }
-                    });
-                    updateVocabSelection();
-                };
-            }
-
         } catch (err) {
             console.error("Error cargando vocabulario:", err);
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:#ef4444;"><i class="fas fa-exclamation-circle"></i> Error al cargar vocabulario.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:#ef4444;"><i class="fas fa-exclamation-circle"></i> Error al cargar vocabulario.</td></tr>';
         }
     }
 
@@ -215,7 +171,7 @@ const MyVocabulary = (function () {
         }
 
         detailTr.innerHTML = `
-            <td colspan="6" style="padding: 0;">
+            <td colspan="5" style="padding: 0;">
                 <div class="vocab-details-container" style="animation: slideDown 0.25s ease; padding: 1.25rem; background: rgba(10,10,10,0.2);">
                     <div><strong>Definición:</strong> ${w.definition || 'Sin definición guardada.'}</div>
                     <div style="margin-top:0.35rem;"><strong>Ejemplo en contexto:</strong> <span style="font-style:italic; color:#a78bfa;">"${w.example_sentence || 'Sin ejemplo guardado.'}"</span></div>
@@ -381,14 +337,7 @@ const MyVocabulary = (function () {
         }
     }
 
-    function updateVocabSelection() {
-        const btnExport = document.getElementById('btn-export-vocab-flashcards');
-        const countSpan = document.getElementById('selected-vocab-count');
-        if (!btnExport || !countSpan) return;
 
-        countSpan.innerText = selectedVocabIds.length;
-        btnExport.disabled = selectedVocabIds.length === 0;
-    }
 
     // --- Borrar Palabra ---
     async function deleteVocabWord(id) {
@@ -418,7 +367,6 @@ const MyVocabulary = (function () {
         const vocabModal = document.getElementById('vocab-modal-overlay');
         const btnAiFill = document.getElementById('btn-vocab-ai-fill');
         const btnSave = document.getElementById('btn-save-vocab');
-        const btnExport = document.getElementById('btn-export-vocab-flashcards');
 
         const wordInput = document.getElementById('vocab-word');
         const suggestionsDropdown = document.getElementById('vocab-suggestions-dropdown');
@@ -637,50 +585,7 @@ const MyVocabulary = (function () {
             };
         }
 
-        if (btnExport) {
-            btnExport.onclick = async () => {
-                if (selectedVocabIds.length === 0) return;
 
-                btnExport.disabled = true;
-                const originalHtml = btnExport.innerHTML;
-                btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-
-                try {
-                    const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/languages/vocabulary/export-flashcards`, {
-                        method: 'POST',
-                        body: JSON.stringify({ ids: selectedVocabIds })
-                    });
-
-                    if (res.status === 403) {
-                        if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
-                            window.uiManager.showPaywallModal();
-                        } else {
-                            alert('Límite de Flashcards alcanzado. Pásate a Premium.');
-                        }
-                        return;
-                    }
-
-                    const data = await res.json();
-                    if (data.success) {
-                        window.uiManager?.showToast(`¡${data.count} palabras exportadas a tus Flashcards!`, "success");
-                        selectedVocabIds = [];
-                        updateVocabSelection();
-
-                        const selectAllChk = document.getElementById('vocab-select-all');
-                        if (selectAllChk) selectAllChk.checked = false;
-
-                        loadVocabulary();
-                    } else {
-                        alert(data.error || "No se pudieron exportar las palabras.");
-                    }
-                } catch (e) {
-                    console.error("Export flashcards error:", e);
-                } finally {
-                    btnExport.disabled = false;
-                    btnExport.innerHTML = originalHtml;
-                }
-            };
-        }
     }
 
     // --- Reproducción de Audio TTS (Caché GCS) ---

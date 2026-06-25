@@ -474,46 +474,6 @@ class LanguageService {
         return await this.languageRepository.deleteWord(id, userId);
     }
 
-    /**
-     * Exporta palabras de vocabulario seleccionadas al mazo de flashcards SRS de idiomas.
-     */
-    async exportToFlashcards(userId, ids, deckId) {
-        const words = await this.languageRepository.getVocabularyWordsByIds(userId, ids);
-        if (words.length === 0) {
-            throw new Error('NO_WORDS_FOUND');
-        }
-
-        let targetDeckId = deckId;
-        if (!targetDeckId) {
-            const TrainingRepository = require('../repositories/flashcardRepository');
-            targetDeckId = await TrainingRepository.ensureSystemDeck(userId, 'IDIOMAS');
-        }
-
-        const mediaController = require('../../application/controllers/mediaController');
-
-        const insertPromises = words.map(async w => {
-            const backContent = `**Traducción:** ${w.translation}\n\n**Definición:** ${w.definition || 'Sin definición'}\n\n**Ejemplo:** *${w.example_sentence || 'Sin ejemplo'}*`;
-            let flashcardAudioUrl = null;
-            if (w.word && w.language_code) {
-                try {
-                    const audioBuffer = await ttsService.synthesize(w.word, w.language_code);
-                    if (audioBuffer) {
-                        const fileName = `tts_front_${Date.now()}.mp3`;
-                        flashcardAudioUrl = await mediaController.uploadRawBuffer(audioBuffer, fileName, 'audio/mpeg', 'audio-cards');
-                    }
-                } catch (ttsErr) {
-                    console.error('⚠️ [LanguageService] Error al pre-sintetizar audio para exportación:', ttsErr.message);
-                }
-            }
-            return this.languageRepository.insertFlashcard(
-                userId, targetDeckId, w.word, backContent, 'Vocabulario', 
-                flashcardAudioUrl, w.language_code
-            );
-        });
-
-        await Promise.all(insertPromises);
-        return words.length;
-    }
 
     /**
      * Genera un reto de práctica para una palabra de vocabulario usando Gemini.

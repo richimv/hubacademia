@@ -489,14 +489,11 @@ const SimulatorDash = (() => {
             }
         }
 
-        // ✅ UPDATE MODE IMAGES IF DEFINED IN CONTEXT
         if (ctxConfig.images) {
             const studyImg = document.querySelector('#btn-mode-study img');
-            const flashImg = document.querySelector('#btn-mode-flash img');
             const realImg = document.querySelector('#btn-mode-real img');
 
             if (studyImg && ctxConfig.images.study) studyImg.src = ctxConfig.images.study;
-            if (flashImg && ctxConfig.images.flashcards) flashImg.src = ctxConfig.images.flashcards;
             if (realImg && ctxConfig.images.real) realImg.src = ctxConfig.images.real;
         }
 
@@ -1625,7 +1622,6 @@ const SimulatorDash = (() => {
             const scoreEl = document.getElementById('stat-score');
             const accuracyEl = document.getElementById('stat-accuracy');
             const countsEl = document.getElementById('stat-counts-text');
-            const masteryEl = document.getElementById('stat-mastery');
 
             if (scoreEl) scoreEl.textContent = kpis.avg_score || '0.0';
 
@@ -1663,24 +1659,6 @@ const SimulatorDash = (() => {
 
             if (accuracyEl) accuracyEl.textContent = `${Math.round(kpis.accuracy || 0)}%`;
             if (countsEl) countsEl.textContent = `${kpis.total_correct || 0} / ${kpis.total_incorrect || 0}`;
-            if (masteryEl) masteryEl.textContent = kpis.mastered_cards || 0;
-
-            // Setup Flashcard Link — también links el KPI de Tarjetas Dominadas
-            if (kpis.system_deck_id) {
-                const btnFlash = document.getElementById('btn-mode-flash');
-                if (btnFlash) btnFlash.href = `repaso?deckId=${kpis.system_deck_id}`;
-
-                // KPI de tarjetas dominadas ahora es un enlace directo al deck
-                const masteryBox = masteryEl ? masteryEl.closest('.stat-box') : null;
-                if (masteryBox && !masteryBox.dataset.linked) {
-                    masteryBox.dataset.linked = '1';
-                    masteryBox.style.cursor = 'pointer';
-                    masteryBox.title = 'Ver mis Flashcards';
-                    masteryBox.addEventListener('click', () => {
-                        window.location.href = `repaso?deckId=${kpis.system_deck_id}`;
-                    });
-                }
-            }
 
             // --- Render Bar Chart (Áreas) ---
             if (kpis.radar_data && kpis.radar_data.length > 0) {
@@ -2054,13 +2032,11 @@ const SimulatorDash = (() => {
         const scoreEl = document.getElementById('stat-score');
         const accuracyEl = document.getElementById('stat-accuracy');
         const countsEl = document.getElementById('stat-counts-text');
-        const masteryEl = document.getElementById('stat-mastery');
 
         let currentAvgScore = '14.5';
         if (scoreEl) scoreEl.textContent = currentAvgScore;
         if (accuracyEl) accuracyEl.textContent = '72%';
         if (countsEl) countsEl.textContent = '50 / 20';
-        if (masteryEl) masteryEl.textContent = '12';
 
         // 3. Evolution Chart Demo (Context-Aware)
         const evoCanvas = document.getElementById('evolutionChart');

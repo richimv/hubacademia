@@ -856,25 +856,6 @@ window.UIComponents.createReviewCardHTML = function (config) {
         : '';
 
     let saveBtnHTML = '';
-    if (!isDemo) {
-        if (isSavedFront) {
-            saveBtnHTML = `
-            <div>
-                <button class="btn-neon saved-flashcard-btn" disabled
-                    style="padding: 0.5rem 1rem; font-size: 0.75rem; white-space: nowrap; border-radius: 20px; opacity: 0.5; cursor: not-allowed; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4); color: #60a5fa; box-shadow: none;">
-                    <i class="fas fa-check"></i> Ya guardado
-                </button>
-            </div>`;
-        } else {
-            saveBtnHTML = `
-            <div>
-                <button class="btn-neon save-flashcard-btn" data-qindex="${index}"
-                    style="padding: 0.5rem 1rem; font-size: 0.75rem; white-space: nowrap; border-radius: 20px;">
-                    <i class="fas fa-save"></i> Guardar Flashcard
-                </button>
-            </div>`;
-        }
-    }
 
     let imageHTML = '';
     if (question.image_url) {

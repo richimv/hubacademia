@@ -187,6 +187,11 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Botón con Brillo Invitación:** Se añadió la clase `.btn-add-card-glow` al botón dinámico "+ Añadir Tarjeta" en `repaso.js`, aplicando una animación infinita de box-shadow azul translúcido (`@keyframes btn-pulse-glow`) para incentivar e indicar al usuario de forma clara el punto de acción para crear nuevas tarjetas.
 - **Corrección de Giro en Flashcards (Efecto Reflejado):** Al remover el efecto de profundidad perspectiva 3D en el sprint anterior, se eliminó accidentalmente la propiedad `transform-style: preserve-3d;` en la clase `.card` de `flashcards.css`. Esto causaba que las caras de la tarjeta se aplanaran, impidiendo que `backface-visibility: hidden` ocultase el reverso de la cara frontal al rotar la tarjeta, mostrando la pregunta reflejada horizontalmente. Se restauró `transform-style: preserve-3d;` a `.card` para solucionar este comportamiento regresivo sin reintroducir la distorsión de perspectiva de cámara exagerada.
 
+### N. Sprint de Simplificación: Remoción de Flashcards y Mazos Oficiales (Junio 2026 - V20)
+- **Depreciación de Mazos Oficiales (SYSTEM Decks):** Se removieron las pestañas de navegación para "Mazos Oficiales" en el dashboard del módulo de Repaso. La aplicación ahora solo expone y opera sobre mazos de usuario (`type === 'USER'`), excluyendo los mazos de sistema (`SYSTEM`) en las consultas principales del backend (`flashcardRepository`) y en el renderizado del explorador lateral (`deck-explorer.js`).
+- **Eliminación del Guardado desde Quizzes:** Se quitó la capacidad de convertir preguntas de simulacros en flashcards. Esto incluye la eliminación del botón "Guardar Flashcard" en la interfaz de revisión y los endpoints backend `/api/flashcard/check-saved` y `/api/flashcard/save-from-question`.
+- **Exportación a Mazo Personal:** La exportación de vocabulario del módulo de idiomas ahora crea y asocia las tarjetas a un mazo de usuario personal llamado "Mi Vocabulario" en lugar de un mazo del sistema.
+
 ---
 
-**Documentación Técnica Actualizada - 13 de Junio, 2026.**
+**Documentación Técnica Actualizada - 24 de Junio, 2026.**

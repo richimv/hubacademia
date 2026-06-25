@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         },
         educacion: {
-            title: 'Preparación Magisterial',
+            title: 'Centro de Preparación Magisterial',
             subtitle: 'Herramientas especializadas para el docente peruano',
             cards: [
                 {

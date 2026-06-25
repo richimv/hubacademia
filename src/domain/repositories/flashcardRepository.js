@@ -5,18 +5,7 @@ class FlashcardRepository {
 
     async getDecks(userId, parentId = null) {
         if (userId === 'GUEST') {
-            const query = `
-                SELECT DISTINCT ON (d.name)
-                    d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
-                    0 as total_cards, 0 as due_cards, 
-                    (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
-                    0 as mastery_percentage
-                FROM decks d
-                WHERE d.type = 'SYSTEM' AND (d.parent_id = $1 OR ($1 IS NULL AND d.parent_id IS NULL))
-                ORDER BY d.name, d.created_at ASC
-            `;
-            const result = await db.query(query, [parentId]);
-            return result.rows;
+            return [];
         }
 
         let query = `
@@ -29,7 +18,7 @@ class FlashcardRepository {
                 ROUND((COUNT(uf.id) FILTER (WHERE uf.interval_days > 21)::float / NULLIF(COUNT(uf.id), 0)) * 100) as mastery_percentage
             FROM decks d
             LEFT JOIN user_flashcards uf ON d.id = uf.deck_id
-            WHERE d.user_id = $1
+            WHERE d.user_id = $1 AND d.type <> 'SYSTEM'
         `;
 
         const params = [userId];
@@ -39,7 +28,6 @@ class FlashcardRepository {
         } else {
             query += ` AND d.parent_id IS NULL`;
         }
-
         query += ` GROUP BY d.id ORDER BY d.created_at ASC`;
         const result = await db.query(query, params);
         return result.rows;
@@ -47,18 +35,7 @@ class FlashcardRepository {
 
     async getAllUserDecks(userId) {
         if (userId === 'GUEST') {
-            const query = `
-                SELECT DISTINCT ON (d.name)
-                    d.id, d.name, d.type, d.icon, d.source_module, d.parent_id,
-                    0 as total_cards, 0 as due_cards, 
-                    (SELECT COUNT(*) FROM decks children WHERE children.parent_id = d.id) as children_count,
-                    0 as mastery_percentage
-                FROM decks d
-                WHERE d.type = 'SYSTEM'
-                ORDER BY d.name, d.created_at ASC
-            `;
-            const result = await db.query(query);
-            return result.rows;
+            return [];
         }
 
         const query = `
@@ -71,7 +48,7 @@ class FlashcardRepository {
                 ROUND((COUNT(uf.id) FILTER (WHERE uf.interval_days > 21)::float / NULLIF(COUNT(uf.id), 0)) * 100) as mastery_percentage
             FROM decks d
             LEFT JOIN user_flashcards uf ON d.id = uf.deck_id
-            WHERE d.user_id = $1
+            WHERE d.user_id = $1 AND d.type <> 'SYSTEM'
             GROUP BY d.id 
             ORDER BY d.created_at ASC
         `;
@@ -90,7 +67,7 @@ class FlashcardRepository {
                 ROUND((COUNT(uf.id) FILTER (WHERE uf.interval_days > 21)::float / NULLIF(COUNT(uf.id), 0)) * 100) as mastery_percentage
             FROM decks d
             LEFT JOIN user_flashcards uf ON d.id = uf.deck_id
-            WHERE ${userId === 'GUEST' ? "(d.type = 'SYSTEM' OR d.is_public = true)" : "d.user_id = $1"} AND d.id = ${userId === 'GUEST' ? '$1' : '$2'}
+            WHERE ${userId === 'GUEST' ? "d.is_public = true" : "d.user_id = $1 AND d.type <> 'SYSTEM'"} AND d.id = ${userId === 'GUEST' ? '$1' : '$2'}
             GROUP BY d.id
         `;
         const params = userId === 'GUEST' ? [deckId] : [userId, deckId];
@@ -101,7 +78,7 @@ class FlashcardRepository {
     async getDeckGuide(userId, deckId) {
         const query = `
             SELECT description FROM decks 
-            WHERE (user_id = $1 OR type = 'SYSTEM' OR is_public = true) AND id = $2
+            WHERE (user_id = $1 OR is_public = true) AND id = $2
         `;
         const result = await db.query(query, [userId, deckId]);
         return result.rows[0] ? result.rows[0].description : null;
@@ -169,77 +146,6 @@ class FlashcardRepository {
     async incrementDeckSaves(deckId) {
         const query = `UPDATE decks SET saves_count = saves_count + 1 WHERE id = $1`;
         await db.query(query, [deckId]);
-    }
-
-    async ensureSystemDeck(userId, moduleName) {
-        let deckName = `Repaso ${moduleName.charAt(0).toUpperCase() + moduleName.slice(1).toLowerCase()}`;
-        let icon = 'fas fa-brain';
-
-        if (moduleName === 'MEDICINA') icon = 'fas fa-stethoscope';
-        if (moduleName === 'IDIOMAS') icon = 'fas fa-comments';
-
-        const findQuery = `
-            SELECT id FROM decks 
-            WHERE user_id = $1 AND type = 'SYSTEM' AND source_module = $2
-            LIMIT 1
-        `;
-        const findRes = await db.query(findQuery, [userId, moduleName]);
-
-        if (findRes.rows.length > 0) return findRes.rows[0].id;
-
-        return (await this.createDeck(userId, deckName, 'SYSTEM', moduleName, icon)).id;
-    }
-
-    async createFlashcardsBatch(userId, questions, topic, attemptId, moduleName = 'MEDICINA') {
-        if (!questions || questions.length === 0) return;
-
-        const deckId = await this.ensureSystemDeck(userId, moduleName);
-
-        const existingQuery = `
-            SELECT front_content FROM user_flashcards 
-            WHERE user_id = $1 AND deck_id = $2
-        `;
-        const existingRes = await db.query(existingQuery, [userId, deckId]);
-        const existingFronts = new Set(existingRes.rows.map(r => r.front_content.trim()));
-
-        const values = [];
-        const placeholders = [];
-        let insertCount = 0;
-
-        questions.forEach((q) => {
-            const front = q.question_text.trim();
-
-            if (existingFronts.has(front)) {
-                return;
-            }
-
-            const correctOption = q.options[q.correct_option_index];
-            const back = `💡 ${correctOption}`;
-
-            const offset = insertCount * 14;
-            placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14})`);
-            values.push(
-                userId, front, back, q.topic || topic, attemptId, deckId, 
-                q.image_url || null, q.explanation_image_url || null, 
-                q.audio_url_frente || null, q.audio_url_dorso || null,
-                q.tts_lang_frente || null, q.tts_lang_dorso || null,
-                q.hide_text_frente || false, q.hide_text_dorso || false
-            );
-            insertCount++;
-        });
-
-        if (insertCount === 0) {
-            console.log("No new flashcards to insert (all were duplicates).");
-            return;
-        }
-
-        const query = `
-            INSERT INTO user_flashcards (user_id, front_content, back_content, topic, source_quiz_id, deck_id, image_url, explanation_image_url, audio_url_frente, audio_url_dorso, tts_lang_frente, tts_lang_dorso, hide_text_frente, hide_text_dorso)
-            VALUES ${placeholders.join(', ')}
-        `;
-
-        await db.query(query, values);
-        console.log(`✅ Saved ${insertCount} new UNIQUE flashcards with individual topics.`);
     }
 
     async createFlashcardsManualBatch(userId, deckId, cards) {

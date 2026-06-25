@@ -70,22 +70,52 @@
     background: var(--border);
 }
 
-/* ── Modes Grid ─────────────────────────────────────────── */
 .modes-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4 tarjetas en una sola fila en PC */
-    gap: 1rem;
+    grid-template-columns: repeat(3, 1fr); /* 3 tarjetas en una sola fila en PC */
+    gap: 1.5rem;
     margin-bottom: 2.5rem;
 }
 
+@media (max-width: 1024px) {
+    .mode-card {
+        aspect-ratio: auto;
+        min-height: 165px;
+    }
+}
+
 @media (max-width: 900px) {
-    .modes-grid { grid-template-columns: repeat(2, 1fr); }
+    .modes-grid { 
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 1rem;
+    }
+    .mode-card {
+        aspect-ratio: auto;
+        min-height: 160px;
+    }
+}
+
+@media (max-width: 768px) {
+    .modes-grid { 
+        grid-template-columns: 1fr 1fr; /* Replicar comportamiento de 2 columnas de Resumen de Progreso */
+        max-width: none;
+        margin-left: 0;
+        margin-right: 0;
+        gap: 1rem;
+    }
+    .mode-card {
+        aspect-ratio: auto !important;
+        min-height: 140px !important;
+    }
 }
 
 @media (max-width: 520px) {
     .modes-grid { 
-        grid-template-columns: repeat(2, 1fr); /* 2x2 en celulares */
-        gap: 0.75rem; 
+        grid-template-columns: 1fr; /* Replicar comportamiento de 1 columna de Resumen de Progreso */
+        max-width: 450px;
+        margin-left: auto;
+        margin-right: auto;
+        gap: 1rem;
     }
 }
 
@@ -95,7 +125,7 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding: 3rem 1.75rem 1.5rem 1.75rem;
+    padding: 2.25rem 1.75rem 1.5rem 1.75rem;
     background: rgba(10, 13, 18, 0.45); /* Glassmorphism premium dark background */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -105,7 +135,7 @@
     cursor: pointer;
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1.6 / 1;
     /* Premium shadows & inner glow */
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.35),
@@ -135,7 +165,7 @@
     position: absolute;
     left: 0; 
     top: 0;
-    height: 5.6rem; /* Aligned with top padding 3rem + title 2.6rem */
+    height: 4.8rem; /* Aligned with top padding 2.25rem + title 2.6rem */
     width: 3px;
     background: var(--accent);
     border-radius: 0 0 2px 0;
@@ -145,7 +175,7 @@
 }
 
 .mode-card:hover::before {
-    height: 6.2rem; /* Grows slightly on hover for micro-animation */
+    height: 5.4rem; /* Grows slightly on hover for micro-animation */
     box-shadow: 0 0 15px var(--accent);
 }
 
@@ -384,16 +414,16 @@
     color: #c4b5fd; /* Soft Purple */
 }
 
-/* ── KPI Stats Grid ─────────────────────────────────────── */
 .stats-overview {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
     margin-bottom: 2rem;
 }
 
-@media (max-width: 900px) { .stats-overview { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .stats-overview { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 900px) { .stats-overview { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px) { .stats-overview { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .stats-overview { grid-template-columns: 1fr; } }
 
 .stat-box {
     background: var(--bg-card);
