@@ -8,25 +8,65 @@ class AuthApiService {
         return 'https://tutor-ia-backend.onrender.com';
     }
 
+    // ✅ Verificar si un token JWT está expirado localmente
+    static isTokenExpired(token) {
+        if (!token) return true;
+        try {
+            const parts = token.split('.');
+            if (parts.length !== 3) return true;
+            // base64url decode
+            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+            if (!payload.exp) return true;
+            // Restar 60 segundos de margen de seguridad para evitar fallar al final de la petición
+            return Date.now() / 1000 > (payload.exp - 60);
+        } catch (e) {
+            return true;
+        }
+    }
+
     // ✅ Obtener Token Fresco (Supabase -> LocalStorage)
     static async getValidToken() {
         if (window.supabaseClient) {
             try {
                 // Intentar recuperar la sesión actual de la SDK de Supabase (Fuente de verdad)
-                const { data: { session }, error } = await window.supabaseClient.auth.getSession();
+                let { data: { session }, error } = await window.supabaseClient.auth.getSession();
+                
+                // Si la sesión existe pero el token ya expiró o expirará pronto, forzar refreshSession
+                if (session && session.access_token && this.isTokenExpired(session.access_token)) {
+                    console.log("🕒 [AuthApiService] Token de acceso Supabase expirado. Forzando refresco de sesión...");
+                    const refreshResult = await window.supabaseClient.auth.refreshSession();
+                    if (refreshResult.data && refreshResult.data.session) {
+                        session = refreshResult.data.session;
+                    }
+                }
+                
+                // Si getSession no devolvió nada, pero hay un token registrado localmente, intentar forzar refreshSession
+                if (!session) {
+                    const localToken = localStorage.getItem('authToken');
+                    if (localToken && localToken !== 'undefined' && localToken !== 'null') {
+                        console.log("🕒 [AuthApiService] Sesión ausente pero token local presente. Intentando recuperar mediante refreshSession...");
+                        const refreshResult = await window.supabaseClient.auth.refreshSession();
+                        if (refreshResult.data && refreshResult.data.session) {
+                            session = refreshResult.data.session;
+                        }
+                    }
+                }
+
                 if (session && session.access_token) {
                     const freshToken = session.access_token;
                     localStorage.setItem('authToken', freshToken);
                     return freshToken;
                 }
             } catch (e) {
-                console.warn("AuthApiService: Error recuperando sesión de Supabase", e);
+                console.warn("AuthApiService: Error recuperando o refrescando sesión de Supabase", e);
             }
         }
         
-        // Fallback: Si no hay SDK o falló, usar localStorage pero validar que no sea basura
+        // Fallback: Si no hay SDK o falló, usar localStorage pero validar que no sea basura ni esté expirado
         const localToken = localStorage.getItem('authToken');
-        if (!localToken || localToken === 'undefined' || localToken === 'null') return null;
+        if (!localToken || localToken === 'undefined' || localToken === 'null' || this.isTokenExpired(localToken)) {
+            return null;
+        }
         return localToken;
     }
 

@@ -70,57 +70,6 @@ CREATE TABLE IF NOT EXISTS public.courses (
     CONSTRAINT courses_pkey PRIMARY KEY (id)
 );
 
--- Table: languages
-CREATE TABLE IF NOT EXISTS public.languages (
-    id SERIAL PRIMARY KEY,
-    code CHARACTER VARYING(10) UNIQUE NOT NULL, -- 'en-US', 'en-GB', 'it-IT'
-    name CHARACTER VARYING(50) NOT NULL,        -- 'English (USA)', 'English (UK)', 'Italiano'
-    tts_voice CHARACTER VARYING(50) NOT NULL,   -- Voz neural de Google Cloud TTS
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Table: languages_syllabus
-CREATE TABLE IF NOT EXISTS public.languages_syllabus (
-    id SERIAL PRIMARY KEY,
-    language_code VARCHAR(10) NOT NULL REFERENCES public.languages(code) ON DELETE CASCADE,
-    level VARCHAR(10) NOT NULL, -- 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'
-    unit_number INT NOT NULL,
-    topic_name VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    content JSONB DEFAULT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Table: user_language_progress
-CREATE TABLE IF NOT EXISTS public.user_language_progress (
-    id UUID NOT NULL DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    syllabus_id INT NOT NULL REFERENCES public.languages_syllabus(id) ON DELETE CASCADE,
-    completed BOOLEAN DEFAULT TRUE,
-    completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT user_language_progress_pkey PRIMARY KEY (id),
-    CONSTRAINT user_syllabus_unique UNIQUE (user_id, syllabus_id)
-);
-
--- Table: user_vocabularies
-CREATE TABLE IF NOT EXISTS public.user_vocabularies (
-    id UUID NOT NULL DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    vocabulary_id UUID NOT NULL REFERENCES public.global_vocabularies(id) ON DELETE CASCADE,
-    translation VARCHAR(255) NOT NULL,
-    srs_state VARCHAR(20) DEFAULT 'new',
-    next_review_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    interval_days INT DEFAULT 0,
-    ease_factor NUMERIC(4, 2) DEFAULT 2.50,
-    practice_count INT DEFAULT 0,
-    metadata JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    CONSTRAINT user_vocabularies_pkey PRIMARY KEY (id),
-    CONSTRAINT unique_user_vocabulary UNIQUE (user_id, vocabulary_id)
-);
-
 -- Table: decks
 CREATE TABLE IF NOT EXISTS public.decks (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -448,23 +397,6 @@ CREATE POLICY "Users can view own notes" ON public.user_notes FOR SELECT USING (
 CREATE POLICY "Users can create own notes" ON public.user_notes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can edit own notes" ON public.user_notes FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own notes" ON public.user_notes FOR DELETE USING (auth.uid() = user_id);
-
-ALTER TABLE public.languages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Languages" ON public.languages FOR SELECT USING (true);
-
-ALTER TABLE public.languages_syllabus ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Public Read Syllabus" ON public.languages_syllabus;
-CREATE POLICY "Public Read Syllabus" ON public.languages_syllabus FOR SELECT USING (true);
-
-ALTER TABLE public.user_language_progress ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users can manage own progress" ON public.user_language_progress;
-CREATE POLICY "Users can manage own progress" ON public.user_language_progress
-    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
-ALTER TABLE public.user_vocabularies ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users can manage own vocabulary" ON public.user_vocabularies;
-CREATE POLICY "Users can manage own vocabulary" ON public.user_vocabularies
-    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 ALTER TABLE public.careers ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public Read Careers" ON public.careers FOR SELECT USING (true);

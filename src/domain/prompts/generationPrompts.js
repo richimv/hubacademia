@@ -173,84 +173,12 @@ function buildMedicineAdminPrompt(target, area, career, context, historyText = "
 // REFINAMIENTO Y AUDITORÍA
 // ═══════════════════════════════════════════════════════════════
 
-function buildLanguagePrompt(target, area, career, cefrLevel, historyText) {
-    let languageDetails = "";
-    if (career === 'en-US') {
-        languageDetails = "Language: English (United States) [en-US]. Use American spelling (e.g., 'color', 'analyze', 'center'), American idioms, and tech/business context.";
-    } else if (career === 'en-GB') {
-        languageDetails = "Language: English (United Kingdom) [en-GB]. Use British spelling (e.g., 'colour', 'analyse', 'centre'), British idioms, and academic/IELTS-style context.";
-    } else if (career === 'it-IT') {
-        languageDetails = "Language: Italian (Italy) [it-IT]. Focus on grammatical structures, gender agreement, formal vs informal registers (Lei vs tu), and appropriate prepositions.";
-    } else {
-        languageDetails = `Language Code: ${career || 'en-US'}. Use the standard grammar and spelling for this language code.`;
-    }
 
-    let areaInstructions = "";
-    if (area === 'Grammar & Use of English') {
-        areaInstructions = `Focus on grammar, syntax, word order, verb conjugations, prepositions, or sentence structure appropriate for CEFR level ${cefrLevel}. The question text MUST contain exactly one blank space represented by '_____' (5 underscores) where the correct option fits. CRITICAL: If you are testing verb conjugations, do not write the target verb in its base/infinitive form next to the blank space as part of the running sentence (e.g. do not write "Io _____ leggere ogni giorno"). Instead, either omit it completely (e.g., "Io _____ ogni giorno" with options "leggo", "legge", "leggono") or put the target verb in parentheses as a hint (e.g., "Io _____ (leggere) ogni giorno").`;
-    } else if (area === 'Vocabulary & Context') {
-        areaInstructions = `Focus on vocabulary, word choice, synonyms/antonyms, phrasal verbs, idioms, or contextual meaning appropriate for CEFR level ${cefrLevel}. The question text MUST contain exactly one blank space represented by '_____' (5 underscores) where the correct option fits.`;
-    } else if (area === 'Reading Comprehension') {
-        areaInstructions = `Provide a short reading passage (1-2 paragraphs) in the target language, followed by a question that tests comprehension, main idea, detail, or inference at CEFR level ${cefrLevel}. Structure the question_text as: "[Reading Passage]\\n\\nQuestion: [Comprehension Question]"`;
-    } else if (area === 'Listening Comprehension') {
-        areaInstructions = `Create a script for a listening task (dialogue, announcement, or monologue) in the target language at CEFR level ${cefrLevel}. Store this script in the 'audio_text' field (max 100 words). The 'question_text' should be a question testing comprehension of that script. (e.g., 'According to the speaker, what is the main goal...?')`;
-    }
-
-    return `Actúa como un profesor experto y creador de exámenes internacionales de idiomas (tipo TOEFL, IELTS, Cambridge, CELI).
-    Genera UNA pregunta de opción múltiple con las siguientes especificaciones:
-    
-    ${languageDetails}
-    - Nivel MCER (CEFR) objetivo: ${cefrLevel}
-    - Habilidad / Área a evaluar: ${area}
-    - Especificaciones de la habilidad: ${areaInstructions}
-    
-    🚨 REGLAS DE ORO DE IDIOMAS:
-    1. El enunciado de la pregunta (question_text), el pasaje de lectura (si aplica), el script de audio (si aplica) y todas las opciones de respuesta (options) DEBEN estar escritos 100% en el idioma objetivo (${career.split('-')[0]}). No incluyas español en estas partes.
-    2. La explicación (explanation) DEBE estar escrita en ESPAÑOL, explaining de forma clara y didáctica la gramática, vocabulario o justificación de la respuesta correcta.
-    3. Genera exactamente 4 opciones de respuesta. Evita el sesgo de longitud: TODAS las 4 opciones de respuesta deben tener una longitud similar (aproximadamente el mismo número de palabras). La opción correcta NO debe ser más de una frase más larga o descriptiva que los distractores.
-    4. Sin letras (A, B, C, D) al inicio de las opciones.
-    5. Escapa correctamente cualquier comilla doble interna usando \\" para que no se rompa el JSON.
-    6. Para preguntas que NO sean de 'Listening Comprehension', el campo 'audio_text' debe ser nulo.
-    7. Para las áreas 'Grammar & Use of English' y 'Vocabulary & Context', el enunciado de la pregunta ('question_text') DEBE incluir obligatoriamente un espacio en blanco representado exactamente por 5 guiones bajos ('_____') para que el usuario sepa dónde completar el conector, palabra o frase correspondiente.
-    9. EVITAR REDUNDANCIA Y COLISIÓN VERBAL: La opción correcta (correct_option_index) y las palabras adyacentes al espacio en blanco ('_____') NO deben ser redundantes ni compartir la misma raíz verbal (por ejemplo, evita "Io leggo leggere ogni giorno"). Si el espacio en blanco precede a un verbo en infinitivo, la respuesta correcta y distractores deben ser verbos modales/auxiliares compatibles (e.g., "voglio", "posso", "devo") y no formas conjugadas de ese mismo infinitivo.
-    10. EVITAR REDUNDANCIA DE SALUDO/RESPUESTA: Si la pregunta de idioma utiliza un interrogativo de estado/modo (como "Come" en italiano o "How" en inglés), las opciones de respuesta NO deben incluir adverbios o palabras de respuesta de estado (como "bene", "well", "fine", "good"). Por ejemplo, para "Come _____ oggi?", las alternativas deben evaluar la conjugación (ej: "sta", "stai", "state") o pronombre ("sta Lei", "stai tu") pero nunca contener el adverbio (evitar "sta bene lei", ya que formaría la frase redundante e incorrecta "Come sta bene lei oggi?").
-    
-    ${historyText}
-    
-    RESPONDE ÚNICAMENTE CON EL SIGUIENTE FORMATO JSON (sin bloques de código markdown ni texto adicional):
-    {
-      "domain": "languages",
-      "target": "${target}",
-      "career": "${career}",
-      "topic": "${area}",
-      "subtopic": "Language Practice",
-      "difficulty": "${cefrLevel}",
-      "question_text": "Texto de la pregunta (e.g. 'Complete the sentence: She _____ to the store yesterday.' o el pasaje de lectura seguido de la pregunta)",
-      "options": ["went", "goes", "has gone", "will go"],
-      "correct_option_index": 0,
-      "explanation": "Explicación didáctica en español sobre por qué 'went' es la opción correcta debido al adverbio de tiempo 'yesterday'.",
-      "audio_text": ${area === 'Listening Comprehension' ? '"Script del audio en el idioma objetivo para que sea sintetizado."' : 'null'}
-    }`;
-}
 
 function buildRefinementPrompt(questionJson, issues = []) {
     const isEducation = questionJson.domain === 'education';
     const isResidentado = questionJson.target === 'RESIDENTADO';
-    const isLanguage = questionJson.domain === 'languages' || ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS'].includes(String(questionJson.target).toUpperCase());
     const requiredOptions = isEducation ? 3 : (isResidentado ? 5 : 4);
-
-    let issuesText = '';
-    if (issues && issues.length > 0) {
-        issuesText = `\n### PROBLEMAS ESPECÍFICOS DETECTADOS A CORREGIR:\n${issues.map((iss, idx) => `${idx + 1}. ${iss}`).join('\n')}\n`;
-    }
-
-    let languageRules = '';
-    if (isLanguage) {
-        languageRules = `\n5. **REGLAS DE IDIOMAS**:
-           - El enunciado de la pregunta, las opciones y el audio_text deben estar 100% en el idioma objetivo (e.g., inglés, italiano).
-           - La explicación (explanation) debe estar en ESPAÑOL y ser fluida y gramaticalmente correcta.
-           - Para Grammar o Vocabulary, la pregunta debe incluir obligatoriamente el placeholder '_____'.`;
-    }
 
     return `Actúa como un Auditor de Calidad Psicométrica DESPIADADO y ANALÍTICO.
         Tu misión es auditar y perfeccionar la pregunta para garantizar que sea impecable pedagógicamente y formalmente.
@@ -267,8 +195,7 @@ function buildRefinementPrompt(questionJson, issues = []) {
         2. **LEY DE SIMETRÍA**: Si la respuesta correcta es más larga, DEBES recortarla eliminando adjetivos o detalles innecesarios, o ALARGAR los distractores agregando contexto técnico similar. Todas las opciones deben verse como un bloque de texto idéntico y simétrico (máximo +/- 10 caracteres de diferencia).
         3. **PREGUNTA O CONSIGNA OBLIGATORIA (CRÍTICO)**: El enunciado ("question_text") debe finalizar obligatoriamente con una pregunta directa (ej. "¿...?") o una instrucción imperativa explícita (ej. "indique", "señale", "determine", "seleccione", "calcule", "identifique"). Si solo tiene el caso clínico o pedagógico pero le falta la pregunta final, agrégala de forma coherente en un párrafo de cierre. NUNCA dejes la pregunta en el aire.
         4. **LIMPIEZA DE LETRAS EN LA EXPLICACIÓN (CRÍTICO)**: Está TERMINANTEMENTE PROHIBIDO mencionar letras de alternativas (A, B, C, D, E) o decir cosas como "Alternativa A", "Opción B", "la respuesta correcta es la C" en la explicación. Las opciones se barajan de manera aleatoria y dinámica al mostrarse al alumno, por lo que el orden cambia siempre. La explicación debe ser 100% conceptual y referirse al contenido mismo de la opción (ej: "El uso de 'went' es correcto por..." en lugar de "La opción A es correcta"). Reescribe cualquier oración incompleta para que sea fluida y gramaticalmente correcta en español.
-        ${languageRules}
-        6. **LIMPIEZA GENERAL**: Elimina encabezados, códigos (A01-...) y basura de PDF.
+        5. **LIMPIEZA GENERAL**: Elimina encabezados, códigos (A01-...) y basura de PDF.
 
         ### PREGUNTA A AUDITAR:
         ${JSON.stringify(questionJson, null, 2)}
@@ -293,17 +220,6 @@ const GENERATION_PROMPTS = {
             return buildEducationAdminPrompt(target, area, career, context, historyText, targetQuestionNum);
         }
         return buildMedicineAdminPrompt(target, area, career, context, historyText, targetQuestionNum);
-    },
-
-    getLanguagePrompt: (target, area, career, cefrLevel, history = []) => {
-        let historyText = "No hay contexto de repetición.";
-        if (history && history.length > 0) {
-            historyText = history.map(item => {
-                const text = typeof item === 'string' ? item : (item.question_text || "");
-                return `- Pregunta de idioma previa: "${text.substring(0, 150)}..."`;
-            }).join('\n');
-        }
-        return buildLanguagePrompt(target, area, career, cefrLevel, historyText);
     },
 
     buildRefinementPrompt

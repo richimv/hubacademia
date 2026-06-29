@@ -73,6 +73,14 @@ class NetworkService {
                 if (response.status === 401) {
                     console.warn(`⚠️ [NetworkService] Error de autorización (401) en: ${url}`);
                     
+                    const currentToken = localStorage.getItem('authToken');
+                    // Si ya no hay token en localStorage, no intentar desloguear (evita bucles infinitos)
+                    if (!currentToken || currentToken === 'null' || currentToken === 'undefined') {
+                        const error = new Error('Unauthorized');
+                        error.status = response.status;
+                        throw error;
+                    }
+
                     // Si el backend dice que la sesión expiró, forzamos limpieza
                     if (window.sessionManager) {
                         // Notificar al usuario antes de redirigir si es posible
@@ -81,9 +89,14 @@ class NetworkService {
                         }
                         
                         const isQuizPage = window.location.pathname.includes('quiz.html') || window.location.pathname.includes('simulator');
+                        const isHomePage = window.location.pathname === '/' || window.location.pathname.endsWith('index.html');
+                        
                         // Esperar un poco para que el toast sea visible si no estamos en un flujo crítico
                         setTimeout(() => {
-                            window.sessionManager.logout(!isQuizPage);
+                            // Solo redireccionar si no estamos en la página de inicio y no es quiz
+                            const shouldRedirect = !isQuizPage && !isHomePage;
+                            window.sessionManager.logout(shouldRedirect);
+                            
                             if (isQuizPage && window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
                                 window.uiManager.showAuthPromptModal();
                             }

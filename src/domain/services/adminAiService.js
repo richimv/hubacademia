@@ -251,10 +251,10 @@ class AdminAiService {
      * Centraliza todas las reglas de negocio, asimetría, duplicados y exclusión de letras
      * para asegurar coherencia transversal en todos los módulos de Hub Academia.
      */
-    _checkQuality(question, target, area, career, difficulty, isLanguage, combinedHistory) {
+    _checkQuality(question, target, area, career, difficulty, combinedHistory) {
         const issues = [];
         const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
-        const requiredCount = isLanguage ? 4 : (isEducation ? 3 : (target === 'RESIDENTADO' ? 5 : 4));
+        const requiredCount = isEducation ? 3 : (target === 'RESIDENTADO' ? 5 : 4);
 
         if (!question.question_text || typeof question.question_text !== 'string' || question.question_text.trim() === '') {
             issues.push("La pregunta debe incluir un enunciado ('question_text') no vacío.");
@@ -274,20 +274,11 @@ class AdminAiService {
             const correctLen = lengths[question.correct_option_index];
             const distractorLengths = lengths.filter((_, i) => i !== question.correct_option_index);
             const avgDistractorLen = distractorLengths.reduce((a, b) => a + b, 0) / distractorLengths.length;
-            const maxLen = Math.max(...lengths);
-            const minLen = Math.min(...lengths);
 
-            if (isLanguage) {
-                // Umbral más realista para idiomas
-                if (Math.abs(correctLen - avgDistractorLen) > 30 || (maxLen - minLen) > 40) {
-                    issues.push(`Asimetría detectada en opciones de idiomas. Opción correcta: ${correctLen} letras, Distractores promedio: ${Math.round(avgDistractorLen)}. Deben ser similares en extensión y detalle.`);
-                }
-            } else {
-                // Umbral estándar
-                const charDiff = correctLen - avgDistractorLen;
-                if (Math.abs(charDiff) > 40) {
-                    issues.push(`Asimetría detectada. Opción correcta: ${correctLen} letras, Distractores promedio: ${Math.round(avgDistractorLen)} (Diferencia de ${Math.round(charDiff)}). Todas las opciones deben tener una longitud similar.`);
-                }
+            // Umbral estándar
+            const charDiff = correctLen - avgDistractorLen;
+            if (Math.abs(charDiff) > 40) {
+                issues.push(`Asimetría detectada. Opción correcta: ${correctLen} letras, Distractores promedio: ${Math.round(avgDistractorLen)} (Diferencia de ${Math.round(charDiff)}). Todas las opciones deben tener una longitud similar.`);
             }
         }
 
@@ -303,100 +294,14 @@ class AdminAiService {
             issues.push("La explicación contiene mención explícita a letras de alternativas (A, B, C, D o E). Las opciones se barajan al mostrarse. Explica de forma 100% conceptual en español, refiriéndote a la frase o respuesta exacta sin usar su letra.");
         }
 
-        // 3. Placeholder de Completación (Solo para Idiomas - Gramática/Vocabulario)
-        if (isLanguage) {
-            const needsPlaceholder = ['Grammar & Use of English', 'Vocabulary & Context'].includes(area);
-            const text = question.question_text || "";
-            const hasPlaceholder = text.includes('_____') || text.includes('____') || text.includes('___');
-            if (needsPlaceholder && !hasPlaceholder) {
-                issues.push(`El enunciado de la pregunta (question_text) para el área '${area}' DEBE incluir un espacio en blanco '_____' (cinco guiones bajos) para indicar la palabra a completar.`);
-            }
-        }
-
-        // 3.5. Prevención de Redundancia/Colisión Verbal Adyacente (Solo para Idiomas - Gramática/Vocabulario)
-        if (isLanguage && ['Grammar & Use of English', 'Vocabulary & Context'].includes(area)) {
-            const text = question.question_text || "";
-            const options = question.options || [];
-            const correctIdx = question.correct_option_index;
-            if (options.length > 0 && correctIdx >= 0 && correctIdx < options.length) {
-                const correctOption = String(options[correctIdx]).toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
-                
-                // Encontrar el placeholder y extraer las palabras que lo rodean (limpiando expresiones/pistas entre paréntesis o corchetes)
-                const textWithoutHelpers = text.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '');
-                const parts = textWithoutHelpers.split(/_{3,}/);
-                if (parts.length > 1) {
-                    const beforeText = parts[0].trim();
-                    const afterText = parts[1].trim();
-
-                    const getAdjacentWord = (str, fromStart) => {
-                        const words = str.split(/\s+/).map(w => w.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "")).filter(Boolean);
-                        if (words.length === 0) return "";
-                        return fromStart ? words[0] : words[words.length - 1];
-                    };
-
-                    const prevWord = getAdjacentWord(beforeText, false); // última palabra antes del blanco
-                    const nextWord = getAdjacentWord(afterText, true);   // primera palabra después del blanco
-
-                    const getCommonPrefixLength = (s1, s2) => {
-                        let len = 0;
-                        const minL = Math.min(s1.length, s2.length);
-                        for (let i = 0; i < minL; i++) {
-                            if (s1[i] === s2[i]) len++;
-                            else break;
-                        }
-                        return len;
-                    };
-
-                    const checkCollision = (word) => {
-                        if (!word || word.length < 3 || correctOption.length < 3) return false;
-                        const prefixLen = getCommonPrefixLength(correctOption, word);
-                        // Si comparten una raíz léxica común (mínimo 4 letras) o son la misma palabra/prefijo total (mínimo 3 letras)
-                        if (prefixLen >= 4 || (prefixLen >= 3 && (prefixLen === correctOption.length || prefixLen === word.length))) {
-                            return true;
-                        }
-                        return false;
-                    };
-
-                    if (checkCollision(nextWord) || checkCollision(prevWord)) {
-                        const badWord = checkCollision(nextWord) ? nextWord : prevWord;
-                        issues.push(`Colisión de raíz/Redundancia verbal detectada. La opción correcta '${options[correctIdx]}' comparte la misma raíz con la palabra adyacente '${badWord}'. Reestructura la oración o usa una opción que no repita el verbo.`);
-                    }
-                }
-            }
-        }
-
-        // 3.6. Prevención de Redundancia de Saludo/Respuesta (Solo para Idiomas - Gramática/Vocabulario)
-        if (isLanguage && ['Grammar & Use of English', 'Vocabulary & Context'].includes(area)) {
-            const text = (question.question_text || "").toLowerCase();
-            const options = question.options || [];
-            
-            // Si la pregunta contiene un interrogativo de estado/saludo en italiano o inglés
-            const hasGreetingQuestion = /\b(?:come|how)\b/.test(text);
-            if (hasGreetingQuestion) {
-                // Adverbios o palabras de respuesta de estado redundantes
-                const badWordsRegex = /\b(?:bene|well|fine|good)\b/i;
-                
-                // Verificar si alguna de las opciones contiene la palabra redundante
-                const hasRedundancy = options.some(opt => badWordsRegex.test(String(opt || '')));
-                
-                if (hasRedundancy) {
-                    issues.push("Redundancia de saludo/respuesta detectada. El enunciado contiene el interrogativo 'come'/'how' pero las opciones contienen palabras de respuesta de estado ('bene'/'well'/'fine'/'good'). Esto formaría una oración incorrecta (ej: 'Come sta bene'). Elimina dicho adverbio de las opciones.");
-                }
-            }
-        }
-
         // 4. Pregunta o Consigna Explícita (Solo para Medicina y Educación)
-        if (!isLanguage) {
-            const text = question.question_text || "";
-            const lacksQuestionPrompt = !text.includes('?') && !text.includes('¿') &&
-                !/indique|señale|determine|seleccione|calcule|identifique/i.test(text);
-            if (lacksQuestionPrompt) {
-                issues.push("El enunciado de la pregunta (question_text) carece de una pregunta final clara (¿...?) o de una consigna imperativa explícita al final.");
-            }
+        const text = question.question_text || "";
+        const lacksQuestionPrompt = !text.includes('?') && !text.includes('¿') &&
+            !/indique|señale|determine|seleccione|calcule|identifique/i.test(text);
+        if (lacksQuestionPrompt) {
+            issues.push("El enunciado de la pregunta (question_text) carece de una pregunta final clara (¿...?) o de una consigna imperativa explícita al final.");
         }
 
-        // 5. Prevención de Duplicados (Comparación Semántica y Jaccard)
-        const text = question.question_text || "";
         const normGenText = text.toLowerCase().replace(/[^a-z0-9]/g, '');
         const isDuplicate = combinedHistory.some(histItem => {
             if (!histItem) return false;
@@ -523,9 +428,6 @@ class AdminAiService {
             });
             let batchHistory = [...globalHistory]; // Memoria dinámica que crecerá
 
-            const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS', 'IDIOMAS', 'LANGUAGES'];
-            const isLanguage = (normalizedTarget && LANGUAGE_TARGETS.includes(normalizedTarget)) || normalizedTarget === 'LANGUAGES';
-
             // 1. Generación en Paralelo por Chunks
             const chunkSize = 5;
             for (let i = 0; i < amount && allQuestions.length < amount; i += chunkSize) {
@@ -548,7 +450,7 @@ class AdminAiService {
 
                 for (const item of resolved) {
                     if (item.question && allQuestions.length < amount) {
-                        const status = this._checkQuality(item.question, normalizedTarget, item.area, career, difficulty, isLanguage, batchHistory);
+                        const status = this._checkQuality(item.question, normalizedTarget, item.area, career, difficulty, batchHistory);
                         if (status.isValid) {
                             allQuestions.push(item.question);
                             batchHistory.push(item.question.question_text);
@@ -573,7 +475,7 @@ class AdminAiService {
                 const q = await this._generateSingleQuestion(normalizedTarget, area, career, batchHistory, isUserRequest, difficulty, totalAttempts);
 
                 if (q) {
-                    const status = this._checkQuality(q, normalizedTarget, area, career, difficulty, isLanguage, batchHistory);
+                    const status = this._checkQuality(q, normalizedTarget, area, career, difficulty, batchHistory);
                     if (status.isValid) {
                         allQuestions.push(q);
                         batchHistory.push(q.question_text);
@@ -602,14 +504,9 @@ class AdminAiService {
         }
     }
 
-    /**
-     * REFACTORIZADO: Flujo unificado de generación de pregunta individual con auditoría por IA.
-     */
     async _generateSingleQuestion(target, area, career, history = [], isUserRequest = false, difficulty = null, parallelIndex = 0) {
         try {
             const db = require('../../infrastructure/database/db');
-            const LANGUAGE_TARGETS = ['TOEFL', 'IELTS', 'TECH_ENGLISH', 'MCER', 'CELI', 'CILS', 'IDIOMAS', 'LANGUAGES'];
-            const isLanguage = (target && LANGUAGE_TARGETS.includes(target.toUpperCase())) || target === 'languages';
 
             // 1. Obtener historial específico para duplicados
             let existingRes;
@@ -642,95 +539,89 @@ class AdminAiService {
             let selectedSubtopic = null;
 
             // 2. Generar el Prompt de Generación Inicial
-            if (isLanguage) {
-                const cefrLevel = difficulty || 'B1';
-                initialPrompt = genPrompts.getLanguagePrompt(target, area, career, cefrLevel, combinedHistory);
-                console.log(`🤖 [Language Gen] Generando pregunta de nivel ${cefrLevel} para el área '${area}' (${career})`);
-            } else {
-                const namespace = target === 'ASCENSO' || target === 'NOMBRAMIENTO' || target === 'ACCESO_CARGOS' ? 'education' : 'medicine';
+            const namespace = target === 'ASCENSO' || target === 'NOMBRAMIENTO' || target === 'ACCESO_CARGOS' ? 'education' : 'medicine';
 
-                // FASE 1: Seleccionar tema desde el prospecto
-                console.log(`🔍 [Fase 1] Escaneando temario oficial para área: ${area}...`);
-                const syllabusList = await this.ragService.getSyllabusContext(namespace, career, area);
+            // FASE 1: Seleccionar tema desde el prospecto
+            console.log(`🔍 [Fase 1] Escaneando temario oficial para área: ${area}...`);
+            const syllabusList = await this.ragService.getSyllabusContext(namespace, career, area);
 
-                if (!syllabusList || syllabusList.includes("ERROR:")) {
-                    console.error(`🚨 [Aborto] Temario inválido o vacío. Deteniendo generación.`);
-                    return null;
-                }
-
-                const selectionPrompt = `Actúa como Director Académico para la carrera de ${career}.
-                Aquí tienes fragmentos del TEMARIO OFICIAL (Prospecto):
-                ${syllabusList}
-                
-                HISTORIAL DE TEMAS YA USADOS (PROHIBIDOS):
-                ${history.filter(h => h.startsWith('TEMA:')).slice(-15).join('\n')}
-                
-                HISTORIAL DE PREGUNTAS (CONTEXTO):
-                ${history.filter(h => !h.startsWith('TEMA:')).slice(-5).join('\n')}
-                
-                VARIACIÓN DE PROCESO (Evita duplicados):
-                Fuerza la variación eligiendo un subtema del fragmento número ${(parallelIndex % 5) + 1} de la lista de fragmentos del prospecto provistos para evitar colisiones con otros procesos concurrentes.
-                
-                TAREAS:
-                1. Analiza el temario y elige UN subtema específico de la carrera "${career}" que pertenezca ESTRICTAMENTE al área: "${area}".
-                2. Si el temario muestra temas de otras áreas o carreras, IGNÓRALOS. Solo puedes elegir subtemas de "${area}" para "${career}".
-                3. Si el área tiene SUB-ÁREAS, elige un punto específico (ej. "1.2 Epidemiología") y no el título general.
-                4. El tema elegido NO debe estar en el historial de temas prohibidos.
-                5. Genera 2 términos de búsqueda "Sniper" que incluyan palabras técnicas clave (ej: "NTS", "Guía clínica", "Esquema de vacunación", "Manejo clínico", "Normativa") para encontrar el sustento oficial.
-                
-                RESPONDE SOLO EN JSON:
-                { "selectedTopic": "Nombre del tema", "searchTerms": ["termino 1", "termino 2"] }`;
-
-                const selectionResult = await this._callModel(selectionPrompt);
-                const selectionData = this._parseJSON(selectionResult.response.candidates[0].content.parts[0].text);
-
-                selectedSubtopic = selectionData.selectedTopic || area;
-                const technicalSearchTerms = Array.isArray(selectionData.searchTerms)
-                    ? selectionData.searchTerms.join(' ')
-                    : (typeof selectionData.searchTerms === 'string' ? selectionData.searchTerms : selectedSubtopic);
-                console.log(`🎯 [Fase 1] Tema Elegido: ${selectedSubtopic}`);
-
-                // FASE 2: RAG Dual (Teoría + Estructura de Examen Real)
-                let fullContext = { syllabus: selectedSubtopic };
-
-                const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
-                const maxQuestions = isEducation ? 60 : 100;
-                const randomQuestionNum = Math.floor(Math.random() * maxQuestions) + 1;
-                const year = isEducation ? (Math.random() > 0.5 ? '2025' : '2024') : '2025';
-
-                let examIdentity = "";
-                let styleSearchTerms = [];
-
-                if (isEducation) {
-                    const level = career.replace('EBR - ', '').trim();
-                    examIdentity = `Prueba ${target} EBR ${level} ${area} Año ${year} Pregunta ${randomQuestionNum}`;
-                    styleSearchTerms = [examIdentity];
-                } else {
-                    const isNursing = career.toLowerCase().includes('enfermeria');
-                    const careerTag = isNursing ? 'Enfermería' : 'Medicina Humana';
-                    examIdentity = `${target} ${careerTag} Item ${randomQuestionNum}`;
-                    styleSearchTerms = [
-                        `${randomQuestionNum}.`,
-                        `${target} ${careerTag} 2025`,
-                        `${target} ${careerTag} ${area}`
-                    ];
-                }
-
-                console.log(`📚 [Fase 2] Investigando Teoría para: ${selectedSubtopic}`);
-                console.log(`🎭 [Fase 2] Capturando Moldes Reales de: ${examIdentity}`);
-
-                const [theoryContext, styleContext] = await Promise.all([
-                    this.ragService.getTechnicalBasis(namespace, selectedSubtopic, technicalSearchTerms, 5),
-                    this.ragService.getStyleContextByKeywords(namespace, styleSearchTerms, 15)
-                ]);
-
-                fullContext.style = styleContext;
-                fullContext.basis = theoryContext;
-
-                // FASE 3: Constructor de pregunta (Unificado)
-                console.log(`🏗️ [Fase 3] Construyendo pregunta (isUserRequest: ${isUserRequest})...`);
-                initialPrompt = genPrompts.getUnifiedPrompt(target, area, career, fullContext, combinedHistory, null);
+            if (!syllabusList || syllabusList.includes("ERROR:")) {
+                console.error(`🚨 [Aborto] Temario inválido o vacío. Deteniendo generación.`);
+                return null;
             }
+
+            const selectionPrompt = `Actúa como Director Académico para la carrera de ${career}.
+            Aquí tienes fragmentos del TEMARIO OFICIAL (Prospecto):
+            ${syllabusList}
+            
+            HISTORIAL DE TEMAS YA USADOS (PROHIBIDOS):
+            ${history.filter(h => h.startsWith('TEMA:')).slice(-15).join('\n')}
+            
+            HISTORIAL DE PREGUNTAS (CONTEXTO):
+            ${history.filter(h => !h.startsWith('TEMA:')).slice(-5).join('\n')}
+            
+            VARIACIÓN DE PROCESO (Evita duplicados):
+            Fuerza la variación eligiendo un subtema del fragmento número ${(parallelIndex % 5) + 1} de la lista de fragmentos del prospecto provistos para evitar colisiones con otros procesos concurrentes.
+            
+            TAREAS:
+            1. Analiza el temario y elige UN subtema específico de la carrera "${career}" que pertenezca ESTRICTAMENTE al área: "${area}".
+            2. Si el temario muestra temas de otras áreas o carreras, IGNÓRALOS. Solo puedes elegir subtemas de "${area}" para "${career}".
+            3. Si el área tiene SUB-ÁREAS, elige un punto específico (ej. "1.2 Epidemiología") y no el título general.
+            4. El tema elegido NO debe estar en el historial de temas prohibidos.
+            5. Genera 2 términos de búsqueda "Sniper" que incluyan palabras técnicas clave (ej: "NTS", "Guía clínica", "Esquema de vacunación", "Manejo clínico", "Normativa") para encontrar el sustento oficial.
+            
+            RESPONDE SOLO EN JSON:
+            { "selectedTopic": "Nombre del tema", "searchTerms": ["termino 1", "termino 2"] }`;
+
+            const selectionResult = await this._callModel(selectionPrompt);
+            const selectionData = this._parseJSON(selectionResult.response.candidates[0].content.parts[0].text);
+
+            selectedSubtopic = selectionData.selectedTopic || area;
+            const technicalSearchTerms = Array.isArray(selectionData.searchTerms)
+                 ? selectionData.searchTerms.join(' ')
+                 : (typeof selectionData.searchTerms === 'string' ? selectionData.searchTerms : selectedSubtopic);
+            console.log(`🎯 [Fase 1] Tema Elegido: ${selectedSubtopic}`);
+
+            // FASE 2: RAG Dual (Teoría + Estructura de Examen Real)
+            let fullContext = { syllabus: selectedSubtopic };
+
+            const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
+            const maxQuestions = isEducation ? 60 : 100;
+            const randomQuestionNum = Math.floor(Math.random() * maxQuestions) + 1;
+            const year = isEducation ? (Math.random() > 0.5 ? '2025' : '2024') : '2025';
+
+            let examIdentity = "";
+            let styleSearchTerms = [];
+
+            if (isEducation) {
+                const level = career.replace('EBR - ', '').trim();
+                examIdentity = `Prueba ${target} EBR ${level} ${area} Año ${year} Pregunta ${randomQuestionNum}`;
+                styleSearchTerms = [examIdentity];
+            } else {
+                const isNursing = career.toLowerCase().includes('enfermeria');
+                const careerTag = isNursing ? 'Enfermería' : 'Medicina Humana';
+                examIdentity = `${target} ${careerTag} Item ${randomQuestionNum}`;
+                styleSearchTerms = [
+                    `${randomQuestionNum}.`,
+                    `${target} ${careerTag} 2025`,
+                    `${target} ${careerTag} ${area}`
+                ];
+            }
+
+            console.log(`📚 [Fase 2] Investigando Teoría para: ${selectedSubtopic}`);
+            console.log(`🎭 [Fase 2] Capturando Moldes Reales de: ${examIdentity}`);
+
+            const [theoryContext, styleContext] = await Promise.all([
+                this.ragService.getTechnicalBasis(namespace, selectedSubtopic, technicalSearchTerms, 5),
+                this.ragService.getStyleContextByKeywords(namespace, styleSearchTerms, 15)
+            ]);
+
+            fullContext.style = styleContext;
+            fullContext.basis = theoryContext;
+
+            // FASE 3: Constructor de pregunta (Unificado)
+            console.log(`🏗️ [Fase 3] Construyendo pregunta (isUserRequest: ${isUserRequest})...`);
+            initialPrompt = genPrompts.getUnifiedPrompt(target, area, career, fullContext, combinedHistory, null);
 
             // 3. Generar pregunta y ejecutar Bucle de Auditoría por IA (Fase 4)
             const result = await this._callModel(initialPrompt);
@@ -745,13 +636,8 @@ class AdminAiService {
 
             // Forzar metadatos correctos post-generación
             question.topic = area;
-            if (isLanguage) {
-                question.difficulty = difficulty || 'B1';
-                question.career = career;
-                question.domain = 'languages';
-            }
 
-            let status = this._checkQuality(question, target, area, career, difficulty, isLanguage, combinedHistory);
+            let status = this._checkQuality(question, target, area, career, difficulty, combinedHistory);
             let auditAttempts = 0;
 
             while (!status.isValid && auditAttempts < 3) {
@@ -772,13 +658,8 @@ class AdminAiService {
 
                     // Mantener consistencia de metadatos
                     question.topic = area;
-                    if (isLanguage) {
-                        question.difficulty = difficulty || 'B1';
-                        question.career = career;
-                        question.domain = 'languages';
-                    }
 
-                    status = this._checkQuality(question, target, area, career, difficulty, isLanguage, combinedHistory);
+                    status = this._checkQuality(question, target, area, career, difficulty, combinedHistory);
                 } catch (refineErr) {
                     console.error(`⚠️ Error en auditoría/refinamiento (intento ${auditAttempts}):`, refineErr);
                     break;
@@ -792,8 +673,7 @@ class AdminAiService {
             }
 
             // 🛡️ Saneador de Estructura Final (Opciones e indexes)
-            const isEducation = ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(target);
-            const requiredCount = isLanguage ? 4 : (isEducation ? 3 : (target === 'RESIDENTADO' ? 5 : 4));
+            const requiredCount = isEducation ? 3 : (target === 'RESIDENTADO' ? 5 : 4);
 
             if (question.options.length !== requiredCount) {
                 console.log(`🛡️ [Sanitizer] Forzando ${requiredCount} opciones (IA generó ${question.options.length}).`);
@@ -810,16 +690,7 @@ class AdminAiService {
             }
 
             // Sanitización y formateo final del subtema
-            if (isLanguage) {
-                question.subtopic = question.subtopic || 'Language Practice';
-                if (['Grammar & Use of English', 'Vocabulary & Context'].includes(area) &&
-                    question.question_text &&
-                    !question.question_text.includes('_____') && !question.question_text.includes('___')) {
-                    question.question_text += ' _____';
-                }
-            } else {
-                question.subtopic = selectedSubtopic || question.subtopic || 'Análisis Casuístico';
-            }
+            question.subtopic = selectedSubtopic || question.subtopic || 'Análisis Casuístico';
 
             // Escudo final de sanitización estática
             question.explanation = this._sanitizeExplanation(question.explanation);

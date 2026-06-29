@@ -1,6 +1,20 @@
 const supabase = require('../config/supabaseClient');
 const UserRepository = require('../../domain/repositories/userRepository');
 const userRepository = new UserRepository();
+const jwt = require('jsonwebtoken');
+
+// Caché en memoria para almacenar verificaciones exitosas de tokens (token -> { user, cachedAt, exp })
+const tokenCache = new Map();
+
+// Limpiar caché periódicamente para evitar fugas de memoria
+setInterval(() => {
+    const now = Date.now();
+    for (const [token, entry] of tokenCache.entries()) {
+        if (now > entry.cachedAt + 3 * 60 * 1000 || now / 1000 > entry.exp) {
+            tokenCache.delete(token);
+        }
+    }
+}, 60 * 1000);
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 500;
@@ -42,55 +56,74 @@ async function auth(req, res, next) {
         return res.status(401).json({ error: 'Acceso denegado. Token no provisto.' });
     }
 
-
-
     try {
-        // 1. Verificar token con Supabase (con Retry Pattern para evitar ECONNRESET)
+        // 1. Decodificar localmente el JWT para verificar expiración sin llamadas de red
+        const decoded = jwt.decode(token);
+        if (!decoded || !decoded.exp) {
+            return res.status(401).json({ error: 'Sesión inválida o expirada.' });
+        }
+
+        if (Date.now() / 1000 > decoded.exp) {
+            console.warn('🕒 [AuthMiddleware] Token expirado detectado por validación local de JWT.');
+            return res.status(401).json({ error: 'Sesión expirada. Por favor inicie sesión nuevamente.' });
+        }
+
+        // 2. Verificar caché en memoria
         let sbUser;
-        try {
-            const result = await getUserWithRetry(token);
-            sbUser = result.user;
-        } catch (err) {
-            const msg = err.message || '';
-            const status = err.status || 0;
-            
-            // 1. Errores de Cliente (Token inválido/expirado o sesión perdida)
-            const isClientError = msg.includes('invalid JWT') || 
-                                  msg.includes('expired') || 
-                                  msg.includes('invalid claim') || 
-                                  msg.includes('Auth session missing') || 
-                                  status === 400; // Supabase suele devolver 400 para sesiones rotas
+        const cached = tokenCache.get(token);
+        const now = Date.now();
+        if (cached && now < cached.cachedAt + 3 * 60 * 1000) {
+            sbUser = cached.user;
+        } else {
+            // 3. Si no está en caché o expiró la caché de 3 min, validar con Supabase (con Retry)
+            try {
+                const result = await getUserWithRetry(token);
+                sbUser = result.user;
+                if (sbUser) {
+                    tokenCache.set(token, {
+                        user: sbUser,
+                        cachedAt: now,
+                        exp: decoded.exp
+                    });
+                }
+            } catch (err) {
+                const msg = err.message || '';
+                const status = err.status || 0;
+                
+                const isClientError = msg.includes('invalid JWT') || 
+                                      msg.includes('expired') || 
+                                      msg.includes('invalid claim') || 
+                                      msg.includes('Auth session missing') || 
+                                      status === 400;
 
-            if (isClientError) {
-                console.warn('⚠️ Sesión de usuario inválida:', msg);
-                return res.status(401).json({ error: 'Sesión expirada. Por favor inicie sesión nuevamente.' });
-            }
+                if (isClientError) {
+                    console.warn('⚠️ Sesión de usuario inválida:', msg);
+                    tokenCache.delete(token);
+                    return res.status(401).json({ error: 'Sesión expirada. Por favor inicie sesión nuevamente.' });
+                }
 
-            // 2. Errores de Infraestructura (Red/DNS)
-            const isConnectionError = err.code === 'ENOTFOUND' || err.syscall === 'getaddrinfo' || msg.includes('fetch failed');
-            if (isConnectionError) {
-                console.warn('⚠️ Supabase Auth Connectivity Warning (DNS/Network).');
-            } else {
-                // Solo loguear como ERROR si es algo realmente inesperado (5xx o crash)
-                console.error('❌ Supabase Auth unexpected error:', err);
+                const isConnectionError = err.code === 'ENOTFOUND' || err.syscall === 'getaddrinfo' || msg.includes('fetch failed');
+                if (isConnectionError) {
+                    console.warn('⚠️ Supabase Auth Connectivity Warning (DNS/Network).');
+                } else {
+                    console.error('❌ Supabase Auth unexpected error:', err);
+                }
+                return res.status(503).json({ error: 'Error de conexión con servicio de autenticación. Intente nuevamente.' });
             }
-            return res.status(503).json({ error: 'Error de conexión con servicio de autenticación. Intente nuevamente.' });
         }
 
         if (!sbUser) {
             return res.status(401).json({ error: 'Sesión inválida o expirada.' });
         }
 
-        // 2. Obtener usuario de nuestra Base de Datos (Roles, Usage, Subscription)
+        // 4. Obtener usuario de nuestra Base de Datos (Roles, Usage, Subscription)
         const dbUser = await userRepository.findById(sbUser.id);
 
         if (!dbUser) {
-            // Caso raro: Existe en Auth pero no en DB (Sincronización fallida?)
             console.error(`❌ Usuario Auth ${sbUser.id} no encontrado en DB Local.`);
             return res.status(401).json({ error: 'Usuario no registrado en el sistema.' });
         }
 
-        // 3. Adjuntar usuario completo a la request
         req.user = dbUser;
         next();
 
@@ -105,17 +138,37 @@ async function optionalAuth(req, res, next) {
     const token = authHeader ? authHeader.split(' ')[1] : req.query.token;
     if (!token) return next();
 
-
-
     try {
-        // Usar el helper con reintentos para evitar ráfagas de errores de conexión (443 Timeout)
-        const { user: sbUser } = await getUserWithRetry(token);
+        // 1. Decodificar localmente el JWT
+        const decoded = jwt.decode(token);
+        if (!decoded || !decoded.exp || Date.now() / 1000 > decoded.exp) {
+            return next();
+        }
+
+        // 2. Verificar caché en memoria
+        let sbUser;
+        const cached = tokenCache.get(token);
+        const now = Date.now();
+        if (cached && now < cached.cachedAt + 3 * 60 * 1000) {
+            sbUser = cached.user;
+        } else {
+            // 3. Validar con Supabase
+            const result = await getUserWithRetry(token);
+            sbUser = result.user;
+            if (sbUser) {
+                tokenCache.set(token, {
+                    user: sbUser,
+                    cachedAt: now,
+                    exp: decoded.exp
+                });
+            }
+        }
+
         if (sbUser) {
             const dbUser = await userRepository.findById(sbUser.id);
             if (dbUser) req.user = dbUser;
         }
     } catch (err) {
-        // En auth opcional, los errores de red se loguean como advertencia, no como error crítico
         if (err.message.includes('fetch failed') || err.code === 'UND_ERR_CONNECT_TIMEOUT') {
             console.warn('⚠️ Supabase Auth (Optional) Timeout/Network Error. Ignorando...');
         }

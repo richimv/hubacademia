@@ -13,6 +13,12 @@ console.log('🌍 Entorno:', (window.location.hostname === 'localhost' || window
 async function syncPendingSubmissions() {
     if (!navigator.onLine) return;
     
+    const token = localStorage.getItem('authToken');
+    if (!token || token === 'null' || token === 'undefined') {
+        // No hay sesión activa, abortamos la sincronización para evitar bucles de redirección 401
+        return;
+    }
+    
     const pendingKey = 'simulator_pending_submissions';
     let pending = [];
     try {

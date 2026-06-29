@@ -8,18 +8,18 @@
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=a574bf2e">
-    <link rel="stylesheet" href="/css/base.css?v=a574bf2e">
-    <link rel="stylesheet" href="/css/header.css?v=a574bf2e">
-    <link rel="stylesheet" href="/css/footer.css?v=a574bf2e">
-    <link rel="stylesheet" href="/css/dashboard.css?v=a574bf2e">
+    <link rel="stylesheet" href="/css/theme.css?v=2bd6fe1c">
+    <link rel="stylesheet" href="/css/base.css?v=2bd6fe1c">
+    <link rel="stylesheet" href="/css/header.css?v=2bd6fe1c">
+    <link rel="stylesheet" href="/css/footer.css?v=2bd6fe1c">
+    <link rel="stylesheet" href="/css/dashboard.css?v=2bd6fe1c">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/modal.css?v=a574bf2e">
-    <link rel="stylesheet" href="/css/sidebar.css?v=a574bf2e">
-    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=a574bf2e">
-    <link rel="stylesheet" href="/css/components.css?v=a574bf2e">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=a574bf2e"> <!-- ✅ Formato unificado de Markdown IA -->
-    <link rel="stylesheet" href="/css/quiz.css?v=a574bf2e">
+    <link rel="stylesheet" href="/css/modal.css?v=2bd6fe1c">
+    <link rel="stylesheet" href="/css/sidebar.css?v=2bd6fe1c">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=2bd6fe1c">
+    <link rel="stylesheet" href="/css/components.css?v=2bd6fe1c">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=2bd6fe1c"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="/css/quiz.css?v=2bd6fe1c">
 </head>
 
 <body class="hero-hidden">
@@ -54,15 +54,6 @@
                 <h1 id="ctx-title" class="ctx-title-compact">Ciencias de la Salud</h1>
             </div>
 
-            <!-- Tabs de navegación para Idiomas -->
-            <div id="languages-nav-tabs" class="languages-tabs">
-                <button class="lang-tab-btn active" id="tab-simulador">
-                    <i class="fas fa-tasks"></i> Simulador de Exámenes
-                </button>
-                <button class="lang-tab-btn" id="tab-teoria">
-                    <i class="fas fa-book-open"></i> Aprender (Teoría)
-                </button>
-            </div>
 
             <div id="sim-dashboard-sections">
 
@@ -380,168 +371,6 @@
                 </div>
             </div> <!-- Close #sim-dashboard-sections -->
 
-            <!-- Contenedor del Reproductor de Simulacro de Idiomas (In-Page) -->
-            <div id="languages-quiz-player-wrapper" style="display: none; margin-top: 1rem;">
-                <div class="quiz-container"
-                    style="max-width: 100%; width: 100%; margin: 0 auto; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); padding: 2rem; border-radius: 20px;">
-                    <div class="question-header">
-                        <div>
-                            <span
-                                style="color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
-                                Pregunta <span id="lang-currentQ">1</span>/<span id="lang-maxQ">10</span>
-                            </span>
-                            <div
-                                style="height: 6px; width: 100px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.5rem; overflow: hidden;">
-                                <div id="lang-progressBar"
-                                    style="height: 100%; width: 10%; background: #a78bfa; transition: width 0.3s;">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="timer-badge" id="lang-timer-badge" style="display: none;">
-                            <i class="fas fa-clock"></i>
-                            <span id="lang-timer">00:00</span>
-                        </div>
-                    </div>
-
-                    <div id="lang-questionLayout" class="question-layout-grid">
-                        <div id="lang-questionImageContainer" class="hidden q-image-container-premium">
-                            <img id="lang-questionImage" src="" alt="Imagen de contexto" loading="lazy">
-                        </div>
-
-                        <div class="question-text" id="lang-questionText">
-                            Cargando pregunta...
-                        </div>
-                    </div>
-
-                    <div class="options-grid" id="lang-optionsGrid">
-                        <!-- Botones generados por JS -->
-                    </div>
-
-                    <div id="lang-feedbackBox" class="feedback-box">
-                        <h5 id="lang-explanation-title" class="mb-3"
-                            style="color: #c4b5fd; font-weight: 700; letter-spacing: -0.02em;">
-                            <i class="fas fa-info-circle"></i> Sustento Técnico / Explicación
-                        </h5>
-                        <div id="lang-explanationText"
-                            style="font-size: 1.15rem; line-height: 1.6; color: #cbd5e1; margin-bottom: 1.5rem;"></div>
-                        <div id="lang-explanationImageContainer" class="hidden q-explanation-image-container-premium">
-                            <img id="lang-explanationImage" src="" alt="Imagen explicativa" loading="lazy">
-                        </div>
-                        <button id="lang-nextBtn" class="btn-neon"
-                            style="margin-top: 1rem; border: none; padding: 0.75rem 2rem; border-radius: 12px; font-weight: 600; background: linear-gradient(135deg, #8b5cf6, #6366f1); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                            Siguiente Pregunta <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-
-                    <!-- Contenedor Post-Examen (Hidden) -->
-                    <div id="lang-reviewContainer" class="review-container hidden">
-                        <div class="review-header">
-                            <h2><i class="fas fa-clipboard-check"></i> Corrección de Simulacro</h2>
-                            <button id="lang-btn-top-exit" class="btn-top-exit"><i class="fas fa-times"></i>
-                                Salir</button>
-                        </div>
-                        <div id="lang-reviewFeed" class="review-feed">
-                            <!-- Tarjetas inyectadas por JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal de Resultados de Idiomas (In-Page) -->
-            <div id="lang-resultsOverlay" class="results-overlay">
-                <div class="results-card">
-                    <h2 style="margin-bottom: 1rem;">¡Simulacro Finalizado!</h2>
-                    <div class="score-circle-svg-container" id="lang-scoreCircle">
-                        <svg viewBox="0 0 100 100" class="svg-score-chart">
-                            <circle class="svg-circle-bg" cx="50" cy="50" r="45"></circle>
-                            <circle class="svg-circle-progress" id="lang-svgScoreProgress" cx="50" cy="50" r="45"
-                                style="stroke: #8b5cf6; filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5));"></circle>
-                        </svg>
-                        <span class="score-value" id="lang-finalScore">0/10</span>
-                    </div>
-                    <p style="color: #94a3b8; margin-bottom: 2rem;">¿Qué te pareció el nivel?</p>
-
-                    <div class="actions" style="flex-direction: column; display: flex; gap: 1rem;">
-                        <button id="lang-btn-review-exam" type="button" class="btn-neon" style="width: 100%;">
-                            <i class="fas fa-eye"></i> Ver Corrección del Examen
-                        </button>
-                        <div style="display: flex; gap: 1rem; justify-content: center; width: 100%;">
-                            <button id="lang-btn-exit-quiz" class="btn-secondary"
-                                style="flex: 1; padding: 0.75rem 1.5rem; border-radius: 12px; cursor: pointer;">
-                                Salir al Panel
-                            </button>
-                            <button id="lang-btn-retry-quiz" class="btn-secondary"
-                                style="flex: 1; padding: 0.75rem 1.5rem; border-radius: 12px; cursor: pointer;">
-                                Nuevo Examen
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <!-- Temario y Teoría Interactiva -->
-            <div id="cci-teoria-section" style="display:none; animation: fadeIn 0.4s ease;">
-                <div class="cci-syllabus-layout">
-                    <!-- Col Izquierda: Árbol de Temas -->
-                    <div class="cci-syllabus-sidebar glass-card">
-                        <div class="cci-sidebar-header">
-                            <h4>Temario Curricular</h4>
-                            <p class="syllabus-subtitle" id="syllabus-meta-info">Cargando temas...</p>
-                        </div>
-                        <div id="cci-syllabus-list" class="cci-syllabus-list">
-                            <!-- Rellenado por JS -->
-                        </div>
-                    </div>
-
-                    <!-- Col Derecha: Panel de la Lección -->
-                    <div class="cci-syllabus-content glass-card" id="cci-syllabus-lesson-panel">
-                        <div id="lesson-empty-state" class="lesson-empty-state">
-                            <div class="empty-icon"><i class="fas fa-book-open"></i></div>
-                            <h4>Aprende Teoría con IA</h4>
-                            <p>Selecciona un tema del temario de la izquierda para comenzar tu lección interactiva
-                                potenciada por Gemini.</p>
-                        </div>
-                        <div id="lesson-content-area" style="display:none;">
-                            <div class="lesson-header">
-                                <div class="lesson-header-flex">
-                                    <div>
-                                        <span class="lesson-badge-level" id="lesson-badge-level">A1</span>
-                                        <h2 id="lesson-title" class="lesson-title">Lección</h2>
-                                    </div>
-                                    <div class="lesson-header-actions" id="lesson-header-actions">
-                                        <button class="btn-toggle-completed" id="btn-lesson-complete"
-                                            title="Marcar como completado"
-                                            style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; padding:0.5rem 0.8rem; border-radius:8px; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; gap:0.4rem; transition:all 0.2s;">
-                                            <i class="far fa-circle"></i> <span>Completar</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="lesson-body-scroll">
-                                <!-- Teoría e Explicación -->
-                                <div class="lesson-section">
-                                    <h3 class="lesson-section-title"><i class="fas fa-file-alt"></i> Explicación Teórica
-                                    </h3>
-                                    <div id="lesson-explanation" class="markdown-content"></div>
-                                </div>
-
-                                <!-- Ejercicios Interactivos (Zona Lúdica) -->
-                                <div class="lesson-section"
-                                    style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.5rem;">
-                                    <h3 class="lesson-section-title"><i class="fas fa-edit"></i> Zona de Práctica /
-                                        Ejercicios Interactivos</h3>
-                                    <div id="lesson-exercises-wrapper" style="margin-top: 1rem;">
-                                        <!-- Ejercicios interactivos cargados dinámicamente -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
 
         </div>
@@ -598,18 +427,6 @@
                     </select>
                 </div>
 
-                <!-- Contenedor Dificultad (Idiomas) -->
-                <div id="languages-difficulty-container" style="display:none;">
-                    <h4 class="modal-section-title">Nivel Objetivo (CEFR)</h4>
-                    <select id="config-difficulty">
-                        <option value="A1">Nivel A1 (Principiante)</option>
-                        <option value="A2">Nivel A2 (Básico)</option>
-                        <option value="B1">Nivel B1 (Intermedio)</option>
-                        <option value="B2">Nivel B2 (Intermedio Alto)</option>
-                        <option value="C1">Nivel C1 (Avanzado)</option>
-                        <option value="C2">Nivel C2 (Maestría)</option>
-                    </select>
-                </div>
 
                 <!-- Modo de Configuración (Examen Oficial vs Personalizado) -->
                 <div class="config-section" id="config-mode-selection-container">
@@ -731,7 +548,7 @@
                     Hub Academia
                 </a>
                 <p class="footer-slogan">Tu plataforma de aprendizaje inteligente. Simulacros, flashcards y asistente
-                    interactivo para salud, educación e idiomas.</p>
+                    interactivo para salud y educación.</p>
             </div>
             <div class="footer-links-col">
                 <h4 class="footer-heading">Explorar</h4>
@@ -758,22 +575,22 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=a574bf2e"></script>
-    <script src="/js/services/networkService.js?v=a574bf2e"></script>
+    <script src="/js/config.js?v=2bd6fe1c"></script>
+    <script src="/js/services/networkService.js?v=2bd6fe1c"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=a574bf2e"></script>
-    <script src="/js/services/authApiService.js?v=a574bf2e"></script>
-    <script src="/js/services/analyticsApiService.js?v=a574bf2e"></script>
-    <script src="/js/sessionManager.js?v=a574bf2e"></script>
-    <script src="/js/ui/uiManager.js?v=a574bf2e"></script>
-    <script src="/js/ui/components.js?v=a574bf2e"></script>
-    <script src="/js/ui/sidebar.js?v=a574bf2e"></script>
-    <script src="/js/app.js?v=a574bf2e"></script>
+    <script src="/js/utils/markdown-renderer.js?v=2bd6fe1c"></script>
+    <script src="/js/services/authApiService.js?v=2bd6fe1c"></script>
+    <script src="/js/services/analyticsApiService.js?v=2bd6fe1c"></script>
+    <script src="/js/sessionManager.js?v=2bd6fe1c"></script>
+    <script src="/js/ui/uiManager.js?v=2bd6fe1c"></script>
+    <script src="/js/ui/components.js?v=2bd6fe1c"></script>
+    <script src="/js/ui/sidebar.js?v=2bd6fe1c"></script>
+    <script src="/js/app.js?v=2bd6fe1c"></script>
 
     <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 
-    <script src="/js/simulator-dash.js?v=a574bf2e"></script>
+    <script src="/js/simulator-dash.js?v=2bd6fe1c"></script>
 </body>
 
 </html>

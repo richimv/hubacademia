@@ -100,51 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     image: '/assets/bg-sim-edu-rubrics.webp'
                 }
             ]
-        },
-        idiomas: {
-            title: 'Centro de Idiomas',
-            subtitle: 'Domina un nuevo idioma con simulacros de certificación y tutores de IA',
-            cards: [
-                {
-                    title: 'Simulacro de Certificaciones',
-                    desc: 'Prepárate para TOEFL, IELTS, y exámenes de nivelación MCER en inglés e italiano.',
-                    summary: 'Mide tus habilidades lingüísticas mediante simulacros de exámenes cronometrados que replican estándares internacionales (TOEFL, IELTS, MCER). Evalúa tu desempeño en tiempo real y realiza un seguimiento de tu progreso con KPIs clave y análisis detallado de tus estadísticas.',
-                    href: '/simulator-dashboard?context=IDIOMAS',
-                    actionText: 'Ingresar',
-                    actionIcon: 'fa-arrow-right',
-                    enabled: true,
-                    accent: '#ec4899',
-                    accentRgb: '236, 72, 153',
-                    accentLight: '#f472b6',
-                    image: '/assets/bg-sim-lang-exams.webp'
-                },
-                {
-                    title: 'Tutor Conversacional IA',
-                    desc: 'Chatea en tiempo real y recibe correcciones de gramática, vocabulario y pronunciación instantáneas.',
-                    summary: 'Desarrolla fluidez oral y escrita conversando con un tutor interactivo por voz de baja latencia que te proporcionará correcciones gramaticales y sugerencias de léxico en tiempo real.',
-                    href: '/language-tutor',
-                    actionText: 'Ingresar al Chat',
-                    actionIcon: 'fa-comments',
-                    enabled: true,
-                    accent: '#7c3aed',
-                    accentRgb: '124, 58, 237',
-                    accentLight: '#a78bfa',
-                    image: '/assets/bg-sim-lang-tutor.webp'
-                },
-                {
-                    title: 'Mi Vocabulario',
-                    desc: 'Colecciona y practica palabras. Domina tiempos verbales, conjugaciones y flexiones con feedback en tiempo real de la IA.',
-                    summary: 'Almacena y organiza tu vocabulario personalizado, repasa conjugaciones verbales y realiza ejercicios de memorización interactivos con retroalimentación automática.',
-                    href: '/my-vocabulary',
-                    actionText: 'Ingresar',
-                    actionIcon: 'fa-arrow-right',
-                    enabled: true,
-                    accent: '#d946ef',
-                    accentRgb: '217, 70, 239',
-                    accentLight: '#f472b6',
-                    image: '/assets/bg-sim-lang-vocab.webp'
-                }
-            ]
         }
     };
 

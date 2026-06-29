@@ -30,17 +30,7 @@ const adminService = adminServiceSingleton;
 const searchService = new SearchService();
 const usageService = new UsageService(); // ✅ NUEVO: Servicio singleton
 
-const LanguageChatController = require('./LanguageChatController');
-const LanguageSyllabusController = require('./LanguageSyllabusController');
-const LanguageVocabularyController = require('./LanguageVocabularyController');
 
-const LanguageRepository = require('../../domain/repositories/languageRepository');
-const LanguageService = require('../../domain/services/languageService');
-const LanguageChatService = require('../../domain/services/languageChatService');
-
-const languageRepository = new LanguageRepository();
-const languageService = new LanguageService(languageRepository);
-const languageChatService = new LanguageChatService();
 
 // --- 3. Inyectar los servicios en los controladores al crearlos ---
 module.exports = {
@@ -52,13 +42,9 @@ module.exports = {
     adminController: require('./adminController'), // ✅ NUEVO: Importar la instancia singleton directamente
     medicoController: require('./medicoController'),
     docenteController: require('./docenteController'),
-    idiomasSimulatorController: require('./idiomasSimulatorController'),
     flashcardController: require('./flashcardController'),
     selfEvaluationController: require('./selfEvaluationController'),
     userPreferencesController: require('./userPreferencesController'), // ✅ NUEVO: Multi-Domain Simulator
     mediaController: require('./mediaController'), // ✅ NUEVO: Proxy de imágenes GCS
-    speechController: require('./speechController'), // ✅ NUEVO: Motor de Voz (ES, EN, IT)
-    languageChatController: new LanguageChatController(languageChatService, usageService), // ✅ NUEVO: Chat Conversacional de Idiomas (CCI)
-    languageSyllabusController: new LanguageSyllabusController(languageService, usageService),
-    languageVocabularyController: new LanguageVocabularyController(languageService, usageService)
+    speechController: require('./speechController') // ✅ NUEVO: Motor de Voz (ES, EN, IT)
 };

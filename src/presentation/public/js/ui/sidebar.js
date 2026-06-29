@@ -80,11 +80,7 @@ class GlobalSidebar {
                         <span class="sidebar-item-label">Módulo Educación</span>
                     </a>
                     
-                    <a href="/simulators?domain=idiomas" class="sidebar-item" data-page="idiomas">
-                        <i class="fas fa-language"></i>
-                        <span class="sidebar-item-label">Módulo Idiomas</span>
-                    </a>
-                    
+
                     <a href="/repaso" class="sidebar-item" data-page="flashcards">
                         <i class="fas fa-clone"></i>
                         <span class="sidebar-item-label">Flashcards</span>
@@ -223,13 +219,11 @@ class GlobalSidebar {
 
         if (pathname === '/' || pathname === '/index.html' || pathname === '/index') {
             activePage = 'home';
-        } else if (pathname.includes('simulator-dashboard') || pathname.includes('simulators') || pathname.includes('my-vocabulary') || pathname.includes('language-tutor')) {
-            if (search.includes('domain=salud') || search.includes('context=MEDICINA')) {
-                activePage = 'salud';
-            } else if (search.includes('domain=educacion') || search.includes('context=EDUCACION')) {
+        } else if (pathname.includes('simulator-dashboard') || pathname.includes('simulators')) {
+            if (search.includes('domain=educacion') || search.includes('context=EDUCACION')) {
                 activePage = 'educacion';
             } else {
-                activePage = 'idiomas';
+                activePage = 'salud';
             }
         } else if (pathname.includes('repaso') || pathname.includes('flashcards')) {
             activePage = 'flashcards';
