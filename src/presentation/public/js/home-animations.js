@@ -44,16 +44,45 @@ document.addEventListener('DOMContentLoaded', () => {
     if (openChatBtn) {
         openChatBtn.onclick = (e) => {
             e.preventDefault();
-            if (window.chatbot) {
-                if (!window.chatbot.isOpen) {
-                    window.chatbot.toggleChat();
+            if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+                if (window.chatbot) {
+                    if (!window.chatbot.isOpen) {
+                        window.chatbot.toggleChat();
+                    }
+                } else {
+                    const chatbotToggle = document.getElementById('chatbot-toggle');
+                    if (chatbotToggle) {
+                        chatbotToggle.click();
+                    }
                 }
             } else {
-                const chatbotToggle = document.getElementById('chatbot-toggle');
-                if (chatbotToggle) {
-                    chatbotToggle.click();
-                }
+                window.location.href = '/login?redirect=chat';
             }
         };
+    }
+
+    // 4. Auto-abrir chat si viene redireccionado desde login con ?openChat=true
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('openChat') === 'true') {
+        const checkAndOpenChat = () => {
+            if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+                if (window.chatbot) {
+                    if (!window.chatbot.isOpen) {
+                        window.chatbot.toggleChat();
+                    }
+                } else {
+                    const chatbotToggle = document.getElementById('chatbot-toggle');
+                    if (chatbotToggle) chatbotToggle.click();
+                }
+                // Limpiar parámetro de la URL para limpieza visual
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        };
+
+        if (window.sessionManager) {
+            window.sessionManager.onStateChange(checkAndOpenChat);
+            checkAndOpenChat(); // Comprobar si ya está inicializado
+        }
     }
 });

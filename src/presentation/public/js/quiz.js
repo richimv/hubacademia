@@ -1069,6 +1069,14 @@ function handleAnswer(selectedIndex, btnElement) {
         } else {
             tutorBtn.style.display = 'flex';
             tutorBtn.onclick = () => {
+                const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || !localStorage.getItem('token');
+                if (isGuest) {
+                    if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+                        window.uiManager.showAuthPromptModal();
+                        return;
+                    }
+                }
+
                 const currentQ = state.questions[state.currentQuestionIndex];
                 const currentAns = state.answers[state.currentQuestionIndex];
                 const qContext = {
@@ -1646,6 +1654,14 @@ function smoothScrollTo(element, duration = 2200) {
 console.log("💎 Module quiz.js loaded successfully. showExamReview is ready with Zoom Lightbox.");
 
 window.openQuizTutorForReview = function (index) {
+    const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || !localStorage.getItem('token');
+    if (isGuest) {
+        if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+            window.uiManager.showAuthPromptModal();
+            return;
+        }
+    }
+
     const q = state.questions[index];
     if (!q) return;
     const ans = state.answers[index];
