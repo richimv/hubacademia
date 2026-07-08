@@ -136,9 +136,23 @@ class FlashcardTutor {
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) throw new Error("Error en la red");
-
             const data = await response.json();
+
+            if (!response.ok) {
+                if (response.status === 403) {
+                    if (data && data.paywall) {
+                        window.uiManager.showPaywallModal(data.error || null, 'chat');
+                        this._addMessage("🔒 Límite de prueba alcanzado. Por favor, actualiza tu plan para continuar consultando al tutor.", 'bot');
+                        return;
+                    }
+                    if (data && data.error) {
+                        this._addMessage(`⚠️ ${data.error}`, 'bot');
+                        return;
+                    }
+                }
+                throw new Error(data.error || "Error en la red");
+            }
+
             if (data.respuesta) {
                 this._addMessage(data.respuesta, 'bot');
                 

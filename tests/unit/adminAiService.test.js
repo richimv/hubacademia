@@ -35,6 +35,7 @@ describe('AdminAiService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         process.env.GOOGLE_CLOUD_PROJECT = 'test-project';
+        delete process.env.GEMINI_API_KEY;
     });
 
     describe('_sanitizeExplanation', () => {
@@ -81,295 +82,11 @@ describe('AdminAiService', () => {
         });
     });
 
-    describe('generateRAGQuestions - Languages', () => {
-        it('should generate language questions correctly without calling Syllabus RAG', async () => {
-            db.query.mockResolvedValue({ rows: [] });
 
-            const mockLanguageQuestion = {
-                question_text: "What is the capital of the UK? _____",
-                options: ["London", "Paris", "Rome", "Berlin"],
-                correct_option_index: 0,
-                explanation: "Explicación didáctica sobre Londres.",
-                topic: "Vocabulary & Context",
-                difficulty: "B2",
-                career: "en-GB",
-                audio_text: null
-            };
-
-            mockGenerateContent.mockResolvedValue({
-                response: {
-                    candidates: [
-                        {
-                            content: {
-                                parts: [
-                                    { text: JSON.stringify(mockLanguageQuestion) }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            });
-
-            const result = await adminAiService.generateRAGQuestions(
-                'MCER',
-                'Vocabulary & Context',
-                'en-GB',
-                1,
-                false,
-                'B2'
-            );
-
-            expect(result).toHaveLength(1);
-            expect(result[0].question_text).toContain("What is the capital");
-            expect(result[0].difficulty).toBe("B2");
-            expect(result[0].career).toBe("en-GB");
-            
-            expect(db.query).toHaveBeenCalledWith(
-                expect.stringContaining("SELECT question_text, subtopic FROM question_bank"),
-                ["MCER", "en-GB"]
-            );
-            
-            expect(questionRagService.getSyllabusContext).not.toHaveBeenCalled();
-            expect(questionRagService.getTechnicalBasis).not.toHaveBeenCalled();
-        });
-
-        it('should trigger AI refinement when explanation contains option letters in languages flow', async () => {
-            db.query.mockResolvedValue({ rows: [] });
-
-            // Initial response has letters in explanation
-            const badQuestion = {
-                question_text: "Fill in the blank: She is _____ than her sister.",
-                options: ["taller", "more tall", "tallest", "most taller"],
-                correct_option_index: 0,
-                explanation: "La alternativa A es la correcta porque es un comparativo simple.",
-                topic: "Grammar & Use of English",
-                difficulty: "A2",
-                career: "en-US",
-                audio_text: null
-            };
-
-            // Refined response resolves the issue
-            const refinedQuestion = {
-                question_text: "Fill in the blank: She is _____ than her sister.",
-                options: ["taller", "more tall", "tallest", "most taller"],
-                correct_option_index: 0,
-                explanation: "El comparativo simple de 'tall' es 'taller'. Por ello se utiliza esta opción.",
-                topic: "Grammar & Use of English",
-                difficulty: "A2",
-                career: "en-US",
-                audio_text: null
-            };
-
-            mockGenerateContent
-                .mockResolvedValueOnce({
-                    response: {
-                        candidates: [{ content: { parts: [{ text: JSON.stringify(badQuestion) }] } }]
-                    }
-                })
-                .mockResolvedValueOnce({
-                    response: {
-                        candidates: [{ content: { parts: [{ text: JSON.stringify(refinedQuestion) }] } }]
-                    }
-                });
-
-            const result = await adminAiService.generateRAGQuestions(
-                'TOEFL',
-                'Grammar & Use of English',
-                'en-US',
-                1,
-                false,
-                'A2'
-            );
-
-            expect(result).toHaveLength(1);
-            expect(result[0].explanation).toBe("El comparativo simple de 'tall' es 'taller'. Por ello se utiliza esta opción.");
-            expect(mockGenerateContent).toHaveBeenCalledTimes(2); // Dispatched refinement to AI
-        });
-
-        it('should trigger AI refinement when there is a verbal prefix redundancy / stem collision near the blank', async () => {
-            db.query.mockResolvedValue({ rows: [] });
-
-            // Initial response has verbal redundancy (leggo / leggere)
-            const badQuestion = {
-                question_text: "Mi piace molto questo libro. Io _____ leggere ogni giorno.",
-                options: ["leggo", "leggono", "legge", "leggere"],
-                correct_option_index: 0,
-                explanation: "El sujeto es Io, por lo tanto usamos la conjugación leggo del verbo leggere.",
-                topic: "Grammar & Use of English",
-                difficulty: "A1",
-                career: "it-IT",
-                audio_text: null
-            };
-
-            // Refined response resolves the issue (removes the redundant infinitive)
-            const refinedQuestion = {
-                question_text: "Mi piace molto questo libro. Io _____ ogni giorno.",
-                options: ["leggo", "leggono", "legge", "leggere"],
-                correct_option_index: 0,
-                explanation: "En este caso, se conjuga directamente el verbo leggere para la primera persona: Io leggo.",
-                topic: "Grammar & Use of English",
-                difficulty: "A1",
-                career: "it-IT",
-                audio_text: null
-            };
-
-            mockGenerateContent
-                .mockResolvedValueOnce({
-                    response: {
-                        candidates: [{ content: { parts: [{ text: JSON.stringify(badQuestion) }] } }]
-                    }
-                })
-                .mockResolvedValueOnce({
-                    response: {
-                        candidates: [{ content: { parts: [{ text: JSON.stringify(refinedQuestion) }] } }]
-                    }
-                });
-
-            const result = await adminAiService.generateRAGQuestions(
-                'MCER',
-                'Grammar & Use of English',
-                'it-IT',
-                1,
-                false,
-                'A1'
-            );
-
-            expect(result).toHaveLength(1);
-            expect(result[0].question_text).toBe("Mi piace molto questo libro. Io _____ ogni giorno.");
-            expect(mockGenerateContent).toHaveBeenCalledTimes(2); // Dispatched refinement to AI
-        });
-
-        it('should trigger AI refinement when there is a greeting/response redundancy (come/bene)', async () => {
-            db.query.mockResolvedValue({ rows: [] });
-
-            // Initial response has greeting redundancy (Come _____ oggi? / sta bene lei)
-            const badQuestion = {
-                question_text: "Buongiorno, Signora Bianchi! Come _____ oggi?",
-                options: ["stanno bene loro", "sta bene lei", "stai bene tu", "state bene voi"],
-                correct_option_index: 1,
-                explanation: "En italiano, cuando nos dirigimos a una persona de manera formal usamos la tercera persona del singular ('Lei').",
-                topic: "Grammar & Use of English",
-                difficulty: "A1",
-                career: "it-IT",
-                audio_text: null
-            };
-
-            // Refined response resolves the issue (removes 'bene' from the options)
-            const refinedQuestion = {
-                question_text: "Buongiorno, Signora Bianchi! Come _____ oggi?",
-                options: ["stanno loro", "sta Lei", "stai tu", "state voi"],
-                correct_option_index: 1,
-                explanation: "En italiano, cuando nos dirigimos a una persona de manera formal usamos la tercera persona del singular ('Lei'). Por lo tanto, se usa 'sta Lei' o simplemente 'sta'.",
-                topic: "Grammar & Use of English",
-                difficulty: "A1",
-                career: "it-IT",
-                audio_text: null
-            };
-
-            mockGenerateContent
-                .mockResolvedValueOnce({
-                    response: {
-                        candidates: [{ content: { parts: [{ text: JSON.stringify(badQuestion) }] } }]
-                    }
-                })
-                .mockResolvedValueOnce({
-                    response: {
-                        candidates: [{ content: { parts: [{ text: JSON.stringify(refinedQuestion) }] } }]
-                    }
-                });
-
-            const result = await adminAiService.generateRAGQuestions(
-                'MCER',
-                'Grammar & Use of English',
-                'it-IT',
-                1,
-                false,
-                'A1'
-            );
-
-            expect(result).toHaveLength(1);
-            expect(result[0].options[1]).toBe("sta Lei");
-            expect(mockGenerateContent).toHaveBeenCalledTimes(2); // Dispatched refinement to AI
-        });
-
-        it('should bypass collision detection when the redundant verb is enclosed in parentheses', async () => {
-            db.query.mockResolvedValue({ rows: [] });
-
-            const validQuestionWithParenthesizedHelp = {
-                question_text: "Mi piace molto questo libro. Io _____ (leggere) ogni giorno.",
-                options: ["leggo", "leggono", "legge", "leggere"],
-                correct_option_index: 0,
-                explanation: "En este caso, se conjuga directamente el verbo leggere para la primera persona: Io leggo.",
-                topic: "Grammar & Use of English",
-                difficulty: "A1",
-                career: "it-IT",
-                audio_text: null
-            };
-
-            mockGenerateContent.mockResolvedValueOnce({
-                response: {
-                    candidates: [{ content: { parts: [{ text: JSON.stringify(validQuestionWithParenthesizedHelp) }] } }]
-                }
-            });
-
-            const result = await adminAiService.generateRAGQuestions(
-                'MCER',
-                'Grammar & Use of English',
-                'it-IT',
-                1,
-                false,
-                'A1'
-            );
-
-            expect(result).toHaveLength(1);
-            expect(result[0].question_text).toBe("Mi piace molto questo libro. Io _____ (leggere) ogni giorno.");
-            expect(mockGenerateContent).toHaveBeenCalledTimes(1); // No refinement dispatched!
-        });
-
-        it('should handle null/undefined question gracefully during generation', async () => {
-            db.query.mockResolvedValue({ rows: [] });
-
-            // Returns null/invalid JSON first, then a valid question in sequential fallback
-            mockGenerateContent
-                .mockResolvedValueOnce({
-                    response: {
-                        candidates: [{ content: { parts: [{ text: "null" }] } }]
-                    }
-                })
-                .mockResolvedValueOnce({
-                    response: {
-                        candidates: [{ content: { parts: [{ text: JSON.stringify({
-                            question_text: "Mi piace molto questo libro. Io _____ ogni giorno.",
-                            options: ["leggo", "leggono", "legge", "leggere"],
-                            correct_option_index: 0,
-                            explanation: "En este caso, se conjuga directamente el verbo leggere para la primera persona: Io leggo.",
-                            topic: "Grammar & Use of English",
-                            difficulty: "A1",
-                            career: "it-IT",
-                            audio_text: null
-                        }) }] } }]
-                    }
-                });
-
-            const result = await adminAiService.generateRAGQuestions(
-                'MCER',
-                'Grammar & Use of English',
-                'it-IT',
-                1,
-                false,
-                'A1'
-            );
-
-            expect(result).toHaveLength(1);
-            expect(result[0].question_text).toBe("Mi piace molto questo libro. Io _____ ogni giorno.");
-        });
-    });
 
     describe('generateRAGQuestions - Non-Languages (Syllabus/Standard Flow)', () => {
         it('should execute full RAG pipeline and handle refinement for standard domains like ASCENSO', async () => {
-            db.query
-                .mockResolvedValueOnce({ rows: [] })
-                .mockResolvedValueOnce({ rows: [] });
+            db.query.mockResolvedValue({ rows: [] });
 
             questionRagService.getSyllabusContext.mockResolvedValue("1.1 Estrategias pedagógicas.");
             questionRagService.getTechnicalBasis.mockResolvedValue("Teoría sobre estrategias.");
@@ -423,9 +140,7 @@ describe('AdminAiService', () => {
         });
 
         it('should run full RAG pipeline even when isUserRequest is true', async () => {
-            db.query
-                .mockResolvedValueOnce({ rows: [] })
-                .mockResolvedValueOnce({ rows: [] });
+            db.query.mockResolvedValue({ rows: [] });
 
             questionRagService.getSyllabusContext.mockResolvedValue("1.1 Estrategias pedagógicas.");
             questionRagService.getTechnicalBasis.mockResolvedValue("Teoría sobre estrategias.");
@@ -479,13 +194,16 @@ describe('AdminAiService', () => {
 
         it('should reject and trigger refinement when a question has a highly repetitive opening style/prefix', async () => {
             // DB returns historical question with repetitive prefix
-            db.query
-                .mockResolvedValueOnce({ rows: [] }) // For globalHistory
-                .mockResolvedValueOnce({
+            db.query.mockImplementation((sql) => {
+                if (sql.includes("LIMIT 25")) {
+                    return Promise.resolve({ rows: [] });
+                }
+                return Promise.resolve({
                     rows: [
                         { question_text: "- ¡Mira mi torre de bloques!, le dice Juan a su compañero Pedro, quien intenta acoplar..." }
                     ]
                 });
+            });
 
             questionRagService.getSyllabusContext.mockResolvedValue("1.1 Juego y aprendizaje.");
             questionRagService.getTechnicalBasis.mockResolvedValue("Teoría sobre el juego libre.");
@@ -558,9 +276,7 @@ describe('AdminAiService', () => {
         });
 
         it('should generate multiple questions in parallel chunks of up to 5', async () => {
-            db.query
-                .mockResolvedValueOnce({ rows: [] }) // For globalHistory
-                .mockResolvedValueOnce({ rows: [] });
+            db.query.mockResolvedValue({ rows: [] });
 
             questionRagService.getSyllabusContext.mockResolvedValue("1.1 Estrategias pedagógicas.");
             questionRagService.getTechnicalBasis.mockResolvedValue("Teoría sobre estrategias.");
@@ -622,9 +338,7 @@ describe('AdminAiService', () => {
         });
 
         it('should handle malformed selectionData gracefully when searchTerms is missing or not an array', async () => {
-            db.query
-                .mockResolvedValueOnce({ rows: [] }) // For globalHistory
-                .mockResolvedValueOnce({ rows: [] });
+            db.query.mockResolvedValue({ rows: [] });
 
             questionRagService.getSyllabusContext.mockResolvedValue("1.1 Estrategias pedagógicas.");
             questionRagService.getTechnicalBasis.mockResolvedValue("Teoría sobre estrategias.");

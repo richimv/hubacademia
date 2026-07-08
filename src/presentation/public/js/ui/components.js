@@ -487,9 +487,6 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     if (type === 'question') {
         const cleanText = item.question_text ? item.question_text.replace(/<[^>]*>/g, '') : '';
         displayName = cleanText ? (cleanText.substring(0, 80) + '...') : 'Pregunta sin texto';
-    } else if (type === 'vocabulary') {
-        displayName = item.word || 'Palabra sin texto';
-        subtitle = `${item.translation} - <span style="opacity: 0.85; font-style: italic;">${item.definition || 'Sin definición'}</span>`;
     }
 
     const resetPasswordButton = showResetPassword ? `<button class="reset-pass-btn-small" data-id="${item.id}" title="Restablecer Contraseña"><i class="fas fa-key"></i></button>` : '';
@@ -500,9 +497,6 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`;
     } else if (type === 'question') {
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--primary-light); padding: 2px 8px; border-radius: 4px; color: var(--text-dark); display:inline-block; margin-top:0.25rem;">${item.domain?.toUpperCase() || ''} | ${item.target || 'General'}</span>`;
-    } else if (type === 'vocabulary') {
-        const langLabel = item.language_code === 'it-IT' ? '🇮🇹 Italiano' : '🇺🇸 Inglés';
-        areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${langLabel} | ${item.part_of_speech?.toUpperCase() || 'NOUN'} | ${item.level || 'A1'}</span>`;
     } else if (type === 'student') {
         const tier = (item.subscriptionTier || item.subscription_tier || 'free').toUpperCase();
         const status = (item.subscriptionStatus || item.subscription_status || 'inactive').toUpperCase();
@@ -975,6 +969,11 @@ window.UIComponents.createReviewCardHTML = function (config) {
             <strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>
             ${expTextHTML}
             ${expImageHTML}
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                <button class="btn-tutor-ai-action" onclick="window.openQuizTutorForReview(${index})" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0.5rem 1rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 8px; color: #a5b4fc; font-family: inherit; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);">
+                    <i class="fas fa-robot"></i> Consultar Tutor IA
+                </button>
+            </div>
         </div>
     </div>`;
 };

@@ -14,7 +14,6 @@ Para garantizar precisión y evitar alucinaciones cruzadas, los datos se aíslan
 | :--- | :--- | :--- |
 | **`medicine`** | Harrison, NTS MINSA, GPC, ENAM, SERUMS. | Tutor Clínico / Chat Médico. |
 | **`education`** | CNEB, Ley Reforma Magisterial, Pruebas de Ascenso, Temarios MINEDU. | Tutor Pedagógico / Chat Docente. |
-| **`languages`** | Gramática, Diccionarios, Modismos. | Modo Idiomas (Próximamente). |
 | **`general`** | Cultura General, Ayuda del Hub. | Modo Neutro. |
 
 ## 🧠 Flujo de Recuperación (Retrieval V6.5)

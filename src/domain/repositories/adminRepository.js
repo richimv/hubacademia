@@ -129,11 +129,7 @@ class AdminRepository {
         return rows[0] ? rows[0].count : 0;
     }
 
-    async countVocabulariesWithAudioUrl(audioUrl) {
-        const query = `SELECT COUNT(*)::int as count FROM public.user_vocabularies WHERE audio_url = $1`;
-        const { rows } = await db.query(query, [audioUrl]);
-        return rows[0] ? rows[0].count : 0;
-    }
+
 
     async updateQuestion(id, { question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation }) {
         const updateQuery = `

@@ -38,4 +38,22 @@ document.addEventListener('DOMContentLoaded', () => {
             observer.observe(section);
         });
     }
+
+    // 3. Abrir Chat desde el botón del Tutor IA en Home
+    const openChatBtn = document.getElementById('homepage-open-chat-btn');
+    if (openChatBtn) {
+        openChatBtn.onclick = (e) => {
+            e.preventDefault();
+            if (window.chatbot) {
+                if (!window.chatbot.isOpen) {
+                    window.chatbot.toggleChat();
+                }
+            } else {
+                const chatbotToggle = document.getElementById('chatbot-toggle');
+                if (chatbotToggle) {
+                    chatbotToggle.click();
+                }
+            }
+        };
+    }
 });

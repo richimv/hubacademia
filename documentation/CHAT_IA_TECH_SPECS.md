@@ -280,3 +280,18 @@ Para guiar al usuario e invitarlo a interactuar con el Tutor IA de manera amigab
   - Uso de las directivas `will-change: transform, opacity;` y `transform-style: preserve-3d;` con `backface-visibility: hidden;` para forzar la composición en capas independientes de la GPU.
   - La animación `@keyframes bubble-float` mantiene explícitamente la escala constante (`scale(1)`) en sus keyframes, evitando colisiones con el estado inicial de escalado en la transición de entrada.
 
+---
+
+## 14. Tutor de Simulador de Examen (Quiz Tutor)
+- **Archivos:** [quiz-tutor.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz-tutor.js) (cliente), [quiz.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/quiz.html) y [quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js).
+- **Modo:** Efímero con envío de historial de sesión por cliente (`history`) y desactivación de la persistencia relacional en BD.
+- **Acceso:** Se habilita únicamente una vez que el usuario ha respondido la pregunta activa (es decir, tras hacer clic en una opción y mostrarse el botón Siguiente en modos de 10 o 20 preguntas). En el examen Simulacro Real (100 preguntas), se bloquea el tutor interactivo durante la ejecución para evitar trampas, habilitándose en su lugar de forma proactiva al final en cada una de las tarjetas de la pantalla de corrección/revisión.
+- **Contexto RAG de Alta Fidelidad:**
+  - El frontend captura los metadatos de la pregunta en curso (enunciado, opciones de respuesta, opción correcta, opción elegida por el usuario, resultado de acierto/error, explicación oficial, tema técnico y examen objetivo) y los transmite estructuradamente en el campo `context` del request con el tipo `quiz_tutor`.
+  - El backend (`chatController.js`) detecta este contexto e inyecta dinámicamente un prompt estructurado al modelo Gemini 2.5 Flash Lite.
+  - Se activa el RAG semántico consultando Pinecone en el namespace respectivo (`medicine` o `education`) utilizando la pregunta y los temas técnicos de la misma para alimentar las respuestas con bases de datos y normas oficiales de alta especialización.
+- **Monetización y Límites:**
+  - Se han erradicado los vacíos legales del bypass `isEphemeral`. Las consultas del tutor de flashcards y de simulador se controlan y debitan estrictamente:
+    - **Usuarios Free/Pending:** Consume 2 vidas del pool de 50 si se realiza una consulta con RAG (Modos Medicina o Educación), o 1 vida si no se usa RAG (Modo Idiomas/Flashcards).
+    - **Usuarios Active (Basic/Advanced):** Se incrementa el contador `daily_ai_usage` diario, bloqueando el acceso en el middleware si superan la cuota diaria asignada (50 y 100 respectivamente).
+

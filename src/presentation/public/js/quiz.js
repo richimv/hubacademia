@@ -928,6 +928,10 @@ function renderQuestion() {
     if (elements.nextBtnContainer) {
         elements.nextBtnContainer.classList.add('hidden');
     }
+    const tutorBtn = document.getElementById('btn-open-quiz-tutor');
+    if (tutorBtn) {
+        tutorBtn.style.display = 'none';
+    }
 
     // Render Opciones
     if (!q.options || !Array.isArray(q.options)) {
@@ -1017,6 +1021,7 @@ function handleAnswer(selectedIndex, btnElement) {
     // Configurar acción del botón Siguiente
     elements.nextBtn.onclick = () => {
         cancelCurrentScroll();
+        if (window.quizTutor) window.quizTutor.toggle(false);
         state.currentQuestionIndex++;
         if (state.currentQuestionIndex >= state.maxQuestions) {
             finishQuiz();
@@ -1053,6 +1058,34 @@ function handleAnswer(selectedIndex, btnElement) {
         elements.feedbackBox.style.display = 'none';
         if (elements.nextBtnContainer) {
             elements.nextBtnContainer.classList.remove('hidden');
+        }
+    }
+
+    // Configurar y mostrar botón de Tutor IA (No permitido en vivo durante examen real de 100q)
+    const tutorBtn = document.getElementById('btn-open-quiz-tutor');
+    if (tutorBtn) {
+        if (state.maxQuestions === 100) {
+            tutorBtn.style.display = 'none';
+        } else {
+            tutorBtn.style.display = 'flex';
+            tutorBtn.onclick = () => {
+                const currentQ = state.questions[state.currentQuestionIndex];
+                const currentAns = state.answers[state.currentQuestionIndex];
+                const qContext = {
+                    id: currentQ.id || `q-${state.currentQuestionIndex}`,
+                    questionText: currentQ.question_text,
+                    options: currentQ.options,
+                    correctOptionIndex: currentQ.correct_option_index,
+                    correctOptionText: currentQ.options[currentQ.correct_option_index] || '',
+                    userOptionIndex: currentAns ? currentAns.userAnswer : null,
+                    userOptionText: currentAns ? currentQ.options[currentAns.userAnswer] : '',
+                    isUserCorrect: currentAns ? currentAns.isCorrect : false,
+                    explanation: currentQ.explanation || '',
+                    topic: currentQ.topic || state.topic || 'General',
+                    target: currentQ.target || state.targetExam || ''
+                };
+                window.quizTutor.toggle(true, qContext);
+            };
         }
     }
 
@@ -1611,3 +1644,27 @@ function smoothScrollTo(element, duration = 2200) {
 }
 
 console.log("💎 Module quiz.js loaded successfully. showExamReview is ready with Zoom Lightbox.");
+
+window.openQuizTutorForReview = function (index) {
+    const q = state.questions[index];
+    if (!q) return;
+    const ans = state.answers[index];
+    
+    const questionContext = {
+        id: q.id || `q-${index}`,
+        questionText: q.question_text,
+        options: q.options,
+        correctOptionIndex: q.correct_option_index,
+        correctOptionText: q.options[q.correct_option_index] || '',
+        userOptionIndex: ans ? ans.userAnswer : null,
+        userOptionText: ans ? q.options[ans.userAnswer] : '',
+        isUserCorrect: ans ? ans.isCorrect : false,
+        explanation: q.explanation || '',
+        topic: q.topic || state.topic || 'General',
+        target: q.target || state.targetExam || ''
+    };
+    
+    if (window.quizTutor) {
+        window.quizTutor.toggle(true, questionContext);
+    }
+};

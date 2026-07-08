@@ -70,12 +70,12 @@ class GlobalSidebar {
                         <span class="sidebar-item-label">Inicio</span>
                     </a>
                     
-                    <a href="/simulators?domain=salud" class="sidebar-item" data-page="salud">
+                    <a href="/#salud-section" class="sidebar-item" data-page="salud">
                         <i class="fas fa-stethoscope"></i>
                         <span class="sidebar-item-label">Módulo Salud</span>
                     </a>
                     
-                    <a href="/simulators?domain=educacion" class="sidebar-item" data-page="educacion">
+                    <a href="/#docente-section" class="sidebar-item" data-page="educacion">
                         <i class="fas fa-graduation-cap"></i>
                         <span class="sidebar-item-label">Módulo Educación</span>
                     </a>
@@ -218,7 +218,13 @@ class GlobalSidebar {
         let activePage = '';
 
         if (pathname === '/' || pathname === '/index.html' || pathname === '/index') {
-            activePage = 'home';
+            if (hash === '#salud-section') {
+                activePage = 'salud';
+            } else if (hash === '#docente-section') {
+                activePage = 'educacion';
+            } else {
+                activePage = 'home';
+            }
         } else if (pathname.includes('simulator-dashboard') || pathname.includes('simulators')) {
             if (search.includes('domain=educacion') || search.includes('context=EDUCACION')) {
                 activePage = 'educacion';

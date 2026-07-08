@@ -329,5 +329,11 @@ Para optimizar el flujo de usuarios al realizar simulacros y evitar conflictos d
 3. **Validación Estricta de Sesión (`loadSession`)**: En `quiz.js`, la función de recuperación de caché ahora contrasta rigurosamente la sesión almacenada con el contexto (`context`), examen objetivo (`targetExam`), nivel/modalidad (`career`), dificultad y áreas seleccionadas actualmente. Si existe alguna discrepancia, el caché viejo se limpia automáticamente y se inicia un examen fresco.
 4. **Confirmación Interactiva de Reanudación**: Si la configuración del examen actual coincide perfectamente con el simulacro incompleto en caché, se despliega el modal premium de confirmación (`window.confirmationModal`) consultando al usuario de forma clara si desea continuar con el examen anterior o comenzar uno limpio desde cero.
 
+---
 
-
+## 14. Chat de Apoyo IA para Análisis Casuístico (Julio 2026)
+Para profundizar en el estudio de las casuísticas pedagógicas y principios constructivistas del CNEB, se implementó el Chat del Tutor IA integrado:
+1. **Acceso al Responder**: El chat se habilita para el alumno únicamente tras haber marcado una alternativa en la pregunta activa (Modos 10q y 20q).
+2. **Contextualización Inmediata**: Al abrirse, la IA recibe todo el contexto del caso pedagógico (enunciado, opciones de respuesta, alternativa correcta, distractor seleccionado por el usuario y sustento técnico del banco de preguntas).
+3. **RAG Semántico (Pinecone)**: Las dudas sobre teorías del aprendizaje (Piaget, Vygotsky), enfoques transversales o rúbricas de evaluación del MINEDU se resuelven utilizando RAG sobre el namespace de educación (`education`), garantizando respuestas alineadas con el Currículo Nacional de Educación Básica y normas técnicas vigentes.
+4. **Monetización**: Consume 1 uso de la cuota diaria estándar para usuarios Premium Active (Basic/Advanced), y 2 vidas por consulta para usuarios Free/Pending.

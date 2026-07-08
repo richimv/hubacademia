@@ -88,13 +88,6 @@ const checkAILimits = (type) => {
 
             req.userTier = user.subscription_tier;
 
-            // 🛡️ OMITIR VERIFICACIONES DE LÍMITES PARA CONSULTAS EFÍMERAS / TUTOR DE FLASHCARDS
-            const isEphemeral = req.body && (req.body.ephemeral === true || (req.body.context && req.body.context.type === 'flashcard_tutor'));
-            if (isEphemeral) {
-                req.usageType = null;
-                return next();
-            }
-
             // 2. REINICIO DE CONTADORES (DIARIOS Y MENSUALES)
             if (!user.last_usage_reset || lastResetDateStr !== todayDate) {
                 console.log(`♻️ [Quota Reset] Iniciando reset para ${user.subscription_tier} (${userId}). De ${lastResetDateStr} a ${todayDate}`);
@@ -160,7 +153,9 @@ const checkAILimits = (type) => {
             }
 
             if (effectiveType === 'chat_standard') {
-                const isDiagnostic = req.path.includes('/diagnostic') || req.originalUrl.includes('/diagnostic');
+                const pathStr = req.path || '';
+                const urlStr = req.originalUrl || '';
+                const isDiagnostic = pathStr.includes('/diagnostic') || urlStr.includes('/diagnostic');
                 if (isDiagnostic) {
                     if (!isActiveAccount) {
                         req.usageType = null;

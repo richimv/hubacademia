@@ -261,7 +261,7 @@ function renderUsageDetails(user) {
             <!-- Item 2: Simuladores -->
             <div class="usage-item">
                 <div class="usage-info">
-                    <span class="usage-title"><i class="fas fa-stethoscope" style="color: #8b5cf6; margin-right: 8px;"></i>Simulador Médico</span>
+                    <span class="usage-title"><i class="fas fa-stethoscope" style="color: #8b5cf6; margin-right: 8px;"></i>Simulacros Realizados</span>
                     <span class="usage-count-val">${simUsed}/${simLimit}</span>
                 </div>
                 <div class="usage-progress-bg">

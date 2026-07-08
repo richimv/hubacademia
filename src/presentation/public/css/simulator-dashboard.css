@@ -322,21 +322,26 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.55rem 1.1rem;
+    padding: 0.55rem 1.25rem;
     font-size: 0.85rem;
-    font-weight: 600;
-    color: #94a3b8;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    font-weight: 700;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(59, 130, 246, 0.25) 100%) !important;
+    border: 1.5px solid rgba(139, 92, 246, 0.65) !important;
+    border-radius: 12px;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.22);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 #btn-start-config:hover {
-    background: rgba(255,255,255,0.07);
-    color: var(--text-primary);
-    border-color: var(--border-hover);
-    transform: none;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.4) 0%, rgba(59, 130, 246, 0.35) 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(139, 92, 246, 0.95) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 
+        0 6px 20px rgba(139, 92, 246, 0.32),
+        0 0 15px rgba(59, 130, 246, 0.22);
 }
 
 /* ── Active Config Summary ──────────────────────────────── */
@@ -670,7 +675,7 @@
 
 .config-modal {
     background: #0a0a0a;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.25);
     border-radius: 24px;
     width: 92%;
     max-width: 500px;
@@ -678,13 +683,21 @@
     display: flex;
     flex-direction: column;
     overflow: hidden; /* Evitar scrollbar doble */
-    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.85);
     animation: modalUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
+    transition: max-width 0.3s ease;
+}
+
+@media (min-width: 769px) {
+    .config-modal {
+        max-width: 760px !important;
+        width: 100% !important;
+    }
 }
 
 .config-modal .modal-header {
-    padding: 1.25rem 1.5rem;
+    padding: 1.25rem 1.8rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -692,14 +705,14 @@
     flex: 1;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
-    padding: 1.25rem 1.5rem !important;
+    padding: 1.5rem 1.8rem !important;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
 .config-modal .modal-footer {
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.8rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     background: rgba(255, 255, 255, 0.01);
 }
@@ -712,23 +725,38 @@
 .exam-target-option input[type="radio"] { display: none; }
 
 .target-card {
-    padding: 1rem 0.75rem;
+    padding: 1.25rem 1rem;
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
     color: #94a3b8;
     cursor: pointer;
-    transition: var(--transition);
-    font-weight: 600;
-    font-size: 0.88rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    font-weight: 700;
+    font-size: 0.95rem;
     background: #121212;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.target-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: #181818;
+    color: #ffffff;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
 }
 
 .exam-target-option input:checked + .target-card {
-    background: rgba(59,130,246,0.1);
-    border-color: rgba(59,130,246,0.5);
-    color: #60a5fa;
-    box-shadow: 0 0 18px rgba(59,130,246,0.1);
+    background: rgba(59, 130, 246, 0.12) !important;
+    border-color: rgba(59, 130, 246, 0.6) !important;
+    color: #60a5fa !important;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15) !important;
+    text-shadow: 0 0 10px rgba(96, 165, 250, 0.2);
 }
 
 .exam-target-option:hover .target-card {

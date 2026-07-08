@@ -8,8 +8,8 @@ const SimulatorDash = (() => {
     // Configuración Extendida de Dominios (v3.0)
     const contexts = {
         'MEDICINA': {
-            title: 'Entrenamiento Médico',
-            heroTitle: 'Entrenamiento Médico',
+            title: 'Preparación Médico',
+            heroTitle: 'Preparación Médico',
             quizParams: '', // Eliminado el fallback automático. Ahora se fuerza la configuración.
             studyDesc: '20 preguntas con explicación.',
             realDesc: '100 preguntas integradas.',

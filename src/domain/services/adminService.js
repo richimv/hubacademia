@@ -269,7 +269,7 @@ class AdminService {
     }
 
     async countVocabulariesWithAudioUrl(audioUrl) {
-        return await adminRepository.countVocabulariesWithAudioUrl(audioUrl);
+        return 0;
     }
 
     async updateSingleQuestion(id, data) {

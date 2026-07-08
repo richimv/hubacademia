@@ -11,10 +11,12 @@
     <!-- CSS Moderno (Glassmorphism) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Centralized Design System Tokens -->
-    <link rel="stylesheet" href="/css/theme.css?v=2bd6fe1c">
-    <link rel="stylesheet" href="/css/quiz.css?v=2bd6fe1c">
-    <link rel="stylesheet" href="/css/modal.css?v=2bd6fe1c">
-    <link rel="stylesheet" href="/css/components.css?v=2bd6fe1c">
+    <link rel="stylesheet" href="/css/theme.css?v=f702c3d0">
+    <link rel="stylesheet" href="/css/quiz.css?v=f702c3d0">
+    <link rel="stylesheet" href="/css/modal.css?v=f702c3d0">
+    <link rel="stylesheet" href="/css/components.css?v=f702c3d0">
+    <link rel="stylesheet" href="/css/tutor.css?v=f702c3d0">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=f702c3d0">
 </head>
 
 <body class="quiz-body">
@@ -83,6 +85,9 @@
         </div>
 
         <div id="nextBtnContainer" class="next-btn-container hidden">
+            <button id="btn-open-quiz-tutor" class="btn-tutor-ai-action" type="button" style="display: none; align-items: center; justify-content: center; gap: 8px; padding: 0.6rem 1.4rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 12px; color: #a5b4fc; font-family: inherit; font-weight: 600; font-size: 0.92rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1); margin-right: 1rem;">
+                <i class="fas fa-robot"></i> Consultar Tutor IA
+            </button>
             <button id="nextBtn" class="btn-next-premium">
                 Siguiente Pregunta <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>
             </button>
@@ -205,20 +210,21 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/js/config.js?v=2bd6fe1c"></script>
+    <script src="/js/config.js?v=f702c3d0"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/utils/markdown-renderer.js?v=2bd6fe1c"></script>
-    <script src="/js/services/networkService.js?v=2bd6fe1c"></script>
-    <script src="/js/services/authApiService.js?v=2bd6fe1c"></script>
-    <script src="/js/services/analyticsApiService.js?v=2bd6fe1c"></script>
-    <script src="/js/sessionManager.js?v=2bd6fe1c"></script>
-    <script src="/js/ui/components.js?v=2bd6fe1c"></script>
-    <script src="/js/ui/confirmationModal.js?v=2bd6fe1c"></script>
-    <script src="/js/ui/uiManager.js?v=2bd6fe1c"></script>
-    <script src="/js/app.js?v=2bd6fe1c"></script>
-    <script type="module" src="/js/quiz.js?v=2bd6fe1c"></script>
+    <script src="/js/utils/markdown-renderer.js?v=f702c3d0"></script>
+    <script src="/js/services/networkService.js?v=f702c3d0"></script>
+    <script src="/js/services/authApiService.js?v=f702c3d0"></script>
+    <script src="/js/services/analyticsApiService.js?v=f702c3d0"></script>
+    <script src="/js/sessionManager.js?v=f702c3d0"></script>
+    <script src="/js/ui/components.js?v=f702c3d0"></script>
+    <script src="/js/ui/confirmationModal.js?v=f702c3d0"></script>
+    <script src="/js/ui/uiManager.js?v=f702c3d0"></script>
+    <script src="/js/app.js?v=f702c3d0"></script>
+    <script src="/js/quiz-tutor.js?v=f702c3d0"></script>
+    <script type="module" src="/js/quiz.js?v=f702c3d0"></script>
 </body>
 
 </html>

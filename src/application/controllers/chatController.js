@@ -116,6 +116,27 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
                 console.log('🧠 Tutor Context (Expansive Mode) Injected');
             }
 
+            // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE SIMULADOR DE EXAMEN (Quiz Tutor)
+            if (context && context.type === 'quiz_tutor') {
+                const tutorInstruction = `[MODO: TUTOR DE SIMULADOR DE EXAMEN]
+Eres un tutor experto. El estudiante está revisando una pregunta del simulador y tiene una duda. Ayúdale a comprender el fundamento de la respuesta, profundizando en el tema y resolviendo sus inquietudes específicas de manera clara, pedagógica y precisa.
+
+CONTEXTO DE LA PREGUNTA DEL SIMULADOR:
+- PREGUNTA: ${context.questionText}
+- OPCIONES:
+${(context.options || []).map((opt, i) => `  [${String.fromCharCode(65 + i)}] ${opt}`).join('\n')}
+- RESPUESTA CORRECTA: Opción [${context.correctOptionIndex !== null ? String.fromCharCode(65 + context.correctOptionIndex) : 'N/A'}] (${context.correctOptionText})
+- RESPUESTA SELECCIONADA POR EL USUARIO: Opción [${context.userOptionIndex !== null ? String.fromCharCode(65 + context.userOptionIndex) : 'N/A'}] (${context.userOptionText}) -> ${context.isUserCorrect ? 'Correcta' : 'Incorrecta'}
+- EXPLICACIÓN OFICIAL: ${context.explanation}
+- TEMA/ÁREA: ${context.topic || 'General'}
+- EXAMEN OBJETIVO: ${context.target || 'General'}
+---
+PREGUNTA DEL ESTUDIANTE: ${message}`;
+
+                processedMessage = tutorInstruction;
+                console.log('🧠 Quiz Tutor Context (Simulador Mode) Injected');
+            }
+
             const hasRAGAccess = (req.userTier === 'advanced' || req.userTier === 'basic' || req.userTier === 'admin');
 
             // --- ✅ FASE III: PROCESAMIENTO IA (V6 - TutorAiService) ---
@@ -162,11 +183,13 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
 
             // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro de 2 Vidas por RAG)
             try {
-                if (!isEphemeral && req.usageType === 'usage_count') {
-                    // ✅ NUEVA REGLA: El Chat con RAG cuesta 2 vidas
-                    await this.usageService.checkAndIncrementUsage(userId, 2);
-                    console.log(`📉 Límite de usage_count incrementado (+2) para usuario ${userId}.`);
-                } else if (!isEphemeral && req.usageType) {
+                const isRAG = (specialization === 'medicine' || specialization === 'education');
+                if (req.usageType === 'usage_count') {
+                    // Si usa RAG, cuesta 2 vidas. Si no (como idiomas o flashcards sin RAG), cuesta 1 vida.
+                    const cost = isRAG ? 2 : 1;
+                    await this.usageService.checkAndIncrementUsage(userId, cost);
+                    console.log(`📉 Límite de usage_count incrementado (+${cost}) para usuario ${userId}.`);
+                } else if (req.usageType) {
                     // Para otros límites (daily_ai_usage), cobro normal de 1
                     const pool = require('../../infrastructure/database/db');
                     await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);

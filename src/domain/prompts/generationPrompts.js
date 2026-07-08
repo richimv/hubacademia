@@ -180,6 +180,11 @@ function buildRefinementPrompt(questionJson, issues = []) {
     const isResidentado = questionJson.target === 'RESIDENTADO';
     const requiredOptions = isEducation ? 3 : (isResidentado ? 5 : 4);
 
+    let issuesText = '';
+    if (issues && issues.length > 0) {
+        issuesText = `\n### PROBLEMAS ESPECÍFICOS DETECTADOS A CORREGIR:\n${issues.map((iss, idx) => `${idx + 1}. ${iss}`).join('\n')}\n`;
+    }
+
     return `Actúa como un Auditor de Calidad Psicométrica DESPIADADO y ANALÍTICO.
         Tu misión es auditar y perfeccionar la pregunta para garantizar que sea impecable pedagógicamente y formalmente.
         ${issuesText}

@@ -151,3 +151,12 @@ Para solucionar el problema de visualización de tablas en formato Markdown que 
    - El contenedor `.table-wrapper` gestiona un scroll horizontal nativo extremadamente suave (`overflow-x: auto`) con barras de desplazamiento sutiles y personalizadas que se acoplan al tema visual de Hub Academia.
 4. **Resiliencia en Ambientes de Test**:
    - Para evitar fallos en entornos simulados de Node/Jest donde la interfaz de manipulación de DOM de clases (`classList`) no está completamente mockeada, se implementó un fallback dinámico que manipula directamente la propiedad `className` en forma de cadena de texto, garantizando la cobertura de tests al 100%.
+
+---
+
+## 12. Chat de Apoyo IA para Análisis de Casos Clínicos (Julio 2026)
+Para profundizar en el estudio de diagnósticos, tratamientos y normas técnicas del sector Salud, se integró el Chat del Tutor IA dentro del simulador médico:
+1. **Acceso al Responder**: El chat se habilita tras responder la pregunta activa (Modos 10q y 20q), o en las tarjetas de revisión al final del examen (todos los modos, incluyendo 100q).
+2. **Contextualización Inmediata**: La IA recibe metadatos del caso clínico (enunciado, opciones de respuesta, alternativa correcta, distractor seleccionado del usuario y sustento oficial del banco).
+3. **RAG Semántico (Pinecone)**: Las consultas médicas se resuelven utilizando RAG semántico en el namespace de salud (`medicine`), conectando con la biblioteca digital médica (Normas Técnicas de Salud, Guías de Práctica Clínica y literatura estándar).
+4. **Monetización**: Consume 1 uso de la cuota diaria estándar para usuarios Premium Active (Basic/Advanced), y 2 vidas por consulta para usuarios Free/Pending.

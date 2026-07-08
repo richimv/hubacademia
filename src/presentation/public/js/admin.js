@@ -8,7 +8,7 @@ class AdminManager {
         this.allTopics = []; // Nuevo almacén para temas
         this.allBooks = []; // Nuevo almacén para libros
         this.allQuestions = []; // NUEVO: Almacén para preguntas
-        this.allVocabularies = []; // NUEVO: Almacén para vocabulario global
+
 
         // Estado de ordenamiento por pestaña
         this.tabSortState = {
@@ -18,7 +18,7 @@ class AdminManager {
             'tab-topics': 'date-desc',
             'tab-books': 'date-desc',
             'tab-questions': 'date-desc',
-            'tab-vocabularies': 'date-desc'
+
         };
         this.previewTimer = null; // Debounce para previsualización
 
@@ -30,7 +30,7 @@ class AdminManager {
             'tab-topics': { search: '', filter: 'all' },
             'tab-books': { search: '', filter: 'all' },
             'tab-questions': { search: '', filter: 'all' },
-            'tab-vocabularies': { search: '', filter: 'all' }
+
         };
         this.selectedIds = [];
         this.selectedType = '';
@@ -379,7 +379,7 @@ class AdminManager {
         if (tabId === 'tab-books') this.displayBooks();
         if (tabId === 'tab-careers') this.displayCareers();
         if (tabId === 'tab-questions') this.displayQuestions();
-        if (tabId === 'tab-vocabularies') this.displayVocabularies();
+
     }
 
     // ELIMINADO: _getAuthHeaders ahora es manejado automáticamente por NetworkService
@@ -434,17 +434,16 @@ class AdminManager {
                 questionsUrl.searchParams.append('search', this.currentQuestionSearch);
             }
 
-            const [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes, vocabulariesRes] = await Promise.all([
+            const [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes] = await Promise.all([
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/careers`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/students`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/topics`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?includeHidden=true`),
-                window.NetworkService.fetch(questionsUrl.toString()),
-                window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/vocabularies`)
+                window.NetworkService.fetch(questionsUrl.toString())
             ]);
 
-            for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes, vocabulariesRes]) {
+            for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes]) {
                 if (!res.ok) throw new Error(`Failed to fetch ${res.url}: ${res.statusText}`);
             }
 
@@ -454,7 +453,6 @@ class AdminManager {
             this.allStudents = await studentsRes.json();
             this.allTopics = await topicsRes.json();
             this.allBooks = await booksRes.json(); // Cargar libros
-            this.allVocabularies = await vocabulariesRes.json(); // Cargar vocabulario
 
             // OPTIMIZACIÓN: No cargamos todas las preguntas de golpe aquí si queremos soporte dinámico,
             // pero para no romper el flujo actual, cargamos el primer lote.
@@ -467,7 +465,6 @@ class AdminManager {
             this.displayTopics();
             this.displayBooks();
             this.displayQuestions();
-            this.displayVocabularies();
 
         } catch (error) {
             console.error('❌ Error cargando datos iniciales:', error);
@@ -701,47 +698,7 @@ class AdminManager {
         }
     }
 
-    displayVocabularies() {
-        const container = document.getElementById('tab-vocabularies');
-        if (!container) return;
 
-        // Ordenar datos
-        const sortedVocab = this.sortData(this.allVocabularies, 'vocabulary', 'tab-vocabularies');
-        const itemsHTML = sortedVocab.map(vocab => createAdminItemCardHTML(vocab, 'vocabulary')).join('');
-
-        const langFilters = [
-            { id: 'all', name: 'Todos los Idiomas' },
-            { id: 'en-US', name: '🇺🇸 Inglés (USA)' },
-            { id: 'en-GB', name: '🇬🇧 Inglés (UK)' },
-            { id: 'it-IT', name: '🇮🇹 Italiano' }
-        ];
-
-        const headerHTML = `
-            <div class="tab-header-controls">
-                <div class="search-sort-wrapper">
-                    <div class="search-bar-container">
-                        <i class="fas fa-search"></i>
-                        <input type="text" class="admin-search-input" data-target-tab="tab-vocabularies" placeholder="Buscar palabras...">
-                    </div>
-                    <select class="admin-type-filter" data-target-tab="tab-vocabularies">
-                        ${langFilters.map(lf => `<option value="${lf.id}">${lf.name}</option>`).join('')}
-                    </select>
-                    <select class="tab-sort-select" data-tab="tab-vocabularies">
-                        <option value="date-desc">📅 Más Recientes</option>
-                        <option value="alpha-asc">🔤 A-Z (Palabra)</option>
-                    </select>
-                </div>
-                <div class="action-buttons">
-                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('vocabulary')">
-                        <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Palabra Global</span>
-                    </button>
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = headerHTML + (itemsHTML || '<p class="empty-state">No hay palabras en el diccionario global.</p>');
-        this.applySearchFilterForTab('tab-vocabularies');
-    }
 
     async openGenericModal(type, id = null) {
         this.genericForm.reset();
@@ -799,8 +756,7 @@ class AdminManager {
 
                 const domains = [
                     { id: 'medicine', name: 'Medicina' },
-                    { id: 'education', name: 'Educación' },
-                    { id: 'languages', name: 'Idiomas' }
+                    { id: 'education', name: 'Educación' }
                 ];
 
                 fieldsHTML = `
@@ -831,13 +787,6 @@ class AdminManager {
                                 <option value="NOMBRAMIENTO" ${this.currentItem?.target === 'NOMBRAMIENTO' ? 'selected' : ''}>NOMBRAMIENTO</option>
                                 <option value="ASCENSO" ${this.currentItem?.target === 'ASCENSO' ? 'selected' : ''}>ASCENSO</option>
                                 <option value="ACCESO_CARGOS" ${this.currentItem?.target === 'ACCESO_CARGOS' ? 'selected' : ''}>ACCESO A CARGOS</option>
-                                ` : this.currentItem?.domain === 'languages' ? `
-                                <option value="TOEFL" ${this.currentItem?.target === 'TOEFL' ? 'selected' : ''}>TOEFL</option>
-                                <option value="IELTS" ${this.currentItem?.target === 'IELTS' ? 'selected' : ''}>IELTS</option>
-                                <option value="TECH_ENGLISH" ${this.currentItem?.target === 'TECH_ENGLISH' ? 'selected' : ''}>TECH_ENGLISH</option>
-                                <option value="MCER" ${this.currentItem?.target === 'MCER' ? 'selected' : ''}>MCER</option>
-                                <option value="CELI" ${this.currentItem?.target === 'CELI' ? 'selected' : ''}>CELI</option>
-                                <option value="CILS" ${this.currentItem?.target === 'CILS' ? 'selected' : ''}>CILS</option>
                                 ` : `
                                 <option value="ENAM" ${this.currentItem?.target === 'ENAM' ? 'selected' : ''}>ENAM</option>
                                 <option value="SERUMS" ${this.currentItem?.target === 'SERUMS' ? 'selected' : ''}>SERUMS</option>
@@ -870,10 +819,6 @@ class AdminManager {
                                 <option value="EBR - Secundaria - Matemática" ${this.currentItem?.career === 'EBR - Secundaria - Matemática' ? 'selected' : ''}>EBR - Secundaria - Matemática</option>
                                 <option value="EBR - Secundaria - Profesor de Innovación Pedagógica" ${this.currentItem?.career === 'EBR - Secundaria - Profesor de Innovación Pedagógica' ? 'selected' : ''}>EBR - Secundaria - Profesor de Innovación Pedagógica</option>
                             </optgroup>
-                            ` : this.currentItem?.domain === 'languages' ? `
-                            <option value="en-US" ${this.currentItem?.career === 'en-US' ? 'selected' : ''}>English (USA)</option>
-                            <option value="en-GB" ${this.currentItem?.career === 'en-GB' ? 'selected' : ''}>English (UK)</option>
-                            <option value="it-IT" ${this.currentItem?.career === 'it-IT' ? 'selected' : ''}>Italiano (IT)</option>
                             ` : `
                             <option value="Medicina Humana" ${this.currentItem?.career === 'Medicina Humana' ? 'selected' : ''}>Medicina Humana</option>
                             <option value="Enfermería" ${this.currentItem?.career === 'Enfermería' ? 'selected' : ''}>Enfermería</option>
@@ -939,61 +884,7 @@ class AdminManager {
                 break;
             }
 
-            case 'vocabulary': {
-                title.textContent = id ? 'Editar Palabra Global' : 'Añadir Palabra Global';
-                if (id) this.currentItem = this.allVocabularies.find(v => String(v.id) === String(id));
 
-                const languages = [
-                    { id: 'en-US', name: '🇺🇸 Inglés (USA)' },
-                    { id: 'en-GB', name: '🇬🇧 Inglés (UK)' },
-                    { id: 'it-IT', name: '🇮🇹 Italiano' }
-                ];
-
-                const partsOfSpeech = [
-                    { id: 'noun', name: 'Sustantivo' },
-                    { id: 'verb', name: 'Verbo' },
-                    { id: 'adjective', name: 'Adjetivo' },
-                    { id: 'adverb', name: 'Adverbio' },
-                    { id: 'pronoun', name: 'Pronombre' },
-                    { id: 'preposition', name: 'Preposición' },
-                    { id: 'conjunction', name: 'Conjunción' },
-                    { id: 'determiner', name: 'Determinante' },
-                    { id: 'interjection', name: 'Interjección' }
-                ];
-
-                const levels = [
-                    { id: 'A1', name: 'Nivel A1' },
-                    { id: 'A2', name: 'Nivel A2' },
-                    { id: 'B1', name: 'Nivel B1' },
-                    { id: 'B2', name: 'Nivel B2' },
-                    { id: 'C1', name: 'Nivel C1' },
-                    { id: 'C2', name: 'Nivel C2' }
-                ];
-
-                fieldsHTML = `
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        ${this.createFormGroup('text', 'generic-word', 'Palabra / Lema Canónico (*)', this.currentItem?.word || '', true)}
-                        ${this.createFormGroup('text', 'generic-translation', 'Traducción Base (*)', this.currentItem?.translation || '', true)}
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
-                        ${this.createSelect('generic-language-code', 'Idioma (*)', languages, this.currentItem?.language_code || 'en-US', false)}
-                        ${this.createSelect('generic-part-of-speech', 'Categoría Gramatical (*)', partsOfSpeech, this.currentItem?.part_of_speech || 'noun', false)}
-                        ${this.createSelect('generic-level', 'Nivel MCER (*)', levels, this.currentItem?.level || 'A1', false)}
-                    </div>
-                    <div style="margin-top: 15px;">
-                        ${this.createFormGroup('textarea', 'generic-definition', 'Definición (*)', this.currentItem?.definition || '', true)}
-                        ${this.createFormGroup('textarea', 'generic-example-sentence', 'Ejemplo de Uso (Opcional)', this.currentItem?.example_sentence || '', false)}
-                    </div>
-                `;
-
-                setTimeout(() => {
-                    const txtDef = document.getElementById('generic-definition');
-                    const txtEx = document.getElementById('generic-example-sentence');
-                    if (txtDef) txtDef.rows = 3;
-                    if (txtEx) txtEx.rows = 2;
-                }, 0);
-                break;
-            }
 
             case 'bulk-question':
                 title.textContent = '📦 Importación Inteligente de Preguntas';
@@ -1050,7 +941,6 @@ class AdminManager {
                             <select id="ai-domain" class="form-input" onchange="window.adminManager.handleAiDomainChange(this.value)">
                                 <option value="medicine" selected>Medicina</option>
                                 <option value="education">Educación</option>
-                                <option value="languages">Idiomas</option>
                             </select>
                         </div>
                         <div>
@@ -1068,17 +958,7 @@ class AdminManager {
                                 <option value="Enfermería">Enfermería</option>
                             </select>
                         </div>
-                        <div id="ai-difficulty-container" style="display: none;">
-                            <label class="form-label">Nivel MCER / CEFR (*)</label>
-                            <select id="ai-difficulty" class="form-input">
-                                <option value="A1">A1 (Principiante)</option>
-                                <option value="A2">A2 (Básico)</option>
-                                <option value="B1" selected>B1 (Intermedio)</option>
-                                <option value="B2">B2 (Intermedio Alto)</option>
-                                <option value="C1">C1 (Avanzado)</option>
-                                <option value="C2">C2 (Maestría)</option>
-                            </select>
-                        </div>
+
                     </div>
 
                     <!-- Dynamic Specialty Container for Education -->
@@ -1220,21 +1100,7 @@ class AdminManager {
                             </div>
                         </div>
 
-                        <!-- ═══ IDIOMAS ═══ -->
-                        <div id="ai-areas-languages" style="display: none;">
-                            <div class="ai-study-group" data-group="LANGUAGES" style="display: block;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
-                                    <span style="background: #ec4899; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">L</span>
-                                    <strong style="color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Habilidades Lingüísticas</strong>
-                                </div>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
-                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Grammar & Use of English" checked> Grammar & Use of English</label>
-                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Vocabulary & Context" checked> Vocabulary & Context</label>
-                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Reading Comprehension" checked> Reading Comprehension</label>
-                                    <label class="checkbox-item"><input type="checkbox" class="ai-domain-cb" value="Listening Comprehension" checked> Listening Comprehension</label>
-                                </div>
-                            </div>
-                        </div>
+
                     </div>
                 `;
                 setTimeout(() => {
@@ -2192,7 +2058,6 @@ class AdminManager {
         const difficultyContainer = document.getElementById('ai-difficulty-container');
         const medicineAreas = document.getElementById('ai-areas-medicine');
         const educationAreas = document.getElementById('ai-areas-education');
-        const languagesAreas = document.getElementById('ai-areas-languages');
         const infoText = document.getElementById('ai-info-text');
         const areasTitle = document.getElementById('ai-areas-title');
 
@@ -2201,37 +2066,7 @@ class AdminManager {
         const allCheck = document.getElementById('ai-domain-all');
         if (allCheck) allCheck.checked = false;
 
-        if (domain === 'languages') {
-            if (targetSelect) {
-                targetSelect.innerHTML = `
-                    <option value="TOEFL">TOEFL</option>
-                    <option value="IELTS">IELTS</option>
-                    <option value="TECH_ENGLISH" selected>TECH_ENGLISH</option>
-                    <option value="MCER">MCER</option>
-                    <option value="CELI">CELI</option>
-                    <option value="CILS">CILS</option>
-                `;
-            }
-            if (careerSelect) {
-                careerSelect.innerHTML = `
-                    <option value="en-US" selected>English (USA)</option>
-                    <option value="en-GB">English (UK)</option>
-                    <option value="it-IT">Italiano (IT)</option>
-                `;
-            }
-            if (careerLabel) careerLabel.textContent = 'Dialecto / Variante (*)';
-            if (specialtyContainer) specialtyContainer.style.display = 'none';
-            if (difficultyContainer) difficultyContainer.style.display = 'block';
-
-            if (medicineAreas) medicineAreas.style.display = 'none';
-            if (educationAreas) educationAreas.style.display = 'none';
-            if (languagesAreas) languagesAreas.style.display = 'block';
-
-            if (infoText) infoText.textContent = 'Generación de preguntas de idiomas adaptadas al nivel MCER/CEFR seleccionado.';
-            if (areasTitle) areasTitle.textContent = 'Configuración de Habilidades Lingüísticas';
-
-            this.handleAiTargetChange('TECH_ENGLISH');
-        } else if (domain === 'education') {
+        if (domain === 'education') {
             if (targetSelect) {
                 targetSelect.innerHTML = `
                     <option value="ASCENSO" selected>ASCENSO (EBR)</option>
@@ -2252,7 +2087,6 @@ class AdminManager {
 
             if (medicineAreas) medicineAreas.style.display = 'none';
             if (educationAreas) educationAreas.style.display = 'block';
-            if (languagesAreas) languagesAreas.style.display = 'none';
 
             if (infoText) infoText.textContent = 'Generación basada en CNEB, Marco del Buen Desempeño Docente y normativas MINEDU.';
             if (areasTitle) areasTitle.textContent = 'Configuración de Áreas de Estudio (Ejes MINEDU)';
@@ -2280,7 +2114,6 @@ class AdminManager {
 
             if (medicineAreas) medicineAreas.style.display = 'block';
             if (educationAreas) educationAreas.style.display = 'none';
-            if (languagesAreas) languagesAreas.style.display = 'none';
 
             if (infoText) infoText.textContent = 'Generación basada en Harrison, AMIR, CTO y Normas Técnicas MINSA.';
             if (areasTitle) areasTitle.textContent = 'Configuración de Áreas de Estudio (Ejes MINSA/ENAM)';
@@ -2335,8 +2168,7 @@ class AdminManager {
 
         if (type === 'question') {
             url = id ? `${window.AppConfig.API_URL}/api/admin/question/${id}` : `${window.AppConfig.API_URL}/api/admin/question`;
-        } else if (type === 'vocabulary') {
-            url = id ? `${window.AppConfig.API_URL}/api/admin/vocabularies/${id}` : `${window.AppConfig.API_URL}/api/admin/vocabularies`;
+
         }
 
         let body = {};
@@ -2614,9 +2446,7 @@ class AdminManager {
                             }
                         }
 
-                        const difficultyVal = (domainVal === 'languages')
-                            ? (document.getElementById('ai-difficulty')?.value || 'B1')
-                            : 'Senior';
+                        const difficultyVal = 'Senior';
 
                         const reqBody = {
                             target: targetVal,
@@ -2792,17 +2622,7 @@ class AdminManager {
                     }
                 }
                 
-                case 'vocabulary':
-                    body = {
-                        word: document.getElementById('generic-word').value.trim(),
-                        translation: document.getElementById('generic-translation').value.trim(),
-                        language_code: document.getElementById('generic-language-code').value,
-                        part_of_speech: document.getElementById('generic-part-of-speech').value,
-                        level: document.getElementById('generic-level').value,
-                        definition: document.getElementById('generic-definition').value.trim(),
-                        example_sentence: document.getElementById('generic-example-sentence').value.trim()
-                    };
-                    break;
+
 
                 default:
                     throw new Error(`Tipo de entidad no manejado: ${type}`);
@@ -2858,8 +2678,7 @@ class AdminManager {
             let url = `${window.AppConfig.API_URL}/api/${type}s/${id}`;
             if (type === 'question') {
                 url = `${window.AppConfig.API_URL}/api/admin/question/${id}`;
-            } else if (type === 'vocabulary') {
-                url = `${window.AppConfig.API_URL}/api/admin/vocabularies/${id}`;
+
             }
 
             const response = await window.NetworkService.fetch(url, {
@@ -2983,11 +2802,11 @@ class AdminManager {
             const ws_data = [
                 [
                     'PREGUNTA (*)', 
-                    'DOMINIO (medicine/education/languages)', 
-                    'TARGET (ENAM/SERUMS/RESIDENTADO/ASCENSO/NOMBRAMIENTO/TECH_ENGLISH/MCER)', 
-                    'CARRERA / MODALIDAD / IDIOMA (Solo SERUMS, Educación o Idiomas)', 
+                    'DOMINIO (medicine/education)', 
+                    'TARGET (ENAM/SERUMS/RESIDENTADO/ASCENSO/NOMBRAMIENTO)', 
+                    'CARRERA / MODALIDAD (Solo SERUMS o Educación)', 
                     'AREA_ESTUDIO / EJE TEMÁTICO (*)', 
-                    'DIFICULTAD (Senior / A1-C2 para Idiomas)', 
+                    'DIFICULTAD (Senior)', 
                     'OPCION_A (*)', 
                     'OPCION_B (*)', 
                     'OPCION_C (*)', 
@@ -3075,25 +2894,6 @@ class AdminManager {
                     'Principios Constructivistas', 
                     '', 
                     'Esquema del ciclo del aprendizaje vivencial'
-                ],
-                [
-                    'Choose the correct option to complete the sentence: "If she _______ harder, she would have passed the exam."', 
-                    'languages', 
-                    'MCER', 
-                    'en-US', 
-                    'Grammar & Use of English', 
-                    'B2', 
-                    'studied', 
-                    'had studied', 
-                    'would study', 
-                    'has studied', 
-                    '', 
-                    '1', 
-                    'This is a third conditional sentence, which requires the past perfect in the "if" clause (had + past participle).', 
-                    '', 
-                    'Conditionals', 
-                    '', 
-                    'Graphic showing timelines for conditional structures'
                 ]
             ];
             const ws = window.XLSX.utils.aoa_to_sheet(ws_data);
@@ -3163,9 +2963,6 @@ class AdminManager {
                     g.style.display = 'none';
                 }
             });
-        } else if (domain === 'languages') {
-            // For languages, just check all lingustics abilities by default
-            document.querySelectorAll('#ai-areas-languages .ai-domain-cb').forEach(cb => cb.checked = true);
         }
     }
 
@@ -3274,26 +3071,6 @@ class AdminManager {
                 `;
             }
             this.handleQuestionTargetChange('SERUMS');
-        } else if (domain === 'languages') {
-            if (targetSelect) {
-                targetSelect.innerHTML = `
-                    <option value="TOEFL">TOEFL</option>
-                    <option value="IELTS">IELTS</option>
-                    <option value="TECH_ENGLISH" selected>TECH_ENGLISH</option>
-                    <option value="MCER">MCER</option>
-                    <option value="CELI">CELI</option>
-                    <option value="CILS">CILS</option>
-                `;
-            }
-            if (careerSelect) {
-                const currentVal = this.currentItem?.career || '';
-                careerSelect.innerHTML = `
-                    <option value="en-US" ${currentVal === 'en-US' ? 'selected' : ''}>English (USA)</option>
-                    <option value="en-GB" ${currentVal === 'en-GB' ? 'selected' : ''}>English (UK)</option>
-                    <option value="it-IT" ${currentVal === 'it-IT' ? 'selected' : ''}>Italiano (IT)</option>
-                `;
-            }
-            this.handleQuestionTargetChange('TECH_ENGLISH');
         } else {
             this.handleQuestionTargetChange('N/A');
         }
