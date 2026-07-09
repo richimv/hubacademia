@@ -235,7 +235,7 @@ class Server {
         // ======================
         // ✅ MEJORA: Rutas con "Clean URLs" (sin .html)
         const pages = [
-            'login', 'admin', 'chat', 'dashboard', 'self-evaluation',
+            'login', 'admin', 'chat', 'dashboard',
             'pricing', 'privacy', 'terms', 'quiz', 'course', 'career', 'category',
             'profile', 'deck-editor', 'flashcards', 'repaso', 'simulator-dashboard',
             'simulators', 'resource', 'language-tutor', 'library', 'my-vocabulary'

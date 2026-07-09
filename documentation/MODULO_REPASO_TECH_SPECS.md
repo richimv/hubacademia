@@ -51,9 +51,9 @@ Para evitar el abuso del almacenamiento en Google Cloud Storage (GCS), se han es
 - **Validación Dual**: El sistema valida estos límites tanto en el frontend (TinyMCE images_upload_handler) como en el backend (`DeckController`) con respuestas 400/403.
 
 ### B. Sistema de "Vidas" para Usuarios Free (Tier Pending)
-Los usuarios sin suscripción activa consumen su saldo global de 50 vidas para las siguientes operaciones de gestión:
+Los usuarios sin suscripción activa consumen su saldo global de 20 vidas para las siguientes operaciones de gestión:
 - **Operaciones de CRUD**: Crear mazo, editar mazo, añadir tarjetas, editar tarjetas.
-- **Operaciones de IA**: Generación masiva de tarjetas con IA (botón morado).
+- **Operaciones de IA**: La generación masiva de tarjetas con IA está **deshabilitada** para Free y Basic (exclusiva del Plan Avanzado).
 - **Carga de Archivos**: Cada subida de imagen consume una vida.
 - **Sincronización en Tiempo Real**: Tras cada acción exitosa, el sistema invoca `sessionManager.refreshUser()` para actualizar el contador de vidas en el header sin recargar la página.
 

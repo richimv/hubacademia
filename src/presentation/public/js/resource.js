@@ -134,9 +134,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 
                 <div class="resource-actions">
-                    <button class="btn-save btn-quiz-premium" onclick="openQuizConfigModal('${resource.id}')">
-                        <i class="fas fa-brain"></i> Autoevaluación IA
-                    </button>
                     <!-- Integración con Mi Biblioteca / LibraryUI -->
                     <button class="btn-save btn-primary js-library-btn action-save" data-id="${resource.id}" data-type="book" data-action="save">
                         <i class="far fa-bookmark"></i> Agregar a mi Biblioteca
@@ -363,31 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Lógica para Autoevaluación IA
-    window.openQuizConfigModal = function(id) {
-        if (window.uiManager) {
-            window.uiManager.checkAuthAndExecute(() => {
-                stateResourceId = id;
-                const modal = document.getElementById('modal-quiz-config');
-                if (modal) modal.classList.add('active');
-            });
-        } else {
-            stateResourceId = id;
-            const modal = document.getElementById('modal-quiz-config');
-            if (modal) modal.classList.add('active');
-        }
-    };
-    
-    window.closeQuizConfigModal = function() {
-        const modal = document.getElementById('modal-quiz-config');
-        if (modal) modal.classList.remove('active');
-    };
 
-    window.startDynamicQuiz = function() {
-        const count = document.getElementById('quiz-count').value;
-        const difficulty = document.getElementById('quiz-difficulty').value;
-        window.location.href = `/self-evaluation?resourceId=${stateResourceId}&count=${count}&difficulty=${difficulty}`;
-    };
 
     // Exponer funciones globales
     window.openResourceLink = openResourceLink;

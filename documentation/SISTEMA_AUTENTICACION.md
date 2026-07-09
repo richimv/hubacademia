@@ -93,7 +93,7 @@ El sistema está blindado para leer datos tanto en `snake_case` (Base de Datos) 
 - **Razón**: Esto evita que usuarios nuevos vean límites antiguos (como el hardcodeado de `3`) si el objeto no se ha instanciado completamente como clase.
 
 ### C. Límites de Uso (Source of Truth)
-La fuente de verdad para los límites gratuitos es el archivo `database_schema.sql` (`max_free_limit INTEGER DEFAULT 50`). Cualquier cambio en la política de "vidas" debe empezar allí y reflejarse en el constructor de `User.js`.
+La fuente de verdad para los límites gratuitos es el archivo `database_schema.sql` (`max_free_limit INTEGER DEFAULT 20`). Cualquier cambio en la política de "vidas" debe empezar allí y reflejarse en el constructor de `User.js`.
 
 ---
 ### 4.3. Resiliencia de Sesión y Mitigación de 401 en Exámenes Críticos

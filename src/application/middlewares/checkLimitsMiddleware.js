@@ -20,8 +20,8 @@ const checkAILimits = (type) => {
                     max_free_limit,
                     subscription_expires_at, 
                     daily_ai_usage, 
+                    daily_rag_usage,
                     monthly_flashcards_usage,
-                    daily_arena_usage, 
                     daily_simulator_usage,
                     daily_import_usage,
                     last_usage_reset,
@@ -105,7 +105,7 @@ const checkAILimits = (type) => {
                     await pool.query(`
                         UPDATE users SET 
                             daily_ai_usage = 0, 
-                            daily_arena_usage = 0, 
+                            daily_rag_usage = 0,
                             daily_simulator_usage = 0,
                             daily_import_usage = 0,
                             monthly_flashcards_usage = 0,
@@ -118,7 +118,7 @@ const checkAILimits = (type) => {
                     await pool.query(`
                         UPDATE users SET 
                             daily_ai_usage = 0, 
-                            daily_arena_usage = 0, 
+                            daily_rag_usage = 0,
                             daily_simulator_usage = 0,
                             daily_import_usage = 0,
                             last_usage_reset = $1 
@@ -128,7 +128,7 @@ const checkAILimits = (type) => {
                 }
 
                 user.daily_ai_usage = 0;
-                user.daily_arena_usage = 0;
+                user.daily_rag_usage = 0;
                 user.daily_simulator_usage = 0;
                 user.last_usage_reset = todayDate;
             }
@@ -143,14 +143,10 @@ const checkAILimits = (type) => {
             // 4. BIFURCACIÓN MAESTRA DE SUBSCRIPCIÓN
             // ✅ MEJORA: Un usuario solo es "Active" si tiene plan premium y status activo.
             const isActiveAccount = user.subscription_status === 'active' && user.subscription_tier !== 'free';
-            const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 50);
+            const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 20);
 
             // 5. CHEQUEO DE LA OPERACIÓN SOLICITADA
-            // ✅ DETECCIÓN DINÁMICA: Si el chat viene con flag de audio, cambiar el tipo internamente
             let effectiveType = type;
-            if (type === 'chat_standard' && req.body && req.body.isAudio) {
-                effectiveType = 'audio_assistant';
-            }
 
             if (effectiveType === 'chat_standard') {
                 const pathStr = req.path || '';
@@ -169,17 +165,50 @@ const checkAILimits = (type) => {
                         }
                     }
                 } else {
+                    const specialization = (req.body && req.body.specialization) || 'medicine';
+                    const context = req.body && req.body.context;
+                    const isRagRequest = (specialization === 'medicine' || specialization === 'education') || (context && context.type === 'quiz_tutor');
+
                     if (!isActiveAccount) {
-                        if (hasGlobalLives) {
-                            req.usageType = 'usage_count'; // Gasta la vida dorada
-                        } else {
+                        const remainingLives = (user.max_free_limit || 20) - (user.usage_count || 0);
+                        if (remainingLives <= 0) {
                             return res.status(403).json({ error: 'Límite de consultas de Prueba agotado. Mejora tu plan para continuar aprendiendo con IA.', reason: 'FREE_LIVES_EXHAUSTED' });
                         }
+
+                        // Free users NEVER use RAG for chats (to reduce costs)
+                        req.useRag = false;
+                        req.usageType = 'usage_count';
+                        req.cost = 1;
                     } else {
-                        if (user.daily_ai_usage >= userLimits.chat_standard) {
-                            return res.status(403).json({ error: 'Límite de mensajes diarios estándar alcanzado. Vuelve mañana o mejora tu plan.', reason: 'DAILY_LIMIT_EXHAUSTED' });
+                        if (tier === 'admin') {
+                            req.useRag = isRagRequest;
+                            req.usageType = null;
+                        } else if (tier === 'advanced') {
+                            const ragLimit = userLimits.daily_rag_limit || 25;
+                            const ragUsed = user.daily_rag_usage || 0;
+                            const aiLimit = userLimits.chat_standard || 100;
+                            const aiUsed = user.daily_ai_usage || 0;
+
+                            if (isRagRequest && ragUsed < ragLimit) {
+                                req.useRag = true;
+                                req.usageType = 'daily_rag_usage';
+                            } else {
+                                // Fallback to normal AI limit (without RAG)
+                                if (aiUsed >= aiLimit) {
+                                    return res.status(403).json({ error: 'Límite de mensajes diarios estándar alcanzado. Vuelve mañana o mejora tu plan.', reason: 'DAILY_LIMIT_EXHAUSTED' });
+                                }
+                                req.useRag = false;
+                                req.usageType = 'daily_ai_usage';
+                            }
+                        } else { // basic
+                            const aiLimit = userLimits.chat_standard || 50;
+                            const aiUsed = user.daily_ai_usage || 0;
+                            if (aiUsed >= aiLimit) {
+                                return res.status(403).json({ error: 'Límite de mensajes diarios estándar alcanzado. Vuelve mañana o mejora tu plan.', reason: 'DAILY_LIMIT_EXHAUSTED' });
+                            }
+                            req.useRag = false;
+                            req.usageType = 'daily_ai_usage';
                         }
-                        req.usageType = 'daily_ai_usage';
                     }
                 }
             }
@@ -219,6 +248,13 @@ const checkAILimits = (type) => {
                     const isBatchImport = req.path.includes('/batch');
 
                     if (isAiGeneration) {
+                        if (tier !== 'advanced' && tier !== 'admin' && tier !== 'elite') {
+                            return res.status(403).json({
+                                error: 'La Generación de Flashcards con IA es una función exclusiva para el Plan Avanzado. ¡Mejora tu plan para crear cientos de tarjetas al instante!',
+                                reason: 'PREMIUM_ONLY_FEATURE',
+                                paywall: true
+                            });
+                        }
                         if ((user.monthly_flashcards_usage || 0) >= userLimits.monthly_flashcards) {
                             return res.status(403).json({ error: `Límite mensual de generación de flashcards alcanzado (${userLimits.monthly_flashcards} intentos). Mejora tu plan.`, reason: 'MONTHLY_LIMIT_EXHAUSTED' });
                         }
@@ -245,53 +281,6 @@ const checkAILimits = (type) => {
                         return res.status(403).json({ error: 'Límite diario de simulacros alcanzado. Vuelve mañana.', reason: 'DAILY_LIMIT_EXHAUSTED' });
                     }
                     req.usageType = 'daily_simulator_usage';
-                }
-            }
-            else if (effectiveType === 'self_evaluation') {
-                const limit = userLimits.self_evaluation || 15;
-                if ((user.daily_arena_usage || 0) >= limit) {
-                    return res.status(403).json({
-                        error: `Límite diario de autoevaluaciones alcanzado (${limit}/día). Vuelve mañana.`,
-                        reason: 'DAILY_LIMIT_EXHAUSTED'
-                    });
-                }
-
-                if (!isActiveAccount) {
-                    if (hasGlobalLives) {
-                        req.usageType = 'usage_count';
-                    } else {
-                        return res.status(403).json({
-                            error: 'Has agotado tus vidas de hoy (créditos). Activa tu cuenta Premium para obtener autoevaluaciones ilimitadas.',
-                            reason: 'FREE_LIVES_EXHAUSTED'
-                        });
-                    }
-                } else {
-                    req.usageType = 'daily_arena_usage';
-                }
-            }
-            // ✅ AUDIO ASSISTANT: Acceso para todos, pero Free consume vidas globales
-            else if (effectiveType === 'audio_assistant') {
-                if (!isActiveAccount) {
-                    if (hasGlobalLives) {
-                        req.usageType = 'usage_count';
-                    } else {
-                        return res.status(403).json({
-                            error: 'Límite de mensajes de voz agotado. Mejora tu plan para continuar.',
-                            reason: 'FREE_LIVES_EXHAUSTED',
-                            paywall: true
-                        });
-                    }
-                } else {
-                    // Validar límite diario para usuarios premium (Basic/Advanced) usando el contador daily_ai_usage
-                    const limit = userLimits.audio_assistant || 50;
-                    if ((user.daily_ai_usage || 0) >= limit) {
-                        return res.status(403).json({
-                            error: 'Límite de mensajes de voz diarios alcanzado. Regresa mañana o mejora tu plan para continuar conversando con la IA.',
-                            reason: 'DAILY_LIMIT_EXHAUSTED',
-                            paywall: true
-                        });
-                    }
-                    req.usageType = 'daily_ai_usage';
                 }
             }
             // Todo Ok. Se le pasa el control a la ruta. Luego el controlador DEBE sumar +1 al req.usageType

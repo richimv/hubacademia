@@ -49,7 +49,6 @@ class NetworkService {
             url.includes('/api/docente/') ||
             url.includes('/api/idiomas-simulator/') ||
             url.includes('/api/decks') ||
-            url.includes('/api/self-evaluation/') ||
             url.includes('/api/analytics/diagnostic');
 
         const isWriteMethod = options.method === 'POST' || options.method === 'PUT' || options.method === 'PATCH';

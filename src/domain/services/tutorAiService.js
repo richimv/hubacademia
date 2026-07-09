@@ -142,7 +142,7 @@ class TutorAiService {
                 if (isContentShort) {
                     console.log(`📚 [TutorAiService] Usando content_html de recurso directo (< 15k texto plano)`);
                     context = `--- CONTEXTO OFICIAL DEL RECURSO: "${resourceContext.title}" ---\n${plainText}\n\n[INSTRUCCIONES DE RESPUESTA]:\nResponde a la pregunta del usuario utilizando este material como tu base de verdad técnica primaria. Si la pregunta requiere profundizar o no está explícita aquí, usa tu experiencia clínica/pedagógica para dar una respuesta rica y veraz.`;
-                } else {
+                } else if (filters.useRag !== false) {
                     console.log(`🔍 [TutorAiService] Usando RAG Semántico basado en el Título del Recurso: "${resourceContext.title}"`);
                     const questionRagService = require('./questionRagService');
                     
@@ -168,10 +168,15 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
 🚨 REGLA DE ORO: TIENES ABSOLUTAMENTE PROHIBIDO decir "no tengo acceso al contenido", "proporcióname el enlace", "no puedo acceder a páginas web externas" o excusas similares. El usuario sabe que eres el tutor integrado. Responde directamente con el resumen o explicación experta del tema indicado en el título de forma proactiva para deslumbrarlo, usando viñetas o tablas Markdown.`;
                         }
                     }
+                } else {
+                    console.log(`⚠️ [TutorAiService] RAG desactivado por límite. Usando fallback generativo experto para recurso.`);
+                    context = `[MODO ASISTENTE DE RECURSO - FALLBACK GENERATIVO EXPERTO]
+Tema principal de estudio: "${resourceContext.title}".
+INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobre el recurso titulado "${resourceContext.title}". Como RAG está deshabilitado por límites, debes actuar como un especialista de élite en ${specialization} y generar una respuesta rica, detallada y perfectamente estructurada basándote en tus conocimientos expertos sobre el tema exacto del título ("${resourceContext.title}").`;
                 }
             } else {
                 // Modo Chat General (Normal RAG)
-                const activeRAG = ['medicine', 'education'].includes(specialization);
+                const activeRAG = ['medicine', 'education'].includes(specialization) && filters.useRag !== false;
                 if (activeRAG) {
                     // Pasamos predefinedTerms para evitar la doble llamada a la IA reescritora
                     context = await RagService.searchContextSmart(mainSearchQuery, 20, { 

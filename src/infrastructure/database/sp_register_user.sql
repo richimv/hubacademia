@@ -23,7 +23,7 @@ BEGIN
     ) 
     VALUES (
         p_id, p_name, lower(p_email), p_password_hash, p_role, 
-        'pending', 'free', 0, 50, CURRENT_DATE, NOW(), NOW(), NOW()
+        'pending', 'free', 0, 20, CURRENT_DATE, NOW(), NOW(), NOW()
     )
     ON CONFLICT (email) 
     DO UPDATE SET

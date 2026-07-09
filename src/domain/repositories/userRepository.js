@@ -21,12 +21,13 @@ class UserRepository {
             row.subscription_expires_at,
             row.daily_simulator_usage,
             row.daily_ai_usage,
-            row.daily_arena_usage,
+            0, // daily_arena_usage removed
             row.last_usage_reset,
             row.last_name_change_at,
             row.monthly_flashcards_usage,
             row.daily_import_usage,
-            row.last_free_renewal
+            row.last_free_renewal,
+            row.daily_rag_usage
         );
     }
 
@@ -71,7 +72,7 @@ class UserRepository {
                 // Estrategia: Intentar insertar por ID, pero si el EMAIL ya existe, actualizar el registro existente.
                 const manualQuery = `
                     INSERT INTO public.users (id, name, email, password_hash, role, subscription_status, subscription_tier, usage_count, max_free_limit, last_usage_reset, last_free_renewal, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, 'pending', 'free', 0, 50, CURRENT_DATE, NOW(), NOW())
+                    VALUES ($1, $2, $3, $4, $5, 'pending', 'free', 0, 20, CURRENT_DATE, NOW(), NOW())
                     ON CONFLICT (email) 
                     DO UPDATE SET 
                         id = EXCLUDED.id,
@@ -144,8 +145,10 @@ class UserRepository {
         const aiUsage = userData.dailyAiUsage !== undefined ? userData.dailyAiUsage : userData.daily_ai_usage;
         if (aiUsage !== undefined) { fields.push(`daily_ai_usage = $${idx++}`); values.push(aiUsage); }
 
-        const arenaUsage = userData.dailyArenaUsage !== undefined ? userData.dailyArenaUsage : userData.daily_arena_usage;
-        if (arenaUsage !== undefined) { fields.push(`daily_arena_usage = $${idx++}`); values.push(arenaUsage); }
+        const ragUsage = userData.dailyRagUsage !== undefined ? userData.dailyRagUsage : userData.daily_rag_usage;
+        if (ragUsage !== undefined) { fields.push(`daily_rag_usage = $${idx++}`); values.push(ragUsage); }
+
+
 
         const lastReset = userData.lastUsageReset !== undefined ? userData.lastUsageReset : userData.last_usage_reset;
         if (lastReset !== undefined) { fields.push(`last_usage_reset = $${idx++}`); values.push(lastReset); }

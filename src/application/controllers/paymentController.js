@@ -11,7 +11,7 @@ const client = new MercadoPagoConfig({
 
 const PLANS = {
     basic: { price: 9.90, months: 2, title: 'Plan Básico - Entrenamiento Médico' },
-    advanced: { price: 24.90, months: 6, title: 'Plan Avanzado - Tutor IA Médica' }
+    advanced: { price: 24.90, months: 4, title: 'Plan Avanzado - Tutor IA Médica' }
 };
 
 exports.createOrder = async (req, res) => {
@@ -170,7 +170,6 @@ exports.handleWebhook = async (req, res) => {
                             usage_count = 0, -- Resetear vidas globales al pagar (Fidelización)
                             daily_ai_usage = 0,
                             monthly_flashcards_usage = 0,
-                            daily_arena_usage = 0,
                             daily_simulator_usage = 0,
                             last_usage_reset = $4,
                             payment_id = $2,

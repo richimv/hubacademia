@@ -102,7 +102,7 @@ TutorAiService.js → Parsea JSON, extrae "respuesta"
     ↓
 ChatController.js → enrichResponse() → res.json({ respuesta, sugerencias })
     ↓
-Frontend (chat.js / tutor-chat.js / audio-assistant.js)
+Frontend (chat.js / tutor-chat.js)
     ↓
 formatMessage(text)
     ├─ JSON Safety Net: detecta JSON crudo → extrae "respuesta"
@@ -126,7 +126,7 @@ markdown-content.css → Tipografía premium unificada
 | `js/utils/markdown-renderer.js` | Motor de parsing centralizado (marked.js + fallback regex) |
 | `js/chat.js` → `formatMessage()` | Renderiza mensajes del chat general |
 | `js/tutor-chat.js` → `addMessage()` | Renderiza mensajes del tutor de flashcards |
-| `js/audio-assistant.js` → `_setResponseHTML()` | Renderiza respuestas del asistente de voz |
+
 | `js/ui/libraryUI.js` | Renderiza notas guardadas en el visor |
 
 ### 7.5 JSON Safety Net
@@ -203,23 +203,9 @@ marked.setOptions({
 - **Historial:** Carga completa al cambiar de conversación.
 - **Sugerencias:** Pastillas clickeables generadas por la IA o fallback predefinido.
 
-### 9.2 Asistente de Voz (Audio Assistant)
-- **Archivos:** [audio-assistant.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/audio-assistant.js) (cliente) y [tutorAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/tutorAiService.js) (motor RAG).
-- **Modo:** Efímero (`isEphemeral: true` en el payload), sin persistencia de la conversación en el histórico relacional.
-- **Límites de Uso Diario (Protección API):**
-  - **Free / Pending:** Consume vidas de su pool global (50 vidas totales de `usage_count`, 1 vida por mensaje).
-  - **Basic:** Límite diario estricto de **30 mensajes diarios**.
-  - **Advanced:** Límite diario estricto de **50 mensajes diarios**.
-  - *Nota de Base de Datos:* Para evitar migraciones arriesgadas en producción, consume el contador físico común `daily_ai_usage` pero es auditado y bloqueado de forma estricta contra su cuota (30 o 50) en el backend por `checkLimitsMiddleware.js`.
-- **Arquitectura de Contexto Híbrido de 3 Niveles (Upgrade):**
-  - Remueve el "web scraping" frágil del DOM de la página. Ahora el frontend captura el `resourceId` desde el query param de la URL (`?id=X`) en su inicialización y lo envía de forma segura en el payload.
-  - El backend resuelve el enrutador inteligente de recuperación contextual en 3 niveles:
-    1. **Express (Base de Datos):** Si la sinopsis textual del recurso en PostgreSQL tiene menos de 15,000 caracteres, se inyecta directamente en el prompt. Cero latencia y cero costo de base vectorial.
-    2. **RAG Semántico Basado en Título:** Si es mayor a 15,000 o nula, consulta a Pinecone de forma global realizando una búsqueda semántica de alta fidelidad combinando el título del recurso y la consulta del usuario. Esto elimina por completo la necesidad de filtros por nombre de archivo (`filename`), haciéndolo 100% compatible con enlaces externos, Google Drive, u otros recursos que carecen de un archivo físico directo.
-    3. **Fallback Generativo:** Si la base vectorial está offline o no se recupera suficiente contexto, Gemini asume un rol de experto académico y genera respuestas de alta fidelidad basadas únicamente en el título del recurso y su conocimiento global pre-entrenado.
-- **Input:** Web Speech API (`SpeechRecognition`) para reconocimiento de voz en tiempo real.
-- **Output:** Web Speech API (`SpeechSynthesis`) utilizando la voz nativa del navegador.
-- **Alineación Visual:** Las respuestas de texto de la IA son procesadas y formateadas con `.markdown-compact` a través de `markdown-renderer.js` para asegurar coherencia tipográfica de lujo.
+### 9.2 Asistente de Voz (Audio Assistant) [ELIMINADO - JULIO 2026]
+- **Estado**: Eliminado en su totalidad tanto del frontend como del backend por motivos de reducción de costos y reestructuración de límites.
+- **Acción**: Los archivos `audio-assistant.js` y `audio-assistant.css` han sido removidos y sus cuotas asociadas eliminadas de la base de datos.
 
 ### 9.3 Tutor de Flashcards
 - **Archivo:** `js/tutor-chat.js`
@@ -292,6 +278,9 @@ Para guiar al usuario e invitarlo a interactuar con el Tutor IA de manera amigab
   - Se activa el RAG semántico consultando Pinecone en el namespace respectivo (`medicine` o `education`) utilizando la pregunta y los temas técnicos de la misma para alimentar las respuestas con bases de datos y normas oficiales de alta especialización.
 - **Monetización y Límites:**
   - Se han erradicado los vacíos legales del bypass `isEphemeral`. Las consultas del tutor de flashcards y de simulador se controlan y debitan estrictamente:
-    - **Usuarios Free/Pending:** Consume 2 vidas del pool de 50 si se realiza una consulta con RAG (Modos Medicina o Educación), o 1 vida si no se usa RAG (Modo Idiomas/Flashcards).
-    - **Usuarios Active (Basic/Advanced):** Se incrementa el contador `daily_ai_usage` diario, bloqueando el acceso en el middleware si superan la cuota diaria asignada (50 y 100 respectivamente).
+    - **Usuarios Free/Pending:** Consume exactamente 1 vida del pool global de 20 vidas. Las consultas se realizan estrictamente sin RAG (modo estándar) para minimizar costos de API.
+    - **Usuarios Active (Basic/Advanced):** Se incrementa el contador de uso diario respectivo (`daily_ai_usage` o `daily_rag_usage`), bloqueando el acceso en el middleware si superan la cuota asignada.
+
+---
+*Última actualización: 9 de julio de 2026 (Depreciación y remoción del Asistente de Voz / Audio Assistant)*
 

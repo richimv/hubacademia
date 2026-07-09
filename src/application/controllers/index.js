@@ -43,7 +43,6 @@ module.exports = {
     medicoController: require('./medicoController'),
     docenteController: require('./docenteController'),
     flashcardController: require('./flashcardController'),
-    selfEvaluationController: require('./selfEvaluationController'),
     userPreferencesController: require('./userPreferencesController'), // ✅ NUEVO: Multi-Domain Simulator
     mediaController: require('./mediaController'), // ✅ NUEVO: Proxy de imágenes GCS
     speechController: require('./speechController') // ✅ NUEVO: Motor de Voz (ES, EN, IT)

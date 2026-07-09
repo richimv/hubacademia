@@ -1436,7 +1436,7 @@ class AdminManager {
                         expiresInput.value = getFutureDate(2);
                     } else if (tier === 'advanced') {
                         statusSelect.value = 'active';
-                        expiresInput.value = getFutureDate(6);
+                        expiresInput.value = getFutureDate(4);
                     } else if (tier === 'free') {
                         if (statusSelect.value === 'active') {
                             statusSelect.value = 'pending';

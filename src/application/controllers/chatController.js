@@ -137,7 +137,7 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
                 console.log('🧠 Quiz Tutor Context (Simulador Mode) Injected');
             }
 
-            const hasRAGAccess = (req.userTier === 'advanced' || req.userTier === 'basic' || req.userTier === 'admin');
+            const hasRAGAccess = req.useRag !== undefined ? req.useRag : (req.userTier === 'advanced' || req.userTier === 'admin');
 
             // --- ✅ FASE III: PROCESAMIENTO IA (V6 - TutorAiService) ---
             let aiResult;
@@ -150,7 +150,8 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
                     specialization: finalSpecialization,
                     userTier: req.userTier,
                     namespace: (finalSpecialization === 'medicine' || finalSpecialization === 'education') ? finalSpecialization : 'general',
-                    resourceContext: resourceContext // ✅ Pasar el contexto del recurso cargado al servicio IA
+                    resourceContext: resourceContext, // ✅ Pasar el contexto del recurso cargado al servicio IA
+                    useRag: hasRAGAccess
                 });
 
                 // TutorAiService ya devuelve { intencion, respuesta, sugerencias } parseados
@@ -183,10 +184,9 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
 
             // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro de 2 Vidas por RAG)
             try {
-                const isRAG = (specialization === 'medicine' || specialization === 'education');
                 if (req.usageType === 'usage_count') {
                     // Si usa RAG, cuesta 2 vidas. Si no (como idiomas o flashcards sin RAG), cuesta 1 vida.
-                    const cost = isRAG ? 2 : 1;
+                    const cost = req.cost || (hasRAGAccess ? 2 : 1);
                     await this.usageService.checkAndIncrementUsage(userId, cost);
                     console.log(`📉 Límite de usage_count incrementado (+${cost}) para usuario ${userId}.`);
                 } else if (req.usageType) {

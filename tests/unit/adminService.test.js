@@ -172,7 +172,7 @@ describe('AdminService - update subscription consistency', () => {
         expect(diffMonths).toBeCloseTo(2, 0);
     });
 
-    it('should force advanced tier to active and calculate 6 months expiration if not provided', async () => {
+    it('should force advanced tier to active and calculate 4 months expiration if not provided', async () => {
         mockUserRepo.findById.mockResolvedValue({ id: 'u1', subscriptionTier: 'free', subscriptionStatus: 'pending' });
         mockUserRepo.update.mockResolvedValue({ id: 'u1', subscriptionTier: 'advanced', subscriptionStatus: 'active' });
 
@@ -188,7 +188,7 @@ describe('AdminService - update subscription consistency', () => {
         const updateArg = mockUserRepo.update.mock.calls[0][1];
         expect(updateArg.subscriptionExpiresAt).toBeInstanceOf(Date);
         const diffMonths = (updateArg.subscriptionExpiresAt - new Date()) / (1000 * 60 * 60 * 24 * 30);
-        expect(diffMonths).toBeCloseTo(6, 0);
+        expect(diffMonths).toBeCloseTo(4, 0);
     });
 
     it('should force tier to free and expires_at to null when expired status is set', async () => {

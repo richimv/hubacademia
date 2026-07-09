@@ -20,9 +20,9 @@ class UsageService {
         if (['basic', 'advanced'].includes(tier) && status === 'active') return { allowed: true, plan: 'premium' };
 
         // 3. Freemium - Lógica estandarizada (Vidas/Créditos)
-        // El default de 50 coincide con el valor definido en el Schema de PostgreSQL
+        // El default de 20 coincide con el valor definido en el Schema de PostgreSQL
         const currentUsage = user.usageCount || 0;
-        const limit = user.maxFreeLimit || 50;
+        const limit = user.maxFreeLimit || 20;
 
         console.log(`📊 [UsageService] Usuario: ${userId} | Actual: ${currentUsage} | Límite: ${limit}`);
 

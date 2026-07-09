@@ -123,12 +123,10 @@ class SessionManager {
                     this.currentUser.usageCount !== updatedUser.usageCount ||
                     this.currentUser.dailyAiUsage !== updatedUser.dailyAiUsage ||
                     this.currentUser.dailySimulatorUsage !== updatedUser.dailySimulatorUsage ||
-                    this.currentUser.dailyArenaUsage !== updatedUser.dailyArenaUsage ||
                     this.currentUser.monthlyFlashcardsUsage !== updatedUser.monthlyFlashcardsUsage ||
                     this.currentUser.usage_count !== updatedUser.usage_count ||
                     this.currentUser.daily_ai_usage !== updatedUser.daily_ai_usage ||
                     this.currentUser.daily_simulator_usage !== updatedUser.daily_simulator_usage ||
-                    this.currentUser.daily_arena_usage !== updatedUser.daily_arena_usage ||
                     this.currentUser.monthly_flashcards_usage !== updatedUser.monthly_flashcards_usage;
                 const tierChanged = this.currentUser.subscriptionTier !== updatedUser.subscriptionTier;
                 
@@ -177,7 +175,7 @@ class SessionManager {
     decrementUsage(amount = 1) {
         if (this.currentUser) {
             const usage = this.currentUser.usageCount !== undefined ? this.currentUser.usageCount : (this.currentUser.usage_count || 0);
-            const limit = this.currentUser.maxFreeLimit !== undefined ? this.currentUser.maxFreeLimit : (this.currentUser.max_free_limit || 50);
+            const limit = this.currentUser.maxFreeLimit !== undefined ? this.currentUser.maxFreeLimit : (this.currentUser.max_free_limit || 20);
             
             const isFree = this.currentUser.subscriptionStatus !== 'active' && this.currentUser.role !== 'admin';
             if (isFree) {

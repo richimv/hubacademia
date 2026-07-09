@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController, usageController, adminController, medicoController, docenteController, flashcardController, selfEvaluationController, userPreferencesController, mediaController, speechController } = require('../../application/controllers');
+const { coursesController, analyticsController, authController, chatController, usageController, adminController, medicoController, docenteController, flashcardController, userPreferencesController, mediaController, speechController } = require('../../application/controllers');
 
 // --- Importar Middleware ---
 const { auth, optionalAuth, adminOnly } = require('../middleware/authMiddleware');
@@ -204,12 +204,7 @@ router.get('/flashcard/due', auth, flashcardController.getDueFlashcards);
 router.post('/flashcard/review', auth, flashcardController.reviewFlashcard);
 
 
-// --- Rutas del Módulo de Autoevaluación ---
-router.post('/self-evaluation/start', auth, checkAILimits('self_evaluation'), selfEvaluationController.startGame);
-router.post('/self-evaluation/questions', auth, selfEvaluationController.getQuestions);
-router.post('/self-evaluation/submit', auth, selfEvaluationController.submitScore);
-router.get('/self-evaluation/ranking', optionalAuth, selfEvaluationController.getRanking);
-router.get('/self-evaluation/stats', auth, selfEvaluationController.getUserStats);
+
 
 // --- Rutas de Analytics Personalizados (Heatmap, etc) ---
 const customAnalyticsRoutes = require('./analyticsRoutes');

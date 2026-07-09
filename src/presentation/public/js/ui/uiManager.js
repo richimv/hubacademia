@@ -300,7 +300,7 @@ class UIManager {
         const status = user.subscriptionStatus || user.subscription_status;
         if (status !== 'active' && user.role !== 'admin') {
             const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
+            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
             if (usage >= limit) {
                 this.showPaywallModal();
                 return { allowed: false, reason: 'limit_reached' };
@@ -333,7 +333,7 @@ class UIManager {
                 return { allowed: true, ...data };
             } else if (response.status === 403 || !data.allowed) {
                 if (user && window.sessionManager) {
-                    user.usageCount = data.usage || 50;
+                    user.usageCount = data.usage || 20;
                     window.sessionManager.notifyStateChange();
                 }
                 this.showPaywallModal();
@@ -428,7 +428,7 @@ class UIManager {
 
             // Freemium: Solo bloquear si ya no tiene usos
             const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
+            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
             return usage >= limit;
         }
 
@@ -1138,7 +1138,7 @@ class UIManager {
         // 🛡️ DETECCIÓN DE TIER Y PROPIEDADES (Robusto: camelCase o snake_case)
         const userTier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
         const usageCount = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
+        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
         const dailySimUsage = user.dailySimulatorUsage !== undefined ? user.dailySimulatorUsage : (user.daily_simulator_usage || 0);
 
         // 1. Lógica para Usuarios FREE (Vidas Globales)
@@ -1193,7 +1193,29 @@ class UIManager {
         };
 
         // BIFURCACIÓN POR CONTEXTO Y TIER
-        if (context === 'simulator') {
+        if (context === 'chat_standard' || context === 'chat') {
+            config.icon = 'fa-comments';
+            if (userTier === 'basic') {
+                config.title = '¡Límite de Mensajes Alcanzado! 🚀';
+                config.message = customMsg || 'Has alcanzado tu límite de mensajes diarios para el Plan Básico (50 mensajes). Mejora tu plan a Avanzado para obtener 100 mensajes diarios y acceder al Tutor IA RAG.';
+                config.btnText = 'Mejorar a Avanzado';
+                config.btnUrl = '/pricing';
+                config.icon = 'fa-rocket';
+            } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
+                config.title = '¡Meta Diaria Alcanzada! 🏆';
+                config.message = customMsg || 'Has completado tus mensajes diarios para el Plan Avanzado (100 mensajes). ¡Mañana volvemos con más tutorías!';
+                config.btnText = 'Volver al Inicio';
+                config.btnUrl = '/';
+                config.icon = 'fa-medal';
+            } else {
+                // Tier FREE o EXPIRED
+                config.title = '¡Prueba Gratuita Finalizada! 💎';
+                config.message = customMsg || 'Has consumido tus 20 vidas de prueba gratuitas. Activa un plan premium para continuar practicando sin interrupciones.';
+                config.btnText = 'Ver Planes Premium';
+                config.btnUrl = '/pricing';
+                config.icon = 'fa-crown';
+            }
+        } else if (context === 'simulator') {
             config.icon = 'fa-stethoscope';
             if (userTier === 'basic') {
                 config.title = '¡Límite Diario Alcanzado! 🚀';
@@ -1574,7 +1596,7 @@ class UIManager {
                 }
                 .freemium-toast i { color: #ffd700; }
             </style>
-            <div id="freemium-status-bar" class="freemium-status-bar" title="Tus créditos de vidas se restablecen a 50 cada 7 días automáticamente">
+            <div id="freemium-status-bar" class="freemium-status-bar" title="Tus créditos de vidas se restablecen a 20 cada 7 días automáticamente">
                 <div class="status-content">
                     <span class="probation-text">⚡ <span class="hide-mobile">PLAN </span>GRATUITO</span>
                     <div class="usage-pill">
@@ -1631,7 +1653,7 @@ class UIManager {
         }
 
         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
+        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
         const remaining = Math.max(0, limit - usage);
 
         if (countSpan) {
@@ -1711,10 +1733,10 @@ class UIManager {
         const modalId = 'welcome-freemium-modal';
         if (document.getElementById(modalId)) return;
 
-        const titleText = isRenewal ? '¡Tus 50 vidas semanales están listas!' : 'Bienvenido a Hub Academia';
+        const titleText = isRenewal ? '¡Tus 20 vidas semanales están listas!' : 'Bienvenido a Hub Academia';
         const bodyText = isRenewal 
-            ? 'Hemos renovado tu cuenta. Recibiste de regalo <strong>50 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA esta semana.'
-            : 'Tu cuenta ha sido configurada correctamente. Dispones de <strong>50 créditos de uso</strong> para explorar todas las herramientas de estudio y productividad de la plataforma.';
+            ? 'Hemos renovado tu cuenta. Recibiste de regalo <strong>20 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA esta semana.'
+            : 'Tu cuenta ha sido configurada correctamente. Dispones de <strong>20 créditos de uso</strong> para explorar todas las herramientas de estudio y productividad de la plataforma.';
         const buttonText = isRenewal ? '¡A estudiar!' : 'Acceder al Hub';
 
         const modalHTML = `

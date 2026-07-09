@@ -27,8 +27,9 @@ class ChatComponent {
         // ✅ FASE III: Cargar el historial de conversaciones desde la API al iniciar.
         await this.loadConversations();
 
-        // Escuchar cambios de sesión para mostrar/ocultar el chat
+        // Escuchar cambios de sesión para mostrar/ocultar el chat y actualizar dropdown
         window.sessionManager.onStateChange(async (user) => {
+            this.updatePersonaDropdown(user);
             const toggleBtn = document.getElementById('chatbot-toggle');
             if (toggleBtn) {
                 // ✅ CAMBIO SOFT BLOCK: Siempre mostrar el botón, incluso desconectado.
@@ -55,6 +56,11 @@ class ChatComponent {
     }
 
     createChatInterface() {
+        const user = window.sessionManager ? window.sessionManager.getUser() : null;
+        const userTier = (user?.subscriptionTier || user?.subscription_tier || 'free').toLowerCase();
+        const status = (user?.subscriptionStatus || user?.subscription_status || 'pending').toLowerCase();
+        const isFree = userTier === 'free' || (user && status !== 'active');
+
         const chatHTML = `
             <!-- ✅ FASE III: Nueva estructura del chat con historial -->
             <div id="chatbot-container" class="chatbot-container" role="dialog" aria-modal="true" aria-hidden="true">
@@ -100,18 +106,18 @@ class ChatComponent {
                             </div>
                             <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
                         </div>
-                        <div class="dropdown-item" data-value="medicine" role="button">
+                        <div class="dropdown-item ${isFree ? 'disabled-premium' : ''}" data-value="medicine" role="button">
                             <div class="dropdown-item-icon medicine"><i class="fas fa-stethoscope"></i></div>
                             <div class="dropdown-item-content">
-                                <span class="dropdown-item-title">Modo Médico</span>
+                                <span class="dropdown-item-title">Modo Médico ${isFree ? '<i class="fas fa-crown premium-crown-icon" style="color:#fbbf24; font-size:0.75rem; margin-left: 6px;"></i>' : ''}</span>
                                 <span class="dropdown-item-desc">Consultas Médicas Especializadas</span>
                             </div>
                             <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
                         </div>
-                        <div class="dropdown-item" data-value="education" role="button">
+                        <div class="dropdown-item ${isFree ? 'disabled-premium' : ''}" data-value="education" role="button">
                             <div class="dropdown-item-icon education"><i class="fas fa-graduation-cap"></i></div>
                             <div class="dropdown-item-content">
-                                <span class="dropdown-item-title">Modo Educación</span>
+                                <span class="dropdown-item-title">Modo Educación ${isFree ? '<i class="fas fa-crown premium-crown-icon" style="color:#fbbf24; font-size:0.75rem; margin-left: 6px;"></i>' : ''}</span>
                                 <span class="dropdown-item-desc">Consultas Educativas Especializadas</span>
                             </div>
                             <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
@@ -165,6 +171,54 @@ class ChatComponent {
         }
 
         this.loadChatStyles();
+
+        // Inicializar el dropdown con el estado del usuario actual
+        this.updatePersonaDropdown(user);
+    }
+
+    updatePersonaDropdown(user) {
+        const userTier = (user?.subscriptionTier || user?.subscription_tier || 'free').toLowerCase();
+        const status = (user?.subscriptionStatus || user?.subscription_status || 'pending').toLowerCase();
+        const isFree = userTier === 'free' || status !== 'active';
+
+        const dropdown = document.getElementById('chatbot-persona-dropdown');
+        if (!dropdown) return;
+
+        // Modo Médico
+        const medicineItem = dropdown.querySelector('[data-value="medicine"]');
+        if (medicineItem) {
+            if (isFree) {
+                medicineItem.classList.add('disabled-premium');
+                const titleSpan = medicineItem.querySelector('.dropdown-item-title');
+                if (titleSpan) {
+                    titleSpan.innerHTML = 'Modo Médico <i class="fas fa-crown premium-crown-icon" style="color:#fbbf24; font-size:0.75rem; margin-left: 6px;"></i>';
+                }
+            } else {
+                medicineItem.classList.remove('disabled-premium');
+                const titleSpan = medicineItem.querySelector('.dropdown-item-title');
+                if (titleSpan) {
+                    titleSpan.innerHTML = 'Modo Médico';
+                }
+            }
+        }
+
+        // Modo Educación
+        const educationItem = dropdown.querySelector('[data-value="education"]');
+        if (educationItem) {
+            if (isFree) {
+                educationItem.classList.add('disabled-premium');
+                const titleSpan = educationItem.querySelector('.dropdown-item-title');
+                if (titleSpan) {
+                    titleSpan.innerHTML = 'Modo Educación <i class="fas fa-crown premium-crown-icon" style="color:#fbbf24; font-size:0.75rem; margin-left: 6px;"></i>';
+                }
+            } else {
+                educationItem.classList.remove('disabled-premium');
+                const titleSpan = educationItem.querySelector('.dropdown-item-title');
+                if (titleSpan) {
+                    titleSpan.innerHTML = 'Modo Educación';
+                }
+            }
+        }
     }
 
     loadChatStyles() {
@@ -217,8 +271,8 @@ class ChatComponent {
         if (!textarea) return;
         const placeholders = {
             neutral: "Escribe tu pregunta aquí...",
-            medicine: "Pregunta sobre farmacología, diagnósticos o protocolos...",
-            education: "Pregunta sobre diseño curricular, metodologías o pedagogía..."
+            medicine: "Escribe tu pregunta aquí...",
+            education: "Escribe tu pregunta aquí..."
         };
         textarea.placeholder = placeholders[this.specialization] || "Escribe tu pregunta aquí...";
     }
@@ -319,6 +373,18 @@ class ChatComponent {
         const dropdownItems = document.querySelectorAll('.chatbot-persona-dropdown .dropdown-item');
         dropdownItems.forEach(item => {
             item.addEventListener('click', (e) => {
+                if (item.classList.contains('disabled-premium')) {
+                    if (personaDropdown) {
+                        personaDropdown.classList.remove('open');
+                    }
+                    if (personaTrigger) {
+                        personaTrigger.classList.remove('dropdown-active');
+                    }
+                    if (window.uiManager) {
+                        window.uiManager.showPaywallModal('El Modo Médico y Modo Educación son exclusivos para suscriptores Premium.', 'chat');
+                    }
+                    return;
+                }
                 const newValue = item.dataset.value;
                 if (personaDropdown) {
                     personaDropdown.classList.remove('open');
@@ -556,7 +622,7 @@ class ChatComponent {
                         // Validar campos camelCase o snake_case
                         const status = user.subscriptionStatus || user.subscription_status;
                         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-                        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 50);
+                        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
 
                         // Lógica de Bloqueo
                         if (status === 'pending' && usage >= limit) {
@@ -850,6 +916,9 @@ class ChatComponent {
             if (error.isLimitReached) {
                 // Mensaje limpio y elegante del Tutor
                 this.addMessage(`⚠️ ${error.message}`, 'bot');
+                if (window.uiManager) {
+                    window.uiManager.showPaywallModal(error.message, 'chat_standard');
+                }
             } else {
                 let errorMessage = '❌ ';
 

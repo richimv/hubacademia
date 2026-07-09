@@ -34,7 +34,7 @@ function resolveSubscriptionConsistency(tier, status, expiresAt) {
         // Si no se proporcionó fecha de expiración, la calculamos (2 meses basic, 6 meses advanced)
         if (!finalExpiresAt) {
             const d = new Date();
-            const months = finalTier === 'basic' ? 2 : 6;
+            const months = finalTier === 'basic' ? 2 : 4;
             d.setMonth(d.getMonth() + months);
             finalExpiresAt = d;
         }
@@ -192,6 +192,7 @@ class AdminService {
             if (updatePayload.subscriptionStatus === 'active') {
                 updatePayload.usageCount = 0;
                 updatePayload.dailyAiUsage = 0;
+                updatePayload.dailyRagUsage = 0;
                 updatePayload.dailyArenaUsage = 0;
                 updatePayload.dailySimulatorUsage = 0;
                 updatePayload.monthlyFlashcardsUsage = 0;

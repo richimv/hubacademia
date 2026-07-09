@@ -178,15 +178,11 @@ class QuizTutor {
 
             if (!response.ok) {
                 if (response.status === 403) {
-                    if (data && data.paywall) {
-                        window.uiManager.showPaywallModal(data.error || null, 'chat');
-                        this._addMessage("🔒 Límite de prueba alcanzado. Por favor, actualiza tu plan para continuar consultando al tutor.", 'bot');
-                        return;
+                    if (window.uiManager) {
+                        window.uiManager.showPaywallModal(data.error || null, 'chat_standard');
                     }
-                    if (data && data.error) {
-                        this._addMessage(`⚠️ ${data.error}`, 'bot');
-                        return;
-                    }
+                    this._addMessage(`⚠️ ${data.error || 'Límite de consultas diarias alcanzado.'}`, 'bot');
+                    return;
                 }
                 throw new Error(data.error || "Error en la red");
             }

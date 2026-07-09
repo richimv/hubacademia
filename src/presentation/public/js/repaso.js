@@ -623,6 +623,10 @@ class RepasoManager {
     renderDeckHeader(deck, cards = []) {
         if (!deck) return;
 
+        const user = window.sessionManager ? window.sessionManager.getUser() : null;
+        const userTier = (user?.subscriptionTier || user?.subscription_tier || 'free').toLowerCase();
+        const isAdvancedOrAdmin = ['advanced', 'admin', 'elite'].includes(userTier);
+
         const container = document.getElementById('folder-header');
         const total = cards?.length || 0;
         const mastered = cards?.filter(c => c.interval_days > 21).length || 0;
@@ -667,9 +671,11 @@ class RepasoManager {
                             <button class="btn-premium btn-premium-secondary btn-add-card-glow" onclick="window.repasoManager.openAddCardModal()">
                                 <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
                             </button>
+                            ${isAdvancedOrAdmin ? `
                             <button class="btn-premium btn-premium-ia" onclick="window.repasoManager.openAiModal()">
                                 <i class="fas fa-magic"></i> <span class="btn-text">Crear con IA</span>
                             </button>
+                            ` : ''}
                             ` : ''}
                             
                             <button class="btn-premium btn-premium-secondary" onclick="${this.token ? `window.repasoManager.openStatsModal(${total}, ${mastered}, ${pending})` : 'window.uiManager.showAuthPromptModal()'}">

@@ -305,9 +305,9 @@ CREATE TABLE IF NOT EXISTS public.users (
     subscription_expires_at TIMESTAMP WITH TIME ZONE,
     payment_id CHARACTER VARYING(255) DEFAULT NULL::character varying,
     usage_count INTEGER DEFAULT 0,
-    max_free_limit INTEGER DEFAULT 50,
+    max_free_limit INTEGER DEFAULT 20,
     daily_ai_usage INTEGER DEFAULT 0,
-    daily_arena_usage INTEGER DEFAULT 0,
+    daily_rag_usage INTEGER DEFAULT 0, -- [NEW] For RAG Chat limits
     daily_simulator_usage INTEGER DEFAULT 0, -- [NEW] For Safety Caps
     monthly_flashcards_usage INTEGER DEFAULT 0,
     last_usage_reset DATE,
