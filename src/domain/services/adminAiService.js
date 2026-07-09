@@ -14,9 +14,8 @@ class AdminAiService {
         const path = require('path');
         let keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
         if (keyPath) {
-            const isLocalWindowsPath = keyPath.startsWith('C:') || keyPath.includes('\\') || keyPath.includes('Users/');
             const fileExists = fs.existsSync(keyPath);
-            if (isLocalWindowsPath || !fileExists) {
+            if (!fileExists) {
                 console.warn(`⚠️ [VertexAuth] La ruta GOOGLE_APPLICATION_CREDENTIALS (${keyPath}) es inválida o no existe en este entorno.`);
                 const fallbackRootKey = path.join(__dirname, '../../../service-account-key.json');
                 if (fs.existsSync(fallbackRootKey)) {

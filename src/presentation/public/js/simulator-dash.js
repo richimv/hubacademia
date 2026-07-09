@@ -1382,7 +1382,8 @@ const SimulatorDash = (() => {
 
                 activeConfig = { configType, target, areas: selectedAreas, career, difficulty };
                 localStorage.setItem(`simActiveConfig_${currentContext}`, JSON.stringify(activeConfig)); // Persist locally
-                localStorage.removeItem('simulator_active_session'); // Clear any pending quiz session on config change
+                const activeSessionUserId = (window.sessionManager && window.sessionManager.getUser()) ? window.sessionManager.getUser().id : 'guest';
+                localStorage.removeItem(`simulator_active_session_${activeSessionUserId}`); // Clear any pending quiz session on config change
 
                 const token = localStorage.getItem('authToken');
                 if (token) {

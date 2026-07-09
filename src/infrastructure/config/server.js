@@ -1,6 +1,7 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env'), override: true });
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 
 class Server {
     constructor() {
@@ -64,9 +65,8 @@ class Server {
             let keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
             if (keyPath) {
                 const fs = require('fs');
-                const isLocalWindowsPath = keyPath.startsWith('C:') || keyPath.includes('\\') || keyPath.includes('Users/');
                 const fileExists = fs.existsSync(keyPath);
-                if (isLocalWindowsPath || !fileExists) {
+                if (!fileExists) {
                     console.warn(`⚠️ [AuthSanitizer] La ruta GOOGLE_APPLICATION_CREDENTIALS (${keyPath}) es inválida o no existe en este servidor.`);
                     const fallbackRootKey = path.join(__dirname, '../../../service-account-key.json');
                     if (fs.existsSync(fallbackRootKey)) {

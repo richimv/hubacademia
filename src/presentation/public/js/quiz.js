@@ -35,7 +35,11 @@ function cancelCurrentScroll() {
     }
 }
 
-const STORAGE_KEY = 'simulator_active_session';
+function getStorageKey() {
+    const user = window.sessionManager ? window.sessionManager.getUser() : null;
+    const userId = user?.id || 'guest';
+    return `simulator_active_session_${userId}`;
+}
 
 // 💡 TIPS DINÁMICOS PARA LA ESPERA (Evitar aburrimiento)
 const LOADING_RESOURCES = {
@@ -191,6 +195,11 @@ let API_URL = `${window.AppConfig.API_URL}/api/medico`; // Default fallback
 
 // 1. Inicialización
 async function init() {
+    // Asegurar que la sesión del usuario está resuelta antes de restaurar/comenzar el quiz
+    if (window.sessionManager) {
+        await window.sessionManager.initialize();
+    }
+
     // Re-bind elements to guarantee they are correctly resolved after DOM is fully parsed
     Object.keys(elements).forEach(key => {
         const el = document.getElementById(key);
@@ -312,7 +321,7 @@ async function init() {
         }
     } catch (error) {
         console.error('Error iniciando quiz:', error);
-        localStorage.removeItem(STORAGE_KEY); // Auto-Recuperación con la clave correcta
+        localStorage.removeItem(getStorageKey()); // Auto-Recuperación con la clave correcta
         alert('Se detectó un examen dañado en memoria. Hemos limpiado el caché de seguridad de tu navegador. Por favor, intenta iniciar el simulacro nuevamente y ya debería funcionar.');
         window.location.href = '/';
     }
@@ -324,7 +333,7 @@ async function init() {
  */
 function saveSession() {
     if (new URLSearchParams(window.location.search).get('demo') === 'true') return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    localStorage.setItem(getStorageKey(), JSON.stringify({
         ...state,
         savedAt: Date.now(), // ✅ Expiración tracker
         quizId: state.quizId,
@@ -334,7 +343,7 @@ function saveSession() {
 
 function loadSession() {
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = localStorage.getItem(getStorageKey());
         if (!stored) return null;
         const data = JSON.parse(stored);
         // Regla 1: Expiración por tiempo de examen extendido (24 horas = 86400000 ms para soportar Simulacros Reales y pausas)
@@ -421,7 +430,7 @@ function loadSession() {
 }
 
 function clearSession() {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(getStorageKey());
 }
 
 // Exponer función para iniciar nuevo examen limpiando caché sin race conditions
@@ -1069,7 +1078,8 @@ function handleAnswer(selectedIndex, btnElement) {
         } else {
             tutorBtn.style.display = 'flex';
             tutorBtn.onclick = () => {
-                const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || !localStorage.getItem('token');
+                const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || 
+                                (window.sessionManager ? !window.sessionManager.isLoggedIn() : !localStorage.getItem('authToken'));
                 if (isGuest) {
                     if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
                         window.uiManager.showAuthPromptModal();
@@ -1654,7 +1664,8 @@ function smoothScrollTo(element, duration = 2200) {
 console.log("💎 Module quiz.js loaded successfully. showExamReview is ready with Zoom Lightbox.");
 
 window.openQuizTutorForReview = function (index) {
-    const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || !localStorage.getItem('token');
+    const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || 
+                    (window.sessionManager ? !window.sessionManager.isLoggedIn() : !localStorage.getItem('authToken'));
     if (isGuest) {
         if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
             window.uiManager.showAuthPromptModal();

@@ -1,6 +1,6 @@
 const RagService = require('../src/domain/services/ragService');
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env'), override: true });
 
 async function extract() {
     const topic = process.argv[2];

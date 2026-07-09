@@ -6,6 +6,7 @@ class SessionManager {
         this.onStateChangeCallbacks = [];
         this.lastSyncTime = 0; // Para throttling global
         this.initSupabaseListener();
+        this.initPromise = null;
     }
 
     // ✅ Centralizar la escucha de Supabase
@@ -90,25 +91,31 @@ class SessionManager {
         this.notifyStateChange();
     }
 
-    async initialize() {
-        // 1. 🛡️ IMPORTANTE: NO borrar el hash aquí. 
-        // Supabase necesita el hash en la URL para leer el token tras el redirect de Google.
-        // Si lo borramos ahora, el login manual "muere" al regresar.
+    initialize() {
+        if (!this.initPromise) {
+            this.initPromise = (async () => {
+                // 1. 🛡️ IMPORTANTE: NO borrar el hash aquí. 
+                // Supabase necesita el hash en la URL para leer el token tras el redirect de Google.
+                // Si lo borramos ahora, el login manual "muere" al regresar.
 
-        // 2. Recuperar sesión local si existe
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            try {
-                // No bloqueamos desesperadamente, intentamos recuperar
-                this.currentUser = await AuthApiService.getMe();
-            } catch (err) {
-                this.currentUser = null;
-                localStorage.removeItem('authToken');
-            }
+                // 2. Recuperar sesión local si existe
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    try {
+                        // No bloqueamos desesperadamente, intentamos recuperar
+                        this.currentUser = await AuthApiService.getMe();
+                    } catch (err) {
+                        this.currentUser = null;
+                        localStorage.removeItem('authToken');
+                    }
+                }
+
+                // Si no hay usuario tras initialize, notificamos para que aparezca el botón "Acceder"
+                this.notifyStateChange();
+                return this.currentUser;
+            })();
         }
-
-        // Si no hay usuario tras initialize, notificamos para que aparezca el botón "Acceder"
-        this.notifyStateChange();
+        return this.initPromise;
     }
 
     // ✅ NUEVO: Método para refrescar sesión sin recargar (para actualizar vidas/tokens)

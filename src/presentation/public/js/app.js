@@ -304,6 +304,12 @@ function updateHeaderUI(user) {
 window.triggerGoogleLogin = async (buttonElement = null) => {
     console.log('🖱️ [AuthManager] Iniciando flujo Google OAuth...');
 
+    // Inicialización perezosa (lazy) por si las librerías se cargaron en desorden
+    if (!window.supabaseClient && typeof supabase !== 'undefined' && window.AppConfig) {
+        window.supabaseClient = supabase.createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+        console.log('✅ Supabase Client inicializado de forma diferida (lazy).');
+    }
+
     if (!window.supabaseClient) {
         window.uiManager.showToast('⏳ El servicio de autenticación se está preparando. Reintenta en breve.');
         return;
