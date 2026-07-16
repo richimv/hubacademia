@@ -94,14 +94,139 @@ class TutorAiService {
     }
 
     /**
+     * Extrae imágenes en base64 de un texto y retorna el texto limpio
+     * con placeholders e inlineData para la API de Gemini.
+     */
+    _extractMultimodalParts(text) {
+        const parts = [];
+        if (!text) return { cleanedText: '', parts };
+
+        // Expresión regular lineal y robusta para evitar backtracking con base64 gigantescos
+        const base64Regex = /data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/gi;
+        
+        let match;
+        
+        // Buscar todas las ocurrencias de base64
+        while ((match = base64Regex.exec(text)) !== null) {
+            const mimeType = match[1];
+            const base64Data = match[2].replace(/\s/g, ''); // Remover saltos de línea/espacios del base64
+            parts.push({
+                inlineData: {
+                    mimeType: mimeType,
+                    data: base64Data
+                }
+            });
+        }
+        
+        // Reemplazar la data URI base64 en el texto por un placeholder indexado
+        let index = 1;
+        const cleanedText = text.replace(/data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/gi, () => {
+            return `[Imagen ${index++}]`;
+        });
+        
+        return { cleanedText, parts };
+    }
+
+    /**
+     * 🧠 LLAMADOR DE MODELO DUAL Y RESILIENTE (AI CHANNELER)
+     * Llama a Gemini utilizando la API REST de Google AI Studio (si hay GEMINI_API_KEY)
+     * o mediante Vertex AI. Cuenta con reintentos y backoff exponencial en caso de 429 u otros fallos.
+     */
+    async _callModelResilient(contents, systemPrompt) {
+        const apiKey = process.env.GEMINI_API_KEY;
+        const maxRetries = 3;
+        let delayMs = 1000;
+        let lastError = null;
+
+        // 1. Intentar primero con la API REST de Google AI Studio si está configurada (canal primario independiente)
+        if (apiKey) {
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    const axios = require('axios');
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+                    
+                    const payload = {
+                        contents: contents,
+                        systemInstruction: {
+                            parts: [{ text: systemPrompt }]
+                        },
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            temperature: 0.8,
+                            maxOutputTokens: 8192,
+                            topP: 0.9
+                        }
+                    };
+
+                    console.log(`📡 [REST Tutor] Llamando a gemini-2.5-flash-lite vía Google AI Studio (Intento ${attempt}/${maxRetries})...`);
+                    const res = await axios.post(url, payload, { timeout: 25000 });
+                    
+                    if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
+                        const text = res.data.candidates[0].content.parts[0].text;
+                        return text;
+                    }
+                    throw new Error("Respuesta inválida del servidor REST");
+                } catch (err) {
+                    lastError = err;
+                    const status = err.response ? err.response.status : null;
+                    console.warn(`⚠️ [REST Tutor Fallo] Intento ${attempt} falló:`, err.message);
+                    
+                    if (status === 400 || status === 403) {
+                        break; // Error de autenticación/configuración, no reintentar
+                    }
+
+                    if (attempt < maxRetries) {
+                        console.log(`⏳ Esperando ${delayMs}ms antes de reintentar REST...`);
+                        await new Promise(resolve => setTimeout(resolve, delayMs));
+                        delayMs *= 2;
+                    }
+                }
+            }
+        }
+
+        // 2. Fallback / Canal Secundario: Vertex AI con reintentos y backoff exponencial
+        console.log("📡 [VertexAI Tutor] Iniciando canal Vertex AI con reintentos...");
+        delayMs = 1000;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const result = await this.model.generateContent({
+                    contents,
+                    systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] }
+                });
+                
+                if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].content) {
+                    return result.response.candidates[0].content.parts[0].text;
+                }
+                throw new Error("Respuesta de Vertex AI vacía o inválida");
+            } catch (err) {
+                lastError = err;
+                console.warn(`⚠️ [VertexAI Tutor Fallo] Intento ${attempt} falló:`, err.message);
+                
+                if (attempt < maxRetries) {
+                    console.log(`⏳ Esperando ${delayMs}ms antes de reintentar Vertex AI...`);
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                    delayMs *= 2;
+                }
+            }
+        }
+
+        console.error("❌ [TutorAiService] Todos los canales e intentos de IA fallaron.");
+        throw lastError;
+    }
+
+    /**
      * Maneja la conversación del usuario con el Tutor.
      * @param {string} message - El mensaje del usuario.
      * @param {Array} history - Historial de la conversación.
      * @param {Object} filters - { target, specialization, namespace, userTier }
      */
     async handleChat(userMessage, history = [], filters = {}) {
-        // Sanitizar mensaje
-        const message = securityUtils.sanitizeInputForAI(userMessage, securityUtils.LIMITS.LONG_TEXT);
+        // 1. Extraer imágenes base64 del mensaje original (antes de sanitizar/recortar para no truncar la data)
+        const { cleanedText: preCleanedMessage, parts: imageParts } = this._extractMultimodalParts(userMessage);
+
+        // 2. Sanitizar el mensaje limpio (que ahora es muy corto y no será truncado)
+        const message = securityUtils.sanitizeInputForAI(preCleanedMessage, securityUtils.LIMITS.LONG_TEXT);
         const conversationId = filters.conversationId || 'default';
 
         const target = (filters.target || "ENAM").toUpperCase();
@@ -196,20 +321,26 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
 
             let systemPrompt = chatPrompts.buildPrompt(specialization, target, contextConImagenes);
 
-            // 4. Formatear historial para Gemini
-            const contents = history.map(h => ({
-                role: h.role === 'user' ? 'user' : 'model',
-                parts: [{ text: h.content }]
-            }));
-            contents.push({ role: 'user', parts: [{ text: message }] });
-
-            // 5. Generación de respuesta
-            const result = await this.model.generateContent({
-                contents,
-                systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] }
+            // 4. Formatear historial para Gemini (limpiando cualquier base64 remanente para evitar inflar el contexto)
+            const contents = history.map(h => {
+                const text = h.content || '';
+                const cleanedText = text.replace(/data:(image\/[a-z0-9-+.]+);base64,([a-zA-Z0-9+/=\s\r\n]+?)(?=["'\s\)])/gi, '[Imagen]');
+                return {
+                    role: h.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: cleanedText }]
+                };
             });
+            
+            // Añadir mensaje actual limpio y adjuntar las imágenes extraídas como partes multimodales
+            const userParts = [{ text: message }];
+            if (imageParts && imageParts.length > 0) {
+                userParts.push(...imageParts);
+                console.log(`📸 [TutorAiService] Inyectadas ${imageParts.length} imágenes como partes multimodales.`);
+            }
+            contents.push({ role: 'user', parts: userParts });
 
-            const rawText = result.response.candidates[0].content.parts[0].text;
+            // 5. Generación de respuesta resiliente con reintentos y multicanal
+            const rawText = await this._callModelResilient(contents, systemPrompt);
 
             // 6. Parsear la respuesta JSON
             let parsed;
@@ -267,13 +398,21 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             
             Devuelve un JSON con el campo "titulo".`;
 
-            const result = await this.model.generateContent({
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                systemInstruction: { role: 'system', parts: [{ text: "Eres un experto en síntesis de contenido. Generas títulos para chats de medicina y educación." }] }
-            });
+            const contents = [{ role: 'user', parts: [{ text: prompt }] }];
+            const systemInstruction = "Eres un experto en síntesis de contenido. Generas títulos para chats de medicina y educación.";
+            const rawText = await this._callModelResilient(contents, systemInstruction);
 
-            const rawText = result.response.candidates[0].content.parts[0].text;
-            const parsed = JSON.parse(rawText);
+            let parsed;
+            try {
+                parsed = JSON.parse(rawText);
+            } catch (e) {
+                const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                try {
+                    parsed = JSON.parse(cleaned);
+                } catch (e2) {
+                    parsed = { titulo: userMessage.substring(0, 30) };
+                }
+            }
 
             return parsed.titulo || userMessage.substring(0, 30);
         } catch (error) {

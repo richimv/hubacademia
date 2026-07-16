@@ -8,8 +8,15 @@ Hemos completado la mejora de la experiencia para usuarios visitantes (no regist
 
 ### Cambios Realizados
 - **Apertura de Configuración:** En [simulator-dash.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js), se eliminó la restricción que impedía a los visitantes abrir el modal de configuración de exámenes.
-- **Bloqueo de Configuración Personalizada:** En [simulator-dash.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js), se interceptan los cambios de modo de configuración. Si un usuario no registrado intenta seleccionar "Práctica Personalizada", se revierte automáticamente a "Modo examen oficial" y se muestra el modal de invitación a registrarse.
-- **Bloqueo de Inicio sin Configuración:** En [simulator-dash.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js), si un visitante intenta iniciar el simulacro de 10qs (Arcade) sin tener una configuración aplicada, se detiene el inicio, se abre el modal de configuración y se aplica un efecto visual *shake*.
+- **Aislamiento de Sesión Activa de Simulacros (`quiz.js`, `simulator-dash.js` y `sessionManager.js`)**:
+  - **Problema**: El almacenamiento local de exámenes a medio terminar usaba una clave compartida estática (`simulator_active_session`). Si un usuario iniciaba un examen, cerraba sesión y otro ingresaba desde el mismo dispositivo/navegador, la sesión del primero se cargaba incorrectamente.
+  - **Solución**: Modifiqué el almacenamiento para ser dinámico y específico del usuario, mapeándose como `simulator_active_session_${userId}`. Además, adapté `simulator-dash.js` para limpiar correctamente esta clave dinámica al cambiar la configuración.
+  - **Soporte Asíncrono**: Refactoricé `sessionManager.js` para guardar la promesa de inicialización de sesión (`initPromise`) y evitar llamadas HTTP duplicadas a la API `/api/auth/me`. En `quiz.js` se colocó un `await window.sessionManager.initialize()` al inicio de `init()` para garantizar que la sesión está completamente cargada antes de recuperar los borradores.
+- **Resiliencia ante Límites de Cuota / Rate Limits de la IA (`tutorAiService.js`)**:
+  - **Problema**: El servicio de tutoría del examen fallaba con un error HTTP 500 (Internal Server Error) cuando la API de Vertex AI arrojaba un error `429 Too Many Requests (RESOURCE_EXHAUSTED)`.
+  - **Solución**: Creé el método `_callModelResilient` dentro de `TutorAiService` que encapsula la llamada con un algoritmo de **backoff exponencial** (reintento automático aumentando progresivamente el tiempo de espera).
+  - **Canal Dual/REST Fallback**: Si existe la variable de entorno `GEMINI_API_KEY`, el servicio usa la API REST directa de Google AI Studio (que cuenta con su propio pool de cuota separado). Si este canal falla o no está disponible, realiza un fallback automático e inteligente hacia Vertex AI.
+- **Suite de Pruebas**: Aprobación de la suite Jest con el 100% de éxito en la validación (81/81 Passed). aplica un efecto visual *shake*.
 - **Petición con Filtros:** En [quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js), la llamada al endpoint `/demo` ahora incluye los parámetros configurados: `target`, `career`, `difficulty`, y `areas`.
 - **Mensaje de Invitación General:** En [uiManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js), se actualizó la descripción del modal de registro para que muestre un mensaje general de invitación a probar todos los servicios y herramientas del sitio web.
 - **Corrección de ReferenceError:** En [simulator-dash.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js), se declaró la variable `masteryEl` (haciendo referencia al elemento `stat-mastery`), solucionando un fallo `ReferenceError` crítico que interrumpía la inicialización de los gráficos y estadísticas de la demo.
@@ -29,14 +36,20 @@ Hemos completado la mejora de la experiencia para usuarios visitantes (no regist
 
 ---
 
-## 3. Verificación de Resultados
+## 3. Soporte Multimodal para Preguntas con Imágenes Base64 (`tutorAiService.js`)
+
+### Cambios Realizados
+- **Extracción de Imágenes Base64 (Antes de la sanitización):** Modificamos el orden en `tutorAiService.js` para extraer las imágenes en base64 **antes** de que el texto pase por la sanitización y el límite de 2000 caracteres de `securityUtils.sanitizeInputForAI`. De este modo, evitamos que la cadena base64 se corte a la mitad, lo que anteriormente rompía la expresión regular y dejaba ruidos base64 en el prompt y borraba el resto del enunciado, alternativas e indicaciones del sistema, provocando que la IA respondiera alucinando sobre "Gamificación".
+- **Optimización de Regex:** Reemplazamos el motor de la expresión regular por una versión lineal y robusta sin búsquedas hacia adelante (`/data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/gi`) para garantizar inmunidad total a backtracking y máxima velocidad.
+- **Flujo Multimodal Nativo:** Las imágenes extraídas se inyectan como partes de datos en línea (`inlineData`) en la llamada a Gemini, lo que permite al modelo de lenguaje multimodal "ver" y analizar las imágenes directamente para responder con precisión las preguntas del estudiante.
+- **Acceso por Plan (Basic vs Advanced):** 
+  - **Plan Basic:** Obtiene la explicación directa de la IA aprovechando la entrada multimodal de imágenes (sin búsqueda RAG).
+  - **Plan Advanced:** Obtiene la explicación multimodal enriquecida adicionalmente con la recuperación RAG semántica de Pinecone.
+
+---
+
+## 4. Verificación de Resultados
 
 ### Pruebas Unitarias de Regresión
-Se ha ejecutado el suite de testeo unitario localmente:
-- **Resultado:** 14 suites pasadas, 114 pruebas exitosas en total (incluyendo comprobaciones de control de calidad psicométrica de idiomas).
-
-### Pruebas de Generación con IA
-Ejecutamos con éxito los scripts locales que conectan con la base de datos y llaman al modelo:
-- **`test_idiomas_generation.js`:** Simula un banco vacío de idiomas e inicia una reposición con IA. Generó correctamente una pregunta gramatical de nivel B2 en inglés americano.
-- **`test_idiomas_listening.js`:** Generó con éxito una pregunta de comprensión auditiva con script de audio estructurado.
-- **`test_lang_generation_db.js`:** Validó la llamada con base de datos del mundo real para una pregunta de italiano gramatical (A1) y su correcta inserción en `question_bank` sin problemas de restricciones.
+Se ha ejecutado la suite de testeo unitario localmente:
+- **Resultado:** 11 suites pasadas, 81 pruebas unitarias exitosas en total (100% de éxito).
