@@ -27,9 +27,14 @@ class FlashcardTutor {
             <div class="tutor-chat-header">
                 <div class="tutor-header-title">
                     <i class="fas fa-robot tutor-robot-icon"></i>
-                    <span>Tutor de Apoyo</span>
+                    <span>Tutor de Apoyo IA</span>
                 </div>
-                <button id="tutor-close" class="tutor-close-btn">&times;</button>
+                <div class="tutor-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
+                    <button id="tutor-expand" class="tutor-expand-btn" aria-label="Pantalla completa" title="Pantalla completa">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button id="tutor-close" class="tutor-close-btn" aria-label="Cerrar">&times;</button>
+                </div>
             </div>
             <div id="tutor-messages" class="tutor-messages-area">
                 <div class="tutor-message tutor-message-bot">Hola, soy tu tutor de apoyo. ¿Hay algo en esta tarjeta que no te haya quedado claro?</div>
@@ -48,6 +53,7 @@ class FlashcardTutor {
             messages: document.getElementById('tutor-messages'),
             input: document.getElementById('tutor-input'),
             send: document.getElementById('tutor-send'),
+            expand: document.getElementById('tutor-expand'),
             close: document.getElementById('tutor-close')
         };
     }
@@ -55,6 +61,23 @@ class FlashcardTutor {
     _bindEvents() {
         this.dom.close.onclick = () => this.toggle(false);
         this.dom.send.onclick = () => this.sendMessage();
+
+        if (this.dom.expand) {
+            this.dom.expand.onclick = () => this.toggleFullScreen();
+        }
+
+        // Delegación de clic en imágenes para visor inmersivo
+        if (this.dom.messages) {
+            this.dom.messages.addEventListener('click', (e) => {
+                const img = e.target.closest('img');
+                if (img && this.dom.messages.contains(img)) {
+                    const ui = window.uiManager || (window.parent && window.parent.uiManager);
+                    if (ui && typeof ui.showMediaViewer === 'function') {
+                        ui.showMediaViewer(img.src, img.alt || 'Visualizando imagen del tutor');
+                    }
+                }
+            });
+        }
         
         // ✅ MEJORA: Soporte para multi-línea (Solo Shift + Enter)
         this.dom.input.addEventListener('keydown', (e) => {
@@ -70,6 +93,32 @@ class FlashcardTutor {
             this.dom.input.style.height = 'auto';
             this.dom.input.style.height = (this.dom.input.scrollHeight) + 'px';
         });
+    }
+
+    toggleFullScreen() {
+        this.isFullScreen = !this.isFullScreen;
+        const panel = this.dom.panel;
+        const expandBtn = this.dom.expand;
+        if (!panel || !expandBtn) return;
+        const icon = expandBtn.querySelector('i');
+
+        if (this.isFullScreen) {
+            panel.classList.add('chat-fullscreen');
+            if (icon) {
+                icon.classList.remove('fa-expand');
+                icon.classList.add('fa-compress');
+            }
+            document.body.style.overflow = 'hidden';
+            expandBtn.setAttribute('title', 'Restaurar ventana');
+        } else {
+            panel.classList.remove('chat-fullscreen');
+            if (icon) {
+                icon.classList.remove('fa-compress');
+                icon.classList.add('fa-expand');
+            }
+            document.body.style.overflow = '';
+            expandBtn.setAttribute('title', 'Pantalla completa');
+        }
     }
 
     toggle(forceState, context = null) {

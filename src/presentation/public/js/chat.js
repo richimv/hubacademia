@@ -22,71 +22,46 @@ class ChatComponent {
     async init() {
         this.createChatInterface();
         this.setupEventListeners();
-        // ✅ Aplicar estilos iniciales según la especialidad
         this.updatePersonaUI();
-        // ✅ FASE III: Cargar el historial de conversaciones desde la API al iniciar.
-        await this.loadConversations();
+        // Mostrar mensaje de bienvenida y preguntas iniciales
+        this.addWelcomeMessage();
 
-        // Escuchar cambios de sesión para mostrar/ocultar el chat y actualizar dropdown
-        window.sessionManager.onStateChange(async (user) => {
-            this.updatePersonaDropdown(user);
-            const toggleBtn = document.getElementById('chatbot-toggle');
-            if (toggleBtn) {
-                // ✅ CAMBIO SOFT BLOCK: Siempre mostrar el botón, incluso desconectado.
-                toggleBtn.style.display = 'block';
+        let lastUserId = window.sessionManager && window.sessionManager.getUser() ? window.sessionManager.getUser().id : null;
 
-                if (user) {
-                    // Si el usuario inicia sesión, cargar sus conversaciones.
-                    await this.loadConversations();
-                } else {
-                    // Si cierra sesión, cerrar el chat si estaba abierto
-                    if (this.isOpen) this.closeChat();
+        // Escuchar cambios de sesión para resetear el chat solo cuando cambie el estado de autenticación (ej. de visitante a logueado)
+        if (window.sessionManager) {
+            window.sessionManager.onStateChange((user) => {
+                const toggleBtn = document.getElementById('chatbot-toggle');
+                if (toggleBtn) {
+                    toggleBtn.style.display = 'block';
                 }
-            }
-        });
+                const newUserId = user ? user.id : null;
+                if (lastUserId !== newUserId) {
+                    lastUserId = newUserId;
+                    if (user) {
+                        this.resetVisitorChatState();
+                    }
+                }
+            });
+        }
     }
 
     getPersonaLabel() {
-        const labels = {
-            neutral: 'Neutro',
-            medicine: 'Médico',
-            education: 'Educación'
-        };
-        return labels[this.specialization] || 'Neutro';
+        return 'Asistente Guía';
     }
 
     createChatInterface() {
         const user = window.sessionManager ? window.sessionManager.getUser() : null;
-        const userTier = (user?.subscriptionTier || user?.subscription_tier || 'free').toLowerCase();
-        const status = (user?.subscriptionStatus || user?.subscription_status || 'pending').toLowerCase();
-        const isFree = userTier === 'free' || (user && status !== 'active');
 
         const chatHTML = `
-            <!-- ✅ FASE III: Nueva estructura del chat con historial -->
             <div id="chatbot-container" class="chatbot-container" role="dialog" aria-modal="true" aria-hidden="true">
-                <div class="chatbot-history-panel">
-                    <div class="history-header">
-                        <button id="new-chat-btn" class="new-chat-btn">
-                            <i class="fas fa-plus"></i> Nuevo Chat
-                        </button>
-                    </div>
-                    <div id="conversation-list" class="conversation-list">
-                        <!-- La lista de conversaciones se renderizará aquí -->
-                    </div>
-                </div>
-                <div class="chatbot-main-panel">
+                <div class="chatbot-main-panel" style="width: 100%;">
                     <div class="chatbot-header">
-                        <!-- ✅ MEJORA RESPONSIVE: Botón para mostrar/ocultar historial en móvil -->
-                        <button id="chatbot-history-toggle" class="chatbot-history-toggle">
-                            <i class="fas fa-bars"></i>
-                        </button>
-                        <div class="chatbot-title-selector" id="chatbot-persona-trigger" role="button" aria-haspopup="listbox" aria-expanded="false" title="Cambiar modo del asistente" data-persona="${this.specialization}">
-                            <i id="chatbot-icon" class="${this.specialization === 'medicine' ? 'fas fa-stethoscope' : (this.specialization === 'education' ? 'fas fa-graduation-cap' : 'fas fa-robot')} chatbot-icon-svg" data-persona="${this.specialization}"></i>
-                            <h3 id="chatbot-title-heading" class="chatbot-title-heading">${this.getPersonaLabel()}</h3>
-                            <i class="fas fa-chevron-down chatbot-chevron"></i>
+                        <div class="chatbot-title-selector" style="cursor: default;" title="Asistente Guía Hub Academia">
+                            <i id="chatbot-icon" class="fas fa-compass chatbot-icon-svg" style="color: var(--chat-primary, #6366f1);"></i>
+                            <h3 id="chatbot-title-heading" class="chatbot-title-heading">Asistente Guía Hub Academia</h3>
                         </div>
                         <div class="chatbot-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
-                            <!-- Botón Pantalla Completa (Mejorado) -->
                             <button id="chatbot-expand" class="chatbot-expand" aria-label="Pantalla completa" title="Pantalla completa">
                                 <i class="fas fa-expand"></i>
                             </button>
@@ -96,43 +71,13 @@ class ChatComponent {
                         </div>
                     </div>
 
-                    <!-- Dropdown de Especialidad (Persona) -->
-                    <div class="chatbot-persona-dropdown" id="chatbot-persona-dropdown">
-                        <div class="dropdown-item" data-value="neutral" role="button">
-                            <div class="dropdown-item-icon"><i class="fas fa-robot"></i></div>
-                            <div class="dropdown-item-content">
-                                <span class="dropdown-item-title">Modo General</span>
-                                <span class="dropdown-item-desc">Asistente para consultas generales</span>
-                            </div>
-                            <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
-                        </div>
-                        <div class="dropdown-item ${isFree ? 'disabled-premium' : ''}" data-value="medicine" role="button">
-                            <div class="dropdown-item-icon medicine"><i class="fas fa-stethoscope"></i></div>
-                            <div class="dropdown-item-content">
-                                <span class="dropdown-item-title">Modo Médico ${isFree ? '<i class="fas fa-crown premium-crown-icon" style="color:#fbbf24; font-size:0.75rem; margin-left: 6px;"></i>' : ''}</span>
-                                <span class="dropdown-item-desc">Consultas Médicas Especializadas</span>
-                            </div>
-                            <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
-                        </div>
-                        <div class="dropdown-item ${isFree ? 'disabled-premium' : ''}" data-value="education" role="button">
-                            <div class="dropdown-item-icon education"><i class="fas fa-graduation-cap"></i></div>
-                            <div class="dropdown-item-content">
-                                <span class="dropdown-item-title">Modo Educación ${isFree ? '<i class="fas fa-crown premium-crown-icon" style="color:#fbbf24; font-size:0.75rem; margin-left: 6px;"></i>' : ''}</span>
-                                <span class="dropdown-item-desc">Consultas Educativas Especializadas</span>
-                            </div>
-                            <div class="dropdown-item-check"><i class="fas fa-check"></i></div>
-                        </div>
-                    </div>
-
                     <div id="chatbot-messages" class="chatbot-messages">
                         <!-- Mensajes se cargarán aquí -->
                     </div>
-                    <!-- ✅ MEJORA RESPONSIVE: Overlay para cerrar el historial en móvil -->
-                    <div id="chatbot-history-overlay" class="chatbot-history-overlay"></div>
 
                     <div class="chatbot-typing" id="chatbot-typing" style="display: none;">
                         <div class="typing-indicator"><span></span><span></span><span></span></div>
-                        <span>El asistente está escribiendo...</span>
+                        <span>El Asistente Guía está escribiendo...</span>
                     </div>
 
                     <div class="chatbot-input-container">
@@ -140,7 +85,7 @@ class ChatComponent {
                             <!-- Sugerencias se cargarán dinámicamente -->
                         </div>
                         <div class="chatbot-input">
-                            <textarea id="chatbot-input" placeholder="Escribe tu pregunta aquí..." maxlength="5000" rows="1"></textarea>
+                            <textarea id="chatbot-input" placeholder="Pregunta sobre la plataforma..." maxlength="5000" rows="1"></textarea>
                             <button id="chatbot-send" class="chatbot-send">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
@@ -277,41 +222,109 @@ class ChatComponent {
         textarea.placeholder = placeholders[this.specialization] || "Escribe tu pregunta aquí...";
     }
 
-    addWelcomeMessage() {
-        // ✅ CORRECCIÓN: Solo añadir el mensaje de bienvenida si no hay una conversación activa.
-        if (this.messages.length === 0) {
-            const welcomeText = `**¡Hola! Soy tu asistente tutorial.**
-¿En qué te puedo ayudar hoy?`;
-            this.addMessage(welcomeText, 'bot', { isWelcome: true });
+    getVisitorDailyData() {
+        const today = new Date().toISOString().split('T')[0];
+        try {
+            const stored = localStorage.getItem('visitor_general_chat_daily_v1');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed.date === today) {
+                    return parsed;
+                }
+            }
+        } catch (e) {}
+        const newData = { date: today, count: 0 };
+        localStorage.setItem('visitor_general_chat_daily_v1', JSON.stringify(newData));
+        return newData;
+    }
 
-            // ✅ RESTAURADO: Solo 2 preguntas puntuales que la IA entienda bien.
-            const defaultSuggestions = [
-                "¿Qué puedes hacer por mí?",
-                "Ayúdame a estudiar un tema",
-                "Preguntar sobre Medicina o Educación"
-            ];
-            this.showFollowUpSuggestions(defaultSuggestions);
+    incrementVisitorDailyCount() {
+        const data = this.getVisitorDailyData();
+        data.count += 1;
+        localStorage.setItem('visitor_general_chat_daily_v1', JSON.stringify(data));
+        return data.count;
+    }
+
+    setVisitorLockState(isLocked) {
+        const input = document.getElementById('chatbot-input');
+        const sendBtn = document.getElementById('chatbot-send');
+        if (input) {
+            input.disabled = isLocked;
+            input.placeholder = isLocked
+                ? '⚠️ Regístrate gratis para continuar.'
+                : 'Pregunta sobre la plataforma...';
+        }
+        if (sendBtn) {
+            sendBtn.disabled = isLocked;
         }
     }
+
+    resetVisitorChatState() {
+        this.messages = [];
+        const messagesContainer = document.getElementById('chatbot-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '';
+        }
+        this.setVisitorLockState(false);
+        this.addWelcomeMessage();
+    }
+
+    handleChatToggleClick() {
+        const user = window.sessionManager ? window.sessionManager.getUser() : null;
+        const isLogged = !!user;
+
+        // Permitir 2 consultas gratuitas a visitantes. Al 3er intento se bloquea la interacción antes de enviar.
+        if (!isLogged) {
+            const visitorData = this.getVisitorDailyData();
+            if (visitorData.count >= 2) {
+                if (!this.isOpen) {
+                    this.toggleChat();
+                }
+                this.setVisitorLockState(true);
+                if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+                    window.uiManager.showAuthPromptModal();
+                } else if (window.uiManager) {
+                    window.uiManager.showPaywallModal('Límite de 2 consultas de visitante alcanzado. ¡Crea tu cuenta gratis para continuar!', 'chat');
+                }
+                return;
+            }
+        }
+
+        this.toggleChat();
+    }
+
+    addWelcomeMessage() {
+        if (this.messages.length === 0) {
+            const welcomeText = `**¡Hola! Soy tu Asistente Guía de Hub Academia.**
+Te doy la bienvenida. Estoy aquí para resolver tus dudas sobre nuestros simuladores de **SERUMS (Medicina)** y **ASCENSO (Educación)**, planes de suscripción y cómo navegar por la plataforma.`;
+            this.addMessage(welcomeText, 'bot', { isWelcome: true });
+
+            const defaultSuggestions = [
+                "¿Qué ofrece esta plataforma?",
+                "¿Qué simuladores tienen disponibles?",
+                "¿Cuáles son los planes y precios?",
+                "¿Cómo me ayuda a nombrarme/colegiarme?"
+            ];
+            this.showFollowUpSuggestions(defaultSuggestions);
+
+            const user = window.sessionManager ? window.sessionManager.getUser() : null;
+            const isVisitorLocked = !user && this.getVisitorDailyData().count >= 2;
+            this.setVisitorLockState(isVisitorLocked);
+        }
+    }
+
     setupEventListeners() {
         const toggleBtn = document.getElementById('chatbot-toggle');
         const closeBtn = document.getElementById('chatbot-close');
 
         console.log('🔄 Configurando event listeners...');
-        console.log('Toggle button:', toggleBtn);
-        console.log('Close button:', closeBtn);
 
-        // BOTÓN FLOTANTE - Con delegación de eventos más robusta
+        // BOTÓN FLOTANTE - Permitir a visitantes abrir el chat
         if (toggleBtn) {
             toggleBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-
-                // ✅ NUEVO: Soft block para el chat
-                window.uiManager.checkAuthAndExecute(() => {
-                    console.log('🎯 Botón toggle clickeado');
-                    this.toggleChat();
-                });
+                this.handleChatToggleClick();
             });
         }
 
@@ -321,10 +334,7 @@ class ChatComponent {
             bubbleEl.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                window.uiManager.checkAuthAndExecute(() => {
-                    console.log('🎯 Burbuja de invitación clickeada');
-                    this.toggleChat();
-                });
+                this.handleChatToggleClick();
             });
         }
 
@@ -795,6 +805,24 @@ class ChatComponent {
 
         if (!message) return;
 
+        // Control de límite de 2 mensajes para visitantes no autenticados
+        const user = window.sessionManager ? window.sessionManager.getUser() : null;
+        const isLogged = !!user;
+
+        if (!isLogged) {
+            const visitorData = this.getVisitorDailyData();
+            if (visitorData.count >= 2) {
+                input.value = '';
+                this.setVisitorLockState(true);
+                if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+                    window.uiManager.showAuthPromptModal();
+                } else if (window.uiManager) {
+                    window.uiManager.showPaywallModal('Límite de 2 consultas alcanzado. ¡Crea tu cuenta gratis para continuar!', 'chat');
+                }
+                return;
+            }
+        }
+
         console.log('💬 Enviando mensaje:', message);
 
         if (this.isSending) {
@@ -806,7 +834,7 @@ class ChatComponent {
         input.disabled = true;
         document.getElementById('chatbot-send').disabled = true;
 
-        // ✅ TIMEOUT de seguridad (60 segundos). Aumentado para permitir operaciones complejas del LLM (múltiples tool calls).
+        // ✅ TIMEOUT de seguridad (60 segundos)
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => reject(new Error('Timeout: El servidor tardó demasiado en responder')), 60000);
         });
@@ -821,14 +849,18 @@ class ChatComponent {
 
             console.log('📡 Enviando solicitud al servidor...');
 
-            // ✅ FASE III: El historial ya no se envía, solo el ID de la conversación activa.
+            // Extraer los últimos 10 turnos de conversación previa en memoria para mantener la hilación de sesión
+            const historyToSend = this.messages.slice(0, -1).slice(-10).map(msg => ({
+                sender: msg.sender,
+                content: msg.content
+            }));
+
             const requestData = {
                 message: message,
-                conversationId: this.activeConversationId,
-                specialization: this.specialization // ✅ Pasamos la especialidad actual
+                conversationId: 'ephemeral',
+                specialization: 'neutral',
+                history: historyToSend
             };
-
-            console.log('📦 Datos enviados:', requestData);
 
             const fetchPromise = window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat`, {
                 method: 'POST',
@@ -837,28 +869,16 @@ class ChatComponent {
 
             const response = await Promise.race([fetchPromise, timeoutPromise]);
 
-            console.log('📡 Respuesta HTTP recibida:', {
-                status: response.status,
-                statusText: response.statusText,
-                ok: response.ok
-            });
-
             let data;
-
-            // ✅ MEJORA: Leer el cuerpo UNA sola vez para evitar "Body stream already read"
-            // Intentamos parsear JSON, si falla usamos texto, pero guardamos el resultado.
-            const responseClone = response.clone(); // Clonamos por seguridad si necesitamos leer texto plano después
+            const responseClone = response.clone();
             try {
                 data = await response.json();
             } catch (e) {
-                data = null; // No es JSON
+                data = null;
             }
 
             if (!response.ok) {
-
-                // ✅ NUEVO: Manejo de Soft Block (Límite alcanzado)
                 if (response.status === 403) {
-                    // Verificamos si es un error de Paywall (Limit Reached para Nativos/Trials)
                     if (data && data.paywall) {
                         this.hideTypingIndicator();
                         window.uiManager.showPaywallModal();
@@ -866,9 +886,6 @@ class ChatComponent {
                         return;
                     }
 
-                    // ✅ EXCEPCIÓN ELEGANTE PARA LÍMITES DIARIOS (Basic/Advanced)
-                    // Si el backend mandó un mensaje de error limpio por agotamiento, lo lanzamos
-                    // con un identificador especial para que el catch no le ponga "Error HTTP".
                     if (data && data.error) {
                         const limitError = new Error(data.error);
                         limitError.isLimitReached = true;
@@ -880,7 +897,6 @@ class ChatComponent {
                 if (data && data.error) {
                     errorDetails += ` - ${data.error}`;
                 } else {
-                    // Si no pudimos leer JSON, leemos texto del clon
                     const textError = await responseClone.text();
                     errorDetails += ` - ${textError}`;
                 }
@@ -891,21 +907,20 @@ class ChatComponent {
 
             console.log('✅ Respuesta recibida del servidor:', data);
 
-            // ✅ FASE III: Actualizar el ID de la conversación si era una nueva.
-            const wasNewConversation = !this.activeConversationId;
-            this.activeConversationId = data.conversationId;
-
             this.addMessage(data.respuesta, 'bot', { ...data, messageId: data.messageId });
-
-            // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
 
             if (data.sugerencias && data.sugerencias.length > 0) {
                 this.showFollowUpSuggestions(data.sugerencias);
             }
 
-            // Si era una conversación nueva, recargar la lista para que aparezca.
-            if (wasNewConversation) {
-                await this.loadConversations();
+            // Incrementar contador diario de visitante si no está autenticado
+            if (!isLogged) {
+                const newCount = this.incrementVisitorDailyCount();
+
+                // Si se alcanzaron las 2 consultas gratuitas, bloquear suavemente el input para la siguiente interacción
+                if (newCount >= 2) {
+                    this.setVisitorLockState(true);
+                }
             }
 
         } catch (error) {
@@ -1017,28 +1032,16 @@ class ChatComponent {
             `;
         }
 
-        // ✅ NUEVO: Añadir botones de feedback a los mensajes del bot (excepto el de bienvenida).
-        if (sender === 'bot' && !metadata.isWelcome && currentMessageId) {
-            // ✅ SOLUCIÓN: La decisión ahora se basa en la propiedad `is_helpful` que viene del servidor.
-            // Esta puede ser true, false, o null.
+        // Acciones para mensajes del bot (Copiar y Guardar como Nota)
+        if (sender === 'bot' && !metadata.isWelcome) {
             const actionButtons = `
                 <button class="copy-msg-btn" title="Copiar texto" onclick="window.chatbot.copyToClipboard(this)"><i class="far fa-copy"></i></button>
-                <button class="save-note-btn" title="Guardar como nota" data-msg-id="${currentMessageId}"><i class="far fa-bookmark"></i></button>
+                <button class="save-note-btn" title="Guardar como nota" data-msg-id="${currentMessageId || 'ephemeral'}"><i class="far fa-bookmark"></i></button>
             `;
-
-            if (metadata.is_helpful !== null && metadata.is_helpful !== undefined) { // Si el feedback ya fue dado (no es null/undefined)
-                messageHTML += `
-                    <div class="feedback-container" data-message-id="${currentMessageId}">
-                        ${actionButtons}
-                    </div>`;
-            } else {
-                messageHTML += `
-                    <div class="feedback-container" data-message-id="${currentMessageId}">
-                        <button class="feedback-btn" data-helpful="true" title="Respuesta útil">👍</button>
-                        <button class="feedback-btn" data-helpful="false" title="Respuesta no útil">👎</button>
-                        ${actionButtons}
-                    </div>`;
-            }
+            messageHTML += `
+                <div class="feedback-container">
+                    ${actionButtons}
+                </div>`;
         }
 
         messageDiv.innerHTML = messageHTML;
@@ -1139,184 +1142,6 @@ class ChatComponent {
     hideNotification() {
         const notification = document.getElementById('chatbot-notification');
         notification.style.display = 'none';
-    }
-
-    // --- ✅ FASE III: NUEVOS MÉTODOS PARA GESTIONAR EL HISTORIAL ---
-
-    async loadConversations() {
-        if (!window.sessionManager.isLoggedIn()) return;
-
-        try {
-            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat/conversations`);
-            if (!response.ok) throw new Error('No se pudo cargar el historial.');
-
-            this.conversations = await response.json();
-            this.renderConversationList();
-
-            // Si no hay una conversación activa, iniciar una nueva o seleccionar la más reciente.
-            if (!this.activeConversationId && this.conversations.length > 0) {
-                this.switchConversation(this.conversations[0].id);
-            } else if (!this.activeConversationId) {
-                this.startNewConversation();
-            }
-
-        } catch (error) {
-            console.error("Error cargando conversaciones:", error);
-        }
-    }
-
-    renderConversationList() {
-        const listContainer = document.getElementById('conversation-list');
-        if (!listContainer) return;
-
-        if (this.conversations.length === 0) {
-            listContainer.innerHTML = '<p class="no-history">No hay chats guardados.</p>';
-            return;
-        }
-
-        listContainer.innerHTML = this.conversations.map(conv => `
-            <div class="conversation-item ${conv.id == this.activeConversationId ? 'active' : ''}" data-id="${conv.id}">
-                <i class="fas fa-comment-dots"></i>
-                <span class="conversation-title">${escapeHtml(conv.title)}</span>
-                <div class="conversation-actions">
-                    <button class="edit-conversation-btn" aria-label="Editar título"><i class="fas fa-pen"></i></button>
-                    <button class="delete-conversation-btn" aria-label="Eliminar chat"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    enableTitleEditing(conversationItem) {
-        const conversationId = conversationItem.dataset.id;
-        const titleSpan = conversationItem.querySelector('.conversation-title');
-        const currentTitle = titleSpan.textContent;
-
-        // Reemplazar el span con un input
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = currentTitle;
-        input.className = 'conversation-title-input';
-
-        titleSpan.replaceWith(input);
-        input.focus();
-        input.select();
-
-        const saveChanges = async () => {
-            const newTitle = input.value.trim();
-            // Revertir a un span, incluso si no hay cambios.
-            const newTitleSpan = document.createElement('span');
-            newTitleSpan.className = 'conversation-title';
-
-            if (newTitle && newTitle !== currentTitle) {
-                newTitleSpan.textContent = newTitle; // Vista optimista
-                input.replaceWith(newTitleSpan);
-                await this.updateConversationTitle(conversationId, newTitle);
-            } else {
-                // Si no hay cambios o el título está vacío, restaurar el original.
-                newTitleSpan.textContent = currentTitle;
-                input.replaceWith(newTitleSpan);
-            }
-        };
-
-        input.addEventListener('blur', saveChanges);
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                input.blur(); // Dispara el evento blur para guardar.
-            }
-        });
-    }
-
-    async updateConversationTitle(conversationId, newTitle) {
-        try {
-            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`, {
-                method: 'PUT',
-                body: JSON.stringify({ title: newTitle })
-            });
-
-            if (!response.ok) throw new Error('No se pudo actualizar el título.');
-
-            // Actualizar el estado local
-            const convIndex = this.conversations.findIndex(c => c.id == conversationId);
-            if (convIndex !== -1) {
-                this.conversations[convIndex].title = newTitle;
-            }
-            // No es necesario re-renderizar toda la lista, ya que lo hicimos de forma optimista.
-        } catch (error) {
-            console.error("Error actualizando título:", error);
-            // Opcional: Revertir el cambio en la UI si falla la API.
-            this.renderConversationList(); // Re-renderizar para mostrar el título antiguo.
-        }
-    }
-
-    async handleDeleteConversation(conversationId) {
-        // Fallback robusto nativo si confirmationModal no está disponible
-        let isConfirmed = false;
-        if (window.confirmationModal && typeof window.confirmationModal.show === 'function') {
-            isConfirmed = await window.confirmationModal.show('¿Estás seguro de que quieres eliminar este chat? Esta acción no se puede deshacer.', 'Eliminar Chat', 'Eliminar', 'Cancelar');
-        } else {
-            isConfirmed = confirm('¿Estás seguro de que quieres eliminar este chat?');
-        }
-
-        if (!isConfirmed) return;
-
-        try {
-            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`, {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) throw new Error('No se pudo eliminar la conversación.');
-
-            // Eliminar la conversación del estado local
-            this.conversations = this.conversations.filter(c => c.id != conversationId);
-
-            // Si la conversación eliminada era la activa, iniciar una nueva.
-            if (this.activeConversationId == conversationId) {
-                this.startNewConversation();
-            } else {
-                // Si no, simplemente re-renderizar la lista.
-                this.renderConversationList();
-            }
-
-        } catch (error) {
-            console.error("Error eliminando conversación:", error);
-            alert('Hubo un error al intentar eliminar el chat.');
-        }
-    }
-
-
-
-    async switchConversation(conversationId) {
-        if (this.activeConversationId == conversationId) return;
-
-        this.activeConversationId = conversationId;
-        this.messageIdCounter = 0; // Reset counter for new conversation
-        const messagesContainer = document.getElementById('chatbot-messages');
-        messagesContainer.innerHTML = '<div class="loading-state">Cargando chat...</div>';
-
-        try {
-            const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat/conversations/${conversationId}`);
-            if (!response.ok) throw new Error('No se pudo cargar la conversación.');
-
-            this.messages = await response.json();
-            messagesContainer.innerHTML = '';
-            this.messages.forEach(msg => this.addMessage(msg.content, msg.sender, msg));
-            this.renderConversationList(); // Re-renderizar para marcar la activa
-
-        } catch (error) {
-            console.error("Error cambiando de conversación:", error);
-            messagesContainer.innerHTML = '<p class="error-state">Error al cargar el chat.</p>';
-        }
-    }
-
-    startNewConversation() {
-        this.activeConversationId = null;
-        this.messages = [];
-        this.messageIdCounter = 0; // Reset counter for new conversation
-        const messagesContainer = document.getElementById('chatbot-messages');
-        messagesContainer.innerHTML = '';
-        this.addWelcomeMessage();
-        this.renderConversationList(); // Re-renderizar para desmarcar la activa
-        document.getElementById('chatbot-input').focus();
     }
 
     async copyToClipboard(btn) {

@@ -13,8 +13,7 @@ class AnalyticsRepository {
     }
 
     async getFeedback() {
-        const { rows } = await db.query('SELECT query, response, is_helpful, created_at FROM feedback');
-        return rows;
+        return [];
     }
 
     /**
@@ -110,16 +109,12 @@ class AnalyticsRepository {
     }
 
     async isMessageExists(messageId) {
-        const { rows } = await db.query('SELECT 1 FROM chat_messages WHERE id = $1', [messageId]);
-        return rows.length > 0;
+        return false;
     }
 
     async recordFeedbackFromService(queryText, response, isHelpful, userId, messageId) {
-        const query = `
-            INSERT INTO feedback(query, response, is_helpful, user_id, message_id)
-            VALUES($1, $2, $3, $4, $5)
-        `;
-        await db.query(query, [queryText, response, isHelpful, userId, messageId]);
+        // Obsoleto: tabla feedback eliminada
+        return;
     }
 
     async logPulse(sessionId, userId, isMobile) {
@@ -153,17 +148,14 @@ class AnalyticsRepository {
             `SELECT COUNT(*) FROM search_history WHERE source = 'search_bar' AND ${dateFilter}`,
             `SELECT COUNT(*) FROM search_history WHERE source = 'chatbot' AND ${dateFilter}`,
             `SELECT COUNT(*) FROM search_history WHERE is_educational_query = TRUE AND ${dateFilter}`,
-            `SELECT COUNT(*) FROM feedback WHERE ${dateFilter}`,
-            `SELECT COUNT(*) FROM feedback WHERE is_helpful = TRUE AND ${dateFilter}`,
+            `SELECT 0 AS count`,
+            `SELECT 0 AS count`,
             `
                 SELECT COUNT(DISTINCT user_id) 
-                FROM (
-                    SELECT user_id FROM search_history WHERE ${dateFilter} AND user_id IS NOT NULL
-                    UNION
-                    SELECT user_id FROM conversations WHERE updated_at >= NOW() - INTERVAL '${days} days' AND user_id IS NOT NULL 
-                ) AS active_users;
+                FROM search_history 
+                WHERE ${dateFilter} AND user_id IS NOT NULL;
             `,
-            `SELECT COUNT(*) FROM chat_messages WHERE ${dateFilter}`,
+            `SELECT 0 AS count`,
             `
                 SELECT query, COUNT(*) as count 
                 FROM search_history 
@@ -281,12 +273,8 @@ class AnalyticsRepository {
 
     async getAnalyticsForMLRaw(days) {
         const querySearch = `SELECT query, results_count, created_at FROM search_history WHERE created_at >= NOW() - INTERVAL '${days} days' ORDER BY created_at DESC LIMIT 50000`;
-        const queryFeedback = `SELECT query, response, is_helpful, created_at FROM feedback WHERE created_at >= NOW() - INTERVAL '${days} days' ORDER BY created_at DESC LIMIT 10000`;
-        const [searchHistoryRes, feedbackRes] = await Promise.all([
-            db.query(querySearch),
-            db.query(queryFeedback)
-        ]);
-        return { searchHistory: searchHistoryRes.rows, feedback: feedbackRes.rows };
+        const searchHistoryRes = await db.query(querySearch);
+        return { searchHistory: searchHistoryRes.rows, feedback: [] };
     }
 
     async logAIInteractionRaw(query, intentType, eventType, userId) {
@@ -325,8 +313,7 @@ class AnalyticsRepository {
     }
 
     async getAllFeedbackRaw() {
-        const res = await db.query('SELECT * FROM feedback ORDER BY created_at DESC');
-        return res.rows;
+        return [];
     }
 
     async getHeatmapDataRaw(userId) {

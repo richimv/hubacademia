@@ -111,6 +111,9 @@ const elements = {
 window.showExamReview = async function () {
     console.log("🚀 Iniciando renderizado de revisión...");
     cancelCurrentScroll();
+    if (window.quizTutor) window.quizTutor.toggle(false);
+    const tutorBtn = document.getElementById('btn-open-quiz-tutor');
+    if (tutorBtn) tutorBtn.style.display = 'none';
     try {
         const resOverlay = document.getElementById('resultsOverlay');
         if (resOverlay) resOverlay.classList.remove('active');
@@ -1234,6 +1237,9 @@ function showNetworkRetryOverlay() {
 
 async function finishQuiz() {
     clearInterval(timerInterval);
+    if (window.quizTutor) window.quizTutor.toggle(false);
+    const tutorBtn = document.getElementById('btn-open-quiz-tutor');
+    if (tutorBtn) tutorBtn.style.display = 'none';
 
     // Calcular Score Visual
     const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';

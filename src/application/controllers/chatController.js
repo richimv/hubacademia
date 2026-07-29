@@ -35,9 +35,9 @@ class ChatController {
             console.log('💬 ChatController.processMessage iniciado');
 
             // ✅ FASE II: Extraer datos del request (incluyendo resourceId si lo envía el asistente de voz/chat)
-            const { message, specialization = 'medicine', context, ephemeral = false, resourceId = null } = req.body;
-            let { conversationId } = req.body; // 'let' porque puede ser creado.
-            const userId = req.user.id; // Obtenido del token JWT.
+            const { message, specialization = 'neutral', context, ephemeral = true, resourceId = null } = req.body;
+            let { conversationId } = req.body;
+            const userId = req.user ? req.user.id : null; // Soporte para visitantes no autenticados
 
             if (!message || message.trim() === '') {
                 return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
@@ -67,33 +67,18 @@ class ChatController {
 
             console.log(`💬 Procesando mensaje (${finalSpecialization}):`, message.substring(0, 60));
 
-            if (!this.analyticsService) {
-                console.error('❌ ERROR CRÍTICO: analyticsService no está disponible');
-            }
+            // ✅ EL CHAT GENERAL ES 100% EFÍMERO (VOLÁTIL)
+            // Solo los tutores de examen/flashcards pueden recibir historial de sesión en memoria
+            const isQuizTutor = context && context.type === 'quiz_tutor';
+            const isFlashcardTutor = context && context.type === 'flashcard_tutor';
+            const isEphemeral = true; // El chat general ya NO se guarda en PostgreSQL/Supabase
 
-            // ✅ SOPORTE PARA CHAT VOLÁTIL (EFÍMERO)
-            const isEphemeral = ephemeral || (context && context.type === 'flashcard_tutor');
-            let conversationHistory = [];
+            console.log('⚡ MODO EFÍMERO: Procesando mensaje en memoria de sesión.');
+            conversationId = conversationId || 'ephemeral';
+            const conversationHistory = req.body.history || [];
 
-            if (!isEphemeral) {
-                // --- ✅ FASE II: LÓGICA DE PERSISTENCIA DEL CHAT ---
-                // 1. Si es un mensaje nuevo, crear la conversación en la BD.
-                if (!conversationId) {
-                    const title = message.substring(0, 50) + (message.length > 50 ? '...' : '');
-                    const newConversation = await this.chatService.chatRepository.createConversation(userId, title);
-                    conversationId = newConversation.id;
-                }
-
-                // 2. Guardar el mensaje del usuario en la BD.
-                await this.chatService.chatRepository.addMessage(conversationId, 'user', message);
-
-                // 3. Obtener el historial COMPLETO desde la BD para dar contexto a la IA.
-                conversationHistory = await this.chatService.chatRepository.getMessagesByConversationId(conversationId, userId);
-            } else {
-                console.log('⚡ MODO EFÍMERO: Usando historial de sesión enviado por el cliente.');
-                conversationId = 'ephemeral';
-                conversationHistory = req.body.history || [];
-            }
+            // RAG solo se activa para Quiz Tutor en exámenes (para usuarios Advanced/Admin con cuota)
+            const hasRAGAccess = isQuizTutor ? (req.useRag !== undefined ? req.useRag : (req.userTier === 'advanced' || req.userTier === 'admin')) : false;
 
             // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE FLASHCARDS (General & Versátil)
             let processedMessage = message;
@@ -137,8 +122,6 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
                 console.log('🧠 Quiz Tutor Context (Simulador Mode) Injected');
             }
 
-            const hasRAGAccess = req.useRag !== undefined ? req.useRag : (req.userTier === 'advanced' || req.userTier === 'admin');
-
             // --- ✅ FASE III: PROCESAMIENTO IA (V6 - TutorAiService) ---
             let aiResult;
             try {
@@ -169,33 +152,32 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
                 botMessage = await this.chatService.chatRepository.addMessage(conversationId, 'bot', response.respuesta);
             }
 
-            // 5. REGISTRAR EN ANALYTICS (Lógica original)
-            if (this.analyticsService) {
-                // ✅ REFACTOR: Usar clasificación centralizada basada en CONTENIDO
+            // 5. REGISTRAR EN ANALYTICS (Solo si hay usuario autenticado)
+            if (this.analyticsService && userId) {
                 const isEducational = this.analyticsService.isQueryEducational(message);
 
                 await this.analyticsService.recordSearchWithIntent(
                     message,
-                    [], // No hay "resultados" directos en una conversación de chat
+                    [],
                     isEducational,
-                    userId, 'chatbot' // ✅ MEJORA: Especificar que la fuente es el chatbot.
-                );
+                    userId, 'chatbot'
+                ).catch(err => console.warn("⚠️ Analytics error:", err.message));
             }
 
-            // 6. ACTUALIZAR LÍMITES DE USO IA (Cobro de 2 Vidas por RAG)
-            try {
-                if (req.usageType === 'usage_count') {
-                    // Si usa RAG, cuesta 2 vidas. Si no (como idiomas o flashcards sin RAG), cuesta 1 vida.
-                    const cost = req.cost || (hasRAGAccess ? 2 : 1);
-                    await this.usageService.checkAndIncrementUsage(userId, cost);
-                    console.log(`📉 Límite de usage_count incrementado (+${cost}) para usuario ${userId}.`);
-                } else if (req.usageType) {
-                    // Para otros límites (daily_ai_usage), cobro normal de 1
-                    const pool = require('../../infrastructure/database/db');
-                    await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);
+            // 6. ACTUALIZAR LÍMITES DE USO IA (Solo si aplica cobro y hay usuario autenticado)
+            if (userId && req.usageType) {
+                try {
+                    if (req.usageType === 'usage_count') {
+                        const cost = req.cost || (hasRAGAccess ? 2 : 1);
+                        await this.usageService.checkAndIncrementUsage(userId, cost);
+                        console.log(`📉 Límite de usage_count incrementado (+${cost}) para usuario ${userId}.`);
+                    } else if (req.usageType) {
+                        const pool = require('../../infrastructure/database/db');
+                        await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);
+                    }
+                } catch (limitErr) {
+                    console.error("⚠️ No se pudo actualizar el límite del usuario:", limitErr.message);
                 }
-            } catch (limitErr) {
-                console.error("⚠️ No se pudo actualizar el límite del usuario:", limitErr.message);
             }
 
             console.log('✅ Respuesta generada exitosamente');

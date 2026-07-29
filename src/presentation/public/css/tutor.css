@@ -157,10 +157,9 @@
     padding: 12px 16px;
     border-radius: 14px;
     font-size: 0.95rem;
-    line-height: 1.5;
+    line-height: 1.6;
     position: relative;
     animation: message-in 0.3s ease-out forwards;
-    white-space: pre-wrap;
     word-break: break-word;
     text-align: left;
 }
@@ -173,10 +172,6 @@
     background-clip: text; /* ✅ Propiedad estándar */
     -webkit-text-fill-color: transparent;
 }
-
-/* ✅ Markdown code/pre → Centralizado en markdown-content.css
-   Solo la regla de strong con gradiente se mantiene aquí por ser exclusiva del tutor. */
-
 
 @keyframes message-in {
     from { opacity: 0; transform: translateY(10px); }
@@ -196,6 +191,47 @@
     color: var(--tutor-text);
     border-bottom-left-radius: 4px;
     border: 1px solid var(--tutor-border);
+    max-width: 95%;
+}
+
+/* ✅ PANTALLA COMPLETA EN PC/DESKTOP PARA TUTOR IA (QUIZ Y REPASO) */
+.tutor-chat-panel.chat-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 999999 !important;
+}
+
+.tutor-chat-panel.chat-fullscreen .tutor-message {
+    max-width: 92%;
+}
+
+.tutor-expand-btn {
+    background: transparent;
+    border: none;
+    color: var(--tutor-text-muted, rgba(255, 255, 255, 0.6));
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.tutor-expand-btn:hover {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.15);
 }
 
 /* Acciones de Mensaje (Guardar Nota) */

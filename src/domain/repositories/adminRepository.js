@@ -48,7 +48,7 @@ class AdminRepository {
             db.query('SELECT COUNT(*) as count FROM users'),
             db.query("SELECT COUNT(*) as count FROM users WHERE subscription_status = 'active'"),
             db.query('SELECT COUNT(*) as count FROM search_history'),
-            db.query('SELECT COUNT(*) as count FROM chat_messages'),
+            db.query('SELECT 0 as count'),
             db.query(`SELECT c.name, COUNT(*) as visits FROM page_views pv JOIN courses c ON pv.entity_id = c.id WHERE pv.entity_type = 'course' GROUP BY c.name ORDER BY visits DESC LIMIT 5`),
             db.query(`
                 SELECT 

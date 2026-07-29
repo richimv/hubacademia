@@ -321,12 +321,11 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
 
             let systemPrompt = chatPrompts.buildPrompt(specialization, target, contextConImagenes);
 
-            // 4. Formatear historial para Gemini (limpiando cualquier base64 remanente para evitar inflar el contexto)
             const contents = history.map(h => {
                 const text = h.content || '';
                 const cleanedText = text.replace(/data:(image\/[a-z0-9-+.]+);base64,([a-zA-Z0-9+/=\s\r\n]+?)(?=["'\s\)])/gi, '[Imagen]');
                 return {
-                    role: h.role === 'user' ? 'user' : 'model',
+                    role: (h.role === 'user' || h.sender === 'user') ? 'user' : 'model',
                     parts: [{ text: cleanedText }]
                 };
             });

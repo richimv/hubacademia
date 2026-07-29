@@ -49,9 +49,15 @@ El sistema gestiona una arquitectura de apoyo visual proactivo y especializado:
 - **Tablas Proactivas:** Capacidad universal (todos los dominios) para generar tablas comparativas y cuadros sinópticos en Markdown para estructurar información técnica.
 - **Renderizado Premium:** Procesador DOM en `markdown-renderer.js` que envuelve tablas en wrappers responsivos y resuelve URLs de GCS mediante el proxy `/api/media/gcs`.
 
-### D. Asistente Neutro (`neutral`)
-- **Namespace:** N/A (sin RAG).
-- **Rol:** Asistente inteligente versátil para consultas generales.
+### D. Asistente Guía Hub Academia (`neutral`)
+- **Namespace:** N/A (100% sin RAG en Pinecone para máximo rendimiento y cero costos vectoriales).
+- **Rol:** Anfitrión y Asistente Guía de Navegación y Soporte de Hub Academia.
+- **Enfoque Académico Oficial:** Exclusivo para **SERUMS** (Medicina) y **ASCENSO** (Educación Magisterial).
+- **Persistencia en BD:** 100% Volátil / Efímero. No realiza escrituras en las tablas `conversations` o `chat_messages` de PostgreSQL/Supabase, manteniendo la base de datos libre de registros irrelevantes.
+- **Soporte para Visitantes (No Autenticados):**
+  - Acceso libre hasta **3 consultas de prueba**.
+  - Píldoras de preguntas rápidas predefinidas: *"¿Qué ofrece esta plataforma?"*, *"¿Qué simuladores tienen disponibles?"*, *"¿Cuáles son los planes y precios?"*, *"¿Cómo me ayuda a nombrarme/colegiarme?"*.
+  - Al 3er mensaje, despliega la modal de inicio de sesión/registro (`showAuthPromptModal`) y bloquea el input invitando al visitante a crear su cuenta gratuita.
 
 ### E. Tutor de Flashcards (`flashcard_tutor`)
 - **Namespace:** N/A (sin RAG, modo efímero).

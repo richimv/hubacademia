@@ -33,28 +33,8 @@ class AnalyticsService {
     }
 
     async recordFeedback(query, response, isHelpful, userId = null, messageId = null) {
-        try {
-            if (messageId) {
-                const parsedMessageId = parseInt(messageId, 10);
-                if (isNaN(parsedMessageId)) {
-                    console.warn(`⚠️ No se puede registrar el feedback: message_id "${messageId}" no es un número válido.`);
-                    return;
-                }
-                const exists = await this.analyticsRepo.isMessageExists(parsedMessageId);
-                if (!exists) {
-                    console.warn(`⚠️ No se puede registrar el feedback: message_id ${parsedMessageId} no existe en la tabla chat_messages.`);
-                    return;
-                }
-                messageId = parsedMessageId;
-            } else {
-                console.warn(`⚠️ No se puede registrar el feedback: message_id no proporcionado.`);
-                return;
-            }
-
-            await this.analyticsRepo.recordFeedbackFromService(query, response, isHelpful, userId, messageId);
-        } catch (error) {
-            console.error('❌ Error al registrar el feedback en la base de datos:', error);
-        }
+        // Obsoleto: Chat General es efímero y la tabla feedback fue eliminada.
+        return;
     }
 
     async recordView(entityType, entityId, userId) {

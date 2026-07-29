@@ -969,11 +969,6 @@ window.UIComponents.createReviewCardHTML = function (config) {
             <strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>
             ${expTextHTML}
             ${expImageHTML}
-            <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
-                <button class="btn-tutor-ai-action" onclick="window.openQuizTutorForReview(${index})" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0.5rem 1rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 8px; color: #a5b4fc; font-family: inherit; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);">
-                    <i class="fas fa-robot"></i> Consultar Tutor IA
-                </button>
-            </div>
         </div>
     </div>`;
 };

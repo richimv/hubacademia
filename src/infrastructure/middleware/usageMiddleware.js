@@ -8,7 +8,12 @@ const usageService = new UsageService();
  */
 const usageMiddleware = async (req, res, next) => {
     try {
-        const userId = req.user.id; // Asumimos que authMiddleware ya populó req.user
+        // 🛡️ OMITIR CONTADORES PARA VISITANTES NO AUTENTICADOS
+        if (!req.user) {
+            return next();
+        }
+
+        const userId = req.user.id;
 
         // 🛡️ OMITIR CONTADORES PARA CONSULTAS EFÍMERAS / TUTOR DE FLASHCARDS
         const isEphemeral = req.body && (req.body.ephemeral === true || (req.body.context && req.body.context.type === 'flashcard_tutor'));

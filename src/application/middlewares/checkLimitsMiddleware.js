@@ -9,6 +9,14 @@ const { LIMITS } = require('../../infrastructure/config/limits');
 const checkAILimits = (type) => {
     return async (req, res, next) => {
         try {
+            // Permitir que visitantes no autenticados usen el Chat Guía (efímero, sin RAG)
+            if (!req.user) {
+                req.useRag = false;
+                req.userTier = 'free';
+                req.usageType = null;
+                return next();
+            }
+
             const userId = req.user.id;
 
             // Obtener estado completo del usuario actual

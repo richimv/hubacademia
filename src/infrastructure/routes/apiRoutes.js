@@ -84,7 +84,7 @@ router.delete('/auth/delete-account', auth, authController.deleteAccount);
 
 // --- Rutas de Chat (Prefijo /api/chat) ---
 // SE AGREGA checkAILimits('chat_standard') ANTES DE PROCESS MESSAGE
-router.post('/chat', auth, usageMiddleware, checkAILimits('chat_standard'), chatController.processMessage); // ✅ Middleware aplicado
+router.post('/chat', optionalAuth, checkAILimits('chat_standard'), chatController.processMessage); // ✅ Permite visitantes (Asistente Guía Efímero)
 router.get('/chat/conversations', auth, chatController.getUserConversations);
 router.get('/chat/conversations/:id', auth, chatController.getConversationMessages);
 router.put('/chat/conversations/:id', auth, chatController.updateConversationTitle);

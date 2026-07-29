@@ -36,7 +36,12 @@ class QuizTutor {
                     <i class="fas fa-robot tutor-robot-icon"></i>
                     <span>Tutor de Apoyo IA</span>
                 </div>
-                <button id="quiz-tutor-close" class="tutor-close-btn">&times;</button>
+                <div class="tutor-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
+                    <button id="quiz-tutor-expand" class="tutor-expand-btn" aria-label="Pantalla completa" title="Pantalla completa">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button id="quiz-tutor-close" class="tutor-close-btn" aria-label="Cerrar">&times;</button>
+                </div>
             </div>
             <div id="quiz-tutor-messages" class="tutor-messages-area">
                 <!-- Mensajes inyectados dinámicamente -->
@@ -55,6 +60,7 @@ class QuizTutor {
             messages: document.getElementById('quiz-tutor-messages'),
             input: document.getElementById('quiz-tutor-input'),
             send: document.getElementById('quiz-tutor-send'),
+            expand: document.getElementById('quiz-tutor-expand'),
             close: document.getElementById('quiz-tutor-close')
         };
     }
@@ -62,6 +68,23 @@ class QuizTutor {
     _bindEvents() {
         this.dom.close.onclick = () => this.toggle(false);
         this.dom.send.onclick = () => this.sendMessage();
+
+        if (this.dom.expand) {
+            this.dom.expand.onclick = () => this.toggleFullScreen();
+        }
+
+        // Delegación de clic en imágenes para visor inmersivo
+        if (this.dom.messages) {
+            this.dom.messages.addEventListener('click', (e) => {
+                const img = e.target.closest('img');
+                if (img && this.dom.messages.contains(img)) {
+                    const ui = window.uiManager || (window.parent && window.parent.uiManager);
+                    if (ui && typeof ui.showMediaViewer === 'function') {
+                        ui.showMediaViewer(img.src, img.alt || 'Visualizando imagen del tutor');
+                    }
+                }
+            });
+        }
 
         // Soporte para enviar con Enter (Shift + Enter para nueva línea)
         this.dom.input.addEventListener('keydown', (e) => {
@@ -77,6 +100,32 @@ class QuizTutor {
             this.dom.input.style.height = 'auto';
             this.dom.input.style.height = (this.dom.input.scrollHeight) + 'px';
         });
+    }
+
+    toggleFullScreen() {
+        this.isFullScreen = !this.isFullScreen;
+        const panel = this.dom.panel;
+        const expandBtn = this.dom.expand;
+        if (!panel || !expandBtn) return;
+        const icon = expandBtn.querySelector('i');
+
+        if (this.isFullScreen) {
+            panel.classList.add('chat-fullscreen');
+            if (icon) {
+                icon.classList.remove('fa-expand');
+                icon.classList.add('fa-compress');
+            }
+            document.body.style.overflow = 'hidden';
+            expandBtn.setAttribute('title', 'Restaurar ventana');
+        } else {
+            panel.classList.remove('chat-fullscreen');
+            if (icon) {
+                icon.classList.remove('fa-compress');
+                icon.classList.add('fa-expand');
+            }
+            document.body.style.overflow = '';
+            expandBtn.setAttribute('title', 'Pantalla completa');
+        }
     }
 
     getSpecialization() {
