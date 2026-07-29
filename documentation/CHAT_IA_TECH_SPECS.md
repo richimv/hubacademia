@@ -53,16 +53,17 @@ El sistema gestiona una arquitectura de apoyo visual proactivo y especializado:
 - **Namespace:** N/A (100% sin RAG en Pinecone para máximo rendimiento y cero costos vectoriales).
 - **Rol:** Anfitrión y Asistente Guía de Navegación y Soporte de Hub Academia.
 - **Enfoque Académico Oficial:** Exclusivo para **SERUMS** (Medicina) y **ASCENSO** (Educación Magisterial).
-- **Persistencia en BD:** 100% Volátil / Efímero. No realiza escrituras en las tablas `conversations` o `chat_messages` de PostgreSQL/Supabase, manteniendo la base de datos libre de registros irrelevantes.
+- **Persistencia en BD:** 100% Volátil / Efímero. No realiza escrituras en base de datos. Las tablas `conversations`, `chat_messages` y `feedback` han sido completamente eliminadas/purgadas de PostgreSQL/Supabase.
 - **Soporte para Visitantes (No Autenticados):**
-  - Acceso libre hasta **3 consultas de prueba**.
+  - Acceso libre de hasta **2 consultas gratuitas por día** (gestionado en `localStorage` mediante `visitor_general_chat_daily_v1`).
   - Píldoras de preguntas rápidas predefinidas: *"¿Qué ofrece esta plataforma?"*, *"¿Qué simuladores tienen disponibles?"*, *"¿Cuáles son los planes y precios?"*, *"¿Cómo me ayuda a nombrarme/colegiarme?"*.
-  - Al 3er mensaje, despliega la modal de inicio de sesión/registro (`showAuthPromptModal`) y bloquea el input invitando al visitante a crear su cuenta gratuita.
+  - Al 3er intento de consulta, bloquea el campo de texto con el mensaje `"Límite de consultas alcanzado. Regístrate gratis para continuar."` y abre la modal de inicio de sesión/registro (`showAuthPromptModal`).
 
-### E. Tutor de Flashcards (`flashcard_tutor`)
-- **Namespace:** N/A (sin RAG, modo efímero).
-- **Rol:** Tutor contextual que expande el conocimiento de la flashcard activa.
+### E. Tutor de Flashcards y Repaso (`flashcard_tutor`)
+- **Namespace:** `medicine` / `education` (según contexto activo).
+- **Rol:** Tutor contextual RAG que profundiza la tarjeta flashcard activa.
 - **Comportamiento:** Recibe `front`, `back` y `topic` como contexto inyectado.
+- **Interacción y Pantalla Completa:** Soporta visualización en modo compacto o pantalla completa en escritorio (PC) mediante `.tutor-chat-panel.chat-fullscreen`.
 
 ## 4. Flujo de Procesamiento RAG
 1. **Routing:** El controlador detecta la especialidad enviada desde la UI.
@@ -275,18 +276,21 @@ Para guiar al usuario e invitarlo a interactuar con el Tutor IA de manera amigab
 ---
 
 ## 14. Tutor de Simulador de Examen (Quiz Tutor)
-- **Archivos:** [quiz-tutor.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz-tutor.js) (cliente), [quiz.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/quiz.html) y [quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js).
-- **Modo:** Efímero con envío de historial de sesión por cliente (`history`) y desactivación de la persistencia relacional en BD.
-- **Acceso:** Se habilita únicamente una vez que el usuario ha respondido la pregunta activa (es decir, tras hacer clic en una opción y mostrarse el botón Siguiente en modos de 10 o 20 preguntas). En el examen Simulacro Real (100 preguntas), se bloquea el tutor interactivo durante la ejecución para evitar trampas, habilitándose en su lugar de forma proactiva al final en cada una de las tarjetas de la pantalla de corrección/revisión.
+- **Archivos:** [quiz-tutor.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz-tutor.js) (cliente), [quiz.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/quiz.html), [quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js) y [components.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/components.js).
+- **Modo:** Efímero con envío de historial de sesión por cliente (`history`) y cero escrituras relacionales en BD.
+- **Flujo de Acceso e Interfaz de Examen**:
+  - **Durante el Examen (Modos 10q y 20q)**: Se habilita únicamente una vez que el usuario ha respondido la pregunta activa (tras hacer clic en una opción y desplegarse el botón Siguiente).
+  - **En Simulacros Reales (100 preguntas)**: Se deshabilita durante la ejecución para preservar las condiciones de evaluación oficial.
+  - **En Culminación y Revisión de Examen (`showExamReview`)**: El botón de Tutor IA se **remueve/oculta por completo** de las tarjetas de corrección de preguntas y de la interfaz final. Cada pregunta en la fase de revisión ya exhibe su explicación técnica y sustento oficial directamente, evitando redundancia.
+- **Modo Pantalla Completa en Escritorio (PC)**:
+  - Integra la clase `.tutor-chat-panel.chat-fullscreen` accionada por el botón `#quiz-tutor-expand`, permitiendo expandir la ventana a `100vw x 100vh` en PC para la lectura cómoda de tablas comparativas y esquemas técnicos.
 - **Contexto RAG de Alta Fidelidad:**
-  - El frontend captura los metadatos de la pregunta en curso (enunciado, opciones de respuesta, opción correcta, opción elegida por el usuario, resultado de acierto/error, explicación oficial, tema técnico y examen objetivo) y los transmite estructuradamente en el campo `context` del request con el tipo `quiz_tutor`.
-  - El backend (`chatController.js`) detecta este contexto e inyecta dinámicamente un prompt estructurado al modelo Gemini 2.5 Flash Lite.
-  - Se activa el RAG semántico consultando Pinecone en el namespace respectivo (`medicine` o `education`) utilizando la pregunta y los temas técnicos de la misma para alimentar las respuestas con bases de datos y normas oficiales de alta especialización.
+  - El cliente captura los metadatos de la pregunta en curso (enunciado, opciones de respuesta, opción correcta, opción elegida por el usuario, resultado de acierto/error, explicación oficial, tema técnico y examen objetivo) y los transmite en el campo `context` con tipo `quiz_tutor`.
+  - El backend (`chatController.js`) detecta este contexto e inyecta dinámicamente el prompt al modelo Gemini 2.5 Flash Lite.
+  - Activa RAG semántico consultando Pinecone en el namespace correspondiente (`medicine` o `education`) basándose en la pregunta y temas técnicos.
 - **Monetización y Límites:**
-  - Se han erradicado los vacíos legales del bypass `isEphemeral`. Las consultas del tutor de flashcards y de simulador se controlan y debitan estrictamente:
-    - **Usuarios Free/Pending:** Consume exactamente 1 vida del pool global de 20 vidas. Las consultas se realizan estrictamente sin RAG (modo estándar) para minimizar costos de API.
-    - **Usuarios Active (Basic/Advanced):** Se incrementa el contador de uso diario respectivo (`daily_ai_usage` o `daily_rag_usage`), bloqueando el acceso en el middleware si superan la cuota asignada.
+  - **Usuarios Free/Pending:** Consumen 1 vida global (`usage_count`) por consulta.
+  - **Usuarios Active (Basic/Advanced):** Incrementan la cuota diaria (`daily_ai_usage` / `daily_rag_usage`), bloqueando el acceso en el middleware de cuota si se excede el límite asignado.
 
 ---
-*Última actualización: 9 de julio de 2026 (Depreciación y remoción del Asistente de Voz / Audio Assistant)*
-
+*Última actualización: 29 de julio de 2026 (Actualización de arquitectura efímera del Chat Guía, Tutores contextuales RAG y remoción de tutor en revisión de exámenes)*

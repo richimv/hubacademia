@@ -331,9 +331,20 @@ Para optimizar el flujo de usuarios al realizar simulacros y evitar conflictos d
 
 ---
 
-## 14. Chat de Apoyo IA para Análisis Casuístico (Julio 2026)
-Para profundizar en el estudio de las casuísticas pedagógicas y principios constructivistas del CNEB, se implementó el Chat del Tutor IA integrado:
-1. **Acceso al Responder**: El chat se habilita para el alumno únicamente tras haber marcado una alternativa en la pregunta activa (Modos 10q y 20q).
-2. **Contextualización Inmediata**: Al abrirse, la IA recibe todo el contexto del caso pedagógico (enunciado, opciones de respuesta, alternativa correcta, distractor seleccionado por el usuario y sustento técnico del banco de preguntas).
-3. **RAG Semántico (Pinecone)**: Las dudas sobre teorías del aprendizaje (Piaget, Vygotsky), enfoques transversales o rúbricas de evaluación del MINEDU se resuelven utilizando RAG sobre el namespace de educación (`education`), garantizando respuestas alineadas con el Currículo Nacional de Educación Básica y normas técnicas vigentes.
-4. **Monetización**: Consume 1 uso de la cuota diaria estándar para usuarios Premium Active (Basic/Advanced), y 2 vidas por consulta para usuarios Free/Pending.
+## 14. Arquitectura de Chat IA: Asistente Guía y Tutores Contextuales (Julio 2026)
+
+El sistema de Inteligencia Artificial se segmenta claramente en dos componentes especializados:
+
+### 14.1 Chat General (Asistente Guía de la Plataforma)
+1. **Rol y Naturaleza**: Funciona como un **Asistente Guía efímero** (100% volátil, sin persistencia en BD y sin RAG en Pinecone) diseñado para orientar a visitantes y alumnos registrados en la navegación de la plataforma, simuladores disponibles (SERUMS y ASCENSO), metodologías de estudio y planes de suscripción.
+2. **Visitantes No Logueados**: Disponen de 2 consultas diarias de prueba en `localStorage`. Al 3er intento se bloquea el input mostrando la modal de registro (`showAuthPromptModal`).
+
+### 14.2 Tutores IA de Exámenes (Quiz) y Repaso (Flashcards)
+Para profundizar en las casuísticas pedagógicas, principios constructivistas del CNEB y guías oficiales, se integran los Tutores Contextuales RAG:
+1. **Contextualización Inmediata**: Al activarse en un simulador (`quiz_tutor`) o tarjeta (`flashcard_tutor`), la IA recibe el contexto técnico exacto del reactivo (enunciado, alternativas, respuesta elegida, opción correcta y sustento pedagógico).
+2. **RAG Semántico (Pinecone)**: Resuelve dudas sobre teorías del aprendizaje (Piaget, Vygotsky), enfoques transversales o rúbricas de evaluación del MINEDU utilizando RAG semántico sobre el namespace de educación (`education`), garantizando respuestas alineadas con el Currículo Nacional de Educación Básica (CNEB) y RVM 094-2020-MINEDU.
+3. **Control de Interfaz y Revisión**:
+   - En simuladores activos (10q/20q), el botón del Tutor IA se habilita al responder cada pregunta.
+   - **En la pantalla de culminación y revisión del examen (`showExamReview`)**: El botón de Tutor IA se remueve/oculta automáticamente de las tarjetas de pregunta y el panel flotante se cierra, ya que cada reactivo presenta de forma directa su explicación técnica y sustento oficial.
+4. **Modo Pantalla Completa en Escritorio (PC)**: Los paneles laterales de tutoría cuentan con el botón de expansión a pantalla completa (100vw x 100vh, `.tutor-chat-panel.chat-fullscreen`) para facilitar la lectura de tablas comparativas y esquemas Markdown en computadoras.
+5. **Monetización**: Los usuarios logueados consumen 1 vida global (`usage_count`) por respuesta exitosa en usuarios Free/Pending o 1 uso de su cuota activa en usuarios Premium (Basic/Advanced).
