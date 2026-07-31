@@ -10,86 +10,254 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/base.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/header.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/footer.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/dashboard.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/components.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/modal.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/chat.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/sidebar.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/search.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/browse.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/results.css?v=b2b66033">
-    <link rel="stylesheet" href="/css/course.css?v=b2b66033">
+    <link rel="stylesheet" href="/css/theme.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/base.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/header.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/footer.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/dashboard.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/components.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/modal.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/chat.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/sidebar.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/search.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/browse.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/results.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/course.css?v=5ba50f6c">
 
     <!-- Global scripts -->
-    <script src="/js/config.js?v=b2b66033"></script>
+    <script src="/js/config.js?v=5ba50f6c"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=b2b66033"></script>
+    <script src="/js/utils/markdown-renderer.js?v=5ba50f6c"></script>
 
     <style>
-        /* Asegurar que la barra de búsqueda en la biblioteca sea relativa y esté bien centrada */
+        /* =========================================================
+           LIBRARY PAGE LAYOUT & HEADER (MANTA DESIGN SYSTEM V3.0)
+           ========================================================= */
+
+        #library-page-container {
+            padding: 1.75rem !important;
+            border-radius: 20px !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            background: #0a0a0a !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
+        }
+
+        /* 1. Encabezado "Mi Biblioteca" */
+        .library-header-page {
+            margin-bottom: 0.35rem !important;
+        }
+
+        .library-header-page h1 {
+            font-size: 2rem !important;
+            font-weight: 800 !important;
+            color: var(--text-main) !important;
+            margin: 0 !important;
+            letter-spacing: -0.02em !important;
+        }
+
+        .library-subtitle {
+            display: none !important;
+        }
+
+        /* 2. Pestañas Superiores (Biblioteca de Recursos, Guardados, Favoritos, Notas) */
+        .library-tabs {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            padding-bottom: 0.75rem !important;
+            margin-bottom: 1.25rem !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .library-tabs:not(.guest-mode) {
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+        }
+
+        .library-tabs.guest-mode {
+            display: block !important;
+        }
+
+        .library-tab {
+            background: transparent !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            color: var(--text-muted) !important;
+            padding: 0.65rem 0.5rem !important;
+            border-radius: 12px !important;
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            transition: all 0.2s ease !important;
+            display: flex;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            box-shadow: none !important;
+            width: 100% !important;
+            max-width: none !important;
+            box-sizing: border-box !important;
+        }
+
+        .library-tab.hidden,
+        .library-tab[style*="display: none"] {
+            display: none !important;
+        }
+
+        .library-tab:hover {
+            background: rgba(255, 255, 255, 0.04) !important;
+            color: var(--text-main) !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        .library-tab.active {
+            background: transparent !important;
+            color: #60a5fa !important;
+            border: 1.5px solid #3b82f6 !important;
+            box-shadow: none !important;
+        }
+
+        @media (max-width: 650px) {
+            .library-tabs {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.5rem !important;
+            }
+        }
+
+        /* 3. Sección de Búsqueda Normal (Flujo relativo, SIN solapamiento) */
         #panel-resources .search-section {
             position: relative !important;
             top: auto !important;
             bottom: auto !important;
             left: auto !important;
+            right: auto !important;
             transform: none !important;
             width: 100% !important;
-            max-width: 800px !important;
-            margin: 1.5rem auto 2.5rem auto !important;
+            max-width: 100% !important;
+            margin: 0 0 1.5rem 0 !important;
             padding: 0 !important;
             background: transparent !important;
             box-shadow: none !important;
-            border-bottom: none !important;
+            border: none !important;
             display: block !important;
+            z-index: 1 !important;
         }
 
         #panel-resources .search-box {
-            background: rgba(255, 255, 255, 0.03) !important;
-            padding: 0.6rem 0.6rem 0.6rem 1.5rem !important;
-            border-radius: 50px !important;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
-            display: flex !important;
-            gap: 10px !important;
-            align-items: center !important;
+            background: rgba(18, 18, 18, 0.8) !important;
+            padding: 0.4rem 0.5rem 0.4rem 1.25rem !important;
+            border-radius: 14px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            backdrop-filter: blur(10px);
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+            height: 48px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(12px) !important;
             box-sizing: border-box !important;
+            transition: border-color 0.2s !important;
+        }
+
+        #panel-resources .search-box:focus-within {
+            border-color: rgba(59, 130, 246, 0.4) !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
         }
 
         #panel-resources .search-box input {
             flex: 1 !important;
             border: none !important;
             outline: none !important;
-            font-size: 1.1rem !important;
-            padding: 0.5rem 1rem !important;
+            font-size: 0.95rem !important;
+            padding: 0.5rem 0 !important;
             background: transparent !important;
             color: var(--text-main) !important;
         }
 
+        #panel-resources .search-box .search-clear-btn {
+            background: transparent !important;
+            border: none !important;
+            color: #94a3b8 !important;
+            font-size: 0.95rem !important;
+            cursor: pointer !important;
+            padding: 0 !important;
+            height: 32px !important;
+            width: 32px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 50% !important;
+            transition: all 0.2s ease !important;
+            box-shadow: none !important;
+            flex-shrink: 0 !important;
+        }
+
+        #panel-resources .search-box .search-clear-btn:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #f1f5f9 !important;
+            transform: scale(1.1) !important;
+        }
+
         #panel-resources .search-box button {
-            border-radius: 30px !important;
-            padding: 0.8rem 2rem !important;
-            font-size: 1rem !important;
+            border-radius: 10px !important;
+            padding: 0 1.35rem !important;
+            font-size: 0.875rem !important;
             font-weight: 600 !important;
-            background: var(--primary) !important;
-            color: white !important;
+            height: 36px !important;
+            background: #3b82f6 !important;
+            color: #ffffff !important;
             border: none !important;
             cursor: pointer !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            gap: 8px !important;
-            transition: background 0.2s, transform 0.2s !important;
+            gap: 0.5rem !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+            flex-shrink: 0 !important;
         }
 
         #panel-resources .search-box button:hover {
-            background: var(--primary-light) !important;
+            background: #2563eb !important;
             transform: translateY(-1px) !important;
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4) !important;
+        }
+
+        /* 📱 RESPONSIVE SEARCH BUTTON FOR MOBILE */
+        @media (max-width: 600px) {
+            #panel-resources .search-box button {
+                padding: 0 !important;
+                width: 36px !important;
+                height: 36px !important;
+                border-radius: 10px !important;
+                justify-content: center !important;
+            }
+            #panel-resources .search-box button .search-btn-text {
+                display: none !important;
+            }
+            #panel-resources .search-box button .search-btn-icon {
+                display: inline-block !important;
+                font-size: 0.9rem !important;
+                margin: 0 !important;
+            }
+        }
+
+        /* 4. Separador elegante entre Pestañas SALUD y EDUCACIÓN */
+        .resource-tabs, #manta-resource-tabs {
+            display: flex !important;
+            gap: 0.75rem !important;
+            align-items: center !important;
+        }
+
+        .manta-tab-divider {
+            color: rgba(255, 255, 255, 0.3) !important;
+            font-size: 1.1rem !important;
+            font-weight: 300 !important;
+            user-select: none !important;
+            margin: 0 0.25rem !important;
+            align-self: center !important;
         }
 
         /* Grid de recursos: 6 columnas en escritorio, 3 en celulares (recuperar diseño imperativo) */
@@ -544,29 +712,28 @@
     </header>
 
     <!-- Main Container -->
-    <div class="dashboard-container" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;">
+    <div class="dashboard-container" style="max-width: 1200px; margin: 0 auto; padding: 1.25rem 1.5rem;">
         <!-- Dedicated Library Page Container -->
-        <div id="library-page-container" class="glass-card" style="padding: 2rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(20px);">
-            
-            <div class="library-header-page" style="margin-bottom: 1.5rem;">
-                <h1 style="font-size: 2.2rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Mi Biblioteca</h1>
-                <p style="color: #94a3b8; font-size: 1rem; margin-top: 0.25rem;">Gestiona tus recursos guardados, favoritos y notas personales</p>
-            </div>
-            
-            <div class="library-tabs" style="margin-bottom: 1rem;">
+        <div id="library-page-container" class="glass-card" style="padding: 1.25rem 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(20px);">
+            <div class="library-tabs guest-mode">
                 <button class="library-tab active" data-tab="resources" onclick="window.libraryUI.switchTab('resources')">Biblioteca de Recursos</button>
-                <button class="library-tab" data-tab="saved" id="tab-btn-saved" onclick="window.libraryUI.switchTab('saved')" style="display: none;">Guardados</button>
-                <button class="library-tab" data-tab="favorites" id="tab-btn-favorites" onclick="window.libraryUI.switchTab('favorites')" style="display: none;">Favoritos</button>
-                <button class="library-tab" data-tab="notes" id="tab-btn-notes" onclick="window.libraryUI.switchTab('notes')" style="display: none;">Notas</button>
+                <button class="library-tab hidden" data-tab="saved" id="tab-btn-saved" onclick="window.libraryUI.switchTab('saved')" style="display: none !important;">Guardados</button>
+                <button class="library-tab hidden" data-tab="favorites" id="tab-btn-favorites" onclick="window.libraryUI.switchTab('favorites')" style="display: none !important;">Favoritos</button>
+                <button class="library-tab hidden" data-tab="notes" id="tab-btn-notes" onclick="window.libraryUI.switchTab('notes')" style="display: none !important;">Notas</button>
             </div>
 
             <!-- Panel 1: Biblioteca de Recursos (General Catalog & Search) -->
             <div id="panel-resources" class="library-panel active">
-                <section class="search-section" style="margin-bottom: 2rem;">
+                <section class="search-section">
                     <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Busca tu recurso académico...">
-                        <button id="searchButton" class="btn-primary">
-                            <i class="fas fa-search"></i> <span class="search-btn-text">Buscar</span>
+                        <i class="fas fa-search" style="color: #64748b; font-size: 0.9rem;"></i>
+                        <input type="text" id="searchInput" placeholder="Busca tu recurso académico (libros, papers, normas)...">
+                        <button id="searchClearBtn" class="search-clear-btn" style="display: none;" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <button id="searchButton" class="btn-primary" aria-label="Buscar">
+                            <i class="fas fa-search search-btn-icon"></i>
+                            <span class="search-btn-text">Buscar</span>
                         </button>
                     </div>
                 </section>
@@ -644,22 +811,22 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=b2b66033"></script>
-    <script src="/js/services/networkService.js?v=b2b66033"></script>
-    <script src="/js/services/authApiService.js?v=b2b66033"></script>
-    <script src="/js/services/analyticsApiService.js?v=b2b66033"></script>
-    <script src="/js/sessionManager.js?v=b2b66033"></script>
-    <script src="/js/ui/uiManager.js?v=b2b66033"></script>
-    <script src="/js/ui/components.js?v=b2b66033"></script>
-    <script src="/js/ui/confirmationModal.js?v=b2b66033"></script>
-    <script src="/js/services/searchService.js?v=b2b66033"></script>
-    <script type="module" src="/js/search.js?v=b2b66033"></script>
-    <script src="/js/services/libraryService.js?v=b2b66033"></script>
-    <script src="/js/ui/libraryUI.js?v=b2b66033"></script>
-    <script src="/js/ui/sidebar.js?v=b2b66033"></script>
-    <script src="/js/chat.js?v=b2b66033"></script>
-    <script src="/js/security.js?v=b2b66033"></script>
-    <script src="/js/app.js?v=b2b66033"></script>
+    <script src="/js/config.js?v=5ba50f6c"></script>
+    <script src="/js/services/networkService.js?v=5ba50f6c"></script>
+    <script src="/js/services/authApiService.js?v=5ba50f6c"></script>
+    <script src="/js/services/analyticsApiService.js?v=5ba50f6c"></script>
+    <script src="/js/sessionManager.js?v=5ba50f6c"></script>
+    <script src="/js/ui/uiManager.js?v=5ba50f6c"></script>
+    <script src="/js/ui/components.js?v=5ba50f6c"></script>
+    <script src="/js/ui/confirmationModal.js?v=5ba50f6c"></script>
+    <script src="/js/services/searchService.js?v=5ba50f6c"></script>
+    <script type="module" src="/js/search.js?v=5ba50f6c"></script>
+    <script src="/js/services/libraryService.js?v=5ba50f6c"></script>
+    <script src="/js/ui/libraryUI.js?v=5ba50f6c"></script>
+    <script src="/js/ui/sidebar.js?v=5ba50f6c"></script>
+    <script src="/js/chat.js?v=5ba50f6c"></script>
+    <script src="/js/security.js?v=5ba50f6c"></script>
+    <script src="/js/app.js?v=5ba50f6c"></script>
 </body>
 
 </html>

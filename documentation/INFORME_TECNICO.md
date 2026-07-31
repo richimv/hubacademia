@@ -310,3 +310,16 @@ A continuación, se presenta el informe detallado de la auditoría de control de
   });
   ```
 * **Impacto Operativo:** Solucionado. La inexistencia o falla del proceso de Python es manejada de manera segura respondiendo con código de error HTTP 500, eliminando la posibilidad de que Express experimente un crash catastrófico.
+
+---
+
+### 6.6 Módulo de Curaduría Académica e Ingesta Automática de Recursos (IA Agéntica) - [ESTADO: OPERATIVO Y ACTUALIZADO]
+
+> [!NOTE]
+> **Descripción:** Sistema de curaduría de investigación y de ingesta directa de documentos oficiales (Guías de Práctica Clínica, Normas Técnicas de Salud, Directivas del MINEDU, publicaciones científicas y marcos internacionales) ejecutado de forma agéntica e inyectado en la base de datos PostgreSQL/Supabase.
+
+* **Componentes clave:**
+  - [resourceAutoIngestService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/resourceAutoIngestService.js): Servicio del dominio encargado del procesamiento de lotes (`ingestBatch`), deduplicación por URL normalizada, limpieza/formateo de contenido HTML (`_ensureCleanHtml`), normalización de dominios (`medicine`, `education`) y categorización de tipos de recursos (`paper`, `guia`, `norma`, `book`, `video`, `other`).
+  - [autoIngestResources.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/scripts/autoIngestResources.js): Script CLI interactivo/batch para inyección directa desde la IA Agéntica mediante parámetros CLI (`--data=...`, `--file=...`) o flujo de `stdin`.
+  - [bookRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/bookRepository.js): Capa de abstracción de datos para persistencia relacional transaccional (`BEGIN`, `COMMIT`, `ROLLBACK`) y vinculación automática con temas (`topic_resources`) y cursos (`course_books`).
+* **Estado Actual:** 10 nuevos recursos de alta jerarquía (Guías INS/CETS 2026, Normas Técnicas MINSA 2025/2026, Directiva y Temario MINEDU 2026, Directivas OMS/WHO 2026 y Marco Digital UNESCO) inyectados con éxito en la base de datos de producción.

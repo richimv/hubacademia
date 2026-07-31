@@ -565,6 +565,7 @@ class AdminManager {
                         <option value="paper">Paper Científico</option>
                         <option value="norma">Norma/Directiva</option>
                         <option value="guia">Guía Clínica</option>
+                        <option value="noticia">Noticia Oficial</option>
                         <option value="video">Video</option>
                         <option value="other">Imagen/Otro</option>
                     </select>
@@ -1204,6 +1205,7 @@ class AdminManager {
                     { id: 'norma', name: 'Norma Técnica/Legal' },
                     { id: 'guia', name: 'Guía de Práctica Clínica' },
                     { id: 'paper', name: 'Artículo/Paper' },
+                    { id: 'noticia', name: 'Noticia Oficial (Novedades)' },
                     { id: 'video', name: 'Video' },
                     { id: 'book', name: 'Libro (Histórico)' },
                     { id: 'other', name: 'Otro' }
@@ -1324,6 +1326,7 @@ class AdminManager {
                     { id: 'guia', name: 'Guía de Práctica Clínica' },
                     { id: 'norma', name: 'Norma Técnica/Legal' },
                     { id: 'paper', name: 'Artículo / Paper' },
+                    { id: 'noticia', name: 'Noticia Oficial (Novedades)' },
                     { id: 'video', name: 'Video Clase' },
                     { id: 'other', name: 'Otro Recurso' }
                 ];

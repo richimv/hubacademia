@@ -86,6 +86,13 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 * **Focus State:** Borde cambia a `#3b82f6` con un shadow azul difuminado (`box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15)`).
 * **Borde de Esquinas:** `10px`.
 
+### 3.4. Widget Exclusivo de Novedades (News Bulletin Board)
+El Widget de Novedades (publicaciones de los últimos 60 días) es un contenedor panorámico de 100% de ancho (`grid-column: 1 / -1 !important`) que sigue las siguientes especificaciones:
+* **Contenedor:** Fondo `#0a0a0a` (Matte Black) con textura de malla punteada (`radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px)`), borde `1px solid rgba(255, 255, 255, 0.08)` y esquinas redondeadas a `24px`.
+* **Tarjeta Hero (Destacada):** Fondo `linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 27, 75, 0.6))`, borde `1px solid rgba(59, 130, 246, 0.2)` con efecto glassmorphism `backdrop-filter: blur(12px)`.
+* **Botón Primario de Lectura:** Fondo `linear-gradient(135deg, #3b82f6, #60a5fa)` (Trust Blue), altura `44px`, radio `12px`, texto `#ffffff` con elevación glow en hover `box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45)`.
+* **Tarjetas Secundarias:** Fondo `#121212`, borde `1px solid rgba(255, 255, 255, 0.08)` y esquinas de `16px`. Hover a `#171717` con borde `#3b82f6` semitransparente.
+
 ---
 
 ## 4. 📐 Grids, Layouts y Responsividad

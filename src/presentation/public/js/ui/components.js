@@ -385,49 +385,8 @@ function createRecommendationsSectionHTML(recommendations, searchInputRef) {
     `;
 }
 
-function createChatPromoSectionHTML() {
-    return /*html*/`
-        <div class="chat-promo-banner">
-            <div class="chat-promo-banner-icon"><i class="fas fa-robot"></i></div>
-            <div class="chat-promo-banner-content">
-                <h3 class="chat-promo-banner-title">Tu Asistente Personal de Estudio</h3>
-                <p class="chat-promo-banner-text">Respuestas instantáneas, explicaciones claras y la guía que necesitas para tener éxito.</p>
-            </div>
-            <button class="btn-primary chat-promo-banner-cta" onclick="openChat()">
-                Pregúntale al Tutor
-            </button>
-        </div>
-    `;
-}
-
 function createBackButtonHTML() {
     return `<button class="back-button" aria-label="Volver a la página anterior">‹ Volver</button>`;
-}
-
-// NUEVO: Tarjeta de Intención Educativa (Diseño Premium para Preguntas)
-function createEducationalIntentCardHTML(query) {
-    return /*html*/`
-        <div class="educational-intent-card">
-            <div class="intent-card-content">
-                <div class="intent-icon-wrapper">
-                    <i class="fas fa-brain"></i>
-                </div>
-                <div class="intent-text-group">
-                    <h3 class="intent-title">Pregunta Profunda Detectada</h3>
-                    <p class="intent-description">
-                        "<strong>${query}</strong>" parece un tema complejo. 
-                        <br>En lugar de buscar en múltiples recursos, ¿quieres que te lo explique paso a paso?
-                    </p>
-                </div>
-            </div>
-            <div class="intent-actions">
-                <button class="btn-primary intent-cta-btn" onclick="window.askAboutTopic('${query}')">
-                    <i class="fas fa-sparkles"></i>
-                    Explicar con el Asistente
-                </button>
-            </div>
-        </div>
-    `;
 }
 
 // NUEVO: Componente para el botón de chat contextual dentro de una vista.
@@ -972,3 +931,183 @@ window.UIComponents.createReviewCardHTML = function (config) {
         </div>
     </div>`;
 };
+
+/**
+ * Global Helper: Abre la URL directa comprobada de un recurso o delega a uiManager.
+ */
+window.openVerifiedNewsUrl = function(url, id, type, isPremium, openDirectly) {
+    if (url && typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+        window.open(url, '_blank');
+        return;
+    }
+    if (window.uiManager) {
+        window.uiManager.unlockAndNavigate(id, type, isPremium, openDirectly);
+    } else if (url) {
+        window.open(url, '_blank');
+    }
+};
+
+/**
+ * Crea la interfaz exclusiva estilo Boletín de Novedades (News Widget) para los últimos 30 días (Mes actual).
+ */
+function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
+    if (!newsItems || newsItems.length === 0) {
+        return `
+            <div class="news-bulletin-empty" style="text-align: center; padding: 4rem 2rem; background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 1.5rem; margin-top: 1rem;">
+                <i class="far fa-newspaper" style="font-size: 3rem; color: #3b82f6; margin-bottom: 1rem; opacity: 0.7;"></i>
+                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">No hay novedades registradas en los últimos 30 días</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 500px; margin: 0 auto;">Nuestra IA monitorea periódicamente la web oficial para publicar investigaciones y normas de ${domain === 'medicine' ? 'Salud' : 'Educación'}.</p>
+            </div>
+        `;
+    }
+
+    const featured = newsItems[0];
+    const secondary = newsItems.slice(1);
+
+    const getBadgeInfo = (item) => {
+        const type = (item.resource_type || item.type || '').toLowerCase();
+        if (type === 'noticia') return { label: '📰 NOTICIA OFICIAL', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.35)', text: '#c084fc' };
+        if (type === 'norma') return { label: '⚖️ NORMA OFICIAL', bg: 'rgba(217, 119, 6, 0.15)', border: 'rgba(217, 119, 6, 0.35)', text: '#fbbf24' };
+        if (type === 'guia') return { label: '📋 GUÍA TÉCNICA', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.35)', text: '#34d399' };
+        return { label: '📄 PAPER CIENTÍFICO', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.35)', text: '#60a5fa' };
+    };
+
+    const getHeroStyle = (item) => {
+        const type = (item.resource_type || item.type || '').toLowerCase();
+        if (type === 'noticia') {
+            return {
+                border: '1px solid rgba(168, 85, 247, 0.45)',
+                shadow: '0 15px 40px rgba(168, 85, 247, 0.12)'
+            };
+        }
+        if (type === 'norma') {
+            return {
+                border: '1px solid rgba(245, 158, 11, 0.45)',
+                shadow: '0 15px 40px rgba(245, 158, 11, 0.12)'
+            };
+        }
+        if (type === 'guia') {
+            return {
+                border: '1px solid rgba(16, 185, 129, 0.45)',
+                shadow: '0 15px 40px rgba(16, 185, 129, 0.12)'
+            };
+        }
+        return {
+            border: '1px solid rgba(59, 130, 246, 0.45)',
+            shadow: '0 15px 40px rgba(59, 130, 246, 0.12)'
+        };
+    };
+
+    const cleanSnippet = (html) => {
+        if (!html) return 'Resumen factual comprobado. Haz clic en el botón inferior para abrir la publicación oficial original.';
+        const clean = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        return clean.length > 220 ? clean.substring(0, 220) + '...' : clean;
+    };
+
+    const featBadge = getBadgeInfo(featured);
+    const featStyle = getHeroStyle(featured);
+    const featOpenDirectly = featured.open_directly === true || String(featured.open_directly) === 'true';
+    const featIsPremium = featured.is_premium === true;
+    const featUrl = featured.url || '';
+    const hasFeatImage = Boolean(featured.image_url && featured.image_url.trim() !== '');
+    const featThumb = hasFeatImage ? (window.resolveImageUrl ? window.resolveImageUrl(featured.image_url, featured.resource_type || 'paper') : featured.image_url) : '';
+
+    const featuredHTML = `
+        <div class="news-hero-card ${hasFeatImage ? 'has-media' : ''}" style="background: #121212; border: ${featStyle.border}; box-shadow: ${featStyle.shadow};">
+            <div class="news-hero-body">
+                <div class="news-hero-tags">
+                    <span class="news-pill-tag" style="background: ${featBadge.bg}; border: 1px solid ${featBadge.border}; color: ${featBadge.text}; font-weight: 700; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem;">
+                        ${featBadge.label}
+                    </span>
+                    <span class="news-freshness-tag"><i class="fas fa-bolt"></i> Novedad Reciente (Últimos 30 Días)</span>
+                </div>
+                <h3 class="news-hero-title">${featured.title}</h3>
+                <div class="news-hero-meta">
+                    <span class="news-author"><i class="fas fa-building-columns"></i> ${featured.author || 'Entidad Oficial / Investigadores'}</span>
+                </div>
+                <p class="news-hero-snippet">${cleanSnippet(featured.content_html)}</p>
+                <div class="news-hero-footer">
+                    <button class="news-primary-btn" onclick="window.openVerifiedNewsUrl('${featUrl}', '${featured.id}', '${featured.resource_type || 'paper'}', ${featIsPremium}, ${featOpenDirectly})">
+                        <i class="fas fa-external-link-alt"></i> Leer Documento Oficial Verificado
+                    </button>
+                    <div class="news-actions-wrap">
+                        <button class="urc-action-btn js-library-btn action-save" data-id="${featured.id}" data-type="book" data-action="save" title="Guardar">
+                            <i class="far fa-bookmark"></i>
+                        </button>
+                        <button class="urc-action-btn js-library-btn action-fav" data-id="${featured.id}" data-type="book" data-action="favorite" title="Favorito">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            ${hasFeatImage ? `
+            <div class="news-hero-media">
+                <img src="${featThumb}" alt="${featured.title}" class="news-hero-img" loading="lazy" onerror="this.parentElement.style.display='none';">
+            </div>
+            ` : ''}
+        </div>
+    `;
+
+    const secondaryCardsHTML = secondary.map(item => {
+        const badge = getBadgeInfo(item);
+        const openDirectly = item.open_directly === true || String(item.open_directly) === 'true';
+        const isPremium = item.is_premium === true;
+        const itemUrl = item.url || '';
+        const hasSecImage = Boolean(item.image_url && item.image_url.trim() !== '');
+        const secThumb = hasSecImage ? (window.resolveImageUrl ? window.resolveImageUrl(item.image_url, item.resource_type || 'paper') : item.image_url) : '';
+
+        return `
+            <div class="news-secondary-card ${hasSecImage ? 'has-media' : ''}" onclick="window.openVerifiedNewsUrl('${itemUrl}', '${item.id}', '${item.resource_type || 'paper'}', ${isPremium}, ${openDirectly})">
+                ${hasSecImage ? `
+                <div class="news-sec-media">
+                    <img src="${secThumb}" alt="${item.title}" class="news-sec-img" loading="lazy" onerror="this.parentElement.style.display='none';">
+                </div>
+                ` : ''}
+                <div class="news-sec-body">
+                    <div class="news-sec-header">
+                        <span class="news-pill-tag" style="background: ${badge.bg}; border: 1px solid ${badge.border}; color: ${badge.text}; font-size: 0.7rem; padding: 2px 10px; border-radius: 12px;">
+                            ${badge.label}
+                        </span>
+                        <span class="news-sec-date"><i class="far fa-clock"></i> Reciente</span>
+                    </div>
+                    <h4 class="news-sec-title">${item.title}</h4>
+                    <div class="news-sec-author">
+                        <i class="fas fa-user-edit"></i> ${item.author || 'Fuente Oficial'}
+                    </div>
+                    <p class="news-sec-snippet">${cleanSnippet(item.content_html)}</p>
+                    <div class="news-sec-footer">
+                        <span class="news-sec-link"><i class="fas fa-arrow-right"></i> Abrir Recurso</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="news-widget-wrapper">
+            <div class="news-widget-header">
+                <div class="news-widget-title-area">
+                    <h2 class="news-widget-main-title">
+                        <i class="fas fa-newspaper" style="color: #3b82f6;"></i> 
+                        Novedades y Boletín Reciente
+                    </h2>
+                    <p class="news-widget-desc">Últimos papers de investigación científica y normas oficiales verificadas de ${domain === 'medicine' ? 'Salud' : 'Educación'}</p>
+                </div>
+                <div class="news-widget-badge-count">
+                    <span>${newsItems.length} Publicaciones</span>
+                </div>
+            </div>
+
+            ${featuredHTML}
+
+            ${secondary.length > 0 ? `
+                <div class="news-sec-section">
+                    <h4 class="news-sec-heading"><i class="fas fa-list-ul"></i> Otras Novedades del Sector</h4>
+                    <div class="news-sec-grid">
+                        ${secondaryCardsHTML}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}

@@ -3,14 +3,18 @@ const db = require('../../infrastructure/database/db');
 class BookRepository {
 
     async findAll(filters = {}) {
-        const { type, domain, includeHidden } = filters;
+        const { type, domain, includeHidden, isNews } = filters;
 
         const params = [];
         const conditions = [];
 
         if (type) {
-            params.push(type);
-            conditions.push(`r.resource_type = $${params.length}`);
+            if (type === 'news' || isNews) {
+                conditions.push(`r.resource_type IN ('paper', 'norma', 'guia', 'noticia')`);
+            } else {
+                params.push(type);
+                conditions.push(`r.resource_type = $${params.length}`);
+            }
         }
         if (domain) {
             params.push(domain);
@@ -21,6 +25,7 @@ class BookRepository {
         }
 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+        const orderBy = (type === 'news' || isNews) ? 'ORDER BY r.id DESC, r.title' : 'ORDER BY r.title';
 
         const query = `
             SELECT 
@@ -45,7 +50,7 @@ class BookRepository {
                 ) as "courseIds"
             FROM resources r
             ${whereClause}
-            ORDER BY r.title
+            ${orderBy}
         `;
 
         const { rows } = await db.query(query, params);
@@ -95,6 +100,13 @@ class BookRepository {
         `;
         const { rows } = await db.query(query, [id]);
         return rows[0];
+    }
+
+    async findByUrl(url) {
+        if (!url) return null;
+        const query = 'SELECT * FROM resources WHERE url = $1 LIMIT 1';
+        const { rows } = await db.query(query, [url]);
+        return rows[0] || null;
     }
 
     async create(bookData) {

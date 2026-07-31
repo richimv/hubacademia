@@ -514,14 +514,29 @@ class LibraryUI {
     }
 
     _syncTabVisibility(user) {
+        const token = localStorage.getItem('authToken');
+        const isLoggedIn = !!(user || token);
+        
         const savedTab = document.getElementById('tab-btn-saved');
         const favoritesTab = document.getElementById('tab-btn-favorites');
         const notesTab = document.getElementById('tab-btn-notes');
+        const tabsContainer = document.querySelector('.library-tabs');
         
-        const displayStyle = user ? '' : 'none';
-        if (savedTab) savedTab.style.display = displayStyle;
-        if (favoritesTab) favoritesTab.style.display = displayStyle;
-        if (notesTab) notesTab.style.display = displayStyle;
+        [savedTab, favoritesTab, notesTab].forEach(tab => {
+            if (tab) {
+                if (isLoggedIn) {
+                    tab.style.setProperty('display', '', 'important');
+                    tab.classList.remove('hidden');
+                } else {
+                    tab.style.setProperty('display', 'none', 'important');
+                    tab.classList.add('hidden');
+                }
+            }
+        });
+        
+        if (tabsContainer) {
+            tabsContainer.classList.toggle('guest-mode', !isLoggedIn);
+        }
     }
 
     _renderDrawerStructure() {

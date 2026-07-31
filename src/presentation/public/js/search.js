@@ -1,7 +1,6 @@
 /* global createBrowseCardHTML, createBackButtonHTML, createTopicViewHTML, 
           createContextualChatButtonHTML, createSearchResultCardHTML, 
-          createRecommendationsSectionHTML, createSpecificChatPromoHTML, 
-          createChatPromoSectionHTML, createFilterSidebarHTML */
+          createRecommendationsSectionHTML, createFilterSidebarHTML */
 /*
   NOTA: Las funciones mencionadas arriba se definen en /public/js/ui/components.js
   y se cargan globalmente. Este comentario le indica al linter que no las marque
@@ -26,7 +25,7 @@ class SearchComponent {
         // MANTA TABS STATE (Sector-Based Taxonomy)
         this.activeSector = 'medicine'; // 'medicine' (Salud) | 'education' (Educación)
         this.activeTab = 'salud'; // 'salud' | 'educacion'
-        this.activeFilter = 'Libros y Manuales'; 
+        this.activeFilter = '🔥 Novedades (60 días)'; 
 
         this.init();
 
@@ -143,37 +142,66 @@ class SearchComponent {
 
     setupEventListeners() {
         this.searchButton.addEventListener('click', () => this.performSearch());
-        this.searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.performSearch();
+
+        // 🔍 SENIOR UX: Escuchar eventos en la barra de búsqueda (Enter, Escape, Reset al vaciar)
+        this.searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.performSearch();
+            } else if (e.key === 'Escape') {
+                this.resetSearchToBrowse();
+            }
         });
 
+        // Auto-restauración al borrar texto (input event)
+        this.searchInput.addEventListener('input', () => {
+            const query = this.searchInput.value.trim();
+            this.toggleClearButton(query.length > 0);
+            if (query.length === 0) {
+                this.resetSearchToBrowse();
+            }
+        });
 
-        // CORRECCIÓN DEFINITIVA: Delegación de eventos en el `body`.
-        // Esto asegura que los clics se capturen tanto en la vista de exploración (`#browse-container`)
-        // como en la de resultados (`#results-container`), solucionando el problema de los stickers no clickables.
+        // Botón 'X' para limpiar la búsqueda
+        const clearBtn = document.getElementById('searchClearBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                this.resetSearchToBrowse();
+                this.searchInput.focus();
+            });
+        }
+
+        // Delegación de eventos en el body
         document.body.addEventListener('click', this.handleContentClick.bind(this));
 
-        // CORRECCIÓN: Listener global para el botón de inicio en el header.
+        // Listener global para el botón de inicio en el header
         const homeBtn = document.querySelector('.nav-home-button');
         if (homeBtn) {
             homeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                // Limpiar búsqueda si existe
-                this.searchInput.value = '';
+                this.resetSearchToBrowse();
                 this.startNewNavigation('home');
             });
         }
+    }
 
+    toggleClearButton(show) {
+        const clearBtn = document.getElementById('searchClearBtn');
+        if (clearBtn) {
+            clearBtn.style.display = show ? 'inline-flex' : 'none';
+        }
+    }
 
-
-        // NUEVO: Listener para la barra de búsqueda sticky
-        // CORRECCIÓN BUG: Usamos un 'placeholder' para evitar el salto de contenido
-        const searchSection = document.querySelector('.search-section');
-        const heroWrapper = document.querySelector('.hero-wrapper');
-
-        // REFACTOR: La barra de búsqueda ahora es estática o sticky por CSS.
-        // Se elimina la lógica JS que causaba el "rebote".
-        // El CSS se encargará de posicionarla correctamente.
+    resetSearchToBrowse() {
+        this.searchInput.value = '';
+        this.toggleClearButton(false);
+        if (this.resultsContainer) {
+            this.resultsContainer.innerHTML = '';
+            this.resultsContainer.classList.add('hidden');
+        }
+        if (this.browseContainer) {
+            this.browseContainer.classList.remove('hidden');
+        }
+        this.renderInitialView();
     }
 
     /**
@@ -426,9 +454,11 @@ class SearchComponent {
     async performSearch() {
         const query = this.searchInput.value.trim();
         if (!query) {
-            // Opcional: podrías mostrar un mensaje si la búsqueda está vacía.
+            this.resetSearchToBrowse();
             return;
         }
+
+        this.toggleClearButton(true);
 
         // Mostramos el contenedor de resultados y ocultamos el de exploración.
         this.browseContainer.classList.add('hidden');
@@ -622,22 +652,7 @@ class SearchComponent {
             contentHTML = `<p class="empty-state" style="margin-top: 2rem;">No se encontraron resultados para "${data.searchQuery}".</p>`;
         }
 
-        // 5. Secciones inferiores (Recomendaciones + Chat)
-        let bottomSectionsHTML = '';
-
-        // NUEVO: Tarjeta de IA educativa si se detecta intención de pregunta
-        let educationalCardHTML = '';
-        if (data.isEducationalQuery) {
-            educationalCardHTML = createEducationalIntentCardHTML(data.searchQuery);
-        }
-
-        // Recomendaciones siempre visibles
-        bottomSectionsHTML = `
-            ${!data.isEducationalQuery ? createChatPromoSectionHTML() : ''}
-        `;
-
-        // 6. Renderizar Vista "Biblioteca Digital"
-        // CORRECCIÓN FINAL: Clase 'search-results-view' añadida para activar el modo compacto en CSS.
+        // 5. Renderizar Vista "Biblioteca Digital" (Limpia, sin banners obsoletos)
         this.resultsContainer.innerHTML = /*html*/`
             <div class="detail-view-container search-results-view"> 
                 
@@ -652,12 +667,6 @@ class SearchComponent {
                 <!-- CONTENIDO PRINCIPAL -->
                 <div class="search-results-body">
                      ${contentHTML}
-                     ${educationalCardHTML}
-                </div>
-
-                <!-- SECCIONES INFERIORES (Solo si hay contenido o IA) -->
-                <div class="search-bottom-sections">
-                    ${bottomSectionsHTML}
                 </div>
             </div>
         `;
@@ -1029,6 +1038,7 @@ class SearchComponent {
                 <div class="manta-resource-tabs-wrapper">
                     <div class="manta-tabs-container resource-tabs" id="manta-resource-tabs">
                         <button class="manta-tab resource-tab ${this.activeTab === 'salud' ? 'active' : ''}" data-tab="salud">SALUD</button>
+                        <span class="manta-tab-divider" aria-hidden="true">|</span>
                         <button class="manta-tab resource-tab ${this.activeTab === 'educacion' ? 'active' : ''}" data-tab="educacion">EDUCACIÓN</button>
                     </div>
                 </div>
@@ -1054,10 +1064,10 @@ class SearchComponent {
 
                 if (tab === 'salud') {
                     this.activeSector = 'medicine';
-                    this.activeFilter = 'Libros y Manuales';
+                    this.activeFilter = '🔥 Novedades';
                 } else if (tab === 'educacion') {
                     this.activeSector = 'education';
-                    this.activeFilter = 'Libros y Manuales';
+                    this.activeFilter = '🔥 Novedades';
                 }
 
                 this.renderTabContent();
@@ -1075,20 +1085,25 @@ class SearchComponent {
 
         if (this.activeTab === 'salud' || this.activeTab === 'educacion') {
             let data = [];
-            let biblioFilters = [
-                { id: 'Libros y Manuales', val: 'book' }
-            ];
+            let biblioFilters = [];
 
-            // CONFIGURACIÓN POR SECTOR
             if (this.activeSector === 'medicine') {
-                // SALUD: Filtros de siempre (incluyendo Papers)
-                biblioFilters.push({ id: 'Papers Científicos', val: 'paper' });
-                biblioFilters.push({ id: 'Normas y Directivas', val: 'norma' });
-                biblioFilters.push({ id: 'Guías Clínicas', val: 'guia' });
-                biblioFilters.push({ id: 'Imágenes / Otros', val: 'other' });
+                biblioFilters = [
+                    { id: '🔥 Novedades', val: 'news' },
+                    { id: 'Libros y Manuales', val: 'book' },
+                    { id: 'Papers Científicos', val: 'paper' },
+                    { id: 'Normas y Directivas', val: 'norma' },
+                    { id: 'Guías Técnicas', val: 'guia' },
+                    { id: 'Otros Recursos', val: 'other' }
+                ];
             } else {
-                // EDUCACIÓN: Solo Libros y Normas
-                biblioFilters.push({ id: 'Normas y Directivas', val: 'norma' });
+                // EDUCACIÓN: Únicamente Novedades, Libros, Papers y Normas
+                biblioFilters = [
+                    { id: '🔥 Novedades', val: 'news' },
+                    { id: 'Libros y Manuales', val: 'book' },
+                    { id: 'Papers Científicos', val: 'paper' },
+                    { id: 'Normas y Directivas', val: 'norma' }
+                ];
             }
 
             filtersContainer.innerHTML = biblioFilters.map(f => `
@@ -1104,7 +1119,7 @@ class SearchComponent {
                     if (res.ok) data = await res.json();
                 } catch (e) { console.error('Error fetching library type', e); }
 
-                this._renderResourceGrid(data, gridContainer);
+                this._renderResourceGrid(data, gridContainer, valStr === 'news');
             });
 
             // Auto-load active pill
@@ -1114,7 +1129,7 @@ class SearchComponent {
                     const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?type=${activePill.val}&domain=${this.activeSector}`);
                     if (res.ok) data = await res.json();
                 } catch (e) { }
-                this._renderResourceGrid(data, gridContainer);
+                this._renderResourceGrid(data, gridContainer, activePill.val === 'news');
             }
 
         } else if (this.activeTab === 'cursos') {
@@ -1138,24 +1153,21 @@ class SearchComponent {
                 if (!careersInArea || careersInArea.length === 0) {
                     return '<p class="empty-state" style="grid-column: 1 / -1;">No hay carreras en esta área.</p>';
                 }
-
                 let html = '';
                 careersInArea.forEach(career => {
-                    const strCareerId = String(career.id);
-                    const linkedCourses = this.allData.courses.filter(c => c.careerIds && c.careerIds.some(id => String(id) === strCareerId));
-                    if (linkedCourses.length > 0) {
-                        html += `<div class="manta-group-title">${career.title || career.name}</div>`;
-                        linkedCourses.forEach(course => {
+                    const courses = (this.allData.courses || []).filter(c => c.career_id === career.id);
+                    if (courses.length > 0) {
+                        html += `<div class="manta-group-title" style="grid-column: 1/-1;">${career.name}</div>`;
+                        courses.forEach(course => {
                             html += createUnifiedResourceCardHTML({ ...course, type: 'course' });
                         });
                     }
                 });
-
-                return html || '<p class="empty-state" style="grid-column: 1 / -1;">Aún no hay cursos asignados a las carreras de esta área.</p>';
+                return html || '<p class="empty-state" style="grid-column: 1 / -1;">No hay cursos registrados para estas carreras.</p>';
             };
 
-            this._attachFilterListeners(filtersContainer, (areaStr) => {
-                const careersInArea = filteredCareers.filter(c => (c.area || 'Otras Áreas') === areaStr);
+            this._attachFilterListeners(filtersContainer, (areaName) => {
+                const careersInArea = filteredCareers.filter(c => (c.area || 'Otras Áreas') === areaName);
                 const rawHTML = renderCoursesByCareer(careersInArea);
                 this._renderPaginatedGrid(rawHTML, gridContainer, 15);
             });
@@ -1168,7 +1180,15 @@ class SearchComponent {
     }
 
     // New Helper: Render Resource Grid with Grouping and Pagination
-    _renderResourceGrid(data, gridContainer) {
+    _renderResourceGrid(data, gridContainer, isNews = false) {
+        if (isNews || this.activeFilter === '🔥 Novedades') {
+            gridContainer.style.display = 'block';
+            gridContainer.innerHTML = createNewsBulletinWidgetHTML(data || [], this.activeSector);
+            if (window.libraryManager) window.libraryManager.updateButtons();
+            return;
+        }
+
+        gridContainer.style.display = ''; // Restore default 6 column grid layout
         if (!data || data.length === 0) {
             gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay recursos en esta categoría.</p>';
             return;
