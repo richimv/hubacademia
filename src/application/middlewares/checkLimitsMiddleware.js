@@ -173,50 +173,16 @@ const checkAILimits = (type) => {
                         }
                     }
                 } else {
-                    const specialization = (req.body && req.body.specialization) || 'medicine';
-                    const context = req.body && req.body.context;
-                    const isRagRequest = (specialization === 'medicine' || specialization === 'education') || (context && context.type === 'quiz_tutor');
-
-                    if (!isActiveAccount) {
-                        const remainingLives = (user.max_free_limit || 20) - (user.usage_count || 0);
-                        if (remainingLives <= 0) {
-                            return res.status(403).json({ error: 'Límite de consultas de Prueba agotado. Mejora tu plan para continuar aprendiendo con IA.', reason: 'FREE_LIVES_EXHAUSTED' });
-                        }
-
-                        // Free users NEVER use RAG for chats (to reduce costs)
-                        req.useRag = false;
-                        req.usageType = 'usage_count';
+                    const isQuizTutor = req.body && req.body.context && req.body.context.type === 'quiz_tutor';
+                    if (isQuizTutor) {
+                        req.useRag = (tier === 'advanced' || tier === 'admin');
+                        req.usageType = isActiveAccount ? 'daily_ai_usage' : 'usage_count';
                         req.cost = 1;
                     } else {
-                        if (tier === 'admin') {
-                            req.useRag = isRagRequest;
-                            req.usageType = null;
-                        } else if (tier === 'advanced') {
-                            const ragLimit = userLimits.daily_rag_limit || 25;
-                            const ragUsed = user.daily_rag_usage || 0;
-                            const aiLimit = userLimits.chat_standard || 100;
-                            const aiUsed = user.daily_ai_usage || 0;
-
-                            if (isRagRequest && ragUsed < ragLimit) {
-                                req.useRag = true;
-                                req.usageType = 'daily_rag_usage';
-                            } else {
-                                // Fallback to normal AI limit (without RAG)
-                                if (aiUsed >= aiLimit) {
-                                    return res.status(403).json({ error: 'Límite de mensajes diarios estándar alcanzado. Vuelve mañana o mejora tu plan.', reason: 'DAILY_LIMIT_EXHAUSTED' });
-                                }
-                                req.useRag = false;
-                                req.usageType = 'daily_ai_usage';
-                            }
-                        } else { // basic
-                            const aiLimit = userLimits.chat_standard || 50;
-                            const aiUsed = user.daily_ai_usage || 0;
-                            if (aiUsed >= aiLimit) {
-                                return res.status(403).json({ error: 'Límite de mensajes diarios estándar alcanzado. Vuelve mañana o mejora tu plan.', reason: 'DAILY_LIMIT_EXHAUSTED' });
-                            }
-                            req.useRag = false;
-                            req.usageType = 'daily_ai_usage';
-                        }
+                        // 💬 CHAT GENERAL (Asistente Guía): 0 consumo de vidas ni de límites diarios para todos los planes
+                        req.useRag = false;
+                        req.usageType = null;
+                        req.cost = 0;
                     }
                 }
             }

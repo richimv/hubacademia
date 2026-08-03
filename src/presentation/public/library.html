@@ -10,25 +10,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/base.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/header.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/footer.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/dashboard.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/components.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/modal.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/chat.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/sidebar.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/search.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/browse.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/results.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/course.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/theme.css?v=2168288b">
+    <link rel="stylesheet" href="/css/base.css?v=2168288b">
+    <link rel="stylesheet" href="/css/header.css?v=2168288b">
+    <link rel="stylesheet" href="/css/footer.css?v=2168288b">
+    <link rel="stylesheet" href="/css/dashboard.css?v=2168288b">
+    <link rel="stylesheet" href="/css/components.css?v=2168288b">
+    <link rel="stylesheet" href="/css/modal.css?v=2168288b">
+    <link rel="stylesheet" href="/css/sidebar.css?v=2168288b">
+    <link rel="stylesheet" href="/css/search.css?v=2168288b">
+    <link rel="stylesheet" href="/css/browse.css?v=2168288b">
+    <link rel="stylesheet" href="/css/results.css?v=2168288b">
+    <link rel="stylesheet" href="/css/course.css?v=2168288b">
 
     <!-- Global scripts -->
-    <script src="/js/config.js?v=5ba50f6c"></script>
+    <script src="/js/config.js?v=2168288b"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=5ba50f6c"></script>
+    <script src="/js/utils/markdown-renderer.js?v=2168288b"></script>
 
     <style>
         /* =========================================================
@@ -176,28 +174,8 @@
             color: var(--text-main) !important;
         }
 
-        #panel-resources .search-box .search-clear-btn {
-            background: transparent !important;
-            border: none !important;
-            color: #94a3b8 !important;
-            font-size: 0.95rem !important;
-            cursor: pointer !important;
-            padding: 0 !important;
-            height: 32px !important;
-            width: 32px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            border-radius: 50% !important;
-            transition: all 0.2s ease !important;
-            box-shadow: none !important;
-            flex-shrink: 0 !important;
-        }
-
-        #panel-resources .search-box .search-clear-btn:hover {
-            background: rgba(255, 255, 255, 0.1) !important;
-            color: #f1f5f9 !important;
-            transform: scale(1.1) !important;
+        #chatbot-toggle, #chatbot-window, .chatbot-widget, #ai-chat-widget {
+            display: none !important;
         }
 
         #panel-resources .search-box button {
@@ -726,11 +704,7 @@
             <div id="panel-resources" class="library-panel active">
                 <section class="search-section">
                     <div class="search-box">
-                        <i class="fas fa-search" style="color: #64748b; font-size: 0.9rem;"></i>
                         <input type="text" id="searchInput" placeholder="Busca tu recurso académico (libros, papers, normas)...">
-                        <button id="searchClearBtn" class="search-clear-btn" style="display: none;" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">
-                            <i class="fas fa-times"></i>
-                        </button>
                         <button id="searchButton" class="btn-primary" aria-label="Buscar">
                             <i class="fas fa-search search-btn-icon"></i>
                             <span class="search-btn-text">Buscar</span>
@@ -811,22 +785,21 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=5ba50f6c"></script>
-    <script src="/js/services/networkService.js?v=5ba50f6c"></script>
-    <script src="/js/services/authApiService.js?v=5ba50f6c"></script>
-    <script src="/js/services/analyticsApiService.js?v=5ba50f6c"></script>
-    <script src="/js/sessionManager.js?v=5ba50f6c"></script>
-    <script src="/js/ui/uiManager.js?v=5ba50f6c"></script>
-    <script src="/js/ui/components.js?v=5ba50f6c"></script>
-    <script src="/js/ui/confirmationModal.js?v=5ba50f6c"></script>
-    <script src="/js/services/searchService.js?v=5ba50f6c"></script>
-    <script type="module" src="/js/search.js?v=5ba50f6c"></script>
-    <script src="/js/services/libraryService.js?v=5ba50f6c"></script>
-    <script src="/js/ui/libraryUI.js?v=5ba50f6c"></script>
-    <script src="/js/ui/sidebar.js?v=5ba50f6c"></script>
-    <script src="/js/chat.js?v=5ba50f6c"></script>
-    <script src="/js/security.js?v=5ba50f6c"></script>
-    <script src="/js/app.js?v=5ba50f6c"></script>
+    <script src="/js/config.js?v=2168288b"></script>
+    <script src="/js/services/networkService.js?v=2168288b"></script>
+    <script src="/js/services/authApiService.js?v=2168288b"></script>
+    <script src="/js/services/analyticsApiService.js?v=2168288b"></script>
+    <script src="/js/sessionManager.js?v=2168288b"></script>
+    <script src="/js/ui/uiManager.js?v=2168288b"></script>
+    <script src="/js/ui/components.js?v=2168288b"></script>
+    <script src="/js/ui/confirmationModal.js?v=2168288b"></script>
+    <script src="/js/services/searchService.js?v=2168288b"></script>
+    <script type="module" src="/js/search.js?v=2168288b"></script>
+    <script src="/js/services/libraryService.js?v=2168288b"></script>
+    <script src="/js/ui/libraryUI.js?v=2168288b"></script>
+    <script src="/js/ui/sidebar.js?v=2168288b"></script>
+    <script src="/js/security.js?v=2168288b"></script>
+    <script src="/js/app.js?v=2168288b"></script>
 </body>
 
 </html>

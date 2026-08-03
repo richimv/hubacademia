@@ -187,11 +187,35 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Botón con Brillo Invitación:** Se añadió la clase `.btn-add-card-glow` al botón dinámico "+ Añadir Tarjeta" en `repaso.js`, aplicando una animación infinita de box-shadow azul translúcido (`@keyframes btn-pulse-glow`) para incentivar e indicar al usuario de forma clara el punto de acción para crear nuevas tarjetas.
 - **Corrección de Giro en Flashcards (Efecto Reflejado):** Al remover el efecto de profundidad perspectiva 3D en el sprint anterior, se eliminó accidentalmente la propiedad `transform-style: preserve-3d;` en la clase `.card` de `flashcards.css`. Esto causaba que las caras de la tarjeta se aplanaran, impidiendo que `backface-visibility: hidden` ocultase el reverso de la cara frontal al rotar la tarjeta, mostrando la pregunta reflejada horizontalmente. Se restauró `transform-style: preserve-3d;` a `.card` para solucionar este comportamiento regresivo sin reintroducir la distorsión de perspectiva de cámara exagerada.
 
-### N. Sprint de Simplificación: Remoción de Flashcards y Mazos Oficiales (Junio 2026 - V20)
-- **Depreciación de Mazos Oficiales (SYSTEM Decks):** Se removieron las pestañas de navegación para "Mazos Oficiales" en el dashboard del módulo de Repaso. La aplicación ahora solo expone y opera sobre mazos de usuario (`type === 'USER'`), excluyendo los mazos de sistema (`SYSTEM`) en las consultas principales del backend (`flashcardRepository`) y en el renderizado del explorador lateral (`deck-explorer.js`).
-- **Eliminación del Guardado desde Quizzes:** Se quitó la capacidad de convertir preguntas de simulacros en flashcards. Esto incluye la eliminación del botón "Guardar Flashcard" en la interfaz de revisión y los endpoints backend `/api/flashcard/check-saved` y `/api/flashcard/save-from-question`.
-- **Exportación a Mazo Personal:** La exportación de vocabulario del módulo de idiomas ahora crea y asocia las tarjetas a un mazo de usuario personal llamado "Mi Vocabulario" en lugar de un mazo del sistema.
+### O. Vista Inicial de Comunidad y Rediseño Neón de Tarjetas (Agosto 2026 - V21)
+- **Ruteo Contextual por Estado de Sesión:**
+  - **Visitantes (Sin Sesión):** Al ingresar al módulo Repaso cargan por defecto la vista **Comunidad** para visualizar el contenido público. Si hacen clic en "Mis Mazos", el sistema renderiza un banner responsivo (`renderGuestMisMazosBanner`) con un llamado a la acción persuasivo que explica los beneficios de registrarse (crear mazos, carpetas, tarjetas con IA y sincronización multi-dispositivo) con botones para crear cuenta o volver a Comunidad.
+  - **Usuarios Logueados:** Al ingresar o recargar la página (`F5`), el sistema respeta la navegación estándar y la última vista activa persistida (`localStorage.getItem('repaso_active_view')`), garantizando que si estaban trabajando en "Mis Mazos" o dentro de una carpeta `deckId`, permanezcan exactamente en dicha sección sin forzar redirecciones.
+- **Refinamiento de Iluminación de Tarjetas (`.deck-card`):** Se pulió el resplandor de las tarjetas estableciendo un fondo negro mate puro (`#09090b`), limitando el destello neón a la esquina superior derecha (`60px` de radio) para mantener la legibilidad de la tipografía y los botones de acción sin sobrecarga de color.
+- **Resaltado Seleccionado en Explorador (`node-community`):** Se eliminó el fondo azul y borde permanente de la opción "Comunidad" en el Explorador lateral (`deck-explorer.js` / `repaso.css`). El elemento mantiene un estado neutro en reposo y activa su resplandor azul únicamente cuando está seleccionado (`.active`) o en hover (`:hover`).
+- **Homogeneización de Proporciones:** Se igualaron al 100% las proporciones, padding e insignias entre Comunidad y Mis Mazos.
+
+### P. Clasificación por Áreas Temáticas y Filtrado en Comunidad (Agosto 2026 - V22)
+- **Persistencia en Base de Datos**: Se incorporó la columna `category` (`VARCHAR(50) DEFAULT 'General'`) e índice optimizado `idx_decks_public_category` en la tabla `decks`.
+- **Estructura por Capas**:
+  - `domain/`: Repositorio (`flashcardRepository.js`) y servicio (`deckService.js`) actualizados para crear, editar, listar y filtrar mazos por temática (`Medicina`, `Educación`, `Matemáticas`, `Historia`, `Idiomas`, `Derecho`, `Ciencia`, `General`).
+  - `application/`: `deckController.js` procesa el filtro de categoría en `getPublicDecks`, `createDeck`, `updateDeck` y `toggleVisibility`.
+  - `presentation/`: Se inyectó una barra de filtrado por pills (`.community-category-bar`, `.category-pill`) en la vista **Comunidad** para filtrado en tiempo real sin recargar la página. Modal de creación/edición de mazos y confirmación de publicación actualizados con selector de temática responsivo y estilizado.
+- **Formato Visual Profesional**: Insignias de temática (`.deck-category-tag`) con tipografía estilizada, alineación responsiva y diseño sobrio sin saturación de bordes o efectos invasivos.
+
+- **Ajustes de Tipografía en Blanco Puro y Responsividad (V23)**:
+  - **Títulos en Blanco Puro**: Se forzó el color blanco brillante (`#f8fafc` / `#ffffff !important`) en los títulos de mazos (`.deck-card h3`) y en todos los ítems del árbol del Explorador (`.tree-content .tree-label`), sustituyendo tonos grises u opacos por una tipografía nítida y legible.
+  - **Márgenes Simétricos en PC**: Se ajustó `.explorer-container` y `#deck-content-area` (`padding-right: 2rem; box-sizing: border-box;`) garantizando una separación limpia y constante con el borde derecho de la pantalla en ordenadores.
+  - **Control de Desbordamiento y Desplazamiento Autónomo de Píldoras**:
+    - Móviles: `touch-action: pan-x;`, `overscroll-behavior-x: contain;` y manejadores `touchstart`/`touchmove` autónomos permitiendo deslizar las píldoras horizontalmente sin arrastrar la ventana principal.
+    - PC: Manejador `wheel` integrado para desplazar las píldoras horizontalmente usando la rueda del ratón.
+- **Implementación Estricta de la Escala Negro Mate Puro (V25)**:
+  - **Corrección de Documentación (`DESIGN_SYSTEM.md`)**: Se eliminaron las referencias a tonos azulados de elevación (`#0f172a`, `#0d1424`, `#0d131f`), declarando de forma estricta la paleta **Pure Matte Black Scale** (`#050505` para el cuerpo principal, `#0a0a0a` para tarjetas y modales sólidos, y `#121212` / `#18181b` para inputs y sub-tarjetas).
+  - **Overlay Semi-Transparente con Backdrop Blur**: Se configuró `.modal-overlay` a `background: rgba(0,0,0,0.75)` con `backdrop-filter: blur(12px) saturate(160%)`, permitiendo visualizar de manera sutil y elegante la página difuminada detrás del modal, manteniendo el cuerpo modal (`.modal-content`) 100% nítido, sólido e inalterado en `#0a0a0a`.
+  - **Reestructuración de "Estadísticas del Mazo" (`stats-modal`)**:
+    - Se dividió el contenido en `.modal-header`, `.modal-body` (con scroll suave autónomo) y `.modal-footer`, resolviendo el recorte del cuadro explicativo SRS y el gráfico.
+    - Se eliminó la leyenda redundante predeterminada de Chart.js, manteniendo únicamente la leyenda visual SRS con tarjetas de estado en `#121212`.
 
 ---
 
-**Documentación Técnica Actualizada - 24 de Junio, 2026.**
+**Documentación Técnica Actualizada - 3 de Agosto, 2026.**

@@ -6,6 +6,7 @@ const BookRepository = require('../../domain/repositories/bookRepository');
 // ✅ FASE II: Importar el nuevo servicio de chat para manejar el historial.
 const ChatService = require('../../domain/services/chatService');
 const TutorAiService = require('../../domain/services/tutorAiService');
+const asistenteGuiaKnowledge = require('../../domain/services/asistenteGuiaKnowledge');
 
 class ChatController {
     constructor(chatService, analyticsService, usageService) {
@@ -19,23 +20,21 @@ class ChatController {
         // Bindeo explícito para mantener el contexto
         this.processMessage = this.processMessage.bind(this);
         this.trainModel = this.trainModel.bind(this);
-        // ✅ FASE II: Bindeo de los nuevos métodos para el historial.
         this.getUserConversations = this.getUserConversations.bind(this);
         this.getConversationMessages = this.getConversationMessages.bind(this);
-        this.updateConversationTitle = this.updateConversationTitle.bind(this); // ✅ MEJORA
-        this.deleteConversation = this.deleteConversation.bind(this); // ✅ MEJORA
+        this.updateConversationTitle = this.updateConversationTitle.bind(this);
+        this.deleteConversation = this.deleteConversation.bind(this);
     }
 
     /**
      * Procesa un mensaje del usuario, lo clasifica, obtiene una respuesta de la IA
-     * y guarda toda la interacción en la base de datos.
+     * o devuelve respuestas estáticas de alta velocidad para preguntas frecuentes.
      */
     async processMessage(req, res) {
         try {
             console.log('💬 ChatController.processMessage iniciado');
 
-            // ✅ FASE II: Extraer datos del request (incluyendo resourceId si lo envía el asistente de voz/chat)
-            const { message, specialization = 'neutral', context, ephemeral = true, resourceId = null } = req.body;
+            const { message, specialization = 'neutral', context, ephemeral = true, resourceId = null, resourceContext = null } = req.body;
             let { conversationId } = req.body;
             const userId = req.user ? req.user.id : null; // Soporte para visitantes no autenticados
 
@@ -43,39 +42,35 @@ class ChatController {
                 return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
             }
 
-            // ✅ CARGA DE CONTEXTO DINÁMICO DE RECURSO (Si viene de la página de un recurso)
-            let finalSpecialization = specialization;
-            let resourceContext = null;
-
-            if (resourceId) {
-                try {
-                    const resRow = await new (require('../../domain/repositories/bookRepository'))().findById(resourceId);
-                    if (resRow) {
-                        finalSpecialization = resRow.domain || 'medicine';
-                        resourceContext = {
-                            id: resourceId,
-                            title: resRow.title || '',
-                            content_html: resRow.content_html || '',
-                            file_url: resRow.url || null
-                        };
-                        console.log(`📚 [ChatController] Contexto de recurso cargado. Especialidad dinamizada: ${finalSpecialization} | Recurso: "${resRow.title}"`);
-                    }
-                } catch (err) {
-                    console.error("⚠️ Error cargando contexto de recurso en ChatController:", err.message);
-                }
-            }
-
-            console.log(`💬 Procesando mensaje (${finalSpecialization}):`, message.substring(0, 60));
-
-            // ✅ EL CHAT GENERAL ES 100% EFÍMERO (VOLÁTIL)
-            // Solo los tutores de examen/flashcards pueden recibir historial de sesión en memoria
             const isQuizTutor = context && context.type === 'quiz_tutor';
             const isFlashcardTutor = context && context.type === 'flashcard_tutor';
             const isEphemeral = true; // El chat general ya NO se guarda en PostgreSQL/Supabase
 
+            // ⚡ CHAT GENERAL ES 100% ESTÁTICO Y EFÍMERO PARA TODOS LOS USUARIOS (0ms / 0 Costo IA)
+            const isGeneralChat = !isQuizTutor && !isFlashcardTutor;
+
+            if (isGeneralChat) {
+                const staticResp = asistenteGuiaKnowledge.matchIntent(message);
+                console.log(`⚡ [Asistente Guía 0ms] Respuesta estática devuelta a usuario (${userId ? 'Registrado' : 'Visitante'}): ${staticResp.intencion}`);
+                return res.json({
+                    intencion: staticResp.intencion,
+                    respuesta: staticResp.respuesta,
+                    sugerencias: staticResp.sugerencias,
+                    isStatic: true,
+                    conversationId: 'ephemeral',
+                    messageId: 'temp',
+                    timestamp: new Date().toISOString()
+                });
+            }
+
             console.log('⚡ MODO EFÍMERO: Procesando mensaje en memoria de sesión.');
             conversationId = conversationId || 'ephemeral';
             const conversationHistory = req.body.history || [];
+
+            // Determinar especialización final y examen objetivo
+            const rawSpec = req.body.specialization || req.userSpecialization || (context && (context.examContext || context.specialization)) || 'medicine';
+            const finalSpecialization = (rawSpec.toLowerCase().includes('educa') || rawSpec === 'EDUCACION') ? 'education' : 'medicine';
+            const targetExam = (context && context.target) || req.body.target || req.userTarget || (finalSpecialization === 'education' ? 'ASCENSO' : 'SERUMS');
 
             // RAG solo se activa para Quiz Tutor en exámenes (para usuarios Advanced/Admin con cuota)
             const hasRAGAccess = isQuizTutor ? (req.useRag !== undefined ? req.useRag : (req.userTier === 'advanced' || req.userTier === 'admin')) : false;
@@ -103,33 +98,45 @@ PREGUNTA DEL ESTUDIANTE: ${message}`;
 
             // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE SIMULADOR DE EXAMEN (Quiz Tutor)
             if (context && context.type === 'quiz_tutor') {
-                const tutorInstruction = `[MODO: TUTOR DE SIMULADOR DE EXAMEN]
-Eres un tutor experto. El estudiante está revisando una pregunta del simulador y tiene una duda. Ayúdale a comprender el fundamento de la respuesta, profundizando en el tema y resolviendo sus inquietudes específicas de manera clara, pedagógica y precisa.
+                const examDomain = context.examContext || (finalSpecialization === 'education' ? 'EDUCACION' : 'MEDICINA');
+                const target = context.target || targetExam;
+                const career = context.career || 'No especificada';
+                const difficulty = context.difficulty || 'Estándar';
+                const areas = (context.areas && Array.isArray(context.areas) && context.areas.length > 0) ? context.areas.join(', ') : (context.topic || 'General');
 
-CONTEXTO DE LA PREGUNTA DEL SIMULADOR:
+                const tutorInstruction = `[MODO: TUTOR DE SIMULADOR DE EXAMEN]
+Eres un tutor de élite de Hub Academia. El estudiante está resolviendo un simulacro interactivo y tiene una duda sobre esta pregunta. Tu objetivo es explicar el fundamento técnico/pedagógico con claridad, resolver sus inquietudes y profundizar en el tema.
+
+CONFIGURACIÓN DE EXAMEN Y CONTEXTO DEL ALUMNO:
+- DOMINIO ACADÉMICO: ${examDomain}
+- EXAMEN OBJETIVO (TARGET): ${target}
+- NIVEL / ESPECIALIDAD (CAREER): ${career}
+- DIFICULTAD CONFIGURADA: ${difficulty}
+- ÁREAS SELECCIONADAS EN LA PRUEBA: ${areas}
+
+DETALLES DE LA PREGUNTA DEL SIMULADOR:
 - PREGUNTA: ${context.questionText}
-- OPCIONES:
+- OPCIONES DE RESPUESTA:
 ${(context.options || []).map((opt, i) => `  [${String.fromCharCode(65 + i)}] ${opt}`).join('\n')}
-- RESPUESTA CORRECTA: Opción [${context.correctOptionIndex !== null ? String.fromCharCode(65 + context.correctOptionIndex) : 'N/A'}] (${context.correctOptionText})
-- RESPUESTA SELECCIONADA POR EL USUARIO: Opción [${context.userOptionIndex !== null ? String.fromCharCode(65 + context.userOptionIndex) : 'N/A'}] (${context.userOptionText}) -> ${context.isUserCorrect ? 'Correcta' : 'Incorrecta'}
-- EXPLICACIÓN OFICIAL: ${context.explanation}
-- TEMA/ÁREA: ${context.topic || 'General'}
-- EXAMEN OBJETIVO: ${context.target || 'General'}
+- RESPUESTA CORRECTA: Opción [${context.correctOptionIndex !== null && context.correctOptionIndex !== undefined ? String.fromCharCode(65 + context.correctOptionIndex) : 'N/A'}] (${context.correctOptionText})
+- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [${context.userOptionIndex !== null && context.userOptionIndex !== undefined ? String.fromCharCode(65 + context.userOptionIndex) : 'N/A'}] (${context.userOptionText}) -> ${context.isUserCorrect ? 'Correcta' : 'Incorrecta'}
+- EXPLICACIÓN/SUSTENTO OFICIAL: ${context.explanation}
+- TEMA ESPECÍFICO: ${context.topic || 'General'}
 ---
-PREGUNTA DEL ESTUDIANTE: ${message}`;
+PREGUNTA O DUDA DEL ESTUDIANTE: ${message}`;
 
                 processedMessage = tutorInstruction;
-                console.log('🧠 Quiz Tutor Context (Simulador Mode) Injected');
+                console.log(`🧠 Quiz Tutor Context Injected | Exam: ${target} (${career}) | Domain: ${examDomain}`);
             }
 
             // --- ✅ FASE III: PROCESAMIENTO IA (V6 - TutorAiService) ---
             let aiResult;
             try {
-                console.log(`🤖 Generando respuesta V6. RAG: ${hasRAGAccess}. Tier: ${req.userTier}. Spec: ${finalSpecialization}`);
+                console.log(`🤖 Generando respuesta V6. RAG: ${hasRAGAccess}. Tier: ${req.userTier}. Spec: ${finalSpecialization}. Target: ${targetExam}`);
 
                 // Llamada al servicio especializado con el mensaje procesado
                 aiResult = await TutorAiService.handleChat(processedMessage, conversationHistory, {
-                    target: req.userTarget || 'ENAM',
+                    target: targetExam,
                     specialization: finalSpecialization,
                     userTier: req.userTier,
                     namespace: (finalSpecialization === 'medicine' || finalSpecialization === 'education') ? finalSpecialization : 'general',

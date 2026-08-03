@@ -66,18 +66,6 @@ const LOADING_RESOURCES = {
             "Sabías que: El error constructivo es una oportunidad valiosa de aprendizaje según el MINEDU.",
             "Clave: La evaluación formativa busca regular el aprendizaje, no solo calificarlo."
         ]
-    },
-    'IDIOMAS': {
-        title: 'Preparando tu Entrenamiento de Idiomas',
-        subtitle: 'Cargando Módulo de Idiomas...',
-        tips: [
-            "La repetición espaciada es clave para memorizar vocabulario a largo plazo.",
-            "Aprender frases completas es más efectivo que memorizar palabras aisladas.",
-            "Escuchar audios con transcripciones ayuda a conectar fonética y ortografía.",
-            "Practica hablar contigo mismo en el idioma objetivo para mejorar tu fluidez.",
-            "El contexto es tu mejor amigo para deducir el significado de palabras nuevas.",
-            "Intenta pensar directamente en el idioma objetivo sin traducir mentalmente."
-        ]
     }
 };
 
@@ -144,7 +132,7 @@ window.showExamReview = async function () {
             const reviewTitleEl = reviewContainer.querySelector('.review-header h2');
             if (reviewTitleEl) {
                 const ctxUpper = state.context.toUpperCase();
-                const ctxTitleSuffix = ctxUpper === 'IDIOMAS' ? 'de Idiomas' : (ctxUpper === 'EDUCACION' ? 'Magisterial' : 'Médico');
+                const ctxTitleSuffix = ctxUpper === 'EDUCACION' ? 'Magisterial' : 'Médico';
                 reviewTitleEl.innerHTML = `<i class="fas fa-clipboard-check"></i> Corrección de Simulacro ${ctxTitleSuffix}`;
             }
         }
@@ -216,14 +204,12 @@ async function init() {
 
     // Set dynamic tab title based on context
     const ctxUpper = state.context.toUpperCase();
-    const ctxTitle = ctxUpper === 'IDIOMAS' ? 'Simulador de Idiomas' : (ctxUpper === 'EDUCACION' ? 'Simulador Magisterial' : 'Simulador Médico');
+    const ctxTitle = ctxUpper === 'EDUCACION' ? 'Simulador Magisterial' : 'Simulador Médico';
     document.title = `${ctxTitle} | Hub Academia`;
 
     // Configurar API_URL dinámicamente según contexto
     if (ctxUpper === 'EDUCACION') {
         API_URL = `${window.AppConfig.API_URL}/api/docente`;
-    } else if (ctxUpper === 'IDIOMAS') {
-        API_URL = `${window.AppConfig.API_URL}/api/idiomas-simulator`;
     } else {
         API_URL = `${window.AppConfig.API_URL}/api/medico`;
     }
@@ -235,9 +221,9 @@ async function init() {
         if (stored) savedConfig = JSON.parse(stored);
     } catch (error) { console.warn("No active config found"); }
 
-    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || (savedConfig && savedConfig.difficulty ? savedConfig.difficulty : (state.context === 'IDIOMAS' ? 'B2' : 'Senior'));
+    state.difficulty = urlParams.get('difficulty') || urlParams.get('level') || (savedConfig && savedConfig.difficulty ? savedConfig.difficulty : 'Senior');
 
-    state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : (state.context === 'IDIOMAS' ? 'MCER' : (state.context === 'EDUCACION' ? 'ASCENSO' : 'SERUMS')));
+    state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : (state.context === 'EDUCACION' ? 'ASCENSO' : 'SERUMS'));
     state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
     state.mode = urlParams.get('mode') || '';
     state.configType = urlParams.get('configType') || (savedConfig && savedConfig.configType ? savedConfig.configType : 'default');
@@ -304,6 +290,19 @@ async function init() {
             
             if (resume === true) {
                 Object.assign(state, recovered);
+                state.score = (state.answers || []).filter(a => a && a.isCorrect).length;
+                
+                // Ubicar el índice en la primera pregunta sin responder de la sesión recuperada
+                const firstUnanswered = (state.answers && Array.isArray(state.answers))
+                    ? state.answers.findIndex((a, idx) => idx < state.questions.length && (!a || a.userAnswer === undefined))
+                    : -1;
+                
+                if (firstUnanswered !== -1) {
+                    state.currentQuestionIndex = firstUnanswered;
+                } else if (state.answers && state.answers.length > 0) {
+                    state.currentQuestionIndex = Math.min(state.answers.length, state.questions.length - 1);
+                }
+
                 renderQuestion();
                 if (state.maxQuestions === 100) startMockTimer();
             } else if (resume === false) {
@@ -336,11 +335,13 @@ async function init() {
  */
 function saveSession() {
     if (new URLSearchParams(window.location.search).get('demo') === 'true') return;
+    if (state.isFinished) return; // ✅ NUNCA guardar si el examen ya se culminó
     localStorage.setItem(getStorageKey(), JSON.stringify({
         ...state,
         savedAt: Date.now(), // ✅ Expiración tracker
         quizId: state.quizId,
-        timeLeft: state.timeLeft // ✅ Persistencia del cronómetro
+        timeLeft: state.timeLeft, // ✅ Persistencia del cronómetro
+        isFinished: false
     }));
 }
 
@@ -349,6 +350,14 @@ function loadSession() {
         const stored = localStorage.getItem(getStorageKey());
         if (!stored) return null;
         const data = JSON.parse(stored);
+
+        // Regla 0: Si la sesión en memoria ya fue culminada, eliminarla de inmediato
+        if (data.isFinished || data.finished) {
+            console.log("♻️ Sesión en memoria ya finalizada. Limpiando caché.");
+            clearSession();
+            return null;
+        }
+
         // Regla 1: Expiración por tiempo de examen extendido (24 horas = 86400000 ms para soportar Simulacros Reales y pausas)
         const ageInMs = Date.now() - (data.savedAt || 0);
         if (ageInMs > 86400000) {
@@ -366,7 +375,7 @@ function loadSession() {
 
         const urlParams = new URLSearchParams(window.location.search);
 
-        // ✅ NUEVO: Si estamos en modo DEMO, nunca cargamos sesión previa (evita conflictos con sesiones de usuarios registrados)
+        // ✅ Si estamos en modo DEMO, nunca cargamos sesión previa (evita conflictos con sesiones de usuarios registrados)
         if (urlParams.get('demo') === 'true') {
             console.log("🆕 Modo Demo activo: Ignorando sesión guardada para inicio limpio.");
             return null;
@@ -381,7 +390,7 @@ function loadSession() {
             return null;
         }
 
-        // Regla 3: Validar contexto (MEDICINA vs EDUCACION vs IDIOMAS)
+        // Regla 3: Validar contexto (MEDICINA vs EDUCACION)
         const currentContext = (state.context || 'MEDICINA').toUpperCase();
         const storedContext = (data.context || 'MEDICINA').toUpperCase();
         if (currentContext !== storedContext) {
@@ -390,41 +399,17 @@ function loadSession() {
             return null;
         }
 
-        // Regla 4: Validar target del examen (SERUMS, ENAM, NOMBRAMIENTO, etc.)
-        const currentTarget = (state.targetExam || '').trim().toUpperCase();
-        const storedTarget = (data.targetExam || '').trim().toUpperCase();
-        if (currentTarget !== storedTarget) {
-            console.log("♻️ Sesión descartada por desajuste de target del examen.");
-            clearSession();
-            return null;
-        }
+        // Sincronizar configuraciones guardadas de forma segura si existen en la sesión
+        if (data.targetExam) state.targetExam = data.targetExam;
+        if (data.career) state.career = data.career;
+        if (data.difficulty) state.difficulty = data.difficulty;
+        if (data.areas && Array.isArray(data.areas) && data.areas.length > 0) state.areas = data.areas;
+        if (data.topic) state.topic = data.topic;
 
-        // Regla 5: Validar carrera / modalidad (EBR - Inicial vs EBR - Primaria vs etc.)
-        const currentCareer = (state.career || '').trim().toUpperCase();
-        const storedCareer = (data.career || '').trim().toUpperCase();
-        if (currentCareer !== storedCareer) {
-            console.log("♻️ Sesión descartada por desajuste de carrera/modalidad.");
-            clearSession();
-            return null;
-        }
-
-        // Regla 6: Validar dificultad
-        const currentDifficulty = (state.difficulty || '').trim().toUpperCase();
-        const storedDifficulty = (data.difficulty || '').trim().toUpperCase();
-        if (currentDifficulty !== storedDifficulty) {
-            console.log("♻️ Sesión descartada por desajuste de dificultad.");
-            clearSession();
-            return null;
-        }
-
-        // Regla 7: Validar que el mazo/tema/áreas sea el mismo
-        const currentAreas = (state.areas || []).sort().join(',').toUpperCase();
-        const storedAreas = (data.areas || []).sort().join(',').toUpperCase();
-
-        if (currentAreas === storedAreas && data.questions.length > 0) {
+        if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
             return data;
         } else {
-            console.log("♻️ Sesión descartada por desajuste de áreas de estudio.");
+            console.log("♻️ Sesión descartada por datos incompletos de preguntas.");
             clearSession();
             return null;
         }
@@ -433,7 +418,26 @@ function loadSession() {
 }
 
 function clearSession() {
-    localStorage.removeItem(getStorageKey());
+    const user = window.sessionManager ? window.sessionManager.getUser() : null;
+    const userId = user?.id || 'guest';
+
+    // 1. Limpieza explícita por claves directas
+    localStorage.removeItem(`simulator_active_session_${userId}`);
+    localStorage.removeItem(`simulator_active_session_guest`);
+
+    // 2. Barrido exhaustivo de cualquier clave residual simulator_active_session_*
+    try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('simulator_active_session_')) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch (e) {
+        console.warn("Fallo limpiando sesiones de localStorage:", e);
+    }
 }
 
 // Exponer función para iniciar nuevo examen limpiando caché sin race conditions
@@ -448,7 +452,7 @@ window.startNewExam = function () {
 // 2. Iniciar Quiz (Llamada al Backend)
 async function startQuiz() {
     // Mostrar Loading Dinámico y Tips
-    const ctxKey = state.context === 'IDIOMAS' ? 'IDIOMAS' : ((['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA');
+    const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
     const resources = LOADING_RESOURCES[ctxKey];
 
     if (elements.loadingTitle) elements.loadingTitle.innerText = resources.title;
@@ -526,8 +530,7 @@ async function startQuiz() {
         // Mapear el contexto del frontend al dominio del backend
         const contextMap = {
             'MEDICINA': 'medicine',
-            'EDUCACION': 'education',
-            'IDIOMAS': 'languages'
+            'EDUCACION': 'education'
         };
         const domainParam = contextMap[state.context || 'MEDICINA'] || 'medicine';
         const seenIds = JSON.parse(localStorage.getItem(`guest_seen_ids_${domainParam}`) || '[]');
@@ -573,7 +576,7 @@ async function startQuiz() {
             });
 
             // Ajustar el tema para la UI
-            const target = domainParam === 'education' ? 'ASCENSO' : (domainParam === 'languages' ? 'MCER' : 'SERUMS');
+            const target = domainParam === 'education' ? 'ASCENSO' : 'SERUMS';
             data.topic = `DEMO: ${target}`;
 
         } catch (demoErr) {
@@ -839,7 +842,7 @@ function renderQuestion() {
                 transition: 'opacity 0.4s ease'
             });
 
-            const ctxKey = state.context === 'IDIOMAS' ? 'IDIOMAS' : ((['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA');
+            const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
             const resources = LOADING_RESOURCES[ctxKey];
             const randomTip = resources.tips[Math.floor(Math.random() * resources.tips.length)];
 
@@ -939,6 +942,7 @@ function renderQuestion() {
     elements.feedbackBox.classList.remove('error');
     if (elements.nextBtnContainer) {
         elements.nextBtnContainer.classList.add('hidden');
+        elements.nextBtnContainer.style.display = 'none';
     }
     const tutorBtn = document.getElementById('btn-open-quiz-tutor');
     if (tutorBtn) {
@@ -976,6 +980,15 @@ function renderQuestion() {
         btn.onclick = () => handleAnswer(index, btn);
         elements.optionsGrid.appendChild(btn);
     });
+
+    // 🔄 REANIMAR INTERFAZ SI LA PREGUNTA YA HABÍA SIDO RESPONDIDA EN LA SESIÓN RECUPERADA
+    const existingAns = state.answers[state.currentQuestionIndex];
+    if (existingAns && existingAns.userAnswer !== undefined) {
+        const optionBtns = elements.optionsGrid.querySelectorAll('button');
+        if (optionBtns[existingAns.userAnswer]) {
+            handleAnswer(existingAns.userAnswer, optionBtns[existingAns.userAnswer]);
+        }
+    }
 }
 
 function updateProgressUI() {
@@ -993,6 +1006,7 @@ function updateProgressUI() {
 // 4. Manejar Respuesta
 function handleAnswer(selectedIndex, btnElement) {
     const q = state.questions[state.currentQuestionIndex];
+    if (!q) return;
 
     // Deshabilitar todos los botones
     const allBtns = elements.optionsGrid.querySelectorAll('button');
@@ -1000,29 +1014,28 @@ function handleAnswer(selectedIndex, btnElement) {
 
     const isCorrect = selectedIndex === q.correct_option_index;
 
-    // Guardar respuesta silenciosamente
-    state.answers.push({
+    // Guardar respuesta por índice explícito para evitar duplicación al reanudar
+    state.answers[state.currentQuestionIndex] = {
         questionId: state.currentQuestionIndex,
         userAnswer: selectedIndex,
         isCorrect: isCorrect
-    });
+    };
+
+    // Recalcular puntaje exacto basado en respuestas únicas
+    state.score = state.answers.filter(a => a && a.isCorrect).length;
 
     saveSession(); // ✅ PERSISTENCIA INMEDIATA
 
     // --- Retroalimentación Visual ---
     if (state.maxQuestions === 100) {
         // MODO SIMULACRO REAL (100q): Selección neutra blanca, sin feedback de acierto/error inmediato.
-        btnElement.classList.add('neutral-selected');
-        if (isCorrect) {
-            state.score++;
-        }
+        if (btnElement) btnElement.classList.add('neutral-selected');
     } else {
         // MODO ESTUDIO (20q) o RÁPIDO (10q): Feedback inmediato rojo/azul
         if (isCorrect) {
-            btnElement.classList.add('correct');
-            state.score++;
+            if (btnElement) btnElement.classList.add('correct');
         } else {
-            btnElement.classList.add('wrong');
+            if (btnElement) btnElement.classList.add('wrong');
             const correctIdx = q.correct_option_index !== undefined ? q.correct_option_index : q.correct_index;
             if (correctIdx !== undefined && allBtns[correctIdx]) {
                 allBtns[correctIdx].classList.add('correct');
@@ -1064,12 +1077,14 @@ function handleAnswer(selectedIndex, btnElement) {
 
         if (elements.nextBtnContainer) {
             elements.nextBtnContainer.classList.remove('hidden');
+            elements.nextBtnContainer.style.display = 'flex';
         }
     } else {
         // MODO RÁPIDO (10q) o SIMULACRO REAL (100q): Ocultamos explicación/feedback box, mostramos solo botón siguiente
         elements.feedbackBox.style.display = 'none';
         if (elements.nextBtnContainer) {
             elements.nextBtnContainer.classList.remove('hidden');
+            elements.nextBtnContainer.style.display = 'flex';
         }
     }
 
@@ -1079,7 +1094,7 @@ function handleAnswer(selectedIndex, btnElement) {
         if (state.maxQuestions === 100) {
             tutorBtn.style.display = 'none';
         } else {
-            tutorBtn.style.display = 'flex';
+            tutorBtn.style.display = 'inline-flex';
             tutorBtn.onclick = () => {
                 const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || 
                                 (window.sessionManager ? !window.sessionManager.isLoggedIn() : !localStorage.getItem('authToken'));
@@ -1103,20 +1118,25 @@ function handleAnswer(selectedIndex, btnElement) {
                     isUserCorrect: currentAns ? currentAns.isCorrect : false,
                     explanation: currentQ.explanation || '',
                     topic: currentQ.topic || state.topic || 'General',
-                    target: currentQ.target || state.targetExam || ''
+                    target: currentQ.target || state.targetExam || '',
+                    career: currentQ.career || state.career || '',
+                    examContext: state.context || 'MEDICINA',
+                    difficulty: state.difficulty || 'Senior',
+                    areas: state.areas || [],
+                    mode: state.mode || ''
                 };
                 window.quizTutor.toggle(true, qContext);
             };
         }
     }
 
-    // 📜 Desplazamiento suave y ligero de pantalla hacia el botón Siguiente
+    // 📜 Desplazamiento suave e inmediato de pantalla hacia los botones Siguiente / Tutor IA tras renderizado
     setTimeout(() => {
         const nextContainer = elements.nextBtnContainer || document.getElementById('nextBtnContainer');
-        if (nextContainer) {
-            smoothScrollTo(nextContainer, 2200); // 2200ms de scroll muy suave, gradual e imperceptible (easeInOutQuad)
+        if (nextContainer && nextContainer.style.display !== 'none') {
+            nextContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    }, 500); // 500ms de espera para permitir digerir el feedback visual (colores de las opciones)
+    }, 100);
 }
 
 // 5. Temporizador Real Mock (Maestro)
@@ -1236,6 +1256,8 @@ function showNetworkRetryOverlay() {
 }
 
 async function finishQuiz() {
+    state.isFinished = true;
+    clearSession(); // ✅ Limpiar de inmediato cualquier sesión activa para evitar la modal de reanudación
     clearInterval(timerInterval);
     if (window.quizTutor) window.quizTutor.toggle(false);
     const tutorBtn = document.getElementById('btn-open-quiz-tutor');
@@ -1303,17 +1325,22 @@ async function finishQuiz() {
         return;
     }
 
+    const totalCount = state.maxQuestions || state.questions.length;
+    const actualScore = (state.answers || []).filter(a => a && a.isCorrect).length;
+    state.score = actualScore;
+
     const payload = {
-        topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : state.topic,
-        areas: state.areas,
+        topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : (state.topic || 'General'),
+        areas: state.areas || [],
         target: state.targetExam,
         career: state.career,
         difficulty: state.difficulty,
-        score: state.score,
-        total_questions: state.currentQuestionIndex,
-        questions: state.questions.slice(0, state.currentQuestionIndex).map((q, idx) => ({
+        score: actualScore,
+        total_questions: totalCount,
+        totalQuestions: totalCount,
+        questions: state.questions.slice(0, totalCount).map((q, idx) => ({
             ...q,
-            userAnswer: state.answers[idx]?.userAnswer || 0,
+            userAnswer: state.answers[idx]?.userAnswer !== undefined ? state.answers[idx].userAnswer : 0,
             topic: q.topic || state.topic
         }))
     };

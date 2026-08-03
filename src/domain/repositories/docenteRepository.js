@@ -205,13 +205,14 @@ class DocenteRepository {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING id;
         `;
-        const weakPoints = quizData.score < quizData.totalQuestions ? [quizData.topic] : [];
+        const totalQ = quizData.totalQuestions || quizData.total_questions || (quizData.questions ? quizData.questions.length : 10);
+        const weakPoints = quizData.score < totalQ ? [quizData.topic] : [];
         const values = [
             userId,
             quizData.topic,
             quizData.difficulty || 'Senior',
             quizData.score,
-            quizData.totalQuestions,
+            totalQ,
             weakPoints,
             quizData.areaStats || '{}',
             quizData.target || 'ASCENSO',

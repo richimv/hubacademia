@@ -1243,26 +1243,6 @@ class UIManager {
             config.btnText = 'Ver Planes Premium';
             config.btnUrl = '/pricing';
             config.icon = 'fa-crown';
-        } else if (context === 'languages') {
-            config.icon = 'fa-language';
-            if (userTier === 'basic') {
-                config.title = '¡Límite Diario Alcanzado! 🚀';
-                config.message = customMsg || 'Has alcanzado tu límite de práctica de idiomas diaria (30 mensajes). Mejora tu plan a Avanzado para continuar entrenando con RAG y obtener hasta 50 mensajes diarios.';
-                config.btnText = 'Mejorar Plan';
-                config.btnUrl = '/pricing';
-            } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
-                config.title = '¡Meta Diaria Alcanzada! 🏆';
-                config.message = customMsg || 'Has completado tu práctica de idiomas diaria (50 mensajes). ¡Tu cerebro te lo agradecerá! Mañana volvemos con más lecciones de inglés e italiano.';
-                config.btnText = 'Volver al Inicio';
-                config.btnUrl = '/';
-            } else {
-                // Tier FREE o EXPIRED
-                config.title = '¡Desbloquea el Acceso Premium! 💎';
-                config.message = customMsg || 'Has alcanzado el límite de tu prueba de idiomas gratuita (5 mensajes). Suscríbete hoy para acceder a práctica y tutoría de voz ilimitada.';
-                config.btnText = 'Ver Planes Premium';
-                config.btnUrl = '/pricing';
-                config.icon = 'fa-crown';
-            }
         } else {
             // Contexto Autoevaluación / Default
             if (userTier === 'basic') {
@@ -1358,6 +1338,7 @@ class UIManager {
      * Muestra el modal de restricción "Soft Block".
      */
     showAuthPromptModal() {
+        this.injectModalHTML();
         const modal = document.getElementById(this.modalId);
         if (modal) {
             modal.style.display = 'flex';

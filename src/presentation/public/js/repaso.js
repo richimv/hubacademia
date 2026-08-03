@@ -137,14 +137,31 @@ class RepasoManager {
         // Init Components
         await this.explorer.init();
 
-        // Load Default View or Deep Link
+        // Load Default View or Deep Link (Contextual por estado de sesión)
         const urlParams = new URLSearchParams(window.location.search);
         const deckId = urlParams.get('deckId');
+        const viewParam = urlParams.get('view');
+        const isGuest = !this.token;
 
         if (deckId) {
-            this.loadFolder(deckId, false); // Deep link (ya está en la URL, no hacer push)
+            this.loadFolder(deckId, false); // Deep link
+        } else if (viewParam === 'community') {
+            this.loadCommunity(false);
+        } else if (viewParam === 'dashboard') {
+            this.loadDashboard(false);
         } else {
-            this.loadDashboard(false); // Start at Home (ya está en la URL, no hacer push)
+            // Visitante sin sesión -> Comunidad primero para explorar mazos públicos.
+            // Usuario autenticado -> Mis Mazos por defecto (o su última vista guardada).
+            if (isGuest) {
+                this.loadCommunity(false);
+            } else {
+                const savedView = localStorage.getItem('repaso_active_view');
+                if (savedView === 'community') {
+                    this.loadCommunity(false);
+                } else {
+                    this.loadDashboard(false);
+                }
+            }
         }
 
         // --- NUEVO: Sincronización de Sesión Reactiva ---
@@ -266,10 +283,13 @@ class RepasoManager {
         const commView = document.getElementById('community-view');
         if (commView) commView.style.display = 'none';
         this.currentDeck = null;
+        this.explorer.setActive('ROOT');
+        localStorage.setItem('repaso_active_view', 'dashboard');
 
         // Sync URL: If we go to Dashboard, clear deckId
         if (pushState && window.history.pushState) {
             const url = new URL(window.location.href);
+            url.searchParams.set('view', 'dashboard');
             url.searchParams.delete('deckId');
             window.history.pushState({ view: 'dashboard' }, 'Centro de Repaso', url.toString());
         }
@@ -286,6 +306,8 @@ class RepasoManager {
         document.getElementById('folder-view').style.display = 'block';
         const commView = document.getElementById('community-view');
         if (commView) commView.style.display = 'none';
+        this.explorer.setActive(deckId);
+        localStorage.setItem('repaso_active_view', 'folder');
 
         // --- 1. INTENTAR CARGAR DESDE CACHÉ (INSTANTÁNEO) ---
         if (this._cache.folderData[deckId]) {
@@ -382,6 +404,8 @@ class RepasoManager {
         if (commView) commView.style.display = 'block';
 
         this.currentDeck = null;
+        this.explorer.setActive('COMMUNITY');
+        localStorage.setItem('repaso_active_view', 'community');
 
         if (pushState && window.history.pushState) {
             const url = new URL(window.location.href);
@@ -411,6 +435,11 @@ class RepasoManager {
             </div>
         `;
 
+        if (!this.token) {
+            this.renderGuestMisMazosBanner();
+            return;
+        }
+
         try {
             const decks = await this.fetchDecksShared(null);
             const grid = document.getElementById('root-decks-grid');
@@ -429,30 +458,86 @@ class RepasoManager {
         }
     }
 
+    renderGuestMisMazosBanner() {
+        const grid = document.getElementById('root-decks-grid');
+        if (!grid) return;
 
-    async renderCommunityDecks(page = 1) {
-        const container = document.getElementById('community-view');
-        container.innerHTML = `
-            <div style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1)); padding: 2rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
-                <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.8rem;">
-                    <i class="fas fa-globe" style="color: #60a5fa;"></i> Comunidad
-                </h1>
-                <p style="color: #94a3b8; font-size: 0.95rem;">Explora mazos públicos creados por otros estudiantes. Clónalos a tu biblioteca personal para estudiarlos y modificarlos a tu ritmo.</p>
+        grid.innerHTML = `
+            <div style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(15, 15, 20, 0.95)); border: 1.5px solid rgba(249, 115, 22, 0.35); border-radius: 20px; padding: 2.5rem 2rem; text-align: center; max-width: 680px; margin: 1rem auto; box-shadow: 0 12px 35px rgba(0,0,0,0.6);">
+                <div style="width: 64px; height: 64px; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; color: #ff9f43; font-size: 1.8rem; box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);">
+                    <i class="fas fa-folder-plus"></i>
+                </div>
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.75rem;">¡Crea y Personaliza tus Propios Mazos!</h3>
+                <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem; max-width: 540px; margin-left: auto; margin-right: auto;">
+                    Únete a Hub Academia para organizar tus temas de estudio, crear carpetas de repaso, crear tus tarjetas y comenzar a estudiar con la ayuda de un tutor inteligente.
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-premium btn-premium-primary" style="padding: 0.75rem 1.75rem; font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.6rem; background: linear-gradient(135deg, #f97316, #ea580c); border: none; border-radius: 12px; color: #fff; cursor: pointer; box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);" onclick="window.uiManager.showAuthPromptModal()">
+                        <i class="fas fa-user-plus"></i> Crear Cuenta Gratis
+                    </button>
+                    <button class="btn-premium btn-premium-secondary" style="padding: 0.75rem 1.5rem; font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.6rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; color: #cbd5e1; cursor: pointer;" onclick="window.repasoManager.loadCommunity()">
+                        <i class="fas fa-globe"></i> Explorar Comunidad
+                    </button>
+                </div>
             </div>
+        `;
+    }
+
+
+    async renderCommunityDecks(page = 1, category = 'ALL') {
+        this.currentCommunityCategory = category || 'ALL';
+        const container = document.getElementById('community-view');
+
+        const CATEGORIES = [
+            { id: 'ALL', name: 'Todas', icon: 'fas fa-border-all' },
+            { id: 'Medicina', name: 'Medicina', icon: 'fas fa-user-md' },
+            { id: 'Educación', name: 'Educación', icon: 'fas fa-graduation-cap' },
+            { id: 'Matemáticas', name: 'Matemáticas', icon: 'fas fa-calculator' },
+            { id: 'Historia', name: 'Historia', icon: 'fas fa-landmark' },
+            { id: 'Idiomas', name: 'Idiomas', icon: 'fas fa-language' },
+            { id: 'Derecho', name: 'Derecho', icon: 'fas fa-balance-scale' },
+            { id: 'Ciencia', name: 'Ciencia', icon: 'fas fa-flask' },
+            { id: 'General', name: 'General', icon: 'fas fa-book' }
+        ];
+
+        const categoryPillsHtml = CATEGORIES.map(cat => `
+            <button class="category-pill ${cat.id === this.currentCommunityCategory ? 'active' : ''}" 
+                onclick="window.repasoManager.renderCommunityDecks(1, '${cat.id}')">
+                <i class="${cat.icon}"></i> ${cat.name}
+            </button>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="community-banner">
+                <h1 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.8rem; color: #ffffff;">
+                    <i class="fas fa-globe" style="color: #f97316;"></i> Comunidad de Repaso
+                </h1>
+                <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin: 0;">
+                    Explora mazos públicos clasificados por áreas temáticas. Clónalos a tu biblioteca personal para estudiarlos cuando quieras.
+                </p>
+            </div>
+
+            <!-- Barra de Filtros por Categoría / Temática -->
+            <div class="community-category-bar">
+                ${categoryPillsHtml}
+            </div>
+
             <div id="community-decks-grid" class="decks-grid">
-                <div style="text-align:center; padding:2rem; grid-column: 1 / -1;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#60a5fa"></i></div>
+                <div style="text-align:center; padding:2rem; grid-column: 1 / -1;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#f97316"></i></div>
             </div>
         `;
 
+        this.enableCategoryBarDrag();
+
         try {
-            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/public?page=${page}&limit=20`);
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/public?page=${page}&limit=20&category=${encodeURIComponent(category)}`);
             const data = await res.json();
 
             const grid = document.getElementById('community-decks-grid');
             grid.innerHTML = '';
 
             if (!data.decks || data.decks.length === 0) {
-                grid.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center; background:rgba(255,255,255,0.02); border-radius:16px; grid-column: 1 / -1;">Aún no hay mazos públicos. ¡Sé el primero en compartir uno!</div>';
+                grid.innerHTML = '<div style="color:#94a3b8; padding:3rem 2rem; text-align:center; background:rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.08); border-radius:16px; grid-column: 1 / -1;"><i class="fas fa-folder-open" style="font-size:2rem; color:#64748b; margin-bottom:0.75rem; display:block;"></i>No se encontraron mazos públicos en esta categoría.</div>';
                 return;
             }
 
@@ -461,30 +546,28 @@ class RepasoManager {
             data.decks.forEach(deck => {
                 const card = document.createElement('div');
                 card.className = 'deck-card';
-                card.style.padding = '1rem';
-                card.style.cursor = 'pointer'; // Changed to pointer since it's clickable
-
-
+                card.style.cursor = 'pointer';
 
                 const iconHtml = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder');
+                const catObj = CATEGORIES.find(c => c.id === deck.category) || { name: deck.category || 'General', icon: 'fas fa-tag' };
 
                 card.innerHTML = `
                     <!-- Desktop layout -->
                     <div class="deck-card-desktop" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${escapeHtml(deck.name)}')">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-                            <span class="deck-badge badge-system" style="font-size:0.6rem; padding:0.15rem 0.5rem; background: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.2);"><i class="fas fa-users"></i> PÚBLICO</span>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                            <span class="deck-category-tag"><i class="${catObj.icon}"></i> ${catObj.name}</span>
                             <div style="color: #94a3b8; font-size: 0.75rem;"><i class="fas fa-download"></i> ${deck.saves_count || 0}</div>
                         </div>
-                        <div style="font-size:1.5rem; margin-bottom:0.5rem;">${iconHtml}</div>
-                        <h3 style="font-size:0.9rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
-                        <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem;">
+                        <div style="font-size:1.6rem; margin-bottom:0.4rem;">${iconHtml}</div>
+                        <h3 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
+                        <div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:0.4rem;">
                             ${deck.total_cards || 0} tarjetas
                         </div>
-                        <div style="font-size:0.7rem; color:#64748b; margin-bottom:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            Por: <span style="color:#cbd5e1">${deck.author_name || 'Estudiante'}</span>
+                        <div style="font-size:0.75rem; color:#f97316; font-weight:600; margin-bottom:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            > Por: <span style="color:#e2e8f0">${deck.author_name || 'Estudiante'}</span>
                         </div>
                         <div style="margin-top:auto; width:100%;">
-                            <button class="btn-action" style="width: 100%; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.8rem; justify-content: center; padding: 0.5rem;" onclick="event.stopPropagation(); window.repasoManager.cloneDeck('${deck.id}')">
+                            <button class="btn-clone-deck" onclick="event.stopPropagation(); window.repasoManager.cloneDeck('${deck.id}')">
                                 <i class="fas fa-clone"></i> Clonar Mazo
                             </button>
                         </div>
@@ -492,20 +575,20 @@ class RepasoManager {
 
                     <!-- Mobile layout -->
                     <div class="deck-card-mobile" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${escapeHtml(deck.name)}')">
-                        <div style="font-size:1.2rem; flex-shrink:0;">${iconHtml}</div>
+                        <div style="font-size:1.3rem; flex-shrink:0;">${iconHtml}</div>
                         <div style="flex:1; min-width:0;">
-                            <div style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
-                            <div style="font-size:0.7rem; color:#94a3b8;">
+                            <div style="font-size:0.9rem; font-weight:700; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
+                            <div style="font-size:0.75rem; color:#cbd5e1;">
                                 ${deck.total_cards || 0} tarj. • <i class="fas fa-download"></i> ${deck.saves_count || 0}
                             </div>
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; flex-shrink:0;">
-                             <button class="deck-action-btn" style="background:rgba(59,130,246,0.15); color:#60a5fa; border: 1px solid rgba(59,130,246,0.2); width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" 
+                             <button class="deck-action-btn" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4); width:34px; height:34px; padding:0; display:flex; align-items:center; justify-content:center;" 
                                 onclick="event.stopPropagation(); window.repasoManager.cloneDeck('${deck.id}')" 
                                 title="Clonar Mazo">
                                 <i class="fas fa-clone"></i>
                             </button>
-                            <span class="deck-badge badge-system" style="font-size:0.5rem; padding:0.1rem 0.4rem;">PÚBLICO</span>
+                            <span class="deck-category-tag"><i class="${catObj.icon}"></i> ${catObj.name}</span>
                         </div>
                     </div>
                 `;
@@ -517,6 +600,65 @@ class RepasoManager {
             console.error('Error loading community decks:', e);
             document.getElementById('community-decks-grid').innerHTML = '<div style="color:#ef4444; padding:2rem; text-align:center; grid-column: 1 / -1;">Error al cargar la comunidad.</div>';
         }
+    }
+
+    enableCategoryBarDrag() {
+        const slider = document.querySelector('.community-category-bar');
+        if (!slider) return;
+
+        let isDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+        let isDragging = false;
+
+        // --- 1. Mouse Dragging (PC) ---
+        slider.onmousedown = (e) => {
+            isDown = true;
+            isDragging = false;
+            slider.classList.add('dragging');
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        };
+
+        slider.onmouseleave = () => {
+            isDown = false;
+            slider.classList.remove('dragging');
+        };
+
+        slider.onmouseup = () => {
+            isDown = false;
+            setTimeout(() => {
+                isDragging = false;
+                slider.classList.remove('dragging');
+            }, 50);
+        };
+
+        slider.onmousemove = (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 1.6;
+            if (Math.abs(walk) > 5) isDragging = true;
+            slider.scrollLeft = scrollLeft - walk;
+        };
+
+        // --- 2. Mouse Wheel Scroll (PC) ---
+        slider.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                slider.scrollLeft += e.deltaY * 1.2;
+            }
+        }, { passive: false });
+
+        // --- 3. Prevenir click accidental al arrastrar con ratón ---
+        slider.querySelectorAll('.category-pill').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (isDragging) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                }
+            }, true);
+        });
     }
 
     async previewPublicDeck(deckId, deckName) {
@@ -707,18 +849,35 @@ class RepasoManager {
         if (!this.token) return;
 
         if (makePublic) {
+            const currentCat = (this.currentDeck && this.currentDeck.category) ? this.currentDeck.category : 'General';
             const modalHtml = `
-            <div id="confirm-publish-modal" style="position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(5px); z-index:99999; display:flex; justify-content:center; align-items:center; opacity:0; transition:opacity 0.2s;">
-                <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:16px; width:90%; max-width:360px; padding:1.5rem; text-align:center; transform:scale(0.95); transition:transform 0.2s;">
-                    <i class="fas fa-globe" style="font-size:2.5rem; color:#3b82f6; margin-bottom:1rem;"></i>
-                    <h3 style="color:#f8fafc; font-size:1.2rem; margin:0 0 0.5rem 0; font-weight:600;">¿Publicar en Comunidad?</h3>
-                    <p style="color:#94a3b8; font-size:0.85rem; line-height:1.5; margin-bottom:1.5rem;">
-                        Se publicará este mazo, su guía y sus tarjetas directas.<br><br>
-                        <span style="color:#ef4444; font-size:0.8rem;"><i class="fas fa-info-circle"></i> Los sub-mazos anidados no se publicarán.</span>
+            <div id="confirm-publish-modal" class="modal-overlay active" style="opacity:0; transition:opacity 0.25s ease;">
+                <div class="modal-content" style="max-width:440px; padding:1.75rem; text-align:center; transform:scale(0.95); transition:transform 0.25s ease; background:#0a0a0a !important; border:1px solid rgba(255,255,255,0.08) !important; border-radius:20px !important; box-shadow:0 25px 50px -12px rgba(0,0,0,0.95) !important;">
+                    <div style="width:64px; height:64px; margin:0 auto 1.2rem auto; background:rgba(249, 115, 22, 0.12); border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(249, 115, 22, 0.3); box-shadow: 0 0 15px rgba(249, 115, 22, 0.15);">
+                        <i class="fas fa-globe" style="font-size:1.8rem; color:#f97316;"></i>
+                    </div>
+                    <h3 style="color:#ffffff; font-size:1.25rem; margin:0 0 0.5rem 0; font-weight:700;">¿Publicar Mazo en Comunidad?</h3>
+                    <p style="color:#94a3b8; font-size:0.88rem; line-height:1.5; margin-bottom:1.25rem;">
+                        Se publicará este mazo, su guía y sus tarjetas directas para que otros estudiantes puedan explorarlo y clonarlo.
                     </p>
+                    
+                    <div style="margin-bottom:1.5rem; text-align:left;">
+                        <label style="font-size:0.82rem; color:#cbd5e1; font-weight:600; display:block; margin-bottom:0.45rem;">Categoría / Área Temática</label>
+                        <select id="publish-deck-category" class="form-input-premium" style="width:100%;">
+                            <option value="General" ${currentCat === 'General' ? 'selected' : ''}>📚 General</option>
+                            <option value="Medicina" ${currentCat === 'Medicina' ? 'selected' : ''}>🩺 Medicina</option>
+                            <option value="Educación" ${currentCat === 'Educación' ? 'selected' : ''}>🎓 Educación</option>
+                            <option value="Matemáticas" ${currentCat === 'Matemáticas' ? 'selected' : ''}>📐 Matemáticas</option>
+                            <option value="Historia" ${currentCat === 'Historia' ? 'selected' : ''}>📜 Historia</option>
+                            <option value="Idiomas" ${currentCat === 'Idiomas' ? 'selected' : ''}>🗣️ Idiomas</option>
+                            <option value="Derecho" ${currentCat === 'Derecho' ? 'selected' : ''}>⚖️ Derecho</option>
+                            <option value="Ciencia" ${currentCat === 'Ciencia' ? 'selected' : ''}>🔬 Ciencia</option>
+                        </select>
+                    </div>
+
                     <div style="display:flex; gap:0.8rem; justify-content:center;">
-                        <button id="btn-cancel-publish" class="btn-action btn-secondary-action" style="flex:1; justify-content:center; padding:0.6rem;">Cancelar</button>
-                        <button id="btn-confirm-publish" class="btn-action" style="flex:1; justify-content:center; padding:0.6rem; background:#3b82f6; color:white; border:none;">Publicar</button>
+                        <button id="btn-cancel-publish" class="btn-action btn-secondary-action" style="flex:1; justify-content:center; padding:0.7rem; border-radius:12px;">Cancelar</button>
+                        <button id="btn-confirm-publish" class="btn-action" style="flex:1; justify-content:center; padding:0.7rem; background:linear-gradient(135deg, #f97316 0%, #ea580c 100%); color:white; border:none; border-radius:12px; font-weight:700; box-shadow:0 4px 15px rgba(249,115,22,0.3);">Publicar</button>
                     </div>
                 </div>
             </div>`;
@@ -733,11 +892,12 @@ class RepasoManager {
             });
 
             const closeModal = (confirmed) => {
+                const selectedCat = document.getElementById('publish-deck-category') ? document.getElementById('publish-deck-category').value : 'General';
                 modal.style.opacity = '0';
                 content.style.transform = 'scale(0.95)';
                 setTimeout(() => {
                     modal.remove();
-                    if (confirmed) this._executeToggleVisibility(deckId, true);
+                    if (confirmed) this._executeToggleVisibility(deckId, true, selectedCat);
                 }, 200);
             };
 
@@ -749,17 +909,16 @@ class RepasoManager {
         return this._executeToggleVisibility(deckId, makePublic);
     }
 
-    async _executeToggleVisibility(deckId, makePublic) {
+    async _executeToggleVisibility(deckId, makePublic, category = null) {
         try {
             const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/visibility`, {
                 method: 'PUT',
-                body: JSON.stringify({ is_public: makePublic })
+                body: JSON.stringify({ is_public: makePublic, category })
             });
 
             if (res.ok) {
                 window.uiManager.showToast(makePublic ? 'Mazo publicado en la comunidad' : 'Mazo hecho privado', 'success');
                 this.invalidateCache(deckId);
-                // Actualizamos la vista actual
                 this.loadFolder(deckId, false);
             } else {
                 const data = await res.json();
@@ -863,10 +1022,7 @@ class RepasoManager {
         decks.forEach(deck => {
             const card = document.createElement('div');
             card.className = 'deck-card';
-            card.style.padding = '1rem';
             card.style.cursor = 'pointer';
-
-
 
             const isSystem = deck.type === 'SYSTEM';
             const mastery = deck.mastery_percentage || 0;
@@ -881,7 +1037,7 @@ class RepasoManager {
                 // Registered User: Play (Real) + Edit/Delete (if not system)
                 actionBtns = `
                     <div style="display:flex; gap:0.4rem; align-items:center;">
-                        <button class="deck-action-btn" style="background:rgba(59,130,246,0.15); color:#60a5fa; border: 1px solid rgba(59,130,246,0.2);" 
+                        <button class="deck-action-btn" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4);" 
                             onclick="event.stopPropagation(); window.repasoManager.startStudy('${deck.id}', '${escapeHtml(deck.name)}', ${deck.total_cards || 0})" 
                             title="Estudiar">
                             <i class="fas fa-play"></i>
@@ -903,7 +1059,7 @@ class RepasoManager {
                 // Guest User: Only Demo Play
                 actionBtns = `
                     <div style="display:flex; gap:0.3rem;">
-                        <button class="deck-action-btn" style="background:rgba(59,130,246,0.1); color:#60a5fa;" 
+                        <button class="deck-action-btn" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4);" 
                             onclick="event.stopPropagation(); window.repasoManager.startStudyDemo('${deck.id}')" 
                             title="Probar Demo">
                             <i class="fas fa-play"></i>
@@ -914,32 +1070,32 @@ class RepasoManager {
             card.innerHTML = `
                 <!-- Desktop layout -->
                 <div class="deck-card-desktop">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
                         ${actionBtns}
-                        <span class="deck-badge ${badgeClass}" style="font-size:0.6rem; padding:0.15rem 0.5rem;">${badgeText}</span>
+                        <span class="deck-badge ${badgeClass}" style="font-size:0.6rem; padding:0.15rem 0.5rem; background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);">${badgeText}</span>
                     </div>
-                    <div style="font-size:1.5rem; margin-bottom:0.5rem;">${iconHtml}</div>
-                    <h3 style="font-size:0.9rem; margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
-                    <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem;">
+                    <div style="font-size:1.6rem; margin-bottom:0.4rem;">${iconHtml}</div>
+                    <h3 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
+                    <div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:0.5rem;">
                         ${deck.total_cards || 0} tarjetas
                         ${hasDue ? `<span style="color:#ef4444; font-weight:600; margin-left:0.5rem;">${deck.due_cards} pend.</span>` : ''}
                     </div>
                     <div style="margin-top:auto; width:100%;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#cbd5e1; margin-bottom:3px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#fb923c; margin-bottom:4px; font-weight:600;">
                             <span>Dominio</span><span>${mastery}%</span>
                         </div>
-                        <div style="height:3px; background:rgba(255,255,255,0.05); border-radius:2px;">
-                            <div style="width:${mastery}%; height:100%; background:#3b82f6; border-radius:2px;"></div>
+                        <div style="height:4px; background:rgba(255,255,255,0.08); border-radius:2px;">
+                            <div style="width:${mastery}%; height:100%; background: linear-gradient(90deg, #f97316, #fb923c); border-radius:2px; box-shadow: 0 0 8px rgba(249,115,22,0.6);"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Mobile layout -->
                 <div class="deck-card-mobile">
-                    <div style="font-size:1.2rem; flex-shrink:0;">${iconHtml}</div>
+                    <div style="font-size:1.3rem; flex-shrink:0;">${iconHtml}</div>
                     <div style="flex:1; min-width:0;">
-                        <div style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
-                        <div style="font-size:0.7rem; color:#94a3b8;">
+                        <div style="font-size:0.9rem; font-weight:700; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
+                        <div style="font-size:0.75rem; color:#cbd5e1;">
                             ${deck.total_cards || 0} tarj.
                             ${hasDue ? `<span style="color:#ef4444; font-weight:600;">${deck.due_cards} pend.</span>` : ''}
                         </div>
@@ -1281,17 +1437,17 @@ class RepasoManager {
         // 2. State-Based Routing
         const params = new URLSearchParams(window.location.search);
         const deckId = params.get('deckId');
+        const view = params.get('view');
 
         if (deckId) {
             // Avoid reloading same folder if already active
             if (!this.currentDeck || String(this.currentDeck.id) !== String(deckId)) {
                 this.loadFolder(deckId, false);
             }
+        } else if (view === 'dashboard') {
+            this.loadDashboard(false);
         } else {
-            // Return to dashboard if no deck specified
-            if (this.currentDeck) {
-                this.loadDashboard(false);
-            }
+            this.loadCommunity(false);
         }
     }
 
@@ -1551,15 +1707,10 @@ class RepasoManager {
                 cutout: '75%',
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#94a3b8',
-                            font: { size: 12, family: "'Inter', sans-serif" },
-                            padding: 15
-                        }
+                        display: false
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        backgroundColor: '#141416',
                         titleColor: '#fff',
                         bodyColor: '#fff',
                         borderColor: 'rgba(255,255,255,0.1)',
@@ -1663,6 +1814,8 @@ class RepasoManager {
         const name = document.getElementById('new-deck-name').value;
         const parentId = document.getElementById('new-deck-parent').value || null;
         const description = document.getElementById('new-deck-description') ? document.getElementById('new-deck-description').value : null;
+        const categorySelect = document.getElementById('new-deck-category');
+        const category = categorySelect ? categorySelect.value : 'General';
 
         try {
             if (deckId) {
@@ -1672,7 +1825,7 @@ class RepasoManager {
                 const color = colorInput ? colorInput.value : null;
                 const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ name, icon, description, color })
+                    body: JSON.stringify({ name, icon, description, color, category })
                 });
 
                 if (res.status === 403) {
@@ -1700,7 +1853,7 @@ class RepasoManager {
                 const color = colorInput ? colorInput.value : null;
                 const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks`, {
                     method: 'POST',
-                    body: JSON.stringify({ name, icon, parentId, description, color })
+                    body: JSON.stringify({ name, icon, parentId, description, color, category })
                 });
 
                 if (res.status === 403) {
@@ -1729,13 +1882,16 @@ class RepasoManager {
         }
     }
 
-    openEditDeckModal(id, currentName, currentIcon, currentDescription = '', currentColor = '') {
+    openEditDeckModal(id, currentName, currentIcon, currentDescription = '', currentColor = '', currentCategory = 'General') {
         // Redundant reset removed, handled by explorer
         DeckExplorer.openCreateModal(null); // Pass null for parent to indicate edit/root
 
         document.getElementById('modal-deck-title').innerText = 'Editar Mazo';
         document.getElementById('new-deck-name').value = currentName;
         document.getElementById('new-deck-id').value = id;
+
+        const catSelect = document.getElementById('new-deck-category');
+        if (catSelect) catSelect.value = currentCategory || 'General';
 
         const descInput = document.getElementById('new-deck-description');
         if (descInput) {

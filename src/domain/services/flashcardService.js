@@ -8,7 +8,7 @@ const location = process.env.GOOGLE_CLOUD_LOCATION;
 const vertex_ai = new VertexAI({ project: project, location: location });
 
 const modelCreativeLite = vertex_ai.getGenerativeModel({
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-3.1-flash-lite',
     generationConfig: {
         maxOutputTokens: 8192,
         temperature: 0.9,

@@ -64,3 +64,20 @@ node scripts/autoIngestResources.js --data='[...ARRAY_JSON_ESCAPADO...]'
 
 El backend de Hub Academia validará la URL y los campos, guardándolos en la tabla "resources" de PostgreSQL con resource_type = 'paper'.
 ```
+
+---
+
+## 📊 Historial de Ingestas Recientes
+
+### 🗓️ Ingesta: 01 de Agosto de 2026
+- **Estado**: ✅ Ingesta exitosa (7 nuevos papers procesados).
+- **Proporción de Papers**: 100% (7/7).
+- **Resumen de Recursos Ingeridos**:
+  1. `[MEDICINE]` *Atlas del envejecimiento lisosomático revela una firma metabólica compartida con trastornos de almacenamiento lisosomático* (Science / PubMed - PMID 42531412)
+  2. `[MEDICINE]` *Injerto de baipás coronario multivaso mediante toracotomía pequeña frente a esternotomía (MIST): ensayo controlado aleatorizado, abierto e internacional* (The Lancet / PubMed - PMID 42537680)
+  3. `[MEDICINE]` *Atlas espacial de la vasculatura del cerebro humano revela ensambles celulares especializados* (Cell / PubMed - PMID 42537647)
+  4. `[MEDICINE]` *La arginina dietética impulsa la traducción dependiente de codones del MHC clase I y mejora la inmunidad en la tumorigénesis de colon e infecciones virales respiratorias* (Cell / PubMed - PMID 42532044)
+  5. `[EDUCATION]` *Panorama del aprendizaje adaptativo en la educación superior STEM: Análisis tecnopedagógico de experiencias, desafíos y oportunidades de implementación* (RIDE / SciELO - DOI 10.23913/ride.v16i32.2901)
+  6. `[EDUCATION]` *Formas distintas de transmisión de dopamina controlan la locomoción y el aprendizaje* (bioRxiv / PubMed - PMID 42539181)
+  7. `[EDUCATION]` *Sintonización del desarrollo de la dimensionalidad de variedades funcionales a lo largo del cerebro humano* (bioRxiv / PubMed - PMID 42539279)
+

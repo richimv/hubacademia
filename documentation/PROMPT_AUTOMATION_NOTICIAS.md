@@ -56,3 +56,9 @@ node scripts/autoIngestResources.js --data='[...ARRAY_JSON_ESCAPADO...]'
 
 El backend validará la URL y los campos, guardándolos en la tabla "resources" de PostgreSQL con resource_type = 'noticia' para destacarse automáticamente en el Widget de Novedades.
 ```
+
+---
+
+## 🛠️ Notas de Base de Datos y Compatibilidad
+- Se ha aplicado la migración `src/infrastructure/database/migrations/add_noticia_resource_type.sql` para actualizar la restricción CHECK `check_resource_type` en la tabla `resources`, permitiendo el valor `'noticia'`.
+

@@ -58,7 +58,7 @@ class ChatComponent {
                 <div class="chatbot-main-panel" style="width: 100%;">
                     <div class="chatbot-header">
                         <div class="chatbot-title-selector" style="cursor: default;" title="Asistente Guía Hub Academia">
-                            <i id="chatbot-icon" class="fas fa-compass chatbot-icon-svg" style="color: var(--chat-primary, #6366f1);"></i>
+                            <img id="chatbot-icon" src="/assets/hubifrente.png" alt="Hubi" class="chatbot-header-avatar">
                             <h3 id="chatbot-title-heading" class="chatbot-title-heading">Asistente Guía Hub Academia</h3>
                         </div>
                         <div class="chatbot-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
@@ -85,7 +85,7 @@ class ChatComponent {
                             <!-- Sugerencias se cargarán dinámicamente -->
                         </div>
                         <div class="chatbot-input">
-                            <textarea id="chatbot-input" placeholder="Pregunta sobre la plataforma..." maxlength="5000" rows="1"></textarea>
+                            <textarea id="chatbot-input" placeholder="Ingrese su consulta..." maxlength="5000" rows="1"></textarea>
                             <button id="chatbot-send" class="chatbot-send">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
@@ -95,14 +95,15 @@ class ChatComponent {
             </div>
 
             <button id="chatbot-toggle" class="chatbot-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="chatbot-container" aria-label="Abrir chat del Asistente">
-                <i class="fas fa-robot"></i>
+                <img src="/assets/hubi.png" alt="Hubi" class="chatbot-toggle-avatar">
                 <span class="chatbot-notification" id="chatbot-notification" style="display: none;"></span>
             </button>
             
             <!-- Burbuja de Invitación animada (Fuera del botón para fluidez extrema) -->
             <div id="chat-invitation-bubble" class="chat-invitation-bubble">
-                <span class="chat-invitation-text">¿Tienes dudas? ¡Pregúntame!</span>
-                <button type="button" class="chat-invitation-close" aria-label="Cerrar invitación" onclick="event.stopPropagation(); document.getElementById('chat-invitation-bubble').classList.remove('active'); localStorage.setItem('chat_invitation_dismissed', 'true');">
+                <img src="/assets/hubifrente.png" alt="Hubi" class="chat-invitation-avatar">
+                <span class="chat-invitation-text">¿Tienes alguna duda? ¡Pregúntame!</span>
+                <button type="button" class="chat-invitation-close" aria-label="Cerrar invitación" onclick="event.stopPropagation(); document.getElementById('chat-invitation-bubble').classList.remove('active'); sessionStorage.setItem('chat_invitation_dismissed', 'true');">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -176,12 +177,17 @@ class ChatComponent {
         const icon = document.getElementById('chatbot-icon');
         if (icon) {
             icon.dataset.persona = this.specialization;
-            const classes = {
-                neutral: 'fas fa-robot',
-                medicine: 'fas fa-stethoscope',
-                education: 'fas fa-graduation-cap'
-            };
-            icon.className = `${classes[this.specialization] || 'fas fa-robot'} chatbot-icon-svg`;
+            if (icon.tagName === 'IMG') {
+                icon.src = '/assets/hubifrente.png';
+                icon.className = 'chatbot-header-avatar';
+            } else {
+                const classes = {
+                    neutral: 'fas fa-robot',
+                    medicine: 'fas fa-stethoscope',
+                    education: 'fas fa-graduation-cap'
+                };
+                icon.className = `${classes[this.specialization] || 'fas fa-robot'} chatbot-icon-svg`;
+            }
         }
 
         const heading = document.getElementById('chatbot-title-heading');
@@ -245,17 +251,15 @@ class ChatComponent {
         return data.count;
     }
 
-    setVisitorLockState(isLocked) {
+    setVisitorLockState(isLocked = false) {
         const input = document.getElementById('chatbot-input');
         const sendBtn = document.getElementById('chatbot-send');
         if (input) {
-            input.disabled = isLocked;
-            input.placeholder = isLocked
-                ? '⚠️ Regístrate gratis para continuar.'
-                : 'Pregunta sobre la plataforma...';
+            input.disabled = false;
+            input.placeholder = 'Ingrese su consulta...';
         }
         if (sendBtn) {
-            sendBtn.disabled = isLocked;
+            sendBtn.disabled = false;
         }
     }
 
@@ -270,46 +274,37 @@ class ChatComponent {
     }
 
     handleChatToggleClick() {
-        const user = window.sessionManager ? window.sessionManager.getUser() : null;
-        const isLogged = !!user;
-
-        // Permitir 2 consultas gratuitas a visitantes. Al 3er intento se bloquea la interacción antes de enviar.
-        if (!isLogged) {
-            const visitorData = this.getVisitorDailyData();
-            if (visitorData.count >= 2) {
-                if (!this.isOpen) {
-                    this.toggleChat();
-                }
-                this.setVisitorLockState(true);
-                if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
-                    window.uiManager.showAuthPromptModal();
-                } else if (window.uiManager) {
-                    window.uiManager.showPaywallModal('Límite de 2 consultas de visitante alcanzado. ¡Crea tu cuenta gratis para continuar!', 'chat');
-                }
-                return;
-            }
-        }
-
         this.toggleChat();
     }
 
     addWelcomeMessage() {
         if (this.messages.length === 0) {
-            const welcomeText = `**¡Hola! Soy tu Asistente Guía de Hub Academia.**
-Te doy la bienvenida. Estoy aquí para resolver tus dudas sobre nuestros simuladores de **SERUMS (Medicina)** y **ASCENSO (Educación)**, planes de suscripción y cómo navegar por la plataforma.`;
-            this.addMessage(welcomeText, 'bot', { isWelcome: true });
-
-            const defaultSuggestions = [
-                "¿Qué ofrece esta plataforma?",
-                "¿Qué simuladores tienen disponibles?",
-                "¿Cuáles son los planes y precios?",
-                "¿Cómo me ayuda a nombrarme/colegiarme?"
-            ];
-            this.showFollowUpSuggestions(defaultSuggestions);
-
             const user = window.sessionManager ? window.sessionManager.getUser() : null;
-            const isVisitorLocked = !user && this.getVisitorDailyData().count >= 2;
-            this.setVisitorLockState(isVisitorLocked);
+            const isRegistered = !!(user && (user.id || user.email));
+
+            let optionsMarkdown = `1. **🚀 Servicios y Simuladores**\n2. **💳 Planes y Precios**\n3. **💡 Sustento Oficial y Ventajas**`;
+            let defaultSuggestions = [
+                "1. 🚀 Servicios y Simuladores",
+                "2. 💳 Planes y Precios",
+                "3. 💡 Sustento Oficial y Ventajas"
+            ];
+
+            // Si el usuario NO está registrado (es visitante), se añade la 4ta opción al final
+            if (!isRegistered) {
+                optionsMarkdown += `\n4. **🔑 ¿Cómo registrarme?**`;
+                defaultSuggestions.push("4. 🔑 ¿Cómo registrarme?");
+            }
+
+            const welcomeText = `**¡Hola! Soy tu guía de Hub Academia.**
+Te doy la bienvenida. Estoy aquí para orientarte sobre la plataforma.
+
+**Ingrese el número de su consulta en la caja de texto inferior:**
+
+${optionsMarkdown}`;
+
+            this.addMessage(welcomeText, 'bot', { isWelcome: true });
+            this.showFollowUpSuggestions(defaultSuggestions);
+            this.setVisitorLockState(false);
         }
     }
 
@@ -621,20 +616,15 @@ Te doy la bienvenida. Estoy aquí para resolver tus dudas sobre nuestros simulad
                     return;
                 }
 
-                // 2. ✅ INTERCEPTOR DE CLICS DE SEGURIDAD (Freemium Bypass Fix)
-                const link = e.target.closest('a');
-                if (link && messagesContainer.contains(link)) {
-                    // Si el link es interno (botón simulado) o algo del sistema, ignorar o manejar diferente.
-                    // Pero aquí nos preocupan los recursos externos (href http...).
-
+                // 2. ✅ INTERCEPTOR DE CLICS EN ENLACES (Navegación & Control Freemium)
+                const targetEl = e.target.closest('a');
+                if (targetEl && messagesContainer.contains(targetEl)) {
                     if (window.sessionManager && window.sessionManager.getUser()) {
                         const user = window.sessionManager.getUser();
-                        // Validar campos camelCase o snake_case
                         const status = user.subscriptionStatus || user.subscription_status;
                         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
                         const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
 
-                        // Lógica de Bloqueo
                         if (status === 'pending' && usage >= limit) {
                             e.preventDefault();
                             e.stopPropagation();
@@ -642,34 +632,30 @@ Te doy la bienvenida. Estoy aquí para resolver tus dudas sobre nuestros simulad
                             window.uiManager.showPaywallModal();
                             return;
                         }
-
-                        // ✅ OPCIONAL: Tracking de consumo si es un recurso.
-                        // Si el link tiene estructura de recurso conocido, podríamos llamar a verify.
-                        // Por ahora, permitimos el paso si tiene vidas.
-                        console.log('✅ Acceso permitido a recurso desde Chat.');
                     }
                 }
             });
         }
 
-        // Mostrar burbuja de invitación de forma diferida (3 segundos)
+        // Mostrar burbuja de invitación de forma diferida (2.5 segundos)
         setTimeout(() => {
             const bubble = document.getElementById('chat-invitation-bubble');
-            const dismissed = localStorage.getItem('chat_invitation_dismissed');
+            const dismissed = sessionStorage.getItem('chat_invitation_dismissed');
             if (bubble && !dismissed && !this.isOpen) {
                 bubble.classList.add('active');
             }
-        }, 3000);
+        }, 2500);
     }
 
     // ✅ NUEVO: Lógica para manejar el botón físico "Atrás" en móviles
     handlePopState(e) {
-        // Obtenemos el estado. Si NO existe el estado chatbotOpen pero ESTÁ abierto internamente, lo cerramos
+        if (this.isOpen && e.state && e.state.chatbotOpen) return;
+        const currentHash = window.location.hash || '';
+        if (this.isOpen && (currentHash.startsWith('#op-') || currentHash === '#acceder' || currentHash === '#login')) {
+            return;
+        }
         if (this.isOpen && (!e.state || !e.state.chatbotOpen)) {
             console.log('🔙 Botón hardware "Atrás" detectado. Cerrando chat para prevenir salida...');
-
-            // Llamamos al cierre pero le decimos explícitamente que NO toque la API history
-            // ya que el navegador y el `popstate` acaban de retroceder por sí solos.
             this.forceCloseChatFromBack();
         }
     }
@@ -805,23 +791,8 @@ Te doy la bienvenida. Estoy aquí para resolver tus dudas sobre nuestros simulad
 
         if (!message) return;
 
-        // Control de límite de 2 mensajes para visitantes no autenticados
         const user = window.sessionManager ? window.sessionManager.getUser() : null;
         const isLogged = !!user;
-
-        if (!isLogged) {
-            const visitorData = this.getVisitorDailyData();
-            if (visitorData.count >= 2) {
-                input.value = '';
-                this.setVisitorLockState(true);
-                if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
-                    window.uiManager.showAuthPromptModal();
-                } else if (window.uiManager) {
-                    window.uiManager.showPaywallModal('Límite de 2 consultas alcanzado. ¡Crea tu cuenta gratis para continuar!', 'chat');
-                }
-                return;
-            }
-        }
 
         console.log('💬 Enviando mensaje:', message);
 
@@ -864,6 +835,10 @@ Te doy la bienvenida. Estoy aquí para resolver tus dudas sobre nuestros simulad
 
             const fetchPromise = window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/chat`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-General-Chat': 'true'
+                },
                 body: JSON.stringify(requestData)
             });
 
@@ -966,12 +941,17 @@ Te doy la bienvenida. Estoy aquí para resolver tus dudas sobre nuestros simulad
         if (!this.isOpen) {
             this.toggleChat();
         }
+        this.setVisitorLockState(false);
         const input = document.getElementById('chatbot-input');
+        const sendBtn = document.getElementById('chatbot-send');
         if (input) {
+            input.disabled = false;
             input.value = question;
-            // Pequeño delay para asegurar que la UI está lista antes de enviar
-            setTimeout(() => this.sendMessage(), 300);
         }
+        if (sendBtn) {
+            sendBtn.disabled = false;
+        }
+        setTimeout(() => this.sendMessage(), 100);
     }
 
     addMessage(text, sender, metadata = {}) {
@@ -1032,15 +1012,13 @@ Te doy la bienvenida. Estoy aquí para resolver tus dudas sobre nuestros simulad
             `;
         }
 
-        // Acciones para mensajes del bot (Copiar y Guardar como Nota)
-        if (sender === 'bot' && !metadata.isWelcome) {
-            const actionButtons = `
-                <button class="copy-msg-btn" title="Copiar texto" onclick="window.chatbot.copyToClipboard(this)"><i class="far fa-copy"></i></button>
-                <button class="save-note-btn" title="Guardar como nota" data-msg-id="${currentMessageId || 'ephemeral'}"><i class="far fa-bookmark"></i></button>
-            `;
+        // Botón CTA de Registro si es mensaje de Despedida/Cierre
+        if (sender === 'bot' && (metadata.isFarewell || metadata.intencion === 'despedida_visitante')) {
             messageHTML += `
-                <div class="feedback-container">
-                    ${actionButtons}
+                <div class="cta-register-container" style="margin-top: 12px; margin-bottom: 6px; text-align: center;">
+                    <button class="btn-cta-register" style="background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000; font-weight: 700; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; font-size: 0.9rem;" onclick="if(window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function'){ window.uiManager.showAuthPromptModal(); } else { window.location.href='/register'; }">
+                        ✨ Crear Cuenta Gratis (20 Vidas de Prueba)
+                    </button>
                 </div>`;
         }
 
@@ -1123,13 +1101,22 @@ Te doy la bienvenida. Estoy aquí para resolver tus dudas sobre nuestros simulad
         const suggestionsContainer = document.getElementById('chatbot-suggestions');
         suggestionsContainer.innerHTML = '';
 
-        suggestions.forEach(suggestion => {
+        if (!suggestions || !Array.isArray(suggestions)) return;
+
+        const user = window.sessionManager ? window.sessionManager.getUser() : null;
+        const isRegistered = !!(user && (user.id || user.email));
+
+        const filtered = suggestions.filter(s => {
+            if (isRegistered && (s.includes('registrarme') || s.includes('acceder'))) {
+                return false;
+            }
+            return true;
+        });
+
+        filtered.forEach(suggestion => {
             const button = document.createElement('button');
             button.className = 'suggestion-btn';
             button.textContent = suggestion;
-            // ✅ ELIMINADO: Se quita el eventListener directo porque causaba conflicto 
-            // con el listener delegado de 'suggestionsContainer' en setupEventListeners,
-            // dejando el texto atorado en el input.
             suggestionsContainer.appendChild(button);
         });
     }

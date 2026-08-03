@@ -143,8 +143,7 @@ class AdminController {
                 return res.status(400).json({ error: 'Faltan parámetros: target y studyAreas son requeridos.' });
             }
 
-            const resolvedDomain = domain || 'medicine';
-            const resolvedDifficulty = difficulty || (resolvedDomain === 'languages' ? 'B1' : 'Senior');
+            const resolvedDifficulty = difficulty || 'Senior';
             console.log(`🧠 Admin solicitó lote RAG: ${target}, ${resolvedDifficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
 
             const generatedQuestions = await adminAiService.generateRAGQuestions(target, studyAreas, career, 5, false, resolvedDifficulty);

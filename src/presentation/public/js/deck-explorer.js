@@ -93,8 +93,8 @@ class DeckExplorer {
         container.className = 'tree-node';
         container.dataset.id = deck.id;
 
-        // Indentation
-        const paddingLeft = level * 1.5;
+        // Indentation (Escala sobria y compacta)
+        const paddingLeft = 0.5 + (level * 0.85);
 
         // Content
         let categoryClass = '';
@@ -135,10 +135,10 @@ class DeckExplorer {
         // Icon + Name
         const label = document.createElement('span');
         label.className = 'tree-label';
-        label.style.cssText = 'display: inline-flex; align-items: center; white-space: nowrap;';
+        label.style.cssText = 'display: inline-flex; align-items: center; flex: 1; min-width: 0; overflow: hidden;';
 
         const displayIcon = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder');
-        label.innerHTML = `<span style="margin-right:8px; width:20px; text-align:center;">${displayIcon}</span> <span style="white-space:nowrap;">${deck.name}</span>`;
+        label.innerHTML = `<span style="margin-right:8px; width:20px; text-align:center; flex-shrink:0;">${displayIcon}</span> <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:inherit;">${deck.name}</span>`;
 
         // Click Action -> Set Active & Load View
         content.onclick = () => {

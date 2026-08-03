@@ -26,7 +26,7 @@ class FlashcardTutor {
         panel.innerHTML = `
             <div class="tutor-chat-header">
                 <div class="tutor-header-title">
-                    <i class="fas fa-robot tutor-robot-icon"></i>
+                    <img src="/assets/hubifrente.png" alt="Hubi" class="tutor-header-avatar-img">
                     <span>Tutor de Apoyo IA</span>
                 </div>
                 <div class="tutor-header-actions" style="display:flex; gap:0.5rem; align-items:center;">

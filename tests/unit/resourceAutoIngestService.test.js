@@ -85,7 +85,6 @@ describe('ResourceAutoIngestService', () => {
         it('should normalize domains correctly', () => {
             expect(service._normalizeDomain('medicina humana')).toBe('medicine');
             expect(service._normalizeDomain('educacion basica')).toBe('education');
-            expect(service._normalizeDomain('idiomas e ingles')).toBe('idiomas');
             expect(service._normalizeDomain('otro')).toBe('medicine');
         });
     });

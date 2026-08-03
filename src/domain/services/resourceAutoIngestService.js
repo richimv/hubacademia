@@ -192,9 +192,7 @@ class ResourceAutoIngestService {
 
     _normalizeDomain(domainStr = '') {
         const dom = (domainStr || '').toLowerCase().trim();
-        if (dom.includes('med') || dom.includes('salud')) return 'medicine';
         if (dom.includes('edu')) return 'education';
-        if (dom.includes('idiom') || dom.includes('lang')) return 'idiomas';
         return 'medicine';
     }
 

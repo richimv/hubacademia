@@ -11,6 +11,7 @@ class BookRepository {
         if (type) {
             if (type === 'news' || isNews) {
                 conditions.push(`r.resource_type IN ('paper', 'norma', 'guia', 'noticia')`);
+                conditions.push(`r.created_at >= (NOW() - INTERVAL '30 days')`);
             } else {
                 params.push(type);
                 conditions.push(`r.resource_type = $${params.length}`);
@@ -25,11 +26,11 @@ class BookRepository {
         }
 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-        const orderBy = (type === 'news' || isNews) ? 'ORDER BY r.id DESC, r.title' : 'ORDER BY r.title';
+        const orderBy = (type === 'news' || isNews) ? 'ORDER BY r.created_at DESC, r.id DESC' : 'ORDER BY r.title';
 
         const query = `
             SELECT 
-                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium, r.content_html, r.domain, r.visible, r.open_directly,
+                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium, r.content_html, r.domain, r.visible, r.open_directly, r.created_at,
                 (
                     SELECT COALESCE(JSON_AGG(DISTINCT car.area), '[]')
                     FROM course_books cb

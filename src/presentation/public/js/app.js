@@ -38,8 +38,6 @@ async function syncPendingSubmissions() {
             let syncUrl = `${window.AppConfig.API_URL}/api/medico/submit`;
             if (ctxUpper === 'EDUCACION') {
                 syncUrl = `${window.AppConfig.API_URL}/api/docente/submit`;
-            } else if (ctxUpper === 'IDIOMAS') {
-                syncUrl = `${window.AppConfig.API_URL}/api/idiomas-simulator/submit`;
             }
             
             const response = await window.NetworkService.fetch(syncUrl, {

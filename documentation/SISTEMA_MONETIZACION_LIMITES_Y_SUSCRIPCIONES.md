@@ -81,7 +81,7 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 *   Permite a los usuarios Advanced realizar una correlación estadística de sus fallas mediante `POST /api/analytics/diagnostic`. Consume de la cuota diaria del chat.
 
 ### 3.4 Módulo: Generador de Flashcards (Tarjetas de Repaso)
-*   Se almacena en `monthly_flashcards_usage`. Limita de forma estricta los intentos de creación a 10 mensuales (Básico) y 30 mensuales (Avanzado).
+*   Se almacena en `monthly_flashcards_usage`. Limita de forma estricta la generación de flashcards con IA a 30 intentos mensuales (exclusivo del Plan Avanzado). Los usuarios del Plan Básico cuentan con creación e interacción manual de tarjetas de forma ilimitada.
 
 ---
 

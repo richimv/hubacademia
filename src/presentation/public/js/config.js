@@ -71,6 +71,7 @@
             'paper': 'paper.webp',
             'guia': 'guia.webp',
             'norma': 'norma.webp',
+            'noticia': 'noticia.webp',
             'other': 'other.webp',
             'article': 'paper.webp'
         };

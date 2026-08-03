@@ -17,9 +17,9 @@ class DeckService {
         return await trainingRepository.getDeckGuide(userId, deckId);
     }
 
-    async createDeck(userId, name, icon, parentId = null, description = null, color = null) {
+    async createDeck(userId, name, icon, parentId = null, description = null, color = null, category = 'General') {
         // Default to USER created manual deck
-        return await trainingRepository.createDeck(userId, name, 'USER', 'MANUAL', icon, parentId, description, color);
+        return await trainingRepository.createDeck(userId, name, 'USER', 'MANUAL', icon, parentId, description, color, category);
     }
 
     async getDueCards(userId, deckId) {
@@ -54,8 +54,8 @@ class DeckService {
         return await trainingRepository.deleteBulkFlashcards(userId, cardIds);
     }
 
-    async updateDeck(userId, deckId, name, icon, description = null, color = null) {
-        return await trainingRepository.updateDeck(userId, deckId, name, icon, description, color);
+    async updateDeck(userId, deckId, name, icon, description = null, color = null, category = 'General') {
+        return await trainingRepository.updateDeck(userId, deckId, name, icon, description, color, category);
     }
 
     async deleteDeck(userId, deckId) {
@@ -74,12 +74,12 @@ class DeckService {
         return await trainingRepository.createFlashcardsManualBatch(userId, deckId, cards);
     }
 
-    async getPublicDecks(page = 1, limit = 20) {
-        return await trainingRepository.getPublicDecks(page, limit);
+    async getPublicDecks(page = 1, limit = 20, category = 'ALL') {
+        return await trainingRepository.getPublicDecks(page, limit, category);
     }
 
-    async updateDeckVisibility(userId, deckId, isPublic) {
-        return await trainingRepository.updateDeckVisibility(userId, deckId, isPublic);
+    async updateDeckVisibility(userId, deckId, isPublic, category = null) {
+        return await trainingRepository.updateDeckVisibility(userId, deckId, isPublic, category);
     }
 
     async cloneDeck(userId, publicDeckId) {

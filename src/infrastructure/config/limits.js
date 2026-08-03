@@ -7,16 +7,16 @@ const LIMITS = {
     free: {
         chat_standard: 5,
         daily_rag_limit: 0,
-        monthly_flashcards: 1,
+        monthly_flashcards: 0,
         simulator: 0,
-        batch_import: 1
+        batch_import: 0
     },
     basic: {
         chat_standard: 50,
         daily_rag_limit: 0,
-        monthly_flashcards: 10,
+        monthly_flashcards: 0,
         simulator: 15,
-        batch_import: 10
+        batch_import: 0
     },
     advanced: {
         chat_standard: 100,

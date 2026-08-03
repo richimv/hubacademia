@@ -152,7 +152,7 @@ class DeckController {
      */
     createDeck = async (req, res) => {
         try {
-            const { name, icon, parentId, description, color } = req.body;
+            const { name, icon, parentId, description, color, category } = req.body;
             const { userId, isGuest } = this._getUserContext(req);
 
             if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para crear mazos' });
@@ -162,7 +162,7 @@ class DeckController {
                 return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
             }
 
-            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null, description || null, color || null);
+            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null, description || null, color || null, category || 'General');
             await this._syncUsage(req);
             res.json({ success: true, deck });
         } catch (error) {
@@ -177,7 +177,7 @@ class DeckController {
     updateDeck = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const { name, icon, description, color } = req.body;
+            const { name, icon, description, color, category } = req.body;
             const { userId } = this._getUserContext(req);
 
             if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
@@ -190,7 +190,7 @@ class DeckController {
                 return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
             }
 
-            const deck = await DeckService.updateDeck(userId, deckId, name, icon, description, color || null);
+            const deck = await DeckService.updateDeck(userId, deckId, name, icon, description, color || null, category || 'General');
             
             // 🪙 CONSUMO DE VIDA: Solo si se está guardando una GUÍA (Descripción)
             // Si solo cambia nombre o icono, es gratis.
@@ -692,7 +692,8 @@ class DeckController {
         try {
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 20;
-            const decks = await DeckService.getPublicDecks(page, limit);
+            const category = req.query.category || 'ALL';
+            const decks = await DeckService.getPublicDecks(page, limit, category);
             res.json({ success: true, decks });
         } catch (error) {
             console.error('[getPublicDecks] Error:', error);
@@ -706,13 +707,13 @@ class DeckController {
     toggleVisibility = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const { is_public } = req.body;
+            const { is_public, category } = req.body;
             const { userId, isGuest } = this._getUserContext(req);
 
             if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión' });
             if (typeof is_public !== 'boolean') return res.status(400).json({ error: 'Estado de visibilidad inválido' });
 
-            const updated = await DeckService.updateDeckVisibility(userId, deckId, is_public);
+            const updated = await DeckService.updateDeckVisibility(userId, deckId, is_public, category || null);
             res.json({ success: true, deck: updated });
         } catch (error) {
             console.error('[toggleVisibility] Error:', error);

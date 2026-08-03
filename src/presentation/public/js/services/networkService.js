@@ -41,13 +41,11 @@ class NetworkService {
             headers
         };
 
-        // Detectar si es un endpoint que consume vidas para free/pending
+        // Detectar si es un endpoint que consume vidas para free/pending (se excluye el Asistente Guía General Chat)
         const isConsumptionEndpoint = 
-            (url.includes('/api/chat') && !url.includes('/conversations')) ||
-            url.includes('/api/languages/') ||
+            (url.includes('/api/chat') && !url.includes('/conversations') && !(options.headers && (options.headers['X-General-Chat'] || options.headers['x-general-chat']))) ||
             url.includes('/api/medico/') ||
             url.includes('/api/docente/') ||
-            url.includes('/api/idiomas-simulator/') ||
             url.includes('/api/decks') ||
             url.includes('/api/analytics/diagnostic');
 

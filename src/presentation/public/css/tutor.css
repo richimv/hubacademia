@@ -9,51 +9,38 @@
     --tutor-border: var(--border-color);
 }
 
-/* Botón Hermoso del Robot (Cápsula Premium) */
+/* Botón Hermoso del Robot (Manta Pill Signature Standard) */
 .flashcard-tutor-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     margin: 20px auto 10px;
-    padding: 12px 28px;
-    background: rgba(30, 30, 30, 0.4);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--tutor-border);
-    border-radius: 50px;
-    color: var(--tutor-text);
+    padding: 0.65rem 1.4rem;
+    background: linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%) !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    color: #ffffff !important;
     font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 0.95rem;
+    font-weight: 700;
+    font-size: 0.92rem;
+    letter-spacing: -0.01em;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 18px rgba(59, 130, 246, 0.4), 0 0 12px rgba(6, 182, 212, 0.25);
     z-index: 10;
     
-    /* ✅ FIX: Centrado en Grid */
+    /* Centrado en Grid */
     grid-column: 1 / -1;
     width: fit-content;
 }
 
-.flashcard-tutor-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, var(--tutor-primary), var(--tutor-secondary));
-    opacity: 0.05;
-    transition: opacity 0.3s;
-}
-
 .flashcard-tutor-btn:hover {
-    transform: translateY(-3px) scale(1.02);
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.25);
-    background: rgba(40, 40, 40, 0.6);
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6), 0 0 20px rgba(6, 182, 212, 0.35) !important;
+    color: #ffffff !important;
 }
 
 .flashcard-tutor-btn:hover::before {
@@ -67,6 +54,26 @@
     background-clip: text; /* ✅ Propiedad estándar */
     -webkit-text-fill-color: transparent;
     animation: robot-pulse 2s infinite ease-in-out;
+}
+
+.tutor-btn-icon-img,
+.tutor-header-avatar-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+    margin-right: 8px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+    vertical-align: middle;
+}
+
+.btn-tutor-icon-img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 8px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 @keyframes robot-pulse {
@@ -296,10 +303,11 @@
 }
 
 .tutor-input-area {
-    padding: 20px;
+    padding: 16px 20px;
     background: rgba(255, 255, 255, 0.02);
     border-top: 1px solid var(--tutor-border);
     display: flex;
+    align-items: center;
     gap: 12px;
 }
 
@@ -315,9 +323,11 @@
     outline: none;
     transition: border-color 0.2s;
     resize: none; /* ✅ Evita redimensionamiento manual */
-    max-height: 150px; /* ✅ Límite de crecimiento */
+    max-height: 120px;
     min-height: 48px;
-    line-height: 1.4;
+    height: 48px;
+    box-sizing: border-box;
+    line-height: 22px;
     overflow-y: auto;
 }
 
@@ -336,6 +346,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     transition: all 0.2s;
 }
 

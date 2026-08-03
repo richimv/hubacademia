@@ -4,7 +4,7 @@ const genPrompts = require('../prompts/generationPrompts');
 
 /**
  * 👑 ADMIN AI SERVICE (V7.1): Generación de Alta Fidelidad para Banco Oficial.
- * - Flujo Unificado Multi-Dominio: Medicina, Educación e Idiomas.
+ * - Flujo Unificado Multi-Dominio: Medicina y Educación.
  * - Pipeline RAG / AI Auditor en bucle cerrado de refinamiento.
  */
 class AdminAiService {
@@ -32,7 +32,7 @@ class AdminAiService {
         const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
         this.vertex_ai = new VertexAI({ project, location });
         
-        // Modelo primario Gemini 3.1 sin razonamiento para optimización de costos
+        // Modelo único Gemini 3.1 Flash-Lite
         this.model = this.vertex_ai.getGenerativeModel({
             model: 'gemini-3.1-flash-lite',
             generationConfig: {
@@ -42,27 +42,16 @@ class AdminAiService {
             }
         });
 
-        // Modelo de respaldo (fallback de emergencia) en caso de limitaciones de región/proyecto en Vertex AI
-        this.fallbackModel = this.vertex_ai.getGenerativeModel({
-            model: 'gemini-2.5-flash-lite',
-            generationConfig: {
-                maxOutputTokens: 16384,
-                temperature: 0.4,
-                responseMimeType: "application/json"
-            }
-        });
+        this.fallbackModel = this.model;
 
-        // Asignar el servicio RAG (ya es una instancia exportada como Singleton)
+        // Asignar el servicio RAG
         this.ragService = QuestionRagService;
-
-        // Bandera de caché en memoria para disponibilidad del modelo 3.1 en Vertex AI
-        this.vertexModel31Supported = true;
     }
 
     /**
      * 🧠 LLAMADOR DE MODELO DUAL Y RESILIENTE (AI CHANNELER)
-     * Ejecuta la llamada a Gemini 3.1 Flash-Lite utilizando la API REST de Google AI Studio (si hay GEMINI_API_KEY)
-     * o mediante Vertex AI. Cuenta con fallback automático a Gemini 2.5 Flash-Lite en caso de errores de acceso o región.
+     * Ejecuta la llamada a gemini-3.1-flash-lite utilizando la API REST de Google AI Studio (si hay GEMINI_API_KEY)
+     * o mediante Vertex AI.
      */
     async _callModel(prompt) {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -97,77 +86,16 @@ class AdminAiService {
                 if (err.response && err.response.data) {
                     console.warn("❌ [REST Detalles]:", JSON.stringify(err.response.data));
                 }
-                
-                // REST Fallback a gemini-2.5-flash-lite si la 3.1 falló (pero la API key es válida)
-                const isAuthError = err.response && (err.response.status === 400 || err.response.status === 403);
-                if (!isAuthError) {
-                    try {
-                        const axios = require('axios');
-                        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
-                        const payload = {
-                            contents: [{ parts: [{ text: prompt }] }],
-                            generationConfig: {
-                                responseMimeType: "application/json",
-                                temperature: 0.4
-                            }
-                        };
-                        console.log("📡 [REST Fallback] Reintentando con gemini-2.5-flash-lite vía REST...");
-                        const fallbackRes = await axios.post(fallbackUrl, payload, { timeout: 15000 });
-                        if (fallbackRes.data && fallbackRes.data.candidates && fallbackRes.data.candidates[0] && fallbackRes.data.candidates[0].content) {
-                            const text = fallbackRes.data.candidates[0].content.parts[0].text;
-                            return {
-                                response: {
-                                    candidates: [{
-                                        content: { parts: [{ text }] }
-                                    }]
-                                }
-                            };
-                        }
-                    } catch (fallbackErr) {
-                        console.warn("⚠️ [REST Fallback Fallo] Error con gemini-2.5-flash-lite vía REST:", fallbackErr.message);
-                        if (fallbackErr.response && fallbackErr.response.data) {
-                            console.warn("❌ [REST Fallback Detalles]:", JSON.stringify(fallbackErr.response.data));
-                        }
-                    }
-                }
             }
         }
 
-        // Si ya sabemos que Vertex no soporta 3.1, saltar directamente al fallback 2.5
-        if (!this.vertexModel31Supported) {
-            console.log("📡 [VertexAI Bypass] gemini-3.1-flash-lite marcado como no soportado. Usando gemini-2.5-flash-lite directamente...");
-            try {
-                return await this.fallbackModel.generateContent(prompt);
-            } catch (vertexErr) {
-                console.error("❌ [VertexAI Fallo Crítico] Falló fallbackModel en Vertex:", vertexErr);
-                if (restError) throw restError;
-                throw vertexErr;
-            }
-        }
-
-        // Intento por Vertex AI (Canal Secundario)
+        // Intento por Vertex AI
         try {
             console.log("📡 [VertexAI] Llamando a gemini-3.1-flash-lite...");
             return await this.model.generateContent(prompt);
         } catch (err) {
-            // Si el error es 404 (modelo no disponible en la región/proyecto) o cualquier otro error crítico, hacer downgrade
-            const isNotAvailable = err.message && (err.message.includes('404') || err.message.includes('NOT_FOUND') || err.message.includes('access'));
-            if (isNotAvailable) {
-                this.vertexModel31Supported = false; // Marcar en memoria
-                console.warn("🚨 [VertexAI Fallback] gemini-3.1-flash-lite no disponible en tu región/proyecto. Aplicando downgrade de emergencia a gemini-2.5-flash-lite...");
-                try {
-                    return await this.fallbackModel.generateContent(prompt);
-                } catch (vertexErr) {
-                    console.error("❌ [VertexAI Fallo Crítico] Falló fallbackModel en Vertex tras downgrade:", vertexErr);
-                    if (restError) throw restError;
-                    throw vertexErr;
-                }
-            }
-            // Si Vertex falla por credenciales u otros errores de infraestructura, y teníamos un error de REST, lanzamos el de REST que es más informativo.
-            if (restError) {
-                console.error("❌ [VertexAI Fallo] Fallo de infraestructura Vertex AI. Lanzando error original de REST.");
-                throw restError;
-            }
+            console.error("❌ [VertexAI Fallo] Error con gemini-3.1-flash-lite en Vertex AI:", err.message);
+            if (restError) throw restError;
             throw err;
         }
     }

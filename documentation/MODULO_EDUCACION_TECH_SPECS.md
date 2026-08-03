@@ -331,7 +331,21 @@ Para optimizar el flujo de usuarios al realizar simulacros y evitar conflictos d
 
 ---
 
-## 14. Arquitectura de Chat IA: Asistente Guía y Tutores Contextuales (Julio 2026)
+## 15. Corrección de Resiliencia en Reanudación de Exámenes y Registro de Estadísticas (Agosto 2026)
+
+### Diagnóstico de la Interrupción
+Se identificó que cuando un usuario interrumpía un simulacro (10q, 20q o Simulacro Real de 100q) y posteriormente lo reanudaba hasta culminar:
+1. **Desalineación de `total_questions`**: Al enviar los resultados al backend (`/submit`), la propiedad `total_questions` tomaba el valor dinámico de `state.currentQuestionIndex`. Si el examen se reanudaba o finalizaba en una pregunta previa a `state.maxQuestions` (o durante la última pregunta antes del incremento), `total_questions` guardaba un número menor (ej. 19 ó 9). Al consultar el dashboard, las queries SQL filtraban estrictamente por `WHERE total_questions = 20` o `= 10`, ocasionando que los exámenes reanudados no aparecieran en los gráficos de evolución ni en las estadísticas acumuladas.
+2. **Duplicación de Respuestas y Conteo de Puntaje**: La función `handleAnswer` utilizaba `state.answers.push()`, lo que provocaba que al reanudar una pregunta guardada y volver a seleccionarla, la respuesta se añadiera por duplicado en el arreglo, distorsionando el cálculo de `score` y el mapeo de respuestas en el backend.
+
+### Solución e Implementación Técnica
+1. **Asignación Atómica por Índice (`quiz.js`)**:
+   - Se reemplazó el método `.push()` en `handleAnswer` por asignación explícita `state.answers[state.currentQuestionIndex] = { ... }`.
+   - Se implementó la recomputación dinámica del puntaje exacto: `state.score = state.answers.filter(a => a && a.isCorrect).length;`.
+2. **Normalización del Payload de Culminación (`finishQuiz`)**:
+   - `total_questions` se fija de forma absoluta al denominador de la modalidad: `const totalCount = state.maxQuestions || state.questions.length;`. Esto garantiza coincidencia del 100% con los filtros de estadísticas del backend (`WHERE total_questions = 20`).
+3. **Re-animación Automática de Pregunta Reanudada**:
+   - En `renderQuestion`, si la pregunta actual ya posee una respuesta previa registrada en la sesión recuperada, se auto-aplica la retroalimentación visual y se activa el botón de *Siguiente*, permitiendo al usuario continuar fluidamente.
 
 El sistema de Inteligencia Artificial se segmenta claramente en dos componentes especializados:
 
@@ -341,7 +355,7 @@ El sistema de Inteligencia Artificial se segmenta claramente en dos componentes 
 
 ### 14.2 Tutores IA de Exámenes (Quiz) y Repaso (Flashcards)
 Para profundizar en las casuísticas pedagógicas, principios constructivistas del CNEB y guías oficiales, se integran los Tutores Contextuales RAG:
-1. **Contextualización Inmediata**: Al activarse en un simulador (`quiz_tutor`) o tarjeta (`flashcard_tutor`), la IA recibe el contexto técnico exacto del reactivo (enunciado, alternativas, respuesta elegida, opción correcta y sustento pedagógico).
+1. **Contextualización Integral**: Al activarse en un simulador (`quiz_tutor`) o tarjeta (`flashcard_tutor`), la IA recibe los metadatos completos del reactivo (enunciado, alternativas, opción correcta, respuesta seleccionada por el estudiante, acierto/error y explicación oficial) **junto con la configuración exacta del examen** (`examContext`: EDUCACION/MEDICINA/IDIOMAS, `target`: ASCENSO/NOMBRAMIENTO/SERUMS, `career`: e.g. EBR Primaria o Especialidad Secundaria, `difficulty`, `areas` y `mode`).
 2. **RAG Semántico (Pinecone)**: Resuelve dudas sobre teorías del aprendizaje (Piaget, Vygotsky), enfoques transversales o rúbricas de evaluación del MINEDU utilizando RAG semántico sobre el namespace de educación (`education`), garantizando respuestas alineadas con el Currículo Nacional de Educación Básica (CNEB) y RVM 094-2020-MINEDU.
 3. **Control de Interfaz y Revisión**:
    - En simuladores activos (10q/20q), el botón del Tutor IA se habilita al responder cada pregunta.

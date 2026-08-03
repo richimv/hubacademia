@@ -1,7 +1,7 @@
 /**
  * simulatorsHub.js — Dynamic Simulator Landing Controller
  * Reads ?domain= from URL and renders the appropriate service cards.
- * Supports: salud (default), educacion, idiomas.
+ * Supports: salud (default), educacion.
  */
 document.addEventListener('DOMContentLoaded', () => {
     'use strict';

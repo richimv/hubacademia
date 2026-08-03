@@ -15,15 +15,15 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Shared CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/base.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/header.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/footer.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/dashboard.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/repaso.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/modal.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/sidebar.css?v=5ba50f6c">
-    <link rel="stylesheet" href="/css/components.css?v=5ba50f6c">
+    <link rel="stylesheet" href="/css/theme.css?v=2168288b">
+    <link rel="stylesheet" href="/css/base.css?v=2168288b">
+    <link rel="stylesheet" href="/css/header.css?v=2168288b">
+    <link rel="stylesheet" href="/css/footer.css?v=2168288b">
+    <link rel="stylesheet" href="/css/dashboard.css?v=2168288b">
+    <link rel="stylesheet" href="/css/repaso.css?v=2168288b">
+    <link rel="stylesheet" href="/css/modal.css?v=2168288b">
+    <link rel="stylesheet" href="/css/sidebar.css?v=2168288b">
+    <link rel="stylesheet" href="/css/components.css?v=2168288b">
 
     <!-- Rich Text Editor (Mini-Word) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
@@ -114,34 +114,34 @@
             font-style: italic;
         }
 
-        /* Estilo para selectores de idioma personalizados */
+        /* Estilo para selectores de categoría e idioma personalizados (Pure Matte Black Scale) */
         select.form-input-premium {
-            background: rgba(15, 23, 42, 0.8) !important;
-            border: 1px solid rgba(59, 130, 246, 0.3) !important;
-            color: #e2e8f0 !important;
-            border-radius: 8px !important;
-            padding: 0.5rem 1rem !important;
-            font-size: 0.85rem !important;
+            background: #121212 !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            color: #ffffff !important;
+            border-radius: 12px !important;
+            padding: 0.65rem 1rem !important;
+            font-size: 0.88rem !important;
             outline: none !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
             appearance: none !important;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360a5fa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%233b82f6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
             background-repeat: no-repeat !important;
-            background-position: right 0.7rem center !important;
+            background-position: right 0.75rem center !important;
             background-size: 1rem !important;
             padding-right: 2.5rem !important;
         }
 
         select.form-input-premium:focus {
             border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
-            background: rgba(30, 41, 59, 0.9) !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+            background: #18181b !important;
         }
 
         select.form-input-premium option {
-            background: #0f172a !important;
-            color: #f1f5f9 !important;
+            background: #121212 !important;
+            color: #ffffff !important;
             padding: 10px !important;
         }
     </style>
@@ -248,6 +248,20 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Categoría / Área Temática</label>
+                    <select class="form-input-premium" id="new-deck-category" style="width:100%;">
+                        <option value="General">📚 General</option>
+                        <option value="Medicina">🩺 Medicina</option>
+                        <option value="Educación">🎓 Educación</option>
+                        <option value="Matemáticas">📐 Matemáticas</option>
+                        <option value="Historia">📜 Historia</option>
+                        <option value="Idiomas">🗣️ Idiomas</option>
+                        <option value="Derecho">⚖️ Derecho</option>
+                        <option value="Ciencia">🔬 Ciencia</option>
+                    </select>
+                </div>
+
                 <!-- Icon Picker -->
                 <div class="form-group">
                     <label class="form-label">Icono</label>
@@ -301,7 +315,7 @@
                 style="display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--border-color);">
                 <button type="button" id="btn-preview-clone" class="btn-action"
                     style="background: var(--accent-primary); color: white; width: 100%;">
-                    <i class="fas fa-clone"></i> Clonar a mi Biblioteca
+                    <i class="fas fa-clone"></i> Clonar a Mis Mazos
                 </button>
             </div>
         </div>
@@ -694,60 +708,57 @@
 
     <!-- Modal Stats -->
     <div class="modal-overlay" id="stats-modal">
-        <div class="modal-content" style="text-align: center; max-height: 85vh; overflow-y: auto;">
-            <h2 style="margin-bottom: 2rem;">Estadísticas del Mazo</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px;">
-                    <div style="font-size: 2rem; font-weight: bold; color: white;" id="modal-total">0</div>
-                    <div style="color: #94a3b8; font-size: 0.9rem;">Total Tarjetas</div>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px;">
-                    <div style="font-size: 2rem; font-weight: bold; color: #34d399;" id="modal-mastered">0</div>
-                    <div style="color: #94a3b8; font-size: 0.9rem;">Dominadas</div>
-                </div>
+        <div class="modal-content" style="max-width: 520px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.6rem;">
+                    <i class="fas fa-chart-pie" style="color: #3b82f6;"></i> Estadísticas del Mazo
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="window.repasoManager.closeStatsModal()">&times;</button>
             </div>
 
-            <!-- Gráfico de Dona para el Mazo -->
-            <div style="max-width: 200px; margin: 0 auto 1.5rem auto; position: relative;">
-                <canvas id="deck-stats-chart"></canvas>
-            </div>
-
-            <!-- Explicación de la Leyenda del Gráfico (SRS) -->
-            <div
-                style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1.2rem; margin-bottom: 2rem; text-align: left; font-size: 0.85rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 0.6rem;">
-                <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-                    <div
-                        style="width: 12px; height: 12px; border-radius: 50%; background: #60a5fa; flex-shrink: 0; margin-top: 4px;">
+            <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;">
+                <!-- KPI Cards -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.25rem; border-radius: 14px; text-align: center;">
+                        <div style="font-size: 2.2rem; font-weight: 800; color: #ffffff;" id="modal-total">0</div>
+                        <div style="color: #94a3b8; font-size: 0.85rem; font-weight: 500; margin-top: 4px;">Total Tarjetas</div>
                     </div>
-                    <div><b>Nuevas / Aprendiendo:</b> Tarjetas recién creadas o en las que has fallado recientemente.
+                    <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.25rem; border-radius: 14px; text-align: center;">
+                        <div style="font-size: 2.2rem; font-weight: 800; color: #34d399;" id="modal-mastered">0</div>
+                        <div style="color: #94a3b8; font-size: 0.85rem; font-weight: 500; margin-top: 4px;">Dominadas</div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-                    <div
-                        style="width: 12px; height: 12px; border-radius: 50%; background: #f87171; flex-shrink: 0; margin-top: 4px;">
-                    </div>
-                    <div><b>Por Repasar (Due):</b> Tarjetas que el algoritmo SRS ha determinado que tu cerebro está por
-                        olvidar y debes repasar hoy.</div>
+
+                <!-- Gráfico de Dona -->
+                <div style="max-width: 200px; height: 180px; margin: 0 auto 1.5rem auto; position: relative;">
+                    <canvas id="deck-stats-chart"></canvas>
                 </div>
-                <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-                    <div
-                        style="width: 12px; height: 12px; border-radius: 50%; background: #34d399; flex-shrink: 0; margin-top: 4px;">
+
+                <!-- Explicación de Leyenda SRS -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.85rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; flex-shrink: 0; margin-top: 4px;"></div>
+                        <div><b style="color: #ffffff;">Nuevas / Aprendiendo:</b> Tarjetas recién creadas o en proceso de estudio inicial.</div>
                     </div>
-                    <div><b>Dominadas:</b> Tarjetas de sólido recuerdo (más de 21 días de intervalo o múltiples aciertos
-                        consecutivos).</div>
+                    <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #f87171; flex-shrink: 0; margin-top: 4px;"></div>
+                        <div><b style="color: #ffffff;">Por Repasar (Due):</b> Tarjetas pendientes para repasar hoy según el algoritmo SRS.</div>
+                    </div>
+                    <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #34d399; flex-shrink: 0; margin-top: 4px;"></div>
+                        <div><b style="color: #ffffff;">Dominadas:</b> Tarjetas de sólido recuerdo (más de 21 días de intervalo o aciertos continuos).</div>
+                    </div>
                 </div>
+
+                <!-- Activity Heatmap Container -->
+                <div id="activity-heatmap" class="heatmap-container" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 1.2rem; height: auto;"></div>
             </div>
 
-            <!-- Heatmap Container -->
-            <div id="activity-heatmap" class="heatmap-container"
-                style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1.2rem; margin-bottom: 2rem; height: auto;">
-                <!-- JS will render here -->
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.01);">
+                <button type="button" class="btn-action btn-secondary-action" style="width: 100%; justify-content: center; padding: 0.7rem; border-radius: 12px;" onclick="window.repasoManager.closeStatsModal()">
+                    Cerrar
+                </button>
             </div>
-
-            <button class="btn-action btn-secondary-action" style="width: 100%; justify-content: center;"
-                onclick="window.repasoManager.closeStatsModal()">
-                Cerrar
-            </button>
         </div>
     </div>
 
@@ -788,17 +799,17 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=5ba50f6c"></script>
+    <script src="/js/config.js?v=2168288b"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=5ba50f6c"></script>
-    <script src="/js/services/networkService.js?v=5ba50f6c"></script>
-    <script src="/js/services/authApiService.js?v=5ba50f6c"></script>
-    <script src="/js/services/analyticsApiService.js?v=5ba50f6c"></script>
-    <script src="/js/sessionManager.js?v=5ba50f6c"></script>
-    <script src="/js/ui/uiManager.js?v=5ba50f6c"></script>
-    <script src="/js/ui/components.js?v=5ba50f6c"></script>
-    <script src="/js/ui/sidebar.js?v=5ba50f6c"></script>
-    <script src="/js/app.js?v=5ba50f6c"></script>
+    <script src="/js/utils/markdown-renderer.js?v=2168288b"></script>
+    <script src="/js/services/networkService.js?v=2168288b"></script>
+    <script src="/js/services/authApiService.js?v=2168288b"></script>
+    <script src="/js/services/analyticsApiService.js?v=2168288b"></script>
+    <script src="/js/sessionManager.js?v=2168288b"></script>
+    <script src="/js/ui/uiManager.js?v=2168288b"></script>
+    <script src="/js/ui/components.js?v=2168288b"></script>
+    <script src="/js/ui/sidebar.js?v=2168288b"></script>
+    <script src="/js/app.js?v=2168288b"></script>
 
     <!-- Polyfill for Mobile Drag and Drop -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
@@ -813,9 +824,9 @@
         });
     </script>
 
-    <script src="/js/heatmap.js?v=5ba50f6c"></script> <!-- Optional for Stats -->
-    <script src="/js/deck-explorer.js?v=5ba50f6c"></script> <!-- NEW -->
-    <script src="/js/repaso.js?v=5ba50f6c"></script>
+    <script src="/js/heatmap.js?v=2168288b"></script> <!-- Optional for Stats -->
+    <script src="/js/deck-explorer.js?v=2168288b"></script> <!-- NEW -->
+    <script src="/js/repaso.js?v=2168288b"></script>
 </body>
 
 </html>

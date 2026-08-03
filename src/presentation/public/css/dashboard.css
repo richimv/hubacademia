@@ -413,9 +413,26 @@ body {
 /* Explorer Sidebar Styles */
 .explorer-container {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 280px minmax(0, 1fr);
     gap: 2rem;
     align-items: start;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+}
+
+#deck-content-area {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#community-view {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .explorer-sidebar {
@@ -424,15 +441,20 @@ body {
     -webkit-backdrop-filter: blur(16px);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 1.5rem;
-    height: calc(100vh - 150px);
+    padding: 1.25rem 1rem;
+    height: calc(100vh - 140px);
     overflow-y: auto;
-    overflow-x: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 @media (max-width: 768px) {
     .explorer-container {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
+        padding-right: 0;
+        width: 100%;
+        max-width: 100%;
     }
 
     .explorer-sidebar {
@@ -450,8 +472,8 @@ body {
 
 .tree-node {
     margin-bottom: 2px;
-    width: max-content;
-    min-width: 100%;
+    width: 100%;
+    min-width: 0;
 }
 
 .tree-content {
@@ -460,24 +482,41 @@ body {
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
-    color: var(--text-muted);
+    color: #f8fafc !important;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     min-width: 0;
     border: 1px solid transparent;
 }
 
+.tree-content .tree-label,
+.tree-content .tree-label span {
+    color: #f8fafc !important;
+    font-weight: 500;
+}
+
 .tree-content:hover {
-    background: rgba(255, 255, 255, 0.03);
-    color: var(--text-main);
-    border-color: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.04);
+}
+
+.tree-content:hover .tree-label,
+.tree-content:hover .tree-label span {
+    color: #ffffff !important;
 }
 
 .tree-content.active {
-    background: rgba(59, 130, 246, 0.06);
-    border-color: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    font-weight: 600;
+    background: rgba(249, 115, 22, 0.16) !important;
+    border-color: rgba(249, 115, 22, 0.3) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+}
+
+.tree-content.active .tree-label,
+.tree-content.active .tree-label span {
+    color: #ffffff !important;
+    font-weight: 700;
 }
 
 .tree-content.active::before {
@@ -525,9 +564,9 @@ body {
 }
 
 .tree-children {
-    padding-left: 1.25rem;
-    border-left: 1px dashed rgba(255, 255, 255, 0.08);
-    margin-left: 10px;
+    padding-left: 0;
+    margin-left: 0;
+    border-left: none;
 }
 
 /* Modal Styles - Heredados de modal.css */
@@ -615,21 +654,25 @@ textarea.form-input {
     /* Prevent Horizontal Scroll */
     body,
     html {
-        overflow-x: hidden;
+        overflow-x: hidden !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
     }
 
     /* --- COMPACT SPACING --- */
     .dashboard-container {
-        padding: 0.5rem !important;
-        /* Minimal constrained padding */
+        padding: 0.75rem 1rem !important;
         gap: 0.5rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
     }
 
     /* Reduce Header Spacing */
     .header-glass {
         padding: 0.5rem 1rem !important;
         margin-bottom: 0.5rem !important;
-        /* Drastically reduced from 2rem */
         min-height: 50px;
     }
 
@@ -637,6 +680,19 @@ textarea.form-input {
     .explorer-container {
         gap: 1rem !important;
         margin-top: 0 !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    #deck-content-area,
+    #community-view {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
     }
 
     .explorer-sidebar {

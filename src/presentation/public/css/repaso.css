@@ -48,33 +48,208 @@
     background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
 }
 
+/* --- Ultra-Premium Matte Black Deck Cards with Refined Neon Orange Rim Glow --- */
 .deck-card {
-    background: linear-gradient(180deg, rgba(10, 10, 10, 0.65) 0%, rgba(5, 5, 5, 0.9) 100%), url('/assets/deck.webp') center/cover no-repeat;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
-    padding: 1.5rem;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
     position: relative;
-    overflow: hidden;
+    background: #09090b;
+    border-radius: 18px;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
+    min-height: 230px;
+    box-sizing: border-box;
+    cursor: pointer;
+    overflow: hidden;
+    border: 1.5px solid rgba(249, 115, 22, 0.4);
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.8), 
+        0 0 12px rgba(249, 115, 22, 0.12);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Destello de luz neón delimitado únicamente a la esquina superior derecha */
+.deck-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle at 100% 0%, rgba(251, 146, 60, 0.35) 0%, rgba(249, 115, 22, 0.1) 45%, transparent 70%);
+    border-radius: 0 18px 0 60px;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    opacity: 0.7;
+    z-index: 1;
+}
+
+/* Biselado suave interior */
+.deck-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.deck-card > * {
+    position: relative;
+    z-index: 2;
 }
 
 @media (max-width: 768px) {
     .deck-card {
-        background: linear-gradient(to right, rgba(10, 10, 10, 0.85) 0%, rgba(5, 5, 5, 0.6) 60%, rgba(10, 10, 10, 0.85) 100%), url('/assets/deck.webp') center/cover no-repeat;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        min-height: auto;
+        padding: 0.9rem 1rem;
     }
 }
 
 .deck-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(255, 255, 255, 0.16);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(59, 130, 246, 0.15);
-    background: linear-gradient(180deg, rgba(10, 10, 10, 0.55) 0%, rgba(5, 5, 5, 0.85) 100%), url('/assets/deck.webp') center/cover no-repeat;
+    border-color: rgba(251, 146, 60, 0.75);
+    box-shadow: 
+        0 16px 36px rgba(0, 0, 0, 0.85), 
+        0 0 22px rgba(249, 115, 22, 0.35), 
+        inset 0 0 12px rgba(249, 115, 22, 0.1);
+}
+
+.deck-card:hover::before {
+    opacity: 1;
+}
+
+/* Estilo del botón Clonar Mazo */
+.btn-clone-deck {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(234, 88, 12, 0.35) 100%);
+    color: #ffedd5;
+    border: 1px solid rgba(249, 115, 22, 0.5);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.55rem 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+}
+
+/* Título de Tarjetas de Mazo en Blanco Puro (Estético y Legible) */
+.deck-card h3,
+.deck-card-desktop h3,
+.deck-card-mobile .deck-title {
+    color: #ffffff !important;
+    text-shadow: none !important;
+    font-weight: 700;
+}
+
+/* --- Banner de Comunidad Responsivo --- */
+.community-banner {
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(249, 115, 22, 0.08));
+    padding: 1.5rem 1.75rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .community-banner {
+        padding: 1rem 1.1rem;
+        border-radius: 12px;
+    }
+}
+
+/* --- Barra de Filtros de Categoría / Temáticas en Comunidad --- */
+.community-category-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.25rem 0.25rem 1rem 0.25rem;
+    margin-bottom: 1.5rem;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    cursor: grab;
+    user-select: none;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+}
+
+.community-category-bar.dragging {
+    cursor: grabbing;
+}
+
+.community-category-bar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.category-pill {
+    flex-shrink: 0 !important;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 0.45rem 1.1rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #94a3b8;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.category-pill:hover {
+    background: rgba(249, 115, 22, 0.12);
+    color: #f97316;
+    border-color: rgba(249, 115, 22, 0.3);
+    transform: translateY(-1px);
+}
+
+.category-pill.active {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(234, 88, 12, 0.18));
+    color: #ff9f43;
+    border-color: rgba(249, 115, 22, 0.65);
+    box-shadow: 0 4px 14px rgba(249, 115, 22, 0.2);
+    font-weight: 600;
+}
+
+/* Insignia de Categoría en Tarjeta de Mazo */
+.deck-category-tag {
+    font-size: 0.68rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 500;
+}
+
+.btn-clone-deck:hover {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.4) 0%, rgba(234, 88, 12, 0.5) 100%);
+    border-color: #fb923c;
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(249, 115, 22, 0.35);
+    transform: translateY(-1px);
 }
 
 /* --- Premium Repaso Tabs --- */
@@ -637,94 +812,97 @@
 
 /* Removed old plasma particle animation code */
 
-/* --- Explorer Sidebar Nodes Categorization --- */
+/* --- Ultra-Clean Flat Explorer Sidebar Nodes (Nombres en Blanco Brillante) --- */
+.tree-content {
+    border-left: none !important;
+    border-radius: 8px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    color: #f8fafc !important;
+    transition: background 0.2s ease, color 0.2s ease !important;
+}
 
-/* 1. Highlight Comunidad */
+.tree-content .tree-label,
+.tree-content .tree-label span {
+    color: #f8fafc !important;
+    font-weight: 500;
+}
+
+/* 1. Node Comunidad */
 .tree-content.node-community {
-    background: rgba(59, 130, 246, 0.05) !important;
-    border: 1px solid rgba(59, 130, 246, 0.2) !important;
-    color: #60a5fa !important;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.05);
+    background: transparent;
+    color: #f8fafc !important;
 }
 
 .tree-content.node-community:hover {
     background: rgba(59, 130, 246, 0.12) !important;
-    border-color: rgba(59, 130, 246, 0.35) !important;
-    color: #93c5fd !important;
+    color: #ffffff !important;
 }
 
 .tree-content.node-community.active {
-    background: rgba(59, 130, 246, 0.15) !important;
-    border-color: rgba(59, 130, 246, 0.45) !important;
+    background: rgba(59, 130, 246, 0.2) !important;
     color: #ffffff !important;
+    font-weight: 700 !important;
 }
 
-/* Hide default active left vertical bar for categories and community */
-.tree-content.node-community.active::before,
-.tree-content.node-system.active::before,
-.tree-content.node-cloned.active::before,
-.tree-content.node-public.active::before,
-.tree-content.node-personal.active::before {
-    display: none !important;
-}
-
-/* 2. Category styling */
+/* 2. System Decks */
 .tree-content.node-system {
-    border-left: 3px solid rgba(16, 185, 129, 0.5) !important;
-    background: rgba(16, 185, 129, 0.02);
+    background: transparent;
+    color: #f8fafc !important;
 }
 .tree-content.node-system:hover {
-    background: rgba(16, 185, 129, 0.06);
-    color: #34d399;
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #ffffff !important;
 }
 .tree-content.node-system.active {
-    background: rgba(16, 185, 129, 0.1) !important;
-    border-left-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.2) !important;
     color: #ffffff !important;
-    font-weight: 600;
+    font-weight: 700 !important;
 }
 
+/* 3. Cloned Decks */
 .tree-content.node-cloned {
-    border-left: 3px solid rgba(168, 85, 247, 0.5) !important;
-    background: rgba(168, 85, 247, 0.02);
+    background: transparent;
+    color: #f8fafc !important;
 }
 .tree-content.node-cloned:hover {
-    background: rgba(168, 85, 247, 0.06);
-    color: #c084fc;
+    background: rgba(168, 85, 247, 0.12) !important;
+    color: #ffffff !important;
 }
 .tree-content.node-cloned.active {
-    background: rgba(168, 85, 247, 0.1) !important;
-    border-left-color: #a855f7 !important;
+    background: rgba(168, 85, 247, 0.2) !important;
     color: #ffffff !important;
-    font-weight: 600;
+    font-weight: 700 !important;
 }
 
+/* 4. Public Decks */
 .tree-content.node-public {
-    border-left: 3px solid rgba(59, 130, 246, 0.5) !important;
-    background: rgba(59, 130, 246, 0.02);
+    background: transparent;
+    color: #f8fafc !important;
 }
 .tree-content.node-public:hover {
-    background: rgba(59, 130, 246, 0.06);
-    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.12) !important;
+    color: #ffffff !important;
 }
 .tree-content.node-public.active {
-    background: rgba(59, 130, 246, 0.1) !important;
-    border-left-color: #3b82f6 !important;
+    background: rgba(59, 130, 246, 0.2) !important;
     color: #ffffff !important;
-    font-weight: 600;
+    font-weight: 700 !important;
 }
 
+/* 5. Personal Decks */
 .tree-content.node-personal {
-    border-left: 3px solid rgba(148, 163, 184, 0.2) !important;
+    background: transparent;
+    color: #f8fafc !important;
 }
 .tree-content.node-personal:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
 }
 .tree-content.node-personal.active {
-    background: rgba(148, 163, 184, 0.1) !important;
-    border-left-color: #94a3b8 !important;
+    background: rgba(249, 115, 22, 0.2) !important;
     color: #ffffff !important;
-    font-weight: 600;
+    font-weight: 700 !important;
 }
 
 /* --- Add Card Modal Face Redesign & Button Glow --- */

@@ -75,45 +75,6 @@ const SimulatorDash = (() => {
                 { label: 'Conocimientos Pedagógicos y Curriculares', areas: ['Teorías del Aprendizaje y Desarrollo', 'Principios del Currículo Nacional (CNEB)', 'Planificación Curricular (PCI, PCA, Unidades)', 'Evaluación Formativa y Retroalimentación', 'Convivencia Escolar y Clima de Aula', 'Principios de la Educación Peruana'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6', conditionalTarget: 'NOMBRAMIENTO' },
                 { label: 'Gestión Institucional', areas: ['Liderazgo Pedagógico', 'Planificación Estratégica (PEI, PAT)', 'Gestión del Riesgo de Desastres', 'Monitoreo y Acompañamiento'], bg: 'rgba(249, 115, 22, 0.7)', border: '#f97316', conditionalTarget: 'ACCESO_CARGOS' }
             ]
-        },
-        'IDIOMAS': {
-            title: 'Centro de Idiomas',
-            heroTitle: 'Centro de Idiomas',
-            quizParams: '',
-            studyDesc: '20 preguntas con explicación.',
-            realDesc: '80 preguntas integradas.',
-            sectionIcon: 'fa-language',
-            barChartTitle: 'Dominio por Ejes Temáticos',
-            barChartEmptyDesc: 'Completa simulacros variados para ver tu dominio por ejes temáticos.',
-            images: {
-                study: '/assets/Modo Estudio-v3.webp',
-                flashcards: '/assets/Flashcards-v3.webp',
-                real: '/assets/Simulacro Real-v3.webp'
-            },
-            getTargetsForLang: function (lang) {
-                if (lang === 'it-IT') {
-                    return [
-                        { value: 'MCER', label: 'MCER', checked: true },
-                        { value: 'CELI', label: 'CELI' },
-                        { value: 'CILS', label: 'CILS' }
-                    ];
-                } else {
-                    return [
-                        { value: 'MCER', label: 'MCER', checked: true },
-                        { value: 'TOEFL', label: 'TOEFL' },
-                        { value: 'IELTS', label: 'IELTS' },
-                        { value: 'TECH_ENGLISH', label: 'Inglés Técnico' }
-                    ];
-                }
-            },
-            careerOptions: [
-                { value: 'en-US', label: 'Inglés USA' },
-                { value: 'en-GB', label: 'Inglés UK' },
-                { value: 'it-IT', label: 'Italiano' }
-            ],
-            areas: [
-                { label: 'Habilidades lingüísticas', areas: ['Grammar & Use of English', 'Vocabulary & Context', 'Reading Comprehension', 'Listening Comprehension'], bg: 'rgba(139, 92, 246, 0.7)', border: '#8b5cf6' }
-            ]
         }
     };
 
@@ -258,8 +219,6 @@ const SimulatorDash = (() => {
         let colors = [];
         if (currentContext === 'MEDICINA') {
             colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899'];
-        } else if (currentContext === 'IDIOMAS') {
-            colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
         } else {
             colors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981'];
         }
@@ -458,11 +417,7 @@ const SimulatorDash = (() => {
 
         const doughnutTooltipDesc = document.getElementById('doughnut-tooltip-desc');
         if (doughnutTooltipDesc) {
-            if (ctxConfig.title === 'Language Hub' || window.location.search.includes('idiomas')) {
-                doughnutTooltipDesc.textContent = 'Muestra la proporción de preguntas practicadas por cada competencia o meta del idioma. Te ayuda a asegurar un entrenamiento balanceado en todas las habilidades lingüísticas.';
-            } else {
-                doughnutTooltipDesc.textContent = 'Muestra la proporción de preguntas respondidas por cada tema o área. Ayuda a identificar en qué temas has concentrado más práctica y a asegurar que cubras todo el temario de forma equilibrada.';
-            }
+            doughnutTooltipDesc.textContent = 'Muestra la proporción de preguntas respondidas por cada tema o área. Ayuda a identificar en qué temas has concentrado más práctica y a asegurar que cubras todo el temario de forma equilibrada.';
         }
 
         const barTooltipTitle = document.getElementById('bar-tooltip-title');
@@ -473,8 +428,6 @@ const SimulatorDash = (() => {
         if (barTooltipDesc) {
             if (ctxConfig.title === 'Docente Pro' || window.location.search.includes('educacion')) {
                 barTooltipDesc.textContent = 'Muestra tu porcentaje de acierto en cada área pedagógica. Sirve para detectar de manera precisa tus fortalezas y debilidades de cara a la evaluación docente.';
-            } else if (ctxConfig.title === 'Language Hub' || window.location.search.includes('idiomas')) {
-                barTooltipDesc.textContent = 'Muestra tu porcentaje de acierto en cada eje temático del idioma (lectura, vocabulario, gramática, audición). Te ayuda a conocer en qué competencia lingüística debes enfocarte.';
             } else {
                 barTooltipDesc.textContent = 'Muestra tu porcentaje de acierto en cada especialidad o área clínica. Sirve para detectar de manera precisa tus fortalezas y tus puntos débiles específicos para priorizar tus repasos.';
             }

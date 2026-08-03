@@ -368,7 +368,7 @@ const FlashcardManager = (() => {
                 tutorBtn.id = 'flashcard-tutor-trigger';
                 tutorBtn.className = 'flashcard-tutor-btn';
                 tutorBtn.innerHTML = `
-                    <i class="fas fa-robot tutor-robot-icon"></i>
+                    <img src="/assets/hubifrente.png" alt="Hubi" class="btn-tutor-icon-img">
                     <span>¿Dudas con esta respuesta?</span>
                 `;
                 tutorBtn.onclick = (e) => {

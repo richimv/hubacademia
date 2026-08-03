@@ -21,7 +21,7 @@ class TutorAiService {
         this.bookRepository = new BookRepository();
 
         this.model = this.vertex_ai.getGenerativeModel({
-            model: 'gemini-2.5-flash-lite',
+            model: 'gemini-3.1-flash-lite',
             generationConfig: {
                 maxOutputTokens: 8192,
                 temperature: 0.8,
@@ -29,7 +29,7 @@ class TutorAiService {
                 responseMimeType: "application/json"
             }
         });
-        console.log("✅ TutorAiService: Motor de Tutoría (Chat) inicializado.");
+        console.log("✅ TutorAiService: Motor de Tutoría (gemini-3.1-flash-lite) inicializado.");
     }
 
     /**
@@ -119,95 +119,101 @@ class TutorAiService {
         }
         
         // Reemplazar la data URI base64 en el texto por un placeholder indexado
-        let index = 1;
-        const cleanedText = text.replace(/data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/gi, () => {
-            return `[Imagen ${index++}]`;
-        });
+        const cleanedText = text.replace(/data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/gi, '[Imagen Adjunta]');
         
         return { cleanedText, parts };
     }
 
     /**
-     * 🧠 LLAMADOR DE MODELO DUAL Y RESILIENTE (AI CHANNELER)
-     * Llama a Gemini utilizando la API REST de Google AI Studio (si hay GEMINI_API_KEY)
-     * o mediante Vertex AI. Cuenta con reintentos y backoff exponencial en caso de 429 u otros fallos.
+     * Ejecuta una llamada resiliente con reintentos hacia gemini-3.1-flash-lite
      */
     async _callModelResilient(contents, systemPrompt) {
         const apiKey = process.env.GEMINI_API_KEY;
-        const maxRetries = 3;
+        const maxRetries = 2;
         let delayMs = 1000;
         let lastError = null;
 
-        // 1. Intentar primero con la API REST de Google AI Studio si está configurada (canal primario independiente)
+        const candidateModels = [
+            'gemini-2.5-flash-lite',
+            'gemini-3.1-flash-lite',
+            'gemini-2.5-flash',
+            'gemini-1.5-flash'
+        ];
+
+        // 1. Intentar con la API REST de Google AI Studio probando la lista de modelos de forma resiliente
         if (apiKey) {
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                try {
-                    const axios = require('axios');
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
-                    
-                    const payload = {
-                        contents: contents,
-                        systemInstruction: {
-                            parts: [{ text: systemPrompt }]
-                        },
-                        generationConfig: {
-                            responseMimeType: "application/json",
-                            temperature: 0.8,
-                            maxOutputTokens: 8192,
-                            topP: 0.9
+            for (const modelName of candidateModels) {
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        const axios = require('axios');
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                        
+                        const payload = {
+                            contents: contents,
+                            systemInstruction: {
+                                parts: [{ text: systemPrompt }]
+                            },
+                            generationConfig: {
+                                responseMimeType: "application/json",
+                                temperature: 0.8,
+                                maxOutputTokens: 8192,
+                                topP: 0.9
+                            }
+                        };
+
+                        console.log(`📡 [REST Tutor] Llamando a ${modelName} vía Google AI Studio (Intento ${attempt}/${maxRetries})...`);
+                        const res = await axios.post(url, payload, { timeout: 25000 });
+                        
+                        if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
+                            const text = res.data.candidates[0].content.parts[0].text;
+                            console.log(`✅ [REST Tutor Éxito] Respuesta generada con modelo: ${modelName}`);
+                            return text;
                         }
-                    };
+                        throw new Error("Respuesta inválida del servidor REST");
+                    } catch (err) {
+                        lastError = err;
+                        const status = err.response ? err.response.status : null;
+                        console.warn(`⚠️ [REST Tutor Fallo - ${modelName}] Intento ${attempt} falló:`, err.message);
+                        
+                        if (status === 404 || status === 400) {
+                            console.warn(`⚠️ [Modelo Inexistente/Incompatible] Salteando ${modelName}...`);
+                            break;
+                        }
 
-                    console.log(`📡 [REST Tutor] Llamando a gemini-2.5-flash-lite vía Google AI Studio (Intento ${attempt}/${maxRetries})...`);
-                    const res = await axios.post(url, payload, { timeout: 25000 });
-                    
-                    if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
-                        const text = res.data.candidates[0].content.parts[0].text;
-                        return text;
-                    }
-                    throw new Error("Respuesta inválida del servidor REST");
-                } catch (err) {
-                    lastError = err;
-                    const status = err.response ? err.response.status : null;
-                    console.warn(`⚠️ [REST Tutor Fallo] Intento ${attempt} falló:`, err.message);
-                    
-                    if (status === 400 || status === 403) {
-                        break; // Error de autenticación/configuración, no reintentar
-                    }
+                        if (status === 403) {
+                            break;
+                        }
 
-                    if (attempt < maxRetries) {
-                        console.log(`⏳ Esperando ${delayMs}ms antes de reintentar REST...`);
-                        await new Promise(resolve => setTimeout(resolve, delayMs));
-                        delayMs *= 2;
+                        if (attempt < maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, delayMs));
+                            delayMs *= 2;
+                        }
                     }
                 }
             }
         }
 
-        // 2. Fallback / Canal Secundario: Vertex AI con reintentos y backoff exponencial
-        console.log("📡 [VertexAI Tutor] Iniciando canal Vertex AI con reintentos...");
-        delayMs = 1000;
-        
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        // 2. Canal Secundario: Vertex AI SDK
+        console.log(`📡 [VertexAI Tutor] Iniciando canal Vertex AI de contingencia...`);
+        for (const modelName of candidateModels) {
             try {
-                const result = await this.model.generateContent({
+                const vertexModel = this.vertex_ai.getGenerativeModel({
+                    model: modelName,
+                    generationConfig: { maxOutputTokens: 8192, temperature: 0.8, topP: 0.9, responseMimeType: "application/json" }
+                });
+
+                const result = await vertexModel.generateContent({
                     contents,
                     systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] }
                 });
                 
                 if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].content) {
+                    console.log(`✅ [VertexAI Tutor Éxito] Respuesta generada con modelo: ${modelName}`);
                     return result.response.candidates[0].content.parts[0].text;
                 }
-                throw new Error("Respuesta de Vertex AI vacía o inválida");
             } catch (err) {
                 lastError = err;
-                console.warn(`⚠️ [VertexAI Tutor Fallo] Intento ${attempt} falló:`, err.message);
-                
-                if (attempt < maxRetries) {
-                    console.log(`⏳ Esperando ${delayMs}ms antes de reintentar Vertex AI...`);
-                    await new Promise(resolve => setTimeout(resolve, delayMs));
-                    delayMs *= 2;
-                }
+                console.warn(`⚠️ [VertexAI Tutor Fallo - ${modelName}]:`, err.message);
             }
         }
 

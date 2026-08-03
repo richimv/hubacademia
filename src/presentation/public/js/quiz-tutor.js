@@ -33,7 +33,7 @@ class QuizTutor {
         panel.innerHTML = `
             <div class="tutor-chat-header">
                 <div class="tutor-header-title">
-                    <i class="fas fa-robot tutor-robot-icon"></i>
+                    <img src="/assets/hubifrente.png" alt="Hubi" class="tutor-header-avatar-img">
                     <span>Tutor de Apoyo IA</span>
                 </div>
                 <div class="tutor-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
@@ -95,10 +95,13 @@ class QuizTutor {
             }
         });
 
-        // Auto-resize del input de texto
+        // Auto-resize del input de texto (Garantiza altura exacta de 48px si no hay multilinea)
         this.dom.input.addEventListener('input', () => {
-            this.dom.input.style.height = 'auto';
-            this.dom.input.style.height = (this.dom.input.scrollHeight) + 'px';
+            this.dom.input.style.height = '48px';
+            if (this.dom.input.scrollHeight > 48) {
+                const newHeight = Math.min(this.dom.input.scrollHeight, 120);
+                this.dom.input.style.height = newHeight + 'px';
+            }
         });
     }
 
@@ -129,11 +132,9 @@ class QuizTutor {
     }
 
     getSpecialization() {
-        const context = window.__quizState?.context || 'MEDICINA';
-        const ctxUpper = context.toUpperCase();
-        if (ctxUpper === 'MEDICINA') return 'medicine';
+        const context = this.questionContext?.examContext || window.__quizState?.context || 'MEDICINA';
+        const ctxUpper = String(context).toUpperCase();
         if (ctxUpper === 'EDUCACION') return 'education';
-        if (ctxUpper === 'IDIOMAS') return 'languages';
         return 'medicine';
     }
 
@@ -173,8 +174,6 @@ class QuizTutor {
             welcomeText = "Hola, soy tu tutor clínico. ¿Hay algún concepto de esta pregunta, norma técnica o guía oficial que desees profundizar?";
         } else if (spec === 'education') {
             welcomeText = "Hola, soy tu tutor pedagógico. ¿Tienes alguna duda sobre la casuística de esta pregunta o sobre el Currículo Nacional (CNEB)?";
-        } else if (spec === 'languages') {
-            welcomeText = "Hi! I am your language tutor. Do you have any questions about the vocabulary, grammar, or text used in this question?";
         }
 
         this._addMessage(welcomeText, 'bot');
@@ -198,9 +197,11 @@ class QuizTutor {
 
         try {
             const spec = this.getSpecialization();
+            const targetExam = this.questionContext?.target || window.__quizState?.targetExam || (spec === 'education' ? 'ASCENSO' : 'SERUMS');
             const payload = {
                 message: text,
                 specialization: spec,
+                target: targetExam,
                 history: this.history,
                 ephemeral: true,
                 context: {
@@ -214,7 +215,12 @@ class QuizTutor {
                     isUserCorrect: this.questionContext?.isUserCorrect || false,
                     explanation: this.questionContext?.explanation || '',
                     topic: this.questionContext?.topic || 'General',
-                    target: this.questionContext?.target || ''
+                    target: targetExam,
+                    career: this.questionContext?.career || window.__quizState?.career || '',
+                    examContext: this.questionContext?.examContext || window.__quizState?.context || 'MEDICINA',
+                    difficulty: this.questionContext?.difficulty || window.__quizState?.difficulty || '',
+                    areas: this.questionContext?.areas || window.__quizState?.areas || [],
+                    mode: this.questionContext?.mode || window.__quizState?.mode || ''
                 }
             };
 

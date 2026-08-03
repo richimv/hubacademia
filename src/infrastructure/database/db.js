@@ -24,6 +24,10 @@ function getPool() {
             keepAlive: true,
         });
 
+        // Auto-healing migration check for decks category column
+        pool.query(`ALTER TABLE public.decks ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'General';`)
+            .catch(err => console.warn('⚠️ Auto-migration category warning:', err.message));
+
         // Manejador de errores (Tu lógica original se mantiene igual)
         pool.on('error', (err, client) => {
             const currentPool = pool;

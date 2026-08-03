@@ -11,6 +11,7 @@ class FlashcardRepository {
         let query = `
             SELECT 
                 d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id,
+                COALESCE(d.category, 'General') as category,
                 d.is_public, d.saves_count, d.likes_count, d.cloned_from_id,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
@@ -41,6 +42,7 @@ class FlashcardRepository {
         const query = `
             SELECT 
                 d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id,
+                COALESCE(d.category, 'General') as category,
                 d.is_public, d.saves_count, d.likes_count, d.cloned_from_id,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
@@ -60,6 +62,7 @@ class FlashcardRepository {
         const query = `
             SELECT 
                 d.id, d.name, d.type, d.icon, d.color, d.source_module, d.parent_id,
+                COALESCE(d.category, 'General') as category,
                 d.is_public, d.saves_count, d.likes_count, d.cloned_from_id,
                 COUNT(uf.id) as total_cards,
                 COUNT(uf.id) FILTER (WHERE uf.next_review_at <= NOW()) as due_cards,
@@ -84,24 +87,24 @@ class FlashcardRepository {
         return result.rows[0] ? result.rows[0].description : null;
     }
 
-    async createDeck(userId, name, type = 'USER', sourceModule = 'MANUAL', icon = '📚', parentId = null, description = null, color = null) {
+    async createDeck(userId, name, type = 'USER', sourceModule = 'MANUAL', icon = '📚', parentId = null, description = null, color = null, category = 'General') {
         const query = `
-            INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description, color)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id, name, icon, color, parent_id, description
+            INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description, color, category)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, name, icon, color, parent_id, description, category
         `;
-        const result = await db.query(query, [userId, name, type, sourceModule, icon, parentId, description, color]);
+        const result = await db.query(query, [userId, name, type, sourceModule, icon, parentId, description, color, category || 'General']);
         return result.rows[0];
     }
 
-    async updateDeck(userId, deckId, name, icon, description = null, color = null) {
+    async updateDeck(userId, deckId, name, icon, description = null, color = null, category = 'General') {
         const query = `
             UPDATE decks 
-            SET name = $3, icon = $4, description = $5, color = $6
+            SET name = $3, icon = $4, description = $5, color = $6, category = $7
             WHERE id = $2 AND user_id = $1
-            RETURNING id, name, icon, color, description
+            RETURNING id, name, icon, color, description, category
         `;
-        const result = await db.query(query, [userId, deckId, name, icon, description, color]);
+        const result = await db.query(query, [userId, deckId, name, icon, description, color, category || 'General']);
 
         if (result.rows.length > 0) {
             const updateCardsQuery = `
@@ -115,31 +118,39 @@ class FlashcardRepository {
         return result.rows[0];
     }
 
-    async updateDeckVisibility(userId, deckId, isPublic) {
-        const query = `
+    async updateDeckVisibility(userId, deckId, isPublic, category = null) {
+        let query = `
             UPDATE decks 
             SET is_public = $3
-            WHERE id = $2 AND user_id = $1
-            RETURNING id, is_public
         `;
-        const result = await db.query(query, [userId, deckId, isPublic]);
+        const params = [userId, deckId, isPublic];
+
+        if (category) {
+            query += `, category = $4 WHERE id = $2 AND user_id = $1 RETURNING id, is_public, category`;
+            params.push(category);
+        } else {
+            query += ` WHERE id = $2 AND user_id = $1 RETURNING id, is_public, COALESCE(category, 'General') as category`;
+        }
+
+        const result = await db.query(query, params);
         return result.rows[0];
     }
 
-    async getPublicDecks(page = 1, limit = 20) {
+    async getPublicDecks(page = 1, limit = 20, category = 'ALL') {
         const offset = (page - 1) * limit;
         const query = `
             SELECT 
-                d.id, d.name, d.icon, d.description, d.color, d.saves_count, d.likes_count, d.created_at,
+                d.id, d.name, d.icon, d.description, d.color, COALESCE(d.category, 'General') as category,
+                d.saves_count, d.likes_count, d.created_at,
                 u.name as author_name,
                 (SELECT COUNT(*) FROM user_flashcards uf WHERE uf.deck_id = d.id) as total_cards
             FROM decks d
             LEFT JOIN users u ON d.user_id = u.id
-            WHERE d.is_public = true
+            WHERE d.is_public = true AND ($3 = 'ALL' OR COALESCE(d.category, 'General') = $3)
             ORDER BY d.saves_count DESC, d.created_at DESC
             LIMIT $1 OFFSET $2
         `;
-        const result = await db.query(query, [limit, offset]);
+        const result = await db.query(query, [limit, offset, category || 'ALL']);
         return result.rows;
     }
 

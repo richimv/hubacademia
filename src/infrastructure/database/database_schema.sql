@@ -195,6 +195,7 @@ CREATE TABLE IF NOT EXISTS public.resources (
     domain CHARACTER VARYING(50) DEFAULT 'medicine'::character varying,
     visible BOOLEAN DEFAULT true,
     open_directly BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT resources_pkey PRIMARY KEY (id),
     CONSTRAINT resources_url_key UNIQUE (url)
 );

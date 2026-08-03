@@ -1009,11 +1009,10 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
     const featOpenDirectly = featured.open_directly === true || String(featured.open_directly) === 'true';
     const featIsPremium = featured.is_premium === true;
     const featUrl = featured.url || '';
-    const hasFeatImage = Boolean(featured.image_url && featured.image_url.trim() !== '');
-    const featThumb = hasFeatImage ? (window.resolveImageUrl ? window.resolveImageUrl(featured.image_url, featured.resource_type || 'paper') : featured.image_url) : '';
+    const featThumb = window.resolveImageUrl ? window.resolveImageUrl(featured.image_url, featured.resource_type || 'paper') : (featured.image_url || 'assets/paper.webp');
 
     const featuredHTML = `
-        <div class="news-hero-card ${hasFeatImage ? 'has-media' : ''}" style="background: #121212; border: ${featStyle.border}; box-shadow: ${featStyle.shadow};">
+        <div class="news-hero-card has-media" style="background: #121212; border: ${featStyle.border}; box-shadow: ${featStyle.shadow};">
             <div class="news-hero-body">
                 <div class="news-hero-tags">
                     <span class="news-pill-tag" style="background: ${featBadge.bg}; border: 1px solid ${featBadge.border}; color: ${featBadge.text}; font-weight: 700; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem;">
@@ -1030,39 +1029,27 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
                     <button class="news-primary-btn" onclick="window.openVerifiedNewsUrl('${featUrl}', '${featured.id}', '${featured.resource_type || 'paper'}', ${featIsPremium}, ${featOpenDirectly})">
                         <i class="fas fa-external-link-alt"></i> Leer Documento Oficial Verificado
                     </button>
-                    <div class="news-actions-wrap">
-                        <button class="urc-action-btn js-library-btn action-save" data-id="${featured.id}" data-type="book" data-action="save" title="Guardar">
-                            <i class="far fa-bookmark"></i>
-                        </button>
-                        <button class="urc-action-btn js-library-btn action-fav" data-id="${featured.id}" data-type="book" data-action="favorite" title="Favorito">
-                            <i class="far fa-heart"></i>
-                        </button>
-                    </div>
                 </div>
             </div>
-            ${hasFeatImage ? `
             <div class="news-hero-media">
-                <img src="${featThumb}" alt="${featured.title}" class="news-hero-img" loading="lazy" onerror="this.parentElement.style.display='none';">
+                <img src="${featThumb}" alt="${featured.title}" class="news-hero-img" loading="lazy">
             </div>
-            ` : ''}
         </div>
     `;
 
     const secondaryCardsHTML = secondary.map(item => {
+        const itemType = (item.resource_type || item.type || 'paper').toLowerCase();
         const badge = getBadgeInfo(item);
         const openDirectly = item.open_directly === true || String(item.open_directly) === 'true';
         const isPremium = item.is_premium === true;
         const itemUrl = item.url || '';
-        const hasSecImage = Boolean(item.image_url && item.image_url.trim() !== '');
-        const secThumb = hasSecImage ? (window.resolveImageUrl ? window.resolveImageUrl(item.image_url, item.resource_type || 'paper') : item.image_url) : '';
+        const secThumb = window.resolveImageUrl ? window.resolveImageUrl(item.image_url, itemType) : (item.image_url || 'assets/paper.webp');
 
         return `
-            <div class="news-secondary-card ${hasSecImage ? 'has-media' : ''}" onclick="window.openVerifiedNewsUrl('${itemUrl}', '${item.id}', '${item.resource_type || 'paper'}', ${isPremium}, ${openDirectly})">
-                ${hasSecImage ? `
+            <div class="news-secondary-card has-media" data-type="${itemType}" onclick="window.openVerifiedNewsUrl('${itemUrl}', '${item.id}', '${itemType}', ${isPremium}, ${openDirectly})">
                 <div class="news-sec-media">
-                    <img src="${secThumb}" alt="${item.title}" class="news-sec-img" loading="lazy" onerror="this.parentElement.style.display='none';">
+                    <img src="${secThumb}" alt="${item.title}" class="news-sec-img" loading="lazy">
                 </div>
-                ` : ''}
                 <div class="news-sec-body">
                     <div class="news-sec-header">
                         <span class="news-pill-tag" style="background: ${badge.bg}; border: 1px solid ${badge.border}; color: ${badge.text}; font-size: 0.7rem; padding: 2px 10px; border-radius: 12px;">
@@ -1091,7 +1078,7 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
                         <i class="fas fa-newspaper" style="color: #3b82f6;"></i> 
                         Novedades y Boletín Reciente
                     </h2>
-                    <p class="news-widget-desc">Últimos papers de investigación científica y normas oficiales verificadas de ${domain === 'medicine' ? 'Salud' : 'Educación'}</p>
+                    <p class="news-widget-desc">Últimos papers de investigación científica, noticias y normas oficiales verificadas de ${domain === 'medicine' ? 'Salud' : 'Educación'}</p>
                 </div>
                 <div class="news-widget-badge-count">
                     <span>${newsItems.length} Publicaciones</span>

@@ -10,7 +10,7 @@ const vertex_ai = new VertexAI({ project: project, location: location });
 
 // Instancia Unificada LITE (Análisis Pro)
 const modelLite = vertex_ai.getGenerativeModel({
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-3.1-flash-lite',
     generationConfig: {
         maxOutputTokens: 2048,
         temperature: 0.3,
@@ -277,37 +277,6 @@ class AnalyticsController {
                             <p style='color:#cbd5e1; margin:0; font-size:0.85rem; line-height:1.5;'>Para desbloquear diagnósticos detallados en tiempo real generados por IA y analizar tus patrones de error específicos por competencia, adquiere una cuenta <strong>Premium Avanzada</strong>.</p>
                         </div>
                     `;
-                } else if (context === 'IDIOMAS') {
-                    strengths = `
-                        <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Tu perfil lingüístico muestra competencias iniciales de recepción:</p>
-                        <ul style='margin:0; padding:0; list-style:none;'>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-check-circle' style='color:#34d399; margin-top:2px;'></i>
-                                <span>Comprensión general en ejercicios de <strong>Reading Comprehension</strong>.</span>
-                            </li>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-check-circle' style='color:#34d399; margin-top:2px;'></i>
-                                <span>Capacidad de identificar palabras clave en ejercicios de <strong>Listening Comprehension</strong>.</span>
-                            </li>
-                        </ul>
-                    `;
-                    weaknesses = `
-                        <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Es clave potenciar el uso del idioma y la precisión estructural gramatical:</p>
-                        <ul style='margin:0; padding:0; list-style:none;'>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-exclamation-triangle' style='color:#fbbf24; margin-top:2px;'></i>
-                                <span>Falta de consistencia y precisión en estructuras gramaticales de <strong>Grammar & Use of English</strong>.</span>
-                            </li>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-exclamation-triangle' style='color:#fbbf24; margin-top:2px;'></i>
-                                <span>Vocabulario pasivo alto pero dificultades en su uso activo en <strong>Vocabulary & Context</strong>.</span>
-                            </li>
-                        </ul>
-                        <div style='margin-top:1.25rem; padding:1rem; background:rgba(139,92,246,0.06); border:1px dashed rgba(139,92,246,0.3); border-radius:10px;'>
-                            <span style='font-weight:700; color:#c4b5fd; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;'>Estrategia de Intervención (Suscripción Avanzada)</span>
-                            <p style='color:#cbd5e1; margin:0; font-size:0.85rem; line-height:1.5;'>Para desbloquear diagnósticos detallados en tiempo real generados por IA y analizar tus patrones de error específicos por habilidad lingüística, adquiere una cuenta <strong>Premium Avanzada</strong>.</p>
-                        </div>
-                    `;
                 } else { // MEDICINA (Default)
                     strengths = `
                         <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Tu perfil de rendimiento muestra fortalezas iniciales en áreas clave de la práctica médica:</p>
@@ -363,14 +332,6 @@ class AnalyticsController {
                 weaknessTextPrompt = "Centra el análisis en la urgencia de dominar los procesos didácticos y normativas de evaluación formativa.";
                 strategyTitle = "Estrategia Pedagógica Recomendada";
                 strategyDescPrompt = "Tu consejo directo para mejorar la resolución de casos de casuística y rúbricas antes de la prueba nacional";
-            } else if (context === 'IDIOMAS') {
-                tutorRole = "Director de Idiomas y Evaluador Oficial del MCER";
-                examType = "estudiante preparando su nivelación lingüística bajo el marco MCER";
-                areaLabel = "RENDIMIENTO POR HABILIDADES LINGÜÍSTICAS (Vocabulary, Grammar, Reading, Listening)";
-                strengthTextPrompt = "El análisis debe centrarse en la fluidez de lectura, precisión gramatical, rango de vocabulario y competencia auditiva. Las áreas van en <strong style='color:#f8fafc;'>.";
-                weaknessTextPrompt = "Centra el análisis en las brechas gramaticales, errores de listening o vocabulario limitado según el nivel objetivo.";
-                strategyTitle = "Estrategia de Aprendizaje de Idiomas";
-                strategyDescPrompt = "Tu consejo directo para mejorar tus destrezas comunicativas y listening antes del simulacro oficial";
             }
 
             // Prompt analítico adaptado

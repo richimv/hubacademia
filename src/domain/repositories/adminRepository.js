@@ -207,7 +207,7 @@ class AdminRepository {
             };
 
             const canonicalDomain = (val) => {
-                const allowed = ['medicine', 'english', 'general_trivia', 'education', 'languages'];
+                const allowed = ['medicine', 'education'];
                 const v = String(val || '').toLowerCase().trim().replace(/\s+/g, '_');
                 return allowed.includes(v) ? v : 'medicine'; // Fallback seguro
             };

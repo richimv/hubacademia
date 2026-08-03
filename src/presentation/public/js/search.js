@@ -155,20 +155,10 @@ class SearchComponent {
         // Auto-restauración al borrar texto (input event)
         this.searchInput.addEventListener('input', () => {
             const query = this.searchInput.value.trim();
-            this.toggleClearButton(query.length > 0);
             if (query.length === 0) {
                 this.resetSearchToBrowse();
             }
         });
-
-        // Botón 'X' para limpiar la búsqueda
-        const clearBtn = document.getElementById('searchClearBtn');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
-                this.resetSearchToBrowse();
-                this.searchInput.focus();
-            });
-        }
 
         // Delegación de eventos en el body
         document.body.addEventListener('click', this.handleContentClick.bind(this));
@@ -184,16 +174,8 @@ class SearchComponent {
         }
     }
 
-    toggleClearButton(show) {
-        const clearBtn = document.getElementById('searchClearBtn');
-        if (clearBtn) {
-            clearBtn.style.display = show ? 'inline-flex' : 'none';
-        }
-    }
-
     resetSearchToBrowse() {
         this.searchInput.value = '';
-        this.toggleClearButton(false);
         if (this.resultsContainer) {
             this.resultsContainer.innerHTML = '';
             this.resultsContainer.classList.add('hidden');
