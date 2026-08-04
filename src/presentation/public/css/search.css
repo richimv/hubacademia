@@ -639,29 +639,42 @@ body.hero-hidden .search-subtitle {
 }
 
 .manta-filter-pill {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #94a3b8;
     padding: 0.5rem 1.25rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    letter-spacing: -0.01em;
 }
 
 .manta-filter-pill:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: white;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    transform: translateY(-1px);
 }
 
 .manta-filter-pill.active {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.4);
-    color: white;
-    font-weight: 600;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.45) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.6);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 4px 18px rgba(59, 130, 246, 0.35);
+}
+
+.manta-filter-pill[data-filter-id*="Novedades"].active,
+.manta-filter-pill[data-filter-val="news"].active {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(249, 115, 22, 0.25) 100%);
+    border: 1px solid rgba(249, 115, 22, 0.45);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(249, 115, 22, 0.22);
 }
 
 /* GROUP TITLES (SUBTÍTULOS ESTILO MANTA) */

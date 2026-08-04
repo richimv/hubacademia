@@ -561,8 +561,25 @@ Servicio en la capa de dominio (`src/domain/services/asistenteGuiaKnowledge.js`)
 - **Remoción del Candado para Visitantes**: Se desactivó la restricción que bloqueaba el textarea con el mensaje `"⚠️ Regístrate gratis para continuar."`. La función `setVisitorLockState` mantiene la barra de texto activa y accesible en todo momento con el placeholder `"Pregunta sobre la plataforma..."`.
 
 ---
-*Última actualización: 3 de agosto de 2026 (Opciones en formato de lista limpia, especificación detallada de Repaso y Mi Biblioteca con Noticias Oficiales, y activación directa de modal Google)*
 
+## 19. Auditoría y Corrección de Consumos y RAG por Nivel de Suscripción (Agosto 2026)
 
+### 19.1 Unificación de Tutores Activos en Middleware (`checkLimitsMiddleware.js`)
+- **Detección Resiliente de Tutores (`isTutorChat`)**: Se integró la verificación combinada de `context.type === 'quiz_tutor'` y `context.type === 'flashcard_tutor'` (así como `specialization === 'flashcard_tutor'`), garantizando que tanto el **Quiz Tutor** (simulacros) como el **Repaso Tutor** (tarjetas/flashcards) ejecuten el control estricto de consumos y cuotas.
 
+### 19.2 Reglas de Cobro y Bloqueo (Paywall 403)
+- **Usuarios Basic (`subscription_tier === 'basic'`)**:
+  - Consumen de la cuota diaria `daily_ai_usage` (límite de **50 msgs/día**).
+  - Al alcanzar 50 mensajes, el middleware devuelve `403 Forbidden` (`DAILY_LIMIT_EXHAUSTED`), abriendo la modal Paywall.
+  - **Uso de RAG**: Estrictamente **deshabilitado (`useRag = false`)**. Responden mediante inferencia generativa experta directa.
+- **Usuarios Advanced (`subscription_tier === 'advanced'`)**:
+  - Consumen de la cuota diaria `daily_ai_usage` (límite de **100 msgs/día**).
+  - **Uso de RAG**: Habilitado hasta **25 consultas RAG/día** (`daily_rag_usage`). Al realizar una consulta con RAG activo, se incrementan simultáneamente los contadores `daily_ai_usage` y `daily_rag_usage`.
+  - **Fallback Generativo Grácil**: Si el usuario Advanced supera las 25 consultas RAG, el sistema desactiva RAG (`useRag = false`) y le permite continuar realizando hasta 100 consultas al día en modo generativo estándar.
+- **Usuarios Free / Pending (`subscription_tier === 'free'` o `subscription_status === 'pending'`)**:
+  - Consumen **1 vida de prueba** (`usage_count`) por cada consulta enviada al Quiz Tutor o Repaso Tutor, hasta alcanzar las 20 vidas asignadas (`max_free_limit`).
+  - Al agotar las 20 vidas, el middleware devuelve `403 Forbidden` (`FREE_LIVES_EXHAUSTED`), bloqueando la consulta y mostrando la modal Paywall.
+  - **Uso de RAG**: Estrictamente **deshabilitado (`useRag = false`)**.
 
+---
+*Última actualización: 3 de agosto de 2026 (Auditoría y corrección total de cuotas diarias, vidas de prueba y reglas RAG para Quiz y Repaso Tutors)*

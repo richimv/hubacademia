@@ -103,6 +103,21 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 * **Focus State:** Borde cambia a `#3b82f6` con un shadow azul difuminado (`box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15)`).
 * **Borde de Esquinas:** `12px`.
 
+### 3.5. Modales de Zona de Peligro / Advertencia Crítica (`.modal-content.danger-variant`)
+* **Propósito:** Confirmación de acciones irreversibles (Eliminación de cuenta, purga de historial).
+* **Borde Destacado:** `1px solid rgba(239, 68, 68, 0.3)`.
+* **Caja de Aviso Interna:** Fondo `rgba(239, 68, 68, 0.08)`, borde `1px solid rgba(239, 68, 68, 0.2)`, texto `#fca5a5`.
+* **Botón de Confirmación Peligrosa (`.btn-danger-pill`):**
+  * Fondo `linear-gradient(135deg, #ef4444 0%, #dc2626 100%)`.
+  * Radio `50px` (Pill), texto `#ffffff` en negrita (700).
+  * Glow Effect: `box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35)`.
+  * Hover: `transform: translateY(-2px) scale(1.02); box-shadow: 0 6px 25px rgba(239, 68, 68, 0.5)`.
+
+### 3.6. Tarjetas de Consumo de IA & Servicios (`.usage-main-card`)
+* **Título Responsivo:** `Consumo de Servicios IA` (`font-size: 1.1rem` en escritorio, disminuyendo progresivamente a `0.95rem` en pantallas móviles `<= 480px` para evitar desbordamientos).
+* **Contenedor Flex de Cabecera:** `min-width: 0` para prevenir quiebres de línea forzados.
+* **Ítems de Consumo (`.usage-item`):** Fondo `#121212`, borde `rgba(255,255,255,0.08)`, ajuste automático de texto con `word-break: break-word` e indicadores de cuotas en tiempo real.
+
 ---
 
 ## 4. 📐 Grids, Layouts y Responsividad

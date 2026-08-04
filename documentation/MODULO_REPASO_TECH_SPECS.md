@@ -244,7 +244,33 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - La cabecera `.explorer-sidebar-header` se mantiene en fila horizontal (`flex-direction: row; justify-content: space-between; align-items: center; width: 100%;`).
     - El título `"EXPLORADOR"` permanece perfectamente visible a la izquierda (`display: block !important; font-size: 0.85rem; color: #94a3b8;`).
     - Los botones de acción (`+` y `[=]`) se posicionan uno al lado del otro en una fila horizontal estilizada a la derecha.
-    - Se eliminaron las restricciones de altura fija recortada, aplicando `height: auto !important; max-height: max-content !important; padding: 0.75rem 1rem !important;` para garantizar cero recortes de texto.
+- **Persistencia de Píldora de Categoría Activa en la Sección Comunidad (V30)**:
+  - **Preservación del Filtro de Categoría**:
+    - Se actualizó el parámetro por defecto de `loadCommunity(pushState, category)` y `renderCommunityDecks(page, category)` en `repaso.js`.
+- **Alineación Estricta con el Design System (Purga Cromática Azul y Estandarización Negro Mate / Naranja - V31)**:
+  - **Reestructuración de Superficies de Modales**:
+    - Se erradicaron todos los fondos azulados oscuros (`rgba(15, 23, 42, ...)` y `rgba(30, 41, 59, 0.5)`).
+    - En el modal `preview-deck-modal`, las tarjetas internas de previsualización adoptan la superficie estándar **Dark Slate Matte** (`#121212` con borde `1px solid rgba(255, 255, 255, 0.08)`).
+    - En `deck-guide-modal`, el contenedor de la guía de estudio pasa a superficie `#121212`.
+    - En `.modal-card-face`, los anversos de tarjetas se actualizaron a superficie `#121212` con enfoque en acento Naranja (`rgba(249, 115, 22, 0.25)`).
+  - **Estandarización de Insignias y Componentes**:
+    - **Insignias de Categorías (`.deck-category-tag`)**: Actualizadas a fondo naranja translúcido (`rgba(249, 115, 22, 0.12)`), borde (`rgba(249, 115, 22, 0.25)`) y texto `#ff9f43`.
+    - **Insignias de Audio y Spinners**: Spinners y badges pasaron de azul (`#60a5fa`) a la paleta viva de marca Naranja (`#f97316` / `#ff9f43`).
+- **Manejadores Directos de Apertura de Modal para Mazos Compartidos de la Comunidad (V32)**:
+  - **Asignación Robusta de Eventos DOM**:
+    - Se reemplazaron los atributos de maquetación HTML inline (`onclick="..."`) en las tarjetas de la comunidad por asignaciones directas de manejadores de eventos en el DOM (`card.onclick = () => this.previewPublicDeck(deck.id, deck.name)`).
+    - Se eliminaron los fallos silenciosos provocados por comillas simples o dobles no escapadas en títulos de mazos con caracteres especiales o signos de puntuación.
+- **Corrección Integral de Botones de Mazos y Apertura de Modales de Edición, Eliminación y Guía (V33)**:
+  - **Eliminación de Errores por Cadenas de Plantilla HTML Inline**:
+    - Se reemplazaron las llamadas `onclick="..."` embebidas en los botones de acción (`Editar`, `Eliminar`, `Estudiar`, `Demo`) por clases explícitas (`btn-act-play`, `btn-act-edit`, `btn-act-delete`, `btn-act-demo`) y delegación DOM en `renderDeckCards`.
+    - Se eliminó el error de sintaxis provocado al inyectar descripciones o títulos con caracteres especiales, comillas o bloques de código dentro de atributos HTML en línea.
+  - **Apertura Universal de Modal de Guía (`openGuideModal`)**:
+- **Corrección Estructural de HTML en Modales y Alineación Cromática de Cabecera de Mazo (V34)**:
+  - **Corrección de Etiqueta `div` Duplicada en Modal de Edición/Creación**:
+    - Se reparó en `repaso.html` un `div` duplicado sin cerrar en `create-deck-modal` que provocaba el desplazamiento o desconfiguración lateral de los modales de edición.
+  - **Actualización de Botones de Cabecera (`renderFolderHeader`)**:
+    - Se actualizaron los botones principales ("Estudiar Ahora", "Hacer Público") de azul (`#3b82f6`) al degradado oficial Naranja Manta (`linear-gradient(135deg, #f97316 0%, #ea580c 100%)`) con sombra `box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35)`.
+    - Se vincularon todos los botones de la cabecera del mazo mediante escuchas de eventos directos en el DOM sin interpolaciones propensas a errores.
 
 ---
 

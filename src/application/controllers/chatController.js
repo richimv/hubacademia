@@ -72,8 +72,8 @@ class ChatController {
             const finalSpecialization = (rawSpec.toLowerCase().includes('educa') || rawSpec === 'EDUCACION') ? 'education' : 'medicine';
             const targetExam = (context && context.target) || req.body.target || req.userTarget || (finalSpecialization === 'education' ? 'ASCENSO' : 'SERUMS');
 
-            // RAG solo se activa para Quiz Tutor en exámenes (para usuarios Advanced/Admin con cuota)
-            const hasRAGAccess = isQuizTutor ? (req.useRag !== undefined ? req.useRag : (req.userTier === 'advanced' || req.userTier === 'admin')) : false;
+            // RAG solo se activa si req.useRag fue evaluado como true en checkLimitsMiddleware
+            const hasRAGAccess = (isQuizTutor || isFlashcardTutor) ? (req.useRag === true) : false;
 
             // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE FLASHCARDS (General & Versátil)
             let processedMessage = message;
@@ -175,12 +175,18 @@ PREGUNTA O DUDA DEL ESTUDIANTE: ${message}`;
             if (userId && req.usageType) {
                 try {
                     if (req.usageType === 'usage_count') {
-                        const cost = req.cost || (hasRAGAccess ? 2 : 1);
+                        const cost = req.cost || 1;
                         await this.usageService.checkAndIncrementUsage(userId, cost);
                         console.log(`📉 Límite de usage_count incrementado (+${cost}) para usuario ${userId}.`);
                     } else if (req.usageType) {
                         const pool = require('../../infrastructure/database/db');
-                        await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);
+                        if (req.incrementRag) {
+                            await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1, daily_rag_usage = daily_rag_usage + 1 WHERE id = $1`, [userId]);
+                            console.log(`📉 Límite de ${req.usageType} (+1) y daily_rag_usage (+1) incrementado para usuario ${userId}.`);
+                        } else {
+                            await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);
+                            console.log(`📉 Límite de ${req.usageType} (+1) incrementado para usuario ${userId}.`);
+                        }
                     }
                 } catch (limitErr) {
                     console.error("⚠️ No se pudo actualizar el límite del usuario:", limitErr.message);

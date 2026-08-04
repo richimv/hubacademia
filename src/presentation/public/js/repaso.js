@@ -406,7 +406,7 @@ class RepasoManager {
         }
     }
 
-    loadCommunity(pushState = true) {
+    loadCommunity(pushState = true, category = null) {
         document.getElementById('dashboard-view').style.display = 'none';
         document.getElementById('folder-view').style.display = 'none';
         const commView = document.getElementById('community-view');
@@ -423,7 +423,8 @@ class RepasoManager {
             window.history.pushState({ view: 'community' }, 'Comunidad', url.toString());
         }
 
-        this.renderCommunityDecks();
+        const targetCat = category || this.currentCommunityCategory || localStorage.getItem('repaso_community_category') || 'ALL';
+        this.renderCommunityDecks(1, targetCat);
     }
 
     // --- Renderers ---
@@ -493,8 +494,16 @@ class RepasoManager {
     }
 
 
-    async renderCommunityDecks(page = 1, category = 'ALL') {
-        this.currentCommunityCategory = category || 'ALL';
+    async renderCommunityDecks(page = 1, category = null) {
+        if (category !== null && category !== undefined) {
+            this.currentCommunityCategory = category;
+        } else if (!this.currentCommunityCategory) {
+            this.currentCommunityCategory = localStorage.getItem('repaso_community_category') || 'ALL';
+        }
+
+        if (this.currentCommunityCategory) {
+            localStorage.setItem('repaso_community_category', this.currentCommunityCategory);
+        }
         const container = document.getElementById('community-view');
 
         const CATEGORIES = [
@@ -539,7 +548,7 @@ class RepasoManager {
         this.enableCategoryBarDrag();
 
         try {
-            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/public?page=${page}&limit=20&category=${encodeURIComponent(category)}`);
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/public?page=${page}&limit=20&category=${encodeURIComponent(this.currentCommunityCategory)}`);
             const data = await res.json();
 
             const grid = document.getElementById('community-decks-grid');
@@ -562,7 +571,7 @@ class RepasoManager {
 
                 card.innerHTML = `
                     <!-- Desktop layout -->
-                    <div class="deck-card-desktop" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${escapeHtml(deck.name)}')">
+                    <div class="deck-card-desktop">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
                             <span class="deck-category-tag"><i class="${catObj.icon}"></i> ${catObj.name}</span>
                             <div style="color: #94a3b8; font-size: 0.75rem;"><i class="fas fa-download"></i> ${deck.saves_count || 0}</div>
@@ -576,14 +585,14 @@ class RepasoManager {
                             > Por: <span style="color:#e2e8f0">${deck.author_name || 'Estudiante'}</span>
                         </div>
                         <div style="margin-top:auto; width:100%;">
-                            <button class="btn-clone-deck" onclick="event.stopPropagation(); window.repasoManager.cloneDeck('${deck.id}')">
+                            <button type="button" class="btn-clone-deck btn-clone-desktop">
                                 <i class="fas fa-clone"></i> Clonar Mazo
                             </button>
                         </div>
                     </div>
 
                     <!-- Mobile layout -->
-                    <div class="deck-card-mobile" onclick="window.repasoManager.previewPublicDeck('${deck.id}', '${escapeHtml(deck.name)}')">
+                    <div class="deck-card-mobile">
                         <div style="font-size:1.3rem; flex-shrink:0;">${iconHtml}</div>
                         <div style="flex:1; min-width:0;">
                             <div style="font-size:0.9rem; font-weight:700; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
@@ -592,8 +601,7 @@ class RepasoManager {
                             </div>
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; flex-shrink:0;">
-                             <button class="deck-action-btn" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4); width:34px; height:34px; padding:0; display:flex; align-items:center; justify-content:center;" 
-                                onclick="event.stopPropagation(); window.repasoManager.cloneDeck('${deck.id}')" 
+                             <button type="button" class="deck-action-btn btn-clone-mobile" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4); width:34px; height:34px; padding:0; display:flex; align-items:center; justify-content:center;" 
                                 title="Clonar Mazo">
                                 <i class="fas fa-clone"></i>
                             </button>
@@ -601,6 +609,29 @@ class RepasoManager {
                         </div>
                     </div>
                 `;
+
+                // Asignar click a la tarjeta para abrir el modal de previsualización
+                card.onclick = () => {
+                    this.previewPublicDeck(deck.id, deck.name);
+                };
+
+                // Asignar manejadores a los botones de clonar deteniendo la propagación al modal
+                const cloneDesktop = card.querySelector('.btn-clone-desktop');
+                if (cloneDesktop) {
+                    cloneDesktop.onclick = (e) => {
+                        e.stopPropagation();
+                        this.cloneDeck(deck.id);
+                    };
+                }
+
+                const cloneMobile = card.querySelector('.btn-clone-mobile');
+                if (cloneMobile) {
+                    cloneMobile.onclick = (e) => {
+                        e.stopPropagation();
+                        this.cloneDeck(deck.id);
+                    };
+                }
+
                 fragment.appendChild(card);
             });
 
@@ -692,7 +723,7 @@ class RepasoManager {
         }
 
         modal.classList.add('active');
-        content.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#60a5fa"></i></div>';
+        content.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#f97316"></i></div>';
 
         try {
             const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/cards`);
@@ -709,12 +740,12 @@ class RepasoManager {
                 let expImageHtml = c.explanation_image_url ? `<div style="margin-top: 0.5rem; text-align: center;"><img src="${window.resolveImageUrl ? window.resolveImageUrl(c.explanation_image_url) : c.explanation_image_url}" style="max-height: 150px; border-radius: 8px; max-width: 100%; border: 1px solid rgba(255,255,255,0.1);"></div>` : '';
 
                 const hasAudio = c.audio_url_frente || c.audio_url_dorso;
-                const audioBadge = hasAudio ? `<span style="font-size: 0.6rem; background: rgba(59, 130, 246, 0.1); color: #60a5fa; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2);"><i class="fas fa-volume-up"></i> Audio Premium</span>` : '';
+                const audioBadge = hasAudio ? `<span style="font-size: 0.6rem; background: rgba(249, 115, 22, 0.12); color: #ff9f43; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(249, 115, 22, 0.25);"><i class="fas fa-volume-up"></i> Audio Premium</span>` : '';
 
                 html += `
-                    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem;">
+                    <div style="background: #121212; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1rem;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
-                            <div style="color: var(--accent-primary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Tarjeta ${index + 1}</div>
+                            <div style="color: #f97316; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Tarjeta ${index + 1}</div>
                             ${audioBadge}
                         </div>
                         <div style="color: white; font-size: 0.95rem; margin-bottom: 0.5rem; line-height: 1.4;">
@@ -807,40 +838,40 @@ class RepasoManager {
 
                         <div class="action-bar">
                             ${total > 0 && localStorage.getItem('authToken') ? `
-                            <button class="btn-premium btn-premium-primary" onclick="window.repasoManager.startStudy('${deck.id}', '${escapeHtml(deck.name)}', ${total})">
+                            <button type="button" class="btn-premium btn-premium-primary btn-fh-study">
                                 <i class="fas fa-play"></i> <span class="btn-text">Estudiar Ahora</span>
                             </button>
                             ` : ''}
 
                             ${!localStorage.getItem('authToken') ? `
-                            <button class="btn-premium btn-premium-primary" onclick="window.repasoManager.startStudyDemo('${deck.id}')">
+                            <button type="button" class="btn-premium btn-premium-primary btn-fh-demo">
                                 <i class="fas fa-play-circle"></i> <span class="btn-text">¡PROBAR DEMO!</span>
                             </button>
                             ` : ''}
 
                             ${localStorage.getItem('authToken') ? `
-                            <button class="btn-premium btn-premium-secondary btn-add-card-glow" onclick="window.repasoManager.openAddCardModal()">
+                            <button type="button" class="btn-premium btn-premium-secondary btn-add-card-glow btn-fh-add">
                                 <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
                             </button>
                             ${isAdvancedOrAdmin ? `
-                            <button class="btn-premium btn-premium-ia" onclick="window.repasoManager.openAiModal()">
+                            <button type="button" class="btn-premium btn-premium-ia btn-fh-ai">
                                 <i class="fas fa-magic"></i> <span class="btn-text">Crear con IA</span>
                             </button>
                             ` : ''}
                             ` : ''}
                             
-                            <button class="btn-premium btn-premium-secondary" onclick="${this.token ? `window.repasoManager.openStatsModal(${total}, ${mastered}, ${pending})` : 'window.uiManager.showAuthPromptModal()'}">
+                            <button type="button" class="btn-premium btn-premium-secondary btn-fh-stats">
                                 <i class="fas fa-chart-pie"></i> <span class="btn-text">Estadísticas</span>
                             </button>
 
                             ${this.token && deck.type !== 'SYSTEM' ? `
-                            <button class="btn-premium btn-premium-secondary" onclick="DeckExplorer.openGuideModal('${deck.id}', '${escapeHtml(deck.name)}')">
+                            <button type="button" class="btn-premium btn-premium-secondary btn-fh-guide">
                                 <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
                             </button>
                             ` : ''}
 
                             ${this.token && deck.type !== 'SYSTEM' ? `
-                            <button class="btn-premium ${deck.is_public ? 'btn-premium-primary' : 'btn-premium-secondary'}" onclick="window.repasoManager.toggleDeckVisibility('${deck.id}', ${!deck.is_public})">
+                            <button type="button" class="btn-premium ${deck.is_public ? 'btn-premium-primary' : 'btn-premium-secondary'} btn-fh-visibility">
                                 <i class="fas ${deck.is_public ? 'fa-globe' : 'fa-lock'}"></i> <span class="btn-text">${deck.is_public ? 'Hacer Privado' : 'Hacer Público'}</span>
                             </button>
                             ` : ''}
@@ -852,6 +883,28 @@ class RepasoManager {
             <!-- Espaciador para evitar solapamiento -->
             <div style="margin-bottom: 2.5rem;"></div>
         `;
+
+        // Direct Event Bindings for folder header
+        const btnStudy = container.querySelector('.btn-fh-study');
+        if (btnStudy) btnStudy.onclick = () => this.startStudy(deck.id, deck.name, total);
+
+        const btnDemo = container.querySelector('.btn-fh-demo');
+        if (btnDemo) btnDemo.onclick = () => this.startStudyDemo(deck.id);
+
+        const btnAdd = container.querySelector('.btn-fh-add');
+        if (btnAdd) btnAdd.onclick = () => this.openAddCardModal();
+
+        const btnAi = container.querySelector('.btn-fh-ai');
+        if (btnAi) btnAi.onclick = () => this.openAiModal();
+
+        const btnStats = container.querySelector('.btn-fh-stats');
+        if (btnStats) btnStats.onclick = () => this.token ? this.openStatsModal(total, mastered, pending) : window.uiManager.showAuthPromptModal();
+
+        const btnGuide = container.querySelector('.btn-fh-guide');
+        if (btnGuide) btnGuide.onclick = () => window.DeckExplorer.openGuideModal(deck.id, deck.name);
+
+        const btnVisibility = container.querySelector('.btn-fh-visibility');
+        if (btnVisibility) btnVisibility.onclick = () => this.toggleDeckVisibility(deck.id, !deck.is_public);
     }
 
     async toggleDeckVisibility(deckId, makePublic) {
@@ -1064,23 +1117,16 @@ class RepasoManager {
             // --- Dynamic Actions Logic ---
             let actionBtns = '';
             if (this.token) {
-                // Registered User: Play (Real) + Edit/Delete (if not system)
                 actionBtns = `
                     <div style="display:flex; gap:0.4rem; align-items:center;">
-                        <button class="deck-action-btn" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4);" 
-                            onclick="event.stopPropagation(); window.repasoManager.startStudy('${deck.id}', '${escapeHtml(deck.name)}', ${deck.total_cards || 0})" 
-                            title="Estudiar">
+                        <button type="button" class="deck-action-btn btn-act-play" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4);" title="Estudiar">
                             <i class="fas fa-play"></i>
                         </button>
                         ${!isSystem ? `
-                            <button class="deck-action-btn" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border: 1px solid rgba(255,255,255,0.1);" 
-                                onclick="event.stopPropagation(); window.repasoManager.openEditDeckModal('${deck.id}', '${escapeHtml(deck.name)}', '${deck.icon || ''}', \`${escapeHtml(deck.description || '')}\`, '${deck.color || ''}')" 
-                                title="Editar nombre/icono/color/guía">
+                            <button type="button" class="deck-action-btn btn-act-edit" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border: 1px solid rgba(255,255,255,0.1);" title="Editar mazo">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="deck-action-btn deck-action-btn--delete" 
-                                onclick="event.stopPropagation(); window.repasoManager.confirmDeleteDeck('${deck.id}', '${escapeHtml(deck.name)}')" 
-                                title="Eliminar mazo">
+                            <button type="button" class="deck-action-btn deck-action-btn--delete btn-act-delete" title="Eliminar mazo">
                                 <i class="fas fa-trash"></i>
                             </button>
                         ` : ''}
@@ -1089,9 +1135,7 @@ class RepasoManager {
                 // Guest User: Only Demo Play
                 actionBtns = `
                     <div style="display:flex; gap:0.3rem;">
-                        <button class="deck-action-btn" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4);" 
-                            onclick="event.stopPropagation(); window.repasoManager.startStudyDemo('${deck.id}')" 
-                            title="Probar Demo">
+                        <button type="button" class="deck-action-btn btn-act-demo" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4);" title="Probar Demo">
                             <i class="fas fa-play"></i>
                         </button>
                     </div>`;
@@ -1138,7 +1182,21 @@ class RepasoManager {
             `;
 
             card.onclick = (e) => {
-                if (e.target.closest('button')) return;
+                const btn = e.target.closest('button');
+                if (btn) {
+                    e.stopPropagation();
+                    if (btn.classList.contains('btn-act-play')) {
+                        this.startStudy(deck.id, deck.name, deck.total_cards || 0);
+                    } else if (btn.classList.contains('btn-act-demo')) {
+                        this.startStudyDemo(deck.id);
+                    } else if (btn.classList.contains('btn-act-edit')) {
+                        this.openEditDeckModal(deck.id, deck.name, deck.icon, deck.description, deck.color, deck.category);
+                    } else if (btn.classList.contains('btn-act-delete')) {
+                        this.confirmDeleteDeck(deck.id, deck.name);
+                    }
+                    return;
+                }
+
                 const node = document.querySelector(`.tree-node[data-id="${deck.id}"]`);
                 if (node) {
                     this.explorer.toggleNode(deck.id, node);

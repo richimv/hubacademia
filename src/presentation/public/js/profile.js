@@ -13,6 +13,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const emailEl = document.getElementById('user-email');
     emailEl.innerHTML = `${user.email} <i class="fas fa-check-circle" style="color: #10b981; font-size: 0.9rem; margin-left: 5px;" title="Verificado vía Google"></i>`;
 
+    const avatarBadge = document.getElementById('user-avatar-badge');
+    if (avatarBadge) {
+        const photoUrl = user.picture || user.avatar_url || user.avatarUrl;
+        if (photoUrl) {
+            avatarBadge.innerHTML = `<img src="${photoUrl}" alt="${user.name || 'Usuario'}" class="profile-avatar-img">`;
+        }
+    }
+
     const badgeContainer = document.getElementById('plan-badge-container');
     const tier = String(user.subscriptionTier || 'free').toLowerCase();
 
@@ -137,6 +145,11 @@ function openDeleteModal() {
     modal.style.display = 'flex';
     deleteInput.value = '';
     deleteError.style.display = 'none';
+    const btn = document.getElementById('confirm-delete-btn');
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar mi cuenta';
+        btn.disabled = false;
+    }
     deleteInput.focus();
 }
 
@@ -150,13 +163,13 @@ modal.addEventListener('click', (e) => {
 
 document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
     if (deleteInput.value !== 'ELIMINAR') {
-        deleteError.textContent = 'Debes escribir "ELIMINAR" textualmente.';
+        deleteError.innerHTML = '<i class="fas fa-exclamation-circle"></i> Debes escribir "ELIMINAR" textualmente.';
         deleteError.style.display = 'block';
         return;
     }
 
     const btn = document.getElementById('confirm-delete-btn');
-    btn.textContent = 'Eliminando...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
     btn.disabled = true;
 
     try {
@@ -164,9 +177,9 @@ document.getElementById('confirm-delete-btn').addEventListener('click', async ()
         await window.sessionManager.logout();
     } catch (error) {
         console.error(error);
-        deleteError.textContent = error.message || 'Error al eliminar cuenta';
+        deleteError.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message || 'Error al eliminar cuenta'}`;
         deleteError.style.display = 'block';
-        btn.textContent = 'Confirmar';
+        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar mi cuenta';
         btn.disabled = false;
     }
 });
@@ -228,17 +241,17 @@ async function submitNameChange() {
 }
 
 /**
- * Genera el HTML simétrico de una tarjeta de consumo
+ * Genera el HTML simétrico y estilizado de una tarjeta de consumo
  */
 function createUsageCardHTML({ title, icon, colorRGB, badge, countVal, percentage, labelLeft, labelRight }) {
     return `
         <div class="usage-item">
             <div class="usage-item-header">
                 <div class="usage-title-group">
-                    <div class="usage-icon-pill" style="background: rgba(${colorRGB}, 0.15); color: rgb(${colorRGB});">
+                    <div class="usage-icon-pill" style="background: rgba(${colorRGB}, 0.12); color: rgb(${colorRGB});">
                         <i class="${icon}"></i>
                     </div>
-                    <div>
+                    <div class="usage-title-text-wrap">
                         <div class="usage-title">${title}</div>
                         <span class="usage-badge-tag">${badge}</span>
                     </div>
@@ -246,7 +259,7 @@ function createUsageCardHTML({ title, icon, colorRGB, badge, countVal, percentag
                 <div class="usage-count-val" style="color: rgb(${colorRGB});">${countVal}</div>
             </div>
             <div class="usage-progress-bg">
-                <div class="usage-progress-bar" style="width: ${percentage}%; background: linear-gradient(90deg, rgb(${colorRGB}) 0%, rgba(${colorRGB}, 0.7) 100%);"></div>
+                <div class="usage-progress-bar" style="width: ${percentage}%; background: rgb(${colorRGB});"></div>
             </div>
             <div class="usage-footer">
                 <span class="usage-footer-left">${labelLeft}</span>
@@ -275,7 +288,7 @@ function renderUsageDetails(user) {
     usageCard.style.display = 'block';
 
     if (planTag) {
-        if (isAdmin) planTag.textContent = 'MODO ADMIN';
+        if (isAdmin) planTag.textContent = 'ADMINISTRADOR';
         else if (tier === 'advanced') planTag.textContent = 'PLAN ADVANCED';
         else if (tier === 'basic') planTag.textContent = 'PLAN BASIC';
         else planTag.textContent = 'PLAN GRATUITO';
@@ -283,10 +296,10 @@ function renderUsageDetails(user) {
 
     if (isAdmin) {
         container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 2.25rem 2rem; background: #121212; border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 18px;">
-                <i class="fas fa-shield-alt" style="font-size: 2.5rem; color: #60a5fa; margin-bottom: 1rem;"></i>
-                <h4 style="color: #fff; margin: 0 0 0.5rem 0; font-weight: 700; font-size: 1.15rem;">Acceso Ilimitado de Administrador</h4>
-                <p style="color: #94a3b8; font-size: 0.9rem; margin: 0; max-width: 600px; margin: 0 auto; line-height: 1.5;">Como administrador, tu cuenta está exenta de las cuotas y limitaciones estándar de IA en toda la plataforma.</p>
+            <div style="grid-column: 1 / -1; text-align: center; padding: 2.25rem 2rem; background: var(--profile-nested-bg); border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 18px;">
+                <i class="fas fa-shield-alt" style="font-size: 2.2rem; color: #60a5fa; margin-bottom: 0.75rem;"></i>
+                <h4 style="color: #fff; margin: 0 0 0.5rem 0; font-weight: 700; font-size: 1.1rem;">Acceso Ilimitado de Administrador</h4>
+                <p style="color: #94a3b8; font-size: 0.875rem; margin: 0 auto; max-width: 580px; line-height: 1.5;">Tu cuenta posee permisos globales y acceso sin restricciones ni límites de cuota en todas las funciones de IA.</p>
             </div>
         `;
         return;
@@ -307,11 +320,11 @@ function renderUsageDetails(user) {
             title: 'Tutor de IA Estándar',
             icon: 'fas fa-comments',
             colorRGB: '59, 130, 246', // Blue
-            badge: 'Cuota Diaria',
-            countVal: `${aiUsed}/${aiLimit}`,
+            badge: 'Diario',
+            countVal: `${aiUsed} / ${aiLimit}`,
             percentage: aiPct,
-            labelLeft: 'Consultas de chat e interpretación',
-            labelRight: `Quedan: ${aiRemaining}`
+            labelLeft: 'Interacciones con Tutor IA',
+            labelRight: `Disponibles: ${aiRemaining}`
         });
 
         // 2. Consultas RAG (SOLO PARA ADVANCED)
@@ -322,14 +335,14 @@ function renderUsageDetails(user) {
             const ragPct = ragLimit > 0 ? Math.min(100, (ragUsed / ragLimit) * 100) : 0;
 
             cardsHTML += createUsageCardHTML({
-                title: 'Consultas Especialidad (RAG)',
+                title: 'Consultas RAG Especializadas',
                 icon: 'fas fa-brain',
                 colorRGB: '20, 184, 166', // Teal
-                badge: 'Cuota Diaria (Advanced)',
-                countVal: `${ragUsed}/${ragLimit}`,
+                badge: 'Diario (Advanced)',
+                countVal: `${ragUsed} / ${ragLimit}`,
                 percentage: ragPct,
-                labelLeft: 'Fundamentación normativa oficial',
-                labelRight: `Quedan: ${ragRemaining}`
+                labelLeft: 'Base de conocimiento oficial',
+                labelRight: `Disponibles: ${ragRemaining}`
             });
         }
 
@@ -340,14 +353,14 @@ function renderUsageDetails(user) {
         const simPct = Math.min(100, (simUsed / simLimit) * 100);
 
         cardsHTML += createUsageCardHTML({
-            title: 'Simulacros Realizados',
+            title: 'Simulacros y Exámenes',
             icon: 'fas fa-stethoscope',
             colorRGB: '139, 92, 246', // Purple
-            badge: 'Cuota Diaria',
-            countVal: `${simUsed}/${simLimit}`,
+            badge: 'Diario',
+            countVal: `${simUsed} / ${simLimit}`,
             percentage: simPct,
-            labelLeft: 'Generación de casos y exámenes',
-            labelRight: `Quedan: ${simRemaining}`
+            labelLeft: 'Generación de casos y evaluaciones',
+            labelRight: `Disponibles: ${simRemaining}`
         });
 
         // 4. Flashcards (SOLO PARA ADVANCED)
@@ -358,14 +371,14 @@ function renderUsageDetails(user) {
             const fcPct = Math.min(100, (fcUsed / fcLimit) * 100);
 
             cardsHTML += createUsageCardHTML({
-                title: 'Generador de Flashcards (IA)',
+                title: 'Generador de Flashcards',
                 icon: 'fas fa-clone',
                 colorRGB: '245, 158, 11', // Amber
-                badge: 'Cuota Mensual (Advanced)',
-                countVal: `${fcUsed}/${fcLimit}`,
+                badge: 'Mensual (Advanced)',
+                countVal: `${fcUsed} / ${fcLimit}`,
                 percentage: fcPct,
-                labelLeft: 'Creación automatizada de mazos con IA',
-                labelRight: `Quedan: ${fcRemaining}`
+                labelLeft: 'Creación de mazos con IA',
+                labelRight: `Disponibles: ${fcRemaining}`
             });
         }
 
@@ -385,7 +398,7 @@ function renderUsageDetails(user) {
                 const nextRenewalDate = new Date(lastRenewalDate.getTime() + 7 * 24 * 60 * 60 * 1000);
                 const options = { weekday: 'long', day: 'numeric', month: 'long' };
                 const formattedDate = nextRenewalDate.toLocaleDateString('es-ES', options);
-                renewalDateText = `Próximo reinicio: ${formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}`;
+                renewalDateText = `Reinicio: ${formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}`;
             } catch (e) {
                 console.warn('⚠️ Error al formatear fecha de renovación:', e);
             }
@@ -395,26 +408,26 @@ function renderUsageDetails(user) {
             <div class="usage-item" style="grid-column: 1 / -1;">
                 <div class="usage-item-header">
                     <div class="usage-title-group">
-                        <div class="usage-icon-pill" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                        <div class="usage-icon-pill" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">
                             <i class="fas fa-bolt"></i>
                         </div>
-                        <div>
-                            <div class="usage-title">Créditos Semanales (Pool de Vidas)</div>
-                            <span class="usage-badge-tag">Cuota Semanal de Exploración</span>
+                        <div class="usage-title-text-wrap">
+                            <div class="usage-title">Créditos Semanales de Exploración</div>
+                            <span class="usage-badge-tag">Cuota Semanal</span>
                         </div>
                     </div>
-                    <div class="usage-count-val" style="color: #f59e0b;">${remaining}/${maxFreeLimit}</div>
+                    <div class="usage-count-val" style="color: #f59e0b;">${remaining} / ${maxFreeLimit}</div>
                 </div>
                 <div class="usage-progress-bg">
-                    <div class="usage-progress-bar" style="width: ${pct}%; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);"></div>
+                    <div class="usage-progress-bar" style="width: ${pct}%; background: #f59e0b;"></div>
                 </div>
                 <div class="usage-footer">
-                    <span class="usage-footer-left">Créditos disponibles para simulacros e interacciones de IA</span>
-                    <span class="usage-footer-right" style="color: #fbbf24;">Quedan: ${remaining} créditos</span>
+                    <span class="usage-footer-left">Créditos para simulacros e IA</span>
+                    <span class="usage-footer-right" style="color: #f59e0b;">Disponibles: ${remaining}</span>
                 </div>
                 ${renewalDateText ? `
-                <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 0.825rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                    <span><i class="far fa-calendar-alt" style="margin-right: 6px; color: #60a5fa;"></i>Reinicio automático cada 7 días.</span>
+                <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                    <span><i class="far fa-calendar-alt" style="margin-right: 6px; color: #60a5fa;"></i>Renovación cada 7 días</span>
                     <span style="color: #60a5fa; font-weight: 600;">${renewalDateText}</span>
                 </div>
                 ` : ''}

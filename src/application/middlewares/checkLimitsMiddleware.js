@@ -173,14 +173,57 @@ const checkAILimits = (type) => {
                         }
                     }
                 } else {
-                    const isQuizTutor = req.body && req.body.context && req.body.context.type === 'quiz_tutor';
-                    if (isQuizTutor) {
-                        req.useRag = (tier === 'advanced' || tier === 'admin');
-                        req.usageType = isActiveAccount ? 'daily_ai_usage' : 'usage_count';
-                        req.cost = 1;
+                    const context = req.body && req.body.context;
+                    const spec = req.body && req.body.specialization;
+                    const isTutorChat = (context && (context.type === 'quiz_tutor' || context.type === 'flashcard_tutor')) || spec === 'flashcard_tutor';
+
+                    if (isTutorChat) {
+                        if (isActiveAccount) {
+                            // 🛡️ CONTROL DE LÍMITE DIARIO DE CONSULTAS IA PARA PLANES BASIC Y ADVANCED
+                            if ((user.daily_ai_usage || 0) >= userLimits.chat_standard) {
+                                return res.status(403).json({
+                                    error: `Has alcanzado tu límite diario de consultas al Tutor IA (${userLimits.chat_standard} mensajes/día). Vuelve mañana o mejora tu plan.`,
+                                    reason: 'DAILY_LIMIT_EXHAUSTED',
+                                    paywall: true
+                                });
+                            }
+
+                            // 🧠 REGLAS DE USO RAG:
+                            // - Usuario Basic (tier === 'basic'): NO usa RAG (0 msgs/día RAG, sin excepciones).
+                            // - Usuario Advanced (tier === 'advanced' / 'admin' / 'elite'): Usa RAG hasta 25 msgs/día. Si se agota, degrada a IA Estándar sin RAG.
+                            const isAdvancedTier = (tier === 'advanced' || tier === 'admin' || tier === 'elite');
+                            const ragLimit = userLimits.daily_rag_limit || 25;
+                            const currentRagUsage = user.daily_rag_usage || 0;
+
+                            if (isAdvancedTier && currentRagUsage < ragLimit) {
+                                req.useRag = true;
+                                req.incrementRag = true;
+                            } else {
+                                req.useRag = false;
+                                req.incrementRag = false;
+                            }
+
+                            req.usageType = 'daily_ai_usage';
+                            req.cost = 1;
+                        } else {
+                            // 🪙 CONTROL DE VIDAS DE PRUEBA PARA USUARIOS FREE PENDING
+                            if ((user.usage_count || 0) >= (user.max_free_limit || 20)) {
+                                return res.status(403).json({
+                                    error: 'Se han agotado tus 20 vidas de prueba gratis. Mejora tu plan a Basic o Advanced para continuar usando los simuladores y tutores IA.',
+                                    reason: 'FREE_LIVES_EXHAUSTED',
+                                    paywall: true
+                                });
+                            }
+
+                            req.useRag = false; // Usuarios Free Pending NUNCA usan RAG
+                            req.incrementRag = false;
+                            req.usageType = 'usage_count';
+                            req.cost = 1;
+                        }
                     } else {
                         // 💬 CHAT GENERAL (Asistente Guía): 0 consumo de vidas ni de límites diarios para todos los planes
                         req.useRag = false;
+                        req.incrementRag = false;
                         req.usageType = null;
                         req.cost = 0;
                     }

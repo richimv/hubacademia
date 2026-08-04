@@ -15,15 +15,15 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Shared CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=e09574d2">
-    <link rel="stylesheet" href="/css/base.css?v=e09574d2">
-    <link rel="stylesheet" href="/css/header.css?v=e09574d2">
-    <link rel="stylesheet" href="/css/footer.css?v=e09574d2">
-    <link rel="stylesheet" href="/css/dashboard.css?v=e09574d2">
-    <link rel="stylesheet" href="/css/repaso.css?v=e09574d2">
-    <link rel="stylesheet" href="/css/modal.css?v=e09574d2">
-    <link rel="stylesheet" href="/css/sidebar.css?v=e09574d2">
-    <link rel="stylesheet" href="/css/components.css?v=e09574d2">
+    <link rel="stylesheet" href="/css/theme.css?v=3af28f3b">
+    <link rel="stylesheet" href="/css/base.css?v=3af28f3b">
+    <link rel="stylesheet" href="/css/header.css?v=3af28f3b">
+    <link rel="stylesheet" href="/css/footer.css?v=3af28f3b">
+    <link rel="stylesheet" href="/css/dashboard.css?v=3af28f3b">
+    <link rel="stylesheet" href="/css/repaso.css?v=3af28f3b">
+    <link rel="stylesheet" href="/css/modal.css?v=3af28f3b">
+    <link rel="stylesheet" href="/css/sidebar.css?v=3af28f3b">
+    <link rel="stylesheet" href="/css/components.css?v=3af28f3b">
 
     <!-- Rich Text Editor (Mini-Word) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
@@ -283,7 +283,7 @@
                     <button type="button" class="btn-action btn-secondary-action"
                         onclick="DeckExplorer.closeCreateModal()">Cancelar</button>
                     <button type="submit" id="btn-save-deck" class="btn-action"
-                        style="background: #3b82f6; color: white;">Crear</button>
+                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: none; border-radius: 10px; color: white; font-weight: 600; padding: 0.5rem 1.5rem;">Crear</button>
                 </div>
             </form>
         </div>
@@ -309,13 +309,13 @@
             <div id="preview-deck-content"
                 style="overflow-y: auto; flex: 1; padding-right: 0.5rem; margin-bottom: 1rem;">
                 <div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"
-                        style="color:#60a5fa"></i></div>
+                        style="color:#f97316"></i></div>
             </div>
 
             <div
                 style="display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--border-color);">
                 <button type="button" id="btn-preview-clone" class="btn-action"
-                    style="background: var(--accent-primary); color: white; width: 100%;">
+                    style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; width: 100%; border: none; border-radius: 12px; padding: 0.75rem; font-weight: 700; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);">
                     <i class="fas fa-clone"></i> Clonar a Mis Mazos
                 </button>
             </div>
@@ -333,18 +333,18 @@
 
             <!-- Scrollable Body Wrapper -->
             <div
-                style="max-height: 70vh; overflow-y: auto; overflow-x: hidden; padding-right: 0.5rem; scrollbar-width: thin; scrollbar-color: #3b82f6 transparent;">
+                style="max-height: 70vh; overflow-y: auto; overflow-x: hidden; padding-right: 0.5rem; scrollbar-width: thin; scrollbar-color: #f97316 transparent;">
 
                 <!-- View Mode -->
                 <div id="deck-guide-view-mode">
                     <div id="deck-guide-content"
-                        style="background: rgba(30, 41, 59, 0.5); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); min-height: 100px; color: #e2e8f0; line-height: 1.6; white-space: normal;">
+                        style="background: #121212; padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); min-height: 100px; color: #e2e8f0; line-height: 1.6; white-space: normal;">
                         <!-- Content goes here -->
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.5rem;"
                         id="deck-guide-edit-btn-container">
                         <button type="button" class="btn-action" id="deck-guide-edit-btn"
-                            style="background: #3b82f6; color: white; padding: 0.5rem 1rem; font-size: 0.85rem;"
+                            style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 0.5rem 1rem; font-size: 0.85rem; border: none; border-radius: 10px; font-weight: 600;"
                             onclick="DeckExplorer.editGuideMode()">
                             <i class="fas fa-edit"></i> Editar Guía
                         </button>
@@ -625,8 +625,8 @@
                 </div>
 
                 <div id="card-upload-spinner"
-                    style="display: none; text-align: center; margin-bottom: 1rem; background: rgba(59,130,246,0.1); padding: 0.8rem; border-radius: 8px;">
-                    <i class="fas fa-circle-notch fa-spin" style="color: #60a5fa;"></i>
+                    style="display: none; text-align: center; margin-bottom: 1rem; background: rgba(249,115,22,0.1); padding: 0.8rem; border-radius: 8px;">
+                    <i class="fas fa-circle-notch fa-spin" style="color: #f97316;"></i>
                     <span style="margin-left: 8px; color: #94a3b8; font-size: 0.85rem;">Procesando...</span>
                 </div>
 
@@ -634,7 +634,7 @@
                     <button type="button" class="btn-action btn-secondary-action"
                         onclick="window.repasoManager.closeCardModal()">Cancelar</button>
                     <button type="submit" id="btn-save-card-submit" class="btn-action btn-study"
-                        style="background: #3b82f6; color: white; padding: 0.8rem 2.5rem;">Guardar Tarjeta</button>
+                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 0.8rem 2.5rem; border: none; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 15px rgba(249,115,22,0.35);">Guardar Tarjeta</button>
                 </div>
             </form>
         </div>
@@ -800,17 +800,17 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=e09574d2"></script>
+    <script src="/js/config.js?v=3af28f3b"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=e09574d2"></script>
-    <script src="/js/services/networkService.js?v=e09574d2"></script>
-    <script src="/js/services/authApiService.js?v=e09574d2"></script>
-    <script src="/js/services/analyticsApiService.js?v=e09574d2"></script>
-    <script src="/js/sessionManager.js?v=e09574d2"></script>
-    <script src="/js/ui/uiManager.js?v=e09574d2"></script>
-    <script src="/js/ui/components.js?v=e09574d2"></script>
-    <script src="/js/ui/sidebar.js?v=e09574d2"></script>
-    <script src="/js/app.js?v=e09574d2"></script>
+    <script src="/js/utils/markdown-renderer.js?v=3af28f3b"></script>
+    <script src="/js/services/networkService.js?v=3af28f3b"></script>
+    <script src="/js/services/authApiService.js?v=3af28f3b"></script>
+    <script src="/js/services/analyticsApiService.js?v=3af28f3b"></script>
+    <script src="/js/sessionManager.js?v=3af28f3b"></script>
+    <script src="/js/ui/uiManager.js?v=3af28f3b"></script>
+    <script src="/js/ui/components.js?v=3af28f3b"></script>
+    <script src="/js/ui/sidebar.js?v=3af28f3b"></script>
+    <script src="/js/app.js?v=3af28f3b"></script>
 
     <!-- Polyfill for Mobile Drag and Drop -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
@@ -825,9 +825,9 @@
         });
     </script>
 
-    <script src="/js/heatmap.js?v=e09574d2"></script> <!-- Optional for Stats -->
-    <script src="/js/deck-explorer.js?v=e09574d2"></script> <!-- NEW -->
-    <script src="/js/repaso.js?v=e09574d2"></script>
+    <script src="/js/heatmap.js?v=3af28f3b"></script> <!-- Optional for Stats -->
+    <script src="/js/deck-explorer.js?v=3af28f3b"></script> <!-- NEW -->
+    <script src="/js/repaso.js?v=3af28f3b"></script>
 </body>
 
 </html>

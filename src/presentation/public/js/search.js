@@ -25,7 +25,7 @@ class SearchComponent {
         // MANTA TABS STATE (Sector-Based Taxonomy)
         this.activeSector = 'medicine'; // 'medicine' (Salud) | 'education' (Educación)
         this.activeTab = 'salud'; // 'salud' | 'educacion'
-        this.activeFilter = '🔥 Novedades (60 días)'; 
+        this.activeFilter = '🔥 Novedades'; 
 
         this.init();
 

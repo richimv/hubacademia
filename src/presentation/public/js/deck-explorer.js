@@ -351,26 +351,33 @@ class DeckExplorer {
 
     // --- Guide Modal ---
     static async openGuideModal(deckId, deckName) {
-        const deck = window.repasoManager.currentDeck;
-        if (!deck || deck.id !== deckId) return;
+        const modal = document.getElementById('deck-guide-modal');
+        if (!modal) return;
 
-        document.getElementById('deck-guide-title').innerText = `Guía: ${deckName}`;
+        document.getElementById('deck-guide-title').innerText = `Guía: ${deckName || 'Mazo'}`;
         const contentDiv = document.getElementById('deck-guide-content');
         const textarea = document.getElementById('deck-guide-textarea');
 
         // 🚀 LAZY LOADING: Fetch description only when opening the modal
-        contentDiv.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;"><i class="fas fa-circle-notch fa-spin"></i> Cargando guía de estudio...</div>';
-        
+        contentDiv.innerHTML = '<div style="padding: 2rem; text-align: center; color: #94a3b8;"><i class="fas fa-circle-notch fa-spin"></i> Cargando guía de estudio...</div>';
+
+        modal.classList.add('active');
+        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
+            window.uiManager.pushModalState('deck-guide-modal');
+        }
+
         try {
             const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/${deckId}/guide`);
             const data = await res.json();
             const description = data.description || '';
             
-            // Actualizar objeto local para que 'Editar' tenga el contenido fresco
-            deck.description = description;
+            const currentDeck = window.repasoManager.currentDeck;
+            if (currentDeck && currentDeck.id === deckId) {
+                currentDeck.description = description;
+            }
 
             if (description.trim() === '') {
-                contentDiv.innerHTML = '<span style="color: #64748b; font-style: italic;">No hay una guía de estudio definida para este mazo. Pulsa "Editar" para empezar.</span>';
+                contentDiv.innerHTML = '<span style="color: #94a3b8; font-style: italic;">No hay una guía de estudio definida para este mazo. Pulsa "Editar" para empezar.</span>';
             } else {
                 contentDiv.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(description) : description;
             }
@@ -386,14 +393,10 @@ class DeckExplorer {
         document.getElementById('deck-guide-edit-mode').style.display = 'none';
 
         // Only allow edit if it's not a SYSTEM deck
-        const canEdit = deck.type !== 'SYSTEM';
+        const currentDeck = window.repasoManager.currentDeck;
+        const canEdit = currentDeck && currentDeck.id === deckId && currentDeck.type !== 'SYSTEM';
         const editBtn = document.getElementById('deck-guide-edit-btn');
         if (editBtn) editBtn.style.display = canEdit ? 'block' : 'none';
-
-        document.getElementById('deck-guide-modal').classList.add('active');
-        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
-            window.uiManager.pushModalState('deck-guide-modal');
-        }
     }
 
     static closeGuideModal() {

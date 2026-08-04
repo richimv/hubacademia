@@ -107,4 +107,76 @@ describe('Check Limits Middleware', () => {
         expect(mockReq.usageType).toBe('usage_count');
         expect(mockNext).toHaveBeenCalled();
     });
+
+    it('should allow Basic active user in Quiz/Repaso tutor without RAG and consume daily_ai_usage', async () => {
+        mockReq.body = { context: { type: 'quiz_tutor' } };
+        dbUser.subscription_tier = 'basic';
+        dbUser.subscription_status = 'active';
+        dbUser.daily_ai_usage = 10;
+
+        const middleware = checkAILimits('chat_standard');
+        await middleware(mockReq, mockRes, mockNext);
+
+        expect(mockReq.usageType).toBe('daily_ai_usage');
+        expect(mockReq.useRag).toBe(false);
+        expect(mockNext).toHaveBeenCalled();
+    });
+
+    it('should block Basic active user in Quiz/Repaso tutor when daily_ai_usage reaches 50', async () => {
+        mockReq.body = { context: { type: 'flashcard_tutor' } };
+        dbUser.subscription_tier = 'basic';
+        dbUser.subscription_status = 'active';
+        dbUser.daily_ai_usage = 50;
+
+        const middleware = checkAILimits('chat_standard');
+        await middleware(mockReq, mockRes, mockNext);
+
+        expect(mockRes.status).toHaveBeenCalledWith(403);
+        expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it('should allow Advanced active user in Quiz/Repaso tutor with RAG when under 25 daily_rag_usage', async () => {
+        mockReq.body = { context: { type: 'flashcard_tutor' } };
+        dbUser.subscription_tier = 'advanced';
+        dbUser.subscription_status = 'active';
+        dbUser.daily_ai_usage = 10;
+        dbUser.daily_rag_usage = 5;
+
+        const middleware = checkAILimits('chat_standard');
+        await middleware(mockReq, mockRes, mockNext);
+
+        expect(mockReq.usageType).toBe('daily_ai_usage');
+        expect(mockReq.useRag).toBe(true);
+        expect(mockReq.incrementRag).toBe(true);
+        expect(mockNext).toHaveBeenCalled();
+    });
+
+    it('should fallback Advanced user to non-RAG when daily_rag_usage reaches 25', async () => {
+        mockReq.body = { context: { type: 'quiz_tutor' } };
+        dbUser.subscription_tier = 'advanced';
+        dbUser.subscription_status = 'active';
+        dbUser.daily_ai_usage = 30;
+        dbUser.daily_rag_usage = 25;
+
+        const middleware = checkAILimits('chat_standard');
+        await middleware(mockReq, mockRes, mockNext);
+
+        expect(mockReq.usageType).toBe('daily_ai_usage');
+        expect(mockReq.useRag).toBe(false);
+        expect(mockReq.incrementRag).toBe(false);
+        expect(mockNext).toHaveBeenCalled();
+    });
+
+    it('should block Free Pending user in Quiz/Repaso tutor when lives are exhausted', async () => {
+        mockReq.body = { context: { type: 'quiz_tutor' } };
+        dbUser.subscription_tier = 'free';
+        dbUser.subscription_status = 'pending';
+        dbUser.usage_count = 20;
+
+        const middleware = checkAILimits('chat_standard');
+        await middleware(mockReq, mockRes, mockNext);
+
+        expect(mockRes.status).toHaveBeenCalledWith(403);
+        expect(mockNext).not.toHaveBeenCalled();
+    });
 });

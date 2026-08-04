@@ -73,9 +73,12 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 *   **Usuarios Free:** Consumen vidas de prueba al **iniciar** la Ronda 1.
 *   **Reposición por IA ("Banco Infinito")**: Si el stock local del banco es menor a 5 preguntas, se activa la generación de emergencia balanceada por áreas para completar el lote sin interrumpir el flujo.
 
-### 3.2 Módulo: Tutor IA (Chat y Idiomas)
-*   Las consultas al chat del tutor médico y del chat conversacional de idiomas comparten el contador global `daily_ai_usage` regulado por el middleware `checkAILimits('chat_standard')`.
-*   **RAG Exclusivo:** Solo los usuarios del plan Advanced activan la biblioteca RAG ( Harrison, NTS o GPC) en el chat.
+### 3.2 Módulo: Tutor IA (Quiz Tutor & Repaso Tutor)
+*   **Control Unificado de Consumos (`checkLimitsMiddleware`)**:
+    *   **Usuarios Basic Activos**: Tienen asignado un límite de **50 mensajes/día** (`daily_ai_usage`). No utilizan RAG (`useRag = false`) en ninguna circunstancia.
+    *   **Usuarios Advanced Activos**: Tienen asignado un límite de **100 mensajes/día** (`daily_ai_usage`) con **hasta 25 consultas RAG/día** (`daily_rag_usage`). Si agotan las 25 consultas RAG, el sistema realiza automáticamente un fallback a IA Estándar (generativo experto sin RAG) consumiendo de la cuota diaria estándar hasta los 100 mensajes.
+    *   **Usuarios Free / Pending**: Consumen **1 vida de prueba** (`usage_count`) por cada consulta enviada al Quiz Tutor o Repaso Tutor, hasta agotar su pool de 20 vidas (`max_free_limit`). NUNCA utilizan RAG (`useRag = false`).
+    *   **Asistente Guía (Chat General)**: Es 100% estático y efímero para todos los usuarios. Latencia de 0ms, 0 consumo de vidas o cuotas diarias.
 
 ### 3.3 Módulo: Diagnóstico Clínico (Analytics)
 *   Permite a los usuarios Advanced realizar una correlación estadística de sus fallas mediante `POST /api/analytics/diagnostic`. Consume de la cuota diaria del chat.
