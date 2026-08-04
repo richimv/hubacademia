@@ -214,7 +214,37 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
   - **Overlay Semi-Transparente con Backdrop Blur**: Se configuró `.modal-overlay` a `background: rgba(0,0,0,0.75)` con `backdrop-filter: blur(12px) saturate(160%)`, permitiendo visualizar de manera sutil y elegante la página difuminada detrás del modal, manteniendo el cuerpo modal (`.modal-content`) 100% nítido, sólido e inalterado en `#0a0a0a`.
   - **Reestructuración de "Estadísticas del Mazo" (`stats-modal`)**:
     - Se dividió el contenido en `.modal-header`, `.modal-body` (con scroll suave autónomo) y `.modal-footer`, resolviendo el recorte del cuadro explicativo SRS y el gráfico.
-    - Se eliminó la leyenda redundante predeterminada de Chart.js, manteniendo únicamente la leyenda visual SRS con tarjetas de estado en `#121212`.
+- **Explorador Colapsable, Iconos Blanco Puro y Secciones Estandarizadas de Submazos / Tarjetas (V26)**:
+  - **Explorador Colapsable Responsivo**: Se añadió soporte para contraer/desplegar el panel lateral del Explorador mediante el botón `#btn-toggle-explorer` (`fas fa-columns` / `fas fa-bars`), con persistencia en `localStorage`.
+    - **PC (Escritorio > 768px)**: Colapso horizontal suave a un ancho compacto de `68px`, ocultando las etiquetas de texto y dejando los iconos centrados y accesibles.
+    - **Móvil (<= 768px)**: Colapso vertical del árbol de mazos a una barra de encabezado de `56px` sin tapar la pantalla.
+  - **Eliminación de Fondos Azules y Colores Saturados**:
+    - Se erradicaron los fondos de selección azul/naranja/púrpura (`rgba(59,130,246,0.2)`) en el árbol del explorador, reemplazándolos por un resaltado sobrio mate neutro (`background: rgba(255,255,255,0.08)`, `border-left: 3px solid #ffffff`).
+    - Todos los iconos de mazos dentro del Explorador lateral se renderizan en **Blanco Puro (`#ffffff`)** evadiendo la saturación cromática.
+  - **Estructura de Secciones Uniformes en Vista de Mazo (`#folder-view`)**:
+    - **Sección SUB-MAZOS**: Encabezado sobrio con flecha desplegable (`fas fa-chevron-down`/`right`) y botón directo `+ Crear Submazo` (`DeckExplorer.openCreateModal(parentId)`).
+- **Optimización de Jerarquía Visual del Explorador y Eliminación de Botón Redundante (V27)**:
+  - **Jerarquía y Contraste de Mazos**:
+    - Mazos no seleccionados: Texto e icono atenuados en tono sobrio slate (`#94a3b8` / `opacity: 0.85`), coincidiendo con el estilo del menú lateral global.
+    - Mazo activo seleccionado: Resaltado en blanco brillante puro (`#ffffff !important; font-weight: 700`), fondo mate sutil (`rgba(255,255,255,0.08)`) y borde indicador lateral en blanco (`3px solid #ffffff`).
+    - Estado hover: Transición fluida a `#f1f5f9`.
+  - **Alineación Vertical al Contraer en PC**:
+    - Al contraer horizontalmente el Explorador en PC (`.explorer-sidebar.is-collapsed`), los submazos anidados secundarios se ocultan (`display: none !important`), alineando de manera limpia y vertical únicamente los iconos de mazos raíz principales y apilando verticalmente los botones de acción (`+` y `[|]`).
+  - **Depuración de Botón Duplicado**:
+- **Perfeccionamiento de Contraste, Barra de Iconos de Acción en PC y Corrección del Colapso de Tarjetas (V28)**:
+  - **Atenuación Estricta de Textos / Títulos No Seleccionados**:
+    - Se eliminaron las reglas de blanco forzado en el árbol del explorador (`dashboard.css` y `repaso.css`).
+    - Todos los títulos de mazos no seleccionados adoptan el tono atenuado **Slate** (`#94a3b8` / `opacity: 0.8`), idéntico al menú desplegable principal de la plataforma.
+    - Únicamente el mazo activo seleccionado adquiere **Blanco Puro Brillo** (`#ffffff !important; font-weight: 700; opacity: 1`).
+  - **Barra de Iconos Ultralimpia al Contraer en PC**:
+    - Al contraer el Explorador en ordenadores (`.explorer-sidebar.is-collapsed`), se oculta completamente el árbol (`#deck-tree { display: none !important; }`), mostrando únicamente una barra lateral estilizada de `68px` con los botones de acción centrados verticalmente (`+ Crear Mazo` y `[=] Desplegar Explorador`).
+- **Corrección de Maquetación Responsiva para el Explorador Contraído en Celulares (V29)**:
+  - Se separaron de forma estricta los estilos de colapso en `@media (min-width: 769px)` (Escritorio) y `@media (max-width: 768px)` (Móvil).
+  - En móviles (`max-width: 768px`), al estar la barra del Explorador en estado contraído:
+    - La cabecera `.explorer-sidebar-header` se mantiene en fila horizontal (`flex-direction: row; justify-content: space-between; align-items: center; width: 100%;`).
+    - El título `"EXPLORADOR"` permanece perfectamente visible a la izquierda (`display: block !important; font-size: 0.85rem; color: #94a3b8;`).
+    - Los botones de acción (`+` y `[=]`) se posicionan uno al lado del otro en una fila horizontal estilizada a la derecha.
+    - Se eliminaron las restricciones de altura fija recortada, aplicando `height: auto !important; max-height: max-content !important; padding: 0.75rem 1rem !important;` para garantizar cero recortes de texto.
 
 ---
 

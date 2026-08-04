@@ -1,5 +1,5 @@
 /**
- * 📚 ASISTENTE GUÍA KNOWLEDGE BASE (Hub Academia)
+ * ASISTENTE GUÍA KNOWLEDGE BASE (Hub Academia)
  * Módulo de respuestas estáticas de alta velocidad (0ms latencia, 0 costo IA).
  * Funciona al 100% como centro de orientación efímero para todos los usuarios.
  * Especialidades oficiales: SERUMS (Salud/Medicina) y ASCENSO (Educación Magisterial).
@@ -28,27 +28,27 @@ class AsistenteGuiaKnowledge {
         this.responses = {
             servicios: {
                 intencion: "informacion_servicios",
-                respuesta: `### 🎓 Servicios y Simuladores en Hub Academia
+                respuesta: `### Servicios y Simuladores en Hub Academia
 
 En **Hub Academia** acompañamos tu preparación profesional enfocándonos exclusivamente en **dos grandes pilares oficiales en el Perú**:
 
-1. **🩺 Medicina y Salud — SERUMS**
+1. **Medicina y Salud — SERUMS**
    - **Simuladores de Examen**: Banco de preguntas oficiales fundamentadas en las **Normas Técnicas de Salud (NTS) del MINSA** y Guías de Práctica Clínica (GPC).
    - **Modos de Evaluación**: Modo Rápido (10q), Modo Estudio con explicación técnica (20q) y Simulacro Real con temporizador (100q).
    - 👉 [Ver simulador de SERUMS](/simulator-dashboard?context=MEDICINA)
 
-2. **🎓 Educación Magisterial — ASCENSO Docente**
+2. **Educación Magisterial — ASCENSO Docente**
    - **Simuladores de Didáctica y Casuística**: Evaluaciones basadas en el **Currículo Nacional (CNEB)**, el **Marco del Buen Desempeño Docente** y la **RVM 094-2020-MINEDU**.
    - **Especialidades**: Inicial, Primaria, Secundaria y áreas pedagógicas.
    - 👉 [Ver simulador de ASCENSO](/simulator-dashboard?context=EDUCACION)
 
-3. **🎴 Módulo Repaso (Flashcards Inteligentes)**
+3. **Módulo Repaso (Flashcards Inteligentes)**
    - **Memorización Activa y Algoritmo SM-2**: Afianza conceptos clave evaluando tu retención (*Olvidé*, *Difícil*, *Bien*, *Fácil*) para optimizar tus intervalos de estudio.
    - **Creación de mazos y tarjetas**: Crea tus propios mazos de flashcards y tarjetas.
    - **Tutor IA Contextual**: Resuelve dudas específicas directamente en cada tarjeta de repaso.
    - 👉 [Ir a Módulo Repaso](/repaso)
 
-4. **📚 Mi Biblioteca (Centro de Recursos, Apuntes y Noticias)**
+4. **Mi Biblioteca (Centro de Recursos, Apuntes y Noticias)**
    - **Gestión Unificada de Notas**: Almacena, organiza y repasa tus apuntes guardados durante los simulacros o sesiones de chat con la IA.
    - **Noticias Oficiales y Novedades Normativas**: Consulta información en tiempo real sobre convocatorias, cronogramas, resoluciones del **MINSA (Salud)** y del **MINEDU (Educación)**.
    - 👉 [Ir a Mi Biblioteca](/library)`,
@@ -61,19 +61,19 @@ En **Hub Academia** acompañamos tu preparación profesional enfocándonos exclu
 
 Contamos con opciones flexibles diseñadas a tu medida para tu preparación hacia el **SERUMS** o el **ASCENSO**:
 
-* **🌱 Plan Free (Prueba Gratuita)**:
+* **Plan Free (Prueba Gratuita)**:
   - **20 Vidas de prueba gratis** automáticas al ingresar con tu cuenta de Google.
 
-* **⚡ Plan Basic (Acceso Estándar)**:
+* **Plan Basic (Acceso Estándar)**:
   - **Simuladores ilimitados** para tu especialidad (SERUMS o ASCENSO).
   - Diagnóstico de rendimiento por áreas temáticas y gráficos de evolución.
 
-* **⭐ Plan Advanced (Experiencia Total + IA)**:
+* **Plan Advanced (Experiencia Total + IA)**:
   - **Acceso Ilimitado Total** a simuladores de examen y banco de preguntas.
   - **Tutor IA Contextual con RAG Semántico** en cada pregunta de simulacro y tarjeta de repaso.
   - Generación inteligente de Flashcards automatizadas con Inteligencia Artificial.
 
-👉 [💎 Ver Tabla de Planes y Precios](/pricing)`,
+👉 [Ver Tabla de Planes y Precios](/pricing)`,
                 sugerencias: this.pills.visitor
             },
 
@@ -91,12 +91,12 @@ Registrarte en la plataforma es **instantáneo y 100% gratuito**, sin formulario
 
             ventajas: {
                 intencion: "informacion_ventajas",
-                respuesta: `### 💡 Sustento Oficial y Ventajas Exclusivas
+                respuesta: `### Sustento Oficial y Ventajas Exclusivas
 
-* **🏛️ Rigor y Sustento Oficial**: Nuestras respuestas y explicaciones no son genéricas; están fundamentadas rigurosamente en la normativa peruana vigente (**NTS MINSA / GPC** para Salud y **CNEB / RVM 094-2020-MINEDU** para Educación).
-* **🎯 Especialización Exclusiva**: Nos dedicamos al 100% a los dos procesos con mayor demanda profesional en el Perú: **SERUMS** y **ASCENSO**.
-* **📊 Analítica y Diagnóstico de Fortalezas**: Mide tu evolución por áreas pedagógicas y médicas antes del examen real.
-* **🧠 Tutor IA Contextual con RAG**: En nuestro Plan Advanced, el Tutor IA fundamenta cada duda citando la norma o manual oficial correspondiente.`,
+* **Rigor y Sustento Oficial**: Nuestras respuestas y explicaciones no son genéricas; están fundamentadas rigurosamente en la normativa peruana vigente (**NTS MINSA / GPC** para Salud y **CNEB / RVM 094-2020-MINEDU** para Educación).
+* **Especialización Exclusiva**: Nos dedicamos al 100% a los dos procesos con mayor demanda profesional en el Perú: **SERUMS** y **ASCENSO**.
+* **Analítica y Diagnóstico de Fortalezas**: Mide tu evolución por áreas pedagógicas y médicas antes del examen real.
+* **Tutor IA Contextual con RAG**: En nuestro Plan Advanced, el Tutor IA fundamenta cada duda citando la norma o manual oficial correspondiente.`,
                 sugerencias: this.pills.visitor
             },
 

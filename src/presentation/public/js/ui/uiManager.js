@@ -1426,30 +1426,169 @@ class UIManager {
     /**
      * ✅ CENTRALIZACIÓN: Renderiza el banner de Modo Invitado con estilo Premium Glass
      */
+    /**
+     * ✅ CENTRALIZACIÓN: Renderiza el banner de Modo Invitado ultra-minimalista de 1 sola fila
+     */
     renderGuestBanner(containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
 
         if (document.getElementById('guest-mode-banner-premium')) return;
 
+        // Inyectar estilos responsivos de 1 sola fila si aún no existen
+        if (!document.getElementById('guest-banner-styles')) {
+            const styleTag = document.createElement('style');
+            styleTag.id = 'guest-banner-styles';
+            styleTag.textContent = `
+                .guest-banner-wrapper {
+                    background: rgba(18, 18, 18, 0.85);
+                    backdrop-filter: blur(16px);
+                    -webkit-backdrop-filter: blur(16px);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 14px;
+                    padding: 0.6rem 1.25rem;
+                    margin-bottom: 1.25rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 1rem;
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+                    animation: guestBannerFade 0.4s ease-out;
+                }
+
+                @keyframes guestBannerFade {
+                    from { opacity: 0; transform: translateY(-6px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
+                .guest-banner-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    min-width: 0;
+                }
+
+                .guest-banner-icon {
+                    width: 32px;
+                    height: 32px;
+                    background: rgba(255, 255, 255, 0.08);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #ffffff;
+                    font-size: 0.95rem;
+                    flex-shrink: 0;
+                }
+
+                .guest-banner-text {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    font-size: 0.875rem;
+                    color: #e2e8f0;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .guest-banner-title {
+                    font-weight: 700;
+                    color: #ffffff;
+                    letter-spacing: -0.2px;
+                }
+
+                .guest-banner-dot {
+                    color: #64748b;
+                    font-size: 0.75rem;
+                }
+
+                .guest-banner-desc {
+                    color: #94a3b8;
+                    font-weight: 400;
+                }
+
+                .guest-banner-btn {
+                    background: #ffffff;
+                    color: #0f172a;
+                    padding: 0.45rem 1.1rem;
+                    border-radius: 50px;
+                    font-size: 0.825rem;
+                    font-weight: 700;
+                    border: none;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.45rem;
+                    flex-shrink: 0;
+                    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+                    transition: all 0.2s ease;
+                }
+
+                .guest-banner-btn:hover {
+                    transform: scale(1.03);
+                    background: #f8fafc;
+                    box-shadow: 0 6px 18px rgba(255, 255, 255, 0.25);
+                }
+
+                .guest-btn-text-mobile {
+                    display: none;
+                }
+
+                @media (max-width: 640px) {
+                    .guest-banner-wrapper {
+                        padding: 0.45rem 0.85rem;
+                        margin-bottom: 0.85rem;
+                        border-radius: 12px;
+                        gap: 0.5rem;
+                    }
+                    .guest-banner-icon {
+                        width: 28px;
+                        height: 28px;
+                        font-size: 0.85rem;
+                        border-radius: 8px;
+                    }
+                    .guest-banner-text {
+                        font-size: 0.8rem;
+                    }
+                    .guest-banner-desc,
+                    .guest-banner-dot {
+                        display: none;
+                    }
+                    .guest-btn-text-desktop {
+                        display: none;
+                    }
+                    .guest-btn-text-mobile {
+                        display: inline;
+                    }
+                    .guest-banner-btn {
+                        padding: 0.45rem 0.85rem;
+                        font-size: 0.78rem;
+                    }
+                }
+            `;
+            document.head.appendChild(styleTag);
+        }
+
         const banner = document.createElement('div');
         banner.id = 'guest-mode-banner-premium';
-        banner.className = 'premium-glass-dark';
-        banner.style.cssText = 'border-radius: 20px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; animation: fadeIn 0.8s ease-out;';
+        banner.className = 'guest-banner-wrapper';
         banner.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 1.2rem;">
-                <div style="width: 54px; height: 54px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #f8fafc; font-size: 1.6rem; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <div class="guest-banner-left">
+                <div class="guest-banner-icon">
                     <i class="fas fa-user-astronaut"></i>
                 </div>
-                <div>
-                    <h3 style="color: #f8fafc; margin: 0; font-size: 1.15rem; font-weight: 700;">Estás en Modo Invitado</h3>
-                    <p style="color: #94a3b8; margin: 0.3rem 0 0 0; font-size: 0.9rem; line-height: 1.4;">Regístrate para guardar tu progreso académico y acceder a todas las funciones.</p>
+                <div class="guest-banner-text">
+                    <span class="guest-banner-title">Modo Invitado</span>
+                    <span class="guest-banner-dot">•</span>
+                    <span class="guest-banner-desc">Regístrate para guardar tu progreso académico.</span>
                 </div>
             </div>
-            <button id="banner-auth-trigger" class="btn-action" style="background: #f8fafc; color: #110d15ff; padding: 0.8rem 1.8rem; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1); transition: all 0.2s;" 
-                onclick="window.triggerGoogleLogin(this)"
-                onmouseover="this.style.transform='scale(1.05)'; this.style.background='#fff'" onmouseout="this.style.transform='scale(1)'; this.style.background='#f8fafc'">
-                <i class="fab fa-google"></i> Continuar con Google
+            <button id="banner-auth-trigger" class="guest-banner-btn" onclick="window.triggerGoogleLogin(this)">
+                <i class="fab fa-google"></i>
+                <span class="guest-btn-text-desktop">Continuar con Google</span>
+                <span class="guest-btn-text-mobile">Acceder</span>
             </button>
         `;
         container.prepend(banner);

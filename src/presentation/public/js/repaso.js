@@ -54,6 +54,15 @@ class RepasoManager {
     }
 
     /**
+     * Renders icon inheriting color for clean, unsaturated sidebar hierarchy.
+     */
+    static renderWhiteIcon(icon, fallbackFA = 'fas fa-folder') {
+        const resolved = RepasoManager._resolveIcon(icon, fallbackFA);
+        if (resolved.html) return `<span style="color:inherit;">${resolved.html}</span>`;
+        return `<i class="${resolved.faClass || fallbackFA}" style="color:inherit;"></i>`;
+    }
+
+    /**
      * Returns both the FA class and a vibrant color for the icon.
      */
     static _resolveIcon(icon, fallbackFA = 'fas fa-folder') {
@@ -941,19 +950,18 @@ class RepasoManager {
             return;
         }
 
-        container.style.display = 'block'; // Changed to block to contain header + grid
+        container.style.display = 'block';
 
         const count = decks.length;
-        const title = count > 0 ? `Sub-mazos (${count})` : 'Sub-mazos';
+        const title = `SUB-MAZOS (${count})`;
         const icon = this.subDecksCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
 
         container.innerHTML = `
-            <div class="subdecks-header" onclick="window.repasoManager.toggleSubDecks()">
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <i class="${icon} toggle-icon"></i>
-                    <h3 style="margin:0; font-size:0.9rem; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">${title}</h3>
+            <div class="deck-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.6rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;" onclick="window.repasoManager.toggleSubDecks()">
+                    <i class="${icon} toggle-icon" style="color:#94a3b8; font-size:0.9rem; transition:transform 0.2s;"></i>
+                    <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:#ffffff; letter-spacing:0.5px;">${title}</h3>
                 </div>
-                <div class="subdecks-line"></div>
             </div>
             <div id="subdecks-grid" class="decks-grid ${this.subDecksCollapsed ? 'collapsed' : ''}" style="margin-top:1rem;"></div>
         `;
@@ -967,7 +975,7 @@ class RepasoManager {
         localStorage.setItem('subDecksCollapsed', this.subDecksCollapsed);
 
         const grid = document.getElementById('subdecks-grid');
-        const icon = document.querySelector('.subdecks-header .toggle-icon');
+        const icon = document.querySelector('.deck-section-header .toggle-icon');
 
         if (this.subDecksCollapsed) {
             grid?.classList.add('collapsed');
@@ -977,6 +985,28 @@ class RepasoManager {
             }
         } else {
             grid?.classList.remove('collapsed');
+            if (icon) {
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+    }
+
+    toggleCardsSection() {
+        this.cardsCollapsed = !this.cardsCollapsed;
+        localStorage.setItem('cardsCollapsed', this.cardsCollapsed);
+
+        const body = document.getElementById('cards-section-body');
+        const icon = document.querySelector('.toggle-icon-cards');
+
+        if (this.cardsCollapsed) {
+            body?.classList.add('collapsed');
+            if (icon) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            }
+        } else {
+            body?.classList.remove('collapsed');
             if (icon) {
                 icon.classList.remove('fa-chevron-right');
                 icon.classList.add('fa-chevron-down');
@@ -1126,33 +1156,53 @@ class RepasoManager {
         const container = document.getElementById('cards-container');
         if (!container) return;
 
-        if (!cards || cards.length === 0) {
-            container.innerHTML = '<div style="color:#94a3b8; padding:2rem; text-align:center; background:rgba(255,255,255,0.02); border-radius:16px;">No hay tarjetas en este mazo. ¡Crea la primera!</div>';
-            return;
-        }
+        container.style.display = 'block';
+        const cardCount = cards ? cards.length : 0;
+        const icon = this.cardsCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
 
         this.isSelectionMode = false;
 
-        // Render Header & Search once
         container.innerHTML = `
-            <div style="display:flex; justify-content:space-between; margin-bottom:1rem; align-items:center; flex-wrap:wrap; gap:1rem;">
-                <h3 style="margin:0; font-size:1.2rem; font-weight:600;">Tarjetas (${cards.length})</h3>
-                <div style="position:relative; width:100%; max-width:250px;">
-                    <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;"></i>
-                    <input type="text" id="card-search-input" placeholder="Buscar tarjetas..." style="width:100%; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); color:white; font-size:0.9rem;" onkeyup="window.repasoManager.filterCards(this.value)">
+            <div class="deck-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.6rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;" onclick="window.repasoManager.toggleCardsSection()">
+                    <i class="${icon} toggle-icon-cards" style="color:#94a3b8; font-size:0.9rem; transition:transform 0.2s;"></i>
+                    <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:#ffffff; letter-spacing:0.5px;">TARJETAS (${cardCount})</h3>
                 </div>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; align-items:center; background:rgba(255,255,255,0.02); padding:0.5rem 1rem; border-radius:8px;">
-                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin:0;">
-                    <input type="checkbox" id="select-all-cards" onchange="window.repasoManager.toggleSelectAllCards(this.checked)" class="card-checkbox">
-                    <span style="font-size:0.85rem; color:#94a3b8; font-weight:500;">Seleccionar todo</span>
-                </label>
-                <button id="btn-bulk-delete" class="btn-action deck-action-btn--delete" style="display:none; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:600;" onclick="${this.token ? 'window.repasoManager.confirmBulkDelete()' : 'window.uiManager.showAuthPromptModal()'}">
-                    <i class="fas fa-trash"></i> Eliminar Selección
+                ${this.token ? `
+                <button type="button" class="btn-action-sm btn-card-create" onclick="event.stopPropagation(); window.repasoManager.openAddCardModal()" style="background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:#ffffff; padding:0.4rem 0.85rem; border-radius:8px; font-size:0.82rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:all 0.2s;">
+                    <i class="fas fa-plus" style="color:#60a5fa;"></i> Crear Tarjeta
                 </button>
+                ` : ''}
             </div>
-            <div id="cards-list-container"></div>
+
+            <div id="cards-section-body" class="${this.cardsCollapsed ? 'collapsed' : ''}" style="transition: all 0.3s ease;">
+                ${cardCount === 0 ? `
+                    <div style="color:#94a3b8; padding:2rem; text-align:center; background:rgba(255,255,255,0.02); border-radius:14px; border:1px solid rgba(255,255,255,0.05);">
+                        <i class="fas fa-layer-group" style="font-size:2rem; color:#475569; margin-bottom:0.75rem; display:block;"></i>
+                        No hay tarjetas en este mazo. ¡Haz clic en <b>"+ Crear Tarjeta"</b> para agregar la primera!
+                    </div>
+                ` : `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:1rem; align-items:center; flex-wrap:wrap; gap:1rem;">
+                        <div style="position:relative; width:100%; max-width:260px;">
+                            <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;"></i>
+                            <input type="text" id="card-search-input" placeholder="Buscar tarjetas..." style="width:100%; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; font-size:0.9rem;" onkeyup="window.repasoManager.filterCards(this.value)">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:1rem;">
+                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin:0;">
+                                <input type="checkbox" id="select-all-cards" onchange="window.repasoManager.toggleSelectAllCards(this.checked)" class="card-checkbox">
+                                <span style="font-size:0.85rem; color:#94a3b8; font-weight:500;">Seleccionar todo</span>
+                            </label>
+                            <button id="btn-bulk-delete" class="btn-action deck-action-btn--delete" style="display:none; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:600;" onclick="${this.token ? 'window.repasoManager.confirmBulkDelete()' : 'window.uiManager.showAuthPromptModal()'}">
+                                <i class="fas fa-trash"></i> Eliminar Selección
+                            </button>
+                        </div>
+                    </div>
+                    <div id="cards-list-container"></div>
+                `}
+            </div>
         `;
+
+        if (cardCount === 0) return;
 
         const listContainer = document.getElementById('cards-list-container');
         const fragment = document.createDocumentFragment();

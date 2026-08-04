@@ -15,15 +15,15 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Shared CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=2168288b">
-    <link rel="stylesheet" href="/css/base.css?v=2168288b">
-    <link rel="stylesheet" href="/css/header.css?v=2168288b">
-    <link rel="stylesheet" href="/css/footer.css?v=2168288b">
-    <link rel="stylesheet" href="/css/dashboard.css?v=2168288b">
-    <link rel="stylesheet" href="/css/repaso.css?v=2168288b">
-    <link rel="stylesheet" href="/css/modal.css?v=2168288b">
-    <link rel="stylesheet" href="/css/sidebar.css?v=2168288b">
-    <link rel="stylesheet" href="/css/components.css?v=2168288b">
+    <link rel="stylesheet" href="/css/theme.css?v=e09574d2">
+    <link rel="stylesheet" href="/css/base.css?v=e09574d2">
+    <link rel="stylesheet" href="/css/header.css?v=e09574d2">
+    <link rel="stylesheet" href="/css/footer.css?v=e09574d2">
+    <link rel="stylesheet" href="/css/dashboard.css?v=e09574d2">
+    <link rel="stylesheet" href="/css/repaso.css?v=e09574d2">
+    <link rel="stylesheet" href="/css/modal.css?v=e09574d2">
+    <link rel="stylesheet" href="/css/sidebar.css?v=e09574d2">
+    <link rel="stylesheet" href="/css/components.css?v=e09574d2">
 
     <!-- Rich Text Editor (Mini-Word) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
@@ -176,16 +176,17 @@
             <div class="explorer-container">
 
                 <!-- SIDEBAR: Tree View -->
-                <aside class="explorer-sidebar">
-                    <div
-                        style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                        <h3
-                            style="font-size: 0.9rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; font-weight: 700;">
-                            Explorador</h3>
-                        <button onclick="DeckExplorer.openCreateModal()" title="Nuevo Mazo"
-                            style="background: transparent; border: none; color: #3b82f6; cursor: pointer;">
-                            <i class="fas fa-folder-plus"></i>
-                        </button>
+                <aside class="explorer-sidebar" id="explorer-sidebar">
+                    <div class="explorer-sidebar-header">
+                        <h3 class="explorer-sidebar-title">Explorador</h3>
+                        <div class="explorer-sidebar-actions">
+                            <button onclick="DeckExplorer.openCreateModal()" title="Nuevo Mazo" class="explorer-action-btn" id="btn-explorer-create">
+                                <i class="fas fa-folder-plus"></i>
+                            </button>
+                            <button id="btn-toggle-explorer" onclick="window.repasoManager?.explorer?.toggleCollapseSidebar()" title="Contraer / Desplegar Explorador" class="explorer-action-btn explorer-toggle-btn">
+                                <i class="fas fa-columns"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div id="deck-tree">
@@ -799,17 +800,17 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=2168288b"></script>
+    <script src="/js/config.js?v=e09574d2"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=2168288b"></script>
-    <script src="/js/services/networkService.js?v=2168288b"></script>
-    <script src="/js/services/authApiService.js?v=2168288b"></script>
-    <script src="/js/services/analyticsApiService.js?v=2168288b"></script>
-    <script src="/js/sessionManager.js?v=2168288b"></script>
-    <script src="/js/ui/uiManager.js?v=2168288b"></script>
-    <script src="/js/ui/components.js?v=2168288b"></script>
-    <script src="/js/ui/sidebar.js?v=2168288b"></script>
-    <script src="/js/app.js?v=2168288b"></script>
+    <script src="/js/utils/markdown-renderer.js?v=e09574d2"></script>
+    <script src="/js/services/networkService.js?v=e09574d2"></script>
+    <script src="/js/services/authApiService.js?v=e09574d2"></script>
+    <script src="/js/services/analyticsApiService.js?v=e09574d2"></script>
+    <script src="/js/sessionManager.js?v=e09574d2"></script>
+    <script src="/js/ui/uiManager.js?v=e09574d2"></script>
+    <script src="/js/ui/components.js?v=e09574d2"></script>
+    <script src="/js/ui/sidebar.js?v=e09574d2"></script>
+    <script src="/js/app.js?v=e09574d2"></script>
 
     <!-- Polyfill for Mobile Drag and Drop -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
@@ -824,9 +825,9 @@
         });
     </script>
 
-    <script src="/js/heatmap.js?v=2168288b"></script> <!-- Optional for Stats -->
-    <script src="/js/deck-explorer.js?v=2168288b"></script> <!-- NEW -->
-    <script src="/js/repaso.js?v=2168288b"></script>
+    <script src="/js/heatmap.js?v=e09574d2"></script> <!-- Optional for Stats -->
+    <script src="/js/deck-explorer.js?v=e09574d2"></script> <!-- NEW -->
+    <script src="/js/repaso.js?v=e09574d2"></script>
 </body>
 
 </html>

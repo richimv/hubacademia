@@ -12,7 +12,8 @@
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.decks-grid.collapsed {
+.decks-grid.collapsed,
+#cards-section-body.collapsed {
     display: none !important;
 }
 
@@ -812,97 +813,80 @@
 
 /* Removed old plasma particle animation code */
 
-/* --- Ultra-Clean Flat Explorer Sidebar Nodes (Nombres en Blanco Brillante) --- */
+/* --- Ultra-Clean Flat Explorer Sidebar Nodes (Hierarchy Contrast) --- */
 .tree-content {
     border-left: none !important;
     border-radius: 8px !important;
     padding-top: 6px !important;
     padding-bottom: 6px !important;
-    color: #f8fafc !important;
+    color: #94a3b8 !important; /* Muted slate color for unselected items */
     transition: background 0.2s ease, color 0.2s ease !important;
 }
 
 .tree-content .tree-label,
 .tree-content .tree-label span {
-    color: #f8fafc !important;
+    color: inherit;
     font-weight: 500;
 }
 
-/* 1. Node Comunidad */
-.tree-content.node-community {
-    background: transparent;
-    color: #f8fafc !important;
+/* Unselected items: Muted slate icons & text */
+.explorer-sidebar .tree-content:not(.active) i,
+.explorer-sidebar .tree-content:not(.active) span.tree-icon-wrapper,
+.explorer-sidebar .tree-content:not(.active) svg {
+    color: #94a3b8 !important;
+    fill: #94a3b8 !important;
+    opacity: 0.85;
 }
 
-.tree-content.node-community:hover {
-    background: rgba(59, 130, 246, 0.12) !important;
-    color: #ffffff !important;
+/* Hover state: Brightens to white */
+.tree-content:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #f1f5f9 !important;
 }
 
-.tree-content.node-community.active {
-    background: rgba(59, 130, 246, 0.2) !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
+.tree-content:hover i,
+.tree-content:hover span.tree-icon-wrapper,
+.tree-content:hover svg {
+    color: #f1f5f9 !important;
+    fill: #f1f5f9 !important;
+    opacity: 1;
 }
 
-/* 2. System Decks */
-.tree-content.node-system {
-    background: transparent;
-    color: #f8fafc !important;
-}
-.tree-content.node-system:hover {
-    background: rgba(16, 185, 129, 0.12) !important;
-    color: #ffffff !important;
-}
-.tree-content.node-system.active {
-    background: rgba(16, 185, 129, 0.2) !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
-/* 3. Cloned Decks */
-.tree-content.node-cloned {
-    background: transparent;
-    color: #f8fafc !important;
-}
-.tree-content.node-cloned:hover {
-    background: rgba(168, 85, 247, 0.12) !important;
-    color: #ffffff !important;
-}
-.tree-content.node-cloned.active {
-    background: rgba(168, 85, 247, 0.2) !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
-/* 4. Public Decks */
-.tree-content.node-public {
-    background: transparent;
-    color: #f8fafc !important;
-}
-.tree-content.node-public:hover {
-    background: rgba(59, 130, 246, 0.12) !important;
-    color: #ffffff !important;
-}
-.tree-content.node-public.active {
-    background: rgba(59, 130, 246, 0.2) !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
-/* 5. Personal Decks */
-.tree-content.node-personal {
-    background: transparent;
-    color: #f8fafc !important;
-}
-.tree-content.node-personal:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: #ffffff !important;
-}
+/* Selected active item: Pure Bright White & Highlighted */
+.tree-content.active,
+.tree-content.node-community.active,
+.tree-content.node-system.active,
+.tree-content.node-cloned.active,
+.tree-content.node-public.active,
 .tree-content.node-personal.active {
-    background: rgba(249, 115, 22, 0.2) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
     color: #ffffff !important;
     font-weight: 700 !important;
+}
+
+.tree-content.active i,
+.tree-content.active span.tree-icon-wrapper,
+.tree-content.active svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    opacity: 1;
+}
+
+.tree-content.active::before,
+.tree-content.node-community.active::before,
+.tree-content.node-system.active::before,
+.tree-content.node-cloned.active::before,
+.tree-content.node-public.active::before,
+.tree-content.node-personal.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 15%;
+    height: 70%;
+    width: 3px;
+    background: #ffffff !important;
+    border-radius: 0 4px 4px 0;
 }
 
 /* --- Add Card Modal Face Redesign & Button Glow --- */

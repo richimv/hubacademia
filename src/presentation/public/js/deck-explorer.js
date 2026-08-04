@@ -37,7 +37,48 @@ class DeckExplorer {
                 localStorage.setItem('repaso_explorer_scroll', this.treeContainer.scrollTop);
             });
         }
+        this.restoreCollapseState();
         await this.loadTree();
+    }
+
+    toggleCollapseSidebar() {
+        const sidebar = document.getElementById('explorer-sidebar');
+        const container = document.querySelector('.explorer-container');
+        if (!sidebar || !container) return;
+
+        const isCollapsed = sidebar.classList.toggle('is-collapsed');
+        container.classList.toggle('sidebar-collapsed', isCollapsed);
+
+        localStorage.setItem('repaso_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+        this.updateToggleIcon(isCollapsed);
+    }
+
+    updateToggleIcon(isCollapsed) {
+        const btn = document.getElementById('btn-toggle-explorer');
+        if (!btn) return;
+        const icon = btn.querySelector('i');
+        if (icon) {
+            if (isCollapsed) {
+                icon.className = 'fas fa-bars';
+                btn.setAttribute('title', 'Desplegar Explorador');
+            } else {
+                icon.className = 'fas fa-columns';
+                btn.setAttribute('title', 'Contraer Explorador');
+            }
+        }
+    }
+
+    restoreCollapseState() {
+        const saved = localStorage.getItem('repaso_sidebar_collapsed');
+        if (saved === 'true') {
+            const sidebar = document.getElementById('explorer-sidebar');
+            const container = document.querySelector('.explorer-container');
+            if (sidebar && container) {
+                sidebar.classList.add('is-collapsed');
+                container.classList.add('sidebar-collapsed');
+                this.updateToggleIcon(true);
+            }
+        }
     }
 
     async loadTree() {
@@ -117,6 +158,7 @@ class DeckExplorer {
         const content = document.createElement('div');
         content.className = `tree-content ${categoryClass} ${this.activeNodeId === deck.id ? 'active' : ''}`;
         content.style.paddingLeft = `${paddingLeft}rem`;
+        content.setAttribute('title', deck.name);
 
         // Toggle Icon
         const toggle = document.createElement('span');
@@ -132,13 +174,16 @@ class DeckExplorer {
             };
         }
 
-        // Icon + Name
+        // Icon + Name (Iconos Blanco Puro para evitar saturación de color)
         const label = document.createElement('span');
         label.className = 'tree-label';
         label.style.cssText = 'display: inline-flex; align-items: center; flex: 1; min-width: 0; overflow: hidden;';
 
-        const displayIcon = RepasoManager.renderColoredIcon(deck.icon, 'fas fa-folder');
-        label.innerHTML = `<span style="margin-right:8px; width:20px; text-align:center; flex-shrink:0;">${displayIcon}</span> <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:inherit;">${deck.name}</span>`;
+        const displayIcon = RepasoManager.renderWhiteIcon 
+            ? RepasoManager.renderWhiteIcon(deck.icon, 'fas fa-folder') 
+            : `<i class="${deck.icon || 'fas fa-folder'}" style="color:#ffffff !important;"></i>`;
+            
+        label.innerHTML = `<span class="tree-icon-wrapper" style="margin-right:8px; width:20px; text-align:center; flex-shrink:0; color:inherit;">${displayIcon}</span> <span class="tree-text-label" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:inherit;">${deck.name}</span>`;
 
         // Click Action -> Set Active & Load View
         content.onclick = () => {
