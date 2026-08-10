@@ -270,8 +270,35 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Se reparó en `repaso.html` un `div` duplicado sin cerrar en `create-deck-modal` que provocaba el desplazamiento o desconfiguración lateral de los modales de edición.
   - **Actualización de Botones de Cabecera (`renderFolderHeader`)**:
     - Se actualizaron los botones principales ("Estudiar Ahora", "Hacer Público") de azul (`#3b82f6`) al degradado oficial Naranja Manta (`linear-gradient(135deg, #f97316 0%, #ea580c 100%)`) con sombra `box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35)`.
-    - Se vincularon todos los botones de la cabecera del mazo mediante escuchas de eventos directos en el DOM sin interpolaciones propensas a errores.
+- **Especialización Multidisciplinaria del Chat Tutor de Repaso y Cero Contaminación Temática (V35)**:
+  - **Inyección Estructurada de Metadatos de Mazo y Flashcard**:
+    - `flashcards.js` y `tutor-chat.js` capturan y transmiten el contexto integral: `deckCategory` (*Derecho*, *Idiomas*, *Medicina*, *Educación*, etc.), `deckName`, `topic`, `front`, `back`, `imageUrl` y `explanationImageUrl`.
+  - **Preservación de Especialización en `chatController.js`**:
+    - Se aisló la especialización `flashcard_tutor` impidiendo que sea aplanada a medicina.
+    - Se estructura el prompt con mentalidad, doctrina y marco conceptual adaptado a la materia real del mazo.
+  - **Aislamiento Doctrinal y Erradicación de Frases Médicas/Cursos**:
+    - Se eliminó del system prompt y del servicio de IA cualquier descarte genérico sobre consultas médicas o catálogos en materias ajenas como Derecho.
+    - En `buildPrompt` (`chatPrompts.js`), se aisló la construcción de `flashcard_tutor` y `neutral` para no inyectar directrices clínicas del MINSA/GPC.
+- **Categoría 'Tecnología' y Corrección UX en Barra de Píldoras de Comunidad (V36)**:
+  - **Nueva Categoría Temática Multidisciplinaria**:
+    - Se incorporó la categoría `Tecnología` (que engloba programación, computación, redes, inteligencia artificial y desarrollo de software) con icono `fas fa-laptop-code` / 💻.
+    - Se añadió `Tecnología` a `CATEGORIES` en `repaso.js`, en `#new-deck-category` (`repaso.html`), en `#publish-deck-category` y en `ICON_OPTIONS` (`deck-explorer.js`).
+    - Se expandió el soporte del Tutor IA en `chatController.js` y `chatPrompts.js` para fundamentar en arquitectura de software, algoritmos y código limpio.
+  - **Corrección Integral de UX en la Barra de Filtros de Comunidad**:
+    - Se eliminó el reseteo abrupto del scroll horizontal a "Todas" al seleccionar píldoras lejanas: `renderCommunityDecks` ahora actualiza de forma reactiva la clase `.active` en el DOM sin destruir `.community-category-bar`.
+    - Se incorporó `activePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })` para mantener la píldora seleccionada centrada y visible en pantalla.
+- **Optimización de Modal de Tarjetas, Soporte de Listas/Viñetas y Limpieza del Chat Tutor (V37)**:
+  - **Ampliación y Ergonomía del Modal de Edición de Tarjetas (`#card-modal`)**:
+    - Se amplió el ancho del modal de `600px` a `720px` (`width: 95%`) y se incrementó el scroll vertical útil a `max-height: 68vh`.
+    - Los textareas `#card-front` y `#card-back` ahora cuentan con la clase `.card-modal-textarea` (`min-height: 115px`, `line-height: 1.55`, tipografía de 0.95rem), eliminando el scroll anidado excesivo y ofreciendo una experiencia espaciosa de redacción.
+    - Se sustituyó el azul residual por naranja (`rgba(249, 115, 22, 0.4)`) en scrollbars y animaciones de resplandor (`.btn-add-card-glow`).
+  - **Soporte Completo de Listas, Viñetas y Enumeraciones en Flashcards**:
+    - Se incorporaron reglas CSS explícitas para `.content-text ol`, `.content-text ul` y `.content-text li` en `flashcards.css` con `padding-left: 2rem`, `list-style-position: outside`, alineación a la izquierda y `::marker` en color naranja `#f97316`.
+    - Se cambió `white-space: pre-wrap` a `white-space: normal` en `.content-text` (`flashcards.html` y `flashcards.css`) para permitir que las listas y párrafos generados por Markdown se rendericen con tipografía limpia sin saltos distorsionados ni números recortados por el contenedor.
+  - **Erradicación de Respuestas Contaminadas en el Chat Tutor**:
+    - Se implementó `MarkdownRenderer._extractCleanResponse` y `_normalizeText` para extraer de forma resiliente la propiedad `respuesta` cuando el modelo devuelva JSON embebido, bloques de código ```` ```json ```` o caracteres de escape literales (`\n`, `\"`).
+    - En `tutorAiService.js`, se mejoró el parser JSON del backend extrayendo bloques con regex y desescapando secuencias `\n` que lleguen como texto crudo.
 
 ---
 
-**Documentación Técnica Actualizada - 3 de Agosto, 2026.**
+**Documentación Técnica Actualizada - 10 de Agosto, 2026.**

@@ -505,6 +505,7 @@ class RepasoManager {
             localStorage.setItem('repaso_community_category', this.currentCommunityCategory);
         }
         const container = document.getElementById('community-view');
+        if (!container) return;
 
         const CATEGORIES = [
             { id: 'ALL', name: 'Todas', icon: 'fas fa-border-all' },
@@ -515,37 +516,62 @@ class RepasoManager {
             { id: 'Idiomas', name: 'Idiomas', icon: 'fas fa-language' },
             { id: 'Derecho', name: 'Derecho', icon: 'fas fa-balance-scale' },
             { id: 'Ciencia', name: 'Ciencia', icon: 'fas fa-flask' },
+            { id: 'Tecnología', name: 'Tecnología', icon: 'fas fa-laptop-code' },
             { id: 'General', name: 'General', icon: 'fas fa-book' }
         ];
 
-        const categoryPillsHtml = CATEGORIES.map(cat => `
-            <button class="category-pill ${cat.id === this.currentCommunityCategory ? 'active' : ''}" 
-                onclick="window.repasoManager.renderCommunityDecks(1, '${cat.id}')">
-                <i class="${cat.icon}"></i> ${cat.name}
-            </button>
-        `).join('');
+        let categoryBar = container.querySelector('.community-category-bar');
+        const grid = document.getElementById('community-decks-grid');
 
-        container.innerHTML = `
-            <div class="community-banner">
-                <h1 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.8rem; color: #ffffff;">
-                    <i class="fas fa-globe" style="color: #f97316;"></i> Comunidad de Repaso
-                </h1>
-                <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin: 0;">
-                    Explora mazos públicos clasificados por áreas temáticas. Clónalos a tu biblioteca personal para estudiarlos cuando quieras.
-                </p>
-            </div>
+        // Si la barra y el grid no existen en el DOM, los creamos
+        if (!categoryBar || !grid) {
+            const categoryPillsHtml = CATEGORIES.map(cat => `
+                <button type="button" class="category-pill ${cat.id === this.currentCommunityCategory ? 'active' : ''}" 
+                    data-category="${cat.id}">
+                    <i class="${cat.icon}"></i> ${cat.name}
+                </button>
+            `).join('');
 
-            <!-- Barra de Filtros por Categoría / Temática -->
-            <div class="community-category-bar">
-                ${categoryPillsHtml}
-            </div>
+            container.innerHTML = `
+                <div class="community-banner">
+                    <h1 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.8rem; color: #ffffff;">
+                        <i class="fas fa-globe" style="color: #f97316;"></i> Comunidad de Repaso
+                    </h1>
+                    <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin: 0;">
+                        Explora mazos públicos clasificados por áreas temáticas. Clónalos a tu biblioteca personal para estudiarlos cuando quieras.
+                    </p>
+                </div>
 
-            <div id="community-decks-grid" class="decks-grid">
-                <div style="text-align:center; padding:2rem; grid-column: 1 / -1;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#f97316"></i></div>
-            </div>
-        `;
+                <!-- Barra de Filtros por Categoría / Temática -->
+                <div class="community-category-bar">
+                    ${categoryPillsHtml}
+                </div>
 
-        this.enableCategoryBarDrag();
+                <div id="community-decks-grid" class="decks-grid">
+                    <div style="text-align:center; padding:2rem; grid-column: 1 / -1;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#f97316"></i></div>
+                </div>
+            `;
+
+            categoryBar = container.querySelector('.community-category-bar');
+            this.enableCategoryBarDrag();
+        } else {
+            // Actualización reactiva sin destruir el DOM ni reiniciar el scroll horizontal
+            categoryBar.querySelectorAll('.category-pill').forEach(pill => {
+                if (pill.dataset.category === this.currentCommunityCategory) {
+                    pill.classList.add('active');
+                } else {
+                    pill.classList.remove('active');
+                }
+            });
+
+            grid.innerHTML = '<div style="text-align:center; padding:2rem; grid-column: 1 / -1;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#f97316"></i></div>';
+        }
+
+        // Mantener a la vista la píldora seleccionada con animación suave
+        const activePill = categoryBar?.querySelector(`.category-pill[data-category="${this.currentCommunityCategory}"]`);
+        if (activePill) {
+            activePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
 
         try {
             const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/decks/public?page=${page}&limit=20&category=${encodeURIComponent(this.currentCommunityCategory)}`);
@@ -690,14 +716,17 @@ class RepasoManager {
             }
         }, { passive: false });
 
-        // --- 3. Prevenir click accidental al arrastrar con ratón ---
+        // --- 3. Delegación y manejo de click en las píldoras de categoría ---
         slider.querySelectorAll('.category-pill').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.onclick = (e) => {
                 if (isDragging) {
                     e.stopImmediatePropagation();
                     e.preventDefault();
+                    return;
                 }
-            }, true);
+                const catId = btn.dataset.category || 'ALL';
+                this.renderCommunityDecks(1, catId);
+            };
         });
     }
 
@@ -934,6 +963,7 @@ class RepasoManager {
                             <option value="Idiomas" ${currentCat === 'Idiomas' ? 'selected' : ''}>🗣️ Idiomas</option>
                             <option value="Derecho" ${currentCat === 'Derecho' ? 'selected' : ''}>⚖️ Derecho</option>
                             <option value="Ciencia" ${currentCat === 'Ciencia' ? 'selected' : ''}>🔬 Ciencia</option>
+                            <option value="Tecnología" ${currentCat === 'Tecnología' ? 'selected' : ''}>💻 Tecnología</option>
                         </select>
                     </div>
 
@@ -1851,6 +1881,7 @@ class RepasoManager {
         }
 
         const deckName = deckNameParam || this.currentDeck?.name || 'Mazo';
+        const deckCategory = this.currentDeck?.category || (this.userDecks && this.userDecks.find(d => d.id === deckId)?.category) || 'General';
 
         // ✅ ARQUITECTURA PROFESIONAL: Validación Proactiva (Zero Latency)
         if (window.uiManager && typeof window.uiManager.isResourceLocked === 'function') {
@@ -1862,7 +1893,7 @@ class RepasoManager {
         }
 
         // Navigation: Transfer to flashcards.html with context
-        const studyUrl = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}`;
+        const studyUrl = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}&category=${encodeURIComponent(deckCategory)}`;
         window.location.href = studyUrl;
     }
 

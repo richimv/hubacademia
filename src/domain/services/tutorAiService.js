@@ -305,6 +305,10 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
 Tema principal de estudio: "${resourceContext.title}".
 INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobre el recurso titulado "${resourceContext.title}". Como RAG está deshabilitado por límites, debes actuar como un especialista de élite en ${specialization} y generar una respuesta rica, detallada y perfectamente estructurada basándote en tus conocimientos expertos sobre el tema exacto del título ("${resourceContext.title}").`;
                 }
+            } else if (specialization === 'flashcard_tutor') {
+                // Modo Tutor Flashcard Multidisciplinario (El contexto detallado ya fue inyectado en userMessage)
+                console.log(`🧠 [TutorAiService] Modo flashcard_tutor activo. Disciplina: ${filters.category || 'General'}`);
+                context = "";
             } else {
                 // Modo Chat General (Normal RAG)
                 const activeRAG = ['medicine', 'education'].includes(specialization) && filters.useRag !== false;
@@ -319,8 +323,11 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
                 }
             }
 
-            // 3. Buscar imágenes (Usando temas persistentes)
-            const visualCatalog = await this._searchVisualResources(smartTopics || [], specialization);
+            // 3. Buscar imágenes (Solo para simuladores medicina/educación, nunca para flashcard_tutor multidisciplinario)
+            let visualCatalog = '';
+            if (specialization === 'medicine' || specialization === 'education') {
+                visualCatalog = await this._searchVisualResources(smartTopics || [], specialization);
+            }
 
             // 4. Construir prompt según la especialización
             const contextConImagenes = visualCatalog ? `${visualCatalog}\n\n${context}` : context;
@@ -347,16 +354,43 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             // 5. Generación de respuesta resiliente con reintentos y multicanal
             const rawText = await this._callModelResilient(contents, systemPrompt);
 
-            // 6. Parsear la respuesta JSON
+            // 6. Parsear la respuesta JSON de forma ultra-resiliente
             let parsed;
             try {
                 parsed = JSON.parse(rawText);
             } catch (e) {
-                const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                let cleaned = (rawText || '').trim();
+                const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+                if (codeBlockMatch && codeBlockMatch[1]) {
+                    cleaned = codeBlockMatch[1].trim();
+                } else {
+                    cleaned = cleaned.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                }
+
                 try {
                     parsed = JSON.parse(cleaned);
                 } catch (e2) {
-                    parsed = { intencion: 'respuesta_general', respuesta: rawText, sugerencias: [], idioma_detectado: 'es' };
+                    const firstBrace = cleaned.indexOf('{');
+                    const lastBrace = cleaned.lastIndexOf('}');
+                    if (firstBrace !== -1 && lastBrace > firstBrace) {
+                        try {
+                            parsed = JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
+                        } catch (e3) {
+                            parsed = { intencion: 'respuesta_general', respuesta: rawText, sugerencias: [], idioma_detectado: 'es' };
+                        }
+                    } else {
+                        parsed = { intencion: 'respuesta_general', respuesta: rawText, sugerencias: [], idioma_detectado: 'es' };
+                    }
+                }
+            }
+
+            // Normalizar secuencias literales de escape si llegaron como texto crudo
+            if (parsed && typeof parsed.respuesta === 'string') {
+                if (parsed.respuesta.includes('\\n') && !parsed.respuesta.includes('\n')) {
+                    parsed.respuesta = parsed.respuesta.replace(/\\n/g, '\n');
+                }
+                if (parsed.respuesta.includes('\\"')) {
+                    parsed.respuesta = parsed.respuesta.replace(/\\"/g, '"');
                 }
             }
 

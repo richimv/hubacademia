@@ -260,17 +260,18 @@ body {
     flex: 1;
     flex-shrink: 1;
     overflow-y: auto;
-    white-space: pre-wrap; /* ✅ PRESERVAR SALTOS DE LÍNEA */
-    font-weight: 700;
+    white-space: normal; /* ✅ Normal para que el HTML de Markdown se renderice fluidamente */
+    font-weight: 600;
     text-align: center;
-    font-size: 1.6rem;
-    scrollbar-width: thin; /* Mostrar scrollbar fino si es necesario */
-    scrollbar-color: rgba(255,255,255,0.2) transparent;
+    font-size: 1.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(249, 115, 22, 0.3) transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.5rem 0;
+    padding: 0.5rem 0.8rem;
     transition: font-size 0.2s ease;
+    box-sizing: border-box;
 }
 
 /* ✅ TRUCO MAESTRO: Centrado que no rompe el scroll superior */
@@ -285,12 +286,57 @@ body {
     z-index: 1; /* Asegurar que el contenido esté sobre los pseudos */
 }
 
-/* ✅ SOLUCIÓN MÓVIL: Scrollbar visible en Webkit */
+.content-text p {
+    margin: 0 0 0.5rem 0;
+    line-height: 1.45;
+    width: 100%;
+    z-index: 1;
+}
+
+.content-text p:last-child {
+    margin-bottom: 0;
+}
+
+/* ✅ SOPORTE PERFECTO PARA LISTAS Y ENUMERACIONES (1., 2., viñetas) EN FLASHCARDS */
+.content-text ol,
+.content-text ul {
+    text-align: left !important;
+    display: block;
+    width: 100%;
+    max-width: 92%;
+    margin: 0.6rem auto;
+    padding-left: 2rem !important;
+    box-sizing: border-box;
+    list-style-position: outside !important;
+    z-index: 1;
+}
+
+.content-text ol {
+    list-style-type: decimal !important;
+}
+
+.content-text ul {
+    list-style-type: disc !important;
+}
+
+.content-text li {
+    margin-bottom: 0.45rem;
+    line-height: 1.45;
+    text-align: left !important;
+    color: #f1f5f9;
+}
+
+.content-text li::marker {
+    color: #f97316 !important;
+    font-weight: 700;
+}
+
+/* ✅ Scrollbar visible en Webkit */
 .content-text::-webkit-scrollbar {
     width: 4px;
 }
 .content-text::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.2);
+    background: rgba(249, 115, 22, 0.35);
     border-radius: 10px;
 }
 

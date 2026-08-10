@@ -68,32 +68,59 @@ class ChatController {
             const conversationHistory = req.body.history || [];
 
             // Determinar especialización final y examen objetivo
-            const rawSpec = req.body.specialization || req.userSpecialization || (context && (context.examContext || context.specialization)) || 'medicine';
-            const finalSpecialization = (rawSpec.toLowerCase().includes('educa') || rawSpec === 'EDUCACION') ? 'education' : 'medicine';
+            let finalSpecialization;
+            if (isFlashcardTutor) {
+                finalSpecialization = 'flashcard_tutor';
+            } else {
+                const rawSpec = req.body.specialization || req.userSpecialization || (context && (context.examContext || context.specialization)) || 'medicine';
+                finalSpecialization = (rawSpec.toLowerCase().includes('educa') || rawSpec === 'EDUCACION') ? 'education' : 'medicine';
+            }
             const targetExam = (context && context.target) || req.body.target || req.userTarget || (finalSpecialization === 'education' ? 'ASCENSO' : 'SERUMS');
 
             // RAG solo se activa si req.useRag fue evaluado como true en checkLimitsMiddleware
             const hasRAGAccess = (isQuizTutor || isFlashcardTutor) ? (req.useRag === true) : false;
 
-            // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE FLASHCARDS (General & Versátil)
+            // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE FLASHCARDS (Multidisciplinario y Especializado)
             let processedMessage = message;
             if (context && context.type === 'flashcard_tutor') {
-                const tutorInstruction = `[MODO: TUTOR ACADÉMICO]
-Eres un experto en el tema de esta tarjeta. Ayuda al estudiante a entender no solo qué dice la tarjeta, sino el porqué.
-REGLAS:
-1. Sé pedagógico y expande la explicación si el usuario lo solicita o si el concepto es complejo.
-2. Usa ejemplos, reglas mnemotécnicas o datos adicionales relevantes (dosis, gramática, leyes, etc).
-3. Adapta tu tono a la disciplina (Medicina, Educación, etc).
+                const deckCategory = context.deckCategory || 'General';
+                const deckName = context.deckName || 'Mazo de Estudio';
+                const topic = context.topic || 'General';
+                const front = context.front || 'Sin texto';
+                const back = context.back || 'Sin texto';
+                const hasImages = (context.imageUrl || context.explanationImageUrl) ? 'Sí (imágenes disponibles en la tarjeta)' : 'No';
 
-CONTEXTO DE LA TARJETA:
-- FRENTE: ${context.front}
-- DORSO: ${context.back}
-- TEMA: ${context.topic}
----
-PREGUNTA DEL ESTUDIANTE: ${message}`;
+                const tutorInstruction = `[MODO: TUTOR ACADÉMICO MULTIDISCIPLINARIO DE FLASHCARDS]
+Eres un tutor y mentor de élite en Hub Academia, experto en la disciplina de **${deckCategory}**.
+El estudiante está repasando sus tarjetas mnemotécnicas y tiene una duda específica.
+
+ESTRUCTURA DEL MAZO Y CONTEXTO DE LA TARJETA:
+- ÁREA TEMÁTICA / DISCIPLINA: ${deckCategory}
+- MAZO DE ESTUDIO: ${deckName}
+- TEMA ESPECÍFICO: ${topic}
+- ANVERSO DE LA TARJETA (Pregunta / Concepto Clave):
+${front}
+- REVERSO DE LA TARJETA (Respuesta / Fundamento Doctrinal / Explicación):
+${back}
+- RECURSOS VISUALES: ${hasImages}
+
+DIRECTRICES DE RESPUESTA:
+1. Adopta de inmediato la mentalidad, terminología y rigor técnico de la disciplina correspondiente (${deckCategory}). Por ejemplo:
+   - Si es **Derecho**: Fundamenta con doctrina jurídica, preceptos normativos, jurisprudencia y principios generales del derecho.
+   - Si es **Medicina**: Explica con precisión clínica, fisiopatología, farmacología o guías de práctica.
+   - Si es **Educación**: Explica con didáctica pedagógica, enfoque por competencias y lineamientos del CNEB/MINEDU.
+   - Si es **Idiomas**: Proporciona reglas gramaticales, ejemplos de uso real, pronunciación y tablas comparativas.
+   - Si es **Tecnología / Programación**: Explica con rigor técnico de computación, algoritmos, arquitectura de software, redes, bases de datos, ciberseguridad o conceptos de IA, con ejemplos de código limpio cuando aplique.
+   - Si es otra materia (**Matemáticas, Historia, Ciencias**): Utiliza el marco teórico y analítico exacto de la materia.
+2. Explica con claridad pedagógica y expande el concepto para consolidar el aprendizaje significativo.
+3. 🚨 PROHIBICIÓN ESTRICTA: NO hagas referencias a "consultas médicas", "normas de salud", "cursos de la plataforma" o temas no relacionados a menos que la tarjeta sea explícitamente de esa materia.
+4. Genera sugerencias clicables en el JSON que permitan al alumno profundizar específicamente en el tema de esta tarjeta (${topic} / ${deckCategory}).
+
+PREGUNTA DEL ESTUDIANTE:
+${message}`;
 
                 processedMessage = tutorInstruction;
-                console.log('🧠 Tutor Context (Expansive Mode) Injected');
+                console.log(`🧠 [FlashcardTutor] Contexto inyectado para área: ${deckCategory} | Mazo: ${deckName}`);
             }
 
             // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE SIMULADOR DE EXAMEN (Quiz Tutor)
@@ -118,12 +145,13 @@ DETALLES DE LA PREGUNTA DEL SIMULADOR:
 - PREGUNTA: ${context.questionText}
 - OPCIONES DE RESPUESTA:
 ${(context.options || []).map((opt, i) => `  [${String.fromCharCode(65 + i)}] ${opt}`).join('\n')}
-- RESPUESTA CORRECTA: Opción [${context.correctOptionIndex !== null && context.correctOptionIndex !== undefined ? String.fromCharCode(65 + context.correctOptionIndex) : 'N/A'}] (${context.correctOptionText})
-- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [${context.userOptionIndex !== null && context.userOptionIndex !== undefined ? String.fromCharCode(65 + context.userOptionIndex) : 'N/A'}] (${context.userOptionText}) -> ${context.isUserCorrect ? 'Correcta' : 'Incorrecta'}
-- EXPLICACIÓN/SUSTENTO OFICIAL: ${context.explanation}
+- RESPUESTA CORRECTA: Opción [${context.correctOptionIndex !== null && context.correctOptionIndex !== undefined ? String.fromCharCode(65 + context.correctOptionIndex) : 'N/A'}] (${context.correctOptionText || ''})
+- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [${context.userOptionIndex !== null && context.userOptionIndex !== undefined ? String.fromCharCode(65 + context.userOptionIndex) : 'N/A'}] (${context.userOptionText || ''}) -> ${context.isUserCorrect ? 'Correcta' : 'Incorrecta'}
+- EXPLICACIÓN / SUSTENTO OFICIAL: ${context.explanation || 'No especificada'}
 - TEMA ESPECÍFICO: ${context.topic || 'General'}
 ---
-PREGUNTA O DUDA DEL ESTUDIANTE: ${message}`;
+PREGUNTA O DUDA DEL ESTUDIANTE:
+${message}`;
 
                 processedMessage = tutorInstruction;
                 console.log(`🧠 Quiz Tutor Context Injected | Exam: ${target} (${career}) | Domain: ${examDomain}`);
@@ -138,6 +166,7 @@ PREGUNTA O DUDA DEL ESTUDIANTE: ${message}`;
                 aiResult = await TutorAiService.handleChat(processedMessage, conversationHistory, {
                     target: targetExam,
                     specialization: finalSpecialization,
+                    category: (context && context.deckCategory) || null,
                     userTier: req.userTier,
                     namespace: (finalSpecialization === 'medicine' || finalSpecialization === 'education') ? finalSpecialization : 'general',
                     resourceContext: resourceContext, // ✅ Pasar el contexto del recurso cargado al servicio IA

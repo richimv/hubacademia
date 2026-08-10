@@ -11,14 +11,8 @@ window.MarkdownRenderer = {
     render(text) {
         if (!text) return '';
 
-        // 1. JSON Safety Net: Si es un JSON crudo de la IA, extraer solo "respuesta"
-        let cleanText = text;
-        if (typeof text === 'string' && text.trimStart().startsWith('{')) {
-            try {
-                const parsed = JSON.parse(text);
-                if (parsed && parsed.respuesta) cleanText = parsed.respuesta;
-            } catch (e) { /* No es JSON, continuar */ }
-        }
+        // 1. JSON Safety Net & Normalización: Extraer la respuesta real si viene en JSON o con bloques de código
+        let cleanText = this._extractCleanResponse(text);
 
         let html = '';
         
@@ -247,22 +241,28 @@ window.MarkdownRenderer = {
      * Renderizador básico (Regex) si marked.js no está cargado.
      */
     _basicRender(text) {
-        return text
+        let parsed = text
             .replace(/\n{3,}/g, '\n\n')
             .replace(/^### (.*)$/gm, '<h3>$1</h3>')
             .replace(/^## (.*)$/gm, '<h2>$1</h2>')
             .replace(/^# (.*)$/gm, '<h1>$1</h1>')
             .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
             .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
-            .replace(/^(?: {4,}|\t\t)[\*\-] (.*)$/gm, '<li class="li-l3">$1</li>')
+            // Listas ordenadas (1., 2., 3.)
+            .replace(/^\d+\.\s+(.*)$/gm, '<li>$1</li>')
+            .replace(/((?:<li>[\s\S]*?<\/li>\n?)+)/g, '<ol>$1</ol>')
+            // Listas no ordenadas (anidadas y nivel 1) con soporte para guiones, asteriscos, más y viñetas
+            .replace(/^(?: {4,}|\t\t)[\*\-\+\•·⁃◦] (.*)$/gm, '<li class="li-l3">$1</li>')
             .replace(/((?:<li class="li-l3">[\s\S]*?<\/li>)+)/g, '<ul class="ul-l3">$1</ul>')
-            .replace(/^(?: {2,}|\t)[\*\-] (.*)$/gm, '<li class="li-l2">$1</li>')
+            .replace(/^(?: {2,}|\t)[\*\-\+\•·⁃◦] (.*)$/gm, '<li class="li-l2">$1</li>')
             .replace(/((?:<li class="li-l2">[\s\S]*?<\/li>(?:<ul class="ul-l3">[\s\S]*?<\/ul>)?)+)/g, '<ul class="ul-l2">$1</ul>')
-            .replace(/^[\*\-] (.*)$/gm, '<li class="li-l1">$1</li>')
-            .replace(/((?:<li class="li-l1">[\s\S]*?<\/li>(?:<ul class="ul-l2">[\s\S]*?<\/ul>)?)+)/g, '<ul class="ul-l1">$1</ul>')
+            .replace(/^[\*\-\+\•·⁃◦] (.*)$/gm, '<li>$1</li>')
+            .replace(/((?:<li>[\s\S]*?<\/li>\n?)+)/g, '<ul>$1</ul>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
+            .replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+        // Reemplazar saltos de línea restantes que no estén dentro de listas o encabezados
+        return parsed.replace(/\n(?!(?:<\/li>|<\/ol>|<\/ul>|<\/h[1-6]>|<\/pre>))/g, '<br>');
     },
 
     /**
@@ -345,5 +345,70 @@ window.MarkdownRenderer = {
         } catch (e) {
             return false;
         }
+    },
+
+    /**
+     * Extrae de forma resiliente la respuesta limpia si el texto contiene JSON,
+     * bloques de código ```json o texto con secuencias de escape.
+     */
+    _extractCleanResponse(text) {
+        if (!text || typeof text !== 'string') return text || '';
+        let clean = text.trim();
+
+        // 1. Si está envuelto en bloque ```json ... ``` o ``` ... ```
+        const jsonBlockMatch = clean.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+        if (jsonBlockMatch && jsonBlockMatch[1]) {
+            const inner = jsonBlockMatch[1].trim();
+            if (inner.startsWith('{') && inner.endsWith('}')) {
+                try {
+                    const p = JSON.parse(inner);
+                    if (p && p.respuesta) return this._normalizeText(p.respuesta);
+                } catch (e) {}
+            }
+        }
+
+        // 2. Si es un JSON directo
+        if (clean.startsWith('{') && clean.endsWith('}')) {
+            try {
+                const p = JSON.parse(clean);
+                if (p && p.respuesta) return this._normalizeText(p.respuesta);
+            } catch (e) {}
+        }
+
+        // 3. Si contiene un objeto JSON con campo "respuesta" en cualquier parte del texto
+        const jsonMatch = clean.match(/\{[\s\S]*?"respuesta"\s*:\s*"([\s\S]*?)"[\s\S]*?\}/);
+        if (jsonMatch) {
+            try {
+                const p = JSON.parse(jsonMatch[0]);
+                if (p && p.respuesta) return this._normalizeText(p.respuesta);
+            } catch (e) {
+                if (jsonMatch[1]) {
+                    return this._normalizeText(jsonMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'));
+                }
+            }
+        }
+
+        return this._normalizeText(clean);
+    },
+
+    /**
+     * Normaliza saltos de línea y secuencias de escape literales (\n, \", etc.).
+     */
+    _normalizeText(text) {
+        if (!text || typeof text !== 'string') return '';
+        let normalized = text;
+        
+        // Convertir secuencias literales '\\n' que llegaron como texto a saltos de línea reales '\n'
+        if (normalized.includes('\\n') && !normalized.includes('\n')) {
+            normalized = normalized.replace(/\\n/g, '\n');
+        }
+        if (normalized.includes('\\"')) {
+            normalized = normalized.replace(/\\"/g, '"');
+        }
+
+        // Normalizar viñetas Unicode (•, ·, ⁃, ◦) a guiones Markdown estándar (- )
+        normalized = normalized.replace(/^[ \t]*[•·⁃◦][ \t]+/gm, '- ');
+
+        return normalized.trim();
     }
 };

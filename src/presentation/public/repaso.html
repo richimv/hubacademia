@@ -15,15 +15,15 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Shared CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=3af28f3b">
-    <link rel="stylesheet" href="/css/base.css?v=3af28f3b">
-    <link rel="stylesheet" href="/css/header.css?v=3af28f3b">
-    <link rel="stylesheet" href="/css/footer.css?v=3af28f3b">
-    <link rel="stylesheet" href="/css/dashboard.css?v=3af28f3b">
-    <link rel="stylesheet" href="/css/repaso.css?v=3af28f3b">
-    <link rel="stylesheet" href="/css/modal.css?v=3af28f3b">
-    <link rel="stylesheet" href="/css/sidebar.css?v=3af28f3b">
-    <link rel="stylesheet" href="/css/components.css?v=3af28f3b">
+    <link rel="stylesheet" href="/css/theme.css?v=695ab788">
+    <link rel="stylesheet" href="/css/base.css?v=695ab788">
+    <link rel="stylesheet" href="/css/header.css?v=695ab788">
+    <link rel="stylesheet" href="/css/footer.css?v=695ab788">
+    <link rel="stylesheet" href="/css/dashboard.css?v=695ab788">
+    <link rel="stylesheet" href="/css/repaso.css?v=695ab788">
+    <link rel="stylesheet" href="/css/modal.css?v=695ab788">
+    <link rel="stylesheet" href="/css/sidebar.css?v=695ab788">
+    <link rel="stylesheet" href="/css/components.css?v=695ab788">
 
     <!-- Rich Text Editor (Mini-Word) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
@@ -260,6 +260,7 @@
                         <option value="Idiomas">🗣️ Idiomas</option>
                         <option value="Derecho">⚖️ Derecho</option>
                         <option value="Ciencia">🔬 Ciencia</option>
+                        <option value="Tecnología">💻 Tecnología</option>
                     </select>
                 </div>
 
@@ -390,9 +391,9 @@
     </div>
 
     <div class="modal-overlay" id="card-modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 id="modal-title" style="margin-bottom: 0;">Añadir Tarjeta</h2>
+        <div class="modal-content" style="max-width: 720px; width: 95%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h2 id="modal-title" style="margin-bottom: 0; font-size: 1.35rem; font-weight: 700;">Añadir Tarjeta</h2>
                 <button type="button" class="note-modal-close" onclick="window.repasoManager.closeCardModal()"
                     style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;"><i
                         class="fas fa-times"></i></button>
@@ -400,7 +401,7 @@
 
             <!-- Tab System -->
             <div id="card-modal-tabs" class="library-tabs"
-                style="margin-bottom: 1.5rem; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 4px;">
+                style="margin-bottom: 1.25rem; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 4px;">
                 <button type="button" class="library-tab active" id="tab-card-individual"
                     onclick="window.repasoManager.switchCardMode('individual')" style="flex: 1; padding: 0.6rem;">
                     <i class="fas fa-user-edit" style="margin-right: 8px;"></i> Individual
@@ -419,7 +420,7 @@
                 <div id="section-card-individual" class="card-mode-section active">
                     <!-- Scrollable Content Wrapper -->
                     <div
-                        style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding: 0.5rem; margin-bottom: 1rem; scrollbar-width: thin; scrollbar-color: #3b82f6 transparent;">
+                        style="max-height: 68vh; overflow-y: auto; overflow-x: hidden; padding: 0.5rem; margin-bottom: 1rem; scrollbar-width: thin; scrollbar-color: rgba(249, 115, 22, 0.4) transparent;">
                         
                         <!-- CARA FRONTAL (ANVERSO) -->
                         <div class="modal-card-face face-front">
@@ -428,8 +429,8 @@
                                 <span class="modal-card-face-subtitle">Texto y/o Imagen</span>
                             </div>
                             
-                            <textarea class="form-input" id="card-front" placeholder="Ej: ¿Qué es el mitocondria?"
-                                style="min-height: 80px; resize: vertical; margin-bottom: 0.5rem;"></textarea>
+                            <textarea class="form-input card-modal-textarea" id="card-front" placeholder="Ej: ¿Cuáles son las características de...?"
+                                style="min-height: 115px; resize: vertical; margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5;"></textarea>
 
                             <!-- Indicador de Audio Existente -->
                             <div id="audio-status-front"
@@ -495,8 +496,8 @@
                                 <span class="modal-card-face-subtitle">Texto e/o Imagen</span>
                             </div>
                             
-                            <textarea class="form-input" id="card-back" placeholder="Ej: La central energética de la célula."
-                                style="min-height: 80px; resize: vertical; margin-bottom: 0.5rem;"></textarea>
+                            <textarea class="form-input card-modal-textarea" id="card-back" placeholder="Ej: 1. Criterio principal&#10;2. Criterio secundario..."
+                                style="min-height: 115px; resize: vertical; margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5;"></textarea>
 
                             <!-- Indicador de Audio Existente -->
                             <div id="audio-status-back"
@@ -800,17 +801,17 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=3af28f3b"></script>
+    <script src="/js/config.js?v=695ab788"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=3af28f3b"></script>
-    <script src="/js/services/networkService.js?v=3af28f3b"></script>
-    <script src="/js/services/authApiService.js?v=3af28f3b"></script>
-    <script src="/js/services/analyticsApiService.js?v=3af28f3b"></script>
-    <script src="/js/sessionManager.js?v=3af28f3b"></script>
-    <script src="/js/ui/uiManager.js?v=3af28f3b"></script>
-    <script src="/js/ui/components.js?v=3af28f3b"></script>
-    <script src="/js/ui/sidebar.js?v=3af28f3b"></script>
-    <script src="/js/app.js?v=3af28f3b"></script>
+    <script src="/js/utils/markdown-renderer.js?v=695ab788"></script>
+    <script src="/js/services/networkService.js?v=695ab788"></script>
+    <script src="/js/services/authApiService.js?v=695ab788"></script>
+    <script src="/js/services/analyticsApiService.js?v=695ab788"></script>
+    <script src="/js/sessionManager.js?v=695ab788"></script>
+    <script src="/js/ui/uiManager.js?v=695ab788"></script>
+    <script src="/js/ui/components.js?v=695ab788"></script>
+    <script src="/js/ui/sidebar.js?v=695ab788"></script>
+    <script src="/js/app.js?v=695ab788"></script>
 
     <!-- Polyfill for Mobile Drag and Drop -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
@@ -825,9 +826,9 @@
         });
     </script>
 
-    <script src="/js/heatmap.js?v=3af28f3b"></script> <!-- Optional for Stats -->
-    <script src="/js/deck-explorer.js?v=3af28f3b"></script> <!-- NEW -->
-    <script src="/js/repaso.js?v=3af28f3b"></script>
+    <script src="/js/heatmap.js?v=695ab788"></script> <!-- Optional for Stats -->
+    <script src="/js/deck-explorer.js?v=695ab788"></script> <!-- NEW -->
+    <script src="/js/repaso.js?v=695ab788"></script>
 </body>
 
 </html>

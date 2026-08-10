@@ -59,10 +59,19 @@ El sistema gestiona una arquitectura de apoyo visual proactivo y especializado:
   - Píldoras de preguntas rápidas predefinidas: *"¿Qué ofrece esta plataforma?"*, *"¿Qué simuladores tienen disponibles?"*, *"¿Cuáles son los planes y precios?"*, *"¿Cómo me ayuda a nombrarme/colegiarme?"*.
   - Al 3er intento de consulta, bloquea el campo de texto con el mensaje `"Límite de consultas alcanzado. Regístrate gratis para continuar."` y abre la modal de inicio de sesión/registro (`showAuthPromptModal`).
 
-### E. Tutor de Flashcards y Repaso (`flashcard_tutor`)
-- **Namespace:** `medicine` / `education` (según contexto activo).
-- **Rol:** Tutor contextual RAG que profundiza la tarjeta flashcard activa.
-- **Comportamiento:** Recibe `front`, `back` y `topic` como contexto inyectado.
+### E. Tutor Académico de Flashcards y Repaso (`flashcard_tutor`)
+- **Especialización:** Multidisciplinaria Pura y Adaptativa (`Derecho`, `Medicina`, `Educación`, `Idiomas`, `Matemáticas`, `Historia`, `General`).
+- **Namespace Pinecone:** Efímero / Aislado. No ejecuta RAG clínico/educativo en materias ajenas para garantizar **cero contaminación temática**.
+- **Inyección de Contexto Completo de Mazo y Tarjeta:**
+  - `deckCategory`: Categoría temática del mazo (ej. *Derecho*, *Idiomas*, *Medicina*, *Educación*).
+  - `deckName`: Nombre real del mazo de estudio.
+  - `topic`: Subtema o etiqueta de la tarjeta.
+  - `front`: Anverso de la tarjeta (pregunta / concepto clave).
+  - `back`: Reverso de la tarjeta (respuesta / fundamento doctrinal / explicación).
+  - `imageUrl` / `explanationImageUrl`: Recursos visuales asociados a la tarjeta.
+- **Aislamiento Doctrinal y Temático:**
+  - Adopta el rol de jurista/docente para Derecho, docente clínico para Medicina, lingüista para Idiomas, pedagogo para Educación, etc.
+  - Prohibición estricta de emitir descargos médicos, referencias de salud o textos de catálogos de cursos en materias que no correspondan.
 - **Interacción y Pantalla Completa:** Soporta visualización en modo compacto o pantalla completa en escritorio (PC) mediante `.tutor-chat-panel.chat-fullscreen`.
 
 ## 4. Flujo de Procesamiento RAG
@@ -582,4 +591,13 @@ Servicio en la capa de dominio (`src/domain/services/asistenteGuiaKnowledge.js`)
   - **Uso de RAG**: Estrictamente **deshabilitado (`useRag = false`)**.
 
 ---
-*Última actualización: 3 de agosto de 2026 (Auditoría y corrección total de cuotas diarias, vidas de prueba y reglas RAG para Quiz y Repaso Tutors)*
+
+## 20. Normalización Resiliente de Respuestas de la IA (Agosto 2026)
+
+### 20.1 Extracción Limpia y Desescape (`MarkdownRenderer._extractCleanResponse`)
+- **Extracción Automática de Bloques JSON**: Se implementó una rutina que detecta bloques ```` ```json ... ``` ```` o estructuras JSON incrustadas y extrae directamente la propiedad `respuesta`, evitando que corchetes `{ }`, claves `"intencion"` o bloques de código sin procesar se filtren a la interfaz de usuario.
+- **Desescape de Saltos de Línea y Caracteres Literales**: Se normalizan las secuencias `\n` y `\"` que lleguen como cadenas literales desde respuestas en streaming o JSON mal escapado, transformándolas en saltos de línea reales y tipografía pulida.
+- **Backend Ultra-Resiliente (`TutorAiService`)**: Si el modelo Gemini responde con texto previo o posterior al bloque JSON, una extracción por expresiones regulares y búsqueda de delimitadores `{` / `}` recupera el objeto válido y formatea la respuesta de forma consistente.
+
+---
+*Última actualización: 10 de agosto de 2026 (Normalización y extracción limpia de Markdown y JSON en Tutor IA y Módulo Repaso)*

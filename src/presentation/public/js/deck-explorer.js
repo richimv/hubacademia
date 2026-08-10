@@ -283,6 +283,8 @@ class DeckExplorer {
         { fa: 'fas fa-lightbulb', color: '#fbbf24', label: 'Idea' },
         { fa: 'fas fa-graduation-cap', color: '#818cf8', label: 'Estudio' },
         { fa: 'fas fa-microscope', color: '#c084fc', label: 'Ciencia' },
+        { fa: 'fas fa-laptop-code', color: '#38bdf8', label: 'Tecnología' },
+        { fa: 'fas fa-code', color: '#a855f7', label: 'Código' },
         { fa: 'fas fa-pills', color: '#f87171', label: 'Farmacia' },
         { fa: 'fas fa-heartbeat', color: '#f87171', label: 'Cardio' },
         { fa: 'fas fa-dna', color: '#34d399', label: 'Genética' },

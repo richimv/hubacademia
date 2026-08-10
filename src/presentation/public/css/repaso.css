@@ -1031,32 +1031,60 @@
 }
 
 .settings-lang-select:focus {
-    border-color: #3b82f6;
+    border-color: #f97316;
 }
 
 .modal-card-face.face-back .settings-lang-select:focus {
-    border-color: #8b5cf6;
+    border-color: #a855f7;
+}
+
+/* Textarea espacioso y cómodo en modal de tarjetas */
+.card-modal-textarea {
+    width: 100%;
+    min-height: 115px;
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 0.85rem 1rem !important;
+    color: #ffffff !important;
+    font-family: inherit;
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.modal-card-face.face-front .card-modal-textarea:focus {
+    border-color: #f97316 !important;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15), inset 0 0 10px rgba(249, 115, 22, 0.05) !important;
+    background: rgba(0, 0, 0, 0.55) !important;
+}
+
+.modal-card-face.face-back .card-modal-textarea:focus {
+    border-color: #a855f7 !important;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15), inset 0 0 10px rgba(168, 85, 247, 0.05) !important;
+    background: rgba(0, 0, 0, 0.55) !important;
 }
 
 /* Add Card Button Pulse Glow */
 .btn-add-card-glow {
     position: relative;
-    border-color: rgba(59, 130, 246, 0.45) !important;
+    border-color: rgba(249, 115, 22, 0.45) !important;
     animation: btn-pulse-glow 2.5s infinite;
 }
 
 @keyframes btn-pulse-glow {
     0% {
-        box-shadow: 0 0 5px rgba(59, 130, 246, 0.2), inset 0 0 0px rgba(59, 130, 246, 0);
-        border-color: rgba(59, 130, 246, 0.35) !important;
+        box-shadow: 0 0 5px rgba(249, 115, 22, 0.2), inset 0 0 0px rgba(249, 115, 22, 0);
+        border-color: rgba(249, 115, 22, 0.35) !important;
     }
     50% {
-        box-shadow: 0 0 14px rgba(59, 130, 246, 0.6), inset 0 0 4px rgba(59, 130, 246, 0.25);
-        border-color: rgba(59, 130, 246, 0.8) !important;
+        box-shadow: 0 0 14px rgba(249, 115, 22, 0.6), inset 0 0 4px rgba(249, 115, 22, 0.25);
+        border-color: rgba(249, 115, 22, 0.8) !important;
     }
     100% {
-        box-shadow: 0 0 5px rgba(59, 130, 246, 0.2), inset 0 0 0px rgba(59, 130, 246, 0);
-        border-color: rgba(59, 130, 246, 0.35) !important;
+        box-shadow: 0 0 5px rgba(249, 115, 22, 0.2), inset 0 0 0px rgba(249, 115, 22, 0);
+        border-color: rgba(249, 115, 22, 0.35) !important;
     }
 }
 

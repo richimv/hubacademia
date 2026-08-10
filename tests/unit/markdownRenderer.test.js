@@ -226,6 +226,41 @@ describe('MarkdownRenderer URL safety', () => {
         expect(rendered).toContain('<td>Cell 1 <br> Line 2</td>');
         expect(rendered).toContain('<code>code-cell</code>');
     });
+
+    it('extracts clean response from markdown code fence with JSON and unescapes newlines', () => {
+        const rawJsonBlock = '```json\n{\n  "intencion": "tutor_academico",\n  "respuesta": "1. Primer concepto clave\\n2. Segundo concepto clave",\n  "sugerencias": ["Profundizar"]\n}\n```';
+        const clean = window.MarkdownRenderer._extractCleanResponse(rawJsonBlock);
+        expect(clean).toBe('1. Primer concepto clave\n2. Segundo concepto clave');
+
+        const rendered = window.MarkdownRenderer.render(rawJsonBlock);
+        expect(rendered).toContain('<ol>');
+        expect(rendered).toContain('<li>Primer concepto clave</li>');
+        expect(rendered).toContain('<li>Segundo concepto clave</li>');
+        expect(rendered).not.toContain('intencion');
+        expect(rendered).not.toContain('```json');
+    });
+
+    it('correctly renders bullet lists and numbered lists', () => {
+        const listMarkdown = '1. Primer paso\n2. Segundo paso\n3. Tercer paso';
+        const rendered = window.MarkdownRenderer.render(listMarkdown);
+        expect(rendered).toContain('<ol>');
+        expect(rendered).toContain('<li>Primer paso</li>');
+        expect(rendered).toContain('<li>Segundo paso</li>');
+        expect(rendered).toContain('<li>Tercer paso</li>');
+
+        const bulletMarkdown = '- Elemento A\n- Elemento B';
+        const renderedBullet = window.MarkdownRenderer.render(bulletMarkdown);
+        expect(renderedBullet).toContain('<ul>');
+        expect(renderedBullet).toContain('<li>Elemento A</li>');
+        expect(renderedBullet).toContain('<li>Elemento B</li>');
+
+        const unicodeBulletMarkdown = '• Punto uno\n• Punto dos\n· Punto tres';
+        const renderedUnicode = window.MarkdownRenderer.render(unicodeBulletMarkdown);
+        expect(renderedUnicode).toContain('<ul>');
+        expect(renderedUnicode).toContain('<li>Punto uno</li>');
+        expect(renderedUnicode).toContain('<li>Punto dos</li>');
+        expect(renderedUnicode).toContain('<li>Punto tres</li>');
+    });
 });
 
 

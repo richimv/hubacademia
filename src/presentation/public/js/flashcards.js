@@ -9,8 +9,9 @@ const FlashcardManager = (() => {
     let queue = [];
     let currentCard = null;
     let isFlipped = false;
-    let syncQueue = []; 
     let currentDeckId = null; // ✅ Persist deckId at module level
+    let currentDeckName = ''; // ✅ Persist deckName
+    let currentDeckCategory = 'General'; // ✅ Persist category (Derecho, Medicina, etc.)
     let currentAudio = null; // ✅ Manejo de audio global para detener si se cambia de tarjeta
     let isGuest = false; // ✅ Track guest status for feature gating
 
@@ -52,6 +53,8 @@ const FlashcardManager = (() => {
 
         const urlParams = new URLSearchParams(window.location.search);
         currentDeckId = urlParams.get('deckId');
+        currentDeckName = urlParams.get('deckName') || '';
+        currentDeckCategory = urlParams.get('category') || 'General';
         setupNavigationButtons();
 
         const isDemo = urlParams.get('demo') === 'true';
@@ -386,8 +389,12 @@ const FlashcardManager = (() => {
                         window.flashcardTutor.toggle(true, {
                             front: currentCard.front_content,
                             back: currentCard.back_content,
-                            topic: currentCard.topic || ui.topic.textContent,
-                            deck: currentDeckId
+                            topic: currentCard.topic || ui.topic.textContent || 'General',
+                            deckId: currentDeckId,
+                            deckName: currentDeckName || currentCard.topic || ui.topic.textContent || 'Mazo de Estudio',
+                            deckCategory: currentDeckCategory || 'General',
+                            imageUrl: currentCard.image_url || null,
+                            explanationImageUrl: currentCard.explanation_image_url || null
                         });
                     }
                 };

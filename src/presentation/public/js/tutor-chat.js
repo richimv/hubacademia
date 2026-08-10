@@ -170,13 +170,18 @@ class FlashcardTutor {
             
             const payload = {
                 message: text,
-                specialization: 'flashcard_tutor', // 🚀 NUEVA: Personalidad exclusiva de Tutor Académico
-                history: this.history, // 🧠 Enviamos la memoria de la sesión
+                specialization: 'flashcard_tutor', // 🚀 Personalidad exclusiva de Tutor Académico Multidisciplinario
+                history: this.history, // 🧠 Memoria de la sesión
                 context: {
                     type: 'flashcard_tutor',
                     front: this.cardContext?.front || 'Imagen o sin texto',
                     back: this.cardContext?.back || 'Imagen o sin texto',
-                    topic: this.cardContext?.topic || 'General'
+                    topic: this.cardContext?.topic || 'General',
+                    deckId: this.cardContext?.deckId || null,
+                    deckName: this.cardContext?.deckName || 'Mazo de Estudio',
+                    deckCategory: this.cardContext?.deckCategory || 'General',
+                    imageUrl: this.cardContext?.imageUrl || null,
+                    explanationImageUrl: this.cardContext?.explanationImageUrl || null
                 }
             };
 
@@ -227,13 +232,16 @@ class FlashcardTutor {
         const msg = document.createElement('div');
         msg.className = `tutor-message tutor-message-${role} markdown-content markdown-compact`;
         
-        // ✅ SAFETY NET: Extraer respuesta si el texto es JSON crudo
-        if (typeof text === 'string' && text.trimStart().startsWith('{')) {
-            try { const p = JSON.parse(text); if (p && p.respuesta) text = p.respuesta; } catch(e) {}
+        // ✅ SAFETY NET: Extraer respuesta pura y desescapar si el texto contiene JSON crudo o bloques de código
+        let cleanText = text;
+        if (window.MarkdownRenderer && typeof window.MarkdownRenderer._extractCleanResponse === 'function') {
+            cleanText = window.MarkdownRenderer._extractCleanResponse(text);
+        } else if (typeof text === 'string' && text.trimStart().startsWith('{')) {
+            try { const p = JSON.parse(text); if (p && p.respuesta) cleanText = p.respuesta; } catch(e) {}
         }
 
         // ✅ MEJORA: Formateador Markdown Unificado
-        let formattedText = window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
+        let formattedText = window.MarkdownRenderer ? window.MarkdownRenderer.render(cleanText) : cleanText.replace(/\n/g, '<br>');
         msg.innerHTML = formattedText;
         msgContainer.appendChild(msg);
 
@@ -246,13 +254,13 @@ class FlashcardTutor {
             saveBtn.className = 'tutor-save-note-btn';
             saveBtn.innerHTML = '<i class="far fa-bookmark"></i> Guardar nota';
             saveBtn.title = 'Guardar como nota';
-            saveBtn.onclick = () => this.saveAsNote(text, saveBtn);
+            saveBtn.onclick = () => this.saveAsNote(cleanText, saveBtn);
 
             const copyBtn = document.createElement('button');
             copyBtn.className = 'tutor-save-note-btn'; // Reutilizamos clase para consistencia
             copyBtn.innerHTML = '<i class="far fa-copy"></i> Copiar';
             copyBtn.title = 'Copiar respuesta';
-            copyBtn.onclick = () => this.copyToClipboard(text, copyBtn);
+            copyBtn.onclick = () => this.copyToClipboard(cleanText, copyBtn);
             
             actions.appendChild(saveBtn);
             actions.appendChild(copyBtn);
