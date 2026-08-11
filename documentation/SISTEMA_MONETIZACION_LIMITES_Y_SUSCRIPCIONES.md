@@ -6,13 +6,17 @@ Este documento centraliza toda la arquitectura de monetización, el modelo de su
 
 ## 🏗️ 1. Estructura Matemática de Suscripciones (Planes y Tokens)
 
-El sistema opera con límites de consumo rígidos según el nivel de suscripción del alumno para proteger la rentabilidad frente a costos de infer| Característica | **Plan Básico (Basic)** | **Plan Avanzado (Advanced)** | **Prueba Gratuita (Free)** |
+| Característica | **Plan Básico (Basic)** | **Plan Avanzado (Advanced)** | **Prueba Gratuita (Free)** |
 | :--- | :--- | :--- | :--- |
 | **Costo / Duración** | S/ 9.90 (2 Meses) | S/ 24.90 (4 Meses) | Gratuito |
 | **Tutor IA (Chat)** | Estándar (50 msg/día, Sin RAG) | Inteligente con RAG / Razonamiento (100 msg/día) | Estándar (Sin RAG, Descuenta vidas) |
 | **Consultas RAG** | No Incluido (0 msg/día) | Incluido (Hasta 25 msg RAG/Día, degradable a estándar) | No Incluido (Bloqueado) |
 | **Voz (Audio Assistant)**| Estándar (50 msg/día) | Avanzado (100 msg/día) | Descuenta vidas |
-| **Flashcards (IA)** | No Incluido (Manuales únicamente) | 30 intentos / mes (Con IA) | No Incluido (Manuales únicamente) |
+| **Flashcards (Manuales)** | Ilimitadas (Texto puro hasta 1,000 caracteres por cara) | Personalizadas con Audio TTS (500 chars) e Imágenes (1,000 chars texto) | Estudio de mazos y repaso básico |
+| **Carga Masiva Excel** | 3 archivos/día (Hasta 100 tarjetas/archivo, texto puro) | 10 archivos/día (Hasta 100 tarjetas/archivo con opción Audio TTS) | Bloqueado con Paywall |
+| **Audio TTS e Imágenes**| No Incluido (Paywall) | Exclusivo (Síntesis TTS Google Cloud + Subida de Imágenes a GCS) | No Incluido (Paywall) |
+| **Generación IA Flashcards** | No Incluido | 30 pedidos / mes (Hasta 20 tarjetas por pedido con Gemini) | No Incluido |
+| **Clonación de Mazos** | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) |
 | **Simulador de Exámenes** | **CAP 15/Día** | **CAP 50/Día** | Descuenta vidas (20 de prueba) |
 
 ---
@@ -83,8 +87,21 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 ### 3.3 Módulo: Diagnóstico Clínico (Analytics)
 *   Permite a los usuarios Advanced realizar una correlación estadística de sus fallas mediante `POST /api/analytics/diagnostic`. Consume de la cuota diaria del chat.
 
-### 3.4 Módulo: Generador de Flashcards (Tarjetas de Repaso)
-*   Se almacena en `monthly_flashcards_usage`. Limita de forma estricta la generación de flashcards con IA a 30 intentos mensuales (exclusivo del Plan Avanzado). Los usuarios del Plan Básico cuentan con creación e interacción manual de tarjetas de forma ilimitada.
+### 3.4 Módulo: Tarjetas de Repaso y Flashcards (deckController.js / deckService.js)
+*   **Creación Manual y Longitudes de Texto**:
+    *   **Texto Puro (Basic y Advanced)**: Permite hasta **1,000 caracteres** por cara (frente y dorso), ofreciendo amplitud para fórmulas, listas y explicaciones doctrinales.
+    *   **Audio TTS Activado (Advanced únicamente)**: Aplica un tope condicional de **500 caracteres** por cara para preservar el presupuesto de síntesis de Google Cloud Text-to-Speech.
+*   **Políticas Multimedia (TTS e Imágenes)**:
+    *   **Audio TTS y Carga de Imágenes (`/api/cards/upload-image`)**: Exclusivos de planes `advanced`, `elite` y `admin`. Usuarios `free` o `basic` que intenten activar estas opciones reciben respuesta `403 Forbidden` (`paywall: true`) e intercepción visual inmediata con la modal Paywall.
+*   **Carga Masiva vía Excel (`batch_import`)**:
+    *   **Free**: 0 archivos/día (bloqueado para mitigar abusos de bots/scripts).
+    *   **Basic**: Hasta 3 archivos Excel por día (hasta 100 tarjetas por archivo, texto puro de hasta 1,000 caracteres por cara).
+    *   **Advanced**: Hasta 10 archivos Excel por día (hasta 100 tarjetas por archivo con soporte opcional de síntesis de voz TTS en lote).
+*   **Generación de Flashcards con IA (`monthly_flashcards_usage`)**:
+    *   Exclusivo del Plan Avanzado con cuota de **30 solicitudes mensuales** (hasta 20 tarjetas generadas por solicitud mediante Gemini).
+*   **Clonación y Mazos de Comunidad**:
+    *   Todos los tiers (Free, Basic, Advanced) pueden clonar y estudiar mazos públicos con audios e imágenes existentes sin generar costos extra en GCS/TTS (reutilización atómica de URLs).
+    *   Protección anti-duplicados y rate limiting de máximo 30 clonaciones por día para prevenir flooding.
 
 ---
 

@@ -69,6 +69,19 @@ El backend de Hub Academia validará la URL y los campos, guardándolos en la ta
 
 ## 📊 Historial de Ingestas Recientes
 
+### 🗓️ Ingesta: 11 de Agosto de 2026
+- **Estado**: ✅ Ingesta exitosa (8 nuevos papers procesados).
+- **Proporción de Papers**: 100% (8/8).
+- **Resumen de Recursos Ingeridos**:
+  1. `[MEDICINE]` *Puntaje Internacional de Riesgo en Hipertensión Pulmonar Pediátrica: Un modelo de predicción de resultados mediante aprendizaje automático* (Circulation / PubMed - PMID 42576812)
+  2. `[MEDICINE]` *Tamizaje de oportunidad para la enfermedad de Chagas mediante electrocardiograma impulsado por IA: Evaluación prospectiva de factibilidad y precisión diagnóstica* (Circulation / PubMed - PMID 42576808)
+  3. `[MEDICINE]` *Efecto neuroprotector de exosomas derivados de células madre mesenquimales en la mitigación del daño oxidativo e inflamatorio del Alzheimer mediante la vía Nrf2/HO-1* (Ibrain / PubMed - PMID 42577281)
+  4. `[MEDICINE]` *Métricas de variabilidad de la frecuencia cardíaca en el dominio del tiempo como predictores de recuperación de concusiones en adolescentes* (Neurorehabilitation and Neural Repair / PubMed - PMID 42576778)
+  5. `[EDUCATION]` *Optimización de la autoverificación de laboratorio en análisis de hemograma completo mediante aprendizaje automático: Estudio de evaluación de desempeño* (Journal of Clinical Laboratory Analysis / PubMed - PMID 42576782)
+  6. `[EDUCATION]` *De la supervivencia a la recuperación en UCI: Un marco de recuperación domiciliaria dirigido por enfermería adaptado a entornos de escasos recursos* (Neuropsychiatric Disease and Treatment / PubMed - PMID 42577356)
+  7. `[EDUCATION]` *Prácticas de comunicación y formación clínica sobre riesgo y equidad en la atención perinatal de mujeres afrodescendientes* (Journal of Midwifery & Women's Health / PubMed - PMID 42576713)
+  8. `[EDUCATION]` *Avances recientes en aplicaciones de inteligencia artificial para la mitigación de la resistencia a los antimicrobianos: Desafíos y oportunidades educativas* (JAC-Antimicrobial Resistance / PubMed - PMID 42577011)
+
 ### 🗓️ Ingesta: 01 de Agosto de 2026
 - **Estado**: ✅ Ingesta exitosa (7 nuevos papers procesados).
 - **Proporción de Papers**: 100% (7/7).
@@ -80,4 +93,5 @@ El backend de Hub Academia validará la URL y los campos, guardándolos en la ta
   5. `[EDUCATION]` *Panorama del aprendizaje adaptativo en la educación superior STEM: Análisis tecnopedagógico de experiencias, desafíos y oportunidades de implementación* (RIDE / SciELO - DOI 10.23913/ride.v16i32.2901)
   6. `[EDUCATION]` *Formas distintas de transmisión de dopamina controlan la locomoción y el aprendizaje* (bioRxiv / PubMed - PMID 42539181)
   7. `[EDUCATION]` *Sintonización del desarrollo de la dimensionalidad de variedades funcionales a lo largo del cerebro humano* (bioRxiv / PubMed - PMID 42539279)
+
 

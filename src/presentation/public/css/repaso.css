@@ -39,7 +39,7 @@
 
 .subdecks-header .toggle-icon {
     font-size: 0.8rem;
-    color: #3b82f6;
+    color: #f97316;
     transition: transform 0.2s ease;
 }
 
@@ -152,10 +152,10 @@
 /* --- Banner de Comunidad Responsivo --- */
 .community-banner {
     margin-bottom: 1.5rem;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(249, 115, 22, 0.08));
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(234, 88, 12, 0.03));
     padding: 1.5rem 1.75rem;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(249, 115, 22, 0.15);
     box-sizing: border-box;
     width: 100%;
     max-width: 100%;
@@ -295,8 +295,8 @@
 
 .repaso-tab-btn.active {
     color: #ffffff;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
 }
 
 @media (max-width: 640px) {
@@ -362,7 +362,7 @@
 
 .progress-bar-fill {
     height: 100%;
-    background: #3b82f6;
+    background: linear-gradient(90deg, #f97316 0%, #fb923c 100%);
     border-radius: 3px;
     transition: width 0.5s ease;
 }
@@ -481,8 +481,9 @@
 }
 
 .badge-user {
-    background: rgba(59, 130, 246, 0.2);
-    color: #60a5fa;
+    background: rgba(249, 115, 22, 0.12);
+    color: #fb923c;
+    border: 1px solid rgba(249, 115, 22, 0.3);
 }
 
 /* Add Deck Button */
@@ -505,9 +506,9 @@
 }
 
 .add-deck-card:hover {
-    background: rgba(59, 130, 246, 0.03);
-    border-color: rgba(59, 130, 246, 0.45);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 15px rgba(59, 130, 246, 0.08);
+    background: rgba(249, 115, 22, 0.03);
+    border-color: rgba(249, 115, 22, 0.45);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 15px rgba(249, 115, 22, 0.12);
     transform: translateY(-5px);
 }
 
@@ -529,12 +530,12 @@
 
 .crumb-link {
     cursor: pointer;
-    color: #60a5fa;
+    color: #f97316;
     transition: color 0.2s;
 }
 
 .crumb-link:hover {
-    color: #93c5fd;
+    color: #fb923c;
 }
 
 .crumb-active {
@@ -616,20 +617,20 @@
 /* --- Efecto Pendiente (Due) --- */
 .is-due-glow {
     animation: duePulseGlow 2.5s infinite;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(249, 115, 22, 0.4) !important;
 }
 
 @keyframes duePulseGlow {
     0% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4);
     }
 
     70% {
-        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+        box-shadow: 0 0 0 8px rgba(249, 115, 22, 0);
     }
 
     100% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
     }
 }
 
@@ -671,23 +672,29 @@
 }
 
 .btn-premium-secondary {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: #e2e8f0;
 }
 
 .btn-premium-secondary:hover {
-    background: rgba(51, 65, 85, 0.8);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    transform: translateY(-1px);
 }
 
 .btn-premium-ia {
-    background: rgba(139, 92, 246, 0.15);
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    background: rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(168, 85, 247, 0.25);
     color: #d8b4fe;
 }
 
 .btn-premium-ia:hover {
-    background: rgba(139, 92, 246, 0.25);
+    background: rgba(168, 85, 247, 0.22);
+    border-color: rgba(168, 85, 247, 0.45);
+    color: #f3e8ff;
+    transform: translateY(-1px);
 }
 
 /* Consolidated in SRS status section above */
@@ -718,17 +725,17 @@
     width: 60px;
     height: 60px;
     font-size: 2rem;
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(249, 115, 22, 0.1);
     border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(249, 115, 22, 0.25);
     flex-shrink: 0;
 }
 
 .card-checkbox {
-    accent-color: #3b82f6;
+    accent-color: #f97316;
     width: 16px;
     height: 16px;
     cursor: pointer;
@@ -752,9 +759,9 @@
 
 /* --- New Minimal Upload Styles --- */
 .btn-upload-minimal {
-    background: rgba(59, 130, 246, 0.05);
-    border: 1px dashed rgba(59, 130, 246, 0.3);
-    color: #60a5fa;
+    background: rgba(249, 115, 22, 0.05);
+    border: 1px dashed rgba(249, 115, 22, 0.3);
+    color: #f97316;
     padding: 0.8rem;
     border-radius: 12px;
     width: 100%;
@@ -769,8 +776,9 @@
 }
 
 .btn-upload-minimal:hover {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
+    background: rgba(249, 115, 22, 0.12);
+    border-color: #f97316;
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.2);
     transform: translateY(-2px);
 }
 
@@ -954,7 +962,7 @@
 }
 
 .modal-card-face.face-front .modal-card-face-title {
-    color: #60a5fa;
+    color: #ff9f43;
 }
 
 .modal-card-face.face-back .modal-card-face-title {
@@ -1066,25 +1074,5 @@
     background: rgba(0, 0, 0, 0.55) !important;
 }
 
-/* Add Card Button Pulse Glow */
-.btn-add-card-glow {
-    position: relative;
-    border-color: rgba(249, 115, 22, 0.45) !important;
-    animation: btn-pulse-glow 2.5s infinite;
-}
 
-@keyframes btn-pulse-glow {
-    0% {
-        box-shadow: 0 0 5px rgba(249, 115, 22, 0.2), inset 0 0 0px rgba(249, 115, 22, 0);
-        border-color: rgba(249, 115, 22, 0.35) !important;
-    }
-    50% {
-        box-shadow: 0 0 14px rgba(249, 115, 22, 0.6), inset 0 0 4px rgba(249, 115, 22, 0.25);
-        border-color: rgba(249, 115, 22, 0.8) !important;
-    }
-    100% {
-        box-shadow: 0 0 5px rgba(249, 115, 22, 0.2), inset 0 0 0px rgba(249, 115, 22, 0);
-        border-color: rgba(249, 115, 22, 0.35) !important;
-    }
-}
 

@@ -2,10 +2,10 @@ const DeckService = require('../../domain/services/deckService');
 
 // 🛡️ CONSTANTES DE SEGURIDAD Y CONTROL DE COSTOS
 const SECURITY_LIMITS = {
-    MAX_TEXT_LENGTH: 400,      // Límite para guardar en BD (Reducido para brevedad)
-    MAX_TTS_LENGTH: 500,       // Límite para enviar a Google TTS (Ahorro de cuota)
-    MIN_TEXT_LENGTH: 2,        // Evitar basura
-    MAX_BATCH_SIZE: 50         // Tarjetas por lote
+    MAX_TEXT_LENGTH: 1000,      // Límite estándar por cara (Frente / Dorso)
+    MAX_TTS_TEXT_LENGTH: 500,   // Límite estricto por cara cuando se activa Audio TTS (Ahorro de cuota)
+    MIN_TEXT_LENGTH: 2,         // Evitar basura
+    MAX_BATCH_SIZE: 100         // Tarjetas por archivo Excel
 };
 
 class DeckController {
@@ -13,9 +13,12 @@ class DeckController {
      * Helper to get common user context.
      */
     _getUserContext = (req) => {
+        const tier = (req.user?.subscription_tier || req.userTier || 'free').toLowerCase();
         return {
             userId: req.user ? req.user.id : 'GUEST',
-            isGuest: !req.user
+            isGuest: !req.user,
+            userTier: tier,
+            isAdvanced: ['advanced', 'admin', 'elite'].includes(tier)
         };
     }
 
@@ -41,7 +44,7 @@ class DeckController {
         if (!text || text.trim().length < SECURITY_LIMITS.MIN_TEXT_LENGTH) return null;
 
         // 🛡️ RECORTAR TEXTO PARA TTS (Protección de presupuesto)
-        const cleanText = text.substring(0, SECURITY_LIMITS.MAX_TTS_LENGTH);
+        const cleanText = text.substring(0, SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH);
 
         try {
             const TtsService = require('../../domain/services/ttsService');
@@ -296,7 +299,7 @@ class DeckController {
         try {
             const { deckId } = req.params;
             const { front, back, imageUrl, backImageUrl, generateTtsFront, generateTtsBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack } = req.body;
-            const { userId } = this._getUserContext(req);
+            const { userId, isAdvanced } = this._getUserContext(req);
 
             // Validar que al menos haya texto o imagen en ambos lados
             const hasFront = (front && front.trim()) || imageUrl;
@@ -306,9 +309,24 @@ class DeckController {
                 return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
             }
 
-            // 🛡️ VALIDACIÓN DE LONGITUD
+            // 🛡️ REGLA PREMIUM / CONTROL DE COSTOS: Audio TTS e Imágenes son exclusivas del Plan Advanced
+            const hasMedia = imageUrl || backImageUrl || generateTtsFront || generateTtsBack;
+            if (hasMedia && !isAdvanced) {
+                return res.status(403).json({
+                    error: 'La generación de audio TTS y la asignación de imágenes son funciones exclusivas del Plan Avanzado. ¡Mejora tu plan para desbloquearlas!',
+                    paywall: true
+                });
+            }
+
+            // 🛡️ VALIDACIÓN CONDICIONAL DE LONGITUD (500 chars si hay TTS, 1000 chars texto estándar)
+            if (generateTtsFront && front && front.length > SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH) {
+                return res.status(400).json({ error: `Al generar audio TTS en el frente, el texto no puede superar los ${SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH} caracteres.` });
+            }
+            if (generateTtsBack && back && back.length > SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH) {
+                return res.status(400).json({ error: `Al generar audio TTS en el dorso, el texto no puede superar los ${SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH} caracteres.` });
+            }
             if ((front && front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (back && back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH)) {
-                return res.status(400).json({ error: `El texto de la tarjeta es demasiado largo (Máx: ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres).` });
+                return res.status(400).json({ error: `El texto de la tarjeta no puede superar los ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres por cara.` });
             }
 
             // ✅ NUEVO: Generación de Audio TTS Individual
@@ -337,20 +355,36 @@ class DeckController {
     addBulkCards = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const { cards } = req.body;
-            const { userId, isGuest } = this._getUserContext(req);
+            const { cards, generateTtsFront, generateTtsBack, ttsLang } = req.body;
+            const { userId, isGuest, isAdvanced } = this._getUserContext(req);
 
             if (isGuest) return res.status(403).json({ error: 'Inicia sesión para subir tarjetas.' });
             if (!cards || !Array.isArray(cards)) return res.status(400).json({ error: 'Se requiere un array de tarjetas.' });
 
-            const { generateTtsFront, generateTtsBack, ttsLang } = req.body;
-
-            // LÍMITE DE SEGURIDAD (Backend Enforcement)
+            // LÍMITE DE SEGURIDAD (Backend Enforcement: 100 tarjetas por Excel)
             if (cards.length > SECURITY_LIMITS.MAX_BATCH_SIZE) {
-                return res.status(400).json({ error: `Límite de ${SECURITY_LIMITS.MAX_BATCH_SIZE} tarjetas excedido para carga masiva.` });
+                return res.status(400).json({ error: `Límite de ${SECURITY_LIMITS.MAX_BATCH_SIZE} tarjetas por archivo Excel excedido.` });
             }
 
-            // 🛡️ VALIDACIÓN DE LONGITUD EN LOTE
+            // 🛡️ REGLA PREMIUM: Audio TTS en carga masiva es exclusivo de Advanced
+            if ((generateTtsFront || generateTtsBack) && !isAdvanced) {
+                return res.status(403).json({
+                    error: 'La generación de audio TTS en carga masiva es una función exclusiva del Plan Avanzado.',
+                    paywall: true
+                });
+            }
+
+            // 🛡️ VALIDACIÓN DE LONGITUD CONDICIONAL EN LOTE
+            if (generateTtsFront || generateTtsBack) {
+                const hasTtsOverlength = cards.some(c => 
+                    (generateTtsFront && c.front && c.front.length > SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH) ||
+                    (generateTtsBack && c.back && c.back.length > SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH)
+                );
+                if (hasTtsOverlength) {
+                    return res.status(400).json({ error: `Una o más tarjetas en el lote exceden el límite de ${SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH} caracteres permitido al activar audio TTS.` });
+                }
+            }
+
             const hasOverlength = cards.some(c => (c.front && c.front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (c.back && c.back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH));
             if (hasOverlength) {
                 return res.status(400).json({ error: `Una o más tarjetas en el lote exceden el límite de ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres.` });
@@ -450,7 +484,7 @@ class DeckController {
         try {
             const { cardId } = req.params;
             const { front, back, imageUrl, backImageUrl, generateTtsFront, generateTtsBack, deleteAudioFront, deleteAudioBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack } = req.body;
-            const { userId } = this._getUserContext(req);
+            const { userId, isAdvanced } = this._getUserContext(req);
 
             // Validar que al menos haya texto o imagen en ambos lados
             const hasFront = (front && front.trim()) || imageUrl;
@@ -460,14 +494,31 @@ class DeckController {
                 return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
             }
 
-            // 🛡️ VALIDACIÓN DE LONGITUD
-            if ((front && front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (back && back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH)) {
-                return res.status(400).json({ error: `El texto de la tarjeta es demasiado largo (Máx: ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres).` });
-            }
-
             // 1. Obtener la tarjeta actual para comparar imágenes y audios
             const currentCard = await DeckService.getCardById(cardId);
             if (!currentCard) return res.status(404).json({ error: 'Tarjeta no encontrada' });
+
+            // 🛡️ REGLA PREMIUM / CONTROL DE COSTOS: Audio TTS e Imágenes son exclusivas de Advanced
+            const isAddingImage = (imageUrl && imageUrl !== currentCard.image_url) || (backImageUrl && backImageUrl !== currentCard.explanation_image_url);
+            const isGeneratingTts = generateTtsFront || generateTtsBack;
+
+            if ((isAddingImage || isGeneratingTts) && !isAdvanced) {
+                return res.status(403).json({
+                    error: 'La generación de audio TTS y la asignación de imágenes son funciones exclusivas del Plan Avanzado. ¡Mejora tu plan para desbloquearlas!',
+                    paywall: true
+                });
+            }
+
+            // 🛡️ VALIDACIÓN CONDICIONAL DE LONGITUD
+            if (generateTtsFront && front && front.length > SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH) {
+                return res.status(400).json({ error: `Al generar audio TTS en el frente, el texto no puede superar los ${SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH} caracteres.` });
+            }
+            if (generateTtsBack && back && back.length > SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH) {
+                return res.status(400).json({ error: `Al generar audio TTS en el dorso, el texto no puede superar los ${SECURITY_LIMITS.MAX_TTS_TEXT_LENGTH} caracteres.` });
+            }
+            if ((front && front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (back && back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH)) {
+                return res.status(400).json({ error: `El texto de la tarjeta no puede superar los ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres por cara.` });
+            }
 
             // ✅ NUEVO: Actualización de Audio TTS
             let audioUrlFront = currentCard.audio_url_frente;
@@ -671,6 +722,16 @@ class DeckController {
      */
     uploadCardImage = async (req, res) => {
         try {
+            const { isAdvanced, isGuest } = this._getUserContext(req);
+            if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para subir imágenes.' });
+
+            if (!isAdvanced) {
+                return res.status(403).json({
+                    error: 'La subida de imágenes para tarjetas es una función exclusiva del Plan Avanzado. ¡Mejora tu plan para desbloquearla!',
+                    paywall: true
+                });
+            }
+
             if (!req.file) {
                 return res.status(400).json({ error: 'No se recibió ninguna imagen.' });
             }

@@ -101,13 +101,31 @@ class DeckService {
 
         const deck = deckRes.rows[0];
 
-        // 2. Create the cloned deck for the new user
-        const newDeck = await this.createDeck(userId, `${deck.name} (Clon)`, deck.icon, null, deck.description, deck.color);
+        // 2. Anti-Spam / Anti-Duplicados: Verificar si el usuario ya tiene este mazo clonado
+        const cloneName = `${deck.name} (Clon)`;
+        const existingCloneQuery = `SELECT id FROM decks WHERE user_id = $1 AND (name = $2 OR name = $3) LIMIT 1`;
+        const existingCloneRes = await db.query(existingCloneQuery, [userId, cloneName, deck.name]);
+        if (existingCloneRes.rows.length > 0) {
+            throw new Error('Ya has clonado este mazo en tu biblioteca.');
+        }
 
-        // 3. Fetch original cards
+        // Anti-Abuso: Límite de seguridad contra scripts maliciosos (máx 30 clonaciones por día)
+        const dailyClonesQuery = `
+            SELECT COUNT(*) as count FROM decks 
+            WHERE user_id = $1 AND name LIKE '% (Clon)' AND created_at > NOW() - INTERVAL '24 hours'
+        `;
+        const dailyClonesRes = await db.query(dailyClonesQuery, [userId]);
+        if (parseInt(dailyClonesRes.rows[0]?.count || 0) >= 30) {
+            throw new Error('Has alcanzado el límite de 30 clonaciones de mazos por día. Vuelve mañana.');
+        }
+
+        // 3. Crear el mazo clonado para el usuario
+        const newDeck = await this.createDeck(userId, cloneName, deck.icon, null, deck.description, deck.color);
+
+        // 4. Obtener tarjetas originales
         const cards = await this.getDeckCards(publicDeckId);
 
-        // 4. Bulk insert cards for the new user
+        // 5. Inserción masiva vinculando URLs existentes sin re-sintetizar audio ni duplicar imágenes en GCS
         if (cards && cards.length > 0) {
             const mappedCards = cards.map(c => ({
                 front: c.front_content,
@@ -121,7 +139,7 @@ class DeckService {
             await this.addBulkCards(userId, newDeck.id, mappedCards);
         }
 
-        // 5. Increment saves count
+        // 6. Incrementar contador de guardados en la comunidad
         await trainingRepository.incrementDeckSaves(publicDeckId);
 
         return newDeck;

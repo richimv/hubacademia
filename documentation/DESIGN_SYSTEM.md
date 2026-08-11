@@ -28,8 +28,11 @@ Toda la plataforma se rige estrictamente bajo la paleta de **Negro Mate Puro en 
 | **Deep Black (Main Background)** | `--bg-main` | `#050505` | Fondo principal de todas las páginas (`body`). |
 | **Pure Matte Black (Card/Modal Surface)** | `--bg-secondary` / `--card-bg` | `#0a0a0a` | Tarjetas hero, paneles principales y cuerpo de modales (sólido no transparente). |
 | **Dark Slate Matte (Nested Surface)** | `--bg-tertiary` / `--surface-hover` | `#121212` / `#18181b` | Sub-tarjetas anidadas, inputs, selectores y elementos de elevación interna. |
-| **Cyan-Blue Gradient (Primary Action)** | `--gradient-primary` | `linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%)` | Botones de acción principal (Explorar, Confirmar, Suscribir). |
-| **Trust Blue (Solid Accent)** | `--primary` | `#3b82f6` | Enlaces activos e iconos de estado. |
+| **Clean Translucent White (Hover Surface)**| `--hover-clean` | `rgba(255, 255, 255, 0.06)` a `0.08` | Relleno homogéneo al pasar el cursor (hover) en ítems del explorador, filas de tarjetas y botones secundarios. Queda prohibido el uso de rellenos plomos/azulados (`#334155`, `rgba(51, 65, 85, ...)`). |
+| **Manta Orange Gradient (Repaso / Core CTA)** | `--gradient-orange` | `linear-gradient(135deg, #f97316 0%, #ea580c 100%)` | Acciones primarias en Repaso (Estudiar Ahora, Crear Mazo, Clonar), pestañas activas y acentos del módulo. |
+| **Manta Orange Glow** | `--glow-orange` | `rgba(249, 115, 22, 0.35)` | Sombras iluminadas y halos coherentes en botones primarios y tarjetas destacadas. |
+| **Cyan-Blue Gradient (Primary Action)** | `--gradient-primary` | `linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%)` | Botones de acción principal en Simulator / Chat (Explorar, Confirmar, Suscribir). |
+| **Trust Blue (Solid Accent)** | `--primary` | `#3b82f6` | Enlaces activos e iconos de estado en Simulador. |
 | **Electric Blue (Light Accent)** | `--primary-light` | `#60a5fa` | Resaltados de texto e interacciones secundarias. |
 | **Emerald Green (Status)** | `--success` | `rgba(16, 185, 129, 0.12)` / `#34d399` | Insignias de verificación y tarjetas dominadas. |
 | **Subtle Border** | `--border-color` | `rgba(255, 255, 255, 0.08)` | Bordes decorativos translúcidos. |
@@ -67,29 +70,23 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 * **Esquinas:** `20px` (Rounded).
 * **Sombra:** `0 25px 50px -12px rgba(0, 0, 0, 0.9)`.
 
-### 3.2. Botones (The "Manta Pill Gradient" Signature Standard)
+### 3.2. Botones y Estados Hover
 
 > [!IMPORTANT]
-> El estilo **Manta Pill Gradient con Insignia Circular de Icono** es el estándar estético **EXCLUSIVO Y OBLIGATORIO** para todos los botones primarios de acción, disparadores de IA y enlaces de llamadas a la acción en Hub Academia.
+> El estilo **Manta Pill Gradient con Insignia Circular de Icono** o **Manta Orange Degradado** son los estándares estéticos obligatorios para botones primarios de acción. Los botones secundarios deben mantener una estética limpia y sobria, integrándose perfectamente con el explorador.
 
-* **Botón Primario de Acción (`.btn-primary` / `.btn-manta-pill` / `.btn-gradient-pill`):** 
-  * **Forma:** Cápsula Pill Total (`border-radius: 9999px` o `50px`).
-  * **Fondo Degradado:** `linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%)` (Transición continua Índigo -> Azul -> Cian).
-  * **Badge Circular de Icono (Izquierda):** Un círculo blanco sólido (`background: #ffffff; width: 28px - 32px; height: 28px - 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #2563eb; flex-shrink: 0;`) que contiene el icono del botón.
-  * **Texto:** Texto blanco `#ffffff` en negrita (700) (`font-size: 0.9rem - 0.95rem; letter-spacing: -0.01em;`).
-  * **Resplandor / Sombra (Glow Effect):** `box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4), 0 0 15px rgba(6, 182, 212, 0.25)`.
-  * **Interacción Hover:** `transform: translateY(-2px) scale(1.02); box-shadow: 0 6px 25px rgba(59, 130, 246, 0.55), 0 0 20px rgba(6, 182, 212, 0.35); color: #ffffff !important;`.
-  * **Aplicación Obligatoria:**
-    - Enlaces de acción generados en respuestas de chat (`.markdown-content a`).
-    - Botones de apertura del Tutor IA en simulacros (`#btn-open-quiz-tutor`) y repaso (`.btn-tutor-trigger`).
-    - Botón de "Configurar Examen" en el Simulator Dashboard (`#btn-start-config`).
-    - Tarjetas interactivas de opciones dentro del cuerpo del Chat General.
+* **Botón Primario de Repaso / Core Action (`.btn-premium-primary`):**
+  * **Fondo:** `linear-gradient(135deg, #f97316 0%, #ea580c 100%)`.
+  * **Texto:** `#ffffff` en negrita (600/700).
+  * **Sombra / Glow:** `box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35)`.
+  * **Hover:** `transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5); color: #ffffff;`.
 
-* **Botón Secundario (`.btn-secondary`):**
-  * **Fondo:** `#121212` (Dark Slate Matte).
-  * **Borde:** `1px solid rgba(255, 255, 255, 0.1)`.
-  * **Forma:** `border-radius: 12px` | Texto `#e2e8f0`.
-  * **Hover:** `background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2)`.
+* **Botón Secundario (`.btn-secondary` / `.btn-premium-secondary`):**
+  * **Fondo Inicial:** `rgba(255, 255, 255, 0.04)` (Translúcido limpio).
+  * **Borde:** `1px solid rgba(255, 255, 255, 0.08)`.
+  * **Forma:** `border-radius: 10px - 12px` | Texto `#e2e8f0`.
+  * **Interacción Hover (Estándar Explorador):** `background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); color: #ffffff; transform: translateY(-1px);`.
+  * **Regla de Coherencia:** Queda estrictamente prohibido usar fondos plomos opacos (ej. `#334155` o `rgba(51,65,85,0.8)`) o aplicar halos/bordes de resplandor naranja aislados sobre botones secundarios que rompan la armonía visual.
 
 ### 3.3. Badges de Estado e Insignias de Plan
 * **Pill Badge Plan Active (`.badge-premium`):**

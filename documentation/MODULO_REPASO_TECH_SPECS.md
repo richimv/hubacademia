@@ -287,18 +287,25 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
   - **Corrección Integral de UX en la Barra de Filtros de Comunidad**:
     - Se eliminó el reseteo abrupto del scroll horizontal a "Todas" al seleccionar píldoras lejanas: `renderCommunityDecks` ahora actualiza de forma reactiva la clase `.active` en el DOM sin destruir `.community-category-bar`.
     - Se incorporó `activePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })` para mantener la píldora seleccionada centrada y visible en pantalla.
-- **Optimización de Modal de Tarjetas, Soporte de Listas/Viñetas y Limpieza del Chat Tutor (V37)**:
-  - **Ampliación y Ergonomía del Modal de Edición de Tarjetas (`#card-modal`)**:
-    - Se amplió el ancho del modal de `600px` a `720px` (`width: 95%`) y se incrementó el scroll vertical útil a `max-height: 68vh`.
-    - Los textareas `#card-front` y `#card-back` ahora cuentan con la clase `.card-modal-textarea` (`min-height: 115px`, `line-height: 1.55`, tipografía de 0.95rem), eliminando el scroll anidado excesivo y ofreciendo una experiencia espaciosa de redacción.
-    - Se sustituyó el azul residual por naranja (`rgba(249, 115, 22, 0.4)`) en scrollbars y animaciones de resplandor (`.btn-add-card-glow`).
-  - **Soporte Completo de Listas, Viñetas y Enumeraciones en Flashcards**:
-    - Se incorporaron reglas CSS explícitas para `.content-text ol`, `.content-text ul` y `.content-text li` en `flashcards.css` con `padding-left: 2rem`, `list-style-position: outside`, alineación a la izquierda y `::marker` en color naranja `#f97316`.
-    - Se cambió `white-space: pre-wrap` a `white-space: normal` en `.content-text` (`flashcards.html` y `flashcards.css`) para permitir que las listas y párrafos generados por Markdown se rendericen con tipografía limpia sin saltos distorsionados ni números recortados por el contenedor.
-  - **Erradicación de Respuestas Contaminadas en el Chat Tutor**:
-    - Se implementó `MarkdownRenderer._extractCleanResponse` y `_normalizeText` para extraer de forma resiliente la propiedad `respuesta` cuando el modelo devuelva JSON embebido, bloques de código ```` ```json ```` o caracteres de escape literales (`\n`, `\"`).
-    - En `tutorAiService.js`, se mejoró el parser JSON del backend extrayendo bloques con regex y desescapando secuencias `\n` que lleguen como texto crudo.
+- **Optimización de Carga Masiva Excel, Control de Costos TTS/Media y Seguridad de Mazos (V38)**:
+  - **Ampliación de Límites de Tarjetas y Texto**:
+    - Se aumentó la capacidad de tarjetas por archivo Excel de `50` a **`100 tarjetas`**.
+    - Se amplió el límite de caracteres por cara de tarjeta a **`1,000 caracteres`** para flashcards de texto puro.
+    - Se implementó un límite condicional estricto de **`500 caracteres`** por cara cuando se activa la generación de Audio TTS para preservar el presupuesto y cuota gratuita de Google Cloud Text-to-Speech.
+  - **Políticas de Privilegios y Control de Costos Multimedia (GCS / TTS)**:
+    - **Audio TTS e Imágenes Exclusivas del Plan Advanced**: La síntesis de voz (`_processAudioTts`) y la carga de imágenes (`uploadCardImage`, `POST /api/cards/upload-image`) están estrictamente reservadas para usuarios con tier `advanced`, `elite` o `admin`.
+    - **Protección Paywall y Fallback Seguro**: Usuarios Free y Basic son interceptados visualmente con `window.uiManager.showPaywallModal(..., 'flashcards')` y protegidos en backend con código HTTP `403 Forbidden` (`paywall: true`).
+    - **Cuotas de Carga Masiva Diarias**: `LIMITS.basic.batch_import = 3` (texto puro) y `LIMITS.advanced.batch_import = 10` (con opción de audio TTS), bloqueando cuentas Free para prevenir abuso de scripts.
+  - **Armonización Visual y Consistencia de Diseño (Design System Negro Mate & Naranja Manta)**:
+    - **Erradicación de Azules Residuales**: Se depuraron y sustituyeron todas las clases con sombras o fondos azules (`rgba(59, 130, 246)`, `#3b82f6`, `#60a5fa`) en pestañas activas (`.repaso-tab-btn.active`), barras de progreso (`.progress-bar-fill`), insignias de usuario (`.badge-user`), enlaces de migas de pan (`.crumb-link`), animaciones de vencimiento (`.is-due-glow`), selectores de checkboxes (`accent-color: #f97316`) y áreas de arrastrar/soltar (`.btn-upload-minimal`).
+    - **Consistencia en Modales**: Se homogeneizó la estética de los modales (`#create-deck-modal`, `#stats-modal`, `#card-modal`, `#ai-modal`, `#preview-deck-modal`, `#deck-guide-modal`) con fondo negro mate sólido `#0a0a0a`, bordes sutiles `rgba(255, 255, 255, 0.08)`, bordes redondeados y títulos/acentos en Naranja Manta `#f97316` / `#ff9f43`.
+    - **Sombreado e Iluminación Coherente**: Los botones primarios y tarjetas interactivas cuentan con resplandores calibrados `box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35)` sin contaminación cromática.
+  - **Sincronización Comercial y Planes (Landing y Pricing)**:
+    - Se actualizaron las secciones de precios en [index.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/index.html) y [pricing.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/pricing.html) para destacar:
+      - **Plan Básico**: Flashcards manuales ilimitadas y carga masiva Excel (3 archivos/día).
+      - **Plan Avanzado**: Flashcards manuales personalizadas con Audio TTS e imágenes, Carga masiva Excel con Audio TTS (10 archivos/día) y Generación con IA (30 pedidos/mes).
+    - Se actualizó el documento maestro [SISTEMA_MONETIZACION_LIMITES_Y_SUSCRIPCIONES.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/SISTEMA_MONETIZACION_LIMITES_Y_SUSCRIPCIONES.md).
 
 ---
 
-**Documentación Técnica Actualizada - 10 de Agosto, 2026.**
+**Documentación Técnica Actualizada - 11 de Agosto, 2026.**

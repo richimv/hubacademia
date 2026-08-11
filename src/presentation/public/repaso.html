@@ -15,15 +15,15 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Shared CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=695ab788">
-    <link rel="stylesheet" href="/css/base.css?v=695ab788">
-    <link rel="stylesheet" href="/css/header.css?v=695ab788">
-    <link rel="stylesheet" href="/css/footer.css?v=695ab788">
-    <link rel="stylesheet" href="/css/dashboard.css?v=695ab788">
-    <link rel="stylesheet" href="/css/repaso.css?v=695ab788">
-    <link rel="stylesheet" href="/css/modal.css?v=695ab788">
-    <link rel="stylesheet" href="/css/sidebar.css?v=695ab788">
-    <link rel="stylesheet" href="/css/components.css?v=695ab788">
+    <link rel="stylesheet" href="/css/theme.css?v=1859573d">
+    <link rel="stylesheet" href="/css/base.css?v=1859573d">
+    <link rel="stylesheet" href="/css/header.css?v=1859573d">
+    <link rel="stylesheet" href="/css/footer.css?v=1859573d">
+    <link rel="stylesheet" href="/css/dashboard.css?v=1859573d">
+    <link rel="stylesheet" href="/css/repaso.css?v=1859573d">
+    <link rel="stylesheet" href="/css/modal.css?v=1859573d">
+    <link rel="stylesheet" href="/css/sidebar.css?v=1859573d">
+    <link rel="stylesheet" href="/css/components.css?v=1859573d">
 
     <!-- Rich Text Editor (Mini-Word) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
@@ -241,8 +241,8 @@
                 <div class="form-group">
                     <label class="form-label">Guía de Estudio</label>
                     <input type="hidden" id="new-deck-description">
-                    <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 1rem; margin-top: 0.5rem;">
-                        <p style="font-size: 0.85rem; color: #93c5fd; margin: 0; line-height: 1.5;">
+                    <div style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 12px; padding: 1rem; margin-top: 0.5rem;">
+                        <p style="font-size: 0.85rem; color: #fdba74; margin: 0; line-height: 1.5;">
                             <i class="fas fa-info-circle" style="margin-right: 6px;"></i> 
                             Puedes añadir una <b>Guía de Estudio enriquecida</b> (con tablas, imágenes y formato) en cualquier momento desde el botón "Guía" que aparece al entrar en este mazo.
                         </p>
@@ -561,15 +561,15 @@
                 <!-- SECCIÓN CARGA MASIVA -->
                 <div id="section-card-bulk" class="card-mode-section" style="display: none; padding: 1rem 0;">
                     <div
-                        style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                        <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #60a5fa;"><i
+                        style="background: rgba(249, 115, 22, 0.06); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #f97316;"><i
                                 class="fas fa-info-circle"></i> Instrucciones</h4>
-                        <p style="font-size: 0.8rem; color: #94a3b8; line-height: 1.4;">
+                        <p style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
                             Sube un archivo Excel con las columnas <b>Frente</b> y <b>Dorso</b>.<br>
-                            • Máximo <b>400 caracteres</b> por cara.<br>
-                            • Límite por archivo Excel: <b>50 tarjetas</b>.<br>
-                            • Límite diario: <b>10 archivos Excel por día</b>.<br>
-                            • El audio premium se sintetiza hasta 500 caracteres.
+                            • Hasta <b>1,000 caracteres</b> por cara (máx. <b>500 caracteres</b> si se activa Audio TTS).<br>
+                            • Límite por archivo Excel: <b>100 tarjetas</b>.<br>
+                            • Audio TTS e imágenes: Exclusivos para usuarios <b>Advanced</b>.<br>
+                            • Límite diario: 10 archivos para Advanced / 3 para Basic.
                         </p>
                     </div>
 
@@ -646,7 +646,7 @@
         <div class="modal-content">
             <h2 style="margin-bottom: 1rem;"><i class="fas fa-magic" style="color: #a855f7;"></i> Generar con IA</h2>
             <p style="color: #94a3b8; margin-bottom: 0.5rem;">Escribe un tema o concepto, y la IA creará flashcards
-                atómicas (máx. 400 caracteres) inteligentemente.</p>
+                optimizadas y concisas inteligentemente.</p>
             <p style="color: #64748b; font-size: 0.8rem; margin-bottom: 1.5rem;"><i>Selecciona la cantidad exacta de
                     tarjetas que deseas generar (Máx: 20).</i></p>
 
@@ -713,7 +713,7 @@
         <div class="modal-content" style="max-width: 520px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
                 <h2 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.6rem;">
-                    <i class="fas fa-chart-pie" style="color: #3b82f6;"></i> Estadísticas del Mazo
+                    <i class="fas fa-chart-pie" style="color: #f97316;"></i> Estadísticas del Mazo
                 </h2>
                 <button type="button" class="modal-close-btn" onclick="window.repasoManager.closeStatsModal()">&times;</button>
             </div>
@@ -801,17 +801,17 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=695ab788"></script>
+    <script src="/js/config.js?v=1859573d"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=695ab788"></script>
-    <script src="/js/services/networkService.js?v=695ab788"></script>
-    <script src="/js/services/authApiService.js?v=695ab788"></script>
-    <script src="/js/services/analyticsApiService.js?v=695ab788"></script>
-    <script src="/js/sessionManager.js?v=695ab788"></script>
-    <script src="/js/ui/uiManager.js?v=695ab788"></script>
-    <script src="/js/ui/components.js?v=695ab788"></script>
-    <script src="/js/ui/sidebar.js?v=695ab788"></script>
-    <script src="/js/app.js?v=695ab788"></script>
+    <script src="/js/utils/markdown-renderer.js?v=1859573d"></script>
+    <script src="/js/services/networkService.js?v=1859573d"></script>
+    <script src="/js/services/authApiService.js?v=1859573d"></script>
+    <script src="/js/services/analyticsApiService.js?v=1859573d"></script>
+    <script src="/js/sessionManager.js?v=1859573d"></script>
+    <script src="/js/ui/uiManager.js?v=1859573d"></script>
+    <script src="/js/ui/components.js?v=1859573d"></script>
+    <script src="/js/ui/sidebar.js?v=1859573d"></script>
+    <script src="/js/app.js?v=1859573d"></script>
 
     <!-- Polyfill for Mobile Drag and Drop -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
@@ -826,9 +826,9 @@
         });
     </script>
 
-    <script src="/js/heatmap.js?v=695ab788"></script> <!-- Optional for Stats -->
-    <script src="/js/deck-explorer.js?v=695ab788"></script> <!-- NEW -->
-    <script src="/js/repaso.js?v=695ab788"></script>
+    <script src="/js/heatmap.js?v=1859573d"></script> <!-- Optional for Stats -->
+    <script src="/js/deck-explorer.js?v=1859573d"></script> <!-- NEW -->
+    <script src="/js/repaso.js?v=1859573d"></script>
 </body>
 
 </html>

@@ -16,7 +16,7 @@ const LIMITS = {
         daily_rag_limit: 0,
         monthly_flashcards: 0,
         simulator: 15,
-        batch_import: 0
+        batch_import: 3
     },
     advanced: {
         chat_standard: 100,
