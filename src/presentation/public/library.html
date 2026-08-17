@@ -10,23 +10,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=1859573d">
-    <link rel="stylesheet" href="/css/base.css?v=1859573d">
-    <link rel="stylesheet" href="/css/header.css?v=1859573d">
-    <link rel="stylesheet" href="/css/footer.css?v=1859573d">
-    <link rel="stylesheet" href="/css/dashboard.css?v=1859573d">
-    <link rel="stylesheet" href="/css/components.css?v=1859573d">
-    <link rel="stylesheet" href="/css/modal.css?v=1859573d">
-    <link rel="stylesheet" href="/css/sidebar.css?v=1859573d">
-    <link rel="stylesheet" href="/css/search.css?v=1859573d">
-    <link rel="stylesheet" href="/css/browse.css?v=1859573d">
-    <link rel="stylesheet" href="/css/results.css?v=1859573d">
-    <link rel="stylesheet" href="/css/course.css?v=1859573d">
+    <link rel="stylesheet" href="/css/theme.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/base.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/header.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/footer.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/dashboard.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/components.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/modal.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/sidebar.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/search.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/browse.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/results.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/course.css?v=865cbe41">
 
     <!-- Global scripts -->
-    <script src="/js/config.js?v=1859573d"></script>
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/utils/themeManager.js?v=865cbe41"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=1859573d"></script>
+    <script src="/js/utils/markdown-renderer.js?v=865cbe41"></script>
 
     <style>
         /* =========================================================
@@ -36,9 +37,9 @@
         #library-page-container {
             padding: 1.75rem !important;
             border-radius: 20px !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            background: #0a0a0a !important;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
+            border: 1px solid var(--border-color) !important;
+            background: var(--card-bg) !important;
+            box-shadow: var(--shadow-md) !important;
         }
 
         /* 1. Encabezado "Mi Biblioteca" */
@@ -63,7 +64,7 @@
             display: flex !important;
             align-items: center !important;
             gap: 0.75rem !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-bottom: 1px solid var(--border-color) !important;
             padding-bottom: 0.75rem !important;
             margin-bottom: 1.25rem !important;
             width: 100% !important;
@@ -81,8 +82,8 @@
 
         .library-tab {
             background: transparent !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            color: var(--text-muted) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-secondary) !important;
             padding: 0.65rem 0.5rem !important;
             border-radius: 12px !important;
             font-size: 0.9rem !important;
@@ -106,15 +107,15 @@
         }
 
         .library-tab:hover {
-            background: rgba(255, 255, 255, 0.04) !important;
+            background: var(--surface-hover) !important;
             color: var(--text-main) !important;
-            border-color: rgba(255, 255, 255, 0.15) !important;
+            border-color: var(--border-hover) !important;
         }
 
         .library-tab.active {
-            background: transparent !important;
-            color: #60a5fa !important;
-            border: 1.5px solid #3b82f6 !important;
+            background: rgba(59, 130, 246, 0.1) !important;
+            color: var(--primary) !important;
+            border: 1.5px solid var(--primary) !important;
             box-shadow: none !important;
         }
 
@@ -145,23 +146,23 @@
         }
 
         #panel-resources .search-box {
-            background: rgba(18, 18, 18, 0.8) !important;
+            background: var(--input-bg) !important;
             padding: 0.4rem 0.5rem 0.4rem 1.25rem !important;
             border-radius: 14px !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid var(--border-color) !important;
             display: flex !important;
             align-items: center !important;
             gap: 0.75rem !important;
             height: 48px !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+            box-shadow: var(--shadow-sm) !important;
             backdrop-filter: blur(12px) !important;
             box-sizing: border-box !important;
-            transition: border-color 0.2s !important;
+            transition: border-color 0.2s, box-shadow 0.2s !important;
         }
 
         #panel-resources .search-box:focus-within {
-            border-color: rgba(59, 130, 246, 0.4) !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px var(--primary-glow) !important;
         }
 
         #panel-resources .search-box input {
@@ -420,9 +421,9 @@
 
         .note-card {
             position: relative;
-            background: rgba(18, 18, 18, 0.65) !important;
+            background: var(--card-bg) !important;
             backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+            border: 1px solid var(--border-color) !important;
             border-radius: 16px !important;
             padding: 1.25rem !important;
             display: flex !important;
@@ -435,13 +436,14 @@
             overflow: hidden !important;
             margin-bottom: 0 !important;
             text-align: left !important;
+            box-shadow: var(--shadow-sm) !important;
         }
 
         .note-card:hover {
             transform: translateY(-5px) !important;
-            background: rgba(24, 24, 24, 0.85) !important;
+            background: var(--surface-hover) !important;
             border-color: var(--note-color, #3b82f6) !important;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 255, 255, 0.03) !important;
+            box-shadow: var(--shadow-md) !important;
         }
 
         .note-card-accent {
@@ -473,9 +475,9 @@
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(10, 10, 10, 0.85);
-            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -486,7 +488,7 @@
 
         .note-card-action-btn:hover {
             color: var(--text-main);
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--surface-hover);
             transform: scale(1.1);
         }
 
@@ -517,7 +519,7 @@
 
         .note-card-preview {
             font-size: 0.825rem;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             line-height: 1.5;
             margin: 0;
             display: -webkit-box;
@@ -534,7 +536,7 @@
             align-items: center;
             margin-top: 12px;
             font-size: 0.7rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid var(--border-color);
             padding-top: 8px;
         }
 
@@ -548,16 +550,16 @@
         }
 
         .note-card-date {
-            color: var(--text-muted);
+            color: var(--text-secondary);
             opacity: 0.7;
         }
 
         /* Botón para añadir notas en grilla */
         #panel-notes .library-add-note-btn {
             height: 210px !important;
-            background: rgba(255, 255, 255, 0.01) !important;
-            border: 2px dashed rgba(255, 255, 255, 0.08) !important;
-            color: var(--text-muted) !important;
+            background: var(--bg-tertiary) !important;
+            border: 2px dashed var(--border-color) !important;
+            color: var(--text-secondary) !important;
             border-radius: 16px !important;
             display: flex !important;
             flex-direction: column !important;
@@ -565,24 +567,23 @@
             justify-content: center !important;
             gap: 12px !important;
             cursor: pointer !important;
-            transition: all 0.3s ease !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
             margin-bottom: 0 !important;
-            padding: 1.5rem !important;
-            box-sizing: border-box !important;
+            box-shadow: var(--shadow-sm) !important;
+        }
+
+        #panel-notes .library-add-note-btn:hover {
+            background: var(--surface-hover) !important;
+            border-color: var(--primary) !important;
+            color: var(--primary) !important;
+            transform: translateY(-5px) !important;
+            box-shadow: var(--shadow-md) !important;
         }
 
         #panel-notes .library-add-note-btn i {
             font-size: 1.8rem !important;
             color: var(--primary) !important;
             transition: transform 0.25s ease !important;
-        }
-
-        #panel-notes .library-add-note-btn:hover {
-            background: rgba(59, 130, 246, 0.04) !important;
-            border-color: var(--primary) !important;
-            color: var(--text-main) !important;
-            transform: translateY(-5px) !important;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4) !important;
         }
 
         #panel-notes .library-add-note-btn:hover i {
@@ -692,7 +693,7 @@
     <!-- Main Container -->
     <div class="dashboard-container" style="max-width: 1200px; margin: 0 auto; padding: 1.25rem 1.5rem;">
         <!-- Dedicated Library Page Container -->
-        <div id="library-page-container" class="glass-card" style="padding: 1.25rem 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(20px);">
+        <div id="library-page-container" class="glass-card">
             <div class="library-tabs guest-mode">
                 <button class="library-tab active" data-tab="resources" onclick="window.libraryUI.switchTab('resources')">Biblioteca de Recursos</button>
                 <button class="library-tab hidden" data-tab="saved" id="tab-btn-saved" onclick="window.libraryUI.switchTab('saved')" style="display: none !important;">Guardados</button>
@@ -785,21 +786,21 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=1859573d"></script>
-    <script src="/js/services/networkService.js?v=1859573d"></script>
-    <script src="/js/services/authApiService.js?v=1859573d"></script>
-    <script src="/js/services/analyticsApiService.js?v=1859573d"></script>
-    <script src="/js/sessionManager.js?v=1859573d"></script>
-    <script src="/js/ui/uiManager.js?v=1859573d"></script>
-    <script src="/js/ui/components.js?v=1859573d"></script>
-    <script src="/js/ui/confirmationModal.js?v=1859573d"></script>
-    <script src="/js/services/searchService.js?v=1859573d"></script>
-    <script type="module" src="/js/search.js?v=1859573d"></script>
-    <script src="/js/services/libraryService.js?v=1859573d"></script>
-    <script src="/js/ui/libraryUI.js?v=1859573d"></script>
-    <script src="/js/ui/sidebar.js?v=1859573d"></script>
-    <script src="/js/security.js?v=1859573d"></script>
-    <script src="/js/app.js?v=1859573d"></script>
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/services/networkService.js?v=865cbe41"></script>
+    <script src="/js/services/authApiService.js?v=865cbe41"></script>
+    <script src="/js/services/analyticsApiService.js?v=865cbe41"></script>
+    <script src="/js/sessionManager.js?v=865cbe41"></script>
+    <script src="/js/ui/uiManager.js?v=865cbe41"></script>
+    <script src="/js/ui/components.js?v=865cbe41"></script>
+    <script src="/js/ui/confirmationModal.js?v=865cbe41"></script>
+    <script src="/js/services/searchService.js?v=865cbe41"></script>
+    <script type="module" src="/js/search.js?v=865cbe41"></script>
+    <script src="/js/services/libraryService.js?v=865cbe41"></script>
+    <script src="/js/ui/libraryUI.js?v=865cbe41"></script>
+    <script src="/js/ui/sidebar.js?v=865cbe41"></script>
+    <script src="/js/security.js?v=865cbe41"></script>
+    <script src="/js/app.js?v=865cbe41"></script>
 </body>
 
 </html>

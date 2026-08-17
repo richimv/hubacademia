@@ -645,7 +645,7 @@ class LibraryUI {
             document.getElementById('note-editor-textarea').value = note.content;
             this._renderColorOptions(note.color || '');
             viewer.innerHTML = `
-                <h3 class="note-viewer-title" style="margin-top: 0; margin-bottom: 1rem; color: var(--primary-light); font-size: 1.3rem; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem; text-align: left;">${window.escapeHtml(note.title || 'Sin título')}</h3>
+                <h3 class="note-viewer-title" style="margin-top: 0; margin-bottom: 1rem; color: var(--text-main); font-size: 1.3rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; text-align: left;">${window.escapeHtml(note.title || 'Sin título')}</h3>
                 <div class="markdown-content">${this._renderMarkdown(note.content)}</div>
             `;
             

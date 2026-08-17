@@ -134,9 +134,9 @@ class TutorAiService {
         let lastError = null;
 
         const candidateModels = [
-            'gemini-2.5-flash-lite',
             'gemini-3.1-flash-lite',
             'gemini-2.5-flash',
+            'gemini-2.5-flash-lite',
             'gemini-1.5-flash'
         ];
 
@@ -354,7 +354,7 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             // 5. Generación de respuesta resiliente con reintentos y multicanal
             const rawText = await this._callModelResilient(contents, systemPrompt);
 
-            // 6. Parsear la respuesta JSON de forma ultra-resiliente
+            // 6. Parsear la respuesta JSON de forma ultra-resiliente y purgar contaminación de JSON
             let parsed;
             try {
                 parsed = JSON.parse(rawText);
@@ -376,26 +376,19 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
                         try {
                             parsed = JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
                         } catch (e3) {
-                            parsed = { intencion: 'respuesta_general', respuesta: rawText, sugerencias: [], idioma_detectado: 'es' };
+                            parsed = { intencion: 'respuesta_general', respuesta: this._cleanResponseText(rawText), sugerencias: [], idioma_detectado: 'es' };
                         }
                     } else {
-                        parsed = { intencion: 'respuesta_general', respuesta: rawText, sugerencias: [], idioma_detectado: 'es' };
+                        parsed = { intencion: 'respuesta_general', respuesta: this._cleanResponseText(rawText), sugerencias: [], idioma_detectado: 'es' };
                     }
                 }
             }
 
-            // Normalizar secuencias literales de escape si llegaron como texto crudo
-            if (parsed && typeof parsed.respuesta === 'string') {
-                if (parsed.respuesta.includes('\\n') && !parsed.respuesta.includes('\n')) {
-                    parsed.respuesta = parsed.respuesta.replace(/\\n/g, '\n');
-                }
-                if (parsed.respuesta.includes('\\"')) {
-                    parsed.respuesta = parsed.respuesta.replace(/\\"/g, '"');
-                }
-            }
+            // Sanitización profunda: limpiar y formatear la propiedad respuesta
+            const sanitizedRespuesta = this._cleanResponseText(parsed?.respuesta || rawText);
 
             // 6. Log de la respuesta (Debug Visual)
-            if (parsed.respuesta && parsed.respuesta.includes('![')) {
+            if (sanitizedRespuesta && sanitizedRespuesta.includes('![')) {
                 console.log('✅ [TutorAiService] IA insertó imagen en la respuesta.');
             } else {
                 console.warn('⚠️ [TutorAiService] IA NO insertó ninguna imagen del catálogo.');
@@ -408,10 +401,10 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             };
 
             return {
-                intencion: parsed.intencion || `consulta_${specialization}`,
-                respuesta: parsed.respuesta || rawText,
-                sugerencias: parsed.sugerencias || [],
-                idioma_detectado: parsed.idioma_detectado || 'es',
+                intencion: parsed?.intencion || `consulta_${specialization}`,
+                respuesta: sanitizedRespuesta,
+                sugerencias: Array.isArray(parsed?.sugerencias) ? parsed.sugerencias : [],
+                idioma_detectado: parsed?.idioma_detectado || 'es',
                 confianza: 0.9,
                 contextUsed: !!context,
                 sources: context ? (sourcesMap[specialization] || "Biblioteca Especializada") : "Conocimiento General"
@@ -421,6 +414,57 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             console.error('❌ Error en TutorAiService:', error.message);
             throw error;
         }
+    }
+
+    /**
+     * Sanitiza el texto de respuesta final para evitar cualquier contaminación de JSON,
+     * llaves/corchetes residuales o escapes literales de saltos de línea.
+     */
+    _cleanResponseText(text) {
+        if (!text || typeof text !== 'string') return '';
+        let cleaned = text.trim();
+
+        // 1. Si el texto viene con bloques de código json
+        const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+        if (codeBlockMatch && codeBlockMatch[1]) {
+            try {
+                const parsed = JSON.parse(codeBlockMatch[1]);
+                if (parsed && parsed.respuesta) {
+                    cleaned = parsed.respuesta;
+                }
+            } catch (e) {}
+        }
+
+        // 2. Si el texto sigue siendo un string JSON
+        if (cleaned.startsWith('{') && (cleaned.includes('"respuesta"') || cleaned.includes('"intencion"'))) {
+            try {
+                const parsed = JSON.parse(cleaned);
+                if (parsed && parsed.respuesta) {
+                    cleaned = parsed.respuesta;
+                }
+            } catch (e) {
+                const match = cleaned.match(/"respuesta"\s*:\s*"((?:\\.|[^"\\])*)"/);
+                if (match && match[1]) {
+                    cleaned = match[1];
+                }
+            }
+        }
+
+        // 3. Normalizar saltos de línea y comillas escapadas
+        cleaned = cleaned
+            .replace(/\\r\\n/g, '\n')
+            .replace(/\\n/g, '\n')
+            .replace(/\\t/g, ' ')
+            .replace(/\\"/g, '"');
+
+        // 4. Limpiar fragmentos residuales de JSON al inicio o final
+        cleaned = cleaned
+            .replace(/^\s*\{\s*"respuesta"\s*:\s*"/i, '')
+            .replace(/^\s*\{\s*"intencion"\s*:\s*"[^"]*",\s*"respuesta"\s*:\s*"/i, '')
+            .replace(/"\s*,\s*"sugerencias"[\s\S]*\}\s*$/i, '')
+            .replace(/"\s*\}\s*$/i, '');
+
+        return cleaned.trim();
     }
 
 

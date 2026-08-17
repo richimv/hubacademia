@@ -1,7 +1,7 @@
 /* Estilos Específicos para el Quiz */
 :root {
     --quiz-bg: var(--bg-main);
-    --quiz-container-bg: rgba(10, 10, 10, 0.85);
+    --quiz-container-bg: var(--card-bg);
     --quiz-border: var(--border-color);
     --quiz-text: var(--text-main);
     --quiz-text-secondary: var(--text-secondary);
@@ -30,7 +30,7 @@ body.quiz-body {
     border: 1px solid var(--quiz-border); /* More subtle border */
     border-radius: 20px; /* Slightly less rounded */
     padding: 2.5rem 3.5rem; /* More generous padding */
-    box-shadow: var(--shadow-xl), inset 0 1px 0 rgba(255,255,255,0.05); /* Deeper shadow */
+    box-shadow: var(--shadow-xl); /* Deeper shadow */
     position: relative;
     overflow: hidden;
 }
@@ -39,7 +39,7 @@ body.quiz-body {
 .loading-overlay {
     position: fixed; /* Asegura cobertura total */
     inset: 0;
-    background: rgba(10, 10, 10, 0.4); /* Transparencia para efecto Glass */
+    background: var(--modal-overlay-bg); /* Transparencia para efecto Glass */
     backdrop-filter: blur(15px) saturate(180%);
     display: flex;
     align-items: center;
@@ -55,14 +55,14 @@ body.quiz-body {
 }
 
 .glass-loader {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     padding: 3rem;
     border-radius: 24px;
     text-align: center;
     max-width: 450px;
     width: 90%;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-xl);
 }
 
 .loader-pulse {
@@ -106,16 +106,16 @@ body.quiz-body {
 }
 
 .timer-badge {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
+    background: var(--danger-bg);
+    color: var(--danger);
     padding: 0.5rem 1.2rem;
     border-radius: 999px;
     font-weight: 700;
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+    border: 1px solid var(--danger-border);
+    box-shadow: 0 4px 15px var(--danger-bg);
 }
 
 .question-text {
@@ -158,11 +158,11 @@ body.quiz-body {
     -webkit-overflow-scrolling: touch;
     margin: 1.5rem 0;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: #0a0a0a;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    scrollbar-color: var(--border-color) transparent;
 }
 
 .table-wrapper::-webkit-scrollbar {
@@ -172,11 +172,11 @@ body.quiz-body {
     background: transparent;
 }
 .table-wrapper::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--border-color);
     border-radius: 3px;
 }
 .table-wrapper::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--border-hover);
 }
 
 .question-text table, .review-q-text table, .review-explanation table, #explanationText table {
@@ -185,7 +185,7 @@ body.quiz-body {
     border-collapse: collapse;
     margin: 0;
     background: transparent;
-    color: #cbd5e1;
+    color: var(--text-secondary);
     border: none;
     table-layout: auto; 
 }
@@ -198,17 +198,17 @@ body.quiz-body {
     text-align: left;
     font-size: 1.05rem;
     border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--table-border);
 }
 
 .question-text th, .review-q-text th, .review-explanation th, #explanationText th {
-    background: rgba(59, 130, 246, 0.06);
-    color: #60a5fa;
+    background: var(--table-header-bg);
+    color: var(--primary);
     font-weight: 700;
     font-size: 0.88rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+    border-bottom: 1px solid var(--primary-glow);
 }
 
 .question-text tr:last-child td, .review-q-text tr:last-child td,
@@ -218,13 +218,13 @@ body.quiz-body {
 
 .question-text tr:nth-child(even), .review-q-text tr:nth-child(even),
 .review-explanation tr:nth-child(even), #explanationText tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.01);
+    background: var(--table-row-hover);
 }
 
 .question-text tr:hover, .review-q-text tr:hover,
 .review-explanation tr:hover, #explanationText tr:hover {
-    background: rgba(59, 130, 246, 0.02);
-    color: #f8fafc;
+    background: var(--table-row-hover);
+    color: var(--text-main);
 }
 
 /* Ajuste de párrafos dentro del texto de pregunta y explicaciones */
@@ -239,7 +239,7 @@ body.quiz-body {
 /* 🎭 ESTILOS PARA DIÁLOGOS Y ETIQUETAS */
 .question-text strong, #explanationText strong, 
 .review-q-text strong, .review-explanation strong {
-    color: #fbbf24; /* Dorado para resaltar roles en diálogos */
+    color: var(--warning); /* Dorado para resaltar roles en diálogos */
     font-weight: 700;
 }
 
@@ -338,7 +338,7 @@ body.quiz-body {
     max-width: 100%;
     max-height: 350px;
     border-radius: 8px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-md);
     object-fit: contain;
 }
 
@@ -373,8 +373,8 @@ body.quiz-body {
 }
 
 .option-btn {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     padding: 1.25rem 1.5rem;
     border-radius: 18px;
     color: var(--quiz-text-secondary); /* Brighter/clearer text */
@@ -387,11 +387,12 @@ body.quiz-body {
     align-items: center;
     gap: 1.5rem;
     font-family: var(--font-main);
+    box-shadow: var(--shadow-sm);
 }
 
 .option-letter {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     width: 42px;
     height: 42px;
@@ -411,14 +412,16 @@ body.quiz-body {
 }
 
 .option-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
     color: var(--quiz-text);
     transform: translateX(8px);
+    box-shadow: var(--shadow-md);
 }
 
 .option-btn:hover:not(:disabled) .option-letter {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
     color: var(--quiz-text);
 }
 
@@ -648,7 +651,7 @@ body.quiz-body {
 
 .review-container {
     margin-top: 2rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--border-color);
     padding-top: 2rem;
     animation: fadeIn 0.5s ease;
 }
@@ -683,14 +686,14 @@ body.quiz-body {
 
 /* Post-Exam Review Cards */
 .review-card {
-    background: rgba(10, 10, 10, 0.5); /* Lighter, cleaner */
-    border: 1px solid var(--quiz-border); /* Very subtle border */
-    padding: 1.25rem;
-    border-radius: 12px; /* Sharper */
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    border-radius: 16px;
     text-align: left;
     position: relative;
     overflow: hidden;
-    box-shadow: none; /* Flat design - no 3D shadow */
+    box-shadow: var(--shadow-sm);
     backdrop-filter: blur(10px);
 }
 
@@ -720,20 +723,20 @@ body.quiz-body {
 
 .review-q-text {
     font-size: 1.4rem; /* Proportional, slightly below active question (1.5rem) */
-    color: var(--quiz-text);
+    color: var(--text-main);
     margin-bottom: 1.25rem;
     line-height: 1.6;
-    font-weight: 600;
+    font-weight: 700;
     font-family: var(--font-main);
 }
 
 .review-opt {
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
-    margin-bottom: 0.5rem;
-    border: 1px solid var(--quiz-border);
-    color: var(--quiz-text-secondary);
+    padding: 0.85rem 1.2rem;
+    border-radius: 12px;
+    background: var(--bg-tertiary);
+    margin-bottom: 0.6rem;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
     font-size: 1.2rem; /* Increased size, slightly below review question (1.4rem) */
     transition: all 0.2s;
     display: flex;
@@ -743,26 +746,26 @@ body.quiz-body {
 }
 
 .r-correct {
-    background: rgba(59, 130, 246, 0.08);
-    border-color: rgba(59, 130, 246, 0.4);
-    color: var(--quiz-text);
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: var(--text-main);
 }
-.r-correct strong { color: #60a5fa; }
+.r-correct strong { color: var(--primary); }
 
 .r-wrong {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.4);
-    color: var(--quiz-text-secondary);
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: var(--text-secondary);
 }
-.r-wrong strong { color: #f87171; text-decoration: line-through; }
+.r-wrong strong { color: var(--danger); text-decoration: line-through; }
 
 .review-explanation {
     margin-top: 1.25rem;
-    padding: 1rem;
-    background: rgba(59, 130, 246, 0.05); /* Faint blue */
-    border: 1px solid rgba(59, 130, 246, 0.1); /* Very subtle border */
-    border-radius: 8px; /* Sharp corners */
-    color: var(--quiz-text-secondary); /* Brighter/clearer explanation text */
+    padding: 1.25rem;
+    background: var(--surface-hover); /* Faint blue */
+    border: 1px solid var(--border-color); /* Very subtle border */
+    border-radius: 12px; /* Sharp corners */
+    color: var(--text-secondary); /* Brighter/clearer explanation text */
     font-size: 1.35rem !important; /* Matches review question text size without exceeding it */
     line-height: 1.6;
     font-family: var(--font-main);
@@ -770,6 +773,7 @@ body.quiz-body {
 
 .review-explanation p {
     font-size: 1.35rem !important;
+    color: var(--text-secondary);
 }
 
 @keyframes fadeIn {
@@ -806,21 +810,21 @@ body.quiz-body {
 }
 
 .btn-secondary {
-    background: rgba(255, 255, 255, 0.05);
-    color: #cbd5e1;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-tertiary);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
     padding: 0.75rem 1.5rem;
     border-radius: 12px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     backdrop-filter: blur(10px);
 }
 
 .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--surface-hover);
+    color: var(--text-main);
+    border-color: var(--border-hover);
 }
 
 .btn-back-pulse {
@@ -830,9 +834,9 @@ body.quiz-body {
     width: 44px;
     height: 44px;
     border-radius: 12px;
-    background: rgba(31, 31, 31, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #f8fafc;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1225,14 +1229,14 @@ body.quiz-body {
 
 /* ⚪ Neutral Selected Option for Real Mock (100qs) */
 .option-btn.neutral-selected {
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.12) !important;
+    border-color: var(--primary) !important;
+    background: var(--primary-glow) !important;
+    color: var(--text-main) !important;
+    box-shadow: 0 0 16px var(--primary-glow) !important;
 }
 
 .option-btn.neutral-selected .option-letter {
-    background: rgba(255, 255, 255, 0.18) !important;
-    border-color: rgba(255, 255, 255, 0.25) !important;
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
     color: #ffffff !important;
 }

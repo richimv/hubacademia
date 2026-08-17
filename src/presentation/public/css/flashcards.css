@@ -69,15 +69,16 @@ body {
    EMPTY STATE — Pantalla "Todo al dia"
    ========================================================================== */
 .empty-content {
-    background: #0f0f0f;
-    border: 1px solid #222;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     padding: 4rem 3rem;
     border-radius: 24px;
     text-align: center;
     max-width: 550px;
     margin: 0 auto;
     width: 95%;
-    box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+    box-shadow: var(--shadow-xl);
+    color: var(--text-main);
 }
 
 /* Contenedor de botones de accion */
@@ -88,7 +89,7 @@ body {
     margin-top: 3rem;
 }
 
-/* Botones gemelos dark */
+/* Botones gemelos dark/light */
 .btn-action {
     padding: 1.1rem 2.2rem;
     border-radius: 14px;
@@ -99,21 +100,23 @@ body {
     justify-content: center;
     gap: 12px;
     transition: all 0.3s ease;
-    border: 1px solid #333;
+    border: 1px solid var(--border-color);
     cursor: pointer;
-    background: #1a1a1a;
-    color: #fff;
+    background: var(--bg-tertiary);
+    color: var(--text-main);
     font-size: 1rem;
     min-width: 200px;
 }
 .btn-action.btn-primary {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+    background: var(--primary);
+    color: white !important;
+    border-color: var(--primary);
+    box-shadow: 0 0 15px var(--primary-glow);
 }
 .btn-action:hover {
     transform: translateY(-3px);
-    background: #222;
-    border-color: #444;
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
 }
 
 /* ==========================================================================
@@ -131,12 +134,7 @@ body {
     margin-bottom: 2rem;
     position: relative;
     border-radius: 24px;
-    /* Stacked deck card shadow effect */
-    box-shadow: 
-        0 4px 0 -2px rgba(255, 255, 255, 0.04),
-        0 8px 0 -4px rgba(255, 255, 255, 0.04),
-        0 12px 0 -6px rgba(255, 255, 255, 0.03),
-        0 20px 40px rgba(0, 0, 0, 0.65);
+    box-shadow: var(--shadow-xl);
 }
 
 .card {
@@ -159,39 +157,37 @@ body {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     border-radius: 24px;
-    background: linear-gradient(135deg, rgba(20, 20, 25, 0.8), rgba(10, 10, 12, 0.95));
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
     /* Flexbox columna: badge | contenido | hint */
     display: flex;
     flex-direction: column;
-    padding: 1rem 1.5rem 0.5rem 1.5rem; /* ✅ MÁXIMO ESPACIO: Top 1rem, Bottom 0.5rem */
+    padding: 1.25rem 1.75rem 0.75rem 1.75rem;
     overflow: hidden;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 .fc-card-face--back { transform: rotateY(180deg); }
 
 /* --- Fila 1: Badge (altura fija, nunca se comprime) --- */
 .fc-badge-container {
-    height: 40px; /* Reducido de 55px */
+    height: 40px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .fc-badge {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-tertiary);
     padding: 6px 16px;
     border-radius: 50px;
-    border: 1px solid #333;
+    border: 1px solid var(--border-color);
     font-size: 0.75rem;
     font-weight: 800;
     text-transform: uppercase;
     color: var(--text-secondary);
     
-    /* ✅ MEJORA: Truncar nombres largos */
+    /* Truncar nombres largos */
     max-width: 280px;
     white-space: nowrap;
     overflow: hidden;
@@ -206,20 +202,19 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* justify-content: center; // Eliminado para evitar cortes en overflow */
     overflow: hidden;    
     width: 100%;
 }
 
 /* --- Fila 3: Hint (altura fija, nunca se comprime) --- */
 .fc-hint-container {
-    height: 30px; /* Reducido de 40px */
+    height: 30px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-.tap-hint { font-size: 0.8rem; color: #444; font-weight: 600; }
+.tap-hint { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
 
 /* ==========================================================================
    IMAGE CONTAINER
@@ -260,12 +255,13 @@ body {
     flex: 1;
     flex-shrink: 1;
     overflow-y: auto;
-    white-space: normal; /* ✅ Normal para que el HTML de Markdown se renderice fluidamente */
+    white-space: normal;
     font-weight: 600;
     text-align: center;
     font-size: 1.5rem;
+    color: var(--text-main) !important;
     scrollbar-width: thin;
-    scrollbar-color: rgba(249, 115, 22, 0.3) transparent;
+    scrollbar-color: var(--primary-glow) transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -274,7 +270,7 @@ body {
     box-sizing: border-box;
 }
 
-/* ✅ TRUCO MAESTRO: Centrado que no rompe el scroll superior */
+/* Centrado que no rompe el scroll superior */
 .content-text::before,
 .content-text::after {
     content: '';
@@ -283,7 +279,8 @@ body {
 
 .content-text > div, .content-text > p {
     width: 100%;
-    z-index: 1; /* Asegurar que el contenido esté sobre los pseudos */
+    z-index: 1;
+    color: var(--text-main) !important;
 }
 
 .content-text p {
@@ -291,13 +288,14 @@ body {
     line-height: 1.45;
     width: 100%;
     z-index: 1;
+    color: var(--text-main) !important;
 }
 
 .content-text p:last-child {
     margin-bottom: 0;
 }
 
-/* ✅ SOPORTE PERFECTO PARA LISTAS Y ENUMERACIONES (1., 2., viñetas) EN FLASHCARDS */
+/* Listas y enumeraciones en flashcards */
 .content-text ol,
 .content-text ul {
     text-align: left !important;
@@ -323,11 +321,11 @@ body {
     margin-bottom: 0.45rem;
     line-height: 1.45;
     text-align: left !important;
-    color: #f1f5f9;
+    color: var(--text-main) !important;
 }
 
 .content-text li::marker {
-    color: #f97316 !important;
+    color: var(--primary) !important;
     font-weight: 700;
 }
 
@@ -452,8 +450,8 @@ body {
 }
 
 .fc-stats-badge {
-    background: #111;
-    border: 1px solid #333;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     padding: 8px 16px;
     border-radius: 12px;
     display: flex;
@@ -462,7 +460,7 @@ body {
 }
 .fc-stats-badge .label {
     font-size: 0.7rem;
-    color: #666;
+    color: var(--text-muted);
     font-weight: 800;
     text-transform: uppercase;
 }
@@ -485,21 +483,21 @@ body {
     font-size: 1rem;
     padding: 8px 0;
 }
-.back-nav:hover { color: white; transform: translateX(-3px); }
+.back-nav:hover { color: var(--text-main); transform: translateX(-3px); }
 
 @media (max-width: 768px) { 
     .study-header { padding: 1rem 0; margin-bottom: 0.5rem; }
-    .nav-text { display: none; } /* Ocultar texto en movil para ganar espacio */
+    .nav-text { display: none; }
     .back-nav { font-size: 1.2rem; }
 }
 
 /* ==========================================================================
-   CONTROLS — Botones de dificultad
+   CONTROLS — Botones de dificultad FSRS
    ========================================================================== */
 .controls {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    gap: 1.25rem;
     width: 100%;
     max-width: 850px;
     opacity: 0;
@@ -510,16 +508,15 @@ body {
 .controls.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
 
 .control-btn {
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1.5px solid var(--border-color);
     padding: 1.2rem 0.5rem;
-    border-radius: 16px;
-    color: #f8fafc;
+    border-radius: 18px;
+    color: var(--text-main);
     font-weight: 800;
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.015);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -527,50 +524,54 @@ body {
 }
 .control-btn:hover { 
     transform: translateY(-4px); 
-    background: rgba(255, 255, 255, 0.04);
+    box-shadow: var(--shadow-lg);
 }
 
 .btn-again { 
     color: #ef4444; 
-    border-color: rgba(239, 68, 68, 0.15); 
+    border-color: rgba(239, 68, 68, 0.25); 
 }
 .btn-again:hover {
-    border-color: rgba(239, 68, 68, 0.4);
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
-    color: #f87171;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.25);
+    color: #ef4444;
 }
 
 .btn-hard { 
-    color: #f97316; 
-    border-color: rgba(249, 115, 22, 0.15); 
+    color: #ea580c; 
+    border-color: rgba(234, 88, 12, 0.25); 
 }
 .btn-hard:hover {
-    border-color: rgba(249, 115, 22, 0.4);
-    box-shadow: 0 0 15px rgba(249, 115, 22, 0.15);
-    color: #fb923c;
+    border-color: #ea580c;
+    background: rgba(234, 88, 12, 0.08);
+    box-shadow: 0 4px 18px rgba(234, 88, 12, 0.25);
+    color: #ea580c;
 }
 
 .btn-good { 
-    color: #3b82f6; 
-    border-color: rgba(59, 130, 246, 0.15); 
+    color: #2563eb; 
+    border-color: rgba(37, 99, 235, 0.25); 
 }
 .btn-good:hover {
-    border-color: rgba(59, 130, 246, 0.4);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, 0.08);
+    box-shadow: 0 4px 18px rgba(37, 99, 235, 0.25);
+    color: #2563eb;
 }
 
 .btn-easy { 
-    color: #10b981; 
-    border-color: rgba(16, 185, 129, 0.15); 
+    color: #059669; 
+    border-color: rgba(5, 150, 105, 0.25); 
 }
 .btn-easy:hover {
-    border-color: rgba(16, 185, 129, 0.4);
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
-    color: #34d399;
+    border-color: #059669;
+    background: rgba(5, 150, 105, 0.08);
+    box-shadow: 0 4px 18px rgba(5, 150, 105, 0.25);
+    color: #059669;
 }
 
-.sub-label { font-size: 0.65rem; opacity: 0.6; font-weight: 400; }
+.sub-label { font-size: 0.72rem; color: var(--text-muted); opacity: 0.9; font-weight: 600; }
 
 /* ✅ BOTÓN DE AUDIO PREMIUM (Glassmorphism - Flotante Inferior Derecha) */
 .fc-audio-btn {

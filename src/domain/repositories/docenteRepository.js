@@ -32,7 +32,8 @@ class DocenteRepository {
             paramIdx++;
         }
 
-        if (difficulty) {
+        const isMixtoDifficulty = !difficulty || ['MIXTO', 'TODOS', 'ALL', 'MIXED', 'DEFAULT', 'GENERAL'].includes(String(difficulty).toUpperCase().trim());
+        if (!isMixtoDifficulty) {
             whereClauses += ` AND difficulty = $${paramIdx} `;
             params.push(difficulty);
             paramIdx++;
@@ -114,7 +115,8 @@ class DocenteRepository {
             paramIdx++;
         }
 
-        if (difficulty) {
+        const isMixtoDifficulty = !difficulty || ['MIXTO', 'TODOS', 'ALL', 'MIXED', 'DEFAULT', 'GENERAL'].includes(String(difficulty).toUpperCase().trim());
+        if (!isMixtoDifficulty) {
             query += ` AND difficulty = $${paramIdx} `;
             params.push(difficulty);
             paramIdx++;
@@ -206,12 +208,15 @@ class DocenteRepository {
             RETURNING id;
         `;
         const totalQ = quizData.totalQuestions || quizData.total_questions || (quizData.questions ? quizData.questions.length : 10);
-        const weakPoints = quizData.score < totalQ ? [quizData.topic] : [];
+        const scoreInt = Math.round(Number(quizData.score) || 0);
+        const finalTopic = quizData.topic || 'Multi-Área';
+        const weakPoints = scoreInt < totalQ ? [finalTopic] : [];
+        const finalDifficulty = (quizData.difficulty && quizData.difficulty !== 'MIXTO') ? quizData.difficulty : 'Senior';
         const values = [
             userId,
-            quizData.topic,
-            quizData.difficulty || 'Senior',
-            quizData.score,
+            finalTopic,
+            finalDifficulty,
+            scoreInt,
             totalQ,
             weakPoints,
             quizData.areaStats || '{}',

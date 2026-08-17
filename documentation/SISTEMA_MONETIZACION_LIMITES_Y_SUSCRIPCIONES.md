@@ -46,10 +46,10 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
     *   Resetea todos los consumos a cero (`0`).
     *   Actualiza la fecha de caducidad en formato UTC: `subscription_expires_at = NOW() + INTERVAL '4 months'` (ó 2 meses).
 
-### Fase 2.3.1: Pago Manual vía Yape/Plin (Alternativa WhatsApp)
-*   **Interfaz pricing.html**: Ofrece un banner destacado que abre un modal con el código QR de Yape real cargado de forma local (`/assets/yape-qr.jpeg`), asociado a la cuenta de **Ricardo M.** y al número celular oficial **+51 980844817** (HubAcademia).
+### Fase 2.3.1: Pago Manual vía Yape/Plin (Contacto Oficial WhatsApp)
+*   **Interfaz pricing.html y Apps Móviles**: Ofrece un banner destacado que abre un modal con el canal de atención oficial de WhatsApp asociado al número **+51 993 869166** (Hub Academia). No se expone ningún número para transferencias directas ni código QR estático; en su lugar, se guía al usuario a contactar por WhatsApp para recibir las instrucciones personalizadas de pago y activar su cuenta al instante.
 *   **Pestañas de Planes**: Permite seleccionar dinámicamente el plan básico (S/ 9.90 por 2 meses) o el plan avanzado (S/ 24.90 por 4 meses) y actualiza automáticamente los montos e instrucciones en tiempo real.
-*   **Redirección Dinámica**: Mediante `pricing.js` y el `SessionManager`, se captura el email registrado del usuario para pre-llenar un mensaje de WhatsApp personalizado al hacer clic en "Enviar Comprobante por WhatsApp".
+*   **Redirección Dinámica**: Mediante `pricing.js` / `pricing.tsx` y el gestor de sesión, se captura el email registrado del usuario para pre-llenar un mensaje de WhatsApp personalizado al hacer clic en "Contactar por WhatsApp (+51 993 869166)".
 *   **Activación y Consistencia Interactiva en el Panel de Gestión (`admin.js`)**: El administrador puede editar el registro de cualquier estudiante desde el Panel de Gestión. El sistema automatiza y restringe los valores en el cliente en tiempo real:
 *   Si selecciona `basic`, el estado cambia a `active` y se calcula la fecha actual + 2 meses.
 *   Si selecciona `advanced`, el estado cambia a `active` y se calcula la fecha actual + 4 meses.
@@ -129,23 +129,33 @@ Para evitar duplicar constantes en el frontend y backend:
 
 ---
 
-## 🖥️ 6. UI/UX del Sistema de Suscripciones y Precios
+## 🖥️ 6. UI/UX del Sistema de Suscripciones y Precios (Web y Móvil)
 
-### 6.1 Página de Perfil (`profile.html`)
-*   **Badge Dinámico**: Muestra de forma colorida el plan del usuario (*Plan Gratuito*, *Plan Basic* o *Plan Advanced*).
-*   **Cuadrícula de Consumos `#premium-usage-card`**: Dibuja barras de progreso del consumo actual frente al límite diario y mensual inyectado por el backend.
+### 6.1 Página y Pantalla de Perfil (`profile.html` / `profile.tsx`)
+*   **Badge Dinámico**: Muestra el nivel oficial del usuario (*Plan Gratuito*, *Plan Basic*, *Plan Advanced* o *Administrador Global*).
+*   **Gestión de Usuario y Edición de Nombre**: Modal interactivo para actualizar el nombre de perfil con validación de longitud mínima (vía `PUT /api/auth/profile`).
+*   **Cuadrícula de Consumos y Cuotas**: Dibuja barras de progreso del consumo diario/mensual real frente al límite inyectado por el backend (`daily_simulator_usage`, `daily_ai_usage`, `daily_rag_usage` y `lives_remaining`).
+*   **Flujo de Eliminación de Cuenta ("Account Deletion")**: Requisito obligatorio de Google Play Store implementado tanto en la web como en las aplicaciones móviles (`DELETE /api/auth/account`), con confirmación textual estricta ("ELIMINAR") y purga en cascada en base de datos.
 
-### 6.2 Página de Pricing e Upgrades (`pricing.html`)
-*   **Diseño Glassmorphic Cyber-Minimalist**: Tarjetas translúcidas oscuras con desenfoque de fondo (`backdrop-filter`) y alineación editorial a la izquierda.
-*   **Flujo de Upgrades Activos**: Los usuarios con Plan Básico pueden visualizar y adquirir el Plan Avanzado. La tarjeta de su plan actual cambia visualmente con borde dorado y botón deshabilitado ("Plan Activo").
-*   **Reglas de Renovación**: No es posible degradar planes de forma activa. Los usuarios con Advanced ven inhabilitados los botones de Basic ("Incluido en Premium").
-
-### 6.3 Logging en Terminal
-El sistema utiliza prefijos informativos para auditar los consumos en Express:
-*   `🔎 [Banco]`: Consulta de stock local en las áreas.
-*   `🤖 [IA Reposición]`: Generación de emergencia balanceada por falta de stock.
-*   `🍃 [IA AHORRO]`: Uso de modelo Lite sin costo de razonamiento.
-*   `🛡️ [IA RAG]`: Invocación del RAG oficial (reservado para Advanced/Admin).
+### 6.2 Pantalla de Pricing e Upgrades (`pricing.html` / `pricing.tsx`)
+*   **Diseño Glassmorphic Cyber-Minimalist**: Tarjetas translúcidas oscuras con desenfoque de fondo, degradados dorados/esmeralda y tipografía de alto contraste.
+*   **Selector de Planes**:
+    *   **Plan Básico (S/ 9.90 por 2 Meses)**: 15 simulacros diarios, 50 consultas diarias de IA estándar, flashcards manuales ilimitadas.
+    *   **Plan Avanzado (S/ 24.90 por 4 Meses)**: 50 simulacros diarios, 100 consultas diarias de IA con 25 RAG semánticos, 30 pedidos mensuales de flashcards con IA + Audio TTS.
+*   **Pasarelas de Pago Multi-Método**:
+    *   **Yape / Plin QR**: Datos oficiales de cuenta (Ricardo M. / +51 980844817) y botón con mensaje pre-llenado para WhatsApp con correo registrado.
+    *   **Mercado Pago (Tarjeta de Crédito / Débito)**: Integración segura mediante `paymentService.createOrder()` y navegación web in-app (`WebBrowser.openBrowserAsync`).
+*   **Flujo de Upgrades Activos**: Resalta el plan actual, desactiva planes inferiores y permite mejoras inmediatas a tiers superiores.
 
 ---
-*Última actualización de la documentación consolidada: 9 de julio de 2026 (Eliminación de Autoevaluación IA y Chat de Audio por costos de IA y reestructuración)*
+
+## 📱 7. Requisitos de Cumplimiento para Google Play Store y App Store
+
+Las aplicaciones móviles (`HubDocenteApp` y `HubSaludApp`) integran todas las directivas de seguridad y privacidad exigidas para despliegue en tiendas oficiales:
+1.  **Políticas de Privacidad (`/privacy-policy`)**: Detalla el tratamiento de datos mediante Google OAuth SSO, almacenamiento de tokens JWT, cifrado TLS 1.3, RLS en PostgreSQL, no comercialización de información personal y uso confidencial de Vertex AI sin re-entrenamiento público.
+2.  **Términos y Condiciones (`/terms-and-conditions`)**: Define claramente el alcance pedagógico y clínico de los simuladores, las duraciones de los planes a plazo fijo (sin renovaciones sorpresa automáticas) y los canales de soporte autorizados.
+3.  **Mecanismo de Eliminación de Cuenta en la App**: Accesible directamente desde `profile.tsx` para permitir que cualquier usuario ejerza su derecho de supresión de datos en cualquier momento.
+
+---
+*Última actualización de la documentación consolidada: Agosto 2026 (Paridad total Web-Móvil, Pricing, Seguridad y Cumplimiento Play Store)*
+

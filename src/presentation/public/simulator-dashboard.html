@@ -8,18 +8,20 @@
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=1859573d">
-    <link rel="stylesheet" href="/css/base.css?v=1859573d">
-    <link rel="stylesheet" href="/css/header.css?v=1859573d">
-    <link rel="stylesheet" href="/css/footer.css?v=1859573d">
-    <link rel="stylesheet" href="/css/dashboard.css?v=1859573d">
+    <link rel="stylesheet" href="/css/theme.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/base.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/header.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/footer.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/dashboard.css?v=865cbe41">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/modal.css?v=1859573d">
-    <link rel="stylesheet" href="/css/sidebar.css?v=1859573d">
-    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=1859573d">
-    <link rel="stylesheet" href="/css/components.css?v=1859573d">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=1859573d"> <!-- ✅ Formato unificado de Markdown IA -->
-    <link rel="stylesheet" href="/css/quiz.css?v=1859573d">
+    <link rel="stylesheet" href="/css/modal.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/sidebar.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/components.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=865cbe41"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="/css/quiz.css?v=865cbe41">
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/utils/themeManager.js?v=865cbe41"></script>
 </head>
 
 <body class="hero-hidden">
@@ -71,25 +73,24 @@
                     <!-- Simulacro Rápido -->
                     <a href="#" id="btn-mode-arcade" class="mode-card">
                         <div class="mode-content">
-                            <div class="mode-title">Simulacro Rápido</div>
-                            <div class="mode-desc">10 preguntas para tiempos muertos.</div>
+                            <div class="mode-header-row">
+                                <div class="mode-title">Simulacro Rápido</div>
+                                <div class="mode-icon-badge"><i class="fas fa-bolt"></i></div>
+                            </div>
+                            <div class="mode-desc">10 preguntas dinámicas para repasar en tiempos libres.</div>
                             <div class="mode-cta">Iniciar simulacro <i class="fas fa-arrow-right"></i></div>
-                        </div>
-                        <div class="mode-img-container">
-                            <img src="/assets/Simulacro Rápido.webp" alt="Reloj representativo de simulacro rápido">
                         </div>
                     </a>
 
                     <!-- Modo Estudio -->
                     <a href="#" id="btn-mode-study" class="mode-card">
                         <div class="mode-content">
-                            <div class="mode-title">Modo Estudio</div>
-                            <div class="mode-desc">20 preguntas con explicación médica.
+                            <div class="mode-header-row">
+                                <div class="mode-title">Modo Estudio</div>
+                                <div class="mode-icon-badge"><i class="fas fa-book-open"></i></div>
                             </div>
+                            <div class="mode-desc">20 preguntas con sustento pedagógico y médico detallado.</div>
                             <div class="mode-cta">Iniciar modo estudio <i class="fas fa-arrow-right"></i></div>
-                        </div>
-                        <div class="mode-img-container">
-                            <img src="/assets/Modo Estudio.webp" alt="Cerebro y libro representativos de modo estudio">
                         </div>
                     </a>
 
@@ -97,16 +98,14 @@
                     <a href="#" id="btn-mode-real" class="mode-card mode-card--disabled">
                         <span class="badge-soon">Muy Pronto</span>
                         <div class="mode-content">
-                            <div class="mode-title">Simulacro Real</div>
-                            <div class="mode-desc">100 preguntas con límite de tiempo.</div>
+                            <div class="mode-header-row">
+                                <div class="mode-title">Simulacro Real</div>
+                                <div class="mode-icon-badge"><i class="fas fa-award"></i></div>
+                            </div>
+                            <div class="mode-desc">100 preguntas con límite de tiempo idéntico al examen oficial.</div>
                             <div class="mode-cta">Muy pronto</div>
                         </div>
-                        <div class="mode-img-container">
-                            <img src="/assets/Simulacro Real.webp" alt="Estetoscopio representativo de simulacro real">
-                        </div>
                     </a>
-
-
                 </div>
 
                 <!-- 2. KPIs -->
@@ -114,38 +113,30 @@
                     style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
                     <p class="section-heading" style="margin:0;"><i class="fas fa-chart-bar"></i> Resumen de Progreso
                     </p>
-                    <!-- MEJORA #1: Tabs de Modo -->
+                    <!-- Tabs de Modo y Tiempo -->
                     <div style="display:flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
                         <!-- Tabs de Modo (Rápido, Estudio, Todos) -->
-                        <div style="display:flex;gap:0.35rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:3px;"
-                            role="group" aria-label="Filtrar por modo de examen">
-                            <button class="kpi-mode-tab active" data-mode="all"
-                                style="padding:0.3rem 0.8rem;border:none;border-radius:7px;font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:rgba(59,130,246,0.2);color:#93c5fd;">
+                        <div class="kpi-tabs-group" role="group" aria-label="Filtrar por modo de examen">
+                            <button class="kpi-mode-tab active" data-mode="all">
                                 Modo: Todos
                             </button>
-                            <button class="kpi-mode-tab" data-mode="10"
-                                style="padding:0.3rem 0.8rem;border:none;border-radius:7px;font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
+                            <button class="kpi-mode-tab" data-mode="10">
                                 Rápido
                             </button>
-                            <button class="kpi-mode-tab" data-mode="20"
-                                style="padding:0.3rem 0.8rem;border:none;border-radius:7px;font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
+                            <button class="kpi-mode-tab" data-mode="20">
                                 Estudio
                             </button>
                         </div>
 
-                        <!-- NUEVO: Tabs de Tiempo (7d, 30d, Todos) -->
-                        <div style="display:flex;gap:0.35rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:3px;"
-                            role="group" aria-label="Filtrar por rango de tiempo">
-                            <button class="kpi-time-tab active" data-days="all"
-                                style="padding:0.25rem 0.7rem;border:none;border-radius:7px;font-size:0.65rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:rgba(139,92,246,0.2);color:#c4b5fd;">
+                        <!-- Tabs de Tiempo (7d, 30d, Todos) -->
+                        <div class="kpi-tabs-group" role="group" aria-label="Filtrar por rango de tiempo">
+                            <button class="kpi-time-tab active" data-days="all">
                                 Histórico
                             </button>
-                            <button class="kpi-time-tab" data-days="30"
-                                style="padding:0.25rem 0.7rem;border:none;border-radius:7px;font-size:0.65rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
+                            <button class="kpi-time-tab" data-days="30">
                                 Últimos 30 días
                             </button>
-                            <button class="kpi-time-tab" data-days="7"
-                                style="padding:0.25rem 0.7rem;border:none;border-radius:7px;font-size:0.65rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#475569;">
+                            <button class="kpi-time-tab" data-days="7">
                                 7 días
                             </button>
                         </div>
@@ -231,9 +222,9 @@
                                     <i class="fas fa-chart-pie"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight:600;color:#475569;margin-bottom:0.25rem;">Sin respuestas aún
+                                    <div style="font-weight:700;color:var(--text-main);margin-bottom:0.25rem;">Sin respuestas aún
                                     </div>
-                                    <div id="doughnut-empty-desc" style="font-size:0.78rem;color:#334155;">Completa
+                                    <div id="doughnut-empty-desc" style="font-size:0.78rem;color:var(--text-secondary);">Completa
                                         simulacros para ver tu distribución por temas.</div>
                                 </div>
                             </div>
@@ -241,7 +232,7 @@
                                 <canvas id="topicDoughnutChart"></canvas>
                             </div>
                             <div id="doughnut-legend"
-                                style="display:none;width:100%;max-height:100px;overflow-y:auto;display:flex;flex-wrap:wrap;justify-content:center;gap:0.6rem;font-size:0.72rem;margin-top:0.5rem;color:#94a3b8;">
+                                style="display:none;width:100%;max-height:100px;overflow-y:auto;display:flex;flex-wrap:wrap;justify-content:center;gap:0.6rem;font-size:0.75rem;margin-top:0.5rem;color:var(--text-secondary);">
                             </div>
                         </div>
                     </div>
@@ -291,34 +282,32 @@
 
                         <div style="display:flex;gap:1.25rem;align-items:center;margin-bottom:1.5rem;">
                             <div
-                                style="background:linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.2)); padding:14px; border-radius:14px; color:#a78bfa; border:1px solid rgba(139,92,246,0.3); box-shadow: 0 0 15px rgba(139,92,246,0.1) inset;">
+                                style="background:linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.15)); padding:14px; border-radius:14px; color:var(--accent-purple); border:1px solid rgba(139,92,246,0.25); box-shadow: 0 0 15px rgba(139,92,246,0.1) inset;">
                                 <i class="fas fa-brain fa-lg"
                                     style="filter: drop-shadow(0 0 8px rgba(167,139,250,0.6));"></i>
                             </div>
                             <div>
                                 <h4
-                                    style="margin:0;font-size:0.95rem;font-weight:700;letter-spacing:0.04em;color:#e2e8f0;display:flex;align-items:center;gap:0.5rem;">
+                                    style="margin:0;font-size:0.95rem;font-weight:700;letter-spacing:0.04em;color:var(--text-main);display:flex;align-items:center;gap:0.5rem;">
                                     Análisis de Patrones de Error
                                     <span
-                                        style="font-size:0.65rem; background:rgba(139,92,246,0.2); color:#c4b5fd; padding:3px 8px; border-radius:10px; border:1px solid rgba(139,92,246,0.3); font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Advanced
+                                        style="font-size:0.65rem; background:rgba(139,92,246,0.15); color:var(--accent-purple); padding:3px 8px; border-radius:10px; border:1px solid rgba(139,92,246,0.25); font-weight:700; letter-spacing:0.05em; text-transform:uppercase;">Advanced
                                         IA</span>
                                 </h4>
-                                <p style="margin:0;color:#94a3b8;font-size:0.8rem;margin-top:0.25rem;">Motor de
+                                <p style="margin:0;color:var(--text-secondary);font-size:0.8rem;margin-top:0.25rem;">Motor de
                                     Inteligencia
                                     Artificial Deep Learning</p>
                             </div>
                         </div>
 
                         <div id="ai-initial-state"
-                            style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.5rem;padding:1.5rem; background:rgba(15,23,42,0.4); border-radius:16px; border:1px dashed rgba(148,163,184,0.15);">
-                            <p style="color:#94a3b8;font-size:0.9rem;max-width:500px;line-height:1.6;margin:0;">
+                            style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.5rem;padding:1.5rem; background:var(--bg-tertiary); border-radius:16px; border:1px dashed var(--border-color); box-shadow:var(--shadow-sm);">
+                            <p style="color:var(--text-secondary);font-size:0.9rem;max-width:500px;line-height:1.6;margin:0;">
                                 Utiliza nuestro motor de Inteligencia Artificial para identificar fortalezas ocultas y
                                 brechas de conocimiento crítico basándose en tu historial multivariado de simulacros.
                             </p>
                             <button id="btn-analyze-ai"
-                                style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;padding:0.85rem 2rem;display:flex;align-items:center;gap:0.75rem;border-radius:12px;font-weight:600;font-size:0.95rem;cursor:pointer;transition:all 0.3s;box-shadow:0 10px 25px rgba(99,102,241,0.25), 0 2px 4px rgba(255,255,255,0.1) inset;"
-                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 30px rgba(99,102,241,0.35), 0 2px 4px rgba(255,255,255,0.15) inset';"
-                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 25px rgba(99,102,241,0.25), 0 2px 4px rgba(255,255,255,0.1) inset';">
+                                style="background:var(--primary);color:#ffffff !important;border:none;padding:0.85rem 2.25rem;display:inline-flex;align-items:center;gap:0.75rem;border-radius:50px;font-weight:800;font-size:0.95rem;cursor:pointer;transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1);box-shadow:0 4px 15px var(--primary-glow);">
                                 <i class="fas fa-magic"></i> Extraer Insights IA
                             </button>
                         </div>
@@ -327,43 +316,41 @@
                             style="display:none;flex-direction:column;align-items:center;text-align:center;padding:3rem 1rem;">
                             <div style="position:relative; width:60px; height:60px; margin-bottom:1.5rem;">
                                 <i class="fas fa-circle-notch fa-spin fa-2x"
-                                    style="color:#a78bfa; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);"></i>
+                                    style="color:var(--primary); position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);"></i>
                                 <div
-                                    style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:30px; height:30px; background:#a78bfa; filter:blur(15px); opacity:0.6; border-radius:50%;">
+                                    style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:30px; height:30px; background:var(--primary); filter:blur(15px); opacity:0.4; border-radius:50%;">
                                 </div>
                             </div>
-                            <p style="color:#e2e8f0; font-weight:600; font-size:1rem; margin-bottom:0.25rem;">Procesando
+                            <p style="color:var(--text-main); font-weight:700; font-size:1rem; margin-bottom:0.25rem;">Procesando
                                 matrices de respuesta...</p>
-                            <p style="color:#64748b; font-size:0.85rem;">Correlacionando errores con literatura médica
+                            <p style="color:var(--text-secondary); font-size:0.85rem;">Correlacionando errores con literatura
                                 oficial.</p>
                         </div>
 
                         <div id="ai-results-state"
-                            style="display:none;color:#94a3b8;font-size:0.9rem; animation: fadeIn 0.5s ease;">
+                            style="display:none;color:var(--text-secondary);font-size:0.9rem; animation: fadeIn 0.5s ease;">
                             <div
-                                style="margin-bottom:1.25rem;padding:1.25rem;border-radius:12px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                                style="margin-bottom:1.25rem;padding:1.25rem;border-radius:14px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25); box-shadow: var(--shadow-sm);">
                                 <strong
-                                    style="color:#34d399;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;">
+                                    style="color:#10b981;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:800;">
                                     <i class="fas fa-check-circle"
-                                        style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(52,211,153,0.4));"></i>
+                                        style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(16,185,129,0.3));"></i>
                                     Dominio Consolidado
                                 </strong>
-                                <div id="ai-strengths" style="margin:0;line-height:1.6;color:#cbd5e1;">--</div>
+                                <div id="ai-strengths" style="margin:0;line-height:1.6;color:var(--text-main);">--</div>
                             </div>
                             <div
-                                style="padding:1.25rem;border-radius:12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                                style="padding:1.25rem;border-radius:14px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25); box-shadow: var(--shadow-sm);">
                                 <strong
-                                    style="color:#fbbf24;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;">
+                                    style="color:#f59e0b;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:800;">
                                     <i class="fas fa-exclamation-triangle"
-                                        style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(251,191,36,0.4));"></i>
+                                        style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(245,158,11,0.3));"></i>
                                     Focos de Intervención
                                 </strong>
-                                <div id="ai-weaknesses" style="margin:0;line-height:1.6;color:#cbd5e1;">--</div>
+                                <div id="ai-weaknesses" style="margin:0;line-height:1.6;color:var(--text-main);">--</div>
                             </div>
                             <button id="btn-analyze-again"
-                                style="margin-top:1.5rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;padding:0.75rem 1rem;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;width:100%;transition:all 0.2s;display:flex;justify-content:center;align-items:center;gap:0.5rem;"
-                                onmouseover="this.style.background='rgba(255,255,255,0.06)'; this.style.color='#cbd5e1';"
-                                onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.color='#94a3b8';">
+                                style="margin-top:1.5rem;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-main);padding:0.75rem 1rem;border-radius:12px;font-size:0.88rem;font-weight:700;cursor:pointer;width:100%;transition:all 0.2s;display:flex;justify-content:center;align-items:center;gap:0.5rem;box-shadow:var(--shadow-sm);">
                                 <i class="fas fa-sync-alt"></i> Actualizar Diagnóstico
                             </button>
                         </div>
@@ -431,20 +418,20 @@
                 <!-- Modo de Configuración (Examen Oficial vs Personalizado) -->
                 <div class="config-section" id="config-mode-selection-container">
                     <h4 class="modal-section-title">Modo de Configuración</h4>
-                    <div class="config-mode-toggle" style="display: flex; gap: 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 0.5rem; margin-bottom: 0.5rem;">
-                        <label class="mode-toggle-option active" style="flex: 1; cursor: pointer; display: flex; flex-direction: column; padding: 0.75rem; border-radius: 8px; border: 1px solid transparent; background: transparent; transition: all 0.2s;">
+                    <div class="config-mode-toggle" style="display: flex; gap: 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 14px; padding: 0.5rem; margin-bottom: 0.5rem;">
+                        <label class="mode-toggle-option active" style="flex: 1; cursor: pointer; display: flex; flex-direction: column; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--primary); background: var(--card-bg); box-shadow: var(--shadow-sm); transition: all 0.2s;">
                             <input type="radio" name="configMode" value="default" checked style="display: none;">
-                            <span style="font-weight: 600; font-size: 0.85rem; color: #fff; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
-                                <i class="fas fa-graduation-cap"></i> Modo Examen Oficial
+                            <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <i class="fas fa-graduation-cap" style="color: var(--primary);"></i> Modo Examen Oficial
                             </span>
-                            <span style="font-size: 0.68rem; color: #94a3b8; line-height: 1.3;">Todas las áreas integradas de forma equilibrada según el examen real (Recomendado).</span>
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.35;">Todas las áreas integradas de forma equilibrada según el examen real (Recomendado).</span>
                         </label>
-                        <label class="mode-toggle-option" style="flex: 1; cursor: pointer; display: flex; flex-direction: column; padding: 0.75rem; border-radius: 8px; border: 1px solid transparent; background: transparent; transition: all 0.2s;">
+                        <label class="mode-toggle-option" style="flex: 1; cursor: pointer; display: flex; flex-direction: column; padding: 0.85rem; border-radius: 10px; border: 1px solid transparent; background: transparent; transition: all 0.2s;">
                             <input type="radio" name="configMode" value="custom" style="display: none;">
-                            <span style="font-weight: 600; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
                                 <i class="fas fa-sliders-h"></i> Práctica Personalizada
                             </span>
-                            <span style="font-size: 0.68rem; color: #64748b; line-height: 1.3;">Selecciona manualmente qué áreas específicas deseas practicar.</span>
+                            <span style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.35;">Selecciona manualmente qué áreas específicas deseas practicar.</span>
                         </label>
                     </div>
                 </div>
@@ -458,7 +445,7 @@
                 </div>
             </div>
 
-            <div class="modal-footer" style="padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+            <div class="modal-footer" style="padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
                 <button id="btn-save-config">
                     Aplicar Configuración
                 </button>
@@ -575,22 +562,22 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=1859573d"></script>
-    <script src="/js/services/networkService.js?v=1859573d"></script>
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/services/networkService.js?v=865cbe41"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=1859573d"></script>
-    <script src="/js/services/authApiService.js?v=1859573d"></script>
-    <script src="/js/services/analyticsApiService.js?v=1859573d"></script>
-    <script src="/js/sessionManager.js?v=1859573d"></script>
-    <script src="/js/ui/uiManager.js?v=1859573d"></script>
-    <script src="/js/ui/components.js?v=1859573d"></script>
-    <script src="/js/ui/sidebar.js?v=1859573d"></script>
-    <script src="/js/app.js?v=1859573d"></script>
+    <script src="/js/utils/markdown-renderer.js?v=865cbe41"></script>
+    <script src="/js/services/authApiService.js?v=865cbe41"></script>
+    <script src="/js/services/analyticsApiService.js?v=865cbe41"></script>
+    <script src="/js/sessionManager.js?v=865cbe41"></script>
+    <script src="/js/ui/uiManager.js?v=865cbe41"></script>
+    <script src="/js/ui/components.js?v=865cbe41"></script>
+    <script src="/js/ui/sidebar.js?v=865cbe41"></script>
+    <script src="/js/app.js?v=865cbe41"></script>
 
     <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 
-    <script src="/js/simulator-dash.js?v=1859573d"></script>
+    <script src="/js/simulator-dash.js?v=865cbe41"></script>
 </body>
 
 </html>

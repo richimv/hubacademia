@@ -10,7 +10,7 @@ body.modal-open {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.75) !important; /* Semi-transparente para percibir suavemente el fondo */
+    background: var(--modal-overlay-bg) !important;
     display: none;
     justify-content: center;
     align-items: center;
@@ -33,15 +33,15 @@ body.modal-open {
     z-index: 2147483647 !important;
 }
 
-/* --- REDISEÑO COMPLETO DE MODALES (Single Source of Truth - Pure Matte Black Scale) --- */
+/* --- REDISEÑO COMPLETO DE MODALES (Tokens Centralizados) --- */
 .modal-content {
-    background: #0a0a0a !important; /* Negro Mate Puro Sólido (Sin transparencia interna ni tinte azul) */
+    background: var(--modal-bg) !important;
     border-radius: 20px !important;
     width: 90%;
     max-width: 550px;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.95) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
     animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
@@ -140,29 +140,27 @@ body.modal-open {
     width: 100%;
     padding: 0.75rem;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    /* Borde más visible */
-    background: rgba(10, 10, 10, 0.8);
-    /* Fondo más oscuro para contraste */
-    color: var(--text-main);
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--input-text);
     outline: none;
     transition: 0.2s;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-main);
     font-size: 1rem;
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
-    border-color: var(--primary-light);
-    background: rgba(10, 10, 10, 0.8);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    border-color: var(--primary);
+    background: var(--input-bg);
+    box-shadow: 0 0 0 4px var(--primary-glow);
 }
 
 .modal-footer {
     padding: 1.5rem 2rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid var(--border-color);
+    background: var(--surface-hover);
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
@@ -202,7 +200,7 @@ body.modal-open {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.85); /* Pure Black Overlay */
+    background: rgba(0, 0, 0, 0.6);
     z-index: 2147483647 !important;
     align-items: center;
     justify-content: center;
@@ -211,48 +209,45 @@ body.modal-open {
 }
 
 .premium-glass-dark {
-    background: #0a0a0a !important; /* Pure Dark conforme al Design System */
+    background: var(--modal-bg) !important;
     backdrop-filter: blur(20px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
 }
 
 .auth-prompt-modal .modal-content {
-    background: #0a0a0a !important;
+    background: var(--modal-bg) !important;
     backdrop-filter: blur(28px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-    border: 1px solid var(--border-glow) !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
     width: 92% !important;
     max-width: 420px !important;
     border-radius: 24px !important;
     font-family: 'Inter', sans-serif !important;
     position: relative !important;
     overflow: hidden !important;
+    color: var(--text-main) !important;
 }
 
 /* Variante premium */
 .auth-prompt-modal .modal-content.premium-variant {
-    border: 2px solid #ffd700 !important;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 215, 0, 0.2) !important;
+    border: 2px solid #f59e0b !important;
+    box-shadow: var(--shadow-xl), 0 0 25px rgba(245, 158, 11, 0.25) !important;
 }
 
 .auth-prompt-modal .modal-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-bottom: 1px solid var(--border-color) !important;
     padding: 18px 20px !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
     background: transparent !important;
-    /* Force no separate background */
 }
 
 .auth-prompt-modal .modal-header h2 {
-    background: linear-gradient(90deg, #f8fafc, #94a3b8);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-main);
     font-weight: 800;
     font-size: 1.2rem;
     margin: 0;
@@ -474,23 +469,25 @@ body.modal-open {
 
 /* 📌 Estilos Premium para Confirmation Modal (Design System) */
 #confirmation-modal .modal-content {
-    background: #0a0a0a !important;
-    border: 1px solid rgba(59, 130, 246, 0.25) !important;
+    background: var(--modal-bg) !important;
+    border: 1px solid var(--border-glow) !important;
     border-radius: 24px !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.95), 0 0 20px rgba(59, 130, 246, 0.15) !important;
-    font-family: 'Inter', sans-serif !important;
+    box-shadow: var(--shadow-xl) !important;
+    font-family: var(--font-main) !important;
+    color: var(--text-main) !important;
 }
 
 #confirmation-modal-title {
     font-size: 1.3rem !important;
     font-weight: 800 !important;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6) !important;
+    background: linear-gradient(90deg, var(--primary), var(--accent-purple)) !important;
     -webkit-background-clip: text !important;
+    background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
 }
 
 #confirmation-modal-message {
-    color: #cbd5e1 !important;
+    color: var(--text-secondary) !important;
     font-size: 1.05rem !important;
     line-height: 1.6 !important;
 }
@@ -502,16 +499,16 @@ body.modal-open {
 }
 
 #confirmation-modal #confirmation-modal-confirm {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    background: linear-gradient(135deg, var(--primary), var(--accent-purple)) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: none !important;
     border-radius: 12px !important;
     padding: 0.75rem 1.75rem !important;
     font-weight: 700 !important;
     font-size: 0.95rem !important;
     cursor: pointer !important;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25) !important;
+    box-shadow: 0 4px 15px var(--primary-glow) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -519,19 +516,19 @@ body.modal-open {
 
 #confirmation-modal #confirmation-modal-confirm:hover {
     transform: translateY(-2px) !important;
-    background: linear-gradient(135deg, #60a5fa, #a78bfa) !important;
-    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.45) !important;
+    background: linear-gradient(135deg, var(--primary-hover), var(--accent-purple)) !important;
+    box-shadow: 0 8px 25px var(--primary-glow) !important;
 }
 
 #confirmation-modal #confirmation-modal-confirm:focus {
     outline: none !important;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.4), 0 8px 25px rgba(139, 92, 246, 0.45) !important;
+    box-shadow: 0 0 0 3px var(--primary-glow), 0 8px 25px var(--primary-glow) !important;
 }
 
 #confirmation-modal #confirmation-modal-cancel {
-    background: rgba(255, 255, 255, 0.03) !important;
-    color: #cbd5e1 !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: var(--bg-tertiary) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 12px !important;
     padding: 0.75rem 1.75rem !important;
     font-weight: 600 !important;
@@ -544,14 +541,14 @@ body.modal-open {
 }
 
 #confirmation-modal #confirmation-modal-cancel:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    color: #f8fafc !important;
+    background: var(--surface-hover) !important;
+    border-color: var(--border-hover) !important;
+    color: var(--text-main) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: var(--shadow-sm) !important;
 }
 
 #confirmation-modal .modal-close:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: #ffffff !important;
+    background: var(--surface-hover) !important;
+    color: var(--text-main) !important;
 }

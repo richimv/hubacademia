@@ -41,11 +41,7 @@ body.hero-hidden .hero-wrapper {
 
 .hero {
     height: 360px;
-    /* Mobile First: Background Image Only */
-    background: linear-gradient(90deg, rgba(10, 10, 10, 0.8) 0%, rgba(10, 10, 10, 0.8) 45%, rgba(10, 10, 10, 0.8) 100%), url('../assets/portada.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    background: var(--bg-main);
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -59,11 +55,9 @@ body.hero-hidden .hero-wrapper {
 /* Hero Video (Hidden on Mobile) */
 .hero-video {
     display: none;
-}
-
-.hero-content {
+}.hero-content {
     max-width: 800px;
-    color: white;
+    color: var(--text-main);
     z-index: 2;
     animation: slideInLeft 0.8s ease-out;
 }
@@ -73,27 +67,22 @@ body.hero-hidden .hero-wrapper {
     font-weight: 800;
     margin-bottom: 1rem;
     line-height: 1.2;
-    background: linear-gradient(to right, #ffffff, #94a3b8);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    color: var(--text-main);
 }
 
 .hero-title .highlight-text {
-    color: var(--accent);
-    background: linear-gradient(135deg, var(--accent) 0%, #38bdf8 100%);
+    color: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, #38bdf8 100%);
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent;
+    -webkit-text-fill-color: transparent;
 }
 
 .hero-subtitle {
     font-size: 1.1rem;
-    color: #cbd5e1;
+    color: var(--text-secondary);
     margin-bottom: 2rem;
     line-height: 1.6;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     max-width: 90%;
 }
 
@@ -110,19 +99,19 @@ body.hero-hidden .hero-wrapper {
     align-items: center;
     gap: 0.5rem;
     font-size: 0.95rem;
-    color: #e2e8f0;
+    color: var(--text-secondary);
     font-weight: 500;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-tertiary);
     padding: 8px 16px;
     border-radius: 20px;
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
     transition: transform 0.2s, background 0.2s;
 }
 
 .hero-features li:hover {
     transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
 }
 
 .hero-features li i {
@@ -639,9 +628,9 @@ body.hero-hidden .search-subtitle {
 }
 
 .manta-filter-pill {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #94a3b8;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
     padding: 0.5rem 1.25rem;
     border-radius: 9999px;
     font-size: 0.875rem;
@@ -651,30 +640,32 @@ body.hero-hidden .search-subtitle {
     flex-shrink: 0 !important;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     letter-spacing: -0.01em;
+    box-shadow: var(--shadow-sm);
 }
 
 .manta-filter-pill:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.25);
-    color: #ffffff;
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+    color: var(--text-main) !important;
     transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 .manta-filter-pill.active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.45) 100%);
-    border: 1px solid rgba(59, 130, 246, 0.6);
-    color: #ffffff;
+    background: var(--primary);
+    border: 1px solid var(--primary-hover);
+    color: #ffffff !important;
     font-weight: 700;
-    box-shadow: 0 4px 18px rgba(59, 130, 246, 0.35);
+    box-shadow: 0 4px 18px var(--primary-glow);
 }
 
 .manta-filter-pill[data-filter-id*="Novedades"].active,
 .manta-filter-pill[data-filter-val="news"].active {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(249, 115, 22, 0.25) 100%);
-    border: 1px solid rgba(249, 115, 22, 0.45);
-    color: #ffffff;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border: 1px solid #ea580c;
+    color: #ffffff !important;
     font-weight: 700;
-    box-shadow: 0 3px 10px rgba(249, 115, 22, 0.22);
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
 }
 
 /* GROUP TITLES (SUBTÍTULOS ESTILO MANTA) */
@@ -682,7 +673,7 @@ body.hero-hidden .search-subtitle {
     width: 100%;
     font-size: 1.05rem;
     font-weight: 700;
-    color: white;
+    color: var(--text-main);
     margin-top: 0.5rem;
     margin-bottom: 0.15rem;
     grid-column: 1 / -1;

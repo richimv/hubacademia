@@ -8,16 +8,18 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=1859573d">
-    <link rel="stylesheet" href="/css/base.css?v=1859573d">
+    <link rel="stylesheet" href="/css/theme.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/base.css?v=865cbe41">
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/utils/themeManager.js?v=865cbe41"></script>
     <style>
         :root {
-            --primary-bg: #0a0a0a;
-            --card-bg: #121212;
-            --accent-blue: #3b82f6;
-            --text-main: #ffffff;
-            --text-dim: #a1a1aa;
-            --border-color: rgba(255, 255, 255, 0.1);
+            --primary-bg: var(--bg-main);
+            --card-bg: var(--card-bg);
+            --accent-blue: var(--primary);
+            --text-main: var(--text-main);
+            --text-dim: var(--text-secondary);
+            --border-color: var(--border-color);
         }
 
         body {
@@ -104,14 +106,14 @@
             gap: 14px;
             background: #ffffff;
             color: #1a1a1a;
-            border: none;
+            border: 1px solid var(--border-color);
             padding: 1rem;
             border-radius: 100px; /* Estilo Cápsula Manta */
             font-size: 1.05rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-google-auth:hover {
@@ -200,10 +202,10 @@
 
     <!-- Scripts de Lógica -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=1859573d"></script>
-    <script src="/js/services/networkService.js?v=1859573d"></script>
-    <script src="/js/services/authApiService.js?v=1859573d"></script>
-    <script src="/js/sessionManager.js?v=1859573d"></script>
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/services/networkService.js?v=865cbe41"></script>
+    <script src="/js/services/authApiService.js?v=865cbe41"></script>
+    <script src="/js/sessionManager.js?v=865cbe41"></script>
 
     <script>
         /**

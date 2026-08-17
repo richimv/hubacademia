@@ -121,6 +121,15 @@ class GlobalSidebar {
                         <span class="sidebar-item-label">Mi Perfil</span>
                     </a>
                 </div>
+
+                <!-- Sección Planes y Precios -->
+                <div class="sidebar-section" id="sidebar-section-pricing">
+                    <span class="sidebar-section-title">Planes</span>
+                    <a href="/pricing" class="sidebar-item" data-page="pricing">
+                        <i class="fas fa-crown"></i>
+                        <span class="sidebar-item-label">Planes y Precios</span>
+                    </a>
+                </div>
             </div>
 
             <!-- Sidebar Footer -->
@@ -167,6 +176,11 @@ class GlobalSidebar {
 
         // Sincronizar visibilidad de Cerrar Sesión con SessionManager
         this._syncAuthState();
+
+        // Sincronizar estado inicial del botón de tema
+        if (window.themeManager) {
+            window.themeManager.updateToggleButtons();
+        }
 
         // Persist scroll position across page reloads
         this.restoreScroll();
@@ -245,6 +259,8 @@ class GlobalSidebar {
             }
         } else if (pathname.includes('profile')) {
             activePage = 'profile';
+        } else if (pathname.includes('pricing')) {
+            activePage = 'pricing';
         }
 
         // Remover clases activas previas y asignar al actual

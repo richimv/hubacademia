@@ -158,6 +158,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- PASO 1: Componentes Globales ---
+    ensureThemeToggleButton();
+
     if (typeof ChatComponent !== 'undefined') window.chatbot = new ChatComponent();
 
     if (typeof ConfirmationModal !== 'undefined') {
@@ -192,9 +194,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     // que envía pulsos cada 2.5 minutos, manteniendo el servidor activo de forma más eficiente.
 });
 
+/**
+ * Inyecta el botón de cambio de tema si no existe en la cabecera
+ */
+function ensureThemeToggleButton() {
+    const nav = document.querySelector('.header-nav');
+    if (nav && !document.getElementById('theme-toggle-btn')) {
+        const themeBtn = document.createElement('button');
+        themeBtn.type = 'button';
+        themeBtn.id = 'theme-toggle-btn';
+        themeBtn.className = 'theme-toggle-btn';
+        themeBtn.setAttribute('title', 'Cambiar tema');
+        themeBtn.setAttribute('aria-label', 'Cambiar tema');
+        themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        nav.prepend(themeBtn);
+        if (window.themeManager) {
+            window.themeManager.updateToggleButtons();
+        }
+    }
+}
+
 // ✅ FIX: Resetear estados de carga al volver a la página (evita botones girando infinitamente)
 window.addEventListener('pageshow', (event) => {
     console.log('🔄 [App] Página mostrada. Reseteando estados de botones...');
+    ensureThemeToggleButton();
     
     // Función de restauración
     const restoreButtons = () => {
@@ -215,6 +238,7 @@ window.addEventListener('pageshow', (event) => {
 
 // ✅ FUNCIÓN DE UI (Solo pinta, no modifica datos para evitar bucles)
 function updateHeaderUI(user) {
+    ensureThemeToggleButton();
     const container = document.getElementById('user-session-controls');
     if (!container) return;
 
@@ -229,12 +253,32 @@ function updateHeaderUI(user) {
         // 🔧 FIX: Usamos ui-avatars.com porque via.placeholder.com suele fallar
         const avatarUrl = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff`;
         const displayName = user.name || 'Estudiante';
+        
+        const tier = user.subscriptionTier || 'free';
+        let tierLabel = 'Plan Gratuito';
+        let tierClass = 'tier-free';
+        if (user.subscriptionStatus === 'active') {
+            if (tier === 'advanced' || tier === 'avanzado') {
+                tierLabel = 'Plan Avanzado';
+                tierClass = 'tier-advanced';
+            } else if (tier === 'pro') {
+                tierLabel = 'Plan Pro';
+                tierClass = 'tier-pro';
+            } else {
+                tierLabel = `Plan ${tier.charAt(0).toUpperCase() + tier.slice(1)}`;
+                tierClass = 'tier-premium';
+            }
+        }
 
         container.innerHTML = `
             <div class="user-menu-container">
-                <button id="user-menu-toggle" class="user-menu-toggle">
-                    <img src="${avatarUrl}" class="user-avatar">
-                    <i class="fas fa-chevron-down"></i>
+                <button id="user-menu-toggle" class="user-menu-toggle" title="${displayName} (${tierLabel})">
+                    <img src="${avatarUrl}" class="user-avatar" alt="Avatar">
+                    <div class="user-header-meta">
+                        <span class="user-header-name">${displayName}</span>
+                        <span class="user-header-tier ${tierClass}">${tierLabel}</span>
+                    </div>
+                    <i class="fas fa-chevron-down user-header-chevron"></i>
                 </button>
                 <div id="user-menu-dropdown" class="user-menu-dropdown">
                     <div class="user-menu-header">
@@ -243,15 +287,13 @@ function updateHeaderUI(user) {
                             <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>
                         </span>
                         <span class="user-menu-email">${user.email}</span>
-                        ${(user.subscriptionStatus !== 'active' && user.subscriptionTier === 'free') ? '' : `
-                            <div class="user-usage-badge premium-badge" style="background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; font-weight: 800; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; margin-top: 5px; display: inline-block;">
-                                ⭐ ${user.subscriptionTier?.toUpperCase() || 'PREMIUM'}
-                            </div>
-                            `}
+                        <div class="user-usage-badge ${tierClass}" style="margin-top: 6px; font-size: 0.75rem; font-weight: 700; color: var(--primary);">
+                            ⭐ ${tierLabel.toUpperCase()}
+                        </div>
                     </div>
                     
                     <div class="user-menu-group">
-                        ${user.role === 'admin' ? '<a href="/admin" class="user-menu-item"><i class="fas fa-shield-alt"></i> Admin</a>' : ''}
+                        ${user.role === 'admin' ? '<a href="/admin" class="user-menu-item"><i class="fas fa-shield-alt"></i> Panel de Gestión</a>' : ''}
                         <a href="/profile" class="user-menu-item"><i class="fas fa-user-cog"></i> Mi Perfil</a>
                     </div>
 

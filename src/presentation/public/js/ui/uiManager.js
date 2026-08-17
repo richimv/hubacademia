@@ -1201,7 +1201,7 @@ class UIManager {
                 config.btnText = 'Mejorar a Avanzado';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
-            } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
+            } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Meta Diaria Alcanzada! 🏆';
                 config.message = customMsg || 'Has completado tus mensajes diarios para el Plan Avanzado (100 mensajes). ¡Mañana volvemos con más tutorías!';
                 config.btnText = 'Volver al Inicio';
@@ -1223,7 +1223,7 @@ class UIManager {
                 config.btnText = 'Mejorar Plan';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
-            } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
+            } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Meta Diaria Alcanzada! 🏆';
                 config.message = customMsg || 'Has completado tus simulacros de hoy. ¡Mañana volvemos con más desafíos!';
                 config.btnText = 'Volver al Inicio';
@@ -1251,7 +1251,7 @@ class UIManager {
                 config.btnText = 'Mejorar Plan';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
-            } else if (userTier === 'advanced' || userTier === 'admin' || userTier === 'elite') {
+            } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Meta Diaria Alcanzada! 🏆';
                 config.message = customMsg || 'Has completado tus autoevaluaciones de hoy. ¡Mañana volvemos con más desafíos!';
                 config.btnText = 'Volver al Inicio';
@@ -1374,7 +1374,7 @@ class UIManager {
             <div id="${this.modalId}" class="auth-prompt-modal">
                 <div class="modal-content premium-glass-dark">
                     <div class="modal-header">
-                        <h2 style="color: #f8fafc !important;"><i class="fas fa-rocket"></i> Únete a Hub Academia</h2>
+                        <h2 style="color: var(--text-main) !important;"><i class="fas fa-rocket" style="color: var(--primary);"></i> Únete a Hub Academia</h2>
                         <button class="modal-close-btn" onclick="window.uiManager.hideAuthPromptModal()">&times;</button>
                     </div>
                     
@@ -1382,19 +1382,19 @@ class UIManager {
                         <div class="auth-prompt-icon" style="margin-bottom: 24px;">
                             <div style="
                                 width: 70px; height: 70px; 
-                                background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.08)); 
+                                background: var(--bg-tertiary); 
                                 border-radius: 20px; 
                                 display: flex; align-items: center; justify-content: center; 
                                 margin: 0 auto;
-                                border: 1px solid rgba(255, 255, 255, 0.1);
-                                box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+                                border: 1px solid var(--border-color);
+                                box-shadow: var(--shadow-md);
                                 transform: rotate(-5deg);
                             ">
                                 <img src="/assets/logo.png" alt="Hub Academia" style="width: 80%; height: 80%; object-fit: contain;">
                             </div>
                         </div>
 
-                        <div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 5px; line-height: 1.5; padding: 0 10px;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px; line-height: 1.5; padding: 0 10px;">
                             Únete hoy de forma gratuita para guardar tu progreso, analizar tus estadísticas y probar todos los simuladores y servicios de la plataforma.
                         </div>
                     </div>
@@ -1402,19 +1402,19 @@ class UIManager {
                     <div class="modal-footer" style="padding: 0 24px 32px 24px;">
                         <button class="btn-primary" onclick="window.triggerGoogleLogin(this)" style="
                             width: 100%; 
-                            background: #60a5fa; /* Usamos un color sólido para mejor contraste vs glass */
-                            color: #000000ff; 
-                            font-weight: 800; 
+                            background: linear-gradient(135deg, #2563eb, #1d4ed8); 
+                            color: #ffffff !important; 
+                            font-weight: 700; 
                             border: none;
-                            padding: 16px; 
-                            font-size: 1.05rem;
-                            border-radius: 14px;
-                            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.3);
+                            padding: 14px 20px; 
+                            font-size: 1rem;
+                            border-radius: 12px;
+                            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
                             cursor: pointer;
                             display: flex; align-items: center; justify-content: center; gap: 10px;
-                            transition: all 0.2s;
-                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#93c5fd'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#60a5fa'">
-                            <i class="fab fa-google"></i> Continuar con Google
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(37, 99, 235, 0.45)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(37, 99, 235, 0.35)'">
+                            <i class="fab fa-google" style="font-size: 1.1rem;"></i> Continuar con Google
                         </button>
                     </div>
                 </div>
@@ -1427,171 +1427,11 @@ class UIManager {
      * ✅ CENTRALIZACIÓN: Renderiza el banner de Modo Invitado con estilo Premium Glass
      */
     /**
-     * ✅ CENTRALIZACIÓN: Renderiza el banner de Modo Invitado ultra-minimalista de 1 sola fila
+     * ✅ CENTRALIZACIÓN: Banner de Modo Invitado (Desactivado a solicitud del usuario para una UI más limpia)
      */
     renderGuestBanner(containerId) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        if (document.getElementById('guest-mode-banner-premium')) return;
-
-        // Inyectar estilos responsivos de 1 sola fila si aún no existen
-        if (!document.getElementById('guest-banner-styles')) {
-            const styleTag = document.createElement('style');
-            styleTag.id = 'guest-banner-styles';
-            styleTag.textContent = `
-                .guest-banner-wrapper {
-                    background: rgba(18, 18, 18, 0.85);
-                    backdrop-filter: blur(16px);
-                    -webkit-backdrop-filter: blur(16px);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    border-radius: 14px;
-                    padding: 0.6rem 1.25rem;
-                    margin-bottom: 1.25rem;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 1rem;
-                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-                    animation: guestBannerFade 0.4s ease-out;
-                }
-
-                @keyframes guestBannerFade {
-                    from { opacity: 0; transform: translateY(-6px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-
-                .guest-banner-left {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.75rem;
-                    min-width: 0;
-                }
-
-                .guest-banner-icon {
-                    width: 32px;
-                    height: 32px;
-                    background: rgba(255, 255, 255, 0.08);
-                    border: 1px solid rgba(255, 255, 255, 0.15);
-                    border-radius: 10px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #ffffff;
-                    font-size: 0.95rem;
-                    flex-shrink: 0;
-                }
-
-                .guest-banner-text {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    font-size: 0.875rem;
-                    color: #e2e8f0;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                .guest-banner-title {
-                    font-weight: 700;
-                    color: #ffffff;
-                    letter-spacing: -0.2px;
-                }
-
-                .guest-banner-dot {
-                    color: #64748b;
-                    font-size: 0.75rem;
-                }
-
-                .guest-banner-desc {
-                    color: #94a3b8;
-                    font-weight: 400;
-                }
-
-                .guest-banner-btn {
-                    background: #ffffff;
-                    color: #0f172a;
-                    padding: 0.45rem 1.1rem;
-                    border-radius: 50px;
-                    font-size: 0.825rem;
-                    font-weight: 700;
-                    border: none;
-                    cursor: pointer;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 0.45rem;
-                    flex-shrink: 0;
-                    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
-                    transition: all 0.2s ease;
-                }
-
-                .guest-banner-btn:hover {
-                    transform: scale(1.03);
-                    background: #f8fafc;
-                    box-shadow: 0 6px 18px rgba(255, 255, 255, 0.25);
-                }
-
-                .guest-btn-text-mobile {
-                    display: none;
-                }
-
-                @media (max-width: 640px) {
-                    .guest-banner-wrapper {
-                        padding: 0.45rem 0.85rem;
-                        margin-bottom: 0.85rem;
-                        border-radius: 12px;
-                        gap: 0.5rem;
-                    }
-                    .guest-banner-icon {
-                        width: 28px;
-                        height: 28px;
-                        font-size: 0.85rem;
-                        border-radius: 8px;
-                    }
-                    .guest-banner-text {
-                        font-size: 0.8rem;
-                    }
-                    .guest-banner-desc,
-                    .guest-banner-dot {
-                        display: none;
-                    }
-                    .guest-btn-text-desktop {
-                        display: none;
-                    }
-                    .guest-btn-text-mobile {
-                        display: inline;
-                    }
-                    .guest-banner-btn {
-                        padding: 0.45rem 0.85rem;
-                        font-size: 0.78rem;
-                    }
-                }
-            `;
-            document.head.appendChild(styleTag);
-        }
-
-        const banner = document.createElement('div');
-        banner.id = 'guest-mode-banner-premium';
-        banner.className = 'guest-banner-wrapper';
-        banner.innerHTML = `
-            <div class="guest-banner-left">
-                <div class="guest-banner-icon">
-                    <i class="fas fa-user-astronaut"></i>
-                </div>
-                <div class="guest-banner-text">
-                    <span class="guest-banner-title">Modo Invitado</span>
-                    <span class="guest-banner-dot">•</span>
-                    <span class="guest-banner-desc">Regístrate para guardar tu progreso académico.</span>
-                </div>
-            </div>
-            <button id="banner-auth-trigger" class="guest-banner-btn" onclick="window.triggerGoogleLogin(this)">
-                <i class="fab fa-google"></i>
-                <span class="guest-btn-text-desktop">Continuar con Google</span>
-                <span class="guest-btn-text-mobile">Acceder</span>
-            </button>
-        `;
-        container.prepend(banner);
+        // Desactivado a petición del usuario
+        return;
     }
     /**
      * Inyecta el HTML de la barra de estado Freemium.

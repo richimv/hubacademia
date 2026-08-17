@@ -95,10 +95,12 @@ Hub Academia sigue un enfoque de defensa en profundidad, donde cada capa del sis
 
 ---
 
-## 6. 📝 Auditoría y Cumplimiento
-*   **Logs Limpios:** En producción, se deshabilitan los logs de consola para evitar la exposición de la estructura interna del sistema a través del inspector del navegador.
+## 6. 📝 Auditoría, Privacidad y Cumplimiento (Google Play & GDPR)
+*   **Logs Limpios:** En producción, se deshabilitan los logs de consola para evitar la exposición de la estructura interna del sistema a través del inspector del navegador o logcat.
 *   **Hashes Criptográficos:** Uso de MD5/SHA para validar la integridad de las preguntas del banco y evitar duplicados o colisiones de datos.
+*   **Requisito Google Play - Eliminación de Cuenta ("Account Deletion Flow"):** Endpoint `DELETE /api/auth/account` integrado con frontend web (`profile.js`) y aplicaciones móviles (`profile.tsx` en HubDocenteApp y HubSaludApp). Permite al usuario purgar de forma inmediata y definitiva todos sus registros, exámenes, analíticas y perfil (cumplimiento estricto de la política de eliminación de cuentas de Google Play Store).
+*   **Transparencia Legal en la App:** Enlaces directos y vistas institucionales para `/privacy-policy` y `/terms-and-conditions` accesibles antes y después del registro.
 
 ---
 
-**Estado:** Documentación Oficial v2.0 (Junio 2026 - Conforme a Auditoría de Seguridad y Hardening RLS)
+**Estado:** Documentación Oficial v2.2 (Agosto 2026 - Conforme a Hardening RLS, Google Play Developer Standards y Seguridad Móvil)

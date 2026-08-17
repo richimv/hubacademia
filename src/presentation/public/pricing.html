@@ -8,15 +8,17 @@
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <!-- CSS Base (Variables Hub Academia) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/theme.css?v=1859573d">
-    <link rel="stylesheet" href="/css/base.css?v=1859573d">
-    <link rel="stylesheet" href="/css/header.css?v=1859573d">
-    <link rel="stylesheet" href="/css/modal.css?v=1859573d">
-    <link rel="stylesheet" href="/css/components.css?v=1859573d">
-    <link rel="stylesheet" href="/css/footer.css?v=1859573d">
-    <link rel="stylesheet" href="/css/sidebar.css?v=1859573d">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/pricing.css?v=1859573d">
+    <link rel="stylesheet" href="/css/theme.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/base.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/header.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/modal.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/components.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/footer.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/sidebar.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/pricing.css?v=865cbe41">
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/utils/themeManager.js?v=865cbe41"></script>
 </head>
 
 <body>
@@ -130,15 +132,15 @@
         </div>
     </div>
 
-    <!-- Modal Pago Manual (Yape/Plin) -->
+    <!-- Modal Pago Manual (Yape/Plin vía WhatsApp) -->
     <div id="manual-payment-modal" class="modal-overlay manual-payment-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-qrcode"></i> Pago Manual vía Yape / Plin</h3>
+                <h3><i class="fab fa-whatsapp" style="color: #22c55e;"></i> Pago e Instrucciones vía WhatsApp (Yape / Plin)</h3>
                 <button class="modal-close-btn" onclick="closeManualPaymentModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="modal-intro">Elige el plan que deseas adquirir para ver los detalles del pago:</p>
+                <p class="modal-intro">Elige el plan que deseas adquirir para recibir las indicaciones de pago:</p>
                 
                 <div class="payment-tabs">
                     <button id="tab-basic" class="payment-tab" onclick="selectManualPlan('basic')">
@@ -154,28 +156,25 @@
                 </div>
                 
                 <div class="yape-card-container">
-                    <div class="yape-premium-card">
-                        <div class="yape-card-brands">
-                            <img src="/assets/yape.png" alt="Yape" class="modal-brand-logo">
-                            <span class="brand-divider">|</span>
-                            <img src="/assets/plin.png" alt="Plin" class="modal-brand-logo">
-                        </div>
-                        <div class="yape-qr-wrapper">
-                            <img src="/assets/yape-qr.jpeg" alt="QR Yape HubAcademia" class="yape-qr-img">
+                    <div class="yape-premium-card" style="padding: 1.5rem; text-align: center;">
+                        <div class="yape-card-brands" style="margin-bottom: 1rem; justify-content: center; gap: 1rem; display: flex; align-items: center;">
+                            <img src="/assets/yape.png" alt="Yape" class="modal-brand-logo" style="height: 32px;">
+                            <span class="brand-divider" style="color: rgba(255,255,255,0.3);">|</span>
+                            <img src="/assets/plin.png" alt="Plin" class="modal-brand-logo" style="height: 32px;">
                         </div>
                         <div class="yape-card-details">
-                            <div class="yape-phone">980 844 817</div>
-                            <div class="yape-owner">Ricardo M. (HubAcademia)</div>
+                            <div class="yape-phone" style="font-size: 1.35rem; font-weight: 800; color: #22c55e; letter-spacing: 0.5px;">+51 993 869166</div>
+                            <div class="yape-owner" style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.25rem;">Atención Oficial WhatsApp • Hub Academia</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="payment-instructions">
-                    <h4><i class="fas fa-info-circle"></i> Pasos para activar tu plan:</h4>
+                    <h4><i class="fas fa-info-circle"></i> Pasos para la activación:</h4>
                     <ol>
-                        <li>Abre tu app de <strong>Yape</strong> o <strong>Plin</strong> y escanea el código QR de arriba, o yapea directamente al número <strong>980 844 817</strong>.</li>
-                        <li>Transfiere el monto exacto: <strong id="instruction-amount" style="color: var(--primary-light);">S/ 24.90</strong>.</li>
-                        <li>Haz clic en el botón de abajo para enviar el comprobante de pago por WhatsApp indicando tu correo electrónico.</li>
+                        <li>Selecciona tu plan arriba (Monto: <strong id="instruction-amount" style="color: var(--primary-light);">S/ 24.90</strong>).</li>
+                        <li>Haz clic en el botón verde inferior para contactarnos directamente a nuestro WhatsApp oficial <strong>+51 993 869166</strong>.</li>
+                        <li>Te brindaremos las indicaciones inmediatas para realizar la transferencia por <strong>Yape</strong> o <strong>Plin</strong> y activaremos tu cuenta al instante.</li>
                     </ol>
                 </div>
                 
@@ -186,7 +185,7 @@
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeManualPaymentModal()">Cerrar</button>
                 <button class="btn-whatsapp-confirm" onclick="redirectToWhatsappPayment()">
-                    <i class="fab fa-whatsapp"></i> Enviar Comprobante por WhatsApp
+                    <i class="fab fa-whatsapp"></i> Contactar por WhatsApp (+51 993 869166)
                 </button>
             </div>
         </div>
@@ -232,15 +231,15 @@
 
     <!-- Configuration Script (Load AFTER Supabase to avoid warning) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=1859573d"></script>
-    <script src="/js/services/networkService.js?v=1859573d"></script>
-    <script src="/js/services/authApiService.js?v=1859573d"></script>
-    <script src="/js/sessionManager.js?v=1859573d"></script>
-    <script src="/js/ui/uiManager.js?v=1859573d"></script>
-    <script src="/js/ui/sidebar.js?v=1859573d"></script>
-    <script src="/js/app.js?v=1859573d"></script>
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/services/networkService.js?v=865cbe41"></script>
+    <script src="/js/services/authApiService.js?v=865cbe41"></script>
+    <script src="/js/sessionManager.js?v=865cbe41"></script>
+    <script src="/js/ui/uiManager.js?v=865cbe41"></script>
+    <script src="/js/ui/sidebar.js?v=865cbe41"></script>
+    <script src="/js/app.js?v=865cbe41"></script>
 
-    <script src="/js/pricing.js?v=1859573d"></script>
+    <script src="/js/pricing.js?v=865cbe41"></script>
 </body>
 
 </html>

@@ -8,22 +8,24 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=1859573d">
-    <link rel="stylesheet" href="/css/base.css?v=1859573d">
-    <link rel="stylesheet" href="/css/auth.css?v=1859573d">
-    <link rel="stylesheet" href="/css/header.css?v=1859573d">
-    <link rel="stylesheet" href="/css/footer.css?v=1859573d">
-    <link rel="stylesheet" href="/css/modal.css?v=1859573d">
-    <link rel="stylesheet" href="/css/sidebar.css?v=1859573d">
+    <link rel="stylesheet" href="/css/theme.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/base.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/auth.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/header.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/footer.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/modal.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/sidebar.css?v=865cbe41">
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/utils/themeManager.js?v=865cbe41"></script>
     <style>
-        /* Stylized Design System for Profile Page - Official Matte Black Scale */
+        /* Stylized Design System for Profile Page - Dynamic Theme */
         :root {
-            --profile-bg: #050505;
-            --profile-card-bg: #0a0a0a;
-            --profile-nested-bg: #121212;
-            --profile-card-border: 1px solid rgba(255, 255, 255, 0.08);
-            --profile-text-primary: #ffffff;
-            --profile-text-secondary: #94a3b8;
+            --profile-bg: var(--bg-main);
+            --profile-card-bg: var(--card-bg);
+            --profile-nested-bg: var(--bg-tertiary);
+            --profile-card-border: 1px solid var(--border-color);
+            --profile-text-primary: var(--text-main);
+            --profile-text-secondary: var(--text-secondary);
             --manta-pill-gradient: linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%);
             --manta-pill-glow: 0 4px 20px rgba(59, 130, 246, 0.35), 0 0 15px rgba(6, 182, 212, 0.25);
         }
@@ -68,7 +70,7 @@
             gap: 2rem;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.9);
+            box-shadow: var(--shadow-md);
             backdrop-filter: blur(12px);
         }
 
@@ -87,12 +89,12 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            box-shadow: 0 0 24px rgba(59, 130, 246, 0.3), inset 0 0 12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 24px rgba(59, 130, 246, 0.25);
         }
 
         .profile-avatar i {
             font-size: 3.25rem;
-            color: #60a5fa;
+            color: var(--primary);
         }
 
         .profile-avatar-img {
@@ -120,14 +122,14 @@
             font-size: 1.85rem;
             font-weight: 800;
             margin: 0;
-            color: #ffffff;
+            color: var(--text-main);
             letter-spacing: -0.5px;
         }
 
         .btn-icon-edit {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #60a5fa;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
             cursor: pointer;
             font-size: 0.825rem;
             font-weight: 600;
@@ -137,19 +139,20 @@
             align-items: center;
             gap: 6px;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-icon-edit:hover {
-            background: rgba(59, 130, 246, 0.18);
-            border-color: rgba(59, 130, 246, 0.45);
-            color: #93c5fd;
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+            color: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+            box-shadow: var(--shadow-md);
         }
 
         .profile-email-row {
             margin: 0;
-            color: #94a3b8;
+            color: var(--text-secondary);
             font-size: 0.95rem;
             display: flex;
             align-items: center;
@@ -166,7 +169,7 @@
 
         .badge-status-active {
             background: rgba(16, 185, 129, 0.12);
-            color: #34d399;
+            color: #10b981;
             border: 1px solid rgba(16, 185, 129, 0.3);
             font-size: 0.78rem;
             font-weight: 600;
@@ -192,9 +195,9 @@
         }
 
         .badge-free {
-            background: rgba(255, 255, 255, 0.06);
-            color: #e2e8f0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
             font-weight: 600;
             padding: 5px 14px;
             border-radius: 50px;
@@ -236,11 +239,12 @@
             gap: 1.25rem;
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
             backdrop-filter: blur(8px);
+            box-shadow: var(--shadow-sm);
         }
 
         .settings-card:hover {
-            border-color: rgba(255, 255, 255, 0.16);
-            box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.85);
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-md);
             transform: translateY(-2px);
         }
 
@@ -270,7 +274,7 @@
         .card-subtitle {
             margin: 0.35rem 0 0.75rem 0;
             font-size: 0.875rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
             line-height: 1.5;
         }
 
@@ -287,14 +291,14 @@
             gap: 14px;
             padding: 0.85rem 1.1rem;
             background: var(--profile-nested-bg);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
             border-radius: 14px;
             transition: border-color 0.2s ease, background 0.2s ease;
         }
 
         .security-item:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
         }
 
         .security-item-icon {
@@ -317,7 +321,7 @@
 
         .security-item-label {
             font-size: 0.72rem;
-            color: #64748b;
+            color: var(--text-muted);
             text-transform: uppercase;
             font-weight: 700;
             letter-spacing: 0.5px;
@@ -326,7 +330,7 @@
         .security-item-val {
             font-size: 0.9rem;
             font-weight: 600;
-            color: #e2e8f0;
+            color: var(--text-main);
         }
 
         /* Usage Grid & Cards */
@@ -337,7 +341,7 @@
         .usage-plan-tag {
             background: rgba(59, 130, 246, 0.15);
             border: 1px solid rgba(59, 130, 246, 0.3);
-            color: #60a5fa;
+            color: var(--primary);
             padding: 5px 16px;
             border-radius: 50px;
             font-size: 0.75rem;
@@ -350,7 +354,7 @@
             align-items: center;
             justify-content: center;
             line-height: 1;
-            box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
         }
 
         .usage-grid {
@@ -362,20 +366,21 @@
 
         .usage-item {
             background: var(--profile-nested-bg);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 1.35rem 1.5rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: var(--shadow-sm);
         }
 
         .usage-item:hover {
-            border-color: rgba(99, 102, 241, 0.35);
-            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            box-shadow: var(--shadow-md);
         }
 
         .usage-item-header {
@@ -410,14 +415,14 @@
         .usage-title {
             font-size: 0.95rem;
             font-weight: 700;
-            color: #f1f5f9;
+            color: var(--text-main);
             line-height: 1.25;
             word-break: break-word;
         }
 
         .usage-badge-tag {
             font-size: 0.72rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
             font-weight: 500;
             display: inline-block;
             margin-top: 2px;
@@ -434,7 +439,8 @@
         .usage-progress-bg {
             height: 8px;
             width: 100%;
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--surface-hover);
+            border: 1px solid var(--border-color);
             border-radius: 9999px;
             overflow: hidden;
         }
@@ -450,12 +456,12 @@
             justify-content: space-between;
             align-items: center;
             font-size: 0.8rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
             gap: 0.5rem;
         }
 
         .usage-footer-left {
-            color: #64748b;
+            color: var(--text-muted);
             font-weight: 500;
         }
 
@@ -492,9 +498,9 @@
         }
 
         .btn-secondary {
-            background: var(--profile-nested-bg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #e2e8f0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
             border-radius: 12px;
             padding: 0.75rem 1.4rem;
             cursor: pointer;
@@ -503,9 +509,9 @@
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+            color: var(--text-main);
         }
 
         /* Danger Zone */
@@ -526,7 +532,7 @@
         }
 
         .card-desc {
-            color: #94a3b8;
+            color: var(--text-secondary);
             font-size: 0.9rem;
             margin: 0;
             line-height: 1.5;
@@ -759,8 +765,8 @@
 
     <!-- Delete Modal -->
     <div id="delete-modal" class="modal-overlay">
-        <div class="modal-content" style="border: 1px solid rgba(239, 68, 68, 0.3); background: #0a0a0a; border-radius: 24px; max-width: 500px;">
-            <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 1.25rem 1.75rem;">
+        <div class="modal-content" style="border: 1px solid var(--danger-border, rgba(239, 68, 68, 0.3)); background: var(--modal-bg); border-radius: 24px; max-width: 500px; box-shadow: var(--shadow-xl);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.75rem;">
                 <h3 class="modal-title" style="color: #ef4444; font-size: 1.25rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span>¿Estás absolutamente seguro?</span>
@@ -768,19 +774,19 @@
                 <button onclick="closeDeleteModal()" class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
             </div>
             <div class="modal-body" style="padding: 1.75rem; gap: 1.25rem;">
-                <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 1rem; color: #fca5a5; font-size: 0.875rem; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;">
-                    <i class="fas fa-info-circle" style="margin-top: 2px; flex-shrink: 0; color: #f87171;"></i>
+                <div style="background: var(--danger-bg, rgba(239, 68, 68, 0.08)); border: 1px solid var(--danger-border, rgba(239, 68, 68, 0.2)); border-radius: 12px; padding: 1rem; color: var(--danger, #ef4444); font-size: 0.875rem; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;">
+                    <i class="fas fa-info-circle" style="margin-top: 2px; flex-shrink: 0; color: #ef4444;"></i>
                     <span>Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta, historial de chats, favoritos y suscripciones.</span>
                 </div>
                 <div class="form-group" style="margin-top: 0.5rem; text-align: left;">
-                    <label for="delete-password" style="display: block; margin-bottom: 0.6rem; font-weight: 600; color: #cbd5e1; font-size: 0.9rem;">
+                    <label for="delete-password" style="display: block; margin-bottom: 0.6rem; font-weight: 600; color: var(--text-main); font-size: 0.9rem;">
                         Escribe <span style="color: #ef4444; font-family: monospace; background: rgba(239, 68, 68, 0.15); padding: 2px 6px; border-radius: 4px;">"ELIMINAR"</span> para confirmar:
                     </label>
-                    <input type="text" id="delete-password" class="auth-input" placeholder="ELIMINAR" autocomplete="off" style="width: 100%; padding: 0.85rem 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.12); background: #121212; color: #ffffff; font-size: 0.95rem; outline: none; transition: all 0.2s;">
+                    <input type="text" id="delete-password" class="auth-input" placeholder="ELIMINAR" autocomplete="off" style="width: 100%; padding: 0.85rem 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-main); font-size: 0.95rem; outline: none; transition: all 0.2s;">
                     <div id="delete-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; display: none; font-weight: 500;"><i class="fas fa-exclamation-circle"></i> Debes escribir "ELIMINAR" textualmente.</div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 1.25rem 1.75rem; border-top: 1px solid rgba(255, 255, 255, 0.08); background: transparent; display: flex; gap: 0.85rem; justify-content: flex-end;">
+            <div class="modal-footer" style="padding: 1.25rem 1.75rem; border-top: 1px solid var(--border-color); background: transparent; display: flex; gap: 0.85rem; justify-content: flex-end;">
                 <button onclick="closeDeleteModal()" class="btn-secondary" style="border-radius: 50px; padding: 0.7rem 1.5rem;">Cancelar</button>
                 <button id="confirm-delete-btn" class="btn-danger-pill">
                     <i class="fas fa-trash-alt"></i> Sí, eliminar mi cuenta
@@ -791,23 +797,23 @@
 
     <!-- Edit Name Modal -->
     <div id="edit-name-modal" class="modal-overlay">
-        <div class="modal-content" style="border: 1px solid rgba(59, 130, 246, 0.25); background: #0a0a0a; border-radius: 24px; max-width: 480px;">
-            <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 1.25rem 1.75rem;">
-                <h3 class="modal-title" style="color: #38bdf8; font-size: 1.25rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-user-edit"></i>
+        <div class="modal-content" style="border: 1px solid var(--border-color); background: var(--modal-bg); border-radius: 24px; max-width: 480px; box-shadow: var(--shadow-xl);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.75rem;">
+                <h3 class="modal-title" style="color: var(--text-main); font-size: 1.25rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-user-edit" style="color: var(--primary);"></i>
                     <span>Editar Nombre</span>
                 </h3>
                 <button onclick="closeEditNameModal()" class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
             </div>
             <div class="modal-body" style="padding: 1.75rem; gap: 1.25rem;">
-                <p style="color: #94a3b8; font-size: 0.9rem; margin: 0;">Puedes actualizar tu nombre de visualización dentro de la plataforma.</p>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Puedes actualizar tu nombre de visualización dentro de la plataforma.</p>
                 <div class="form-group" style="text-align: left;">
-                    <label for="new-name-input" style="display: block; margin-bottom: 0.6rem; font-weight: 600; color: #cbd5e1; font-size: 0.9rem;">Nuevo Nombre:</label>
-                    <input type="text" id="new-name-input" class="auth-input" placeholder="Ej: Dr. House" maxlength="50" style="width: 100%; padding: 0.85rem 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.12); background: #121212; color: #ffffff; font-size: 0.95rem;">
+                    <label for="new-name-input" style="display: block; margin-bottom: 0.6rem; font-weight: 600; color: var(--text-main); font-size: 0.9rem;">Nuevo Nombre:</label>
+                    <input type="text" id="new-name-input" class="auth-input" placeholder="Ej: Dr. House" maxlength="50" style="width: 100%; padding: 0.85rem 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-main); font-size: 0.95rem;">
                     <div id="edit-name-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; display: none;"><i class="fas fa-exclamation-circle"></i></div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 1.25rem 1.75rem; border-top: 1px solid rgba(255, 255, 255, 0.08); background: transparent; display: flex; gap: 0.85rem; justify-content: flex-end;">
+            <div class="modal-footer" style="padding: 1.25rem 1.75rem; border-top: 1px solid var(--border-color); background: transparent; display: flex; gap: 0.85rem; justify-content: flex-end;">
                 <button onclick="closeEditNameModal()" class="btn-secondary" style="border-radius: 50px; padding: 0.7rem 1.5rem;">Cancelar</button>
                 <button id="confirm-edit-name-btn" class="btn-action btn-primary" style="padding: 0.7rem 1.75rem;" onclick="submitNameChange()">Guardar Cambios</button>
             </div>
@@ -816,13 +822,13 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=1859573d"></script>
-    <script src="/js/services/networkService.js?v=1859573d"></script>
-    <script src="/js/services/authApiService.js?v=1859573d"></script>
-    <script src="/js/sessionManager.js?v=1859573d"></script>
-    <script src="/js/app.js?v=1859573d"></script>
-    <script src="/js/ui/sidebar.js?v=1859573d"></script>
-    <script src="/js/profile.js?v=1859573d"></script>
+    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/services/networkService.js?v=865cbe41"></script>
+    <script src="/js/services/authApiService.js?v=865cbe41"></script>
+    <script src="/js/sessionManager.js?v=865cbe41"></script>
+    <script src="/js/app.js?v=865cbe41"></script>
+    <script src="/js/ui/sidebar.js?v=865cbe41"></script>
+    <script src="/js/profile.js?v=865cbe41"></script>
 
 </body>
 

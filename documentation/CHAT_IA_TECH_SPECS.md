@@ -1,16 +1,18 @@
-# 🤖 Specs Técnicas: Chat Tutor IA (V6.1 - 100% Vectorial)
+# 🤖 Specs Técnicas: Chat Tutor IA (V6.2 - Gemini 3.1 Flash Lite & Pinecone)
 
 ## 1. Visión General
 El Chat Tutor de Hub Academia es un motor conversacional multi-dominio diseñado para responder dudas especializadas en tiempo real, utilizando una arquitectura **RAG Semántica Pura**.
 
-- **Motor Semántico (Pinecone):** Recuperación basada en significado profundo y vectores.
-- **Aislamiento por Namespaces:** Separación total entre conocimiento médico y educativo.
-- **Rigor Técnico:** Fundamentación en fuentes oficiales (MINSA/MINEDU).
+- **Motor Semántico (Pinecone):** Recuperación vectorial de alta fidelidad basada en significado profundo.
+- **Acceso por Tier:** El acceso a RAG vectorial (Pinecone) está reservado exclusivamente para suscriptores **Advanced / Elite** (hasta 25 consultas RAG/día). Los usuarios Basic/Free operan con IA generativa experta optimizada sin sobrecarga vectorial.
+- **Aislamiento por Namespaces:** Separación total entre conocimiento médico (`medicine`) y educativo (`education`).
+- **Rigor Técnico:** Fundamentación en fuentes oficiales (MINSA/MINEDU/CNEB).
 
 ## 2. Arquitectura de Modelos
-El sistema utiliza **Gemini 2.5 Flash Lite** para la inferencia, optimizado para latencia mínima.
+El sistema utiliza **Gemini 3.1 Flash Lite** (`gemini-3.1-flash-lite`) como motor principal de inferencia, optimizado para latencia mínima y razonamiento multimodal.
 
-- **Orquestación:** `TutorAiService.js` gestiona el routing dinámico y la inyección de contexto.
+- **Orquestación:** `TutorAiService.js` gestiona el routing dinámico, la inyección de contexto y la sanitización de payloads.
+- **UI Desacoplada de Marcas:** Las interfaces móviles y web no muestran nombres de modelos comerciales ("Gemini 2.5", etc.), manteniendo una experiencia de usuario limpia y enfocada en el sustento pedagógico y clínico.
 - **Semantic Expansion:** Motor de re-escritura en `RagService.js` que expande la consulta del usuario en temas técnicos.
 - **Embeddings:** Vertex AI `text-multilingual-embedding-002` (768 dimensiones).
 

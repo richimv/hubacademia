@@ -80,8 +80,23 @@ Para asegurar que las correcciones lleguen a todos los usuarios de inmediato (ev
 
 ---
 
+## 📱 Política de Aplicaciones Móviles (HubDocenteApp y HubSaludApp)
+
+A diferencia de la plataforma web donde los visitantes pueden realizar simulacros demo de 10 preguntas:
+- **Autenticación Obligatoria (100% SSO)**: Las aplicaciones móviles requieren inicio de sesión con Google desde el primer momento (`/(auth)/login`).
+- **Motivo de Arquitectura**: 
+  1. Evitar bypass de cuotas en cliente móvil mediante borrado de almacenamiento local.
+  2. Proteger las vidas sincronizadas (20 vidas en cuenta gratuita en PostgreSQL/Supabase).
+  3. Vincular de inmediato el historial y analíticas de simulacros al usuario.
+- **Disponibilidad Inicial de Concursos**:
+  - **Educación (`HubDocenteApp`)**: Habilitado exclusivamente el examen objetivo **ASCENSO** (MINEDU). Los demás concursos (**Nombramiento**, **Acceso a Cargos**) se presentan con el distintivo **"Pronto"** para evitar selección prematura.
+  - **Salud (`HubSaludApp`)**: Habilitado exclusivamente el examen objetivo **SERUMS** (MINSA). Los demás exámenes (**ENAM**, **Residentado**) se presentan con el distintivo **"Pronto"**.
+
+---
+
 ## 💎 Beneficios
 - **Alta Fidelidad**: El usuario prueba el producto REAL, no una maqueta.
-- **Conversión Progresiva**: 3 sesiones diarias son suficientes para demostrar el valor antes de pedir el registro.
+- **Conversión Progresiva**: 3 sesiones diarias en web son suficientes para demostrar el valor antes de pedir el registro.
 - **Eficiencia**: Cero consumo de créditos de IA para usuarios no registrados.
 - **Orden**: Aislamiento total entre perfiles médicos y docentes desde el primer clic.
+

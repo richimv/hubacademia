@@ -255,8 +255,8 @@ function redirectToWhatsappPayment() {
     const email = user ? (user.email || 'mi_correo@ejemplo.com') : 'mi_correo@ejemplo.com';
     const planName = currentSelectedManualPlan === 'basic' ? 'Básico (S/ 9.90 - 2 Meses)' : 'Avanzado (S/ 24.90 - 4 Meses)';
     
-    const phoneNumber = '51980844817';
-    const message = `¡Hola! Quiero activar mi Plan ${planName} de Hub Academia.\n\nMi correo registrado es: ${email}\n\nAdjunto la captura del pago por Yape.`;
+    const phoneNumber = '51993869166';
+    const message = `¡Hola! Deseo activar mi Plan ${planName} de Hub Academia mediante Yape / Plin.\n\nMi correo registrado es: ${email}\n\n¿Me podrían brindar las indicaciones para realizar la transferencia?`;
     
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;

@@ -262,7 +262,7 @@ class RepasoManager {
     }
 
     syncTtsLanguageSelectors() {
-        const isAdvanced = ['advanced', 'admin', 'elite'].includes(this.userTier);
+        const isAdvanced = ['advanced', 'admin'].includes(this.userTier);
 
         const ttsFront = document.getElementById('card-tts-front');
         const langFront = document.getElementById('card-tts-lang-front');
@@ -512,19 +512,20 @@ class RepasoManager {
         if (!grid) return;
 
         grid.innerHTML = `
-            <div style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(15, 15, 20, 0.95)); border: 1.5px solid rgba(249, 115, 22, 0.35); border-radius: 20px; padding: 2.5rem 2rem; text-align: center; max-width: 680px; margin: 1rem auto; box-shadow: 0 12px 35px rgba(0,0,0,0.6);">
-                <div style="width: 64px; height: 64px; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; color: #ff9f43; font-size: 1.8rem; box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);">
+            <div style="grid-column: 1 / -1; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 2.5rem 2rem; text-align: center; max-width: 680px; margin: 1rem auto; box-shadow: var(--shadow-md); position: relative; overflow: hidden;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #f97316, #fbbf24);"></div>
+                <div style="width: 64px; height: 64px; background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; color: #f97316; font-size: 1.8rem; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.2);">
                     <i class="fas fa-folder-plus"></i>
                 </div>
-                <h3 style="font-size: 1.4rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.75rem;">¡Crea y Personaliza tus Propios Mazos!</h3>
-                <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem; max-width: 540px; margin-left: auto; margin-right: auto;">
+                <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.75rem;">¡Crea y Personaliza tus Propios Mazos!</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem; max-width: 540px; margin-left: auto; margin-right: auto;">
                     Únete a Hub Academia para organizar tus temas de estudio, crear carpetas de repaso, crear tus tarjetas y comenzar a estudiar con la ayuda de un tutor inteligente.
                 </p>
                 <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <button class="btn-premium btn-premium-primary" style="padding: 0.75rem 1.75rem; font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.6rem; background: linear-gradient(135deg, #f97316, #ea580c); border: none; border-radius: 12px; color: #fff; cursor: pointer; box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);" onclick="window.uiManager.showAuthPromptModal()">
+                    <button class="btn-premium btn-premium-primary" style="padding: 0.75rem 1.75rem; font-size: 0.95rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.6rem; background: linear-gradient(135deg, #f97316, #ea580c); border: none; border-radius: 12px; color: #ffffff !important; cursor: pointer; box-shadow: 0 6px 20px rgba(249, 115, 22, 0.35);" onclick="window.uiManager.showAuthPromptModal()">
                         <i class="fas fa-user-plus"></i> Crear Cuenta Gratis
                     </button>
-                    <button class="btn-premium btn-premium-secondary" style="padding: 0.75rem 1.5rem; font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.6rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; color: #cbd5e1; cursor: pointer;" onclick="window.repasoManager.loadCommunity()">
+                    <button class="btn-premium btn-premium-secondary" style="padding: 0.75rem 1.5rem; font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.6rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-main) !important; cursor: pointer;" onclick="window.repasoManager.loadCommunity()">
                         <i class="fas fa-globe"></i> Explorar Comunidad
                     </button>
                 </div>
@@ -573,10 +574,10 @@ class RepasoManager {
 
             container.innerHTML = `
                 <div class="community-banner">
-                    <h1 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.8rem; color: #ffffff;">
+                    <h1 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.8rem; color: var(--text-main);">
                         <i class="fas fa-globe" style="color: #f97316;"></i> Comunidad de Repaso
                     </h1>
-                    <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin: 0;">
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin: 0;">
                         Explora mazos públicos clasificados por áreas temáticas. Clónalos a tu biblioteca personal para estudiarlos cuando quieras.
                     </p>
                 </div>
@@ -642,12 +643,12 @@ class RepasoManager {
                             <div style="color: #94a3b8; font-size: 0.75rem;"><i class="fas fa-download"></i> ${deck.saves_count || 0}</div>
                         </div>
                         <div style="font-size:1.6rem; margin-bottom:0.4rem;">${iconHtml}</div>
-                        <h3 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
-                        <div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:0.4rem;">
+                        <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.4rem;">
                             ${deck.total_cards || 0} tarjetas
                         </div>
                         <div style="font-size:0.75rem; color:#f97316; font-weight:600; margin-bottom:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            > Por: <span style="color:#e2e8f0">${deck.author_name || 'Estudiante'}</span>
+                            > Por: <span style="color:var(--text-secondary)">${deck.author_name || 'Estudiante'}</span>
                         </div>
                         <div style="margin-top:auto; width:100%;">
                             <button type="button" class="btn-clone-deck btn-clone-desktop">
@@ -660,8 +661,8 @@ class RepasoManager {
                     <div class="deck-card-mobile">
                         <div style="font-size:1.3rem; flex-shrink:0;">${iconHtml}</div>
                         <div style="flex:1; min-width:0;">
-                            <div style="font-size:0.9rem; font-weight:700; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
-                            <div style="font-size:0.75rem; color:#cbd5e1;">
+                            <div style="font-size:0.9rem; font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">
                                 ${deck.total_cards || 0} tarj. • <i class="fas fa-download"></i> ${deck.saves_count || 0}
                             </div>
                         </div>
@@ -811,16 +812,16 @@ class RepasoManager {
                 const audioBadge = hasAudio ? `<span style="font-size: 0.6rem; background: rgba(249, 115, 22, 0.12); color: #ff9f43; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(249, 115, 22, 0.25);"><i class="fas fa-volume-up"></i> Audio Premium</span>` : '';
 
                 html += `
-                    <div style="background: #121212; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1rem;">
+                    <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-sm);">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
                             <div style="color: #f97316; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Tarjeta ${index + 1}</div>
                             ${audioBadge}
                         </div>
-                        <div style="color: white; font-size: 0.95rem; margin-bottom: 0.5rem; line-height: 1.4;">
+                        <div style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 0.5rem; line-height: 1.4;">
                             ${window.MarkdownRenderer.render(c.front_content || '')}
                             ${imageHtml}
                         </div>
-                        <div style="color: #94a3b8; font-size: 0.9rem; padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.1); line-height: 1.4;">
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-color); line-height: 1.4;">
                             ${window.MarkdownRenderer.render(c.back_content || '')}
                             ${expImageHtml}
                         </div>
@@ -875,7 +876,7 @@ class RepasoManager {
 
         const user = window.sessionManager ? window.sessionManager.getUser() : null;
         const userTier = (user?.subscriptionTier || user?.subscription_tier || 'free').toLowerCase();
-        const isAdvancedOrAdmin = ['advanced', 'admin', 'elite'].includes(userTier);
+        const isAdvancedOrAdmin = ['advanced', 'admin'].includes(userTier);
 
         const container = document.getElementById('folder-header');
         const total = cards?.length || 0;
@@ -982,18 +983,18 @@ class RepasoManager {
             const currentCat = (this.currentDeck && this.currentDeck.category) ? this.currentDeck.category : 'General';
             const modalHtml = `
             <div id="confirm-publish-modal" class="modal-overlay active" style="opacity:0; transition:opacity 0.25s ease;">
-                <div class="modal-content" style="max-width:440px; padding:1.75rem; text-align:center; transform:scale(0.95); transition:transform 0.25s ease; background:#0a0a0a !important; border:1px solid rgba(255,255,255,0.08) !important; border-radius:20px !important; box-shadow:0 25px 50px -12px rgba(0,0,0,0.95) !important;">
+                <div class="modal-content" style="max-width:440px; padding:1.75rem; text-align:center; transform:scale(0.95); transition:transform 0.25s ease; background:var(--modal-bg) !important; border:1px solid var(--border-color) !important; border-radius:20px !important; box-shadow:var(--shadow-xl) !important;">
                     <div style="width:64px; height:64px; margin:0 auto 1.2rem auto; background:rgba(249, 115, 22, 0.12); border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(249, 115, 22, 0.3); box-shadow: 0 0 15px rgba(249, 115, 22, 0.15);">
                         <i class="fas fa-globe" style="font-size:1.8rem; color:#f97316;"></i>
                     </div>
-                    <h3 style="color:#ffffff; font-size:1.25rem; margin:0 0 0.5rem 0; font-weight:700;">¿Publicar Mazo en Comunidad?</h3>
-                    <p style="color:#94a3b8; font-size:0.88rem; line-height:1.5; margin-bottom:1.25rem;">
+                    <h3 style="color:var(--text-main); font-size:1.25rem; margin:0 0 0.5rem 0; font-weight:700;">¿Publicar Mazo en Comunidad?</h3>
+                    <p style="color:var(--text-secondary); font-size:0.88rem; line-height:1.5; margin-bottom:1.25rem;">
                         Se publicará este mazo, su guía y sus tarjetas directas para que otros estudiantes puedan explorarlo y clonarlo.
                     </p>
                     
                     <div style="margin-bottom:1.5rem; text-align:left;">
-                        <label style="font-size:0.82rem; color:#cbd5e1; font-weight:600; display:block; margin-bottom:0.45rem;">Categoría / Área Temática</label>
-                        <select id="publish-deck-category" class="form-input-premium" style="width:100%;">
+                        <label style="font-size:0.82rem; color:var(--text-secondary); font-weight:600; display:block; margin-bottom:0.45rem;">Categoría / Área Temática</label>
+                        <select id="publish-deck-category" class="form-input-premium" style="width:100%; background:var(--input-bg); color:var(--input-text); border:1px solid var(--border-color); padding:0.65rem; border-radius:8px;">
                             <option value="General" ${currentCat === 'General' ? 'selected' : ''}>📚 General</option>
                             <option value="Medicina" ${currentCat === 'Medicina' ? 'selected' : ''}>🩺 Medicina</option>
                             <option value="Educación" ${currentCat === 'Educación' ? 'selected' : ''}>🎓 Educación</option>
@@ -1079,10 +1080,10 @@ class RepasoManager {
         const icon = this.subDecksCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
 
         container.innerHTML = `
-            <div class="deck-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.6rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div class="deck-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.6rem; border-bottom:1px solid var(--border-color);">
                 <div style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;" onclick="window.repasoManager.toggleSubDecks()">
-                    <i class="${icon} toggle-icon" style="color:#94a3b8; font-size:0.9rem; transition:transform 0.2s;"></i>
-                    <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:#ffffff; letter-spacing:0.5px;">${title}</h3>
+                    <i class="${icon} toggle-icon" style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s;"></i>
+                    <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:var(--text-main); letter-spacing:0.5px;">${title}</h3>
                 </div>
             </div>
             <div id="subdecks-grid" class="decks-grid ${this.subDecksCollapsed ? 'collapsed' : ''}" style="margin-top:1rem;"></div>
@@ -1218,8 +1219,8 @@ class RepasoManager {
                         <span class="deck-badge ${badgeClass}" style="font-size:0.6rem; padding:0.15rem 0.5rem; background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);">${badgeText}</span>
                     </div>
                     <div style="font-size:1.6rem; margin-bottom:0.4rem;">${iconHtml}</div>
-                    <h3 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
-                    <div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:0.5rem;">
+                    <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
+                    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem;">
                         ${deck.total_cards || 0} tarjetas
                         ${hasDue ? `<span style="color:#ef4444; font-weight:600; margin-left:0.5rem;">${deck.due_cards} pend.</span>` : ''}
                     </div>
@@ -1227,8 +1228,8 @@ class RepasoManager {
                         <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#fb923c; margin-bottom:4px; font-weight:600;">
                             <span>Dominio</span><span>${mastery}%</span>
                         </div>
-                        <div style="height:4px; background:rgba(255,255,255,0.08); border-radius:2px;">
-                            <div style="width:${mastery}%; height:100%; background: linear-gradient(90deg, #f97316, #fb923c); border-radius:2px; box-shadow: 0 0 8px rgba(249,115,22,0.6);"></div>
+                        <div style="height:4px; background:rgba(249,115,22,0.1); border-radius:2px;">
+                            <div style="width:${mastery}%; height:100%; background: linear-gradient(90deg, #f97316, #fb923c); border-radius:2px; box-shadow: 0 0 8px rgba(249,115,22,0.4);"></div>
                         </div>
                     </div>
                 </div>
@@ -1237,8 +1238,8 @@ class RepasoManager {
                 <div class="deck-card-mobile">
                     <div style="font-size:1.3rem; flex-shrink:0;">${iconHtml}</div>
                     <div style="flex:1; min-width:0;">
-                        <div style="font-size:0.9rem; font-weight:700; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
-                        <div style="font-size:0.75rem; color:#cbd5e1;">
+                        <div style="font-size:0.9rem; font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">
                             ${deck.total_cards || 0} tarj.
                             ${hasDue ? `<span style="color:#ef4444; font-weight:600;">${deck.due_cards} pend.</span>` : ''}
                         </div>
@@ -1290,36 +1291,36 @@ class RepasoManager {
         this.isSelectionMode = false;
 
         container.innerHTML = `
-            <div class="deck-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.6rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div class="deck-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.6rem; border-bottom:1px solid var(--border-color);">
                 <div style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;" onclick="window.repasoManager.toggleCardsSection()">
-                    <i class="${icon} toggle-icon-cards" style="color:#94a3b8; font-size:0.9rem; transition:transform 0.2s;"></i>
-                    <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:#ffffff; letter-spacing:0.5px;">TARJETAS (${cardCount})</h3>
+                    <i class="${icon} toggle-icon-cards" style="color:var(--text-muted); font-size:0.9rem; transition:transform 0.2s;"></i>
+                    <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:var(--text-main); letter-spacing:0.5px;">TARJETAS (${cardCount})</h3>
                 </div>
                 ${this.token ? `
-                <button type="button" class="btn-action-sm btn-card-create" onclick="event.stopPropagation(); window.repasoManager.openAddCardModal()" style="background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:#ffffff; padding:0.4rem 0.85rem; border-radius:8px; font-size:0.82rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:all 0.2s;">
-                    <i class="fas fa-plus" style="color:#60a5fa;"></i> Crear Tarjeta
+                <button type="button" class="btn-action-sm btn-card-create" onclick="event.stopPropagation(); window.repasoManager.openAddCardModal()" style="background:var(--primary); border:none; color:#ffffff !important; padding:0.45rem 1rem; border-radius:10px; font-size:0.85rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.45rem; box-shadow: 0 2px 8px var(--primary-glow); transition:all 0.2s;">
+                    <i class="fas fa-plus"></i> Crear Tarjeta
                 </button>
                 ` : ''}
             </div>
 
             <div id="cards-section-body" class="${this.cardsCollapsed ? 'collapsed' : ''}" style="transition: all 0.3s ease;">
                 ${cardCount === 0 ? `
-                    <div style="color:#94a3b8; padding:2rem; text-align:center; background:rgba(255,255,255,0.02); border-radius:14px; border:1px solid rgba(255,255,255,0.05);">
-                        <i class="fas fa-layer-group" style="font-size:2rem; color:#475569; margin-bottom:0.75rem; display:block;"></i>
+                    <div style="color:var(--text-muted); padding:2.5rem; text-align:center; background:var(--card-bg); border-radius:16px; border:1px solid var(--border-color); box-shadow:var(--shadow-sm);">
+                        <i class="fas fa-layer-group" style="font-size:2rem; color:var(--text-muted); margin-bottom:0.75rem; display:block;"></i>
                         No hay tarjetas en este mazo. ¡Haz clic en <b>"+ Crear Tarjeta"</b> para agregar la primera!
                     </div>
                 ` : `
                     <div style="display:flex; justify-content:space-between; margin-bottom:1rem; align-items:center; flex-wrap:wrap; gap:1rem;">
                         <div style="position:relative; width:100%; max-width:260px;">
-                            <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;"></i>
-                            <input type="text" id="card-search-input" placeholder="Buscar tarjetas..." style="width:100%; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; font-size:0.9rem;" onkeyup="window.repasoManager.filterCards(this.value)">
+                            <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:0.85rem;"></i>
+                            <input type="text" id="card-search-input" placeholder="Buscar tarjetas..." style="width:100%; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--input-text); font-size:0.9rem; outline:none; transition:border-color 0.2s;" onkeyup="window.repasoManager.filterCards(this.value)">
                         </div>
                         <div style="display:flex; align-items:center; gap:1rem;">
                             <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin:0;">
                                 <input type="checkbox" id="select-all-cards" onchange="window.repasoManager.toggleSelectAllCards(this.checked)" class="card-checkbox">
-                                <span style="font-size:0.85rem; color:#94a3b8; font-weight:500;">Seleccionar todo</span>
+                                <span style="font-size:0.85rem; color:var(--text-secondary); font-weight:500;">Seleccionar todo</span>
                             </label>
-                            <button id="btn-bulk-delete" class="btn-action deck-action-btn--delete" style="display:none; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:600;" onclick="${this.token ? 'window.repasoManager.confirmBulkDelete()' : 'window.uiManager.showAuthPromptModal()'}">
+                            <button id="btn-bulk-delete" class="btn-action deck-action-btn--delete" style="display:none; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:8px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:600;" onclick="${this.token ? 'window.repasoManager.confirmBulkDelete()' : 'window.uiManager.showAuthPromptModal()'}">
                                 <i class="fas fa-trash"></i> Eliminar Selección
                             </button>
                         </div>
@@ -2102,7 +2103,7 @@ class RepasoManager {
         const generateTtsFront = (document.getElementById('card-tts-front')?.checked && front.length >= 2) || false;
         const generateTtsBack = (document.getElementById('card-tts-back')?.checked && back.length >= 2) || false;
 
-        const isAdvanced = ['advanced', 'admin', 'elite'].includes(this.userTier);
+        const isAdvanced = ['advanced', 'admin'].includes(this.userTier);
         const hasMedia = imageUrl || backImageUrl || this._pendingFiles.front || this._pendingFiles.back || generateTtsFront || generateTtsBack;
 
         if (hasMedia && !isAdvanced) {
@@ -2378,7 +2379,7 @@ class RepasoManager {
      * ✅ CARGA INTELIGENTE: Solo genera previsualización local.
      */
     async handleImageUpload(input, side) {
-        const isAdvanced = ['advanced', 'admin', 'elite'].includes(this.userTier);
+        const isAdvanced = ['advanced', 'admin'].includes(this.userTier);
         if (!isAdvanced) {
             input.value = '';
             if (window.uiManager?.showPaywallModal) {
@@ -2522,7 +2523,7 @@ class RepasoManager {
     }
 
     async _saveBulkCards(deckId) {
-        const isAdvanced = ['advanced', 'admin', 'elite'].includes(this.userTier);
+        const isAdvanced = ['advanced', 'admin'].includes(this.userTier);
         const generateTtsFront = document.getElementById('bulk-tts-front')?.checked || false;
         const generateTtsBack = document.getElementById('bulk-tts-back')?.checked || false;
 
@@ -2816,18 +2817,12 @@ class RepasoManager {
     }
 
     renderGuestBanner() {
-        if (window.uiManager) {
-            window.uiManager.renderGuestBanner('main-content');
-        }
+        // Desactivado a solicitud del usuario
     }
 
     updateGuestBanner() {
         const banner = document.getElementById('guest-mode-banner-premium');
-        if (this.token) {
-            if (banner) banner.remove();
-        } else {
-            if (!banner) this.renderGuestBanner();
-        }
+        if (banner) banner.remove();
     }
 
     closePreviewModal() {

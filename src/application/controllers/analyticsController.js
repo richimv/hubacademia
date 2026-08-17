@@ -242,7 +242,7 @@ class AnalyticsController {
             }
 
             // Retornar Diagnóstico Estático para cuentas no Premium (free, pending, etc.) o si se forzó el fallback
-            if (tier !== 'advanced' && tier !== 'elite' && tier !== 'admin' || req.fallbackToStatic) {
+            if ((tier !== 'advanced' && tier !== 'admin') || req.fallbackToStatic) {
                 let strengths = "";
                 let weaknesses = "";
 

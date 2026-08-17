@@ -30,7 +30,7 @@ const SimulatorDash = (() => {
                 { label: 'Ciencias Básicas', areas: ['Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308' },
                 { label: 'Las 4 Grandes', areas: ['Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6' },
                 { label: 'Especialidades Clínicas', areas: ['Cardiología', 'Gastroenterología', 'Neurología', 'Nefrología', 'Neumología', 'Endocrinología', 'Infectología', 'Reumatología', 'Traumatología'], bg: 'rgba(99, 102, 241, 0.7)', border: '#6366f1' },
-                { label: 'Salud Pública y Gestión', areas: ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981' }
+                { label: 'Bloque Temático Oficial', areas: ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981' }
             ]
         },
         'EDUCACION': {
@@ -240,7 +240,7 @@ const SimulatorDash = (() => {
             item.title = label;
             item.innerHTML = `
                 <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; display: inline-block;"></span>
-                <span style="font-weight: 600; color: #f8fafc;">${val} q <span style="font-weight: 400; opacity: 0.6; font-size: 0.7rem;">(${pct}%)</span></span>
+                <span style="font-weight: 600; color: var(--text-main); font-size: 0.8rem;">${val} q <span style="font-weight: 400; color: var(--text-secondary); font-size: 0.72rem;">(${pct}%)</span></span>
             `;
             legend.appendChild(item);
         });
@@ -253,8 +253,8 @@ const SimulatorDash = (() => {
                 datasets: [{
                     data: values,
                     backgroundColor: colors,
-                    borderWidth: 1,
-                    borderColor: 'rgba(0, 0, 0, 0.6)',
+                    borderWidth: 2,
+                    borderColor: document.documentElement.getAttribute('data-theme') === 'light' ? '#ffffff' : '#0f172a',
                     hoverOffset: 4
                 }]
             },
@@ -285,14 +285,6 @@ const SimulatorDash = (() => {
                 tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
 
-                // Estilos visuales
-                tabs.forEach(t => {
-                    t.style.background = 'transparent';
-                    t.style.color = '#475569';
-                });
-                tab.style.background = 'rgba(59,130,246,0.2)';
-                tab.style.color = '#93c5fd';
-
                 const val = tab.dataset.mode;
                 activeMode = val === 'all' ? null : (isNaN(val) ? val : parseInt(val, 10));
 
@@ -316,14 +308,6 @@ const SimulatorDash = (() => {
                 // Actualizar estado activo
                 tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-
-                // Estilos visuales
-                tabs.forEach(t => {
-                    t.style.background = 'transparent';
-                    t.style.color = '#475569';
-                });
-                tab.style.background = 'rgba(139,92,246,0.2)';
-                tab.style.color = '#c4b5fd';
 
                 const val = tab.dataset.days;
                 activeDays = val === 'all' ? null : parseInt(val);
@@ -376,6 +360,21 @@ const SimulatorDash = (() => {
         }
         const urlParams = new URLSearchParams(window.location.search);
         currentContext = (urlParams.get('context') || 'MEDICINA').toUpperCase();
+
+        // 🎨 Asignación Cromática Contextual (Salud = Verde/Esmeralda, Educación = Azul/Índigo)
+        if (currentContext === 'MEDICINA') {
+            document.documentElement.style.setProperty('--primary', '#0d9488');
+            document.documentElement.style.setProperty('--primary-dark', '#0f766e');
+            document.documentElement.style.setProperty('--primary-light', '#2dd4bf');
+            document.documentElement.style.setProperty('--primary-glow', 'rgba(13, 148, 136, 0.25)');
+            document.documentElement.style.setProperty('--primary-glow-sm', 'rgba(13, 148, 136, 0.12)');
+        } else if (currentContext === 'EDUCACION') {
+            document.documentElement.style.setProperty('--primary', '#3b82f6');
+            document.documentElement.style.setProperty('--primary-dark', '#2563eb');
+            document.documentElement.style.setProperty('--primary-light', '#60a5fa');
+            document.documentElement.style.setProperty('--primary-glow', 'rgba(59, 130, 246, 0.25)');
+            document.documentElement.style.setProperty('--primary-glow-sm', 'rgba(59, 130, 246, 0.12)');
+        }
 
         // 0. Initialize Context-Aware Data Structures
         const ctxConfig = contexts[currentContext] || contexts['MEDICINA'];
@@ -959,10 +958,9 @@ const SimulatorDash = (() => {
             let groupsToRender = examAreasGrouped.filter(g => {
                 if (g.conditionalTarget && g.conditionalTarget !== target) return false;
 
-                // 🛡️ REGLA SERUMS: Solo Medicina Humana ve las áreas clínicas.
-                // 🛡️ REGLA SERUMS: Solo se muestra el Grupo D (Salud Pública y Gestión) para TODOS.
+                // 🛡️ REGLA SERUMS: Solo se muestra el Bloque Temático Oficial para TODOS.
                 if (currentContext === 'MEDICINA' && target === 'SERUMS') {
-                    if (!g.label.includes('Salud Pública')) return false;
+                    if (!g.label.includes('Bloque Temático') && !g.label.includes('Salud Pública')) return false;
                 }
 
                 return true;
@@ -1502,7 +1500,11 @@ const SimulatorDash = (() => {
                             legend: {
                                 display: true,
                                 position: 'top',
-                                labels: { color: '#64748b', boxWidth: 12, font: { size: 11 } }
+                                labels: { 
+                                    color: document.documentElement.getAttribute('data-theme') === 'light' ? '#334155' : '#cbd5e1', 
+                                    boxWidth: 12, 
+                                    font: { size: 11, weight: '600', family: 'Inter, sans-serif' } 
+                                }
                             },
                             tooltip: {
                                 callbacks: {
@@ -1515,27 +1517,31 @@ const SimulatorDash = (() => {
                                 beginAtZero: false,
                                 min: 0,
                                 max: 20,
-                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                grid: { color: document.documentElement.getAttribute('data-theme') === 'light' ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.05)' },
                                 ticks: {
-                                    color: '#475569',
+                                    color: document.documentElement.getAttribute('data-theme') === 'light' ? '#475569' : '#94a3b8',
                                     stepSize: 2,
+                                    font: { family: 'Inter, sans-serif' },
                                     callback: (v) => v
                                 },
                                 title: {
                                     display: true,
                                     text: 'Nota (0–20)',
-                                    color: '#334155',
-                                    font: { size: 11 }
+                                    color: document.documentElement.getAttribute('data-theme') === 'light' ? '#1e293b' : '#cbd5e1',
+                                    font: { size: 11, weight: '600', family: 'Inter, sans-serif' }
                                 }
                             },
                             x: {
                                 grid: { display: false },
-                                ticks: { color: '#475569', font: { size: 11 } },
+                                ticks: { 
+                                    color: document.documentElement.getAttribute('data-theme') === 'light' ? '#475569' : '#94a3b8', 
+                                    font: { size: 11, family: 'Inter, sans-serif' } 
+                                },
                                 title: {
                                     display: true,
                                     text: 'Intentos Recientes',
-                                    color: '#334155',
-                                    font: { size: 11 }
+                                    color: document.documentElement.getAttribute('data-theme') === 'light' ? '#1e293b' : '#cbd5e1',
+                                    font: { size: 11, weight: '600', family: 'Inter, sans-serif' }
                                 }
                             }
                         }
@@ -1770,77 +1776,77 @@ const SimulatorDash = (() => {
 
                     if (currentContext === 'EDUCACION') {
                         mockStrengths = `
-                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Las métricas de tu sesión de prueba revelan aptitud pedagógica sólida en fundamentos teóricos:</p>
+                            <p style='color:var(--text-secondary); font-size:0.88rem; line-height:1.6; margin-bottom:1rem;'>Las métricas de tu sesión de prueba revelan aptitud pedagógica sólida en fundamentos teóricos:</p>
                             <ul style="margin:0; padding:0; list-style-type: none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Planificación Curricular (${targetExamName}):</strong> Reacción óptima para identificar propósitos de aprendizaje y criterios de evaluación formativa.</span></li>
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Comprensión Lectora:</strong> Excelentes destrezas de análisis crítico, identificación de ideas principales y subtextos.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-check-circle" style="color: #10b981; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Planificación Curricular (${targetExamName}):</strong> Reacción óptima para identificar propósitos de aprendizaje y criterios de evaluación formativa.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-check-circle" style="color: #10b981; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Comprensión Lectora:</strong> Excelentes destrezas de análisis crítico, identificación de ideas principales y subtextos.</span></li>
                             </ul>
                         `;
 
                         mockWeaknesses = `
-                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Se advierten lagunas de casuística que podrían poner en riesgo tu nombramiento o ascenso.</p>
+                            <p style='color:var(--text-secondary); font-size:0.88rem; line-height:1.6; margin-bottom:1rem;'>Se advierten lagunas de casuística que podrían poner en riesgo tu nombramiento o ascenso.</p>
                             <ul style="margin:0; padding:0; list-style-type: none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-exclamation-triangle" style="color: #fbbf24; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Evaluación y Convivencia (${targetExamName}):</strong> Dificultad para resolver dilemas morales complejos y aplicar retroalimentación descriptiva.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-exclamation-triangle" style="color: #f59e0b; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Evaluación y Convivencia (${targetExamName}):</strong> Dificultad para resolver dilemas morales complejos y aplicar retroalimentación descriptiva.</span></li>
                             </ul>
-                            <div style="margin-top: 1.25rem; padding: 1rem; background: rgba(245, 158, 11, 0.06); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 10px;">
-                                <span style="font-weight: 700; color: #fbbf24; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia Pedagógica Recomendada</span>
-                                <span style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">De acuerdo a esta muestra, concentrar tus esfuerzos en simulacros de 'Evaluación Formativa' y revisar rúbricas docentes mejorará considerablemente tu nota en la PUN.</span>
+                            <div style="margin-top: 1.25rem; padding: 1.2rem; background: var(--surface-hover); border: 1px dashed var(--border-color); border-radius: 12px;">
+                                <span style="font-weight: 800; color: #f59e0b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia Pedagógica Recomendada</span>
+                                <span style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55;">De acuerdo a esta muestra, concentrar tus esfuerzos en simulacros de 'Evaluación Formativa' y revisar rúbricas docentes mejorará considerablemente tu nota en la PUN.</span>
                             </div>
-                            <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1.5rem;">
-                                <button onclick="window.uiManager.showAuthPromptModal();" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">
+                            <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed var(--border-color); padding-top: 1.5rem;">
+                                <button onclick="window.uiManager.showAuthPromptModal();" style="background: var(--primary); color: #ffffff !important; border: none; padding: 0.75rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px var(--primary-glow); font-size: 0.92rem;">
                                     Obtener Diagnóstico Completamente Personalizado IA
                                 </button>
-                                <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.75rem; line-height: 1.4;">Atención: Esta estadística es generada en un entorno efímero. Crear una cuenta permite a nuestro Motor Deep Learning correlacionar tu historial completo sobre miles de casos pedagógicos de ${targetExamName}.</p>
+                                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.75rem; line-height: 1.45;">Atención: Esta estadística es generada en un entorno efímero. Crear una cuenta permite a nuestro Motor Deep Learning correlacionar tu historial completo sobre miles de casos pedagógicos de ${targetExamName}.</p>
                             </div>
                         `;
                     } else if (currentContext === 'IDIOMAS') {
                         mockStrengths = `
-                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Tus destrezas comunicativas pasivas muestran un nivel de comprensión sólido:</p>
+                            <p style='color:var(--text-secondary); font-size:0.88rem; line-height:1.6; margin-bottom:1rem;'>Tus destrezas comunicativas pasivas muestran un nivel de comprensión sólido:</p>
                             <ul style="margin:0; padding:0; list-style-type: none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Reading & Listening (${targetExamName}):</strong> Capacidad de aislar el significado central y deducir detalles contextuales de diálogos nativos.</span></li>
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Vocabulary Range:</strong> Buena correspondencia inicial de definiciones con sus sinónimos contextuales.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-check-circle" style="color: #10b981; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Reading & Listening (${targetExamName}):</strong> Capacidad de aislar el significado central y deducir detalles contextuales de diálogos nativos.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-check-circle" style="color: #10b981; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Vocabulary Range:</strong> Buena correspondencia inicial de definiciones con sus sinónimos contextuales.</span></li>
                             </ul>
                         `;
 
                         mockWeaknesses = `
-                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Se detectan brechas gramaticales y de precisión lingüística que restan fluidez:</p>
+                            <p style='color:var(--text-secondary); font-size:0.88rem; line-height:1.6; margin-bottom:1rem;'>Se detectan brechas gramaticales y de precisión lingüística que restan fluidez:</p>
                             <ul style="margin:0; padding:0; list-style-type: none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-exclamation-triangle" style="color: #fbbf24; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Grammar & Use of English (${targetExamName}):</strong> Imprecisión en tiempos perfectos, modales de especulación y colocaciones gramaticales.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-exclamation-triangle" style="color: #f59e0b; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Grammar & Use of English (${targetExamName}):</strong> Imprecisión en tiempos perfectos, modales de especulación y colocaciones gramaticales.</span></li>
                             </ul>
-                            <div style="margin-top: 1.25rem; padding: 1rem; background: rgba(245, 158, 11, 0.06); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 10px;">
-                                <span style="font-weight: 700; color: #fbbf24; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia Lingüística Recomendada</span>
-                                <span style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">Práctica de forma aislada mediante el módulo 'Aprender (Teoría)' y guarda los verbos y contracciones falladas en 'Mi Vocabulario' para repasar.</span>
+                            <div style="margin-top: 1.25rem; padding: 1.2rem; background: var(--surface-hover); border: 1px dashed var(--border-color); border-radius: 12px;">
+                                <span style="font-weight: 800; color: #f59e0b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia Lingüística Recomendada</span>
+                                <span style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55;">Práctica de forma aislada mediante el módulo 'Aprender (Teoría)' y guarda los verbos y contracciones falladas en 'Mi Vocabulario' para repasar.</span>
                             </div>
-                            <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1.5rem;">
-                                <button onclick="window.uiManager.showAuthPromptModal();" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">
+                            <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed var(--border-color); padding-top: 1.5rem;">
+                                <button onclick="window.uiManager.showAuthPromptModal();" style="background: var(--primary); color: #ffffff !important; border: none; padding: 0.75rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px var(--primary-glow); font-size: 0.92rem;">
                                     Obtener Diagnóstico Completamente Personalizado IA
                                 </button>
-                                <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.75rem; line-height: 1.4;">Atención: Esta estadística es generada en un entorno efímero. Crear una cuenta permite a nuestro Motor Deep Learning correlacionar tu historial completo sobre tus habilidades del nivel ${targetExamName}.</p>
+                                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.75rem; line-height: 1.45;">Atención: Esta estadística es generada en un entorno efímero. Crear una cuenta permite a nuestro Motor Deep Learning correlacionar tu historial completo sobre tus habilidades del nivel ${targetExamName}.</p>
                             </div>
                         `;
                     } else {
                         mockStrengths = `
-                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Las métricas de tu sesión de prueba revelan patrones de decisión fundamentales muy bien afianzados:</p>
+                            <p style='color:var(--text-secondary); font-size:0.88rem; line-height:1.6; margin-bottom:1rem;'>Las métricas de tu sesión de prueba revelan patrones de decisión fundamentales muy bien afianzados:</p>
                             <ul style="margin:0; padding:0; list-style-type: none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Diagnóstico Diferencial (${targetExamName}):</strong> Reacción óptima frente a escenarios clínicos de presión temporal, con alta asimilación de guías clínicas primarias.</span></li>
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Bloque Estratégico:</strong> Rendimiento transversal en áreas materno-infantiles que sugiere bases sólidas de razonamiento médico aplicado.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-check-circle" style="color: #10b981; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Diagnóstico Diferencial (${targetExamName}):</strong> Reacción óptima frente a escenarios clínicos de presión temporal, con alta asimilación de guías clínicas primarias.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-check-circle" style="color: #10b981; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Bloque Estratégico:</strong> Rendimiento transversal en áreas materno-infantiles que sugiere bases sólidas de razonamiento médico aplicado.</span></li>
                             </ul>
                         `;
 
                         mockWeaknesses = `
-                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Se advierten zonas oscuras que podrían generar fugas críticas de puntaje en tu evaluación principal.</p>
+                            <p style='color:var(--text-secondary); font-size:0.88rem; line-height:1.6; margin-bottom:1rem;'>Se advierten zonas oscuras que podrían generar fugas críticas de puntaje en tu evaluación principal.</p>
                             <ul style="margin:0; padding:0; list-style-type: none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-exclamation-triangle" style="color: #fbbf24; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Salud Pública y Gestión (${targetExamName}):</strong> Fallos de deducción en normativas NTS y epidemiología básica, mermando tu índice global.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-exclamation-triangle" style="color: #f59e0b; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Salud Pública y Gestión (${targetExamName}):</strong> Fallos de deducción en normativas NTS y epidemiología básica, mermando tu índice global.</span></li>
                             </ul>
-                            <div style="margin-top: 1.25rem; padding: 1rem; background: rgba(245, 158, 11, 0.06); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 10px;">
-                                <span style="font-weight: 700; color: #fbbf24; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia de Intervención Recomendada</span>
-                                <span style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">De acuerdo a esta muestra, aislar la disciplina general de "Salud Pública" en tu panel de configuración y realizar bloques exclusivos fortalecerá dramáticamente tus ratios de aprobación.</span>
+                            <div style="margin-top: 1.25rem; padding: 1.2rem; background: var(--surface-hover); border: 1px dashed var(--border-color); border-radius: 12px;">
+                                <span style="font-weight: 800; color: #f59e0b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia de Intervención Recomendada</span>
+                                <span style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55;">De acuerdo a esta muestra, aislar la disciplina general de "Salud Pública" en tu panel de configuración y realizar bloques exclusivos fortalecerá dramáticamente tus ratios de aprobación.</span>
                             </div>
-                            <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1.5rem;">
-                                <button onclick="window.uiManager.showAuthPromptModal();" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">
+                            <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed var(--border-color); padding-top: 1.5rem;">
+                                <button onclick="window.uiManager.showAuthPromptModal();" style="background: var(--primary); color: #ffffff !important; border: none; padding: 0.75rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px var(--primary-glow); font-size: 0.92rem;">
                                     Obtener Diagnóstico Completamente Personalizado IA
                                 </button>
-                                <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.75rem; line-height: 1.4;">Atención: Esta estadística es generada en un entorno efímero. Crear una cuenta permite a nuestro Motor Deep Learning correlacionar tu historial completo sobre miles de casos clínicos exclusivos de ${targetExamName}.</p>
+                                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.75rem; line-height: 1.45;">Atención: Esta estadística es generada en un entorno efímero. Crear una cuenta permite a nuestro Motor Deep Learning correlacionar tu historial completo sobre miles de casos clínicos exclusivos de ${targetExamName}.</p>
                             </div>
                         `;
                     }
@@ -1862,8 +1868,7 @@ const SimulatorDash = (() => {
 
                 if (!response.ok) {
                     if (response.status === 403) {
-                        // Límite sobrepasado o usuario Básico/Free sin acceso a IA.
-                        // EN LUGAR DE PAYWALL INTRUSIVO, HACEMOS FALLBACK AL DIAGNÓSTICO ESTÁTICO (Clásico)
+                        // Fallback al Diagnóstico Estático
                         console.log("⚠️ Fallback a Diagnóstico Clínico Estático (Límites o Tier Básico)");
                         stateLoading.style.display = 'none';
                         stateResults.style.display = 'block';
@@ -1875,29 +1880,27 @@ const SimulatorDash = (() => {
                         let restrictedTarget = activeCfgLogs.target || 'General';
                         let availableAreas = activeCfgLogs.areas || ['Medicina General', 'Salud Pública', 'Epidemiología'];
 
-                        // If radar is empty (e.g., brand new config), fallback to the first two areas of the applied config
                         let topSub1 = sortedRadar.length > 0 ? sortedRadar[0].subject : (availableAreas[0] || 'Medicina General');
                         let topSub2 = sortedRadar.length > 1 ? sortedRadar[1].subject : (availableAreas[1] || 'Terapéutica');
                         let weakSub = sortedRadar.length > 0 ? sortedRadar[sortedRadar.length - 1].subject : (availableAreas[availableAreas.length - 1] || 'Salud Pública');
 
-                        // We use the real topics here, making it completely pertinent to whatever config is active
                         const fStrong = `
-                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Existen claras virtudes formadas en tu base de conocimiento que servirán de ancla resolutiva táctica:</p>
+                            <p style='color:var(--text-secondary); font-size:0.88rem; line-height:1.6; margin-bottom:1rem;'>Existen claras virtudes formadas en tu base de conocimiento que servirán de ancla resolutiva táctica:</p>
                             <ul style="margin:0; padding:0; list-style-type: none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Estructura Algorítmica (${restrictedTarget}):</strong> Tus decisiones evidencian una asimilación muy rápida de los protocolos de primera línea requeridos.</span></li>
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Retención Sólida en ${topSub1}:</strong> Tu correlación clínica principal se encuentra estable y efectiva en esta disciplina fundamental.</span></li>
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-check-circle" style="color: #34d399; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Bases en ${topSub2}:</strong> Fuerte articulación fisiopatológica al enfrentar distractores diagnósticos simples.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-check-circle" style="color: #10b981; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Estructura Algorítmica (${restrictedTarget}):</strong> Tus decisiones evidencian una asimilación muy rápida de los protocolos de primera línea requeridos.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-check-circle" style="color: #10b981; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Retención Sólida en ${topSub1}:</strong> Tu correlación clínica principal se encuentra estable y efectiva en esta disciplina fundamental.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-check-circle" style="color: #10b981; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Bases en ${topSub2}:</strong> Fuerte articulación fisiopatológica al enfrentar distractores diagnósticos simples.</span></li>
                             </ul>
                         `;
 
                         const fWeak = `
-                            <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Es imperativo atacar de inmediato los siguientes flancos expuestos para prevenir pérdida de efectividad durante la evaluación real:</p>
+                            <p style='color:var(--text-secondary); font-size:0.88rem; line-height:1.6; margin-bottom:1rem;'>Es imperativo atacar de inmediato los siguientes flancos expuestos para prevenir pérdida de efectividad durante la evaluación real:</p>
                             <ul style="margin:0; padding:0; list-style-type: none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: #cbd5e1; font-size: 0.85rem; line-height: 1.4;"><i class="fas fa-exclamation-triangle" style="color: #fbbf24; margin-top:2px;"></i> <span><strong style='color:#f8fafc;'>Deficiencia en ${weakSub}:</strong> Se detectan debilidades transversales o patrones de duda al responder preguntas relacionadas, marcando un claro foco de intervención.</span></li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;"><i class="fas fa-exclamation-triangle" style="color: #f59e0b; margin-top:2px;"></i> <span><strong style='color:var(--text-main);'>Deficiencia en ${weakSub}:</strong> Se detectan debilidades transversales o patrones de duda al responder preguntas relacionadas, marcando un claro foco de intervención.</span></li>
                             </ul>
-                            <div style="margin-top: 1.25rem; padding: 1rem; background: rgba(245, 158, 11, 0.06); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 10px;">
-                                <span style="font-weight: 700; color: #fbbf24; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia de Intervención Recomendada</span>
-                                <span style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">Genera ahora mismo simulacros de 30 minutos priorizando de modo exclusivo preguntas de "${weakSub}". Este bloqueo frenará inmediatamente el efecto de arrastre estadístico negativo que debilita tu nota global final.</span>
+                            <div style="margin-top: 1.25rem; padding: 1.2rem; background: var(--surface-hover); border: 1px dashed var(--border-color); border-radius: 12px;">
+                                <span style="font-weight: 800; color: #f59e0b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Estrategia de Intervención Recomendada</span>
+                                <span style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55;">Genera ahora mismo simulacros de 30 minutos priorizando de modo exclusivo preguntas de "${weakSub}". Este bloqueo frenará inmediatamente el efecto de arrastre estadístico negativo que debilita tu nota global final.</span>
                             </div>
                         `;
 
@@ -2132,16 +2135,42 @@ const SimulatorDash = (() => {
                     scales: {
                         y: {
                             min: 0, max: 20,
-                            grid: { color: 'rgba(255,255,255,0.05)' },
-                            ticks: { color: '#475569', stepSize: 2 }
+                            grid: { color: document.documentElement.getAttribute('data-theme') === 'light' ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { 
+                                color: document.documentElement.getAttribute('data-theme') === 'light' ? '#475569' : '#94a3b8', 
+                                stepSize: 2,
+                                font: { family: 'Inter, sans-serif' }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Nota (0–20)',
+                                color: document.documentElement.getAttribute('data-theme') === 'light' ? '#1e293b' : '#cbd5e1',
+                                font: { size: 11, weight: '600', family: 'Inter, sans-serif' }
+                            }
                         },
-                        x: { grid: { display: false }, ticks: { color: '#475569' } }
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { 
+                                color: document.documentElement.getAttribute('data-theme') === 'light' ? '#475569' : '#94a3b8',
+                                font: { family: 'Inter, sans-serif' }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Intentos Recientes',
+                                color: document.documentElement.getAttribute('data-theme') === 'light' ? '#1e293b' : '#cbd5e1',
+                                font: { size: 11, weight: '600', family: 'Inter, sans-serif' }
+                            }
+                        }
                     },
                     plugins: {
                         legend: {
                             display: true,
                             position: 'top',
-                            labels: { color: '#64748b', boxWidth: 12, font: { size: 11 } }
+                            labels: { 
+                                color: document.documentElement.getAttribute('data-theme') === 'light' ? '#334155' : '#cbd5e1', 
+                                boxWidth: 12, 
+                                font: { size: 11, weight: '600', family: 'Inter, sans-serif' } 
+                            }
                         },
                         tooltip: {
                             callbacks: {

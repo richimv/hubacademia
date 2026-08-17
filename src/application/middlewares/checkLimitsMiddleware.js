@@ -190,8 +190,8 @@ const checkAILimits = (type) => {
 
                             // 🧠 REGLAS DE USO RAG:
                             // - Usuario Basic (tier === 'basic'): NO usa RAG (0 msgs/día RAG, sin excepciones).
-                            // - Usuario Advanced (tier === 'advanced' / 'admin' / 'elite'): Usa RAG hasta 25 msgs/día. Si se agota, degrada a IA Estándar sin RAG.
-                            const isAdvancedTier = (tier === 'advanced' || tier === 'admin' || tier === 'elite');
+                            // - Usuario Advanced (tier === 'advanced' / 'admin'): Usa RAG hasta 25 msgs/día. Si se agota, degrada a IA Estándar sin RAG.
+                            const isAdvancedTier = (tier === 'advanced' || tier === 'admin');
                             const ragLimit = userLimits.daily_rag_limit || 25;
                             const currentRagUsage = user.daily_rag_usage || 0;
 

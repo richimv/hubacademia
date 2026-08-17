@@ -1,15 +1,15 @@
-# 🎨 Design System & Branding: Hub Academia v3.0
+# 🎨 Design System & Branding: Hub Academia v3.5
 
 **Estado:** Fuente de Verdad (Single Source of Truth)  
-**Versión:** 3.0  
-**Enfoque Estético:** Dark Mode Premium Matte Black / Cyber-Minimalist / Manta Pill Gradients
+**Versión:** 3.5  
+**Enfoque Estético:** Dual-Theme Engine (Dark Mode Matte Black 🌙 / Light Mode Studio Slate ☀️) / Cyber-Minimalist / Manta Pill Gradients
 
-Este documento define las reglas visuales, componentes interactivos y directrices de experiencia de usuario (UX) para **Hub Academia**. Sirve como guía de referencia obligatoria para mantener la coherencia en todas las interfaces de la plataforma.
+Este documento define las reglas visuales, componentes interactivos, tokens CSS y directrices de experiencia de usuario (UX) para **Hub Academia**. Sirve como guía de referencia obligatoria para mantener la coherencia en todas las interfaces de la plataforma.
 
 ---
 
 ## 📌 Tabla de Contenidos
-1. [🌈 Paleta de Colores (The Manta Matte Black Scale)](#1--paleta-de-colores-the-manta-matte-black-scale)
+1. [🌈 Paleta de Colores y Tokens Dinámicos (Dark 🌙 / Light ☀️)](#1--paleta-de-colores-y-tokens-dinámicos-dark---light-)
 2. [🔤 Tipografía y Jerarquía](#2--tipografía-y-jerarquía)
 3. [🔲 Componentes Core](#3--componentes-core)
 4. [📐 Grids, Layouts y Responsividad](#4--grids-layouts-y-responsividad)
@@ -19,25 +19,38 @@ Este documento define las reglas visuales, componentes interactivos y directrice
 
 ---
 
-## 1. 🌈 Paleta de Colores (The Pure Matte Black Scale)
+## 1. 🌈 Paleta de Colores y Tokens Dinámicos (Dark 🌙 / Light ☀️)
 
-Toda la plataforma se rige estrictamente bajo la paleta de **Negro Mate Puro en todas sus variantes**, eliminando por completo cualquier tinte o fondo azulado (como `#0f172a`, `#0d1424` o `#1e293b`) de tarjetas, paneles, inputs y contenedores modales. Los acentos de color se reservan exclusivamente para componentes interactivos (botones de acción, insignias de estado e iconos).
+La plataforma cuenta con un motor de temas centralizado gobernado por el atributo `data-theme="dark"` y `data-theme="light"` en la etiqueta raíz `<html>`. Queda estrictamente prohibido el uso de valores hexadecimales hardcodeados en hojas de componentes; todo elemento debe consumir tokens CSS de `theme.css`.
 
-| Elemento | Variable CSS | Hex / RGBA Code | Uso Principal |
+### Matriz de Tokens de Tema
+
+| Token CSS | Dark Mode (`[data-theme="dark"]`) | Light Mode (`[data-theme="light"]`) | Propósito / Uso en UI |
 | :--- | :--- | :--- | :--- |
-| **Deep Black (Main Background)** | `--bg-main` | `#050505` | Fondo principal de todas las páginas (`body`). |
-| **Pure Matte Black (Card/Modal Surface)** | `--bg-secondary` / `--card-bg` | `#0a0a0a` | Tarjetas hero, paneles principales y cuerpo de modales (sólido no transparente). |
-| **Dark Slate Matte (Nested Surface)** | `--bg-tertiary` / `--surface-hover` | `#121212` / `#18181b` | Sub-tarjetas anidadas, inputs, selectores y elementos de elevación interna. |
-| **Clean Translucent White (Hover Surface)**| `--hover-clean` | `rgba(255, 255, 255, 0.06)` a `0.08` | Relleno homogéneo al pasar el cursor (hover) en ítems del explorador, filas de tarjetas y botones secundarios. Queda prohibido el uso de rellenos plomos/azulados (`#334155`, `rgba(51, 65, 85, ...)`). |
-| **Manta Orange Gradient (Repaso / Core CTA)** | `--gradient-orange` | `linear-gradient(135deg, #f97316 0%, #ea580c 100%)` | Acciones primarias en Repaso (Estudiar Ahora, Crear Mazo, Clonar), pestañas activas y acentos del módulo. |
-| **Manta Orange Glow** | `--glow-orange` | `rgba(249, 115, 22, 0.35)` | Sombras iluminadas y halos coherentes en botones primarios y tarjetas destacadas. |
-| **Cyan-Blue Gradient (Primary Action)** | `--gradient-primary` | `linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%)` | Botones de acción principal en Simulator / Chat (Explorar, Confirmar, Suscribir). |
-| **Trust Blue (Solid Accent)** | `--primary` | `#3b82f6` | Enlaces activos e iconos de estado en Simulador. |
-| **Electric Blue (Light Accent)** | `--primary-light` | `#60a5fa` | Resaltados de texto e interacciones secundarias. |
-| **Emerald Green (Status)** | `--success` | `rgba(16, 185, 129, 0.12)` / `#34d399` | Insignias de verificación y tarjetas dominadas. |
-| **Subtle Border** | `--border-color` | `rgba(255, 255, 255, 0.08)` | Bordes decorativos translúcidos. |
-| **Slate Gray (Text Muted)** | `--text-muted` | `#94a3b8` | Subtítulos, descripciones secundarias y placeholders. |
-| **Pure White (Text Main)** | `--text-main` | `#ffffff` | Encabezados, títulos de tarjetas y texto de botones. |
+| `--bg-main` | `#050505` (Deep Black) | `#f8fafc` (Clean Slate 50) | Fondo principal de la aplicación (`body`). |
+| `--bg-secondary` / `--card-bg` | `#0a0a0a` (Matte Black) | `#ffffff` (Pure White) | Tarjetas, paneles, contenedores de sección y modales. |
+| `--bg-tertiary` | `#121212` (Elevated Black) | `#f1f5f9` (Slate 100) | Subtarjetas anidadas, inputs, barras de progreso de fondo. |
+| `--surface-hover` | `rgba(255, 255, 255, 0.05)` | `rgba(0, 0, 0, 0.04)` | Estados hover en ítems de lista, dropdowns y botones secundarios. |
+| `--border-color` | `rgba(255, 255, 255, 0.08)` | `rgba(0, 0, 0, 0.09)` | Bordes sutiles y separadores divisorios. |
+| `--border-hover` | `rgba(255, 255, 255, 0.18)` | `rgba(0, 0, 0, 0.18)` | Bordes al posar el cursor o enfocar elementos. |
+| `--text-main` | `#ffffff` / `#f8fafc` | `#0f172a` (Slate 900) | Títulos principales, encabezados H1-H3 y texto de alto contraste. |
+| `--text-secondary` | `#cbd5e1` (Slate 300) | `#334155` (Slate 700) | Texto de párrafos, opciones de cuestionario y descripciones. |
+| `--text-muted` | `#94a3b8` (Slate 400) | `#64748b` (Slate 500) | Subtítulos secundarios, etiquetas de fecha y metadatos. |
+| `--modal-bg` | `#0a0a0a` | `#ffffff` | Superficie sólida opaca para modales interactivos. |
+| `--modal-overlay-bg` | `rgba(0, 0, 0, 0.75)` | `rgba(15, 23, 42, 0.5)` | Fondo difuminado (`backdrop-filter`) tras los modales. |
+| `--input-bg` | `#121212` | `#ffffff` | Relleno de campos de texto, áreas de texto y selects. |
+| `--input-border` | `rgba(255, 255, 255, 0.12)` | `rgba(0, 0, 0, 0.15)` | Borde perimetral de controles de formulario. |
+| `--input-text` | `#ffffff` | `#0f172a` | Color de tipografía digitada por el usuario. |
+| `--shadow-md` | `0 4px 20px rgba(0, 0, 0, 0.5)` | `0 4px 20px rgba(0, 0, 0, 0.06)` | Elevación media en tarjetas y badges. |
+| `--shadow-xl` | `0 25px 50px -12px rgba(0, 0, 0, 0.85)` | `0 20px 40px -12px rgba(0, 0, 0, 0.12)` | Elevación alta en ventanas modales y drawers. |
+
+### Acentos de Marca (Idénticos en ambos temas para consistencia)
+* **Azul Primario (`--primary`):** `#3b82f6` (Hover: `#2563eb`).
+* **Degradado Manta Orange (`--gradient-orange`):** `linear-gradient(135deg, #f97316 0%, #ea580c 100%)`.
+* **Degradado Cyan-Blue (`--gradient-primary`):** `linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%)`.
+* **Éxito (`--success`):** `#10b981`.
+* **Peligro (`--danger`):** `#ef4444`.
+* **Advertencia (`--warning`):** `#f59e0b`.
 
 ---
 
@@ -113,7 +126,70 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 ### 3.6. Tarjetas de Consumo de IA & Servicios (`.usage-main-card`)
 * **Título Responsivo:** `Consumo de Servicios IA` (`font-size: 1.1rem` en escritorio, disminuyendo progresivamente a `0.95rem` en pantallas móviles `<= 480px` para evitar desbordamientos).
 * **Contenedor Flex de Cabecera:** `min-width: 0` para prevenir quiebres de línea forzados.
-* **Ítems de Consumo (`.usage-item`):** Fondo `#121212`, borde `rgba(255,255,255,0.08)`, ajuste automático de texto con `word-break: break-word` e indicadores de cuotas en tiempo real.
+* **Ítems de Consumo (`.usage-item`):** Fondo `var(--bg-tertiary)`, borde `var(--border-color)`, ajuste automático de texto con `word-break: break-word` e indicadores de cuotas en tiempo real.
+
+### 3.7. Hero Banner Centrado Dual-Theme (`.hub-hero-container`)
+* **Cuadrícula Técnica y Resplandores Ambientales (`.hero-ambient-glow`):** Cuadrícula nítida visible en Dark (`rgba(255, 255, 255, 0.055)`) y Light (`rgba(15, 23, 42, 0.075)`), combinada con iluminación radial multidimensional (azul eléctrico, índigo y violeta en Dark; azul cielo y lavanda suave en Light) que elimina la monotonía del blanco y da profundidad SaaS moderna.
+* **Pill Badges Temáticos:** Enlaces superiores estilizados en píldora con microinteracciones para `💊 Salud (SERUMS)` y `🎓 Educación (Ascenso Docente)`.
+* **Tipografía Dinámica:** Título H1 `Tu Hub Académico` con gradiente de texto `.hero-gradient-text` optimizado para Dark (`#38bdf8` -> `#818cf8` -> `#ec4899`) y Light (`#2563eb` -> `#6366f1` -> `#db2777`).
+* **Botón de Acción Principal (`.hero-primary-cta`):** Píldora degradada interactiva con efecto de elevación y desplazamiento suave hacia los módulos.
+* **Cuadrícula Bento de Métricas (`.hero-metrics-grid`):** 4 tarjetas de estadísticas (`1K+`, `5K+`, `98%`, `24/7`) con fondo `var(--card-bg)`, borde `var(--border-color)`, barra superior dinámica en hover y valores tipográficos en `var(--text-main)`.
+
+### 3.8. Header User Profile Pill (`.user-menu-toggle`)
+* **Componente de Usuario Enriquecido:** Reemplaza el botón circular simple por una píldora estética con avatar circular, columna con nombre de usuario (`.user-header-name`) y plan de suscripción (`.user-header-tier` ej: `Plan Avanzado`, `Plan Pro`, `Plan Gratuito`), junto con una flecha chevron animada `⌄`.
+* **Comportamiento Responsivo:** En dispositivos móviles ultra-compactos `<= 640px` colapsa ordenadamente a avatar + chevron para evitar desbordamientos en la barra de navegación.
+
+### 3.9. Mockup Showcases en Landing Page (`.edu-preview-showcase`, `.med-preview-showcase`)
+* **Integración Visual de Imágenes Portada:** Presentación de las capturas oficiales (`educacionportada.png`, `simuladormedicoportada.png`) dentro de marcos glassmorphic de 20px de radio, borde dinámico `var(--border-color)`, sombra de elevación `var(--shadow-lg)` y píldoras flotantes (`.mockup-floating-pill`) con iconos representativos y efecto blur backdrop.
+* **Contraste 100% Adaptativo:** Compatible y nítido tanto en Modo Oscuro como en Modo Claro, con microinteracciones de zoom sutil y elevación al posar el cursor.
+
+### 3.10. Módulo de Repaso & Flashcards Dual-Theme (`/repaso` y `/flashcards`)
+* **Flashcard Central de Estudio (`.fc-card-face`):** Fondo dinámico `var(--card-bg)`, borde `var(--border-color)`, relieve `var(--shadow-lg)` y tipografía `var(--text-main) !important` en preguntas, respuestas, listas y subtítulos en ambos temas (☀️ / 🌙).
+* **Botones FSRS de Calificación (`.control-btn`):** Tarjetas interactivas con `var(--card-bg)`, sombra `var(--shadow-md)`, colores temáticos de feedback (Rojo `Olvidé`, Naranja `Difícil`, Azul `Bien`, Esmeralda `Fácil`) y hover con halo cromático sutil sin sombras negras excesivas.
+* **Drawer Tutor IA (`.tutor-chat-panel`):** Panel lateral con `var(--card-bg)`, borde `var(--border-color)`, input con `var(--input-bg)` y `var(--input-text)` y burbujas de respuesta en `var(--bg-tertiary)`.
+* **Explorador y Gestión de Mazos (`repaso.html`):** Títulos de mazo en `var(--text-main)`, botones de acción secundarios en `var(--card-bg)` con borde limpio, buscador adaptativo y filas de tarjetas con relieve y contraste completo.
+* **Eliminación de Sombras Excesivas:** Sustitución de sombras oscuras duras (36px/40px) por elevaciones refinadas (`var(--shadow-md)`, `var(--shadow-lg)`, `var(--shadow-xl)`).
+
+### 3.11. Simuladores, Dashboard, Quiz & Revisión de Exámenes Dual-Theme (`/simulator-dashboard`, `/quiz`)
+* **Modal de Configuración de Simulacro:** Título en `var(--text-main)`, subtítulos en `var(--text-secondary)`, tarjetas de objetivo de examen con `var(--card-bg)` y selección activa con `var(--primary-glow)` y `var(--primary)`. Toggle de modo con `var(--bg-tertiary)` y `var(--border-color)`.
+* **Diagnóstico de Rendimiento & Desglose de Materias:** Barras nativas HTML con etiquetas `.html-bar-label` y valores `.html-bar-value` en `var(--text-main)`, tracks en `var(--bg-tertiary)` con borde dinámico.
+* **KPI Circular / Dona (`#topicDoughnutChart`, `#doughnut-legend`):** Leyenda dinámica con `var(--text-main)` y `var(--text-secondary)`, con bordes adaptativos según el tema activo. Pestañas de modo (`.kpi-mode-tab`) y tiempo (`.kpi-time-tab`) con clases CSS unificadas y contraste optimizado.
+* **Análisis de Patrones de Error (Advanced IA):** Fondos `var(--bg-tertiary)`, bordes punteados `var(--border-color)`, textos de alto contraste (`var(--text-main)` y `var(--text-secondary)`) y botón primario píldora (`#btn-analyze-ai`) con resplandor glow.
+* **Barra de Filtro Activo (`#active-config-summary`):** Píldora moderna con `var(--card-bg)` y `var(--border-color)`.
+* **Pantalla de Revisión de Examen (`.review-card`):** Tarjetas de preguntas en `var(--card-bg)` con sombra `var(--shadow-sm)`, opciones de respuesta `.review-opt` con `var(--bg-tertiary)`, feedback correcto/incorrecto con bordes claros y explicaciones pedagógicas sobre `var(--surface-hover)`.
+* **Desactivación de Banner de Modo Invitado:** Eliminada la inyección persistente del banner de modo invitado para una interfaz de usuario completamente limpia y despejada.
+
+### 3.12. Identidad Cromática por Módulo (Salud Verde Cian vs Educación Azul vs Repaso Naranja)
+* **Módulo Salud (SERUMS / Medicina):** Paleta clínica en **Verde Cian / Teal** (`#14b8a6`, `#0d9488`, `#2dd4bf`), presente en píldoras del Hero (`.pill-salud`), secciones de aterrizaje (`#salud-section`), títulos con `.accent-green-text`, botón CTA `.btn-med-theme`, vitrina mockup (`.mockup-floating-pill.pill-med`), bordes y sombras de tarjetas `.med-card-theme`, y variables dinámicas `--primary` (`#0d9488`), `--primary-dark` (`#0f766e`), `--primary-light` (`#2dd4bf`) y resplandores en `simulator-dash.js`.
+* **Módulo Educación (Ascenso / Magisterio):** Paleta azul real y eléctrico (`#2563eb`, `#1d4ed8`, `#3b82f6`), presente en píldoras del Hero, secciones de aterrizaje (`#docente-section`), título con `.accent-blue-text`, botón CTA `.btn-edu-theme`, vitrina mockup (`.mockup-floating-pill.pill-edu`), y variables dinámicas `--primary` en el dashboard.
+* **Módulo Repaso (Flashcards / FSRS):** Paleta ámbar y naranja (`#f97316`, `#ea580c`), presente en tarjetas de mazos, botones de creación rápida y vistas de comunidad.
+
+### 3.13. Header Global Invariante y Botón "Acceder"
+* **Header & Sidebar Invariantes:** El botón `.main-header #open-login-modal` mantiene de forma constante e invariable su estilo azul de marca (`linear-gradient(135deg, #2563eb, #1d4ed8)`) y texto blanco, independientemente del módulo o contexto activo, garantizando coherencia en la barra de navegación.
+
+### 3.14. Perfil de Usuario, Precios y Chat Flotante Dual-Theme
+* **Página de Precios (`/pricing`, `#pricing-section`):** Títulos y precios en `var(--text-main)`, botón de Plan Básico en `var(--bg-tertiary)` con borde y Plan Avanzado en Teal `#14b8a6`. Integración obligatoria de FontAwesome para renderizado de iconos del sidebar y header.
+* **Perfil de Usuario (`/profile`):** Eliminación de sombras oscuras pesadas (85%-90%) sustituidas por `var(--shadow-sm)` y `var(--shadow-md)`. Textos y tarjetas de consumo de IA sincronizados con `var(--text-main)`, `var(--text-secondary)`, `var(--bg-tertiary)` y `var(--border-color)`.
+* **Chatbot Flotante (`chat.css`):** Cabecera `.chatbot-header` adaptativa con `var(--header-bg)` y `var(--border-color)`, eliminando el tono gris plomo fijo en modo claro. Tarjeta de bienvenida con fondo `var(--bg-tertiary)` y borde primario.
+
+### 3.15. Menú Lateral (Sidebar) con Acceso a Planes y Precios
+* **Retiro de Selector de Tema:** El interruptor de tema se mantiene exclusivamente en la cabecera superior principal (`.main-header`).
+* **Enlace a Planes y Precios:** Se añade la sección `sidebar-section-pricing` con icono `<i class="fas fa-crown"></i>` y enlace a `/pricing`, sincronizada con el enrutador de páginas activas `highlightActiveItem()`.
+
+### 3.16. Modales de Repaso, Biblioteca y Registro Dual-Theme
+* **Modales del Módulo Repaso (`repaso.html`):**
+  * Modal Previsualización de Mazo (`#preview-deck-modal`): Título en `var(--text-main)`, tarjetas individuales con `var(--bg-tertiary)`, `var(--border-color)`, pregunta en `var(--text-main)` y respuesta en `var(--text-secondary)`.
+  * Modal Guía de Estudio (`#deck-guide-modal`): Fondo `#deck-guide-content` con `var(--bg-tertiary)` y texto `var(--text-main)`.
+  * Modal Estadísticas del Mazo (`#stats-modal`): Título y contador de Total Tarjetas (`#modal-total`) en `var(--text-main)` (visibles en claro), tarjetas de KPI y contenedor de leyendas SRS adaptativos.
+  * Modal de Generación IA (`#ai-modal`) y Carga Masiva: Opciones de audio TTS y fondos en `var(--bg-tertiary)` y `var(--text-main)`.
+* **Mi Biblioteca (`library.html`, `components.js`, `browse.css`, `components.css`, `search.css`):**
+  * Tarjeta Hero de Novedades (`.news-hero-card`) y Secundarias (`.news-secondary-card`): Fondos dinámicos en `var(--card-bg)` y hovers en `var(--surface-hover)` con bordes de categoría correspondientes, eliminando fondos oscuros `#14101a` / `#18140c` / `#0e1814` / `#0f141f` al interactuar.
+  * Píldoras de Filtro (`.manta-filter-pill`): Estado base en `var(--card-bg)` con borde claro, hover en `var(--surface-hover)` con `color: var(--text-main) !important` (evitando texto blanco invisible sobre fondo claro) y estado activo en degradado institucional con texto blanco nítido.
+  * Recursos con Portadas Completas (`.unified-resource-card.has-bg-image`, `.browse-card.full-image-card`): Título y metadatos en color blanco `#ffffff !important` con sombra nítida `text-shadow: 0 1px 4px rgba(0,0,0,0.85)` sobre overlay degradado para perfecta legibilidad.
+  * Tablón de Notas (`.note-card` y `.library-add-note-btn`): Grilla adaptativa responsive cerrada correctamente (6 columnas PC, 4 laptop, 3 tablet, 2 mobile) con tarjetas contenedoras estilizadas en `var(--card-bg)`, `var(--border-color)`, `var(--shadow-sm)` y acciones flotantes.
+* **Modales del Perfil de Usuario (`profile.html`):**
+  * Modales de Confirmación de Eliminación (`#delete-modal`) y Edición de Nombre (`#edit-name-modal`): Contenedores con `var(--modal-bg)` y `box-shadow: var(--shadow-xl)`, inputs con `var(--bg-tertiary)` y `var(--text-main)`, botones de cancelación `.btn-secondary` con texto de alto contraste `var(--text-main)` en `var(--bg-tertiary)` y líneas divisorias `var(--border-color)`.
+* **Modal de Registro / Invitados (`showAuthPromptModal` en `uiManager.js`):** Título en `var(--text-main)`, caja de logotipo en `var(--bg-tertiary)` y botón Google con degradado institucional azul de alto impacto visual.
 
 ---
 
@@ -149,3 +225,48 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 ## 7. 🎨 Iconografía (Font Awesome 6.4.0)
 
 * **Biblioteca Estándar:** Font Awesome v6.4.0 mediante CDN (`https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css`).
+
+---
+
+## 8. 📱 Mobile Design Systems: HubDocenteApp & HubSaludApp (Light Theme)
+
+Las aplicaciones móviles de React Native / Expo (`HubDocenteApp` y `HubSaludApp`) utilizan un **Tema Claro Profesional de Alto Rendimiento y Contraste**, con esquinas suavemente redondeadas (`roundness: 12px a 20px`), sombras sutiles multiplataforma y tipografía oscura legible (`#0f172a` / `#475569`).
+
+### 8.1. HubDocenteApp (Tema Claro Magisterial)
+* **Fondo Principal:** `#f8fafc` (Slate 50).
+* **Superficies / Tarjetas:** `#ffffff` (Blanco puro con sombras suaves `rgba(15, 23, 42, 0.06)`).
+* **Sub-tarjetas / Fondos de Input:** `#f1f5f9` (Slate 100).
+* **Bordes Estándar:** `#e2e8f0` (Slate 200) y `#c7d2fe` (Indigo 200 en estados activos).
+* **Color Primario de Marca:** Azul-Morado / Índigo Magisterial (`#4f46e5` a `#4338ca`).
+* **Acentos:** Índigo brillante (`#6366f1` / fondo suave `#eef2ff`) y Dorado CNEB (`#f59e0b` / fondo suave `#fffbeb`).
+* **Tipografía:** Textos principales en `#0f172a` (Slate 900) y secundarios en `#64748b` (Slate 500).
+
+### 8.2. HubSaludApp (Tema Claro Clínico)
+* **Fondo Principal:** `#f8fafc` (Slate 50).
+* **Superficies / Tarjetas:** `#ffffff` (Blanco puro con sombras clínicas suaves).
+* **Sub-tarjetas / Fondos de Input:** `#f0fdfa` (Teal 50) / `#f1f5f9`.
+* **Bordes Estándar:** `#e2e8f0` (Slate 200) y `#99f6e4` (Teal 200 en estados activos).
+* **Color Primario de Marca:** Teal Clínico / Verde Médico Profundo (`#0d9488` a `#0f766e`).
+* **Acentos:** Esmeralda / Cian Clínico (`#059669` / `#06b6d4` / fondo suave `#ccfbf1`) y Dorado de Excelencia (`#f59e0b` / `#fffbeb`).
+* **Tipografía:** Textos principales en `#0f172a` (Slate 900) y secundarios en `#475569` (Slate 600).
+
+### 8.3. Reglas de Componentes Móviles
+* **Eliminación de Demo Mode en Apps Móviles:** Redirección inmediata a `/(auth)/login` para usuarios no registrados o `/(tabs)/home` para usuarios autenticados.
+* **Badge de Concursos Disponibles:**
+  - `HubDocenteApp`: Solo `ASCENSO` habilitado; `NOMBRAMIENTO` y `ACCESO_CARGOS` con badge "Pronto".
+  - `HubSaludApp`: Solo `SERUMS` habilitado; `ENAM`, `RESIDENTADO` y `CONCURSO_MINSA` con badge "Pronto".
+* **Tutor IA & Markdown:** Tarjetas de sustento con fondo `#f8fafc`, tablas estructuradas con cabecera en tinte suave de marca y tipografía `#0f172a`.
+* **Compatibilidad de Sombras:**
+  ```typescript
+  ...Platform.select({
+    web: { boxShadow: '0px 4px 12px rgba(15, 23, 42, 0.06)' },
+    default: {
+      shadowColor: '#0f172a',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+  })
+  ```
+

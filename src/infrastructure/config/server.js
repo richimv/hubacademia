@@ -154,13 +154,14 @@ class Server {
             credentials: true
         }));
 
-        // ✅ EXPRESS.JSON MÍNIMO Y SEGURO
+        // ✅ EXPRESS.JSON Y URLENCODED CON LÍMITE HOLGADO
         this.app.use(express.json({
-            limit: '1mb',
+            limit: '10mb',
             verify: (req, res, buf) => {
                 req.rawBody = buf.toString();
             }
         }));
+        this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
         // ✅ MIDDLEWARE DE LOG SIMPLIFICADO
         this.app.use((req, res, next) => {

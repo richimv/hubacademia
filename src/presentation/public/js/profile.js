@@ -64,10 +64,10 @@ function renderSubscriptionDetails(user) {
         container.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.15rem; font-weight: 800; color: #fff;">ROL ADMINISTRADOR <i class="fas fa-shield-alt" style="color: #60a5fa;"></i></span>
-                    <span style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">ILIMITADO</span>
+                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">ROL ADMINISTRADOR <i class="fas fa-shield-alt" style="color: var(--primary);"></i></span>
+                    <span style="background: rgba(59, 130, 246, 0.15); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">ILIMITADO</span>
                 </div>
-                <div style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">
+                <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">
                     <i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i> Posees acceso total y sin restricciones a todos los servicios de IA y administración.
                 </div>
             </div>
@@ -81,7 +81,7 @@ function renderSubscriptionDetails(user) {
         let planPerks = '';
         if (tier === 'basic') {
             planPerks = `
-                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0; font-size: 0.875rem; color: #cbd5e1;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0; font-size: 0.875rem; color: var(--text-secondary);">
                     <div><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i> 50 Consultas diarias al Tutor IA Estándar</div>
                     <div><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i> 15 Simulacros completos por día</div>
                     <div><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i> Flashcards Manuales Ilimitadas</div>
@@ -89,7 +89,7 @@ function renderSubscriptionDetails(user) {
             `;
         } else {
             planPerks = `
-                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0; font-size: 0.875rem; color: #cbd5e1;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0; font-size: 0.875rem; color: var(--text-secondary);">
                     <div><i class="fas fa-check-circle" style="color: #fbbf24; margin-right: 8px;"></i> 100 Consultas diarias al Tutor IA Estándar</div>
                     <div><i class="fas fa-check-circle" style="color: #fbbf24; margin-right: 8px;"></i> 25 Consultas diarias de Especialidad (RAG)</div>
                     <div><i class="fas fa-check-circle" style="color: #fbbf24; margin-right: 8px;"></i> 50 Simulacros completos por día</div>
@@ -101,14 +101,14 @@ function renderSubscriptionDetails(user) {
         container.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.2rem; font-weight: 800; color: #fff;">PLAN ${tier.toUpperCase()} <i class="fas fa-check-circle" style="color: #4ade80; margin-left: 4px;"></i></span>
-                    <span style="background: rgba(74, 222, 128, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.25); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">ACTIVO</span>
+                    <span style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">PLAN ${tier.toUpperCase()} <i class="fas fa-check-circle" style="color: #10b981; margin-left: 4px;"></i></span>
+                    <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">ACTIVO</span>
                 </div>
 
                 ${planPerks}
 
-                <div style="color: #94a3b8; font-size: 0.875rem; display: flex; align-items: center; gap: 8px;">
-                    <i class="far fa-calendar-alt" style="color: #60a5fa;"></i> Vence el: <strong style="color: #f1f5f9;">${dateStr}</strong>
+                <div style="color: var(--text-secondary); font-size: 0.875rem; display: flex; align-items: center; gap: 8px;">
+                    <i class="far fa-calendar-alt" style="color: var(--primary);"></i> Vence el: <strong style="color: var(--text-main);">${dateStr}</strong>
                 </div>
 
                 <a href="/pricing" class="btn-action btn-secondary" style="align-self: flex-start; margin-top: 0.25rem;">
@@ -120,11 +120,11 @@ function renderSubscriptionDetails(user) {
         container.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.15rem; font-weight: 800; color: #94a3b8;">PLAN GRATUITO</span>
+                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">PLAN GRATUITO</span>
                     <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">LIMITADO</span>
                 </div>
 
-                <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5; margin: 0;">
+                <p style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5; margin: 0;">
                     Actualmente cuentas con cuotas restringidas de exploración. Actualiza a un plan Premium para desbloquear simulacros ilimitados y el tutor inteligente.
                 </p>
 
@@ -296,10 +296,10 @@ function renderUsageDetails(user) {
 
     if (isAdmin) {
         container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 2.25rem 2rem; background: var(--profile-nested-bg); border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 18px;">
-                <i class="fas fa-shield-alt" style="font-size: 2.2rem; color: #60a5fa; margin-bottom: 0.75rem;"></i>
-                <h4 style="color: #fff; margin: 0 0 0.5rem 0; font-weight: 700; font-size: 1.1rem;">Acceso Ilimitado de Administrador</h4>
-                <p style="color: #94a3b8; font-size: 0.875rem; margin: 0 auto; max-width: 580px; line-height: 1.5;">Tu cuenta posee permisos globales y acceso sin restricciones ni límites de cuota en todas las funciones de IA.</p>
+            <div style="grid-column: 1 / -1; text-align: center; padding: 2.25rem 2rem; background: var(--profile-nested-bg); border: 1px dashed var(--border-color); border-radius: 18px;">
+                <i class="fas fa-shield-alt" style="font-size: 2.2rem; color: var(--primary); margin-bottom: 0.75rem;"></i>
+                <h4 style="color: var(--text-main); margin: 0 0 0.5rem 0; font-weight: 700; font-size: 1.1rem;">Acceso Ilimitado de Administrador</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0 auto; max-width: 580px; line-height: 1.5;">Tu cuenta posee permisos globales y acceso sin restricciones ni límites de cuota en todas las funciones de IA.</p>
             </div>
         `;
         return;

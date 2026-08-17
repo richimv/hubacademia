@@ -1,83 +1,216 @@
 /* ============================================================
-   DESIGN SYSTEM TOKENS - Hub Academia (Manta Black Slate)
+   DESIGN SYSTEM TOKENS - Hub Academia v3.5
+   Dual Mode: Dark Matte Slate 🌙 / Light Slate Studio ☀️
    ============================================================ */
-:root {
-    /* Core Palette - Dark Matte Scale */
-    --bg-main: #050505;      /* Deep Black */
-    --bg-secondary: #0a0a0a; /* Matte Black Surface */
-    --bg-tertiary: #121212;  /* Dark Slate Content */
 
-    /* Surfaces */
+/* --- TEMA OSCURO (Por defecto) --- */
+:root,
+[data-theme="dark"] {
+    /* Paleta Base - Pure Dark Matte Scale */
+    --bg-main: #050505;        /* Fondo principal (body) */
+    --bg-secondary: #0a0a0a;   /* Tarjetas hero y paneles principales */
+    --bg-tertiary: #121212;    /* Elementos anidados, inputs y elevaciones */
+    
+    /* Superficies y Paneles */
     --surface: #0a0a0a;
-    --surface-hover: #121212;
+    --surface-hover: #18181b;
+    --surface-alt: #121212;
     --card-bg: #0a0a0a;
     --modal-bg: #0a0a0a;
+    --modal-overlay-bg: rgba(0, 0, 0, 0.75);
 
-    /* Accents - Trustworthy Blue & Purple */
-    --primary: #3b82f6;      /* Blue 500 */
-    --primary-hover: #2563eb; /* Blue 600 */
-    --primary-light: #60a5fa; /* Blue 400 */
-    --accent-purple: #8b5cf6; /* Royal Purple */
+    /* Textos */
+    --text-main: #f8fafc;      /* Slate 50 - Blanco nítido */
+    --text-secondary: #cbd5e1; /* Slate 300 - Secundario legible */
+    --text-muted: #94a3b8;     /* Slate 400 - Descriptivo / placeholders */
+    --text-inverse: #050505;   /* Texto inverso para botones claros */
 
-    /* Text */
-    --text-main: #f8fafc;      /* Slate 50 */
-    --text-secondary: #cbd5e1; /* Slate 300 */
-    --text-muted: #94a3b8;    /* Slate 400 */
-    --text-inverse: #ffffff;
+    /* Acentos Principales */
+    --primary: #3b82f6;        /* Azul confianza 500 */
+    --primary-hover: #2563eb;  /* Azul 600 */
+    --primary-light: #60a5fa;  /* Azul 400 */
+    --primary-glow: rgba(59, 130, 246, 0.35);
+    --accent-purple: #8b5cf6;  /* Royal Purple */
+    --accent-teal: #14b8a6;    /* Teal 500 */
+    --accent-orange: #f97316;  /* Naranja 500 */
 
-    /* Borders - Unified Subtle Glow */
+    /* Gradientes Signature */
+    --manta-pill-gradient: linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%);
+    --manta-pill-glow: 0 4px 20px rgba(59, 130, 246, 0.35), 0 0 15px rgba(6, 182, 212, 0.25);
+
+    /* Bordes y Líneas Divisorias */
     --border-color: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(59, 130, 246, 0.3);
+    --border-hover: rgba(59, 130, 246, 0.35);
     --border-glow: rgba(59, 130, 246, 0.2);
+    --border-dim: rgba(255, 255, 255, 0.05);
 
-    /* Functional Colors */
+    /* Colores Funcionales */
     --danger: #ef4444;
     --danger-hover: #dc2626;
+    --danger-bg: rgba(239, 68, 68, 0.12);
+    --danger-border: rgba(239, 68, 68, 0.3);
     --warning: #f59e0b;
+    --warning-bg: rgba(245, 158, 11, 0.12);
+    --warning-border: rgba(245, 158, 11, 0.3);
     --success: #10b981;
+    --success-bg: rgba(16, 185, 129, 0.12);
+    --success-border: rgba(16, 185, 129, 0.3);
     --info: #0ea5e9;
+    --info-bg: rgba(14, 165, 233, 0.12);
+    --info-border: rgba(14, 165, 233, 0.3);
 
-    /* Shadows & Effects */
-    --shadow-sm: 0 1px 2px 0 rgba(10, 10, 10, 0.8);
-    --shadow-md: 0 4px 6px -1px rgba(10, 10, 10, 0.8), 0 2px 4px -2px rgba(10, 10, 10, 0.8);
-    --shadow-lg: 0 10px 15px -3px rgba(10, 10, 10, 0.8), 0 4px 6px -4px rgba(10, 10, 10, 0.8);
-    --shadow-xl: 0 20px 25px -5px rgba(10, 10, 10, 0.8), 0 8px 10px -6px rgba(10, 10, 10, 0.8);
+    /* Sombras y Elevaciones */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.8);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.7);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.85);
+    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.95);
 
-    /* Typography */
+    /* Componentes Específicos */
+    --header-bg: rgba(5, 5, 5, 0.85);
+    --header-border: rgba(255, 255, 255, 0.06);
+    --sidebar-bg: #0a0a0a;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-hover: #18181b;
+    --sidebar-active-bg: rgba(59, 130, 246, 0.12);
+    --sidebar-active-border: #3b82f6;
+    --sidebar-text: #f8fafc;
+    --sidebar-text-muted: #94a3b8;
+    
+    --input-bg: #121212;
+    --input-border: rgba(255, 255, 255, 0.12);
+    --input-text: #ffffff;
+    --input-placeholder: #64748b;
+
+    --glass-bg: rgba(10, 10, 10, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
+    --table-header-bg: rgba(59, 130, 246, 0.12);
+    --table-border: rgba(255, 255, 255, 0.06);
+    --table-row-hover: rgba(255, 255, 255, 0.03);
+
+    --dropdown-bg: #0a0a0a;
+    --dropdown-border: rgba(59, 130, 246, 0.25);
+
+    /* Tipografía y Escala */
     --font-main: 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     --font-weight-bold: 700;
     --font-weight-extrabold: 800;
     --font-weight-black: 900;
 
-    /* Spacing & Padding Variables */
+    /* Radios */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
+    --radius-full: 9999px;
+
+    /* Espaciados */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1.5rem;
     --spacing-lg: 2.5rem;
     --spacing-xl: 4rem;
 
-    /* Radius Variables */
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
-    --radius-xl: 1rem;
-    --radius-2xl: 1.5rem;
-
-    /* Compatibility Aliases */
+    /* Aliases de Compatibilidad */
     --border: var(--border-color);
-    --surface-alt: var(--bg-secondary);
     --accent: var(--primary);
     --accent-bright: var(--primary-light);
     --accent-hover: var(--primary-hover);
-    --accent-dark: rgba(59, 130, 246, 0.1);
-
-    /* Layout Config */
     --page-padding-x: 1rem;
     --max-width: 1440px;
 }
 
-/* 📱 Webkit Touch Highlight Reset - Aplicado Globalmente */
+/* --- TEMA CLARO (Light Slate Studio) --- */
+[data-theme="light"] {
+    /* Paleta Base - Clean Light Slate Scale */
+    --bg-main: #edf2f7;        /* Slate 100 - Fondo limpio con contraste definido */
+    --bg-secondary: #ffffff;   /* Blanco puro para tarjetas principales */
+    --bg-tertiary: #e2e8f0;    /* Slate 200 para contenedores anidados */
+    
+    /* Superficies y Paneles */
+    --surface: #ffffff;
+    --surface-hover: rgba(15, 23, 42, 0.05);
+    --surface-alt: #f1f5f9;
+    --card-bg: #ffffff;
+    --modal-bg: #ffffff;
+    --modal-overlay-bg: rgba(15, 23, 42, 0.6);
+
+    /* Textos con Alto Contraste */
+    --text-main: #0f172a;      /* Slate 900 - Titulares y textos oscuros */
+    --text-secondary: #334155; /* Slate 700 - Texto de lectura */
+    --text-muted: #64748b;     /* Slate 500 - Subtítulos y metadatos */
+    --text-inverse: #ffffff;   /* Blanco para botones primarios */
+
+    /* Acentos Optimizados para Contraste en Claro */
+    --primary: #2563eb;        /* Azul 600 */
+    --primary-hover: #1d4ed8;  /* Azul 700 */
+    --primary-light: #3b82f6;  /* Azul 500 */
+    --primary-glow: rgba(37, 99, 235, 0.25);
+    --accent-purple: #7c3aed;  /* Púrpura 600 */
+    --accent-teal: #0d9488;    /* Teal 600 */
+    --accent-orange: #ea580c;  /* Naranja 600 */
+
+    /* Gradientes Signature Adaptados */
+    --manta-pill-gradient: linear-gradient(90deg, #4338ca 0%, #2563eb 50%, #0891b2 100%);
+    --manta-pill-glow: 0 4px 18px rgba(37, 99, 235, 0.3), 0 0 12px rgba(8, 145, 178, 0.2);
+
+    /* Bordes Suaves y Limpios */
+    --border-color: rgba(15, 23, 42, 0.1);
+    --border-hover: rgba(37, 99, 235, 0.4);
+    --border-glow: rgba(37, 99, 235, 0.2);
+    --border-dim: rgba(15, 23, 42, 0.06);
+
+    /* Colores Funcionales en Fondo Claro */
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --danger-bg: rgba(239, 68, 68, 0.1);
+    --danger-border: rgba(239, 68, 68, 0.25);
+    --warning: #d97706;
+    --warning-bg: rgba(245, 158, 11, 0.1);
+    --warning-border: rgba(245, 158, 11, 0.25);
+    --success: #059669;
+    --success-bg: rgba(16, 185, 129, 0.1);
+    --success-border: rgba(16, 185, 129, 0.25);
+    --info: #0284c7;
+    --info-bg: rgba(14, 165, 233, 0.1);
+    --info-border: rgba(14, 165, 233, 0.25);
+
+    /* Sombras Naturales y Profundas con Elevación */
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+    --shadow-lg: 0 12px 30px -4px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.06);
+    --shadow-xl: 0 20px 45px -5px rgba(15, 23, 42, 0.16);
+
+    /* Componentes en Modo Claro */
+    --header-bg: rgba(255, 255, 255, 0.92);
+    --header-border: rgba(15, 23, 42, 0.09);
+    --sidebar-bg: #ffffff;
+    --sidebar-border: rgba(15, 23, 42, 0.09);
+    --sidebar-hover: rgba(15, 23, 42, 0.05);
+    --sidebar-active-bg: rgba(37, 99, 235, 0.08);
+    --sidebar-active-border: #2563eb;
+    --sidebar-text: #0f172a;
+    --sidebar-text-muted: #64748b;
+
+    --input-bg: #ffffff;
+    --input-border: rgba(15, 23, 42, 0.18);
+    --input-text: #0f172a;
+    --input-placeholder: #94a3b8;
+
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(15, 23, 42, 0.09);
+
+    --table-header-bg: rgba(37, 99, 235, 0.06);
+    --table-border: rgba(15, 23, 42, 0.09);
+    --table-row-hover: rgba(15, 23, 42, 0.03);
+
+    --dropdown-bg: #ffffff;
+    --dropdown-border: rgba(15, 23, 42, 0.14);
+}
+
+/* 📱 Webkit Touch Highlight Reset Global */
 * {
     -webkit-tap-highlight-color: transparent !important;
 }

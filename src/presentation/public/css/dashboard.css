@@ -441,18 +441,19 @@ body {
 }
 
 .explorer-sidebar {
-    background: rgba(10, 10, 10, 0.65);
+    background: var(--card-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
     padding: 1.25rem 1rem;
     height: calc(100vh - 140px);
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    scrollbar-color: var(--border-color) transparent;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-sm);
 }
 
 .explorer-sidebar-header {
@@ -466,7 +467,7 @@ body {
 .explorer-sidebar-title {
     font-size: 0.85rem;
     text-transform: uppercase;
-    color: #94a3b8;
+    color: var(--text-muted);
     letter-spacing: 1px;
     font-weight: 700;
     margin: 0;
@@ -480,9 +481,9 @@ body {
 }
 
 .explorer-action-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
     width: 32px;
     height: 32px;
     border-radius: 8px;
@@ -495,9 +496,9 @@ body {
 }
 
 .explorer-action-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--surface-hover);
+    color: var(--primary);
+    border-color: var(--border-hover);
 }
 
 /* PC Collapsed State (Escritorio > 768px) */
@@ -712,7 +713,8 @@ body {
 
 /* Modal Styles - Heredados de modal.css */
 .modal-overlay .modal-content {
-    background: #0a0a0a; /* Sólido: Pure Dark Standard */
+    background: var(--modal-bg);
+    color: var(--text-main);
     padding: 2rem;
     border-radius: 16px;
     width: 90%;
@@ -720,7 +722,7 @@ body {
     max-height: 90vh; /* Permite que el modal no exceda la pantalla */
     overflow-y: auto; /* Permite scrollear si el contenido es muy largo */
     border: 1px solid var(--border-color);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-xl);
     transform: translateY(20px);
     transition: transform 0.3s ease;
 }

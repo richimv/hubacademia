@@ -1,6 +1,48 @@
 const medicoRepository = require('../repositories/medicoRepository');
 const adminAiService = require('./adminAiService');
 
+function normalizeHealthAreaName(topic) {
+    if (!topic || typeof topic !== 'string') return 'Salud Pública';
+    const norm = topic.trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    if (norm.includes('cuidado integral') || norm.includes('atencion integral') || norm.includes('mais-bfc')) {
+        return 'Cuidado Integral de Salud';
+    }
+    if (norm.includes('gestion de servicios') || norm.includes('gestion en establecimientos') || (norm.includes('gestion') && norm.includes('salud'))) {
+        return 'Gestión de Servicios de Salud';
+    }
+    if (norm.includes('etica') || norm.includes('interculturalidad') || norm.includes('bioetica')) {
+        return 'Ética e Interculturalidad';
+    }
+    if (norm.includes('investigacion') || norm.includes('paper') || norm.includes('metodologia')) {
+        return 'Investigación';
+    }
+    if (norm.includes('salud publica') || norm.includes('epidemiologia')) {
+        return 'Salud Pública';
+    }
+
+    if (norm.includes('ginecologia') || norm.includes('obstetricia')) return 'Ginecología y Obstetricia';
+    if (norm.includes('medicina interna') || norm.includes('emergencias')) return 'Medicina Interna';
+    if (norm.includes('pediatria') || norm.includes('neonatologia')) return 'Pediatría';
+    if (norm.includes('cirugia') || norm.includes('trauma')) return 'Cirugía General';
+    if (norm.includes('anatomia')) return 'Anatomía';
+    if (norm.includes('fisiologia')) return 'Fisiología';
+    if (norm.includes('farmacologia')) return 'Farmacología';
+    if (norm.includes('microbiologia') || norm.includes('parasitologia')) return 'Microbiología y Parasitología';
+    if (norm.includes('cardiologia')) return 'Cardiología';
+    if (norm.includes('gastroenterologia')) return 'Gastroenterología';
+    if (norm.includes('neurologia')) return 'Neurología';
+    if (norm.includes('nefrologia')) return 'Nefrología';
+    if (norm.includes('neumologia')) return 'Neumología';
+    if (norm.includes('endocrinologia')) return 'Endocrinología';
+    if (norm.includes('infectologia')) return 'Infectología';
+    if (norm.includes('reumatologia')) return 'Reumatología';
+    if (norm.includes('traumatologia')) return 'Traumatología';
+
+    return topic.trim();
+}
+
 class MedicoService {
 
     normalizeTopic(input) {
@@ -156,6 +198,15 @@ class MedicoService {
                 }
             } catch (aiErr) {
                 console.error("❌ Error Crítico en Reposición IA (Medico):", aiErr);
+                if (balancedBatch && balancedBatch.length > 0) {
+                    console.log(`⚠️ [MedicoService] Retornando ${balancedBatch.length} preguntas disponibles del banco como fallback seguro.`);
+                    return {
+                        questions: balancedBatch.slice(0, limit),
+                        source: 'BANK',
+                        topic: sampledAreas[0],
+                        areas: areas
+                    };
+                }
                 throw new Error("AI_REPLENISHMENT_FAILED", { cause: aiErr });
             }
         }
@@ -172,23 +223,37 @@ class MedicoService {
         const areaStats = {};
         const allowedAreas = (quizData.areas && Array.isArray(quizData.areas) && quizData.areas.length > 0)
             ? quizData.areas
-            : [quizData.topic];
+            : (quizData.topic ? [quizData.topic] : []);
+
+        // Normalizar topic principal a 'Multi-Área' si hay más de 1 área o es un simulacro
+        if (allowedAreas.length > 1 || !quizData.topic || quizData.topic.startsWith('Simulacro') || quizData.topic === 'General' || quizData.topic === 'MEDICINA') {
+            quizData.topic = allowedAreas.length === 1 ? normalizeHealthAreaName(allowedAreas[0]) : 'Multi-Área';
+        } else {
+            quizData.topic = normalizeHealthAreaName(quizData.topic);
+        }
+
+        // Forzar dificultad válida (nunca MIXTO)
+        quizData.difficulty = (quizData.difficulty && quizData.difficulty !== 'MIXTO') ? quizData.difficulty : 'Senior';
 
         if (quizData.questions && Array.isArray(quizData.questions)) {
             quizData.questions.forEach(q => {
-                let topic = q.topic || quizData.topic || 'General';
-                const isCorrect = q.userAnswer === q.correct_option_index;
+                let rawTopic = q.topic || q.area || quizData.topic || 'Salud Pública';
+                const isCorrect = q.userAnswer === q.correct_option_index || q.isCorrect === true;
 
-                const isGeneric = !topic || topic === 'MEDICINA' || topic === 'General' || topic === 'Medicina General';
+                const isGeneric = !rawTopic || rawTopic === 'MEDICINA' || rawTopic === 'General' || rawTopic === 'Medicina General' || rawTopic.startsWith('Simulacro');
 
+                let topic = rawTopic;
                 if (isGeneric && allowedAreas.length > 0) {
                     topic = allowedAreas[0];
                 } else if (allowedAreas.length > 0) {
-                    const matched = allowedAreas.find(a => topic.toLowerCase().includes(a.toLowerCase()));
+                    const matched = allowedAreas.find(a => rawTopic.toLowerCase().includes(a.toLowerCase()));
                     if (matched) topic = matched;
                 } else if (topic.includes(',')) {
                     topic = topic.split(',')[0].trim();
                 }
+
+                // Normalización canónica de mayúsculas/acentos
+                topic = normalizeHealthAreaName(topic);
 
                 if (!areaStats[topic]) {
                     areaStats[topic] = { correct: 0, total: 0 };
@@ -215,7 +280,7 @@ class MedicoService {
     }
 
     async getUserQuizStats(userId, context, target, limit, days = null, areas = null, career = null) {
-        let topicFilter = ` AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado')`;
+        let topicFilter = ` AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado', 'Senior', 'Junior', 'Facil', 'Medio', 'Dificil')`;
         let timeFilter = '';
         const params = [userId];
 
@@ -270,19 +335,35 @@ class MedicoService {
         try {
             const topicRes = await medicoRepository.getTopicAnalysis(userId, topicFilter, params, timeFilter, areas);
             if (topicRes.length > 0) {
-                strongest = topicRes[0].subtema;
-                weakest = topicRes[topicRes.length - 1].subtema;
-
-                radarData = topicRes.map(row => {
+                // Normalizar y consolidar subtemas para evitar duplicados por casing
+                const consolidatedMap = new Map();
+                topicRes.forEach(row => {
+                    const normSubject = normalizeHealthAreaName(row.subtema);
                     const correctAnswers = parseInt(row.correct_answers || 0, 10);
                     const totalAnswers = parseInt(row.total_answers || 0, 10);
-                    return {
-                        subject: row.subtema,
-                        accuracy: totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0,
-                        correct: correctAnswers,
-                        total: totalAnswers
-                    };
+
+                    if (!consolidatedMap.has(normSubject)) {
+                        consolidatedMap.set(normSubject, { subject: normSubject, correct: 0, total: 0 });
+                    }
+                    const entry = consolidatedMap.get(normSubject);
+                    entry.correct += correctAnswers;
+                    entry.total += totalAnswers;
                 });
+
+                const consolidatedList = Array.from(consolidatedMap.values()).map(entry => ({
+                    subject: entry.subject,
+                    accuracy: entry.total > 0 ? Math.round((entry.correct / entry.total) * 100) : 0,
+                    correct: entry.correct,
+                    total: entry.total
+                }));
+
+                consolidatedList.sort((a, b) => b.accuracy - a.accuracy);
+
+                if (consolidatedList.length > 0) {
+                    strongest = consolidatedList[0].subject;
+                    weakest = consolidatedList[consolidatedList.length - 1].subject;
+                    radarData = consolidatedList;
+                }
             }
         } catch (e) {
             console.warn("⚠️ No se pudo procesar area_stats JSONB en Medico.", e.message);

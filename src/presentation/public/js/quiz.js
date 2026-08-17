@@ -181,6 +181,46 @@ window.showExamReview = async function () {
     } catch (e) { console.error("💥 ERROR CRÍTICO en showExamReview:", e); }
 };
 
+/**
+ * Abre el Tutor IA con el contexto específico de una pregunta durante la revisión post-examen
+ */
+window.openTutorForReviewQuestion = function (qIndex) {
+    const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || 
+                    (window.sessionManager ? !window.sessionManager.isLoggedIn() : !localStorage.getItem('authToken'));
+    if (isGuest) {
+        if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+            window.uiManager.showAuthPromptModal();
+            return;
+        }
+    }
+
+    const q = state.questions[qIndex];
+    if (!q) return;
+    const ans = state.answers[qIndex];
+
+    const qContext = {
+        id: q.id || `q-rev-${qIndex}`,
+        questionText: q.question_text,
+        options: q.options || [],
+        correctOptionIndex: q.correct_option_index,
+        correctOptionText: (q.options && q.correct_option_index !== undefined) ? (q.options[q.correct_option_index] || '') : '',
+        userOptionIndex: ans ? ans.userAnswer : null,
+        userOptionText: (ans && q.options && ans.userAnswer !== null && ans.userAnswer !== undefined) ? (q.options[ans.userAnswer] || '') : '',
+        isUserCorrect: ans ? ans.isCorrect : false,
+        explanation: q.explanation || '',
+        topic: q.topic || q.area || state.topic || 'General',
+        target: q.target || state.targetExam || (state.context.toUpperCase() === 'EDUCACION' ? 'ASCENSO' : 'SERUMS'),
+        career: q.career || state.career || '',
+        examContext: state.context.toUpperCase() === 'EDUCACION' ? 'EDUCACION' : 'MEDICINA',
+        difficulty: state.difficulty || 'Senior',
+        areas: state.areas || []
+    };
+
+    if (window.quizTutor) {
+        window.quizTutor.toggle(true, qContext);
+    }
+};
+
 // Configuración
 let API_URL = `${window.AppConfig.API_URL}/api/medico`; // Default fallback
 
@@ -1088,10 +1128,10 @@ function handleAnswer(selectedIndex, btnElement) {
         }
     }
 
-    // Configurar y mostrar botón de Tutor IA (No permitido en vivo durante examen real de 100q)
+    // Configurar y mostrar botón de Tutor IA (No disponible en vivo durante modo rápido de 10q ni simulacro real de 100q)
     const tutorBtn = document.getElementById('btn-open-quiz-tutor');
     if (tutorBtn) {
-        if (state.maxQuestions === 100) {
+        if (state.maxQuestions === 100 || state.maxQuestions === 10 || state.mode === 'arcade') {
             tutorBtn.style.display = 'none';
         } else {
             tutorBtn.style.display = 'inline-flex';
@@ -1339,9 +1379,11 @@ async function finishQuiz() {
         total_questions: totalCount,
         totalQuestions: totalCount,
         questions: state.questions.slice(0, totalCount).map((q, idx) => ({
-            ...q,
+            id: q.id,
             userAnswer: state.answers[idx]?.userAnswer !== undefined ? state.answers[idx].userAnswer : 0,
-            topic: q.topic || state.topic
+            correct_option_index: q.correct_option_index,
+            isCorrect: !!state.answers[idx]?.isCorrect,
+            topic: q.topic || state.topic || 'General'
         }))
     };
 

@@ -18,7 +18,7 @@ class DeckController {
             userId: req.user ? req.user.id : 'GUEST',
             isGuest: !req.user,
             userTier: tier,
-            isAdvanced: ['advanced', 'admin', 'elite'].includes(tier)
+            isAdvanced: ['advanced', 'admin'].includes(tier)
         };
     }
 

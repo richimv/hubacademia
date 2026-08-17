@@ -67,19 +67,17 @@ h6 {
     /* Modern editorial look */
     font-weight: var(--font-weight-extrabold);
     /* Heavy by default */
-}
-
-/* Glassmorphism Utilities */
+}/* Glassmorphism Utilities */
 .glass-panel {
-    background: rgba(10, 10, 10, 0.7) !important;
+    background: var(--glass-bg) !important;
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--glass-border);
 }
 
 .premium-border {
     border: 1px solid var(--border-glow) !important;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.05);
+    box-shadow: 0 0 20px var(--primary-glow);
 }
 
 .text-gradient-primary {
@@ -120,7 +118,7 @@ h6 {
     padding: 0.6rem 1.25rem;
     border-radius: var(--radius-md);
     border: none;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 0.95rem;
     line-height: 1.5;
     transition: all 0.2s;
@@ -149,7 +147,7 @@ h6 {
 }
 
 .btn-secondary:hover {
-    background-color: var(--border-hover);
+    background-color: var(--surface-hover);
     border-color: var(--border-hover);
 }
 
@@ -185,7 +183,7 @@ h6 {
 /* --- 0. BUTTON FOR MAIN PAGE (Shared) --- */
 /* Estilos para el botón en index.html, fuera del scope del juego */
 .btn-gamified {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
     color: white;
     border: none;
     padding: 0.8rem 1.5rem;
@@ -196,16 +194,15 @@ h6 {
     align-items: center;
     gap: 10px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 15px var(--primary-glow);
     text-decoration: none;
     font-size: 1rem;
-    font-family: 'Inter', sans-serif;
-    /* Match index.html font */
+    font-family: var(--font-main);
 }
 
 .btn-gamified:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+    box-shadow: 0 0 20px var(--primary-glow);
 }
 
 .btn-badge {
@@ -217,7 +214,7 @@ h6 {
 }
 
 /* ==========================================================================
-   GLOBAL TABLE STYLES (Responsive & Premium Dark)
+   GLOBAL TABLE STYLES (Responsive & Premium Dark/Light)
    ========================================================================== */
 
 .table-wrapper {
@@ -226,12 +223,11 @@ h6 {
     -webkit-overflow-scrolling: touch;
     margin: 1.5rem 0;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
 }
 
-/* Ocultar scrollbar pero permitir scroll en navegadores modernos si se prefiere, 
-   o mantenerlo sutil */
 .table-wrapper::-webkit-scrollbar {
     height: 4px;
 }
@@ -259,12 +255,12 @@ table {
 th, td {
     padding: 12px 16px;
     text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--table-border);
 }
 
 th {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--primary-light);
+    background: var(--table-header-bg);
+    color: var(--primary);
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.75rem;
@@ -276,5 +272,5 @@ tr:last-child td {
 }
 
 tr:hover td {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--table-row-hover);
 }

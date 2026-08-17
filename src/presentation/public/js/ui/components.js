@@ -928,6 +928,12 @@ window.UIComponents.createReviewCardHTML = function (config) {
             <strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>
             ${expTextHTML}
             ${expImageHTML}
+            <div class="review-tutor-action-row" style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn-review-tutor-trigger" onclick="window.openTutorForReviewQuestion(${index})" style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; padding: 0.5rem 1.15rem; border-radius: 9999px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <img src="/assets/hubifrente.png" alt="Hubi" style="width: 18px; height: 18px; object-fit: contain; flex-shrink: 0;">
+                    <span>Consultar Tutor IA</span>
+                </button>
+            </div>
         </div>
     </div>`;
 };
@@ -1012,7 +1018,7 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
     const featThumb = window.resolveImageUrl ? window.resolveImageUrl(featured.image_url, featured.resource_type || 'paper') : (featured.image_url || 'assets/paper.webp');
 
     const featuredHTML = `
-        <div class="news-hero-card has-media" style="background: #121212; border: ${featStyle.border}; box-shadow: ${featStyle.shadow};">
+        <div class="news-hero-card has-media" style="background: var(--card-bg); border: ${featStyle.border}; box-shadow: ${featStyle.shadow};">
             <div class="news-hero-body">
                 <div class="news-hero-tags">
                     <span class="news-pill-tag" style="background: ${featBadge.bg}; border: 1px solid ${featBadge.border}; color: ${featBadge.text}; font-weight: 700; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem;">

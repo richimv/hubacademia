@@ -14,41 +14,45 @@ Previamente, la plataforma contaba con hojas de estilo fragmentadas por módulos
 
 ---
 
-## 2. Solución Implementada: Centralización mediante Tokens (`theme.css`)
+## 2. Solución Implementada: Centralización mediante Tokens y Dual-Theme Engine (`theme.css` + `themeManager.js`)
 
-Hemos creado una hoja de estilos de tokens de diseño centralizada en [theme.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/theme.css) que sirve como la **única fuente de verdad** para los colores, tipografía, bordes y espaciados de la plataforma:
+Hemos creado una hoja de estilos de tokens de diseño centralizada en [theme.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/theme.css) que sirve como la **única fuente de verdad** para los modos Dark (🌙) y Light (☀️), complementada por el singleton [themeManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/utils/themeManager.js):
 
 ```css
-/* theme.css: Paleta de Colores, Tipografías y Reset Universal */
-:root {
-    /* Paleta Manta Black / Slate */
+/* theme.css: Dual-Theme Tokens */
+:root,
+[data-theme="dark"] {
     --bg-main: #050505;
     --bg-secondary: #0a0a0a;
     --bg-tertiary: #121212;
-    --surface-hover: #121212;
-    
-    /* Textos */
+    --card-bg: #0a0a0a;
+    --surface-hover: rgba(255, 255, 255, 0.05);
     --text-main: #f8fafc;
     --text-secondary: #cbd5e1;
     --text-muted: #94a3b8;
-    
-    /* Acciones e Indicadores */
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --accent-purple: #8b5cf6;
-    --success: #10b981;
-    --danger: #ef4444;
-    
-    /* Espaciados, Bordes y Radios */
     --border-color: rgba(255, 255, 255, 0.08);
-    --radius-md: 0.5rem;
-    --radius-xl: 1rem;
-    --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+    --modal-bg: #0a0a0a;
+    --modal-overlay-bg: rgba(0, 0, 0, 0.75);
+    --input-bg: #121212;
+    --input-border: rgba(255, 255, 255, 0.12);
+    --input-text: #ffffff;
 }
 
-/* Reset universal táctil */
-* {
-    -webkit-tap-highlight-color: transparent !important;
+[data-theme="light"] {
+    --bg-main: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --card-bg: #ffffff;
+    --surface-hover: rgba(0, 0, 0, 0.04);
+    --text-main: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --border-color: rgba(0, 0, 0, 0.09);
+    --modal-bg: #ffffff;
+    --modal-overlay-bg: rgba(15, 23, 42, 0.5);
+    --input-bg: #ffffff;
+    --input-border: rgba(0, 0, 0, 0.15);
+    --input-text: #0f172a;
 }
 ```
 

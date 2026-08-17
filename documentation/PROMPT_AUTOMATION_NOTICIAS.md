@@ -65,6 +65,28 @@ El backend validará la URL y los campos, guardándolos en la tabla "resources" 
 ---
 
 ## 📋 Registro de Ejecución y Noticias Ingestadas (Logs)
+- **Fecha:** 15 de agosto de 2026
+- **Recursos Ingestados:**
+  1. **MINEDU (education):** [Minedu alista beca para mejores talentos de los COAR](https://www.gob.pe/institucion/minedu/noticias/1430869-minedu-alista-beca-para-mejores-talentos-de-los-coar)
+  2. **MINEDU (education):** [Minedu y Sunarp se unen para destrabar títulos de propiedad de colegios](https://www.gob.pe/institucion/minedu/noticias/1430817-minedu-y-sunarp-se-unen-para-destrabar-titulos-de-propiedad-de-colegios)
+  3. **MINSA (medicine):** [Día del Niño: Minsa Cuentos lleva mensajes de prevención en salud a niños de Villa María del Triunfo](https://www.gob.pe/institucion/minsa/noticias/1430885-dia-del-nino-minsa-cuentos-lleva-mensajes-de-prevencion-en-salud-a-ninos-de-villa-maria-del-triunfo)
+  4. **MINSA (medicine):** [Minsa realiza jornada de salud por el Día del Niño en Villa María del Triunfo](https://www.gob.pe/institucion/minsa/noticias/1430873-minsa-realiza-jornada-de-salud-por-el-dia-del-nino-en-villa-maria-del-triunfo)
+  5. **MINSA (medicine):** [Más de 1200 personas accedieron a servicios gratuitos para la detección de tuberculosis en Lima Norte](https://www.gob.pe/institucion/minsa/noticias/1430860-mas-de-1200-personas-accedieron-a-servicios-gratuitos-para-la-deteccion-de-tuberculosis-en-lima-norte)
+  6. **MINSA (medicine):** [Minsa fortalece la vigilancia sanitaria de juguetes por campaña del Día del Niño](https://www.gob.pe/institucion/minsa/noticias/1430826-minsa-fortalece-la-vigilancia-sanitaria-de-juguetes-por-campana-del-dia-del-nino)
+- **Estado de Ingesta:** ✅ 6/6 Noticias verificadas e ingestadas exitosamente en la tabla `resources` de PostgreSQL.
+
+- **Fecha:** 12 de agosto de 2026
+- **Recursos Ingestados:**
+  1. **MINEDU (education):** [Minedu aprueba expediente técnico para nueva infraestructura de la IE Juan Pablo II de San Genaro](https://www.gob.pe/institucion/minedu/noticias/1429624-minedu-aprueba-expediente-tecnico-para-nueva-infraestructura-de-la-ie-juan-pablo-ii-de-san-genaro)
+  2. **MINSA (medicine):** [Minsa resalta las bondades del consumo de frutas verdes](https://www.gob.pe/institucion/minsa/noticias/1429677-minsa-resalta-las-bondades-del-consumo-de-frutas-verdes)
+  3. **MINSA (medicine):** [Ministerio de Salud brinda atención médica y soporte psicológico a ciudadano afectado por hecho de violencia](https://www.gob.pe/institucion/minsa/noticias/1429600-ministerio-de-salud-brinda-atencion-medica-y-soporte-psicologico-a-ciudadano-afectado-por-hecho-de-violencia)
+  4. **MINSA (medicine):** [Día Internacional de la Juventud: Minsa promueve el cuidado Integral para los jóvenes en el Perú](https://www.gob.pe/institucion/minsa/noticias/1429538-dia-internacional-de-la-juventud-minsa-promueve-el-cuidado-integral-para-los-jovenes-en-el-peru)
+  5. **MINSA (medicine):** [Ministro Luis Dyer y representantes del Colegio Médico del Perú trabajarán juntos para mejorar la gestión administrativa en el sector Salud](https://www.gob.pe/institucion/minsa/noticias/1429526-ministro-luis-dyer-y-representantes-del-colegio-medico-del-peru-trabajaran-juntos-para-mejorar-la-gestion-administrativa-en-el-sector-salud)
+  6. **MINSA (medicine):** [‘Kallpa’: puesto médico de avanzada implementado por Diris Lima Este para responder ante emergencias](https://www.gob.pe/institucion/minsa/noticias/1429307-kallpa-puesto-medico-de-avanzada-implementado-por-diris-lima-este-para-responder-ante-emergencias)
+  7. **MINSA (medicine):** [Minsa: Instituto de Salud Mental y Colegio Médico obtienen certificación de Buena Práctica en Gestión Pública 2026](https://www.gob.pe/institucion/minsa/noticias/1429291-minsa-instituto-de-salud-mental-y-colegio-medico-obtienen-certificacion-de-buena-practica-en-gestion-publica-2026)
+  8. **MINSA (medicine):** [INSN Breña obtiene certificación de Buena Práctica en Gestión Pública 2026 por innovador sistema de terapia de infusión](https://www.gob.pe/institucion/minsa/noticias/1429190-insn-brena-obtiene-certificacion-de-buena-practica-en-gestion-publica-2026-por-innovador-sistema-de-terapia-de-infusion)
+- **Estado de Ingesta:** ✅ 8/8 Noticias verificadas e ingestadas exitosamente en la tabla `resources` de PostgreSQL.
+
 - **Fecha:** 8 de agosto de 2026
 - **Recursos Ingestados:**
   1. **MINEDU (education):** [Minedu refuerza la educación hospitalaria en las 25 regiones del país](https://www.gob.pe/institucion/minedu/noticias/1427360-minedu-refuerza-la-educacion-hospitalaria-en-las-25-regiones-del-pais)
