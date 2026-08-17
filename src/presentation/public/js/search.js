@@ -59,11 +59,13 @@ class SearchComponent {
             this.performSearch();
         } else {
             // Si hay estado previo (ej: recarga), restaurarlo
-            if (history.state) {
+            if (history.state && history.state.view) {
                 this.handlePopState({ state: history.state });
             } else {
-                // Estado inicial
-                history.replaceState({ view: 'home' }, '', '#home');
+                // Estado inicial: solo añadir hash si estamos en la raíz
+                if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+                    history.replaceState({ view: 'home' }, '', '#home');
+                }
                 this.renderInitialView();
             }
         }
@@ -141,24 +143,29 @@ class SearchComponent {
     }
 
     setupEventListeners() {
-        this.searchButton.addEventListener('click', () => this.performSearch());
+        if (this.searchButton) {
+            this.searchButton.addEventListener('click', () => this.performSearch());
+        }
 
         // 🔍 SENIOR UX: Escuchar eventos en la barra de búsqueda (Enter, Escape, Reset al vaciar)
-        this.searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                this.performSearch();
-            } else if (e.key === 'Escape') {
-                this.resetSearchToBrowse();
-            }
-        });
+        if (this.searchInput) {
+            this.searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.performSearch();
+                } else if (e.key === 'Escape') {
+                    this.resetSearchToBrowse();
+                }
+            });
 
-        // Auto-restauración al borrar texto (input event)
-        this.searchInput.addEventListener('input', () => {
-            const query = this.searchInput.value.trim();
-            if (query.length === 0) {
-                this.resetSearchToBrowse();
-            }
-        });
+            // Auto-restauración y toggle del botón limpiar al escribir
+            this.searchInput.addEventListener('input', () => {
+                const query = this.searchInput.value.trim();
+                this.toggleClearButton(query.length > 0);
+                if (query.length === 0) {
+                    this.resetSearchToBrowse();
+                }
+            });
+        }
 
         // Delegación de eventos en el body
         document.body.addEventListener('click', this.handleContentClick.bind(this));
@@ -174,8 +181,18 @@ class SearchComponent {
         }
     }
 
+    toggleClearButton(show) {
+        const clearBtn = document.getElementById('searchClearButton') || document.querySelector('.search-clear-btn');
+        if (clearBtn) {
+            clearBtn.style.display = show ? 'inline-flex' : 'none';
+        }
+    }
+
     resetSearchToBrowse() {
-        this.searchInput.value = '';
+        if (this.searchInput) {
+            this.searchInput.value = '';
+        }
+        this.toggleClearButton(false);
         if (this.resultsContainer) {
             this.resultsContainer.innerHTML = '';
             this.resultsContainer.classList.add('hidden');

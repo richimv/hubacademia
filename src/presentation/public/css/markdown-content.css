@@ -78,12 +78,12 @@
 /* ─── BOLD & ITALIC (Key Terms Accent) ───────────────── */
 .markdown-content strong {
     font-weight: 700;
-    color: #60a5fa; /* Blue 400 — Premium accent for keywords */
+    color: var(--primary); /* Acento institucional destacado */
 }
 
 .markdown-content em {
     font-style: italic;
-    color: #cbd5e1; /* Slate 300 */
+    color: var(--text-main); /* Alto contraste garantizado en modo claro y oscuro */
 }
 
 /* ─── LISTS ──────────────────────────────────────────── */

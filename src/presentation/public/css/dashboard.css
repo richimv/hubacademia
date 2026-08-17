@@ -624,8 +624,8 @@ body {
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
-    color: #94a3b8;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-secondary);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     min-width: 0;
     border: 1px solid transparent;
@@ -638,26 +638,26 @@ body {
 }
 
 .tree-content:hover {
-    background: rgba(255, 255, 255, 0.06) !important;
-    color: #f1f5f9 !important;
-    border-color: rgba(255, 255, 255, 0.04);
+    background: var(--surface-hover) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color);
 }
 
 .tree-content:hover .tree-label,
 .tree-content:hover .tree-label span {
-    color: #f1f5f9 !important;
+    color: var(--text-main) !important;
 }
 
 .tree-content.active {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    color: #ffffff !important;
+    background: var(--primary-glow) !important;
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
     font-weight: 700 !important;
 }
 
 .tree-content.active .tree-label,
 .tree-content.active .tree-label span {
-    color: #ffffff !important;
+    color: var(--primary) !important;
     font-weight: 700 !important;
 }
 
@@ -668,7 +668,7 @@ body {
     top: 15%;
     height: 70%;
     width: 3px;
-    background: #ffffff !important;
+    background: var(--primary) !important;
     border-radius: 0 4px 4px 0;
 }
 

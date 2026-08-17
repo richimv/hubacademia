@@ -1,86 +1,135 @@
 /**
  * app.js
- * Punto de entrada principal.
- * Versión corregida: Soluciona error de Avatar y Logout en bucle.
+ * Capa de Presentación - Punto de Entrada y Orquestador de la UI Global.
+ * Responsabilidades:
+ *  - Configuración e inicialización de endpoints y tracking de analíticas.
+ *  - Sincronización resiliente de simulacros offline (Médico y Docente).
+ *  - Control de sesión en Header UI y delegación segura de Google OAuth.
+ *  - Gestión global de modales, temas y helpers interactivos.
  */
 
-// ✅ 1. CONFIGURACIÓN DE LA API DESDE LA CONFIGURACIÓN GLOBAL (AppConfig)
-window.API_URL = window.AppConfig.API_URL;
+// 1. CONFIGURACIÓN DE LA API DESDE LA CONFIGURACIÓN GLOBAL (AppConfig)
+window.API_URL = window.AppConfig?.API_URL || '';
 
 console.log('🌍 Entorno:', (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'Local' : 'Producción', '| API:', window.API_URL);
 
-// ✅ NUEVO: Sincronización de Simulacros guardados localmente por fallas de conexión
-async function syncPendingSubmissions() {
-    if (!navigator.onLine) return;
-    
-    const token = localStorage.getItem('authToken');
-    if (!token || token === 'null' || token === 'undefined') {
-        // No hay sesión activa, abortamos la sincronización para evitar bucles de redirección 401
-        return;
+/**
+ * Determina la etiqueta y clase CSS correspondiente al nivel de suscripción del usuario.
+ * Función pura y modular para evitar duplicidad lógica en la UI.
+ * @param {Object|null} user - Objeto de usuario con subscriptionStatus y subscriptionTier.
+ * @returns {{ tierLabel: string, tierClass: string }}
+ */
+function getTierBadgeConfig(user) {
+    if (!user) {
+        return { tierLabel: 'Plan Gratuito', tierClass: 'tier-free' };
+    }
+
+    const tier = (user.subscriptionTier || 'free').toLowerCase();
+    const isActive = user.subscriptionStatus === 'active';
+
+    if (!isActive) {
+        return { tierLabel: 'Plan Gratuito', tierClass: 'tier-free' };
+    }
+
+    if (tier === 'advanced' || tier === 'avanzado') {
+        return { tierLabel: 'Plan Avanzado', tierClass: 'tier-advanced' };
     }
     
-    const pendingKey = 'simulator_pending_submissions';
-    let pending = [];
-    try {
-        pending = JSON.parse(localStorage.getItem(pendingKey) || '[]');
-    } catch (e) {
-        return;
+    if (tier === 'pro') {
+        return { tierLabel: 'Plan Pro', tierClass: 'tier-pro' };
     }
-    
-    if (pending.length === 0) return;
-    
-    console.log(`📡 [Sync] Se encontraron ${pending.length} simulacros pendientes de sincronizar.`);
-    
-    const remaining = [];
-    for (const item of pending) {
-        try {
-            const ctxUpper = (item.context || 'MEDICINA').toUpperCase();
-            let syncUrl = `${window.AppConfig.API_URL}/api/medico/submit`;
-            if (ctxUpper === 'EDUCACION') {
-                syncUrl = `${window.AppConfig.API_URL}/api/docente/submit`;
-            }
-            
-            const response = await window.NetworkService.fetch(syncUrl, {
-                method: 'POST',
-                body: JSON.stringify(item.payload)
-            });
-            
-            if (response.ok) {
-                console.log(`✅ [Sync] Simulacro ${item.quizId} sincronizado exitosamente.`);
-            } else {
-                console.warn(`⚠️ [Sync] Error del servidor al sincronizar ${item.quizId} (${response.status}). Se reintentará luego.`);
-                remaining.push(item);
-            }
-        } catch (err) {
-            console.warn(`❌ [Sync] Error de conexión al sincronizar ${item.quizId}. Se reintentará luego.`, err);
-            remaining.push(item);
-        }
-    }
-    
-    localStorage.setItem(pendingKey, JSON.stringify(remaining));
+
+    const formattedTier = tier.charAt(0).toUpperCase() + tier.slice(1);
+    return {
+        tierLabel: `Plan ${formattedTier}`,
+        tierClass: 'tier-premium'
+    };
 }
 
-// ✅ NUEVO: Tracking de Tráfico en Tiempo Real
+/**
+ * Sincronización de Simulacros guardados localmente por fallas de conexión.
+ */
+async function syncPendingSubmissions() {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token || token === 'null' || token === 'undefined') {
+            // No hay sesión activa, abortamos para evitar bucles de redirección 401
+            return;
+        }
+
+        const pendingKey = 'simulator_pending_submissions';
+        let pending = [];
+        try {
+            pending = JSON.parse(localStorage.getItem(pendingKey) || '[]');
+        } catch (e) {
+            return;
+        }
+
+        if (!Array.isArray(pending) || pending.length === 0) return;
+
+        console.log(`📡 [Sync] Se encontraron ${pending.length} simulacros pendientes de sincronizar.`);
+
+        const remaining = [];
+        const apiUrl = window.AppConfig?.API_URL || window.API_URL || '';
+
+        for (const item of pending) {
+            try {
+                const ctxUpper = (item.context || 'MEDICINA').toUpperCase();
+                const syncUrl = ctxUpper === 'EDUCACION'
+                    ? `${apiUrl}/api/docente/submit`
+                    : `${apiUrl}/api/medico/submit`;
+
+                const response = await window.NetworkService.fetch(syncUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(item.payload)
+                });
+
+                if (response && response.ok) {
+                    console.log(`✅ [Sync] Simulacro ${item.quizId} sincronizado exitosamente.`);
+                } else {
+                    const status = response ? response.status : 'desconocido';
+                    console.warn(`⚠️ [Sync] Error del servidor al sincronizar ${item.quizId} (${status}). Se reintentará luego.`);
+                    remaining.push(item);
+                }
+            } catch (err) {
+                console.warn(`❌ [Sync] Error de conexión al sincronizar ${item.quizId}. Se reintentará luego.`, err);
+                remaining.push(item);
+            }
+        }
+
+        localStorage.setItem(pendingKey, JSON.stringify(remaining));
+    } catch (globalErr) {
+        console.warn('⚠️ [Sync] Error general en proceso de sincronización:', globalErr);
+    }
+}
+
+/**
+ * Tracking de Tráfico en Tiempo Real (Heartbeat / Pulso).
+ */
 function initTrafficTracking() {
     const SESSION_KEY = 'hub_visitor_session_id';
     let sessionId = sessionStorage.getItem(SESSION_KEY);
-    
+
     if (!sessionId) {
-        sessionId = crypto.randomUUID();
+        sessionId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
         sessionStorage.setItem(SESSION_KEY, sessionId);
     }
 
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const apiUrl = window.AppConfig?.API_URL || window.API_URL || '';
 
     const sendPulse = async () => {
-        // ✅ MEJORA: No intentar si estamos offline
-        if (!navigator.onLine) return;
+        if (typeof navigator !== 'undefined' && !navigator.onLine) return;
 
         try {
-            await window.NetworkService.fetch(`${window.API_URL}/api/analytics/pulse`, {
-                method: 'POST',
-                body: JSON.stringify({ sessionId, isMobile })
-            });
+            if (window.NetworkService && apiUrl) {
+                await window.NetworkService.fetch(`${apiUrl}/api/analytics/pulse`, {
+                    method: 'POST',
+                    body: JSON.stringify({ sessionId, isMobile })
+                });
+            }
         } catch (err) {
             // Silencioso para no ensuciar la consola del usuario
         }
@@ -89,113 +138,12 @@ function initTrafficTracking() {
     // Enviar primer pulso inmediato
     sendPulse();
 
-    // Enviar pulso cada 2.5 minutos (para estar dentro del margen de 5 min del servidor)
+    // Enviar pulso cada 2.5 minutos para mantener activo el servidor
     setInterval(sendPulse, 2.5 * 60 * 1000);
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 [App] DOM cargado. Inicializando...');
-
-    // 🛡️ CONFIGURACIÓN DE LOGIN DIRECTO
-    setupDirectLoginListener();
-    
-    // Inicializar tracking de tráfico
-    initTrafficTracking();
-
-    // Sincronizar simulacros pendientes si hay conexión
-    syncPendingSubmissions();
-    window.addEventListener('online', syncPendingSubmissions);
-
-    // ✅ 0.5 INTERCEPTAR RETORNO DE PAGO EXITOSO
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('payment') === 'success') {
-        console.log('🎉 Retorno de Pago Exitoso Detectado.');
-
-        // Limpiamos la URL por estética sin recargar la página
-        window.history.replaceState({}, document.title, window.location.pathname);
-
-        // Obligamos al App a volver a descargar sus privilegios (Pasa de Pending a Active)
-        setTimeout(async () => {
-            if (window.sessionManager && window.sessionManager.isLoggedIn()) {
-                await window.sessionManager.validateSession();
-            }
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: '<span style="color: #ffd700; font-weight:800;">¡Pago Procesado con Éxito!</span>',
-                    html: '<p style="color:#cbd5e1;">Tu Cuenta se ha actualizado a Premium. Tus limites se han restablecido. ¡A estudiar sin límites!</p>',
-                    icon: 'success',
-                    background: 'rgba(20,20,20,0.95)',
-                    confirmButtonText: 'Genial, gracias'
-                });
-            } else {
-                window.uiManager.showToast('✅ ¡Pago procesado con éxito! Tu cuenta ahora es Premium.');
-            }
-        }, 1200); // Pequeño delay de 1.2s para dar tiempo al Webhook a escribir en la DB
-    }
-
-    // ✅ TRACKING AUTOMÁTICO DE VISTAS (Career / Course)
-    try {
-        if (window.AnalyticsApiService) {
-            const path = window.location.pathname;
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-
-            if (id) {
-                if (path.includes('career')) {
-                    window.AnalyticsApiService.recordView('career', id);
-                    console.log('📊 Vista registrada: Carrera', id);
-                } else if (path.includes('course')) {
-                    window.AnalyticsApiService.recordView('course', id);
-                    console.log('📊 Vista registrada: Curso', id);
-                } else if (path.includes('topic')) {
-                    window.AnalyticsApiService.recordView('topic', id);
-                    console.log('📊 Vista registrada: Tema', id);
-                }
-            }
-        }
-    } catch (err) {
-        console.warn('⚠️ Error en tracking automático:', err);
-    }
-
-    // --- PASO 1: Componentes Globales ---
-    ensureThemeToggleButton();
-
-    if (typeof ChatComponent !== 'undefined') window.chatbot = new ChatComponent();
-
-    if (typeof ConfirmationModal !== 'undefined') {
-        window.confirmationModal = new ConfirmationModal();
-    }
-
-    // --- PASO 2: Gestión de Sesión ---
-    if (window.sessionManager) {
-        // Suscribir la UI a cambios (Para pintar el header)
-        window.sessionManager.onStateChange(updateHeaderUI);
-
-        // 🔥 SENIOR FIX: No bloquear la carga de la UI esperando al servidor
-        window.sessionManager.initialize();
-    }
-
-    // --- Helpers de Admin y Modals ---
-    if (document.querySelector('.admin-container')) console.log('⚙️ Página de admin detectada.');
-
-    const closeAllModals = () => {
-        document.querySelectorAll('.modal, .pdf-modal').forEach(m => m.style.display = 'none');
-    };
-
-    // ✅ FIX: Restaurar listener global de cierre de modales
-    document.body.addEventListener('click', (event) => {
-        if (event.target.closest('.modal-close, .pdf-modal-close-btn') || event.target.classList.contains('modal-overlay')) {
-            closeAllModals();
-        }
-    });
-
-    // ✅ KEEP-ALIVE: Ping al servidor cada 5 minutos para evitar que Render se duerma
-    // ✅ NOTA: El sistema de KEEP-ALIVE anterior ha sido reemplazado por initTrafficTracking(),
-    // que envía pulsos cada 2.5 minutos, manteniendo el servidor activo de forma más eficiente.
-});
-
 /**
- * Inyecta el botón de cambio de tema si no existe en la cabecera
+ * Inyecta el botón de cambio de tema si no existe en la cabecera.
  */
 function ensureThemeToggleButton() {
     const nav = document.querySelector('.header-nav');
@@ -214,61 +162,34 @@ function ensureThemeToggleButton() {
     }
 }
 
-// ✅ FIX: Resetear estados de carga al volver a la página (evita botones girando infinitamente)
-window.addEventListener('pageshow', (event) => {
-    console.log('🔄 [App] Página mostrada. Reseteando estados de botones...');
-    ensureThemeToggleButton();
-    
-    // Función de restauración
-    const restoreButtons = () => {
-        document.querySelectorAll('[data-original-html]').forEach(btn => {
-            btn.innerHTML = btn.dataset.originalHtml;
-            btn.style.pointerEvents = 'auto';
-            btn.style.opacity = '1';
-        });
-        window._isAuthenticating = false;
+/**
+ * Configura el botón "Acceder" de la cabecera para el inicio de sesión directo con Google.
+ */
+function setupDirectLoginListener() {
+    const openBtn = document.getElementById('open-login-modal');
+    if (!openBtn) return;
+
+    openBtn.onclick = (e) => {
+        e.preventDefault();
+        window.triggerGoogleLogin(openBtn);
     };
+}
 
-    // Ejecutamos inmediatamente y con un pequeño delay por si hay inyecciones dinámicas
-    restoreButtons();
-    setTimeout(restoreButtons, 200); 
-});
-
-
-
-// ✅ FUNCIÓN DE UI (Solo pinta, no modifica datos para evitar bucles)
+/**
+ * Actualiza la UI de la cabecera (Header) según el estado de la sesión.
+ * @param {Object|null} user - Datos del usuario autenticado o null.
+ */
 function updateHeaderUI(user) {
     ensureThemeToggleButton();
     const container = document.getElementById('user-session-controls');
     if (!container) return;
 
     if (user) {
-        // ✅ SENIOR FIX: Cerramos cualquier rastro de la modal de login inmediatamente
-        const loginOverlay = document.getElementById('login-modal-overlay');
-        if (loginOverlay) loginOverlay.style.display = 'none';
-        
-        // Log de depuración para asegurar que los rangos llegan bien
         console.log(`👤 Sesión Activa: ${user.email} | Rango: ${user.subscriptionTier} | Status: ${user.subscriptionStatus}`);
-        // --- MODO: USUARIO LOGUEADO ---
-        // 🔧 FIX: Usamos ui-avatars.com porque via.placeholder.com suele fallar
+
         const avatarUrl = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff`;
         const displayName = user.name || 'Estudiante';
-        
-        const tier = user.subscriptionTier || 'free';
-        let tierLabel = 'Plan Gratuito';
-        let tierClass = 'tier-free';
-        if (user.subscriptionStatus === 'active') {
-            if (tier === 'advanced' || tier === 'avanzado') {
-                tierLabel = 'Plan Avanzado';
-                tierClass = 'tier-advanced';
-            } else if (tier === 'pro') {
-                tierLabel = 'Plan Pro';
-                tierClass = 'tier-pro';
-            } else {
-                tierLabel = `Plan ${tier.charAt(0).toUpperCase() + tier.slice(1)}`;
-                tierClass = 'tier-premium';
-            }
-        }
+        const { tierLabel, tierClass } = getTierBadgeConfig(user);
 
         container.innerHTML = `
             <div class="user-menu-container">
@@ -306,7 +227,7 @@ function updateHeaderUI(user) {
             </div>
         `;
 
-        // Eventos del Menú
+        // Eventos del menú desplegable
         const toggle = document.getElementById('user-menu-toggle');
         const dropdown = document.getElementById('user-menu-dropdown');
         const logout = document.getElementById('logout-btn-action');
@@ -321,9 +242,9 @@ function updateHeaderUI(user) {
             }, { once: true });
         }
 
-        // 🔧 FIX: Usamos la función robusta handleLogout
-        if (logout) logout.onclick = () => window.handleLogout();
-
+        if (logout) {
+            logout.onclick = () => window.handleLogout();
+        }
     } else {
         // --- MODO: INVITADO ---
         container.innerHTML = `
@@ -331,15 +252,14 @@ function updateHeaderUI(user) {
                 <i class="fas fa-sign-in-alt"></i> <span>Acceder</span>
             </button>
         `;
-
-        // ✅ RE-VINCULAMOS EL BOTÓN DE APERTURA (Login Directo)
         setupDirectLoginListener();
     }
 }
 
 /**
- * ✅ UTILERÍA GLOBAL DE AUTENTICACIÓN
- * Permite disparar el flujo de Google desde cualquier lugar (Modales, Banners, etc.)
+ * Utilería Global de Autenticación con Google OAuth.
+ * Permite disparar el flujo de Google desde cualquier lugar (Header, Modales, Banners).
+ * @param {HTMLElement|null} buttonElement - Botón que originó la acción para feedback visual.
  */
 window.triggerGoogleLogin = async (buttonElement = null) => {
     console.log('🖱️ [AuthManager] Iniciando flujo Google OAuth...');
@@ -351,12 +271,11 @@ window.triggerGoogleLogin = async (buttonElement = null) => {
     }
 
     if (!window.supabaseClient) {
-        window.uiManager.showToast('⏳ El servicio de autenticación se está preparando. Reintenta en breve.');
+        window.uiManager?.showToast('⏳ El servicio de autenticación se está preparando. Reintenta en breve.');
         return;
     }
 
     if (buttonElement) {
-        // ✅ MEJORA: Guardamos el HTML original para restaurarlo después si es necesario
         if (!buttonElement.dataset.originalHtml) {
             buttonElement.dataset.originalHtml = buttonElement.innerHTML;
         }
@@ -388,98 +307,15 @@ window.triggerGoogleLogin = async (buttonElement = null) => {
 };
 
 /**
- * ✅ INICIO DE SESIÓN DIRECTO
- * Configura el botón "Acceder" del header.
+ * Función de Cierre de Sesión Centralizada y Resiliente.
  */
-function setupDirectLoginListener() {
-    const openBtn = document.getElementById('open-login-modal');
-    if (!openBtn) return;
-
-    openBtn.onclick = (e) => {
-        e.preventDefault();
-        window.triggerGoogleLogin(openBtn);
-    };
-}
-
-/**
- * ✅ CONFIGURACIÓN ÚNICA DE MODAL ESTÁTICA
- * Se ejecuta una sola vez al inicio para evitar duplicidad de listeners.
- */
-function setupStaticModalListeners() {
-    const overlay = document.getElementById('login-modal-overlay');
-    const closeBtn = document.getElementById('close-login-modal') || document.getElementById('login-modal-close');
-    const googleBtn = document.getElementById('modal-google-login');
-
-    if (!overlay || !googleBtn) {
-        console.warn('⚠️ No se encontró la modal estática en el DOM.');
-        return;
-    }
-
-    console.log('🛡️ [AuthUI] Configurando listeners de login modal...', { googleBtnExists: !!googleBtn });
-
-    // 1. Cerrar Modal
-    const closeModal = () => { 
-        console.log('🚪 Cerrando modal...');
-        overlay.style.display = 'none'; 
-    };
-    if (closeBtn) closeBtn.onclick = closeModal;
-    overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
-
-    // 2. Lógica de Login Google (OAuth)
-    googleBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('🖱️ [AuthUI] Click detectado (addEventListener)');
-        // alert('Hub Academia: Iniciando conexión con Google...'); // Diagnostic alert
-        
-        if (!window.supabaseClient) {
-            console.error('❌ Supabase no inicializado en el momento del click.');
-            window.uiManager.showToast('❌ Error: El servicio de autenticación no está listo. Refresca la página.');
-            return;
-        }
-
-        // Feedback Visual
-        const originalContent = googleBtn.innerHTML;
-        googleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...';
-        googleBtn.style.pointerEvents = 'none';
-        googleBtn.style.opacity = '0.7';
-
-        // 🛡️ Flag: evita modales durante la redirección OAuth
-        window._isAuthenticating = true;
-        
-        try {
-            console.log('🌐 Iniciando redirección OAuth a Google...');
-            const { error } = await window.supabaseClient.auth.signInWithOAuth({
-                provider: 'google',
-                options: { 
-                    redirectTo: window.location.href,
-                    queryParams: { prompt: 'select_account' } // Forzar selector para mayor claridad
-                }
-            });
-            if (error) throw error;
-        } catch (err) {
-            window._isAuthenticating = false;
-            googleBtn.innerHTML = originalContent;
-            googleBtn.style.pointerEvents = 'auto';
-            googleBtn.style.opacity = '1';
-            console.error('❌ Error OAuth Manual:', err.message);
-            window.uiManager.showToast('❌ Error al conectar con Google. Por favor, intente de nuevo.');
-        }
-    });
-}
-
-// ✅ FUNCIÓN DE LOGOUT ROBUSTA (Evita bucles y limpia todo)
 window.handleLogout = async () => {
-    console.log("🚪 Iniciando cierre de sesión nuclear...");
-
+    console.log("🚪 Iniciando cierre de sesión...");
     try {
-        // 1. Limpieza atómica en el Manager (esto ya dispara notifyStateChange(null))
         if (window.sessionManager) {
             await window.sessionManager.logout();
             console.log("✅ Sesión y memoria purgadas.");
         } else {
-            // Fallback si no hay manager
             if (window.supabaseClient) await window.supabaseClient.auth.signOut();
             localStorage.clear();
             sessionStorage.clear();
@@ -487,12 +323,131 @@ window.handleLogout = async () => {
         }
     } catch (error) {
         console.warn("⚠️ Error durante el cierre de sesión:", error);
-        // Forzamos recarga ante error para asegurar limpieza
         window.location.href = '/';
     }
 };
 
-// Helpers Globales
+// Helpers Globales para interacción con el Chatbot
 window.openChat = () => window.uiManager?.checkAuthAndExecute(() => window.chatbot?.openAndAsk(''));
 window.askAboutCourse = (n) => window.uiManager?.checkAuthAndExecute(() => window.chatbot?.openAndAsk(`Cuéntame del curso "${n}"`));
 window.askAboutTopic = (t) => window.uiManager?.checkAuthAndExecute(() => window.chatbot?.openAndAsk(`Explícame "${t}"`));
+
+// 🛡️ Inicialización al cargar el DOM
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 [App] DOM cargado. Inicializando...');
+
+    setupDirectLoginListener();
+    initTrafficTracking();
+    syncPendingSubmissions();
+    window.addEventListener('online', syncPendingSubmissions);
+
+    // Interceptar retorno de pago exitoso
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+        console.log('🎉 Retorno de Pago Exitoso Detectado.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        setTimeout(async () => {
+            if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+                await window.sessionManager.validateSession();
+            }
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '<span style="color: #ffd700; font-weight:800;">¡Pago Procesado con Éxito!</span>',
+                    html: '<p style="color:#cbd5e1;">Tu Cuenta se ha actualizado a Premium. Tus limites se han restablecido. ¡A estudiar sin límites!</p>',
+                    icon: 'success',
+                    background: 'rgba(20,20,20,0.95)',
+                    confirmButtonText: 'Genial, gracias'
+                });
+            } else {
+                window.uiManager?.showToast('✅ ¡Pago procesado con éxito! Tu cuenta ahora es Premium.');
+            }
+        }, 1200);
+    }
+
+    // Tracking automático de vistas (Career / Course / Topic)
+    try {
+        if (window.AnalyticsApiService) {
+            const path = window.location.pathname;
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
+            if (id) {
+                if (path.includes('career')) {
+                    window.AnalyticsApiService.recordView('career', id);
+                    console.log('📊 Vista registrada: Carrera', id);
+                } else if (path.includes('course')) {
+                    window.AnalyticsApiService.recordView('course', id);
+                    console.log('📊 Vista registrada: Curso', id);
+                } else if (path.includes('topic')) {
+                    window.AnalyticsApiService.recordView('topic', id);
+                    console.log('📊 Vista registrada: Tema', id);
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('⚠️ Error en tracking automático:', err);
+    }
+
+    // Inicialización de Componentes Globales
+    ensureThemeToggleButton();
+
+    if (typeof ChatComponent !== 'undefined') {
+        window.chatbot = new ChatComponent();
+    }
+
+    if (typeof ConfirmationModal !== 'undefined') {
+        window.confirmationModal = new ConfirmationModal();
+    }
+
+    // Gestión de Sesión
+    if (window.sessionManager) {
+        window.sessionManager.onStateChange(updateHeaderUI);
+        window.sessionManager.initialize();
+    }
+
+    if (document.querySelector('.admin-container')) {
+        console.log('⚙️ Página de admin detectada.');
+    }
+
+    // Listener global para cierre de modales
+    const closeAllModals = () => {
+        document.querySelectorAll('.modal, .pdf-modal').forEach(m => m.style.display = 'none');
+    };
+
+    document.body.addEventListener('click', (event) => {
+        if (event.target.closest('.modal-close, .pdf-modal-close-btn') || event.target.classList.contains('modal-overlay')) {
+            closeAllModals();
+        }
+    });
+});
+
+// Resetear estados de botones al volver a la página (evita spinners infinitos)
+window.addEventListener('pageshow', () => {
+    console.log('🔄 [App] Página mostrada. Reseteando estados de botones...');
+    ensureThemeToggleButton();
+    
+    const restoreButtons = () => {
+        document.querySelectorAll('[data-original-html]').forEach(btn => {
+            btn.innerHTML = btn.dataset.originalHtml;
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+        });
+        window._isAuthenticating = false;
+    };
+
+    restoreButtons();
+    setTimeout(restoreButtons, 200); 
+});
+
+// Exportación modular para pruebas unitarias
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        getTierBadgeConfig,
+        syncPendingSubmissions,
+        initTrafficTracking,
+        ensureThemeToggleButton,
+        setupDirectLoginListener,
+        updateHeaderUI
+    };
+}

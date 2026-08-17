@@ -218,7 +218,7 @@ class UIManager {
                             ¡Suscripción Activada!
                         </h2>
                         
-                        <p style="color: #cbd5e1; font-size: 1rem; line-height: 1.5; margin-bottom: 25px;">
+                        <p style="color: var(--text-secondary); font-size: 1rem; line-height: 1.5; margin-bottom: 25px;">
                             Gracias por unirte a la comunidad Premium. <br>
                             Ahora tienes <strong>Acceso Ilimitado</strong> a todos los recursos y al Asistente.
                         </p>
@@ -1272,7 +1272,7 @@ class UIManager {
                         <div class="auth-prompt-icon" style="margin-bottom: 20px;">
                            <i id="${modalId}-icon" class="fas ${config.icon}" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));"></i>
                         </div>
-                        <div id="${modalId}-text" class="auth-prompt-main-text" style="font-size: 1.1rem; color: #f8fafc; line-height: 1.6;">
+                        <div id="${modalId}-text" class="auth-prompt-main-text" style="font-size: 1.05rem; color: var(--text-main); line-height: 1.6;">
                             ${config.message}
                         </div>
                     </div>
@@ -1702,24 +1702,24 @@ class UIManager {
         const modalHTML = `
             <div id="${modalId}" class="auth-prompt-modal" style="display:flex; backdrop-filter: blur(15px); background: rgba(0,0,0,0.5);">
                 <div class="modal-content" style="
-                    background: #0f172a; 
-                    border: 1px solid rgba(255,255,255,0.1); 
+                    background: var(--modal-bg); 
+                    border: 1px solid var(--border-color); 
                     border-radius: 20px; 
                     padding: 3rem; 
                     text-align: center; 
                     max-width: 440px; 
-                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+                    box-shadow: var(--shadow-xl);
                 ">
                     <div style="margin-bottom: 2rem;">
                         <img src="/assets/logo.png" alt="Hub Academia" style="height: 60px; object-fit: contain;">
                     </div>
 
-                    <h2 style="font-size: 1.6rem; font-weight: 700; color: #ffffff; margin-bottom: 1rem; letter-spacing: -0.01em;">
+                    <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 1rem; letter-spacing: -0.01em;">
                         ${titleText}
                     </h2>
                     
                     <div style="margin-bottom: 2.5rem; text-align: center;">
-                        <p style="color: #94a3b8; font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
                             ${bodyText}
                         </p>
                     </div>

@@ -110,6 +110,17 @@ Para garantizar una coexistencia limpia entre Google One Tap (modal flotante) y 
 *   **Cancelación Reactiva de One Tap:** Se suscribe un callback a `sessionManager.onStateChange` que ejecuta `google.accounts.id.cancel()` inmediatamente cuando se detecta un usuario autenticado. Esto asegura que si el prompt flotante ya está en pantalla y el usuario se loguea manualmente, el prompt de One Tap se descarta automáticamente de la vista de forma inmediata.
 
 ---
-**Elaborado por**: Antigravity AI - Expert Senior Team.
-**Versión**: 2.1 - Coexistencia Limpia de Google One Tap y Auth Guards.
+
+## 8. Orquestación y Limpieza de Código en `app.js` (v2.2)
+
+Durante la auditoría técnica de la capa de presentación:
+* **Erradicación de Código Huérfano:** Se eliminó la función inactiva `setupStaticModalListeners()` que contenía referencias a modales estáticas en desuso (`#login-modal-overlay`) y duplicaba la invocación OAuth.
+* **Modularización de Badges de Tier:** Se implementó `getTierBadgeConfig(user)` como función pura desacoplada para computar las etiquetas (`Plan Gratuito`, `Plan Avanzado`, `Plan Pro`, etc.) y clases CSS (`tier-free`, `tier-advanced`, `tier-pro`, `tier-premium`) con soporte para pruebas unitarias.
+* **Sincronización Resiliente:** La función `syncPendingSubmissions()` valida activamente el contexto del simulacro (`EDUCACION` ↔ `/api/docente/submit`, `MEDICINA` ↔ `/api/medico/submit`) y reintenta de forma segura ante desconexiones.
+* **Cobertura de Pruebas Unitarias:** Integración de la suite `tests/unit/app.test.js` garantizando la estabilidad de las funciones modulares del orquestador global.
+
+---
+**Elaborado por**: Antigravity AI - Expert Senior Team.  
+**Versión**: 2.2 - Depuración de Código Huérfano y Optimización Modular de app.js.
+
 

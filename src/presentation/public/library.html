@@ -10,24 +10,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/base.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/header.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/footer.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/dashboard.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/components.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/modal.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/sidebar.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/search.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/browse.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/results.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/course.css?v=865cbe41">
+    <link rel="stylesheet" href="/css/theme.css?v=52676233">
+    <link rel="stylesheet" href="/css/base.css?v=52676233">
+    <link rel="stylesheet" href="/css/header.css?v=52676233">
+    <link rel="stylesheet" href="/css/footer.css?v=52676233">
+    <link rel="stylesheet" href="/css/dashboard.css?v=52676233">
+    <link rel="stylesheet" href="/css/components.css?v=52676233">
+    <link rel="stylesheet" href="/css/modal.css?v=52676233">
+    <link rel="stylesheet" href="/css/sidebar.css?v=52676233">
+    <link rel="stylesheet" href="/css/search.css?v=52676233">
+    <link rel="stylesheet" href="/css/browse.css?v=52676233">
+    <link rel="stylesheet" href="/css/results.css?v=52676233">
+    <link rel="stylesheet" href="/css/course.css?v=52676233">
 
     <!-- Global scripts -->
-    <script src="/js/config.js?v=865cbe41"></script>
-    <script src="/js/utils/themeManager.js?v=865cbe41"></script>
+    <script src="/js/config.js?v=52676233"></script>
+    <script src="/js/utils/themeManager.js?v=52676233"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=865cbe41"></script>
+    <script src="/js/utils/markdown-renderer.js?v=52676233"></script>
 
     <style>
         /* =========================================================
@@ -35,28 +35,25 @@
            ========================================================= */
 
         #library-page-container {
-            padding: 1.75rem !important;
-            border-radius: 20px !important;
-            border: 1px solid var(--border-color) !important;
-            background: var(--card-bg) !important;
-            box-shadow: var(--shadow-md) !important;
+            padding: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            width: 100% !important;
         }
 
-        /* 1. Encabezado "Mi Biblioteca" */
-        .library-header-page {
-            margin-bottom: 0.35rem !important;
+        /* 1. Encabezado "Mi Biblioteca" Hero */
+        .library-hero-header {
+            margin-bottom: 1rem;
+            text-align: left;
         }
 
-        .library-header-page h1 {
+        .library-hero-title {
             font-size: 2rem !important;
             font-weight: 800 !important;
             color: var(--text-main) !important;
             margin: 0 !important;
             letter-spacing: -0.02em !important;
-        }
-
-        .library-subtitle {
-            display: none !important;
         }
 
         /* 2. Pestañas Superiores (Biblioteca de Recursos, Guardados, Favoritos, Notas) */
@@ -66,7 +63,7 @@
             gap: 0.75rem !important;
             border-bottom: 1px solid var(--border-color) !important;
             padding-bottom: 0.75rem !important;
-            margin-bottom: 1.25rem !important;
+            margin-bottom: 1.5rem !important;
             width: 100% !important;
             box-sizing: border-box !important;
         }
@@ -81,21 +78,22 @@
         }
 
         .library-tab {
-            background: transparent !important;
+            background: var(--bg-tertiary) !important;
             border: 1px solid var(--border-color) !important;
             color: var(--text-secondary) !important;
-            padding: 0.65rem 0.5rem !important;
+            padding: 0.75rem 1rem !important;
             border-radius: 12px !important;
             font-size: 0.9rem !important;
             font-weight: 600 !important;
             cursor: pointer !important;
             white-space: nowrap !important;
             transition: all 0.2s ease !important;
-            display: flex;
+            display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+            gap: 8px !important;
             text-align: center !important;
-            box-shadow: none !important;
+            box-shadow: var(--shadow-sm) !important;
             width: 100% !important;
             max-width: none !important;
             box-sizing: border-box !important;
@@ -110,13 +108,18 @@
             background: var(--surface-hover) !important;
             color: var(--text-main) !important;
             border-color: var(--border-hover) !important;
+            transform: translateY(-1px);
         }
 
         .library-tab.active {
-            background: rgba(59, 130, 246, 0.1) !important;
-            color: var(--primary) !important;
-            border: 1.5px solid var(--primary) !important;
-            box-shadow: none !important;
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            border: 1px solid var(--primary) !important;
+            box-shadow: 0 4px 12px var(--primary-glow) !important;
+        }
+
+        .library-tab.active i {
+            color: #ffffff !important;
         }
 
         @media (max-width: 650px) {
@@ -124,6 +127,62 @@
                 grid-template-columns: repeat(2, 1fr) !important;
                 gap: 0.5rem !important;
             }
+        }
+
+        /* 2.5 Estados Vacíos Enriquecidos */
+        .library-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 3.5rem 1.5rem;
+            background: var(--bg-tertiary);
+            border: 1px dashed var(--border-color);
+            border-radius: 16px;
+            margin: 1rem 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .library-empty-state .empty-icon-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--surface-hover);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .library-empty-state h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0 0 0.4rem 0;
+        }
+
+        .library-empty-state p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            max-width: 420px;
+            margin: 0 0 1.25rem 0;
+            line-height: 1.5;
+        }
+
+        .library-empty-state .btn-primary {
+            padding: 0.6rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* 3. Sección de Búsqueda Normal (Flujo relativo, SIN solapamiento) */
@@ -136,7 +195,7 @@
             transform: none !important;
             width: 100% !important;
             max-width: 100% !important;
-            margin: 0 0 1.5rem 0 !important;
+            margin: 0 0 1.25rem 0 !important;
             padding: 0 !important;
             background: transparent !important;
             box-shadow: none !important;
@@ -145,82 +204,70 @@
             z-index: 1 !important;
         }
 
-        #panel-resources .search-box {
-            background: var(--input-bg) !important;
-            padding: 0.4rem 0.5rem 0.4rem 1.25rem !important;
-            border-radius: 14px !important;
-            border: 1px solid var(--border-color) !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 0.75rem !important;
-            height: 48px !important;
-            box-shadow: var(--shadow-sm) !important;
-            backdrop-filter: blur(12px) !important;
-            box-sizing: border-box !important;
-            transition: border-color 0.2s, box-shadow 0.2s !important;
+        .notes-search-wrapper {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            min-width: 250px;
+            box-sizing: border-box;
         }
 
-        #panel-resources .search-box:focus-within {
+        .notes-search-wrapper .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            pointer-events: none;
+        }
+
+        .notes-search-wrapper input {
+            width: 100%;
+            height: 44px;
+            padding: 0 2.5rem 0 2.6rem;
+            background: var(--bg-tertiary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 30px;
+            color: var(--text-main) !important;
+            font-size: 0.92rem;
+            outline: none;
+            transition: all 0.2s;
+            box-sizing: border-box;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .notes-search-wrapper input:focus {
             border-color: var(--primary) !important;
+            background: var(--surface-hover) !important;
             box-shadow: 0 0 0 3px var(--primary-glow) !important;
         }
 
-        #panel-resources .search-box input {
-            flex: 1 !important;
-            border: none !important;
-            outline: none !important;
-            font-size: 0.95rem !important;
-            padding: 0.5rem 0 !important;
-            background: transparent !important;
-            color: var(--text-main) !important;
+        .notes-search-wrapper .search-clear-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .notes-search-wrapper .search-clear-btn:hover {
+            color: var(--text-main);
+            background: var(--surface-hover);
         }
 
         #chatbot-toggle, #chatbot-window, .chatbot-widget, #ai-chat-widget {
             display: none !important;
-        }
-
-        #panel-resources .search-box button {
-            border-radius: 10px !important;
-            padding: 0 1.35rem !important;
-            font-size: 0.875rem !important;
-            font-weight: 600 !important;
-            height: 36px !important;
-            background: #3b82f6 !important;
-            color: #ffffff !important;
-            border: none !important;
-            cursor: pointer !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 0.5rem !important;
-            transition: all 0.2s ease !important;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
-            flex-shrink: 0 !important;
-        }
-
-        #panel-resources .search-box button:hover {
-            background: #2563eb !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4) !important;
-        }
-
-        /* 📱 RESPONSIVE SEARCH BUTTON FOR MOBILE */
-        @media (max-width: 600px) {
-            #panel-resources .search-box button {
-                padding: 0 !important;
-                width: 36px !important;
-                height: 36px !important;
-                border-radius: 10px !important;
-                justify-content: center !important;
-            }
-            #panel-resources .search-box button .search-btn-text {
-                display: none !important;
-            }
-            #panel-resources .search-box button .search-btn-icon {
-                display: inline-block !important;
-                font-size: 0.9rem !important;
-                margin: 0 !important;
-            }
         }
 
         /* 4. Separador elegante entre Pestañas SALUD y EDUCACIÓN */
@@ -231,7 +278,7 @@
         }
 
         .manta-tab-divider {
-            color: rgba(255, 255, 255, 0.3) !important;
+            color: var(--border-color) !important;
             font-size: 1.1rem !important;
             font-weight: 300 !important;
             user-select: none !important;
@@ -620,20 +667,21 @@
         .notes-search-wrapper input {
             width: 100%;
             padding: 0.65rem 1rem 0.65rem 2.6rem;
-            background: rgba(15, 23, 42, 0.6) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background: var(--bg-tertiary) !important;
+            border: 1px solid var(--border-color) !important;
             border-radius: 30px;
-            color: var(--text-main);
+            color: var(--text-main) !important;
             font-size: 0.9rem;
             outline: none;
             transition: all 0.2s;
             box-sizing: border-box;
+            box-shadow: var(--shadow-sm);
         }
 
         .notes-search-wrapper input:focus {
-            border-color: var(--primary-light) !important;
-            background: rgba(15, 23, 42, 0.8) !important;
-            box-shadow: 0 0 10px rgba(96, 165, 250, 0.2) !important;
+            border-color: var(--primary) !important;
+            background: var(--surface-hover) !important;
+            box-shadow: 0 0 10px var(--primary-glow) !important;
         }
 
         .notes-sort-wrapper {
@@ -643,14 +691,14 @@
         }
 
         .notes-sort-wrapper label {
-            color: var(--text-muted);
+            color: var(--text-secondary);
             font-size: 0.85rem;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .notes-sort-wrapper select {
-            background: rgba(15, 23, 42, 0.6) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background: var(--bg-tertiary) !important;
+            border: 1px solid var(--border-color) !important;
             border-radius: 12px !important;
             color: var(--text-main) !important;
             padding: 0.55rem 2.2rem 0.55rem 0.85rem !important;
@@ -659,17 +707,18 @@
             outline: none;
             cursor: pointer;
             transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
             appearance: none;
             -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>") !important;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='%2364748b' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>") !important;
             background-repeat: no-repeat !important;
             background-position: right 8px center !important;
             background-size: 18px !important;
         }
 
         .notes-sort-wrapper select:focus {
-            border-color: var(--primary-light) !important;
-            box-shadow: 0 0 10px rgba(96, 165, 250, 0.2) !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 10px var(--primary-glow) !important;
         }
     </style>
 </head>
@@ -691,24 +740,29 @@
     </header>
 
     <!-- Main Container -->
-    <div class="dashboard-container" style="max-width: 1200px; margin: 0 auto; padding: 1.25rem 1.5rem;">
+    <div class="dashboard-container" style="max-width: 1400px; margin: 0 auto; padding: 1.5rem 2rem; width: 100%; box-sizing: border-box;">
         <!-- Dedicated Library Page Container -->
-        <div id="library-page-container" class="glass-card">
+        <div id="library-page-container">
+            <!-- Hero Header -->
+            <div class="library-hero-header">
+                <h1 class="library-hero-title">Mi Biblioteca</h1>
+            </div>
+
             <div class="library-tabs guest-mode">
-                <button class="library-tab active" data-tab="resources" onclick="window.libraryUI.switchTab('resources')">Biblioteca de Recursos</button>
-                <button class="library-tab hidden" data-tab="saved" id="tab-btn-saved" onclick="window.libraryUI.switchTab('saved')" style="display: none !important;">Guardados</button>
-                <button class="library-tab hidden" data-tab="favorites" id="tab-btn-favorites" onclick="window.libraryUI.switchTab('favorites')" style="display: none !important;">Favoritos</button>
-                <button class="library-tab hidden" data-tab="notes" id="tab-btn-notes" onclick="window.libraryUI.switchTab('notes')" style="display: none !important;">Notas</button>
+                <button class="library-tab active" data-tab="resources" onclick="window.libraryUI.switchTab('resources')"><i class="fas fa-compass"></i> Catálogo de Recursos</button>
+                <button class="library-tab hidden" data-tab="saved" id="tab-btn-saved" onclick="window.libraryUI.switchTab('saved')" style="display: none !important;"><i class="far fa-bookmark"></i> Guardados</button>
+                <button class="library-tab hidden" data-tab="favorites" id="tab-btn-favorites" onclick="window.libraryUI.switchTab('favorites')" style="display: none !important;"><i class="far fa-heart"></i> Favoritos</button>
+                <button class="library-tab hidden" data-tab="notes" id="tab-btn-notes" onclick="window.libraryUI.switchTab('notes')" style="display: none !important;"><i class="far fa-sticky-note"></i> Notas</button>
             </div>
 
             <!-- Panel 1: Biblioteca de Recursos (General Catalog & Search) -->
             <div id="panel-resources" class="library-panel active">
                 <section class="search-section">
-                    <div class="search-box">
+                    <div class="notes-search-wrapper">
+                        <i class="fas fa-search search-icon"></i>
                         <input type="text" id="searchInput" placeholder="Busca tu recurso académico (libros, papers, normas)...">
-                        <button id="searchButton" class="btn-primary" aria-label="Buscar">
-                            <i class="fas fa-search search-btn-icon"></i>
-                            <span class="search-btn-text">Buscar</span>
+                        <button type="button" id="searchClearButton" class="search-clear-btn" style="display: none;" onclick="window.searchComponent?.resetSearchToBrowse()" aria-label="Limpiar búsqueda">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </section>
@@ -786,21 +840,21 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=865cbe41"></script>
-    <script src="/js/services/networkService.js?v=865cbe41"></script>
-    <script src="/js/services/authApiService.js?v=865cbe41"></script>
-    <script src="/js/services/analyticsApiService.js?v=865cbe41"></script>
-    <script src="/js/sessionManager.js?v=865cbe41"></script>
-    <script src="/js/ui/uiManager.js?v=865cbe41"></script>
-    <script src="/js/ui/components.js?v=865cbe41"></script>
-    <script src="/js/ui/confirmationModal.js?v=865cbe41"></script>
-    <script src="/js/services/searchService.js?v=865cbe41"></script>
-    <script type="module" src="/js/search.js?v=865cbe41"></script>
-    <script src="/js/services/libraryService.js?v=865cbe41"></script>
-    <script src="/js/ui/libraryUI.js?v=865cbe41"></script>
-    <script src="/js/ui/sidebar.js?v=865cbe41"></script>
-    <script src="/js/security.js?v=865cbe41"></script>
-    <script src="/js/app.js?v=865cbe41"></script>
+    <script src="/js/config.js?v=52676233"></script>
+    <script src="/js/services/networkService.js?v=52676233"></script>
+    <script src="/js/services/authApiService.js?v=52676233"></script>
+    <script src="/js/services/analyticsApiService.js?v=52676233"></script>
+    <script src="/js/sessionManager.js?v=52676233"></script>
+    <script src="/js/ui/uiManager.js?v=52676233"></script>
+    <script src="/js/ui/components.js?v=52676233"></script>
+    <script src="/js/ui/confirmationModal.js?v=52676233"></script>
+    <script src="/js/services/searchService.js?v=52676233"></script>
+    <script type="module" src="/js/search.js?v=52676233"></script>
+    <script src="/js/services/libraryService.js?v=52676233"></script>
+    <script src="/js/ui/libraryUI.js?v=52676233"></script>
+    <script src="/js/ui/sidebar.js?v=52676233"></script>
+    <script src="/js/security.js?v=52676233"></script>
+    <script src="/js/app.js?v=52676233"></script>
 </body>
 
 </html>

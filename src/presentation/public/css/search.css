@@ -525,7 +525,7 @@ body.hero-hidden .search-subtitle {
     padding: 0;
     cursor: pointer;
     font-family: var(--font-main);
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-secondary);
     transition: all 0.3s ease;
 }
 
@@ -547,9 +547,9 @@ body.hero-hidden .search-subtitle {
 }
 
 .manta-tab.sector-tab.active {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    background: var(--surface-hover);
+    color: var(--text-main);
+    box-shadow: var(--shadow-sm);
 }
 
 .manta-tab.sector-tab.active::after {
@@ -558,21 +558,23 @@ body.hero-hidden .search-subtitle {
 
 /* HEALTH SECTOR ACTIVE STYLE */
 .manta-tab.sector-tab[data-sector="medicine"].active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.4) 100%);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.25) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: var(--text-main);
 }
 .manta-tab.sector-tab[data-sector="medicine"].active i {
-    color: #60a5fa;
+    color: #3b82f6;
     opacity: 1;
 }
 
 /* EDUCATION SECTOR ACTIVE STYLE */
 .manta-tab.sector-tab[data-sector="educacion"].active {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.4) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.25) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: var(--text-main);
 }
 .manta-tab.sector-tab[data-sector="educacion"].active i {
-    color: #34d399;
+    color: #10b981;
     opacity: 1;
 }
 
@@ -583,7 +585,7 @@ body.hero-hidden .search-subtitle {
 
 .manta-tabs-container.resource-tabs {
     gap: 2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .manta-tab.resource-tab {
@@ -593,10 +595,15 @@ body.hero-hidden .search-subtitle {
     text-transform: uppercase;
     letter-spacing: 1px;
     position: relative;
+    color: var(--text-secondary);
+}
+
+.manta-tab.resource-tab:hover {
+    color: var(--text-main);
 }
 
 .manta-tab.resource-tab.active {
-    color: white;
+    color: var(--text-main);
 }
 
 .manta-tab.resource-tab.active::after {
@@ -606,7 +613,7 @@ body.hero-hidden .search-subtitle {
     left: 0;
     width: 100%;
     height: 3.5px;
-    background: white;
+    background: var(--primary);
     border-radius: 2px;
 }
 

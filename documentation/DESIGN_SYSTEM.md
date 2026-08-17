@@ -177,19 +177,67 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 * **Enlace a Planes y Precios:** Se añade la sección `sidebar-section-pricing` con icono `<i class="fas fa-crown"></i>` y enlace a `/pricing`, sincronizada con el enrutador de páginas activas `highlightActiveItem()`.
 
 ### 3.16. Modales de Repaso, Biblioteca y Registro Dual-Theme
-* **Modales del Módulo Repaso (`repaso.html`):**
+* **Modales del Módulo Repaso y Paywalls (`repaso.html`, `uiManager.js`, `heatmap.js`):**
+  * Modal Paywall / Acceso Premium (`showUpgradeModal` en `uiManager.js`): Texto explicativo en `var(--text-main)` de alto contraste (resolviendo texto blanco invisible en tema claro), títulos en degradado dorado y botón de acción con sombra y tipografía de impacto.
+  * Modal de Bienvenida Freemium (`welcome-freemium-modal`): Fondo `var(--modal-bg)`, borde `var(--border-color)` y textos en `var(--text-main)` y `var(--text-secondary)`.
   * Modal Previsualización de Mazo (`#preview-deck-modal`): Título en `var(--text-main)`, tarjetas individuales con `var(--bg-tertiary)`, `var(--border-color)`, pregunta en `var(--text-main)` y respuesta en `var(--text-secondary)`.
   * Modal Guía de Estudio (`#deck-guide-modal`): Fondo `#deck-guide-content` con `var(--bg-tertiary)` y texto `var(--text-main)`.
-  * Modal Estadísticas del Mazo (`#stats-modal`): Título y contador de Total Tarjetas (`#modal-total`) en `var(--text-main)` (visibles en claro), tarjetas de KPI y contenedor de leyendas SRS adaptativos.
+  * Modal Estadísticas del Mazo (`#stats-modal` y `heatmap.js`): Título y contador de Total Tarjetas (`#modal-total`) en `var(--text-main)`, tarjetas de KPI, dona SRS y Activity Heatmap con días, intensidad, tooltips y leyendas sincronizados con `var(--text-main)`, `var(--text-secondary)` y `var(--border-color)`.
   * Modal de Generación IA (`#ai-modal`) y Carga Masiva: Opciones de audio TTS y fondos en `var(--bg-tertiary)` y `var(--text-main)`.
-* **Mi Biblioteca (`library.html`, `components.js`, `browse.css`, `components.css`, `search.css`):**
-  * Tarjeta Hero de Novedades (`.news-hero-card`) y Secundarias (`.news-secondary-card`): Fondos dinámicos en `var(--card-bg)` y hovers en `var(--surface-hover)` con bordes de categoría correspondientes, eliminando fondos oscuros `#14101a` / `#18140c` / `#0e1814` / `#0f141f` al interactuar.
-  * Píldoras de Filtro (`.manta-filter-pill`): Estado base en `var(--card-bg)` con borde claro, hover en `var(--surface-hover)` con `color: var(--text-main) !important` (evitando texto blanco invisible sobre fondo claro) y estado activo en degradado institucional con texto blanco nítido.
-  * Recursos con Portadas Completas (`.unified-resource-card.has-bg-image`, `.browse-card.full-image-card`): Título y metadatos en color blanco `#ffffff !important` con sombra nítida `text-shadow: 0 1px 4px rgba(0,0,0,0.85)` sobre overlay degradado para perfecta legibilidad.
-  * Tablón de Notas (`.note-card` y `.library-add-note-btn`): Grilla adaptativa responsive cerrada correctamente (6 columnas PC, 4 laptop, 3 tablet, 2 mobile) con tarjetas contenedoras estilizadas en `var(--card-bg)`, `var(--border-color)`, `var(--shadow-sm)` y acciones flotantes.
-* **Modales del Perfil de Usuario (`profile.html`):**
-  * Modales de Confirmación de Eliminación (`#delete-modal`) y Edición de Nombre (`#edit-name-modal`): Contenedores con `var(--modal-bg)` y `box-shadow: var(--shadow-xl)`, inputs con `var(--bg-tertiary)` y `var(--text-main)`, botones de cancelación `.btn-secondary` con texto de alto contraste `var(--text-main)` en `var(--bg-tertiary)` y líneas divisorias `var(--border-color)`.
-* **Modal de Registro / Invitados (`showAuthPromptModal` en `uiManager.js`):** Título en `var(--text-main)`, caja de logotipo en `var(--bg-tertiary)` y botón Google con degradado institucional azul de alto impacto visual.
+* **Tarjetas de Mazos de Repaso (`repaso.js`, `repaso.css`):**
+  * Fila Superior Desacoplada (`.deck-card-top-row`): Badge a la izquierda y contenedor de acciones a la derecha (`.deck-card-actions`) sin colisiones.
+  * Botón Play (`.btn-act-play`): Fondo degradado naranja de alto contraste con icono blanco `#ffffff` nítido.
+  * Botones de Edición y Eliminación (`.btn-act-edit`, `.btn-act-delete`): Fondos `var(--bg-tertiary)` y `var(--border-color)` con hover interactivo.
+* **Tipografía y Textos en Cursiva (`markdown-content.css`, `base.css`):**
+  * `.markdown-content em` y `em, i.italic-text`: `font-style: italic; color: var(--text-main);` / `color: inherit;` garantizando perfecta legibilidad en respuestas del tutor, quiz, flashcards y descripciones.
+* **Barra de Búsqueda y Orden en Notas (`library.html`):**
+  * Input de Búsqueda y Selector de Orden: Fondos dinámicos en `var(--bg-tertiary)`, bordes en `var(--border-color)`, texto `var(--text-main)` y placeholder `var(--text-muted)`.
+* **Cabecera Móvil y Controles de Sesión (`header.css`):**
+  * Logo y Título alineados estrictamente a la izquierda en móvil (`position: static; transform: none`).
+  * Controles de usuario logueado en móvil simplificados exclusivamente al avatar circular (`34px x 34px`), ocultando nombre y etiqueta de plan para evitar solapamientos.
+### 3.17. Estándar Universal de Modales (Arquitectura, Barras de Desplazamiento y Botones)
+Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente patrón modular estricto:
+
+* **1. Contenedor y Capas (`.modal-overlay` y `.modal-content`):**
+  * Fondo overlay: `background: var(--modal-overlay-bg); backdrop-filter: blur(12px) saturate(160%);` con bloqueo de scroll corporal (`body.modal-open`).
+  * Contenedor modal: `background: var(--modal-bg); border: 1px solid var(--border-color); border-radius: 20px; box-shadow: var(--shadow-xl); max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;`.
+* **2. Cabecera Fija (`.modal-header`):**
+  * `padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); background: transparent; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;`.
+  * Título `<h2>` en `var(--text-main)` con icono temático institucional.
+  * Botón de cierre `.modal-close-btn` con `&times;` accesible y hover sutil en `var(--surface-hover)`.
+* **3. Cuerpo con Scrollbar Contenido (`.modal-body`):**
+  * `padding: 1.5rem; overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1.25rem;`.
+  * **Barra de desplazamiento estandarizada:**
+    * Firefox / Estándar: `scrollbar-width: thin; scrollbar-color: var(--border-color) transparent;`.
+    * Webkit (Chrome, Edge, Safari): Ancho `6px`, track transparente y thumb `var(--border-color)` con radio `10px`.
+    * *Regla crítica:* La barra de desplazamiento debe estar estrictamente confinada al `.modal-body` y jamás cruzar ni desbordar hacia la cabecera o el pie de la modal. Quedan prohibidos los contenedores de scroll anidados dobles.
+  * Etiquetas de formulario (`.form-label`, `label`): `font-weight: 600; color: var(--text-main); font-size: 0.88rem;`.
+  * Inputs y Selects: `background: var(--input-bg); border: 1.5px solid var(--border-color); color: var(--text-main); border-radius: 10px; height: 44px;`. Al enfocar: `border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow);`.
+  * Selectores de Iconos / Píldoras: Botones inactivos con `background: var(--bg-tertiary); border: 1.5px solid var(--border-color);`. Botones activos con borde del color seleccionado, fondo translúcido y sombra de acento.
+  * Callouts informativos: Fondos tintados en `var(--bg-tertiary)` con bordes de color de acento y texto en `var(--text-secondary)`.
+* **4. Pie Fijo y Botones Estándar (`.modal-footer`):**
+  * `padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: transparent; display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; flex-shrink: 0; border-radius: 0 0 20px 20px;`.
+  * **Orden y Dimensiones Universales de Botones:**
+    * **Botón Secundario (Izquierda del grupo de acción):** `.btn-secondary-action` ("Cancelar" o "Cerrar"). Altura fija `42px`, min-width `105px`, padding `0 1.25rem`, fondo `var(--bg-tertiary)`, borde `1.5px solid var(--border-color)`, color `var(--text-main)`, `border-radius: 10px`, `font-weight: 600`, `font-size: 0.9rem`.
+    * **Botón Primario (Derecha):** `.btn-action` ("Crear", "Guardar", "Generar", "Clonar"). Altura fija `42px`, min-width `110px`, padding `0 1.5rem`, degradado temático de acción, sin borde, color blanco `#ffffff`, `border-radius: 10px`, `font-weight: 700`, `font-size: 0.9rem`, sombra de elevación `box-shadow: 0 4px 12px rgba(...)`.
+
+### 3.18. Expansión, Estilización y Búsqueda Universal en "Mi Biblioteca"
+* **Contenedor Amplio y Desencajonado:** Eliminación de contenedores `.glass-card` con bordes anidados duplicados. Contenedor directo `.dashboard-container` con `max-width: 1400px; width: 100%; padding: 1.5rem 2rem;` para que los recursos ocupen el ancho total con holgura.
+* **Encabezado Minimalista:** Título `<h1>` `Mi Biblioteca` limpio y conciso, sin párrafos de descripción que resten espacio vertical, permitiendo una elevación óptima de las pestañas y el catálogo.
+* **Barra de Búsqueda Estilizada en Cápsula (`.notes-search-wrapper`):**
+  * Diseño homogéneo para todas las pestañas de Biblioteca (*Catálogo de Recursos* y *Notas*).
+  * Estructura: Cápsula redondeada `border-radius: 30px`, altura `44px`, fondo `var(--bg-tertiary)`, borde `1px solid var(--border-color)`, lupa a la izquierda `16px`, texto `var(--text-main)` y botón de limpieza integrado a la derecha `search-clear-btn`.
+* **Pestañas Temáticas con Contraste Semántico (SALUD y EDUCACIÓN):**
+  * Pestañas `.manta-tab.resource-tab`: Color `var(--text-secondary)` (inactivo) y `var(--text-main)` (activo), con línea indicadora inferior `var(--primary)` y separador `var(--border-color)`. Garantiza legibilidad 100% nítida en modo claro y modo oscuro.
+* **Pestañas de Navegación de Ancho Completo:**
+  * *Catálogo de Recursos* (`fa-compass`): Catálogo unificado y buscador de documentos.
+  * *Guardados* (`fa-bookmark`): Marcadores guardados por el usuario.
+  * *Favoritos* (`fa-heart`): Recursos destacados con corazón.
+  * *Notas de Estudio* (`fa-sticky-note`): Cuadrícula responsive de notas con toolbar de búsqueda y ordenación.
+* **Estados Vacíos Enriquecidos (`.library-empty-state`):**
+  * Icono circular contenedor, encabezado descriptivo, texto de guía y botón de llamada a la acción primario para guiar al estudiante de vuelta al catálogo.
+* **Buscador Resiliente (`SearchComponent`):**
+  * Control seguro de limpieza de búsqueda (`toggleClearButton`), restauración instantánea y estados de carga (skeletons) integrados.
 
 ---
 

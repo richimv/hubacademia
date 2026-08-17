@@ -56,6 +56,11 @@ button {
     font-family: var(--font-main);
 }
 
+em, i.italic-text {
+    font-style: italic;
+    color: inherit;
+}
+
 /* Headers / Typography Fixes */
 h1,
 h2,

@@ -63,39 +63,72 @@ body.modal-open {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: transparent;
+    flex-shrink: 0;
 }
 
 .modal-header h2 {
     margin: 0;
     font-size: 1.25rem;
-    color: var(--accent);
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
 }
 
 .modal-close-btn {
     background: none;
     border: none;
-    font-size: 1.75rem;
-    color: var(--text-muted);
+    font-size: 1.5rem;
+    color: var(--text-secondary);
     cursor: pointer;
     line-height: 1;
-    transition: color 0.2s;
+    padding: 0.35rem 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-close-btn:hover {
     color: var(--text-main);
+    background: var(--surface-hover);
 }
 
 .modal-body {
     padding: 1.5rem;
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain; /* 🛡️ BLOQUEO DE SCROLL EN EL CUERPO */
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
     scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    background: transparent;
+}
+
+/* Scrollbar para Webkit en Modales */
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
 
 /* Asegurar que el formulario participe en el layout flexible */
@@ -128,55 +161,92 @@ body.modal-open {
     gap: 0.5rem;
 }
 
-.form-group label {
-    font-weight: 500;
-    color: var(--text-muted);
-    font-size: 0.9rem;
+.form-group label,
+.form-label {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.88rem;
 }
 
 .form-group input,
 .form-group textarea,
-.form-group select {
+.form-group select,
+.form-input {
     width: 100%;
     padding: 0.75rem;
-    border-radius: 8px;
-    border: 1px solid var(--input-border);
+    border-radius: 10px;
+    border: 1.5px solid var(--border-color);
     background: var(--input-bg);
-    color: var(--input-text);
+    color: var(--text-main);
     outline: none;
-    transition: 0.2s;
+    transition: all 0.2s ease;
     font-family: var(--font-main);
-    font-size: 1rem;
+    font-size: 0.95rem;
+    box-sizing: border-box;
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-input:focus {
     border-color: var(--primary);
     background: var(--input-bg);
-    box-shadow: 0 0 0 4px var(--primary-glow);
+    box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .modal-footer {
-    padding: 1.5rem 2rem;
+    padding: 1rem 1.5rem;
     border-top: 1px solid var(--border-color);
-    background: var(--surface-hover);
+    background: transparent;
     display: flex;
     justify-content: flex-end;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    border-radius: 0 0 20px 20px;
 }
 
-/* ✅ CORRECCIÓN: Normalizar tamaño de botones en el footer del modal */
-.modal-footer button {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.95rem;
+/* ✅ Normalizar tamaño de botones en el footer del modal */
+.modal-footer button,
+.modal-footer .btn-action {
+    height: 42px;
+    min-width: 105px;
+    padding: 0 1.25rem;
+    font-size: 0.9rem;
     border-radius: 10px;
-    font-weight: 500;
-    min-width: 100px;
-    /* Ancho mínimo para consistencia */
-    display: flex;
+    font-weight: 600;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.modal-footer .btn-secondary-action {
+    background: var(--bg-tertiary) !important;
+    border: 1.5px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+}
+
+.modal-footer .btn-secondary-action:hover {
+    background: var(--surface-hover) !important;
+    border-color: var(--border-hover) !important;
+    transform: translateY(-1px);
+}
+
+.modal-footer .btn-action:not(.btn-secondary-action) {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+}
+
+.modal-footer .btn-action:not(.btn-secondary-action):hover {
+    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.45) !important;
+    transform: translateY(-1px);
 }
 
 @keyframes fadeIn {

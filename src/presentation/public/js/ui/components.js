@@ -460,7 +460,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         const tier = (item.subscriptionTier || item.subscription_tier || 'free').toUpperCase();
         const status = (item.subscriptionStatus || item.subscription_status || 'inactive').toUpperCase();
         const expiresAt = item.subscriptionExpiresAt || item.subscription_expires_at;
-        
+
         let tierColor = 'var(--text-muted)';
         let tierBg = 'var(--bg-secondary)';
         if (tier === 'BASIC') {
@@ -470,7 +470,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
             tierColor = '#a78bfa';
             tierBg = 'rgba(139, 92, 246, 0.15)';
         }
-        
+
         let statusColor = '#94a3b8';
         let statusBg = 'rgba(148, 163, 184, 0.1)';
         if (status === 'ACTIVE') {
@@ -490,7 +490,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
             });
             dateStr = `📅 Expira: ${formattedDate}`;
         }
-        
+
         areaBadge = `
             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.35rem; align-items: center;">
                 <span class="subscription-tier-badge" style="font-size: 0.7rem; font-weight: 700; background: ${tierBg}; padding: 2px 8px; border-radius: 4px; color: ${tierColor}; display:inline-block; border: 1px solid rgba(${tier === 'ADVANCED' ? '139, 92, 246' : tier === 'BASIC' ? '59, 130, 246' : '148, 163, 184'}, 0.25);">${tier}</span>
@@ -654,7 +654,7 @@ function createUnifiedResourceCardHTML(item) {
 
     // 5. Layout Híbrido Senior: Resolución de Imagen Inteligente (Smart Cover)
     const rawImage = item.image_url || item.coverUrl;
-    
+
     // ✅ RESOLUCIÓN UNIVERSAL: resolveImageUrl ahora maneja los fallbacks artísticos internamente
     const displayImage = window.resolveImageUrl(rawImage, type);
 
@@ -941,7 +941,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
 /**
  * Global Helper: Abre la URL directa comprobada de un recurso o delega a uiManager.
  */
-window.openVerifiedNewsUrl = function(url, id, type, isPremium, openDirectly) {
+window.openVerifiedNewsUrl = function (url, id, type, isPremium, openDirectly) {
     if (url && typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
         window.open(url, '_blank');
         return;
@@ -972,10 +972,10 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
 
     const getBadgeInfo = (item) => {
         const type = (item.resource_type || item.type || '').toLowerCase();
-        if (type === 'noticia') return { label: '📰 NOTICIA OFICIAL', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.35)', text: '#c084fc' };
-        if (type === 'norma') return { label: '⚖️ NORMA OFICIAL', bg: 'rgba(217, 119, 6, 0.15)', border: 'rgba(217, 119, 6, 0.35)', text: '#fbbf24' };
-        if (type === 'guia') return { label: '📋 GUÍA TÉCNICA', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.35)', text: '#34d399' };
-        return { label: '📄 PAPER CIENTÍFICO', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.35)', text: '#60a5fa' };
+        if (type === 'noticia') return { label: 'NOTICIA OFICIAL', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.35)', text: '#c084fc' };
+        if (type === 'norma') return { label: 'NORMA OFICIAL', bg: 'rgba(217, 119, 6, 0.15)', border: 'rgba(217, 119, 6, 0.35)', text: '#fbbf24' };
+        if (type === 'guia') return { label: 'GUÍA TÉCNICA', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.35)', text: '#34d399' };
+        return { label: 'PAPER CIENTÍFICO', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.35)', text: '#60a5fa' };
     };
 
     const getHeroStyle = (item) => {

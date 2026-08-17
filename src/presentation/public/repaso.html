@@ -15,17 +15,17 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Shared CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/base.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/header.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/footer.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/dashboard.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/repaso.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/modal.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/sidebar.css?v=865cbe41">
-    <link rel="stylesheet" href="/css/components.css?v=865cbe41">
-    <script src="/js/config.js?v=865cbe41"></script>
-    <script src="/js/utils/themeManager.js?v=865cbe41"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=52676233">
+    <link rel="stylesheet" href="/css/base.css?v=52676233">
+    <link rel="stylesheet" href="/css/header.css?v=52676233">
+    <link rel="stylesheet" href="/css/footer.css?v=52676233">
+    <link rel="stylesheet" href="/css/dashboard.css?v=52676233">
+    <link rel="stylesheet" href="/css/repaso.css?v=52676233">
+    <link rel="stylesheet" href="/css/modal.css?v=52676233">
+    <link rel="stylesheet" href="/css/sidebar.css?v=52676233">
+    <link rel="stylesheet" href="/css/components.css?v=52676233">
+    <script src="/js/config.js?v=52676233"></script>
+    <script src="/js/utils/themeManager.js?v=52676233"></script>
 
     <!-- Rich Text Editor (Mini-Word) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
@@ -223,61 +223,65 @@
 
     <!-- Create Deck Modal -->
     <div class="modal-overlay" id="create-deck-modal">
-        <div class="modal-content">
-            <h2 id="modal-deck-title">Crear Nuevo Mazo</h2>
-            <form id="create-deck-form">
-                <div class="form-group">
-                    <label class="form-label">Nombre</label>
-                    <input type="text" class="form-input" id="new-deck-name" required placeholder="Ej: Histología">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Guía de Estudio</label>
-                    <input type="hidden" id="new-deck-description">
-                    <div style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); border-radius: 12px; padding: 1rem; margin-top: 0.5rem;">
-                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
-                            <i class="fas fa-info-circle" style="margin-right: 6px; color: #f97316;"></i> 
-                            Puedes añadir una <b>Guía de Estudio enriquecida</b> (con tablas, imágenes y formato) en cualquier momento desde el botón "Guía" que aparece al entrar en este mazo.
-                        </p>
+        <div class="modal-content" style="max-width: 520px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2 style="margin:0; font-size: 1.25rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.6rem;">
+                    <i class="fas fa-folder-plus" style="color: #f97316;"></i> <span id="modal-deck-title">Crear Nuevo Mazo</span>
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="DeckExplorer.closeCreateModal()">&times;</button>
+            </div>
+            <form id="create-deck-form" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Nombre</label>
+                        <input type="text" class="form-input" id="new-deck-name" required placeholder="Ej: Histología">
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label class="form-label">Categoría / Área Temática</label>
-                    <select class="form-input-premium" id="new-deck-category" style="width:100%;">
-                        <option value="General">📚 General</option>
-                        <option value="Medicina">🩺 Medicina</option>
-                        <option value="Educación">🎓 Educación</option>
-                        <option value="Matemáticas">📐 Matemáticas</option>
-                        <option value="Historia">📜 Historia</option>
-                        <option value="Idiomas">🗣️ Idiomas</option>
-                        <option value="Derecho">⚖️ Derecho</option>
-                        <option value="Ciencia">🔬 Ciencia</option>
-                        <option value="Tecnología">💻 Tecnología</option>
-                    </select>
-                </div>
-
-                <!-- Icon Picker -->
-                <div class="form-group">
-                    <label class="form-label">Icono</label>
-                    <input type="hidden" id="new-deck-icon" value="fas fa-layer-group">
-                    <div id="icon-picker-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:0.5rem;">
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Guía de Estudio</label>
+                        <input type="hidden" id="new-deck-description">
+                        <div style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); border-radius: 12px; padding: 0.85rem 1rem;">
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+                                <i class="fas fa-info-circle" style="margin-right: 6px; color: #f97316;"></i> 
+                                Puedes añadir una <b>Guía de Estudio enriquecida</b> (con tablas, imágenes y formato) en cualquier momento desde el botón "Guía" que aparece al entrar en este mazo.
+                            </p>
+                        </div>
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Categoría / Área Temática</label>
+                        <select class="form-input-premium" id="new-deck-category" style="width:100%;">
+                            <option value="General">📚 General</option>
+                            <option value="Medicina">🩺 Medicina</option>
+                            <option value="Educación">🎓 Educación</option>
+                            <option value="Matemáticas">📐 Matemáticas</option>
+                            <option value="Historia">📜 Historia</option>
+                            <option value="Idiomas">🗣️ Idiomas</option>
+                            <option value="Derecho">⚖️ Derecho</option>
+                            <option value="Ciencia">🔬 Ciencia</option>
+                            <option value="Tecnología">💻 Tecnología</option>
+                        </select>
+                    </div>
+
+                    <!-- Icon Picker -->
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Icono</label>
+                        <input type="hidden" id="new-deck-icon" value="fas fa-layer-group">
+                        <div id="icon-picker-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:0.5rem;">
+                        </div>
+                    </div>
+
+                    <!-- Hidden IDs -->
+                    <input type="hidden" id="new-deck-id">
+                    <input type="hidden" id="new-deck-parent">
+                    <input type="hidden" id="new-deck-color" value="">
                 </div>
 
-                <!-- Hidden IDs -->
-                <input type="hidden" id="new-deck-id">
-                <input type="hidden" id="new-deck-parent">
-                <input type="hidden" id="new-deck-color" value="">
-
-
-
-                <div
-                    style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-bottom: 0.5rem;">
+                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.75rem; justify-content: flex-end;">
                     <button type="button" class="btn-action btn-secondary-action"
                         onclick="DeckExplorer.closeCreateModal()">Cancelar</button>
                     <button type="submit" id="btn-save-deck" class="btn-action"
-                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: none; border-radius: 10px; color: white; font-weight: 600; padding: 0.5rem 1.5rem;">Crear</button>
+                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: none; border-radius: 10px; color: white; font-weight: 700; padding: 0.6rem 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">Crear</button>
                 </div>
             </form>
         </div>
@@ -289,27 +293,23 @@
         <div class="modal-content"
             style="max-width: 600px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;"
             onclick="event.stopPropagation()">
-            <div
-                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem;">
-                <h2 id="preview-deck-title"
-                    style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin:0; line-height: 1.3; flex: 1;">
-                    Previsualizar Mazo</h2>
-                <button type="button" onclick="window.repasoManager.closePreviewModal()"
-                    style="background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; line-height: 1; flex-shrink: 0;">
-                    &times;
-                </button>
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-eye" style="color: #f97316;"></i> <span id="preview-deck-title">Previsualizar Mazo</span>
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="window.repasoManager.closePreviewModal()">&times;</button>
             </div>
 
-            <div id="preview-deck-content"
-                style="overflow-y: auto; flex: 1; padding-right: 0.5rem; margin-bottom: 1rem;">
+            <div id="preview-deck-content" class="modal-body"
+                style="overflow-y: auto; flex: 1; padding: 1.5rem;">
                 <div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"
                         style="color:#f97316"></i></div>
             </div>
 
-            <div
-                style="display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <div class="modal-footer">
+                <button type="button" class="btn-action btn-secondary-action" onclick="window.repasoManager.closePreviewModal()">Cerrar</button>
                 <button type="button" id="btn-preview-clone" class="btn-action"
-                    style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; width: 100%; border: none; border-radius: 12px; padding: 0.75rem; font-weight: 700; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);">
+                    style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; border-radius: 10px; height: 42px; padding: 0 1.5rem; font-weight: 700; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">
                     <i class="fas fa-clone"></i> Clonar a Mis Mazos
                 </button>
             </div>
@@ -318,46 +318,46 @@
 
     <!-- Deck Guide Modal -->
     <div class="modal-overlay" id="deck-guide-modal">
-        <div class="modal-content" style="max-width: 1000px; width: 95%;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                <h2 id="deck-guide-title">Guía de Estudio</h2>
-                <button type="button" class="btn-close" onclick="DeckExplorer.closeGuideModal()"
-                    style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
+        <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-book-reader" style="color: #f97316;"></i> <span id="deck-guide-title">Guía de Estudio</span>
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="DeckExplorer.closeGuideModal()">&times;</button>
             </div>
 
-            <!-- Scrollable Body Wrapper -->
-            <div
-                style="max-height: 70vh; overflow-y: auto; overflow-x: hidden; padding-right: 0.5rem; scrollbar-width: thin; scrollbar-color: #f97316 transparent;">
-
+            <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; flex: 1;">
                 <!-- View Mode -->
                 <div id="deck-guide-view-mode">
                     <div id="deck-guide-content"
-                        style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); min-height: 100px; color: var(--text-main); line-height: 1.6; white-space: normal;">
+                        style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); min-height: 120px; color: var(--text-main); line-height: 1.6; white-space: normal;">
                         <!-- Content goes here -->
-                    </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.5rem;"
-                        id="deck-guide-edit-btn-container">
-                        <button type="button" class="btn-action" id="deck-guide-edit-btn"
-                            style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 0.5rem 1rem; font-size: 0.85rem; border: none; border-radius: 10px; font-weight: 600;"
-                            onclick="DeckExplorer.editGuideMode()">
-                            <i class="fas fa-edit"></i> Editar Guía
-                        </button>
                     </div>
                 </div>
 
                 <!-- Edit Mode -->
                 <div id="deck-guide-edit-mode" style="display: none;">
-                    <textarea id="deck-guide-textarea" class="form-input" rows="8"
-                        style="resize: vertical; font-family: monospace; padding: 1rem;"
+                    <textarea id="deck-guide-textarea" class="form-input" rows="9"
+                        style="resize: vertical; font-family: monospace; padding: 1rem; line-height: 1.5;"
                         placeholder="Escribe aquí la guía de estudio..."></textarea>
-                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                        <button type="button" class="btn-action btn-secondary-action"
-                            onclick="DeckExplorer.cancelEditGuide()">Cancelar</button>
-                        <button type="button" class="btn-action" style="background: #10b981; color: white;"
-                            onclick="DeckExplorer.saveGuide()">
-                            <i class="fas fa-save"></i> Guardar
-                        </button>
-                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" id="deck-guide-footer">
+                <div id="deck-guide-view-footer" style="display: flex; gap: 0.75rem; justify-content: flex-end; width: 100%;">
+                    <button type="button" class="btn-action btn-secondary-action" onclick="DeckExplorer.closeGuideModal()">Cerrar</button>
+                    <button type="button" class="btn-action" id="deck-guide-edit-btn"
+                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; border-radius: 10px; font-weight: 700; height: 42px; padding: 0 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);"
+                        onclick="DeckExplorer.editGuideMode()">
+                        <i class="fas fa-edit"></i> Editar Guía
+                    </button>
+                </div>
+                <div id="deck-guide-edit-footer" style="display: none; gap: 0.75rem; justify-content: flex-end; width: 100%;">
+                    <button type="button" class="btn-action btn-secondary-action" onclick="DeckExplorer.cancelEditGuide()">Cancelar</button>
+                    <button type="button" class="btn-action" id="btn-save-guide" style="background: #10b981 !important; color: white; border: none; border-radius: 10px; font-weight: 700; height: 42px; padding: 0 1.5rem;"
+                        onclick="DeckExplorer.saveGuide()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
                 </div>
             </div>
         </div>
@@ -365,56 +365,56 @@
 
     <!-- Delete Confirmation Modal -->
     <div class="modal-overlay" id="delete-confirm-modal">
-        <div class="modal-content" style="max-width:400px; text-align:center;">
-            <div style="margin-bottom:1.5rem;">
-                <i class="fas fa-exclamation-triangle" style="font-size:2.5rem; color:#f87171;"></i>
+        <div class="modal-content" style="max-width:440px; width: 95%; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Eliminar Mazo</h2>
+                <button type="button" class="modal-close-btn" onclick="document.getElementById('btn-cancel-delete')?.click()">&times;</button>
             </div>
-            <h2 style="margin-bottom:0.5rem; font-size:1.2rem; color: var(--text-main);">Eliminar Mazo</h2>
-            <p style="color: var(--text-secondary); margin-bottom:0.3rem;">¿Estás seguro de eliminar</p>
-            <p style="color: var(--text-main); font-weight:600; margin-bottom:0.5rem;">"<span id="delete-deck-name"></span>"</p>
-            <p style="color: var(--text-secondary); font-size:0.8rem; margin-bottom:2rem;">y todo su contenido? Esta acción no se puede
-                deshacer.</p>
-            <div style="display:flex; gap:1rem; justify-content:center;">
-                <button id="btn-cancel-delete" class="btn-action btn-secondary-action"
-                    style="padding:0.6rem 1.5rem;">Cancelar</button>
+            <div class="modal-body" style="padding: 1.5rem; text-align: center; display: flex; flex-direction: column; gap: 0.5rem;">
+                <p style="color: var(--text-secondary); margin: 0;">¿Estás seguro de que deseas eliminar el mazo</p>
+                <p style="color: var(--text-main); font-weight: 700; font-size: 1.1rem; margin: 0.25rem 0;">"<span id="delete-deck-name"></span>"?</p>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.4;">Esta acción eliminará todas las tarjetas y submazos contenidos y no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button id="btn-cancel-delete" class="btn-action btn-secondary-action">Cancelar</button>
                 <button id="btn-confirm-delete" class="btn-action"
-                    style="background:#ef4444; color:white; padding:0.6rem 1.5rem; border:none;">Eliminar</button>
+                    style="background:#ef4444 !important; color:white; border:none; border-radius: 10px; font-weight: 700; height: 42px; padding: 0 1.5rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);">
+                    <i class="fas fa-trash-alt"></i> Eliminar
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- Card Modal (Add & Edit) -->
     <div class="modal-overlay" id="card-modal">
-        <div class="modal-content" style="max-width: 720px; width: 95%;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                <h2 id="modal-title" style="margin-bottom: 0; font-size: 1.35rem; font-weight: 700;">Añadir Tarjeta</h2>
-                <button type="button" class="note-modal-close" onclick="window.repasoManager.closeCardModal()"
-                    style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;"><i
-                        class="fas fa-times"></i></button>
+        <div class="modal-content" style="max-width: 720px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2 id="modal-title">
+                    <i class="fas fa-layer-group" style="color: #f97316;"></i> <span>Añadir Tarjeta</span>
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="window.repasoManager.closeCardModal()">&times;</button>
             </div>
 
-            <!-- Tab System -->
-            <div id="card-modal-tabs" class="library-tabs"
-                style="margin-bottom: 1.25rem; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 4px;">
-                <button type="button" class="library-tab active" id="tab-card-individual"
-                    onclick="window.repasoManager.switchCardMode('individual')" style="flex: 1; padding: 0.6rem;">
-                    <i class="fas fa-user-edit" style="margin-right: 8px;"></i> Individual
-                </button>
-                <button type="button" class="library-tab" id="tab-card-bulk"
-                    onclick="window.repasoManager.switchCardMode('bulk')" style="flex: 1; padding: 0.6rem;">
-                    <i class="fas fa-file-excel" style="margin-right: 8px;"></i> Carga Masiva
-                </button>
-            </div>
-
-            <form id="card-form">
+            <form id="card-form" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                 <input type="hidden" id="card-deck-id">
                 <input type="hidden" id="card-id">
 
-                <!-- SECCIÓN INDIVIDUAL -->
-                <div id="section-card-individual" class="card-mode-section active">
-                    <!-- Scrollable Content Wrapper -->
-                    <div
-                        style="max-height: 68vh; overflow-y: auto; overflow-x: hidden; padding: 0.5rem; margin-bottom: 1rem; scrollbar-width: thin; scrollbar-color: rgba(249, 115, 22, 0.4) transparent;">
-                        
+                <div class="modal-body" style="padding: 1.25rem 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Tab System -->
+                    <div id="card-modal-tabs" class="library-tabs"
+                        style="margin-bottom: 0.25rem; background: var(--bg-tertiary); border-radius: 12px; padding: 4px; border: 1px solid var(--border-color); display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                        <button type="button" class="library-tab active" id="tab-card-individual"
+                            onclick="window.repasoManager.switchCardMode('individual')" style="padding: 0.55rem; border: none; font-size: 0.88rem;">
+                            <i class="fas fa-user-edit" style="margin-right: 6px;"></i> Individual
+                        </button>
+                        <button type="button" class="library-tab" id="tab-card-bulk"
+                            onclick="window.repasoManager.switchCardMode('bulk')" style="padding: 0.55rem; border: none; font-size: 0.88rem;">
+                            <i class="fas fa-file-excel" style="margin-right: 6px;"></i> Carga Masiva
+                        </button>
+                    </div>
+
+                    <!-- SECCIÓN INDIVIDUAL -->
+                    <div id="section-card-individual" class="card-mode-section active" style="display: flex; flex-direction: column; gap: 1.25rem;">
                         <!-- CARA FRONTAL (ANVERSO) -->
                         <div class="modal-card-face face-front">
                             <div class="modal-card-face-header">
@@ -423,7 +423,7 @@
                             </div>
                             
                             <textarea class="form-input card-modal-textarea" id="card-front" placeholder="Ej: ¿Cuáles son las características de...?"
-                                style="min-height: 115px; resize: vertical; margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5;"></textarea>
+                                style="min-height: 110px; resize: vertical; margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5;"></textarea>
 
                             <!-- Indicador de Audio Existente -->
                             <div id="audio-status-front"
@@ -455,7 +455,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="settings-row" style="border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 0.5rem; margin-top: 0.2rem;">
+                                <div class="settings-row" style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.2rem;">
                                     <div class="settings-checkbox-group">
                                         <input type="checkbox" id="card-hide-text-front" style="width: 15px; height: 15px; cursor: pointer;">
                                         <label for="card-hide-text-front">Ocultar texto al estudiar (solo audio)</label>
@@ -490,7 +490,7 @@
                             </div>
                             
                             <textarea class="form-input card-modal-textarea" id="card-back" placeholder="Ej: 1. Criterio principal&#10;2. Criterio secundario..."
-                                style="min-height: 115px; resize: vertical; margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5;"></textarea>
+                                style="min-height: 110px; resize: vertical; margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5;"></textarea>
 
                             <!-- Indicador de Audio Existente -->
                             <div id="audio-status-back"
@@ -522,7 +522,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="settings-row" style="border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 0.5rem; margin-top: 0.2rem;">
+                                <div class="settings-row" style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.2rem;">
                                     <div class="settings-checkbox-group">
                                         <input type="checkbox" id="card-hide-text-back" style="width: 15px; height: 15px; cursor: pointer;">
                                         <label for="card-hide-text-back">Ocultar texto al estudiar (solo audio)</label>
@@ -549,86 +549,85 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- SECCIÓN CARGA MASIVA -->
-                <div id="section-card-bulk" class="card-mode-section" style="display: none; padding: 1rem 0;">
-                    <div
-                        style="background: rgba(249, 115, 22, 0.06); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                        <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #f97316;"><i
-                                class="fas fa-info-circle"></i> Instrucciones</h4>
-                        <p style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
-                            Sube un archivo Excel con las columnas <b>Frente</b> y <b>Dorso</b>.<br>
-                            • Hasta <b>1,000 caracteres</b> por cara (máx. <b>500 caracteres</b> si se activa Audio TTS).<br>
-                            • Límite por archivo Excel: <b>100 tarjetas</b>.<br>
-                            • Audio TTS e imágenes: Exclusivos para usuarios <b>Advanced</b>.<br>
-                            • Límite diario: 10 archivos para Advanced / 3 para Basic.
-                        </p>
-                    </div>
-
-                    <!-- Configuración Global TTS Masivo -->
-                    <div
-                        style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <!-- SECCIÓN CARGA MASIVA -->
+                    <div id="section-card-bulk" class="card-mode-section" style="display: none; padding: 0.5rem 0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-                            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-main);">Configuración de Audio
-                                (Opcional)</span>
-                            <select id="bulk-tts-lang" class="form-input-premium"
-                                style="padding: 4px 2rem 4px 8px; font-size: 0.75rem; border-color: var(--border-color);">
-                                <option value="es-ES">🇪🇸 Español (ES)</option>
-                                <option value="es-US">🇲🇽 Español (US-LAT)</option>
-                                <option value="en-US">🇺🇸 Inglés (US)</option>
-                                <option value="en-GB">🇬🇧 Inglés (UK)</option>
-                                <option value="it-IT">🇮🇹 Italiano</option>
-                                <option value="fr-FR">🇫🇷 Francés</option>
-                                <option value="de-DE">🇩🇪 Alemán</option>
-                                <option value="pt-BR">🇧🇷 Portugués</option>
-                            </select>
+                            style="background: rgba(249, 115, 22, 0.06); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem;">
+                            <h4 style="margin-bottom: 0.4rem; font-size: 0.95rem; color: #f97316;"><i
+                                    class="fas fa-info-circle"></i> Instrucciones</h4>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+                                Sube un archivo Excel con las columnas <b>Frente</b> y <b>Dorso</b>.<br>
+                                • Hasta <b>1,000 caracteres</b> por cara (máx. <b>500 caracteres</b> si se activa Audio TTS).<br>
+                                • Límite por archivo Excel: <b>100 tarjetas</b>.
+                            </p>
                         </div>
-                        <div style="display: flex; gap: 1.2rem;">
-                            <label
-                                style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
-                                <input type="checkbox" id="bulk-tts-front"> Generar para Frente
+
+                        <!-- Configuración Global TTS Masivo -->
+                        <div
+                            style="margin-bottom: 1.25rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 12px; border: 1px solid var(--border-color);">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Configuración de Audio (Opcional)</span>
+                                <select id="bulk-tts-lang" class="form-input-premium"
+                                    style="padding: 4px 2rem 4px 8px; font-size: 0.75rem; border-color: var(--border-color);">
+                                    <option value="es-ES">🇪🇸 Español (ES)</option>
+                                    <option value="es-US">🇲🇽 Español (US-LAT)</option>
+                                    <option value="en-US">🇺🇸 Inglés (US)</option>
+                                    <option value="en-GB">🇬🇧 Inglés (UK)</option>
+                                    <option value="it-IT">🇮🇹 Italiano</option>
+                                    <option value="fr-FR">🇫🇷 Francés</option>
+                                    <option value="de-DE">🇩🇪 Alemán</option>
+                                    <option value="pt-BR">🇧🇷 Portugués</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 1.5rem;">
+                                <label
+                                    style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                    <input type="checkbox" id="bulk-tts-front"> Frente
+                                </label>
+                                <label
+                                    style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                    <input type="checkbox" id="bulk-tts-back"> Dorso
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <button type="button" class="btn-upload-minimal"
+                                onclick="window.repasoManager.downloadFlashcardTemplate()"
+                                style="flex: 1; background: var(--bg-tertiary); color: var(--text-main); border: 1px solid var(--border-color); height: 46px;">
+                                <i class="fas fa-download"></i> Plantilla Excel
+                            </button>
+
+                            <label class="btn-upload-minimal"
+                                style="flex: 2; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981; cursor: pointer; height: 46px;">
+                                <i class="fas fa-file-upload"></i> <span id="bulk-file-label">Seleccionar Archivo</span>
+                                <input type="file" id="bulk-flashcard-input" accept=".xlsx, .xls, .csv"
+                                    style="display: none;" onchange="window.repasoManager.handleBulkFlashcardUpload(this)">
                             </label>
-                            <label
-                                style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
-                                <input type="checkbox" id="bulk-tts-back"> Generar para Dorso
-                            </label>
+                        </div>
+
+                        <div id="bulk-upload-preview"
+                            style="display: none; margin-top: 1rem; font-size: 0.85rem; color: #34d399; text-align: center; background: rgba(16, 185, 129, 0.05); padding: 0.8rem; border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.3);">
+                            <i class="fas fa-check-circle"></i> <span id="bulk-count-text">0 tarjetas detectadas</span>
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 1rem; align-items: center;">
-                        <button type="button" class="btn-upload-minimal"
-                            onclick="window.repasoManager.downloadFlashcardTemplate()"
-                            style="flex: 1; background: var(--bg-tertiary); color: var(--text-main); border: 1px solid var(--border-color); height: 50px;">
-                            <i class="fas fa-download"></i> Plantilla Excel
-                        </button>
-
-                        <label class="btn-upload-minimal"
-                            style="flex: 2; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981; cursor: pointer; height: 50px;">
-                            <i class="fas fa-file-upload"></i> <span id="bulk-file-label">Seleccionar Archivo</span>
-                            <input type="file" id="bulk-flashcard-input" accept=".xlsx, .xls, .csv"
-                                style="display: none;" onchange="window.repasoManager.handleBulkFlashcardUpload(this)">
-                        </label>
-                    </div>
-
-                    <div id="bulk-upload-preview"
-                        style="display: none; margin-top: 1rem; font-size: 0.85rem; color: #34d399; text-align: center; background: rgba(16, 185, 129, 0.05); padding: 0.8rem; border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.3);">
-                        <i class="fas fa-check-circle"></i> <span id="bulk-count-text">0 tarjetas detectadas</span>
+                    <div id="card-upload-spinner"
+                        style="display: none; text-align: center; margin-bottom: 0.5rem; background: rgba(249,115,22,0.1); padding: 0.8rem; border-radius: 8px;">
+                        <i class="fas fa-circle-notch fa-spin" style="color: #f97316;"></i>
+                        <span style="margin-left: 8px; color: var(--text-secondary); font-size: 0.85rem;">Procesando...</span>
                     </div>
                 </div>
 
-                <div id="card-upload-spinner"
-                    style="display: none; text-align: center; margin-bottom: 1rem; background: rgba(249,115,22,0.1); padding: 0.8rem; border-radius: 8px;">
-                    <i class="fas fa-circle-notch fa-spin" style="color: #f97316;"></i>
-                    <span style="margin-left: 8px; color: #94a3b8; font-size: 0.85rem;">Procesando...</span>
-                </div>
-
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+                <div class="modal-footer">
                     <button type="button" class="btn-action btn-secondary-action"
                         onclick="window.repasoManager.closeCardModal()">Cancelar</button>
-                    <button type="submit" id="btn-save-card-submit" class="btn-action btn-study"
-                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 0.8rem 2.5rem; border: none; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 15px rgba(249,115,22,0.35);">Guardar Tarjeta</button>
+                    <button type="submit" id="btn-save-card-submit" class="btn-action"
+                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; border-radius: 10px; font-weight: 700; height: 42px; padding: 0 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">
+                        <i class="fas fa-save" style="margin-right: 6px;"></i> Guardar Tarjeta
+                    </button>
                 </div>
             </form>
         </div>
@@ -636,66 +635,73 @@
 
     <!-- Modal AI Generation -->
     <div class="modal-overlay" id="ai-modal">
-        <div class="modal-content">
-            <h2 style="margin-bottom: 1rem;"><i class="fas fa-magic" style="color: #a855f7;"></i> Generar con IA</h2>
-            <p style="color: #94a3b8; margin-bottom: 0.5rem;">Escribe un tema o concepto, y la IA creará flashcards
-                optimizadas y concisas inteligentemente.</p>
-            <p style="color: #64748b; font-size: 0.8rem; margin-bottom: 1.5rem;"><i>Selecciona la cantidad exacta de
-                    tarjetas que deseas generar (Máx: 20).</i></p>
+        <div class="modal-content" style="max-width: 520px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2 style="margin:0; font-size: 1.25rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.6rem;">
+                    <i class="fas fa-magic" style="color: #a855f7;"></i> Generar con IA
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="window.repasoManager.closeAiModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1.25rem;">
+                <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                    Escribe un tema o concepto, y la IA creará flashcards optimizadas y concisas automáticamente.
+                </p>
 
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label">Tema o Concepto</label>
-                    <input type="text" class="form-input" id="ai-topic"
-                        placeholder="Ej: Histología del Riñón, Revolución Francesa...">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Tema o Concepto</label>
+                        <input type="text" class="form-input" id="ai-topic"
+                            placeholder="Ej: Histología del Riñón, Revolución Francesa...">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Cantidad (1-20)</label>
+                        <input type="number" class="form-input" id="ai-amount" value="5" min="1" max="20"
+                            style="text-align: center;">
+                    </div>
                 </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label">Cantidad</label>
-                    <input type="number" class="form-input" id="ai-amount" value="5" min="1" max="20"
-                        style="text-align: center;">
+
+                <!-- Selector Global TTS IA -->
+                <div
+                    style="display: flex; flex-direction: column; gap: 0.85rem; background: var(--bg-tertiary); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Configuración de Audio</span>
+                        <select id="ai-tts-lang" class="form-input-premium"
+                            style="padding: 4px 2rem 4px 8px; font-size: 0.75rem; border-color: var(--border-color);">
+                            <option value="es-ES">🇪🇸 Español (ES)</option>
+                            <option value="es-US">🇲🇽 Español (US-LAT)</option>
+                            <option value="en-US">🇺🇸 Inglés (US)</option>
+                            <option value="en-GB">🇬🇧 Inglés (UK)</option>
+                            <option value="it-IT">🇮🇹 Italiano</option>
+                            <option value="fr-FR">🇫🇷 Francés</option>
+                            <option value="de-DE">🇩🇪 Alemán</option>
+                            <option value="pt-BR">🇧🇷 Portugués</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 1.5rem;">
+                        <label
+                            style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                            <input type="checkbox" id="ai-tts-front"> Frente
+                        </label>
+                        <label
+                            style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                            <input type="checkbox" id="ai-tts-back"> Dorso
+                        </label>
+                    </div>
+                </div>
+
+                <div id="ai-loading" style="display: none; text-align: center; margin: 1.5rem 0;">
+                    <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #a855f7;"></i>
+                    <p style="margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.9rem;">Consultando a Gemini...</p>
                 </div>
             </div>
 
-            <!-- Selector Global TTS IA -->
-            <div
-                style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem; background: var(--bg-tertiary); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-main);">Configuración de Audio</span>
-                    <select id="ai-tts-lang" class="form-input-premium"
-                        style="padding: 4px 2rem 4px 8px; font-size: 0.75rem; border-color: var(--border-color);">
-                        <option value="es-ES">🇪🇸 Español (ES)</option>
-                        <option value="es-US">🇲🇽 Español (US-LAT)</option>
-                        <option value="en-US">🇺🇸 Inglés (US)</option>
-                        <option value="en-GB">🇬🇧 Inglés (UK)</option>
-                        <option value="it-IT">🇮🇹 Italiano</option>
-                        <option value="fr-FR">🇫🇷 Francés</option>
-                        <option value="de-DE">🇩🇪 Alemán</option>
-                        <option value="pt-BR">🇧🇷 Portugués</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 1.5rem;">
-                    <label
-                        style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
-                        <input type="checkbox" id="ai-tts-front"> Frente
-                    </label>
-                    <label
-                        style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
-                        <input type="checkbox" id="ai-tts-back"> Dorso
-                    </label>
-                </div>
-            </div>
-
-            <div id="ai-loading" style="display: none; text-align: center; margin: 2rem 0;">
-                <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #a855f7;"></i>
-                <p style="margin-top: 1rem; color: var(--text-secondary);">Consultando a Gemini...</p>
-            </div>
-
-            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+            <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.75rem; justify-content: flex-end;">
                 <button type="button" class="btn-action btn-secondary-action"
                     onclick="window.repasoManager.closeAiModal()">Cancelar</button>
                 <button type="button" class="btn-action" onclick="window.repasoManager.generateAiCards()"
-                    style="background: #a855f7; color: white;">
-                    Generar
+                    style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color: white; border: none; border-radius: 10px; font-weight: 700; padding: 0.6rem 1.5rem; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);">
+                    <i class="fas fa-sparkles" style="margin-right: 6px;"></i> Generar
                 </button>
             </div>
         </div>
@@ -711,7 +717,7 @@
                 <button type="button" class="modal-close-btn" onclick="window.repasoManager.closeStatsModal()">&times;</button>
             </div>
 
-            <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;">
+            <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent;">
                 <!-- KPI Cards -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                     <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 14px; text-align: center;">
@@ -749,8 +755,8 @@
                 <div id="activity-heatmap" class="heatmap-container" style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.2rem; height: auto;"></div>
             </div>
 
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: transparent;">
-                <button type="button" class="btn-action btn-secondary-action" style="width: 100%; justify-content: center; padding: 0.7rem; border-radius: 12px;" onclick="window.repasoManager.closeStatsModal()">
+            <div class="modal-footer">
+                <button type="button" class="btn-action btn-secondary-action" style="width: 100%; justify-content: center; height: 42px; border-radius: 10px;" onclick="window.repasoManager.closeStatsModal()">
                     Cerrar
                 </button>
             </div>
@@ -794,17 +800,17 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=865cbe41"></script>
+    <script src="/js/config.js?v=52676233"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=865cbe41"></script>
-    <script src="/js/services/networkService.js?v=865cbe41"></script>
-    <script src="/js/services/authApiService.js?v=865cbe41"></script>
-    <script src="/js/services/analyticsApiService.js?v=865cbe41"></script>
-    <script src="/js/sessionManager.js?v=865cbe41"></script>
-    <script src="/js/ui/uiManager.js?v=865cbe41"></script>
-    <script src="/js/ui/components.js?v=865cbe41"></script>
-    <script src="/js/ui/sidebar.js?v=865cbe41"></script>
-    <script src="/js/app.js?v=865cbe41"></script>
+    <script src="/js/utils/markdown-renderer.js?v=52676233"></script>
+    <script src="/js/services/networkService.js?v=52676233"></script>
+    <script src="/js/services/authApiService.js?v=52676233"></script>
+    <script src="/js/services/analyticsApiService.js?v=52676233"></script>
+    <script src="/js/sessionManager.js?v=52676233"></script>
+    <script src="/js/ui/uiManager.js?v=52676233"></script>
+    <script src="/js/ui/components.js?v=52676233"></script>
+    <script src="/js/ui/sidebar.js?v=52676233"></script>
+    <script src="/js/app.js?v=52676233"></script>
 
     <!-- Polyfill for Mobile Drag and Drop -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
@@ -819,9 +825,9 @@
         });
     </script>
 
-    <script src="/js/heatmap.js?v=865cbe41"></script> <!-- Optional for Stats -->
-    <script src="/js/deck-explorer.js?v=865cbe41"></script> <!-- NEW -->
-    <script src="/js/repaso.js?v=865cbe41"></script>
+    <script src="/js/heatmap.js?v=52676233"></script> <!-- Optional for Stats -->
+    <script src="/js/deck-explorer.js?v=52676233"></script> <!-- NEW -->
+    <script src="/js/repaso.js?v=52676233"></script>
 </body>
 
 </html>

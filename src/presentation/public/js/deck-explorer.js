@@ -306,7 +306,7 @@ class DeckExplorer {
             btn.title = opt.label;
             btn.dataset.icon = opt.fa;
             const isSelected = opt.fa === iconInput.value;
-            btn.style.cssText = `width:40px; height:40px; border-radius:10px; border:2px solid ${isSelected ? opt.color : 'rgba(255,255,255,0.1)'}; background:${isSelected ? opt.color + '22' : 'rgba(255,255,255,0.05)'}; color:${opt.color}; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;`;
+            btn.style.cssText = `width:40px; height:40px; border-radius:10px; border:${isSelected ? '2px solid ' + opt.color : '1.5px solid var(--border-color)'}; background:${isSelected ? opt.color + '22' : 'var(--bg-tertiary)'}; color:${opt.color}; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; box-shadow:${isSelected ? '0 0 10px ' + opt.color + '40' : 'none'};`;
             btn.innerHTML = `<i class="${opt.fa}"></i>`;
 
             btn.onclick = () => {
@@ -315,8 +315,9 @@ class DeckExplorer {
                 grid.querySelectorAll('button').forEach(b => {
                     const bOpt = DeckExplorer.ICON_OPTIONS.find(o => o.fa === b.dataset.icon);
                     const sel = b.dataset.icon === opt.fa;
-                    b.style.borderColor = sel ? bOpt.color : 'rgba(255,255,255,0.1)';
-                    b.style.background = sel ? bOpt.color + '22' : 'rgba(255,255,255,0.05)';
+                    b.style.border = sel ? `2px solid ${bOpt.color}` : '1.5px solid var(--border-color)';
+                    b.style.background = sel ? bOpt.color + '22' : 'var(--bg-tertiary)';
+                    b.style.boxShadow = sel ? `0 0 10px ${bOpt.color}40` : 'none';
                 });
             };
             grid.appendChild(btn);
@@ -393,12 +394,16 @@ class DeckExplorer {
         // Show view mode, hide edit mode
         document.getElementById('deck-guide-view-mode').style.display = 'block';
         document.getElementById('deck-guide-edit-mode').style.display = 'none';
+        const viewFooter = document.getElementById('deck-guide-view-footer');
+        const editFooter = document.getElementById('deck-guide-edit-footer');
+        if (viewFooter) viewFooter.style.display = 'flex';
+        if (editFooter) editFooter.style.display = 'none';
 
         // Only allow edit if it's not a SYSTEM deck
         const currentDeck = window.repasoManager.currentDeck;
         const canEdit = currentDeck && currentDeck.id === deckId && currentDeck.type !== 'SYSTEM';
         const editBtn = document.getElementById('deck-guide-edit-btn');
-        if (editBtn) editBtn.style.display = canEdit ? 'block' : 'none';
+        if (editBtn) editBtn.style.display = canEdit ? 'inline-flex' : 'none';
     }
 
     static closeGuideModal() {
@@ -431,6 +436,10 @@ class DeckExplorer {
         DeckExplorer.sessionImages = []; // Reset session tracking
         document.getElementById('deck-guide-view-mode').style.display = 'none';
         document.getElementById('deck-guide-edit-mode').style.display = 'block';
+        const viewFooter = document.getElementById('deck-guide-view-footer');
+        const editFooter = document.getElementById('deck-guide-edit-footer');
+        if (viewFooter) viewFooter.style.display = 'none';
+        if (editFooter) editFooter.style.display = 'flex';
 
         const description = window.repasoManager.currentDeck.description || '';
 
@@ -501,6 +510,10 @@ class DeckExplorer {
         
         document.getElementById('deck-guide-view-mode').style.display = 'block';
         document.getElementById('deck-guide-edit-mode').style.display = 'none';
+        const viewFooter = document.getElementById('deck-guide-view-footer');
+        const editFooter = document.getElementById('deck-guide-edit-footer');
+        if (viewFooter) viewFooter.style.display = 'flex';
+        if (editFooter) editFooter.style.display = 'none';
     }
 
     static _cleanupSessionImages(urls) {
@@ -516,10 +529,12 @@ class DeckExplorer {
 
         // Get content from TinyMCE
         const newDescription = window.tinymce.get('deck-guide-textarea').getContent();
-        const btn = document.querySelector('#deck-guide-edit-mode .btn-action[style*="background: #10b981"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-        btn.disabled = true;
+        const btn = document.getElementById('btn-save-guide') || document.querySelector('#deck-guide-footer .btn-action[style*="background: #10b981"]') || document.querySelector('#deck-guide-edit-mode .btn-action[style*="background: #10b981"]');
+        const originalText = btn ? btn.innerHTML : 'Guardar';
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            btn.disabled = true;
+        }
 
         try {
             const token = localStorage.getItem('authToken');

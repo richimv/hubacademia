@@ -5,10 +5,9 @@
 
 .decks-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 1.15rem;
     margin-top: 1.5rem;
-    /* ✅ OPTIMIZACIÓN: Solo transicionar propiedades necesarias */
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
@@ -459,26 +458,60 @@
 /* Badge for System/User Decks */
 .deck-badge {
     position: static;
-    padding: 4px 8px;
+    padding: 3px 8px;
     border-radius: 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
 }
 
-/* Action buttons (edit/delete) */
+.badge-system {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-user {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+/* Fila Superior de Tarjeta de Mazo (Badge + Acciones) */
+.deck-card-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    width: 100%;
+}
+
+.deck-card-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Botones de acción dentro de las tarjetas */
 .deck-action-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-size: 0.75rem;
-    padding: 6px 9px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
     border-radius: 8px;
-    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    box-sizing: border-box;
 }
 
 .deck-action-btn:hover {
@@ -488,36 +521,158 @@
     transform: translateY(-1px);
 }
 
+/* Botón Play (Estudiar): Alto contraste naranja siempre nítido */
+.deck-action-btn.btn-act-play {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+    border: 1px solid #ea580c !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
+}
+
+.deck-action-btn.btn-act-play:hover {
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.5);
+    transform: translateY(-1px) scale(1.05);
+}
+
+.deck-action-btn.btn-act-edit:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.deck-action-btn.btn-act-delete:hover,
 .deck-action-btn--delete:hover {
-    color: var(--danger);
-    background: var(--danger-bg);
-    border-color: var(--danger-border);
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.35);
 }
 
-.badge-system {
-    background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
+/* Elementos del Mazo en Desktop */
+.deck-card-icon-center {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
 }
 
-.badge-user {
-    background: rgba(249, 115, 22, 0.12);
-    color: #fb923c;
-    border: 1px solid rgba(249, 115, 22, 0.3);
+.deck-card-title-text {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 0.3rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+.deck-card-meta-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-align: left;
+}
+
+.deck-due-tag {
+    color: #ef4444;
+    font-weight: 700;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.deck-card-footer-box {
+    margin-top: auto;
+    width: 100%;
+}
+
+.deck-mastery-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #f97316;
+    margin-bottom: 5px;
+    font-weight: 700;
+}
+
+.deck-mastery-track {
+    height: 5px;
+    background: rgba(249, 115, 22, 0.15);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.deck-mastery-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f97316, #fb923c);
+    border-radius: 3px;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+    transition: width 0.4s ease;
+}
+
+/* Mobile Deck Card Elements */
+.deck-card-mob-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    color: var(--primary);
+}
+
+.deck-card-mob-info {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.deck-card-mob-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.deck-card-mob-meta {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.deck-card-mob-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 /* Add Deck Button */
 .add-deck-card {
-    background: rgba(255, 255, 255, 0.01);
-    border: 1px dashed rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
+    background: var(--bg-tertiary);
+    border: 2px dashed var(--border-color);
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    min-height: 200px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    min-height: 220px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+}
+
+.add-deck-card:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
 }
 
 .add-deck-card::before {
@@ -897,7 +1052,13 @@
 .tree-content.node-personal.active {
     background: var(--primary-glow) !important;
     border: 1px solid var(--primary) !important;
-    color: var(--text-main) !important;
+    color: var(--primary) !important;
+    font-weight: 700 !important;
+}
+
+.tree-content.active .tree-label,
+.tree-content.active .tree-label span {
+    color: var(--primary) !important;
     font-weight: 700 !important;
 }
 
@@ -974,7 +1135,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.8rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.5rem;
 }
 

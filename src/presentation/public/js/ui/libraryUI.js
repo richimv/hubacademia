@@ -218,6 +218,11 @@ class LibraryUI {
 
         if (tabName !== 'resources') {
             this.renderDrawerList();
+        } else {
+            const browseContainer = document.getElementById('browse-container');
+            if (browseContainer && !browseContainer.innerHTML.trim() && window.searchComponent) {
+                window.searchComponent.renderInitialView();
+            }
         }
     }
 
@@ -307,8 +312,22 @@ class LibraryUI {
         }
 
         if (items.length === 0) {
-            const icon = this.currentTab === 'saved' ? 'fa-bookmark' : 'fa-heart';
-            container.innerHTML = `<div class="empty-state"><i class="far ${icon}"></i><p>No tienes items aquí aún.</p></div>`;
+            const isSaved = this.currentTab === 'saved';
+            const icon = isSaved ? 'fa-bookmark' : 'fa-heart';
+            const title = isSaved ? 'No tienes recursos guardados' : 'No tienes recursos favoritos';
+            const desc = isSaved 
+                ? 'Guarda libros, papers o guías técnicas del catálogo para consultarlos rápidamente aquí.' 
+                : 'Marca tus documentos más importantes con el corazón para tenerlos siempre a mano.';
+            
+            container.innerHTML = `
+                <div class="library-empty-state" style="grid-column: 1 / -1;">
+                    <div class="empty-icon-circle"><i class="far ${icon}"></i></div>
+                    <h3>${title}</h3>
+                    <p>${desc}</p>
+                    <button type="button" class="btn-primary" onclick="window.libraryUI.switchTab('resources')">
+                        <i class="fas fa-compass"></i> Explorar Catálogo
+                    </button>
+                </div>`;
             return;
         }
 
@@ -353,28 +372,55 @@ class LibraryUI {
                         <label for="notes-sort-select">Ordenar:</label>
                         <select id="notes-sort-select" onchange="window.libraryUI.filterAndSortNotes()">
                             <option value="recent">Recientes</option>
-                            <option value="oldest">Antiguas</option>
+                            <option value="oldest">Más antiguas</option>
                             <option value="title">Título (A-Z)</option>
-                            <option value="color">Por Color</option>
-                            <option value="source">Por Origen</option>
                         </select>
                     </div>
                 `;
                 contentDiv.insertBefore(toolbar, contentDiv.firstChild);
             }
 
-            this.filterAndSortNotes();
-        } else {
+            const data = this.service.getLibraryData();
+            const notes = data.notes || [];
             const container = document.querySelector(this.selectors.listContainer);
             if (!container) return;
 
-            const data = this.service.getLibraryData();
-            const notes = data.notes || [];
-
-            let html = `<button class="library-add-note-btn" onclick="window.libraryUI.openNoteEditor()"><i class="fas fa-plus"></i> Crear nota</button>`;
+            let html = `
+                <div class="library-add-note-btn" onclick="window.libraryUI.openNoteModal()">
+                    <div class="add-icon-circle"><i class="fas fa-plus"></i></div>
+                    <span style="font-weight: 700;">Nueva Nota</span>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; margin-top: 4px;">Crear apunte de estudio</p>
+                </div>
+            `;
 
             if (notes.length === 0) {
-                html += `<div class="empty-state"><i class="far fa-sticky-note"></i><p>No tienes notas guardadas.<br>Usa el ícono 🔖 en el chat para guardar respuestas.</p></div>`;
+                html += `
+                    <div class="library-empty-state" style="grid-column: 2 / -1;">
+                        <div class="empty-icon-circle"><i class="far fa-sticky-note"></i></div>
+                        <h3>No tienes notas guardadas</h3>
+                        <p>Crea notas manuales con el botón "Nueva Nota" o guarda respuestas con el ícono 🔖 del tutor en los módulos de estudio.</p>
+                    </div>`;
+            } else {
+                html += notes.map(note => this._createNoteItemHTML(note)).join('');
+            }
+
+            container.innerHTML = html;
+        } else {
+            // Drawer view
+            const data = this.service.getLibraryData();
+            const notes = data.notes || [];
+            const container = document.querySelector(this.selectors.listContainer);
+            if (!container) return;
+
+            let html = `
+                <div class="library-item library-add-note-inline" onclick="window.libraryUI.openNoteModal()" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px dashed var(--primary); border-radius: 8px; margin-bottom: 12px; color: var(--primary); font-weight: 600;">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Crear nueva nota</span>
+                </div>
+            `;
+
+            if (notes.length === 0) {
+                html += `<div class="library-empty-state"><i class="far fa-sticky-note" style="font-size:2rem; margin-bottom:0.5rem; color:var(--text-muted);"></i><p>No tienes notas guardadas.</p></div>`;
             } else {
                 html += notes.map(note => this._createNoteItemHTML(note)).join('');
             }

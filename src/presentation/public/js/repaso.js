@@ -1188,24 +1188,24 @@ class RepasoManager {
             let actionBtns = '';
             if (this.token) {
                 actionBtns = `
-                    <div style="display:flex; gap:0.4rem; align-items:center;">
-                        <button type="button" class="deck-action-btn btn-act-play" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4);" title="Estudiar">
+                    <div class="deck-card-actions">
+                        <button type="button" class="deck-action-btn btn-act-play" title="Estudiar">
                             <i class="fas fa-play"></i>
                         </button>
                         ${!isSystem ? `
-                            <button type="button" class="deck-action-btn btn-act-edit" style="background:rgba(255,255,255,0.05); color:#cbd5e1; border: 1px solid rgba(255,255,255,0.1);" title="Editar mazo">
-                                <i class="fas fa-edit"></i>
+                            <button type="button" class="deck-action-btn btn-act-edit" title="Editar mazo">
+                                <i class="fas fa-pen"></i>
                             </button>
                             <button type="button" class="deck-action-btn deck-action-btn--delete btn-act-delete" title="Eliminar mazo">
-                                <i class="fas fa-trash"></i>
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                         ` : ''}
                     </div>`;
             } else {
                 // Guest User: Only Demo Play
                 actionBtns = `
-                    <div style="display:flex; gap:0.3rem;">
-                        <button type="button" class="deck-action-btn btn-act-demo" style="background:rgba(249, 115, 22, 0.2); color:#ffedd5; border: 1px solid rgba(249, 115, 22, 0.4);" title="Probar Demo">
+                    <div class="deck-card-actions">
+                        <button type="button" class="deck-action-btn btn-act-play" title="Probar Demo">
                             <i class="fas fa-play"></i>
                         </button>
                     </div>`;
@@ -1214,39 +1214,39 @@ class RepasoManager {
             card.innerHTML = `
                 <!-- Desktop layout -->
                 <div class="deck-card-desktop">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                    <div class="deck-card-top-row">
+                        <span class="deck-badge ${badgeClass}">${badgeText}</span>
                         ${actionBtns}
-                        <span class="deck-badge ${badgeClass}" style="font-size:0.6rem; padding:0.15rem 0.5rem; background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);">${badgeText}</span>
                     </div>
-                    <div style="font-size:1.6rem; margin-bottom:0.4rem;">${iconHtml}</div>
-                    <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
-                    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem;">
-                        ${deck.total_cards || 0} tarjetas
-                        ${hasDue ? `<span style="color:#ef4444; font-weight:600; margin-left:0.5rem;">${deck.due_cards} pend.</span>` : ''}
+                    <div class="deck-card-icon-center">${iconHtml}</div>
+                    <h3 class="deck-card-title-text" title="${escapeHtml(deck.name)}">${deck.name}</h3>
+                    <div class="deck-card-meta-text">
+                        <span>${deck.total_cards || 0} tarjetas</span>
+                        ${hasDue ? `<span class="deck-due-tag">${deck.due_cards} pend.</span>` : ''}
                     </div>
-                    <div style="margin-top:auto; width:100%;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#fb923c; margin-bottom:4px; font-weight:600;">
+                    <div class="deck-card-footer-box">
+                        <div class="deck-mastery-header">
                             <span>Dominio</span><span>${mastery}%</span>
                         </div>
-                        <div style="height:4px; background:rgba(249,115,22,0.1); border-radius:2px;">
-                            <div style="width:${mastery}%; height:100%; background: linear-gradient(90deg, #f97316, #fb923c); border-radius:2px; box-shadow: 0 0 8px rgba(249,115,22,0.4);"></div>
+                        <div class="deck-mastery-track">
+                            <div class="deck-mastery-fill" style="width:${mastery}%;"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Mobile layout -->
                 <div class="deck-card-mobile">
-                    <div style="font-size:1.3rem; flex-shrink:0;">${iconHtml}</div>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-size:0.9rem; font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted);">
-                            ${deck.total_cards || 0} tarj.
-                            ${hasDue ? `<span style="color:#ef4444; font-weight:600;">${deck.due_cards} pend.</span>` : ''}
+                    <div class="deck-card-mob-icon">${iconHtml}</div>
+                    <div class="deck-card-mob-info">
+                        <div class="deck-card-mob-title">${deck.name}</div>
+                        <div class="deck-card-mob-meta">
+                            <span>${deck.total_cards || 0} tarj.</span>
+                            ${hasDue ? `<span class="deck-due-tag">${deck.due_cards} pend.</span>` : ''}
                         </div>
                     </div>
-                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; flex-shrink:0;">
+                    <div class="deck-card-mob-side">
+                        <span class="deck-badge ${badgeClass}">${isSystem ? 'AUTO' : 'PERS.'}</span>
                         ${actionBtns}
-                        <span class="deck-badge ${badgeClass}" style="font-size:0.5rem; padding:0.1rem 0.4rem;">${isSystem ? 'AUTO' : 'PERS.'}</span>
                     </div>
                 </div>
             `;

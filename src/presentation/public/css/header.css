@@ -467,7 +467,7 @@ body {
 
     /* ✅ UPDATE: Ocultar texto "Registrarse" en móvil, solo icono */
     #user-session-controls .btn-primary {
-        padding: 0.4rem 0.8rem;
+        padding: 0 0.85rem;
         font-size: 0.85rem;
         white-space: nowrap;
         display: flex;
@@ -476,7 +476,7 @@ body {
         gap: 0;
         height: 34px;
         box-sizing: border-box;
-        border-radius: 8px;
+        border-radius: 10px;
     }
 
     #user-session-controls .btn-primary span {
@@ -491,54 +491,85 @@ body {
 
     /* Minimal mobile layout for open-login-modal (compact rounded rectangle) */
     #user-session-controls #open-login-modal,
+    .main-header #open-login-modal,
     #open-login-modal.btn-primary {
-        width: 36px !important;
-        height: 32px !important;
-        min-width: 36px !important;
-        max-width: 36px !important;
-        padding: 0 !important;
-        border-radius: 8px !important;
-        display: flex !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        padding: 0 0.85rem !important;
+        border-radius: 10px !important;
+        display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         box-sizing: border-box !important;
+        font-size: 0.85rem !important;
     }
 
-    #user-session-controls #open-login-modal span,
-    #open-login-modal.btn-primary span {
+    /* Theme Toggle Button en móvil: Misma altura y proporciones que botón acceder */
+    .theme-toggle-btn {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+        border-radius: 10px !important;
+        font-size: 0.95rem !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Header Nav Container en móvil */
+    .header-nav {
+        gap: 0.4rem;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Usuario logueado en móvil: Solo círculo de avatar, ocultar nombre y tier */
+    .user-menu-toggle {
+        padding: 0 !important;
+        border-radius: 50% !important;
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .user-avatar {
+        width: 30px !important;
+        height: 30px !important;
+        border: 1.5px solid var(--primary) !important;
+        margin: 0 !important;
+    }
+
+    .user-header-meta,
+    .user-header-chevron {
         display: none !important;
     }
 
-    #user-session-controls #open-login-modal i,
-    #open-login-modal.btn-primary i {
-        margin: 0 !important;
-        font-size: 0.95rem !important;
-    }
-
-    .header-nav {
-        gap: 0.35rem;
-        /* ✅ Tighter, more cohesive look */
-    }
-
     .user-menu-dropdown {
-        right: -10px;
-        min-width: 200px;
+        right: 0;
+        min-width: 220px;
     }
 
-    /* Centered logo on mobile */
-    .logo {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+    /* Logo y título SIEMPRE a la izquierda en móvil en todas las páginas */
+    .logo,
+    .header-start .logo {
+        position: static !important;
+        transform: none !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        text-align: left !important;
     }
 
     .logo-text {
         font-size: 1.05rem;
+        display: block !important;
     }
 
     .admin-header {
