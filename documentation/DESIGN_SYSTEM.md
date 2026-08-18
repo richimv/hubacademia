@@ -239,6 +239,54 @@ Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente
 * **Buscador Resiliente (`SearchComponent`):**
   * Control seguro de limpieza de búsqueda (`toggleClearButton`), restauración instantánea y estados de carga (skeletons) integrados.
 
+### 3.19. Arquitectura y Estándar Visual del Panel de Simuladores (Salud & Educación)
+* **Contenedor Principal (`.dashboard-container`):**
+  * `max-width: 1440px; margin: 0 auto; padding: 2rem 1.5rem 5rem;`. Otorga holgura lateral uniforme sin compresión ni enmarcado excesivo.
+* **Hero Card Contextual (`.context-hero-card`):**
+  * Banner de apertura con fondo `var(--card-bg)`, borde `1px solid var(--border-color)`, radio `20px`, padding `1.75rem 2rem`, glow ambiental radial (`.context-hero-glow`) y desenfoque glassmorphism `backdrop-filter: blur(12px)`.
+  * **Estructura Interna:** Tag semántico (`.context-hero-tag`, 0.72rem en mayúsculas con tracking `0.08em`), Título de módulo (`.context-hero-title`, 1.75rem, font-weight 800, color `var(--text-main)`), y subtítulo contextual (`.context-hero-subtitle`, color `var(--text-secondary)`).
+  * **Acciones de Cabecera:** Resumen de configuración activa (`#active-config-summary`) con pills de especialidad/carrera y botón principal de configuración (`.btn-config-hero`) con radio `12px`, padding ergonómico y sombra de elevación `0 4px 14px var(--primary-glow)`.
+* **Cuadrícula y Tarjetas de Modos de Entrenamiento (`.modes-grid`, `.mode-card`):**
+  * Distribución: 3 columnas en PC (`repeat(3, 1fr)`), 2 columnas en tabletas (`900px`), 1 columna en móviles (`600px`).
+  * Estructura: Tarjetas con radio `18px`, padding `1.5rem`, fondo `var(--card-bg)`, borde `1px solid var(--border-color)` y elevación base `var(--shadow-sm)`.
+  * **Fondos Gráficos Integrados (`background-size: cover; background-position: center;` con opacidad y filtro anti-sobresaturación):**
+    * *Modo Rápido:* `/assets/simulacro-rapido.webp` (Oscuro) / `/assets/simulacro-rapido-claro.webp` (Claro).
+    * *Modo Estudio (Salud):* `/assets/modo-estudio-salud.webp` (Oscuro) / `/assets/modo-estudio-salud-claro.webp` (Claro).
+    * *Modo Estudio (Educación):* `/assets/modo-estudio-educacion.webp` (Oscuro) / `/assets/modo-estudio-educacion-claro.webp` (Claro).
+    * *Simulacro Real:* `/assets/simulacro-real.webp` (Oscuro) / `/assets/simulacro-real-claro.webp` (Claro) con acento y botón en tonalidad Rose/Carmesí (`#f43f5e`).
+  * **Micro-interacción Hover:** `transform: translateY(-4px);`, iluminación de borde en el color de acento de la tarjeta (`rgba(var(--accent-rgb), 0.4)`), y sombra de difusión `0 12px 30px rgba(var(--accent-rgb), 0.12)`.
+  * **Componentes de Tarjeta:**
+    * *Cabecera:* Icono cuadrado redondeado (`.mode-icon-badge`, 42x42px, fondo tintado y borde sutil) + Badge de cantidad de preguntas (`.mode-q-badge`, fondo `var(--bg-tertiary)` y borde `var(--border-color)`).
+    * *Cuerpo:* Título en negrita `1.1rem` (`.mode-title`) y descripción concisa `0.8rem` (`.mode-desc`).
+    * *Pie:* Botón pill de llamada a la acción (`.mode-cta`, color y borde de acento, transición a fondo completo e inversión de texto en blanco al posar el cursor).
+* **Métricas Clave y KPIs con Micro-Barras (`.stats-overview`, `.stat-box`):**
+  * 3 tarjetas para *Nota Promedio*, *Precisión Global* y *Total Reactivos Resueltos*.
+  * **Fondos Gráficos Integrados (`::before` con opacidad calibrada al 85% y filtro de saturación equilibrada):**
+    * *Puntuación Promedio:* `/assets/puntuacion-promedio.webp` (Oscuro) / `/assets/puntuacion-promedio-claro.webp` (Claro).
+    * *Precisión Global (Salud):* `/assets/precision-global-salud.webp` (Oscuro) / `/assets/precision-global-salud-claro.webp` (Claro).
+    * *Precisión Global (Educación):* `/assets/precision-global-educacion.webp` (Oscuro) / `/assets/precision-global-educacion-claro.webp` (Claro).
+    * *Volumen de Respuestas:* `/assets/volumen-respuestas.webp` (Oscuro) / `/assets/volumen-respuestas-claro.webp` (Claro) con icono y valor en tonalidad Rose/Carmesí (`#f43f5e`).
+  * Valores destacados en tipografía bold `2rem` con unidades legibles (`.stat-unit`).
+  * **Micro-barras de progreso en cápsula (`.stat-progress-track`):** Altura fija `6px`, radio `999px`, fondo `var(--bg-tertiary)`, borde `1px solid var(--border-color)`. Barra animada suavemente con `transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1)`.
+  * **Píldoras de aciertos y errores:** `.count-pill--correct` (icono check, fondo esmeralda 10%, color `#10b981`) y `.count-pill--incorrect` (icono x, fondo carmesí 10%, color `#f43f5e`).
+* **Filtros de Analítica (`.kpi-filters-container`, `.kpi-tabs-group`):**
+  * Agrupadores en cápsula con fondo `var(--bg-tertiary)` y radio `12px`.
+  * Pestañas activas con fondo `var(--card-bg)` en modo claro o `var(--bg-secondary)` en modo oscuro, borde sutil y sombra de elevación.
+* **Paneles de Visualización Analítica (`.detailed-row`, `.detail-card`):**
+  * Tarjetas de analítica con radio `20px`, padding `1.5rem`, fondo `var(--card-bg)` y cabecera con título `0.95rem` en mayúsculas.
+  * **Evolución Temporal:** Contenedor de canvas con línea horizontal aprobatoria discontinua en nota 14 (`Aprobatorio ≥ 14`).
+  * **Distribución Temática:** Contenedor de dona con leyenda envolvente en la parte inferior (`.doughnut-custom-legend`).
+  * **Dominio por Áreas:** Contenedor de barras horizontales nativas con etiquetas de semáforo cognitivo: Alto (verde `#10b981`), Medio (ámbar `#f59e0b`), Crítico (rojo `#f43f5e`).
+* **Diagnóstico Inteligente por IA (`.ai-diagnosis-card`):**
+  * Encabezado con icono con gradiente violeta/índigo, badge pill "Advanced IA" y glow ambiental.
+  * **Estado Inicial:** Callout de borde punteado con icono de robot flotante y botón de llamada a la acción (`.btn-ai-action`).
+  * **Estado de Resultados:**
+    * *Grilla 2x1 de Insights:* Panel de Fortalezas (borde y tinte esmeralda) y Panel de Brechas Críticas (borde y tinte ámbar).
+    * *Panel de Estrategia:* Banner horizontal con badge "Plan de Acción" y botón secundario para reanalizar diagnóstico.
+* **Sistema de Temas Dual Estricto:**
+  * **Modo Oscuro (Matte Black):** Fondo de página `var(--bg-main)` (`#050505`), fondo de tarjetas `var(--card-bg)` (`#0a0a0a` / `#121212`), bordes `rgba(255, 255, 255, 0.08)`, textos `#f8fafc` y `#94a3b8`. Prohibido el uso de tonos verde bosque o fondos oliva en la interfaz global.
+  * **Modo Claro (Clean Slate):** Fondo de página `#f8fafc`, fondo de tarjetas `#ffffff`, bordes `#e2e8f0`, sombras suaves `var(--shadow-sm)`, textos `#0f172a` y `#64748b`.
+
 ---
 
 ## 4. 📐 Grids, Layouts y Responsividad
@@ -248,6 +296,24 @@ Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente
 * **Portátiles Medianos (900px a 1200px):** **4 columnas por fila** (`repeat(4, minmax(0, 1fr))`).
 * **Tabletas (600px a 900px):** **3 columnas por fila** (`repeat(3, minmax(0, 1fr))`).
 * **Celulares (<= 600px):** **2 columnas por fila** (`repeat(2, minmax(0, 1fr))`) con brecha de espacio reducida a `0.75rem`.
+
+### 4.2. Responsividad del Panel de Simuladores (Salud & Educación)
+* **Escritorio (> 900px):**
+  * Modos de entrenamiento: 3 columnas (`repeat(3, 1fr)`).
+  * KPIs y Métricas: 3 columnas (`repeat(3, 1fr)`).
+  * Fila Analítica: Proporción 2:1 (Evolución 2fr / Dona 1fr).
+* **Tabletas y Pantallas Medianas (600px a 900px):**
+  * Modos de entrenamiento: 2 columnas (`repeat(2, 1fr)`).
+  * KPIs y Métricas: 2 columnas (`repeat(2, 1fr)`).
+  * Paneles de Analítica y Diagnóstico IA: 1 columna completa apilada.
+* **Celulares y Pantallas Pequeñas (<= 600px / <= 480px):**
+  * Contenedor principal con padding ergonómico `1.25rem 1rem 3.5rem` (evita cortes laterales y sobre-compresión).
+  * **Hero Contextual:** Apilamiento vertical (`flex-direction: column`), botón de configuración a ancho completo (`width: 100%`) y glow ambiental reducido en escala y opacidad para evitar deslumbramientos.
+  * **Modos de Entrenamiento:** 1 sola columna fluida con botón `.mode-cta` a ancho completo para facilidad táctil con una sola mano.
+  * **KPIs y Métricas:** 1 columna con tamaño tipográfico ajustado a `1.75rem` / `1.55rem` para evitar saltos de línea numéricos.
+  * **Filtros de Analítica:** Contenedor deslizable horizontalmente (`overflow-x: auto; -webkit-overflow-scrolling: touch;`) con barra de desplazamiento oculta para una experiencia nativa fluida.
+  * **Gráficos y Canvas:** Altura optimizada a `220px` (y `190px` en <480px) para conservar visibilidad del contenido sin obligar al usuario a hacer scroll excesivo.
+  * **Diagnóstico Inteligente IA:** Apilamiento de 1 columna para tarjetas de Fortalezas y Brechas, con botones de acción táctiles de tamaño completo.
 
 ---
 

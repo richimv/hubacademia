@@ -8,20 +8,20 @@
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=52676233">
-    <link rel="stylesheet" href="/css/base.css?v=52676233">
-    <link rel="stylesheet" href="/css/header.css?v=52676233">
-    <link rel="stylesheet" href="/css/footer.css?v=52676233">
-    <link rel="stylesheet" href="/css/dashboard.css?v=52676233">
+    <link rel="stylesheet" href="/css/theme.css?v=c9dd299b">
+    <link rel="stylesheet" href="/css/base.css?v=c9dd299b">
+    <link rel="stylesheet" href="/css/header.css?v=c9dd299b">
+    <link rel="stylesheet" href="/css/footer.css?v=c9dd299b">
+    <link rel="stylesheet" href="/css/dashboard.css?v=c9dd299b">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/modal.css?v=52676233">
-    <link rel="stylesheet" href="/css/sidebar.css?v=52676233">
-    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=52676233">
-    <link rel="stylesheet" href="/css/components.css?v=52676233">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=52676233"> <!-- ✅ Formato unificado de Markdown IA -->
-    <link rel="stylesheet" href="/css/quiz.css?v=52676233">
-    <script src="/js/config.js?v=52676233"></script>
-    <script src="/js/utils/themeManager.js?v=52676233"></script>
+    <link rel="stylesheet" href="/css/modal.css?v=c9dd299b">
+    <link rel="stylesheet" href="/css/sidebar.css?v=c9dd299b">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=c9dd299b">
+    <link rel="stylesheet" href="/css/components.css?v=c9dd299b">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=c9dd299b"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="/css/quiz.css?v=c9dd299b">
+    <script src="/js/config.js?v=c9dd299b"></script>
+    <script src="/js/utils/themeManager.js?v=c9dd299b"></script>
 </head>
 
 <body class="hero-hidden">
@@ -47,318 +47,386 @@
         <div id="loading" style="text-align: center; padding: 4rem;">
             <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #3b82f6;"></i>
         </div>
-
         <!-- Content -->
         <div id="dashboard-content" style="display: none;">
 
-            <!-- Header (Simplified) -->
-            <div class="dashboard-header">
-                <h1 id="ctx-title" class="ctx-title-compact">Ciencias de la Salud</h1>
-            </div>
+            <!-- Context Hero Card -->
+            <section class="context-hero-card">
+                <div class="context-hero-glow" id="bannerGlow"></div>
+                <div class="context-hero-content">
+                    <div class="context-hero-info">
+                        <div class="context-hero-tag" id="areaCategoryTag">
+                            <i class="fas fa-layer-group"></i>
+                            <span id="ctx-tag-label">Área Profesional Activa</span>
+                        </div>
+                        <h1 id="ctx-title" class="context-hero-title">Ciencias de la Salud</h1>
+                        <p id="ctx-subtitle" class="context-hero-subtitle">
+                            Entrenamiento técnico adaptado a especificaciones sanitarias oficiales MINSA & ENCAPS.
+                        </p>
+                    </div>
 
+                    <div class="context-hero-actions">
+                        <!-- Active config summary -->
+                        <div id="active-config-summary" class="context-config-summary">
+                            <!-- Filled via JS -->
+                        </div>
+                        <button id="btn-start-config" class="btn-config-hero">
+                            <i class="fas fa-sliders-h"></i>
+                            <span>Configurar Examen</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
 
             <div id="sim-dashboard-sections">
 
                 <!-- 1. Training Modes -->
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                    <p class="section-label"><i class="fas fa-layer-group"></i> Modos de Entrenamiento</p>
-                    <button id="btn-start-config">
-                        <i class="fas fa-sliders-h"></i> Configurar Examen
-                    </button>
-                </div>
-
-                <!-- Active config summary -->
-                <div id="active-config-summary"><!-- Filled via JS --></div>
-                <div class="modes-grid">
-                    <!-- Simulacro Rápido -->
-                    <a href="#" id="btn-mode-arcade" class="mode-card">
-                        <div class="mode-content">
-                            <div class="mode-header-row">
-                                <div class="mode-title">Simulacro Rápido</div>
-                                <div class="mode-icon-badge"><i class="fas fa-bolt"></i></div>
-                            </div>
-                            <div class="mode-desc">10 preguntas dinámicas para repasar en tiempos libres.</div>
-                            <div class="mode-cta">Iniciar simulacro <i class="fas fa-arrow-right"></i></div>
-                        </div>
-                    </a>
-
-                    <!-- Modo Estudio -->
-                    <a href="#" id="btn-mode-study" class="mode-card">
-                        <div class="mode-content">
-                            <div class="mode-header-row">
-                                <div class="mode-title">Modo Estudio</div>
-                                <div class="mode-icon-badge"><i class="fas fa-book-open"></i></div>
-                            </div>
-                            <div class="mode-desc">20 preguntas con sustento pedagógico y médico detallado.</div>
-                            <div class="mode-cta">Iniciar modo estudio <i class="fas fa-arrow-right"></i></div>
-                        </div>
-                    </a>
-
-                    <!-- Simulacro Real -->
-                    <a href="#" id="btn-mode-real" class="mode-card mode-card--disabled">
-                        <span class="badge-soon">Muy Pronto</span>
-                        <div class="mode-content">
-                            <div class="mode-header-row">
-                                <div class="mode-title">Simulacro Real</div>
-                                <div class="mode-icon-badge"><i class="fas fa-award"></i></div>
-                            </div>
-                            <div class="mode-desc">100 preguntas con límite de tiempo idéntico al examen oficial.</div>
-                            <div class="mode-cta">Muy pronto</div>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- 2. KPIs -->
-                <div
-                    style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
-                    <p class="section-heading" style="margin:0;"><i class="fas fa-chart-bar"></i> Resumen de Progreso
-                    </p>
-                    <!-- Tabs de Modo y Tiempo -->
-                    <div style="display:flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
-                        <!-- Tabs de Modo (Rápido, Estudio, Todos) -->
-                        <div class="kpi-tabs-group" role="group" aria-label="Filtrar por modo de examen">
-                            <button class="kpi-mode-tab active" data-mode="all">
-                                Modo: Todos
-                            </button>
-                            <button class="kpi-mode-tab" data-mode="10">
-                                Rápido
-                            </button>
-                            <button class="kpi-mode-tab" data-mode="20">
-                                Estudio
-                            </button>
-                        </div>
-
-                        <!-- Tabs de Tiempo (7d, 30d, Todos) -->
-                        <div class="kpi-tabs-group" role="group" aria-label="Filtrar por rango de tiempo">
-                            <button class="kpi-time-tab active" data-days="all">
-                                Histórico
-                            </button>
-                            <button class="kpi-time-tab" data-days="30">
-                                Últimos 30 días
-                            </button>
-                            <button class="kpi-time-tab" data-days="7">
-                                7 días
-                            </button>
+                <section class="dashboard-section">
+                    <div class="section-header-row">
+                        <div>
+                            <h3 class="section-title">
+                                <i class="fas fa-bolt-lightning" style="color: #f59e0b;"></i> Modos de Entrenamiento
+                            </h3>
+                            <p class="section-subtitle">Selecciona el tipo de simulación para iniciar la prueba interactiva</p>
                         </div>
                     </div>
-                </div>
-                <div class="stats-overview">
-                    <div class="stat-box stat-box--score">
-                        <div class="stat-icon"><i class="fas fa-trophy"></i></div>
-                        <div class="stat-label">Puntuación Promedio</div>
-                        <div class="stat-value" id="stat-score">--</div>
-                        <div class="stat-sub" id="stat-score-sub">Basado en tus últimos simulacros</div>
+
+                    <div class="modes-grid">
+                        <!-- Simulacro Rápido -->
+                        <a href="#" id="btn-mode-arcade" class="mode-card mode-card--arcade">
+                            <div class="mode-card-top">
+                                <div class="mode-icon-badge"><i class="fas fa-bolt-lightning"></i></div>
+                                <span class="mode-q-badge">10 Preguntas</span>
+                            </div>
+                            <div class="mode-card-body">
+                                <h4 class="mode-title">Simulacro Rápido</h4>
+                                <p class="mode-desc">Formato corto para repasos dinámicos. Ideal para medir agilidad y retención diaria de conceptos clave.</p>
+                            </div>
+                            <div class="mode-card-footer">
+                                <span class="mode-cta">Iniciar simulacro <i class="fas fa-arrow-right"></i></span>
+                            </div>
+                        </a>
+
+                        <!-- Modo Estudio -->
+                        <a href="#" id="btn-mode-study" class="mode-card mode-card--study">
+                            <div class="mode-card-top">
+                                <div class="mode-icon-badge"><i class="fas fa-book-open-reader"></i></div>
+                                <span class="mode-q-badge">20 Preguntas</span>
+                            </div>
+                            <div class="mode-card-body">
+                                <h4 class="mode-title">Modo Estudio</h4>
+                                <p class="mode-desc">Enfocado en el aprendizaje. Cada reactivo cuenta con sustento y justificación técnica/pedagógica detallada.</p>
+                            </div>
+                            <div class="mode-card-footer">
+                                <span class="mode-cta">Iniciar modo estudio <i class="fas fa-arrow-right"></i></span>
+                            </div>
+                        </a>
+
+                        <!-- Simulacro Real -->
+                        <a href="#" id="btn-mode-real" class="mode-card mode-card--real mode-card--disabled">
+                            <div class="mode-card-top">
+                                <div class="mode-icon-badge"><i class="fas fa-stopwatch"></i></div>
+                                <span class="mode-q-badge" id="real-questions-count-badge">100 Preguntas</span>
+                            </div>
+                            <div class="mode-card-body">
+                                <h4 class="mode-title">Simulacro Real (Oficial)</h4>
+                                <p class="mode-desc" id="real-mode-desc-text">Formato intensivo con número exacto de preguntas y temporizador estricto idéntico al examen oficial.</p>
+                            </div>
+                            <div class="mode-card-footer">
+                                <span class="mode-cta">Muy pronto <i class="fas fa-clock"></i></span>
+                            </div>
+                        </a>
                     </div>
-                    <div class="stat-box stat-box--accuracy">
-                        <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
-                        <div class="stat-label">Precisión Global</div>
-                        <div class="stat-value" id="stat-accuracy">--%</div>
-                        <div class="stat-sub">De todas tus respuestas</div>
-                    </div>
-                    <div class="stat-box stat-box--counts" style="border-color:rgba(236,72,153,0.15);">
-                        <div class="stat-icon" style="background:rgba(236,72,153,0.1);color:#f472b6;"><i
-                                class="fas fa-tasks"></i></div>
-                        <div class="stat-label" style="color:#f9a8d4;">Correctas / Incorrectas</div>
-                        <div class="stat-value" id="stat-counts-text" style="color:#ec4899;font-size:1.7rem;">-- / --
+                </section>
+
+                <!-- 2. KPIs & Analítica -->
+                <section class="dashboard-section">
+                    <div class="section-header-row" style="flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h3 class="section-title">
+                                <i class="fas fa-chart-line" id="analytics-section-icon" style="color: var(--primary);"></i> Panel de Control de Analítica
+                            </h3>
+                            <p class="section-subtitle">Métricas consolidadas de desempeño y volumen de práctica</p>
                         </div>
-                        <div class="stat-sub">Preguntas respondidas</div>
-                    </div>
 
-                </div>
+                        <!-- Filter Controls -->
+                        <div class="kpi-filters-container">
+                            <!-- Filter by Mode -->
+                            <div class="kpi-tabs-group" role="group" aria-label="Filtrar por modo de examen">
+                                <span class="kpi-filter-label"><i class="fas fa-filter"></i> Modo:</span>
+                                <button class="kpi-mode-tab active" data-mode="all">Todos</button>
+                                <button class="kpi-mode-tab" data-mode="10">Rápido (10q)</button>
+                                <button class="kpi-mode-tab" data-mode="20">Estudio (20q)</button>
+                            </div>
 
-                <!-- 3. Analytics -->
-                <p class="section-heading"><i class="fas fa-stethoscope"></i> Diagnóstico de Rendimiento</p>
-
-                <!-- Evolution Chart -->
-                <div class="detailed-row" id="evolution-doughnut-row">
-                    <div class="detail-card">
-                        <div class="kpi-info-container">
-                            <button type="button" class="kpi-info-btn" aria-label="Información del KPI">
-                                <i class="fas fa-info-circle"></i>
-                            </button>
-                            <div class="kpi-tooltip-content">
-                                <h5 id="evolution-tooltip-title">Tendencia Histórica</h5>
-                                <p id="evolution-tooltip-desc">Muestra la evolución de tus puntuaciones a lo largo del tiempo para medir tu curva de aprendizaje.</p>
+                            <!-- Filter by Time -->
+                            <div class="kpi-tabs-group" role="group" aria-label="Filtrar por rango de tiempo">
+                                <span class="kpi-filter-label"><i class="far fa-calendar"></i> Tiempo:</span>
+                                <button class="kpi-time-tab active" data-days="all">Histórico</button>
+                                <button class="kpi-time-tab" data-days="30">30 Días</button>
+                                <button class="kpi-time-tab" data-days="7">7 Días</button>
                             </div>
                         </div>
-                        <h4>Tendencia Histórica</h4>
-                        <div style="height:280px;width:100%;position:relative;">
-                            <div id="evolution-empty-state"
-                                style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:0.75rem;color:#334155;font-size:0.85rem;text-align:center;">
-                                <div
-                                    style="width:44px;height:44px;border-radius:12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;color:#3b82f6;font-size:1.2rem;">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
+                    </div>
+
+                    <!-- Stats Overview Grid -->
+                    <div class="stats-overview">
+                        <!-- KPI 1: Score -->
+                        <div class="stat-box stat-box--score">
+                            <div class="stat-box-header">
+                                <span class="stat-label">Puntuación Promedio</span>
+                                <div class="stat-icon"><i class="fas fa-award"></i></div>
+                            </div>
+                            <div class="stat-value-row">
+                                <span class="stat-value" id="stat-score">--</span>
+                                <span class="stat-unit">/ 20</span>
+                            </div>
+                            <div class="stat-sub" id="stat-score-sub">Basado en tus últimos simulacros</div>
+                            <div class="stat-progress-track">
+                                <div class="stat-progress-bar stat-progress-bar--score" id="kpi-score-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- KPI 2: Accuracy -->
+                        <div class="stat-box stat-box--accuracy">
+                            <div class="stat-box-header">
+                                <span class="stat-label">Precisión Global</span>
+                                <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
+                            </div>
+                            <div class="stat-value-row">
+                                <span class="stat-value" id="stat-accuracy">--%</span>
+                                <span class="stat-unit">efectividad</span>
+                            </div>
+                            <div class="stat-sub">De todas tus respuestas</div>
+                            <div class="stat-progress-track">
+                                <div class="stat-progress-bar stat-progress-bar--accuracy" id="kpi-accuracy-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- KPI 3: Counts -->
+                        <div class="stat-box stat-box--counts">
+                            <div class="stat-box-header">
+                                <span class="stat-label">Volumen de Respuestas</span>
+                                <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                            </div>
+                            <div class="stat-value-row">
+                                <span class="stat-value" id="stat-counts-total">--</span>
+                                <span class="stat-unit">reactivos resueltos</span>
+                            </div>
+                            <div class="stat-sub stat-counts-breakdown" id="stat-counts-text">
+                                <span class="count-pill count-pill--correct" id="kpi-correct-pill"><i class="fas fa-check"></i> -- C</span>
+                                <span class="count-pill count-pill--incorrect" id="kpi-incorrect-pill"><i class="fas fa-xmark"></i> -- I</span>
+                            </div>
+                            <div class="stat-progress-track stat-progress-track--segmented">
+                                <div class="stat-progress-bar stat-progress-bar--correct" id="kpi-correct-bar" style="width: 0%;"></div>
+                                <div class="stat-progress-bar stat-progress-bar--incorrect" id="kpi-incorrect-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Análisis Visual y Diagnóstico -->
+                <section class="dashboard-section">
+                    <div class="section-header-row">
+                        <div>
+                            <h3 class="section-title">
+                                <i class="fas fa-chart-pie" style="color: #10b981;"></i> Análisis Visual y Diagnóstico
+                            </h3>
+                            <p class="section-subtitle">Desglose gráfico de tendencia, volumen por temas y porcentaje de dominio por disciplina</p>
+                        </div>
+                    </div>
+
+                    <div class="detailed-row" id="evolution-doughnut-row">
+                        <!-- Evolution Line Chart -->
+                        <div class="detail-card detail-card--evolution">
+                            <div class="detail-card-header">
                                 <div>
-                                    <div style="font-weight:600;color:#475569;margin-bottom:0.25rem;">Sin datos aún
+                                    <h4 class="detail-card-title">
+                                        <i class="fas fa-arrow-trend-up" style="color: var(--primary);"></i> Evolución Cronológica de Puntajes
+                                    </h4>
+                                    <p class="detail-card-subtitle">Curva de aprendizaje comparando calificaciones (0-20) por sesión</p>
+                                </div>
+                                <div class="kpi-info-container">
+                                    <button type="button" class="kpi-info-btn" aria-label="Información del KPI">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                    <div class="kpi-tooltip-content">
+                                        <h5 id="evolution-tooltip-title">Tendencia Histórica</h5>
+                                        <p id="evolution-tooltip-desc">Muestra la evolución de tus puntuaciones a lo largo del tiempo para medir tu curva de aprendizaje.</p>
                                     </div>
-                                    <div style="font-size:0.78rem;color:#334155;">Completa tu primer simulacro para ver
-                                        tu
-                                        curva de aprendizaje.</div>
                                 </div>
                             </div>
-                            <canvas id="evolutionChart"></canvas>
+                            <div class="chart-canvas-container">
+                                <div id="evolution-empty-state" class="chart-empty-state">
+                                    <div class="chart-empty-icon"><i class="fas fa-chart-line"></i></div>
+                                    <div class="chart-empty-text">
+                                        <div class="chart-empty-title">Sin datos aún</div>
+                                        <div class="chart-empty-desc">Completa tu primer simulacro para ver tu curva de aprendizaje.</div>
+                                    </div>
+                                </div>
+                                <canvas id="evolutionChart"></canvas>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Doughnut Chart: Distribución por Temas -->
-                    <div class="detail-card" id="doughnut-chart-card">
-                        <div class="kpi-info-container">
-                            <button type="button" class="kpi-info-btn" aria-label="Información del KPI">
-                                <i class="fas fa-info-circle"></i>
-                            </button>
-                            <div class="kpi-tooltip-content">
-                                <h5 id="doughnut-tooltip-title">Distribución por Temas</h5>
-                                <p id="doughnut-tooltip-desc">Muestra la proporción de preguntas respondidas por cada tema.</p>
-                            </div>
-                        </div>
-                        <h4 id="doughnut-chart-title">Distribución por Temas</h4>
-                        <div
-                            style="height:280px;width:100%;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.5rem;">
-                            <div id="doughnut-empty-state"
-                                style="display:flex;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:0.75rem;color:#334155;font-size:0.85rem;text-align:center;">
-                                <div
-                                    style="width:44px;height:44px;border-radius:12px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.15);display:flex;align-items:center;justify-content:center;color:#8b5cf6;font-size:1.2rem;">
-                                    <i class="fas fa-chart-pie"></i>
-                                </div>
+                        <!-- Doughnut Distribution Chart -->
+                        <div class="detail-card detail-card--distribution" id="doughnut-chart-card">
+                            <div class="detail-card-header">
                                 <div>
-                                    <div style="font-weight:700;color:var(--text-main);margin-bottom:0.25rem;">Sin respuestas aún
+                                    <h4 class="detail-card-title" id="doughnut-chart-title">
+                                        <i class="fas fa-chart-pie" style="color: #8b5cf6;"></i> Distribución por Bloques
+                                    </h4>
+                                    <p class="detail-card-subtitle">Proporción de volumen de preguntas practicadas</p>
+                                </div>
+                                <div class="kpi-info-container">
+                                    <button type="button" class="kpi-info-btn" aria-label="Información del KPI">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                    <div class="kpi-tooltip-content">
+                                        <h5 id="doughnut-tooltip-title">Distribución por Temas</h5>
+                                        <p id="doughnut-tooltip-desc">Muestra la proporción de preguntas respondidas por cada tema.</p>
                                     </div>
-                                    <div id="doughnut-empty-desc" style="font-size:0.78rem;color:var(--text-secondary);">Completa
-                                        simulacros para ver tu distribución por temas.</div>
                                 </div>
                             </div>
-                            <div id="doughnut-wrapper" style="display:none;width:140px;height:140px;position:relative;">
-                                <canvas id="topicDoughnutChart"></canvas>
-                            </div>
-                            <div id="doughnut-legend"
-                                style="display:none;width:100%;max-height:100px;overflow-y:auto;display:flex;flex-wrap:wrap;justify-content:center;gap:0.6rem;font-size:0.75rem;margin-top:0.5rem;color:var(--text-secondary);">
+                            <div class="doughnut-canvas-container">
+                                <div id="doughnut-empty-state" class="chart-empty-state">
+                                    <div class="chart-empty-icon" style="color: #8b5cf6; background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.2);"><i class="fas fa-chart-pie"></i></div>
+                                    <div class="chart-empty-text">
+                                        <div class="chart-empty-title">Sin respuestas aún</div>
+                                        <div id="doughnut-empty-desc" class="chart-empty-desc">Completa simulacros para ver tu distribución por temas.</div>
+                                    </div>
+                                </div>
+                                <div id="doughnut-wrapper" style="display:none;width:150px;height:150px;position:relative;">
+                                    <canvas id="topicDoughnutChart"></canvas>
+                                </div>
+                                <div id="doughnut-legend" class="doughnut-custom-legend"></div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Bar Chart Areas -->
-                <div class="detailed-row" style="grid-template-columns:1fr;margin-top:1rem;">
-                    <div class="detail-card">
-                        <div class="kpi-info-container">
-                            <button type="button" class="kpi-info-btn" aria-label="Información del KPI">
-                                <i class="fas fa-info-circle"></i>
-                            </button>
-                            <div class="kpi-tooltip-content">
-                                <h5 id="bar-tooltip-title">Dominio Académico</h5>
-                                <p id="bar-tooltip-desc">Muestra tu porcentaje de acierto en cada especialidad o área de estudio.</p>
-                            </div>
-                        </div>
-                        <h4 id="bar-chart-title">Dominio por Áreas Clínicas</h4>
-                        <div id="bar-chart-container" style="min-height:200px;position:relative;">
-                            <div id="radar-empty-state"
-                                style="display:flex;flex-direction:column;height:100%;align-items:center;justify-content:center;gap:0.75rem;color:#334155;font-size:0.85rem;text-align:center;min-height:180px;">
-                                <div
-                                    style="width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;color:#10b981;font-size:1.2rem;">
-                                    <i class="fas fa-tasks"></i>
-                                </div>
+                    <!-- Domain Mastery Bars Card -->
+                    <div class="detailed-row" style="grid-template-columns: 1fr; margin-top: 1.25rem;">
+                        <div class="detail-card detail-card--mastery">
+                            <div class="detail-card-header" style="flex-wrap: wrap; gap: 0.75rem;">
                                 <div>
-                                    <div style="font-weight:600;color:#475569;margin-bottom:0.25rem;">Sin datos por área
+                                    <h4 class="detail-card-title" id="bar-chart-title">
+                                        <i class="fas fa-chart-simple" style="color: #f59e0b;"></i> Dominio por Áreas (% Efectividad)
+                                    </h4>
+                                    <p class="detail-card-subtitle" id="bar-chart-sub">Desglose de porcentaje de aciertos por disciplina o bloque temático</p>
+                                </div>
+                                <div class="mastery-legend-tags">
+                                    <span class="mastery-tag mastery-tag--high"><span class="dot"></span> Alto (&gt;75%)</span>
+                                    <span class="mastery-tag mastery-tag--mid"><span class="dot"></span> Medio (50-74%)</span>
+                                    <span class="mastery-tag mastery-tag--low"><span class="dot"></span> Crítico (&lt;50%)</span>
+                                    <div class="kpi-info-container">
+                                        <button type="button" class="kpi-info-btn" aria-label="Información del KPI">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        <div class="kpi-tooltip-content">
+                                            <h5 id="bar-tooltip-title">Dominio Académico</h5>
+                                            <p id="bar-tooltip-desc">Muestra tu porcentaje de acierto en cada especialidad o área de estudio.</p>
+                                        </div>
                                     </div>
-                                    <div id="bar-chart-empty-desc" style="font-size:0.78rem;color:#334155;">Completa
-                                        simulacros variados para ver tu
-                                        dominio clínico por especialidad.</div>
                                 </div>
                             </div>
-                            <div id="native-bars-container" style="display:none;flex-direction:column;gap:1.25rem;">
+                            <div id="bar-chart-container" style="min-height:200px;position:relative;margin-top:0.75rem;">
+                                <div id="radar-empty-state" class="chart-empty-state" style="min-height: 180px;">
+                                    <div class="chart-empty-icon" style="color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.2);"><i class="fas fa-tasks"></i></div>
+                                    <div class="chart-empty-text">
+                                        <div class="chart-empty-title">Sin datos por área</div>
+                                        <div id="bar-chart-empty-desc" class="chart-empty-desc">Completa simulacros variados para ver tu dominio por especialidad.</div>
+                                    </div>
+                                </div>
+                                <div id="native-bars-container" style="display:none;flex-direction:column;gap:1.25rem;"></div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- AI Insights -->
-                <div class="detailed-row" style="grid-template-columns:1fr;margin-top:1rem;">
-                    <div class="detail-card" style="position:relative; overflow:hidden;">
-                        <!-- Ambient Glow for AI Card -->
-                        <div
-                            style="position:absolute; top:-50px; right:-50px; width:200px; height:200px; background:radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%); filter:blur(20px); border-radius:50%; pointer-events:none;">
-                        </div>
-
-                        <div style="display:flex;gap:1.25rem;align-items:center;margin-bottom:1.5rem;">
-                            <div
-                                style="background:linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.15)); padding:14px; border-radius:14px; color:var(--accent-purple); border:1px solid rgba(139,92,246,0.25); box-shadow: 0 0 15px rgba(139,92,246,0.1) inset;">
-                                <i class="fas fa-brain fa-lg"
-                                    style="filter: drop-shadow(0 0 8px rgba(167,139,250,0.6));"></i>
-                            </div>
-                            <div>
-                                <h4
-                                    style="margin:0;font-size:0.95rem;font-weight:700;letter-spacing:0.04em;color:var(--text-main);display:flex;align-items:center;gap:0.5rem;">
-                                    Análisis de Patrones de Error
-                                    <span
-                                        style="font-size:0.65rem; background:rgba(139,92,246,0.15); color:var(--accent-purple); padding:3px 8px; border-radius:10px; border:1px solid rgba(139,92,246,0.25); font-weight:700; letter-spacing:0.05em; text-transform:uppercase;">Advanced
-                                        IA</span>
-                                </h4>
-                                <p style="margin:0;color:var(--text-secondary);font-size:0.8rem;margin-top:0.25rem;">Motor de
-                                    Inteligencia
-                                    Artificial Deep Learning</p>
-                            </div>
-                        </div>
-
-                        <div id="ai-initial-state"
-                            style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.5rem;padding:1.5rem; background:var(--bg-tertiary); border-radius:16px; border:1px dashed var(--border-color); box-shadow:var(--shadow-sm);">
-                            <p style="color:var(--text-secondary);font-size:0.9rem;max-width:500px;line-height:1.6;margin:0;">
-                                Utiliza nuestro motor de Inteligencia Artificial para identificar fortalezas ocultas y
-                                brechas de conocimiento crítico basándose en tu historial multivariado de simulacros.
-                            </p>
-                            <button id="btn-analyze-ai"
-                                style="background:var(--primary);color:#ffffff !important;border:none;padding:0.85rem 2.25rem;display:inline-flex;align-items:center;gap:0.75rem;border-radius:50px;font-weight:800;font-size:0.95rem;cursor:pointer;transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1);box-shadow:0 4px 15px var(--primary-glow);">
-                                <i class="fas fa-magic"></i> Extraer Insights IA
-                            </button>
-                        </div>
-
-                        <div id="ai-loading-state"
-                            style="display:none;flex-direction:column;align-items:center;text-align:center;padding:3rem 1rem;">
-                            <div style="position:relative; width:60px; height:60px; margin-bottom:1.5rem;">
-                                <i class="fas fa-circle-notch fa-spin fa-2x"
-                                    style="color:var(--primary); position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);"></i>
-                                <div
-                                    style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:30px; height:30px; background:var(--primary); filter:blur(15px); opacity:0.4; border-radius:50%;">
+                    <!-- AI Diagnostic Card -->
+                    <div class="detailed-row" style="grid-template-columns: 1fr; margin-top: 1.25rem;">
+                        <div class="detail-card ai-diagnosis-card">
+                            <div class="ai-ambient-glow"></div>
+                            <div class="ai-card-header">
+                                <div class="ai-header-icon-box">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <div class="ai-header-title-box">
+                                    <h4 class="ai-card-title">
+                                        Diagnóstico Inteligente por IA (Patrones de Error)
+                                        <span class="ai-badge-pill">Advanced IA</span>
+                                    </h4>
+                                    <p class="ai-card-subtitle">Algoritmo de detección de brechas cognitivas, sesgos de razonamiento y recomendación personalizada.</p>
                                 </div>
                             </div>
-                            <p style="color:var(--text-main); font-weight:700; font-size:1rem; margin-bottom:0.25rem;">Procesando
-                                matrices de respuesta...</p>
-                            <p style="color:var(--text-secondary); font-size:0.85rem;">Correlacionando errores con literatura
-                                oficial.</p>
-                        </div>
 
-                        <div id="ai-results-state"
-                            style="display:none;color:var(--text-secondary);font-size:0.9rem; animation: fadeIn 0.5s ease;">
-                            <div
-                                style="margin-bottom:1.25rem;padding:1.25rem;border-radius:14px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25); box-shadow: var(--shadow-sm);">
-                                <strong
-                                    style="color:#10b981;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:800;">
-                                    <i class="fas fa-check-circle"
-                                        style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(16,185,129,0.3));"></i>
-                                    Dominio Consolidado
-                                </strong>
-                                <div id="ai-strengths" style="margin:0;line-height:1.6;color:var(--text-main);">--</div>
+                            <!-- Initial State -->
+                            <div id="ai-initial-state" class="ai-state-box ai-state-box--initial">
+                                <div class="ai-initial-icon"><i class="fas fa-robot"></i></div>
+                                <h5 class="ai-initial-heading">Análisis Inteligente Disponible</h5>
+                                <p class="ai-initial-desc">
+                                    Haz clic en "Extraer Insights IA" para procesar tu matriz histórica de respuestas, detectar temas con sesgo de error y obtener un plan de acción sugerido.
+                                </p>
+                                <button id="btn-analyze-ai" class="btn-ai-action">
+                                    <i class="fas fa-wand-magic-sparkles"></i>
+                                    <span>Extraer Insights IA</span>
+                                </button>
                             </div>
-                            <div
-                                style="padding:1.25rem;border-radius:14px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25); box-shadow: var(--shadow-sm);">
-                                <strong
-                                    style="color:#f59e0b;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:800;">
-                                    <i class="fas fa-exclamation-triangle"
-                                        style="font-size:1.1rem; filter:drop-shadow(0 0 5px rgba(245,158,11,0.3));"></i>
-                                    Focos de Intervención
-                                </strong>
-                                <div id="ai-weaknesses" style="margin:0;line-height:1.6;color:var(--text-main);">--</div>
+
+                            <!-- Loading State -->
+                            <div id="ai-loading-state" class="ai-state-box ai-state-box--loading" style="display:none;">
+                                <div class="ai-loading-spinner-box">
+                                    <i class="fas fa-circle-notch fa-spin"></i>
+                                    <i class="fas fa-microchip ai-chip-inner"></i>
+                                </div>
+                                <h5 class="ai-loading-title">Procesando matrices de respuesta...</h5>
+                                <p class="ai-loading-desc">Correlacionando errores con literatura oficial y normas técnicas.</p>
                             </div>
-                            <button id="btn-analyze-again"
-                                style="margin-top:1.5rem;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-main);padding:0.75rem 1rem;border-radius:12px;font-size:0.88rem;font-weight:700;cursor:pointer;width:100%;transition:all 0.2s;display:flex;justify-content:center;align-items:center;gap:0.5rem;box-shadow:var(--shadow-sm);">
-                                <i class="fas fa-sync-alt"></i> Actualizar Diagnóstico
-                            </button>
+
+                            <!-- Results State -->
+                            <div id="ai-results-state" class="ai-state-box ai-state-box--results" style="display:none;">
+                                <div class="ai-insights-grid">
+                                    <!-- Dominio Consolidado -->
+                                    <div class="ai-insight-panel ai-insight-panel--strengths">
+                                        <div class="ai-insight-header text-emerald">
+                                            <i class="fas fa-circle-check"></i>
+                                            <span>Dominio Consolidado (Fortalezas)</span>
+                                        </div>
+                                        <div id="ai-strengths" class="ai-insight-content">--</div>
+                                    </div>
+
+                                    <!-- Focos de Intervención -->
+                                    <div class="ai-insight-panel ai-insight-panel--weaknesses">
+                                        <div class="ai-insight-header text-amber">
+                                            <i class="fas fa-triangle-exclamation"></i>
+                                            <span>Focos de Intervención (Debilidades Prioritarias)</span>
+                                        </div>
+                                        <div id="ai-weaknesses" class="ai-insight-content">--</div>
+                                    </div>
+                                </div>
+
+                                <div class="ai-strategy-box">
+                                    <div class="ai-strategy-header">
+                                        <div class="ai-strategy-title">
+                                            <i class="fas fa-lightbulb"></i>
+                                            <span>Estrategia de Estudio Recomendada por IA</span>
+                                        </div>
+                                        <span class="ai-strategy-badge">Deep Learning</span>
+                                    </div>
+                                    <p class="ai-strategy-text" id="ai-strategy-text">
+                                        Concéntrate en resolver simulacros en los temas prioritarios para balancear tu dominio y maximizar tu nota en el examen oficial.
+                                    </p>
+                                </div>
+
+                                <div class="ai-results-footer">
+                                    <button id="btn-analyze-again" class="btn-ai-reanalyze">
+                                        <i class="fas fa-rotate-right"></i>
+                                        <span>Reanalizar Diagnóstico</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </section>
             </div> <!-- Close #sim-dashboard-sections -->
-
-
 
         </div>
     </div>
@@ -562,22 +630,22 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=52676233"></script>
-    <script src="/js/services/networkService.js?v=52676233"></script>
+    <script src="/js/config.js?v=c9dd299b"></script>
+    <script src="/js/services/networkService.js?v=c9dd299b"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=52676233"></script>
-    <script src="/js/services/authApiService.js?v=52676233"></script>
-    <script src="/js/services/analyticsApiService.js?v=52676233"></script>
-    <script src="/js/sessionManager.js?v=52676233"></script>
-    <script src="/js/ui/uiManager.js?v=52676233"></script>
-    <script src="/js/ui/components.js?v=52676233"></script>
-    <script src="/js/ui/sidebar.js?v=52676233"></script>
-    <script src="/js/app.js?v=52676233"></script>
+    <script src="/js/utils/markdown-renderer.js?v=c9dd299b"></script>
+    <script src="/js/services/authApiService.js?v=c9dd299b"></script>
+    <script src="/js/services/analyticsApiService.js?v=c9dd299b"></script>
+    <script src="/js/sessionManager.js?v=c9dd299b"></script>
+    <script src="/js/ui/uiManager.js?v=c9dd299b"></script>
+    <script src="/js/ui/components.js?v=c9dd299b"></script>
+    <script src="/js/ui/sidebar.js?v=c9dd299b"></script>
+    <script src="/js/app.js?v=c9dd299b"></script>
 
     <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 
-    <script src="/js/simulator-dash.js?v=52676233"></script>
+    <script src="/js/simulator-dash.js?v=c9dd299b"></script>
 </body>
 
 </html>

@@ -10,9 +10,11 @@ const SimulatorDash = (() => {
         'MEDICINA': {
             title: 'Preparación Médico',
             heroTitle: 'Preparación Médico',
+            subtitle: 'Entrenamiento técnico adaptado a especificaciones sanitarias oficiales MINSA & ENCAPS.',
             quizParams: '', // Eliminado el fallback automático. Ahora se fuerza la configuración.
-            studyDesc: '20 preguntas con explicación.',
-            realDesc: '100 preguntas integradas.',
+            studyDesc: '20 preguntas con explicación y sustento clínico detallado.',
+            realDesc: '100 preguntas integradas con temporizador oficial estricto.',
+            realQuestions: 100,
             sectionIcon: 'fa-stethoscope',
             barChartTitle: 'Dominio por Áreas Clínicas',
             barChartEmptyDesc: 'Completa simulacros variados para ver tu dominio clínico por especialidad.',
@@ -36,9 +38,11 @@ const SimulatorDash = (() => {
         'EDUCACION': {
             title: 'Preparación Magisterial',
             heroTitle: 'Preparación Magisterial',
+            subtitle: 'Evaluación de casuística pedagógica basada en el CNEB y Marco de Buen Desempeño Docente.',
             quizParams: '', // Eliminado el fallback automático.
-            studyDesc: '20 preguntas con explicación.',
-            realDesc: '60 preguntas integradas.',
+            studyDesc: '20 preguntas con retroalimentación y sustento pedagógico CNEB.',
+            realDesc: '60 preguntas integradas con temporizador oficial estricto.',
+            realQuestions: 60,
             sectionIcon: 'fa-chalkboard-teacher',
             barChartTitle: 'Dominio por Áreas Pedagógicas',
             barChartEmptyDesc: 'Completa simulacros variados para ver tu dominio pedagógico por especialidad.',
@@ -362,6 +366,7 @@ const SimulatorDash = (() => {
         currentContext = (urlParams.get('context') || 'MEDICINA').toUpperCase();
 
         // 🎨 Asignación Cromática Contextual (Salud = Verde/Esmeralda, Educación = Azul/Índigo)
+        document.documentElement.setAttribute('data-simulator-context', currentContext.toLowerCase());
         if (currentContext === 'MEDICINA') {
             document.documentElement.style.setProperty('--primary', '#0d9488');
             document.documentElement.style.setProperty('--primary-dark', '#0f766e');
@@ -393,10 +398,17 @@ const SimulatorDash = (() => {
 
         // 1. Setup UI Context
         const titleEl = document.getElementById('ctx-title');
+        const subtitleEl = document.getElementById('ctx-subtitle');
         const iconEl = document.getElementById('ctx-icon');
 
         if (titleEl) titleEl.textContent = ctxConfig.title;
+        if (subtitleEl && ctxConfig.subtitle) subtitleEl.textContent = ctxConfig.subtitle;
         document.title = `${ctxConfig.title} | Hub Academia`;
+
+        const realCountBadge = document.getElementById('real-questions-count-badge');
+        if (realCountBadge && ctxConfig.realQuestions) {
+            realCountBadge.textContent = `${ctxConfig.realQuestions} Preguntas`;
+        }
 
         // Dynamic Bar Chart Labels based on Context
         const barChartTitleEl = document.getElementById('bar-chart-title');
@@ -1612,8 +1624,22 @@ const SimulatorDash = (() => {
             const scoreEl = document.getElementById('stat-score');
             const accuracyEl = document.getElementById('stat-accuracy');
             const countsEl = document.getElementById('stat-counts-text');
+            const totalCountEl = document.getElementById('stat-counts-total');
+            const scoreBar = document.getElementById('kpi-score-bar');
+            const accuracyBar = document.getElementById('kpi-accuracy-bar');
+            const correctPill = document.getElementById('kpi-correct-pill');
+            const incorrectPill = document.getElementById('kpi-incorrect-pill');
+            const correctBar = document.getElementById('kpi-correct-bar');
+            const incorrectBar = document.getElementById('kpi-incorrect-bar');
+
+            const avgScoreNum = parseFloat(kpis.avg_score || 0);
+            const accuracyNum = Math.round(parseFloat(kpis.accuracy || 0));
+            const totalCorrect = parseInt(kpis.total_correct || 0, 10);
+            const totalIncorrect = parseInt(kpis.total_incorrect || 0, 10);
+            const totalAnswered = totalCorrect + totalIncorrect;
 
             if (scoreEl) scoreEl.textContent = kpis.avg_score || '0.0';
+            if (scoreBar) scoreBar.style.width = `${Math.min(100, Math.max(0, (avgScoreNum / 20) * 100))}%`;
 
             // ✅ NUEVO: Equivalencia de Exámenes Internacionales en Módulo de Idiomas (4.3)
             const scoreSubEl = document.getElementById('stat-score-sub');
@@ -1647,8 +1673,23 @@ const SimulatorDash = (() => {
                 }
             }
 
-            if (accuracyEl) accuracyEl.textContent = `${Math.round(kpis.accuracy || 0)}%`;
-            if (countsEl) countsEl.textContent = `${kpis.total_correct || 0} / ${kpis.total_incorrect || 0}`;
+            if (accuracyEl) accuracyEl.textContent = `${accuracyNum}%`;
+            if (accuracyBar) accuracyBar.style.width = `${Math.min(100, Math.max(0, accuracyNum))}%`;
+
+            if (totalCountEl) totalCountEl.textContent = totalAnswered;
+            if (countsEl) countsEl.textContent = `${totalCorrect} / ${totalIncorrect}`;
+            if (correctPill) correctPill.innerHTML = `<i class="fas fa-check"></i> ${totalCorrect} C`;
+            if (incorrectPill) incorrectPill.innerHTML = `<i class="fas fa-xmark"></i> ${totalIncorrect} I`;
+
+            if (correctBar && incorrectBar) {
+                if (totalAnswered > 0) {
+                    correctBar.style.width = `${(totalCorrect / totalAnswered) * 100}%`;
+                    incorrectBar.style.width = `${(totalIncorrect / totalAnswered) * 100}%`;
+                } else {
+                    correctBar.style.width = '50%';
+                    incorrectBar.style.width = '50%';
+                }
+            }
 
             // --- Render Bar Chart (Áreas) ---
             if (kpis.radar_data && kpis.radar_data.length > 0) {
@@ -1965,9 +2006,9 @@ const SimulatorDash = (() => {
                     style.id = 'arcade-glow-style';
                     style.textContent = `
                         @keyframes arcade-glow {
-                            0% { box-shadow: 0 0 0px rgba(236, 72, 153, 0); border-color: rgba(255, 255, 255, 0.1); }
-                            50% { box-shadow: 0 0 25px rgba(236, 72, 153, 0.6), 0 0 10px rgba(236, 72, 153, 0.3); border-color: rgba(236, 72, 153, 0.8); }
-                            100% { box-shadow: 0 0 0px rgba(236, 72, 153, 0); border-color: rgba(255, 255, 255, 0.1); }
+                            0% { box-shadow: 0 0 0px rgba(245, 158, 11, 0); border-color: rgba(255, 255, 255, 0.1); }
+                            50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.65), 0 0 10px rgba(245, 158, 11, 0.35); border-color: rgba(245, 158, 11, 0.85); }
+                            100% { box-shadow: 0 0 0px rgba(245, 158, 11, 0); border-color: rgba(255, 255, 255, 0.1); }
                         }
                         .arcade-highlight {
                             animation: arcade-glow 2.5s infinite ease-in-out;
@@ -2019,16 +2060,35 @@ const SimulatorDash = (() => {
         const scoreEl = document.getElementById('stat-score');
         const accuracyEl = document.getElementById('stat-accuracy');
         const countsEl = document.getElementById('stat-counts-text');
-        const masteryEl = document.getElementById('stat-mastery');
+        const totalCountEl = document.getElementById('stat-counts-total');
+        const scoreBar = document.getElementById('kpi-score-bar');
+        const accuracyBar = document.getElementById('kpi-accuracy-bar');
+        const correctPill = document.getElementById('kpi-correct-pill');
+        const incorrectPill = document.getElementById('kpi-incorrect-pill');
+        const correctBar = document.getElementById('kpi-correct-bar');
+        const incorrectBar = document.getElementById('kpi-incorrect-bar');
 
         let currentAvgScore = '14.5';
         if (scoreEl) scoreEl.textContent = currentAvgScore;
+        if (scoreBar) scoreBar.style.width = `${(14.5 / 20) * 100}%`;
+
         if (accuracyEl) accuracyEl.textContent = '72%';
+        if (accuracyBar) accuracyBar.style.width = '72%';
+
+        if (totalCountEl) totalCountEl.textContent = '70';
         if (countsEl) countsEl.textContent = '50 / 20';
+        if (correctPill) correctPill.innerHTML = '<i class="fas fa-check"></i> 50 C';
+        if (incorrectPill) incorrectPill.innerHTML = '<i class="fas fa-xmark"></i> 20 I';
+
+        if (correctBar) correctBar.style.width = `${(50 / 70) * 100}%`;
+        if (incorrectBar) incorrectBar.style.width = `${(20 / 70) * 100}%`;
 
         // 3. Evolution Chart Demo (Context-Aware)
         const evoCanvas = document.getElementById('evolutionChart');
+        const evoEmpty = document.getElementById('evolution-empty-state');
+        if (evoEmpty) evoEmpty.style.display = 'none';
         if (evoCanvas) {
+            evoCanvas.style.display = 'block';
             // --- 🧹 LIMPIEZA DE CANVAS ---
             if (lineChartInst) {
                 lineChartInst.destroy();
@@ -2254,12 +2314,23 @@ const SimulatorDash = (() => {
                 const stats = JSON.parse(localStatsStr);
                 currentAvgScore = stats.avgScore || '0';
                 if (scoreEl) scoreEl.textContent = currentAvgScore;
+                if (scoreBar) scoreBar.style.width = `${(parseFloat(currentAvgScore || 0) / 20) * 100}%`;
                 if (accuracyEl) accuracyEl.textContent = `${stats.accuracy || 0}%`;
+                if (accuracyBar) accuracyBar.style.width = `${stats.accuracy || 0}%`;
                 if (countsEl) countsEl.textContent = `${stats.correct || 0} / ${stats.incorrect || 0}`;
+                if (totalCountEl) totalCountEl.textContent = `${(stats.correct || 0) + (stats.incorrect || 0)}`;
+                if (correctPill) correctPill.innerHTML = `<i class="fas fa-check"></i> ${stats.correct || 0} C`;
+                if (incorrectPill) incorrectPill.innerHTML = `<i class="fas fa-xmark"></i> ${stats.incorrect || 0} I`;
+                const totalReactivos = (stats.correct || 0) + (stats.incorrect || 0);
+                if (totalReactivos > 0) {
+                    if (correctBar) correctBar.style.width = `${((stats.correct || 0) / totalReactivos) * 100}%`;
+                    if (incorrectBar) incorrectBar.style.width = `${((stats.incorrect || 0) / totalReactivos) * 100}%`;
+                }
 
                 // Update Bar Chart if areaStats exists (Real performance)
                 if (stats.areaStats && Object.keys(stats.areaStats).length > 0) {
                     renderBarChart(stats.areaStats);
+                    const masteryEl = document.getElementById('stat-mastery');
                     let masteryCount = 0;
                     Object.keys(stats.areaStats).forEach(topic => {
                         const area = stats.areaStats[topic];
