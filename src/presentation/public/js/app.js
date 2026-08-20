@@ -121,24 +121,41 @@ function initTrafficTracking() {
 
     const sendPulse = async () => {
         if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+        if (!apiUrl) return;
 
         try {
-            if (window.NetworkService && apiUrl) {
-                await window.NetworkService.fetch(`${apiUrl}/api/analytics/pulse`, {
-                    method: 'POST',
-                    body: JSON.stringify({ sessionId, isMobile })
-                });
+            const headers = { 'Content-Type': 'application/json' };
+            const authToken = typeof localStorage !== 'undefined'
+                ? localStorage.getItem('authToken')
+                : null;
+
+            // NetworkService añade este header, pero el heartbeat usa fetch nativo
+            // para no mostrar toasts ni reintentos globales. Mantenerlo conserva
+            // la asociación del pulso con el usuario autenticado en optionalAuth.
+            if (authToken && authToken !== 'null' && authToken !== 'undefined') {
+                headers.Authorization = `Bearer ${authToken}`;
             }
-        } catch (err) {
-            // Silencioso para no ensuciar la consola del usuario
+
+            // ✅ FIX: Usar fetch nativo en lugar de NetworkService para evitar:
+            // 1. Reintentos ruidosos que generan errores CORS en consola durante cold start de Render
+            // 2. Toasts de error visibles al usuario por un endpoint secundario de telemetría
+            await fetch(`${apiUrl}/api/analytics/pulse`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ sessionId, isMobile }),
+                credentials: 'include'
+            });
+        } catch {
+            // Silencioso: el pulse es telemetría no crítica
         }
     };
 
-    // Enviar primer pulso inmediato
-    sendPulse();
+    // ✅ FIX: Retrasar el primer pulso 5s para dar tiempo al servidor de Render
+    // a despertar (cold start) antes de intentar la primera petición CORS.
+    setTimeout(sendPulse, 5000);
 
-    // Enviar pulso cada 2.5 minutos para mantener activo el servidor
-    setInterval(sendPulse, 2.5 * 60 * 1000);
+    // Enviar pulso cada 3 minutos para mantener activo el servidor
+    setInterval(sendPulse, 3 * 60 * 1000);
 }
 
 /**

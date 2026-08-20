@@ -30,6 +30,7 @@ class AnalyticsController {
         // BIND EXPLÍCITO para mantener el contexto de 'this' en las rutas de Express
         this.getAnalytics = this.getAnalytics.bind(this);
         this.getSearchTrends = this.getSearchTrends.bind(this);
+        this.getInteractionTrends = this.getInteractionTrends.bind(this);
         this.getPopularCoursePrediction = this.getPopularCoursePrediction.bind(this);
         this.recordFeedback = this.recordFeedback.bind(this);
         this.getFeedback = this.getFeedback.bind(this);
@@ -67,6 +68,17 @@ class AnalyticsController {
         } catch (error) {
             console.error('❌ Error obteniendo tendencias de búsqueda:', error);
             res.status(500).json({ error: 'Error al obtener las tendencias.' });
+        }
+    }
+
+    async getInteractionTrends(req, res) {
+        try {
+            const days = parseInt(req.query.days, 10) || 30;
+            const trends = await this.analyticsService.getInteractionTrends(days);
+            res.json(trends);
+        } catch (error) {
+            console.error('❌ Error obteniendo tendencias de interacción:', error);
+            res.status(500).json({ error: 'Error al obtener las tendencias de interacción.' });
         }
     }
 

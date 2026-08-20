@@ -41,6 +41,32 @@ class UserRepository {
         return this._mapRowToUser(res.rows[0]);
     }
 
+    /**
+     * Renueva las vidas semanales de un usuario elegible de forma atómica.
+     * La regla de negocio se orquesta desde UsageService; el repositorio
+     * mantiene aquí el acceso SQL a la tabla users.
+     *
+     * @param {string} userId - UUID del usuario
+     * @returns {Promise<boolean>} true si se actualizó la fila
+     */
+    async renewWeeklyLivesIfNeeded(userId) {
+        const result = await db.query(`
+            UPDATE public.users
+            SET usage_count = 0,
+                max_free_limit = 10,
+                last_free_renewal = CURRENT_TIMESTAMP
+            WHERE id = $1
+              AND (subscription_tier = 'free' OR subscription_status IN ('pending', 'expired'))
+              AND (
+                  last_free_renewal IS NULL
+                  OR (last_free_renewal AT TIME ZONE 'America/Lima')::date
+                     <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '7 days')::date
+              )
+        `, [userId]);
+
+        return result.rowCount > 0;
+    }
+
     async findByRole(role) {
         const res = await db.query(`SELECT * FROM users WHERE role = $1 ORDER BY name`, [role]);
         return res.rows.map(row => this._mapRowToUser(row));

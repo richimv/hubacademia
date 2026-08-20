@@ -73,4 +73,23 @@ describe('UserRepository', () => {
             );
         });
     });
+
+    describe('renewWeeklyLivesIfNeeded', () => {
+        it('should execute the atomic weekly renewal and report whether a row changed', async () => {
+            db.query.mockResolvedValue({ rowCount: 1 });
+
+            await expect(userRepository.renewWeeklyLivesIfNeeded('user-123')).resolves.toBe(true);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('last_free_renewal'),
+                ['user-123']
+            );
+        });
+
+        it('should return false when the user does not need renewal', async () => {
+            db.query.mockResolvedValue({ rowCount: 0 });
+
+            await expect(userRepository.renewWeeklyLivesIfNeeded('user-123')).resolves.toBe(false);
+        });
+    });
 });

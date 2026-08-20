@@ -7,6 +7,10 @@ describe('app.js Presentation Orchestrator', () => {
     let mockStorage = {};
     let appModule;
 
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
     beforeEach(() => {
         mockStorage = {};
 
@@ -63,6 +67,8 @@ describe('app.js Presentation Orchestrator', () => {
             },
             addEventListener: jest.fn()
         };
+
+        global.fetch = jest.fn().mockResolvedValue({ ok: true });
 
         // Mock document
         global.document = {
@@ -238,6 +244,28 @@ describe('app.js Presentation Orchestrator', () => {
             const saved = JSON.parse(mockStorage['simulator_pending_submissions']);
             expect(saved).toHaveLength(1);
             expect(saved[0].quizId).toBe('fail-1');
+        });
+    });
+
+    describe('initTrafficTracking()', () => {
+        test('debe enviar el token actual sin activar el interceptor global', async () => {
+            mockStorage['authToken'] = 'jwt-token';
+            jest.useFakeTimers();
+
+            appModule.initTrafficTracking();
+            await jest.advanceTimersByTimeAsync(5000);
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                'http://localhost:3000/api/analytics/pulse',
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: expect.objectContaining({
+                        Authorization: 'Bearer jwt-token'
+                    }),
+                    credentials: 'include'
+                })
+            );
+            expect(global.window.NetworkService.fetch).not.toHaveBeenCalled();
         });
     });
 

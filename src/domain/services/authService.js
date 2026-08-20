@@ -1,4 +1,5 @@
 const UserRepository = require('../../domain/repositories/userRepository');
+const UsageService = require('./usageService');
 const UserPreferencesService = require('../../domain/services/userPreferencesService');
 const userPreferencesService = new UserPreferencesService();
 const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ SUPABASE CLIENT
@@ -6,27 +7,17 @@ const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ S
 const JWT_SECRET = process.env.JWT_SECRET || 'este-es-un-secreto-muy-largo-y-seguro-para-desarrollo';
 
 class AuthService {
-    constructor() {
-        this.userRepository = new UserRepository();
+    constructor(userRepository = new UserRepository(), usageService = new UsageService(userRepository)) {
+        this.userRepository = userRepository;
+        this.usageService = usageService;
     }
 
     /**
      * Obtiene el usuario local enriquecido con su estado de verificación.
      */
     async getUserWithStatus(userId) {
-        // ✅ RENOVACIÓN SEMANAL DE VIDAS (USUARIOS FREE - FECHA CALENDARIO PERÚ America/Lima)
-        try {
-            const db = require('../../infrastructure/database/db');
-            await db.query(`
-                UPDATE public.users 
-                SET usage_count = 0, max_free_limit = 10, last_free_renewal = CURRENT_TIMESTAMP 
-                WHERE id = $1 
-                  AND (subscription_tier = 'free' OR subscription_status IN ('pending', 'expired'))
-                  AND (last_free_renewal IS NULL OR (last_free_renewal AT TIME ZONE 'America/Lima')::date <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '7 days')::date)
-            `, [userId]);
-        } catch (e) {
-            console.error('⚠️ Error al renovar vidas semanales en getUserWithStatus:', e.message);
-        }
+        // ✅ RENOVACIÓN SEMANAL DE VIDAS - Delegada a UsageService (Fuente Única de Verdad)
+        await this.usageService.renewWeeklyLivesIfNeeded(userId);
 
         const user = await this.userRepository.findById(userId);
         if (!user) return null;

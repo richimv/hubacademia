@@ -1,5 +1,7 @@
 const pool = require('../../infrastructure/database/db');
 const { LIMITS } = require('../../infrastructure/config/limits');
+const UsageService = require('../../domain/services/usageService');
+const usageService = new UsageService();
 
 /**
  * Middleware para controlar los límites de uso de IA (Diarios normales vs Mensuales complejos)
@@ -44,23 +46,21 @@ const checkAILimits = (type) => {
 
             let user = result.rows[0];
             let tier = user.subscription_tier || 'free';
+            const status = user.subscription_status || 'pending';
 
-            // 0. RENOVACIÓN SEMANAL DE VIDAS (USUARIOS FREE)
-            if (tier === 'free') {
+            // 0. RENOVACIÓN SEMANAL DE VIDAS - Delegada a UsageService (Fuente Única de Verdad)
+            if (tier === 'free' || status === 'pending' || status === 'expired') {
                 try {
-                    await pool.query(`
-                        UPDATE users 
-                        SET usage_count = 0, max_free_limit = 10, last_free_renewal = CURRENT_TIMESTAMP 
-                        WHERE id = $1 
-                          AND (last_free_renewal IS NULL OR (last_free_renewal AT TIME ZONE 'America/Lima')::date <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '7 days')::date)
-                    `, [userId]);
+                    const wasRenewed = await usageService.renewWeeklyLivesIfNeeded(userId);
                     
-                    // Recargar los valores actualizados de user
-                    const reloadRes = await pool.query("SELECT usage_count, max_free_limit, last_free_renewal FROM users WHERE id = $1", [userId]);
-                    if (reloadRes.rows.length > 0) {
-                        user.usage_count = reloadRes.rows[0].usage_count;
-                        user.max_free_limit = reloadRes.rows[0].max_free_limit;
-                        user.last_free_renewal = reloadRes.rows[0].last_free_renewal;
+                    if (wasRenewed) {
+                        // Recargar los valores actualizados del usuario tras la renovación
+                        const reloadRes = await pool.query("SELECT usage_count, max_free_limit, last_free_renewal FROM users WHERE id = $1", [userId]);
+                        if (reloadRes.rows.length > 0) {
+                            user.usage_count = reloadRes.rows[0].usage_count;
+                            user.max_free_limit = reloadRes.rows[0].max_free_limit;
+                            user.last_free_renewal = reloadRes.rows[0].last_free_renewal;
+                        }
                     }
                 } catch (e) {
                     console.error('⚠️ Error al renovar vidas semanales en middleware:', e.message);

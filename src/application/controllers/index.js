@@ -23,12 +23,12 @@ const LibraryController = require('./libraryController'); // ✅ NUEVO: Importar
 
 // --- 2. Crear una ÚNICA instancia de cada SERVICIO ---
 const userRepository = new UserRepository(); // ✅ 2. Crear una ÚNICA instancia del repositorio.
-const authService = new AuthService(userRepository); // ✅ Inyectar el repositorio en el servicio.
 const analyticsService = new AnalyticsService();
 const chatService = new ChatService();
 const adminService = adminServiceSingleton;
 const searchService = new SearchService();
-const usageService = new UsageService(); // ✅ NUEVO: Servicio singleton
+const usageService = new UsageService(userRepository); // ✅ NUEVO: Servicio singleton
+const authService = new AuthService(userRepository, usageService); // ✅ Inyectar dependencias.
 
 
 

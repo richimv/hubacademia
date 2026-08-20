@@ -127,6 +127,15 @@ Para evitar duplicar constantes en el frontend y backend:
 2.  **Inyección en Perfil (`getMe`):** El endpoint `/api/auth/me` inyecta dinámicamente la configuración `limits` del plan.
 3.  **Cliente Sync:** El validador en el cliente `validateFreemiumAction()` de [uiManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js) resuelve el límite dinámicamente, garantizando un mantenimiento centralizado.
 
+### 5.1 Renovación Semanal de Vidas Free (Fuente Única de Verdad)
+La lógica de renovación de vidas para usuarios Free/Pending está centralizada en un único método:
+*   **`UsageService.renewWeeklyLivesIfNeeded(userId)`** en [usageService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/usageService.js) (Capa de Dominio).
+*   Este método delega el acceso SQL a `UserRepository.renewWeeklyLivesIfNeeded()`, que ejecuta un `UPDATE` atómico en PostgreSQL: resetea `usage_count = 0`, estandariza `max_free_limit = 10` y actualiza `last_free_renewal = CURRENT_TIMESTAMP` si han pasado 7+ días calendario en zona horaria `America/Lima`.
+*   Es invocado por:
+    *   `authService.getUserWithStatus()` — cuando el frontend solicita datos del usuario vía `GET /api/auth/me`.
+    *   `checkLimitsMiddleware.js` — cuando el usuario accede a cualquier endpoint protegido de IA.
+*   Elimina la duplicación previa de código SQL entre `authService.js` y `checkLimitsMiddleware.js`.
+
 ---
 
 ## 🖥️ 6. UI/UX del Sistema de Suscripciones y Precios (Web y Móvil)
@@ -158,4 +167,3 @@ Las aplicaciones móviles (`HubDocenteApp` y `HubSaludApp`) integran todas las d
 
 ---
 *Última actualización de la documentación consolidada: Agosto 2026 (Paridad total Web-Móvil, Pricing, Seguridad y Cumplimiento Play Store)*
-

@@ -7,7 +7,9 @@ El sistema de analíticas de Hub Academia está diseñado siguiendo una arquitec
 ### Capas de Monitoreo
 1.  **Tráfico en Tiempo Real (Heartbeat):**
     -   **Captura:** `app.js` (`initTrafficTracking`).
-    -   **Flujo:** Envía un pulso cada 2.5 minutos con el `session_id` y `is_mobile`.
+    -   **Flujo:** Envía un primer pulso con retraso de 5 segundos (para mitigar errores durante el cold start del servidor en Render), luego repite cada 3 minutos con `session_id` e `is_mobile`. Usa `fetch` nativo silencioso (no `NetworkService`) para evitar reintentos ruidosos y toasts de error por telemetría secundaria, pero conserva el `Authorization` del token vigente para asociar usuarios autenticados.
+    -   **Disponibilidad:** El retraso del cliente reduce la probabilidad de una carrera con el cold start, pero no reemplaza un backend disponible ni corrige por sí mismo respuestas `503` del proveedor.
+    -   **Rutas:** Consolidadas en `infrastructure/routes/analyticsRoutes.js` (`POST /api/analytics/pulse`).
     -   **Tabla:** `web_traffic` (almacena el `last_ping`).
 2.  **Vistas de Contenido:**
     -   **Captura:** `app.js` (Interceptor de rutas).

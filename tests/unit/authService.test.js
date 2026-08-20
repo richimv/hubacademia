@@ -26,6 +26,7 @@ const mockFindById = jest.fn();
 const mockCreate = jest.fn();
 const mockUpdate = jest.fn();
 const mockDelete = jest.fn();
+const mockRenewWeeklyLivesIfNeeded = jest.fn();
 
 jest.mock('../../src/domain/repositories/userRepository', () => {
     return jest.fn().mockImplementation(() => {
@@ -33,7 +34,8 @@ jest.mock('../../src/domain/repositories/userRepository', () => {
             findById: mockFindById,
             create: mockCreate,
             update: mockUpdate,
-            delete: mockDelete
+            delete: mockDelete,
+            renewWeeklyLivesIfNeeded: mockRenewWeeklyLivesIfNeeded
         };
     });
 });
@@ -172,7 +174,7 @@ describe('AuthService', () => {
     });
 
     describe('getUserWithStatus', () => {
-        it('should execute weekly free lives renewal query and fetch user', async () => {
+        it('should delegate weekly free lives renewal and fetch user', async () => {
             const userId = 'user-123';
             const mockUser = {
                 id: userId,
@@ -181,15 +183,12 @@ describe('AuthService', () => {
                 usageCount: 5
             };
 
-            db.query.mockResolvedValue({ rows: [] });
+            mockRenewWeeklyLivesIfNeeded.mockResolvedValue(false);
             mockFindById.mockResolvedValue(mockUser);
 
             const result = await authService.getUserWithStatus(userId);
 
-            expect(db.query).toHaveBeenCalledWith(
-                expect.stringContaining('UPDATE public.users'),
-                [userId]
-            );
+            expect(mockRenewWeeklyLivesIfNeeded).toHaveBeenCalledWith(userId);
             expect(mockFindById).toHaveBeenCalledWith(userId);
             expect(result).toEqual(mockUser);
         });

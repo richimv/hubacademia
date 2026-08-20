@@ -104,15 +104,11 @@ router.get('/books', coursesController.getBooks);
 router.get('/resources', coursesController.getBooks); // ✅ Alias dinámico para todos los recursos (Categorías/Directorios)
 router.get('/books/medical', coursesController.getMedicalBooks); // ✅ NUEVO: Libros de Medicina
 
-// ✅ RUTAS DE CONTENIDO DESTACADO (Analytics)
-router.get('/analytics/featured-books', analyticsController.getFeaturedBooks);
-router.get('/analytics/featured-courses', analyticsController.getFeaturedCourses);
-
 // ✅ NUEVO: Rutas para obtener detalles por ID
 router.get('/careers/:id', coursesController.getCareerById);
 router.get('/courses/:id', coursesController.getCourseById);
 router.get('/topics/:id', coursesController.getTopicById);
-router.get('/resources/:id', coursesController.getResourceById); // ✅ NUEVO
+router.get('/resources/:id', coursesController.getResourceById);
 
 // --- Rutas CRUD Protegidas para el Panel de Administración ---
 router.get('/students', auth, adminOnly, coursesController.getStudents);
@@ -136,21 +132,9 @@ simpleEntities.forEach(entity => {
     router.delete(`/${plural}/:id`, auth, adminOnly, (req, res) => coursesController.deleteEntity(req, res, entity));
 });
 
-// --- Rutas de Analytics ---
-router.get('/analytics', auth, adminOnly, analyticsController.getAnalytics);
-// ✅ SOLUCIÓN DEFINITIVA: Gracias al bindeo en el controlador, ahora podemos pasar el método directamente. Es más limpio.
-router.get('/analytics/trends', auth, adminOnly, analyticsController.getSearchTrends);
-// ✅ SOLUCIÓN: Añadir la nueva ruta para las tendencias de interacción.
-router.get('/analytics/interaction-trends', auth, adminOnly, (req, res) => analyticsController.analyticsService.getInteractionTrends(req.query.days).then(data => res.json(data)).catch(err => res.status(500).json({ error: err.message })));
-router.get('/analytics/time-series', auth, adminOnly, analyticsController.getTimeSeriesData); // Deprecated generic
-router.get('/analytics/courses-time-series', auth, adminOnly, analyticsController.getCourseTimeSeriesData); // ✅ NUEVO
-router.get('/analytics/topics-time-series', auth, adminOnly, analyticsController.getTopicTimeSeriesData); // ✅ NUEVO
-router.get('/analytics/predictions', auth, adminOnly, analyticsController.getPopularCoursePrediction);
-router.get('/analytics/ai', auth, adminOnly, analyticsController.getAIAnalytics); // ✅ NUEVO: KPIs de IA
-router.get('/analytics/feedback', auth, adminOnly, analyticsController.getFeedback);
-router.post('/analytics/feedback', auth, analyticsController.recordFeedback);
-// ✅ NUEVO: Ruta para registrar una vista de página. (Accesible para invitados y registrados)
-router.post('/analytics/view', optionalAuth, analyticsController.recordView.bind(analyticsController));
+// --- 📊 ANALYTICS: Rutas consolidadas en analyticsRoutes.js ---
+const analyticsRoutes = require('./analyticsRoutes');
+router.use('/analytics', analyticsRoutes);
 
 // --- Rutas Internas (para servicios de ML) ---
 router.get('/internal/analytics-data', analyticsController.getAnalyticsForML);
@@ -177,21 +161,21 @@ router.get('/docente/leaderboard', auth, docenteController.getLeaderboard);
 // --- DECKS & FLASHCARDS ---
 const DeckController = require('../../application/controllers/deckController');
 
-router.get('/decks/public', optionalAuth, DeckController.getPublicDecks); // ✅ NUEVO: Explorador de Comunidad
-router.get('/decks/tree', optionalAuth, DeckController.getDeckTree); // 🚀 NUEVO: Fetch Completo del Árbol de Mazos sin recursividad
+router.get('/decks/public', optionalAuth, DeckController.getPublicDecks);
+router.get('/decks/tree', optionalAuth, DeckController.getDeckTree);
 router.get('/decks', optionalAuth, DeckController.listDecks);
-router.get('/decks/:deckId', optionalAuth, DeckController.getDeckById); // ✅ NUEVO: Fetch Single Deck
-router.get('/decks/:deckId/guide', optionalAuth, DeckController.getDeckGuide); // 🚀 LAZY LOADING: Fetch Guide Only
-router.put('/decks/:deckId/visibility', auth, DeckController.toggleVisibility); // ✅ NUEVO: Toggle Privacidad
+router.get('/decks/:deckId', optionalAuth, DeckController.getDeckById);
+router.get('/decks/:deckId/guide', optionalAuth, DeckController.getDeckGuide);
+router.put('/decks/:deckId/visibility', auth, DeckController.toggleVisibility);
 router.post('/decks/:deckId/clone', auth, checkAILimits('monthly_flashcards'), DeckController.cloneDeck); 
-router.post('/decks', auth, checkAILimits('monthly_flashcards'), DeckController.createDeck); // 🪙 COBRA VIDA (Crear Mazo)
+router.post('/decks', auth, checkAILimits('monthly_flashcards'), DeckController.createDeck);
 router.get('/decks/:deckId/cards/due', auth, checkAILimits('monthly_flashcards'), DeckController.getDueCards); 
-router.get('/decks/:deckId/cards/:cardId/study', auth, checkAILimits('monthly_flashcards'), DeckController.getStudyCard); // 🪙 COBRA VIDA (Botón Play pequeño)
+router.get('/decks/:deckId/cards/:cardId/study', auth, checkAILimits('monthly_flashcards'), DeckController.getStudyCard);
 router.get('/decks/:deckId/cards', optionalAuth, DeckController.listCards); 
-router.post('/decks/:deckId/cards', auth, checkAILimits('monthly_flashcards'), DeckController.addCard); // 🪙 COBRA VIDA (Añadir Tarjeta)
-router.post('/decks/:deckId/cards/batch', auth, checkAILimits('monthly_flashcards'), DeckController.addBulkCards); // 🛡️ BLOQUEO PREMIUM (Middleware)
+router.post('/decks/:deckId/cards', auth, checkAILimits('monthly_flashcards'), DeckController.addCard);
+router.post('/decks/:deckId/cards/batch', auth, checkAILimits('monthly_flashcards'), DeckController.addBulkCards);
 router.post('/decks/:deckId/generate', auth, checkAILimits('monthly_flashcards'), DeckController.generateCards); 
-router.put('/decks/:deckId', auth, DeckController.updateDeck); // 🛠️ GESTIÓN INTERNA (Controller decide si cobra Guía o no)
+router.put('/decks/:deckId', auth, DeckController.updateDeck);
 router.delete('/decks/:deckId', auth, DeckController.deleteDeck); 
 router.put('/decks/:deckId/cards/reorder', auth, DeckController.reorderCards); 
 router.delete('/cards/batch', auth, DeckController.deleteBulkCards); 
@@ -202,12 +186,5 @@ router.delete('/cards/:cardId', auth, DeckController.deleteCard);
 // --- Rutas de Repaso de Flashcards ---
 router.get('/flashcard/due', auth, flashcardController.getDueFlashcards);
 router.post('/flashcard/review', auth, flashcardController.reviewFlashcard);
-
-
-
-
-// --- Rutas de Analytics Personalizados (Heatmap, etc) ---
-const customAnalyticsRoutes = require('./analyticsRoutes');
-router.use('/analytics', customAnalyticsRoutes);
 
 module.exports = router;
