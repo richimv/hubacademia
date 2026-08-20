@@ -306,6 +306,18 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
       - **Plan Avanzado**: Flashcards manuales personalizadas con Audio TTS e imágenes, Carga masiva Excel con Audio TTS (10 archivos/día) y Generación con IA (30 pedidos/mes).
     - Se actualizó el documento maestro [SISTEMA_MONETIZACION_LIMITES_Y_SUSCRIPCIONES.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/SISTEMA_MONETIZACION_LIMITES_Y_SUSCRIPCIONES.md).
 
+- **Ordenación Cronológica de Publicación en Comunidad y Auditoría de Salud de Código (V39)**:
+  - **Ordenamiento Prioritario por Fecha de Publicación/Modificación**:
+    - Se actualizó `FlashcardRepository.getPublicDecks` para realizar el ordenamiento con `ORDER BY COALESCE(d.updated_at, d.created_at) DESC, d.created_at DESC`.
+    - Al publicar un mazo en la comunidad o cambiar su visibilidad/categoría (`updateDeckVisibility`), el servidor actualiza la marca de tiempo `updated_at = NOW()`.
+    - Esto garantiza de forma consistente en todas las categorías ("Todas", "Medicina", "Tecnología", "Educación", "Derecho", etc.) que cualquier mazo recién publicado o editado se ubique inmediatamente en el **primer lugar (índice 0)** de la cuadrícula de la comunidad.
+  - **Auditoría de Salud de Código y Limpieza de Arquitectura**:
+    - Se removió la importación no utilizada `crypto` en `FlashcardRepository.js` de acuerdo con las directrices de `code-health-rules.md`.
+    - Se sincronizó el esquema `database_schema.sql` declarando la columna `updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()` e incorporando el índice de alto rendimiento `idx_decks_public_category` sobre `(is_public, category, updated_at DESC, created_at DESC)`.
+  - **Verificación de Pruebas Unitarias**:
+    - Se añadieron casos de prueba en `deckSecurityLimits.test.js` para verificar la llamada de `getPublicDecks` por categoría y la actualización con `updated_at`.
+    - 17/17 suites de prueba pasando (123/123 pruebas al 100%).
+
 ---
 
-**Documentación Técnica Actualizada - 11 de Agosto, 2026.**
+**Documentación Técnica Actualizada - 20 de Agosto, 2026.**

@@ -145,7 +145,7 @@ function createBrowseCardHTML(item, type) {
             const finalImage = window.resolveImageUrl(item.image_url);
             return `
                 <div class="browse-card career-card full-image-card" data-type="career" data-id="${item.id}" style="cursor: pointer;">
-                    <img src="${finalImage}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
+                    <img src="${finalImage}" alt="${item.name}" class="browse-card-image-full" loading="lazy" decoding="async" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
                     
                     <div class="browse-card-overlay">
                         <div class="browse-card-content overlay-content">
@@ -197,7 +197,7 @@ function createBrowseCardHTML(item, type) {
             const finalImage = window.resolveImageUrl(item.image_url);
             return `
                 <div class="browse-card course-card full-image-card" data-type="course" data-id="${item.id}" style="cursor: pointer;">
-                    <img src="${finalImage}" alt="${item.name}" class="browse-card-image-full" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
+                    <img src="${finalImage}" alt="${item.name}" class="browse-card-image-full" loading="lazy" decoding="async" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
                     
                     ${actionButtons}
 
@@ -517,7 +517,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
             const resolvedThumb = window.resolveImageUrl(item.image_url, item.resource_type || item.type || 'book');
             thumbnailHTML = `
                 <div class="admin-item-thumbnail" title="Portada asignada">
-                    <img src="${resolvedThumb}" alt="Preview" loading="lazy">
+                    <img src="${resolvedThumb}" alt="Preview" loading="lazy" decoding="async">
                 </div>
             `;
         } else {
@@ -659,7 +659,7 @@ function createUnifiedResourceCardHTML(item) {
     const displayImage = window.resolveImageUrl(rawImage, type);
 
     // Siempre renderizamos la imagen (ya sea la del recurso o la artística por defecto)
-    let visualHTML = `<img src="${displayImage}" alt="${title}" class="urc-image" loading="lazy" onerror="this.src='${window.getDefaultResourceImage(type)}'">`;
+    let visualHTML = `<img src="${displayImage}" alt="${title}" class="urc-image" loading="lazy" decoding="async" onerror="this.src='${window.getDefaultResourceImage(type)}'">`;
 
     // El fallback de icono ahora es solo decorativo o para estados de error crítico,
     // pero por defecto lo mantenemos oculto ya que la imagen siempre debería cubrir el fondo.
@@ -850,35 +850,37 @@ window.UIComponents.createReviewCardHTML = function (config) {
         ? encodeURIComponent(question.audio_text).replace(/'/g, "%27")
         : '';
 
-    let saveBtnHTML = '';
-
     let imageHTML = '';
     if (question.image_url) {
         const safeResolve = window.resolveImageUrl || (url => url);
         const resolvedImg = safeResolve(question.image_url);
         imageHTML = `
         <div class="review-q-image-container">
-            <img src="${resolvedImg}" loading="lazy">
+            <img src="${resolvedImg}" loading="lazy" alt="Pregunta ${index + 1}">
         </div>`;
     }
 
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
     let optionsHTML = '';
     const optionsList = question.options || [];
     optionsList.forEach((optText, optIdx) => {
         let className = 'review-opt';
-        let formattedText = optText;
+        const letter = letters[optIdx] || (optIdx + 1);
+        let badgeHTML = '';
 
         if (optIdx === question.correct_option_index) {
             className += ' r-correct';
-            formattedText = `<strong>${optText}</strong>`;
+            badgeHTML = `<span class="review-opt-status-badge correct"><i class="fas fa-check-circle"></i> Correcta</span>`;
         } else if (answer && optIdx === answer.userAnswer) {
             className += ' r-wrong';
-            formattedText = `<strong>${optText}</strong>`;
+            badgeHTML = `<span class="review-opt-status-badge wrong"><i class="fas fa-times-circle"></i> Tu respuesta</span>`;
         }
 
         optionsHTML += `
         <div class="${className}">
-            <span style="flex: 1;">${formattedText}</span>
+            <span class="review-opt-letter">${letter}</span>
+            <span class="review-opt-text">${optText}</span>
+            ${badgeHTML}
         </div>`;
     });
 
@@ -895,42 +897,47 @@ window.UIComponents.createReviewCardHTML = function (config) {
         const resolvedExpImg = safeResolve(question.explanation_image_url);
         expImageHTML = `
         <div class="review-explanation-image-container">
-            <img src="${resolvedExpImg}" loading="lazy">
+            <img src="${resolvedExpImg}" loading="lazy" alt="Sustento gráfico">
+        </div>`;
+    }
+
+    let audioHTML = '';
+    if (question.audio_text) {
+        audioHTML = `
+        <div class="quiz-audio-player-wrapper">
+            <button class="quiz-audio-btn btn-message-tts" data-audio-text="${escapedAudioText}" data-career="${career || 'en-US'}" onclick="window.playQuestionAudio(this, decodeURIComponent(this.getAttribute('data-audio-text')), this.getAttribute('data-career'))" title="Escuchar pronunciación">
+                <i class="fas fa-play"></i>
+            </button>
+            <span class="quiz-audio-label">Comprensión Auditiva (Escuchar audio)</span>
         </div>`;
     }
 
     return `
     <div class="review-card ${question.image_url ? 'has-image' : ''}" data-qindex="${index}">
         <div class="review-card-header">
-            <div class="review-q-text" style="flex: 1; margin: 0;">
-                <span style="color:#3b82f6; font-weight: 800; margin-right: 0.5rem;">Q${index + 1}</span> 
+            <span class="review-q-badge">Pregunta ${index + 1}</span>
+            <div class="review-q-text">
                 ${questionTextHTML}
             </div>
-            ${saveBtnHTML}
         </div>
         ${imageHTML}
-        ${(() => {
-            if (question.audio_text) {
-                return `
-                <div class="quiz-audio-player-wrapper" style="margin-top: 1rem; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 1rem; display: flex; align-items: center; gap: 1rem;">
-                    <button class="quiz-audio-btn btn-message-tts" style="width: 45px; height: 45px; border-radius: 50%; border: none; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" data-audio-text="${escapedAudioText}" data-career="${career || 'en-US'}" onclick="window.playQuestionAudio(this, decodeURIComponent(this.getAttribute('data-audio-text')), this.getAttribute('data-career'))">
-                        <i class="fas fa-play"></i>
-                    </button>
-                    <span style="color: #94a3b8; font-size: 0.875rem;">Comprensión Auditiva (Escuchar audio)</span>
-                </div>`;
-            }
-            return '';
-        })()}
+        ${audioHTML}
         <div class="review-options">
             ${optionsHTML}
         </div>
         <div class="review-explanation">
-            <strong><i class="fas fa-lightbulb" style="color:#fbbf24; margin-right:5px;"></i> Explicación:</strong><br><br>
-            ${expTextHTML}
+            <div class="review-explanation-header">
+                <span class="review-exp-tag">
+                    <i class="fas fa-lightbulb"></i> Explicación y Sustento
+                </span>
+            </div>
+            <div class="review-explanation-body">
+                ${expTextHTML}
+            </div>
             ${expImageHTML}
-            <div class="review-tutor-action-row" style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
-                <button type="button" class="btn-review-tutor-trigger" onclick="window.openTutorForReviewQuestion(${index})" style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; padding: 0.5rem 1.15rem; border-radius: 9999px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <img src="/assets/hubifrente.png" alt="Hubi" style="width: 18px; height: 18px; object-fit: contain; flex-shrink: 0;">
+            <div class="review-tutor-action-row">
+                <button type="button" class="btn-review-tutor-trigger" onclick="window.openTutorForReviewQuestion(${index})">
+                    <img src="/assets/hubifrente.png" alt="Hubi" class="btn-review-tutor-icon">
                     <span>Consultar Tutor IA</span>
                 </button>
             </div>
@@ -1038,7 +1045,7 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
                 </div>
             </div>
             <div class="news-hero-media">
-                <img src="${featThumb}" alt="${featured.title}" class="news-hero-img" loading="lazy">
+                <img src="${featThumb}" alt="${featured.title}" class="news-hero-img" loading="lazy" decoding="async">
             </div>
         </div>
     `;
@@ -1054,7 +1061,7 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
         return `
             <div class="news-secondary-card has-media" data-type="${itemType}" onclick="window.openVerifiedNewsUrl('${itemUrl}', '${item.id}', '${itemType}', ${isPremium}, ${openDirectly})">
                 <div class="news-sec-media">
-                    <img src="${secThumb}" alt="${item.title}" class="news-sec-img" loading="lazy">
+                    <img src="${secThumb}" alt="${item.title}" class="news-sec-img" loading="lazy" decoding="async">
                 </div>
                 <div class="news-sec-body">
                     <div class="news-sec-header">

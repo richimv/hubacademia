@@ -16,31 +16,45 @@ El sistema utiliza **Gemini 3.1 Flash Lite** (`gemini-3.1-flash-lite`) como moto
 - **Semantic Expansion:** Motor de re-escritura en `RagService.js` que expande la consulta del usuario en temas técnicos.
 - **Embeddings:** Vertex AI `text-multilingual-embedding-002` (768 dimensiones).
 
-## 3. Especializaciones del Tutor
-El sistema adapta su "personalidad" y base de conocimientos según la especialidad:
+## 3. Modalidades y Especializaciones Reales del Chat
 
-### A. Tutor Clínico (`medicine`)
-- **Namespace Pinecone:** `medicine`
-- **Rol:** Tutor Senior de Medicina Peruana.
-- **Multimedia:** Acceso proactivo a infografías, esquemas y mapas mentales médicos.
-- **Fuentes:** NTS, GPC, Harrison, Nelson.
+El ecosistema de chat de Hub Academia se divide en 3 modalidades con arquitecturas y propósitos específicos:
 
-### B. Tutor Pedagógico (`education`)
-- **Namespace Pinecone:** `education`
-- **Rol:** Tutor Senior de Preparación Magisterial.
-- **Multimedia:** Acceso proactivo a mapas mentales del CNEB y esquemas pedagógicos.
-- **Fuentes:** CNEB, Ley 29944, RVM 094-2020, Pruebas de Ascenso.
+### 3.1 🌐 Modalidad 1: Asistente Guía Hub Academia (Chat General Flotante - `neutral`)
+- **Implementación:** `chat.js` (Frontend) ↔ `chatController.js` / `asistenteGuiaKnowledge.js` (Backend).
+- **Mecánica:** **100% Estático y Efímero** con **latencia de 0ms** y **costo $0 de inferencia IA o base de datos**. Procesa consultas mediante coincidencia inteligente de intención contra la base de conocimiento oficial.
+- **Propósito:** Orientación de la plataforma, explicación de los dos pilares oficiales (**SERUMS** para Salud y **ASCENSO** para Educación), información de planes y precios (Free, Basic, Advanced), sustento oficial y guía de registro.
+- **Cuotas y Vidas:** **0 consumo de vidas y 0 consumo de límites diarios** para todos los usuarios (visitantes y autenticados).
+- **Persistencia:** Cero escrituras en base de datos (las tablas `conversations` y `chat_messages` no se usan para este chat).
 
-### C. Tutor de Idiomas (`languages`)
-- **Namespace:** N/A (sin RAG).
-- **Rol:** Tutor conversacional de Inglés e Italiano.
-- **Comportamiento:** Inmersión gradual, corrección amigable y **tablas gramaticales proactivas**.
-- **Infraestructura de Conversación (CCI v3.2):**
-  - **Aislamiento en `systemInstruction`:** Las directrices y reglas del tutor se inyectan a través del parámetro nativo `systemInstruction` de Gemini, previniendo la degradación de instrucciones a lo largo del historial.
-  - **Historial Estructurado (`contents`):** El historial de turnos se pasa utilizando la estructura nativa de Gemini (`contents` array), mapeando los roles correspondientes (`user` -> `user`, `assistant` -> `model`) para evitar mezclas e interferencias.
-  - **Límites de Corrección:** El tutor inspecciona errores *exclusivamente* en la última interacción del usuario, evitando listar o arrastrar errores ya corregidos en turnos previos del historial.
-  - **Inmersión del Idioma:** La propiedad `response` se redacta al 100% en el idioma objetivo, eliminando mezclas accidentales con el español, a menos que el usuario formule una duda teórica explícitamente en español.
+### 3.2 📝 Modalidad 2: Quiz Tutor (Tutor en Simuladores de Examen - `quiz_tutor`)
+- **Implementación:** `quiz.html` / `quiz-tutor.js` (Frontend) ↔ `chatController.js` / `tutorAiService.js` (Backend).
+- **Activación:** Se abre directamente en la pregunta activa del examen ante dudas del estudiante.
+- **Inyección de Contexto:** Recibe el reactivo completo (enunciado, opciones A-D, opción correcta, respuesta marcada por el estudiante, acierto/error y justificación oficial), junto con la configuración del examen (`examContext`: `MEDICINA` o `EDUCACION`, `target`: `SERUMS`, `ASCENSO`, etc., carrera, dificultad y áreas).
+- **Especializaciones:**
+  - **Tutor Clínico (`medicine`):** Especialista en Medicina Peruana (MINSA, EsSalud, SERUMS, ENAM, Residentado). Consulta en el namespace `medicine` de Pinecone (NTS, GPC, Harrison).
+  - **Tutor Pedagógico (`education`):** Especialista en Educación Peruana (MINEDU, CNEB, Ley 29944, RVM 094-2020). Consulta en el namespace `education` de Pinecone.
+- **Acceso a RAG Vectorial por Tier:**
+  - **Advanced / Elite:** RAG Semántico Puro activo en Pinecone (hasta 25 consultas RAG/día). Si se agota, degrada automáticamente a IA generativa estándar sin RAG hasta los 100 mensajes diarios.
+  - **Basic:** IA generativa experta optimizada **sin RAG** (50 mensajes/día).
+  - **Free:** IA generativa experta **sin RAG**, descontando 1 vida por consulta de su pool de 10 vidas.
+- **Capacidades Visuales Proactivas:** Capacidad de insertar hasta 3 imágenes/esquemas del catálogo visual de Postgres/GCS cuando el tema clínico o pedagógico lo amerite.
 
+### 3.3 🧠 Modalidad 3: Flashcard Tutor (Tutor en Módulo de Repaso - `flashcard_tutor`)
+- **Implementación:** `flashcards.html` / `tutor-chat.js` (Frontend) ↔ `chatController.js` / `tutorAiService.js` (Backend).
+- **Activación:** Se abre durante la sesión de repaso espaciado de flashcards (SM-2).
+- **Inyección de Contexto:** Recibe el contexto exacto de la tarjeta: disciplina (`deckCategory`), nombre del mazo (`deckName`), tema específico (`topic`), anverso (`front`), reverso (`back`) y recursos visuales adjuntos.
+- **Especialización Multidisciplinaria Pura:** Adapta automáticamente su terminología, marco analítico y rigor pedagógico a la disciplina de la tarjeta:
+  - **Derecho:** Doctrina jurídica, preceptos normativos y jurisprudencia.
+  - **Medicina / Salud:** Fisiopatología, diagnóstico, clínica y farmacología.
+  - **Educación:** Didáctica, enfoque por competencias y lineamientos CNEB.
+  - **Idiomas:** Gramática, pronunciación, etimología y tablas comparativas.
+  - **Tecnología / Programación:** Arquitectura de software, algoritmos, redes, bases de datos y buenas prácticas de código.
+  - **Matemáticas, Historia, Ciencias y General:** Marco conceptual y analítico de la materia.
+- **Aislamiento Temático Estricto (CERO CONTAMINACIÓN):**
+  - **Sin RAG en Pinecone:** No ejecuta búsquedas vectoriales médicas ni educativas en materias ajenas, garantizando **cero contaminación temática**.
+  - Prohibición estricta de emitir descargos médicos o citas del MINSA en materias ajenas a medicina.
+- **Cuotas:** Descuenta de la cuota diaria de IA (`daily_ai_usage`) en planes premium o 1 vida en planes Free.
 
 ## 4. Capacidades Multimedia e Inteligencia Visual
 El sistema gestiona una arquitectura de apoyo visual proactivo y especializado:
@@ -50,31 +64,6 @@ El sistema gestiona una arquitectura de apoyo visual proactivo y especializado:
 - **Límite de Recursos:** Hasta **3 imágenes por respuesta** si la complejidad del tema lo amerita (exclusivo para Medicina y Educación).
 - **Tablas Proactivas:** Capacidad universal (todos los dominios) para generar tablas comparativas y cuadros sinópticos en Markdown para estructurar información técnica.
 - **Renderizado Premium:** Procesador DOM en `markdown-renderer.js` que envuelve tablas en wrappers responsivos y resuelve URLs de GCS mediante el proxy `/api/media/gcs`.
-
-### D. Asistente Guía Hub Academia (`neutral`)
-- **Namespace:** N/A (100% sin RAG en Pinecone para máximo rendimiento y cero costos vectoriales).
-- **Rol:** Anfitrión y Asistente Guía de Navegación y Soporte de Hub Academia.
-- **Enfoque Académico Oficial:** Exclusivo para **SERUMS** (Medicina) y **ASCENSO** (Educación Magisterial).
-- **Persistencia en BD:** 100% Volátil / Efímero. No realiza escrituras en base de datos. Las tablas `conversations`, `chat_messages` y `feedback` han sido completamente eliminadas/purgadas de PostgreSQL/Supabase.
-- **Soporte para Visitantes (No Autenticados):**
-  - Acceso libre de hasta **2 consultas gratuitas por día** (gestionado en `localStorage` mediante `visitor_general_chat_daily_v1`).
-  - Píldoras de preguntas rápidas predefinidas: *"¿Qué ofrece esta plataforma?"*, *"¿Qué simuladores tienen disponibles?"*, *"¿Cuáles son los planes y precios?"*, *"¿Cómo me ayuda a nombrarme/colegiarme?"*.
-  - Al 3er intento de consulta, bloquea el campo de texto con el mensaje `"Límite de consultas alcanzado. Regístrate gratis para continuar."` y abre la modal de inicio de sesión/registro (`showAuthPromptModal`).
-
-### E. Tutor Académico de Flashcards y Repaso (`flashcard_tutor`)
-- **Especialización:** Multidisciplinaria Pura y Adaptativa (`Derecho`, `Medicina`, `Educación`, `Idiomas`, `Matemáticas`, `Historia`, `General`).
-- **Namespace Pinecone:** Efímero / Aislado. No ejecuta RAG clínico/educativo en materias ajenas para garantizar **cero contaminación temática**.
-- **Inyección de Contexto Completo de Mazo y Tarjeta:**
-  - `deckCategory`: Categoría temática del mazo (ej. *Derecho*, *Idiomas*, *Medicina*, *Educación*).
-  - `deckName`: Nombre real del mazo de estudio.
-  - `topic`: Subtema o etiqueta de la tarjeta.
-  - `front`: Anverso de la tarjeta (pregunta / concepto clave).
-  - `back`: Reverso de la tarjeta (respuesta / fundamento doctrinal / explicación).
-  - `imageUrl` / `explanationImageUrl`: Recursos visuales asociados a la tarjeta.
-- **Aislamiento Doctrinal y Temático:**
-  - Adopta el rol de jurista/docente para Derecho, docente clínico para Medicina, lingüista para Idiomas, pedagogo para Educación, etc.
-  - Prohibición estricta de emitir descargos médicos, referencias de salud o textos de catálogos de cursos en materias que no correspondan.
-- **Interacción y Pantalla Completa:** Soporta visualización en modo compacto o pantalla completa en escritorio (PC) mediante `.tutor-chat-panel.chat-fullscreen`.
 
 ## 4. Flujo de Procesamiento RAG
 1. **Routing:** El controlador detecta la especialidad enviada desde la UI.
@@ -525,7 +514,7 @@ Servicio en la capa de dominio (`src/domain/services/asistenteGuiaKnowledge.js`)
 - **Especialidades Oficiales**: Información centrada exclusivamente en **SERUMS (Salud/Medicina)** y **ASCENSO (Educación Magisterial)**.
 - **Categorías de Respuestas Precisas**:
   - `servicios`: Detalla simuladores de SERUMS y ASCENSO, Módulo Repaso (Flashcards) y Mi Biblioteca con enlaces Markdown directos (`[🎯 Ver Simuladores](/simulators)`, `[🎴 Ir a Módulo Repaso](/repaso)`, `[📚 Ir a Mi Biblioteca](/library)`).
-  - `precios`: Estructura transparente de Planes Free (20 vidas), Basic y Advanced (`[💎 Ver Tabla de Planes y Precios](/pricing)`).
+  - `precios`: Estructura transparente de Planes Free (10 vidas), Basic y Advanced (`[💎 Ver Tabla de Planes y Precios](/pricing)`).
   - `acceso`: Explicación exacta del acceso en 1 clic mediante Google (botón **"Acceder"** de la barra superior o **"Continuar con Google"**, sin formularios de registro) (`[🔑 Acceder con Google](#acceder)`).
   - `ventajas`: Explicación del sustento técnico oficial (NTS MINSA / CNEB y RVM 094-2020-MINEDU).
 
@@ -588,8 +577,8 @@ Servicio en la capa de dominio (`src/domain/services/asistenteGuiaKnowledge.js`)
   - **Uso de RAG**: Habilitado hasta **25 consultas RAG/día** (`daily_rag_usage`). Al realizar una consulta con RAG activo, se incrementan simultáneamente los contadores `daily_ai_usage` y `daily_rag_usage`.
   - **Fallback Generativo Grácil**: Si el usuario Advanced supera las 25 consultas RAG, el sistema desactiva RAG (`useRag = false`) y le permite continuar realizando hasta 100 consultas al día en modo generativo estándar.
 - **Usuarios Free / Pending (`subscription_tier === 'free'` o `subscription_status === 'pending'`)**:
-  - Consumen **1 vida de prueba** (`usage_count`) por cada consulta enviada al Quiz Tutor o Repaso Tutor, hasta alcanzar las 20 vidas asignadas (`max_free_limit`).
-  - Al agotar las 20 vidas, el middleware devuelve `403 Forbidden` (`FREE_LIVES_EXHAUSTED`), bloqueando la consulta y mostrando la modal Paywall.
+  - Consumen **1 vida de prueba** (`usage_count`) por cada consulta enviada al Quiz Tutor o Repaso Tutor, hasta alcanzar las 10 vidas asignadas (`max_free_limit`).
+  - Al agotar las 10 vidas, el middleware devuelve `403 Forbidden` (`FREE_LIVES_EXHAUSTED`), bloqueando la consulta y mostrando la modal Paywall.
   - **Uso de RAG**: Estrictamente **deshabilitado (`useRag = false`)**.
 
 ---

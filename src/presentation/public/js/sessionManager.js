@@ -182,9 +182,13 @@ class SessionManager {
     decrementUsage(amount = 1) {
         if (this.currentUser) {
             const usage = this.currentUser.usageCount !== undefined ? this.currentUser.usageCount : (this.currentUser.usage_count || 0);
-            const limit = this.currentUser.maxFreeLimit !== undefined ? this.currentUser.maxFreeLimit : (this.currentUser.max_free_limit || 20);
+            const limit = this.currentUser.maxFreeLimit !== undefined ? this.currentUser.maxFreeLimit : (this.currentUser.max_free_limit || 10);
             
-            const isFree = this.currentUser.subscriptionStatus !== 'active' && this.currentUser.role !== 'admin';
+            const tier = String(this.currentUser.subscriptionTier || this.currentUser.subscription_tier || 'free').toLowerCase();
+            const status = String(this.currentUser.subscriptionStatus || this.currentUser.subscription_status || 'pending').toLowerCase();
+            const isPaidActive = (tier === 'basic' || tier === 'advanced') && status === 'active';
+            const isFree = !isPaidActive && this.currentUser.role !== 'admin';
+
             if (isFree) {
                 const newUsage = Math.min(limit, usage + amount);
                 if (this.currentUser.usageCount !== undefined) {
@@ -192,8 +196,14 @@ class SessionManager {
                 } else {
                     this.currentUser.usage_count = newUsage;
                 }
-                console.log(`⚡ [SessionManager] Descuento optimista aplicado localmente: ${limit - newUsage}/${limit}`);
+                const remaining = Math.max(0, limit - newUsage);
+                console.log(`⚡ [SessionManager] Descuento optimista aplicado localmente: ${remaining}/${limit}`);
                 this.notifyStateChange();
+
+                // ⚡ Disparar notificación en pantalla en tiempo real
+                if (window.uiManager && typeof window.uiManager.showLifeDecrementToast === 'function') {
+                    window.uiManager.showLifeDecrementToast(remaining, limit);
+                }
             }
         }
     }
@@ -249,14 +259,112 @@ class SessionManager {
     }
 }
 
-// Instancia global
-window.sessionManager = new SessionManager();
+/**
+ * ====================================================================
+ * 🛡️ GuestSessionManager (Arquitectura Centralizada para Visitantes)
+ * ====================================================================
+ * Controla la cuota de simulacros para usuarios no autenticados (1 intento/día)
+ * y asegura que los datos y estadísticas generados tengan un ciclo de vida
+ * estricto de 1 DÍA (TTL diario con timezone America/Lima).
+ */
+class GuestSessionManager {
+    static MAX_DAILY_DEMOS = 1;
 
-// ✅ Alias Global para fácil acceso desde NetworkService
-window.handleLogout = () => window.sessionManager.logout();
-
-window.sessionManager.onStateChange((user) => {
-    if (user) {
-        window.sessionManager.checkSubscriptionStatus();
+    static getTodayDateStr() {
+        return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' });
     }
-});
+
+    /**
+     * Revisa la fecha del almacenamiento local. Si el día cambió, purga
+     * todas las métricas de demostración del día anterior y resetea el contador.
+     */
+    static checkAndCleanExpiredGuestData() {
+        const today = this.getTodayDateStr();
+        const lastDemoDate = localStorage.getItem('demo_sessions_date');
+
+        if (lastDemoDate && lastDemoDate !== today) {
+            console.log(`🧹 [GuestSessionManager] Nuevo día detectado (${today}). Purgando estadísticas demo de ${lastDemoDate}...`);
+            localStorage.setItem('demo_sessions_count', '0');
+            localStorage.setItem('demo_sessions_date', today);
+
+            // Eliminar estadísticas locales para que los datos duren exactamente 1 día
+            const domains = ['medicina', 'educacion', 'idiomas', 'medicine', 'education'];
+            domains.forEach(dom => {
+                localStorage.removeItem(`guest_demo_stats_${dom}`);
+            });
+            localStorage.removeItem('guest_demo_stats'); // Legacy cleanup
+        } else if (!lastDemoDate) {
+            localStorage.setItem('demo_sessions_date', today);
+            localStorage.setItem('demo_sessions_count', '0');
+        }
+    }
+
+    /**
+     * Verifica si el visitante puede rendir su simulacro diario de 10 preguntas.
+     * @returns {boolean}
+     */
+    static canTakeDailyDemo() {
+        this.checkAndCleanExpiredGuestData();
+        const count = parseInt(localStorage.getItem('demo_sessions_count') || '0', 10);
+        return count < this.MAX_DAILY_DEMOS;
+    }
+
+    /**
+     * Registra un nuevo intento de simulacro para el visitante.
+     */
+    static recordDemoAttempt() {
+        this.checkAndCleanExpiredGuestData();
+        const count = parseInt(localStorage.getItem('demo_sessions_count') || '0', 10);
+        localStorage.setItem('demo_sessions_count', (count + 1).toString());
+        localStorage.setItem('demo_sessions_date', this.getTodayDateStr());
+    }
+
+    /**
+     * Recupera las estadísticas del visitante para el dominio solicitado.
+     * Si la data es de un día anterior, se purga automáticamente.
+     */
+    static getGuestStats(domain) {
+        this.checkAndCleanExpiredGuestData();
+        const domainKey = (domain || 'MEDICINA').toLowerCase();
+        const raw = localStorage.getItem(`guest_demo_stats_${domainKey}`);
+        if (!raw) return null;
+        try {
+            return JSON.parse(raw);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Guarda las estadísticas del simulacro demo para el visitante.
+     */
+    static saveGuestStats(domain, stats) {
+        this.checkAndCleanExpiredGuestData();
+        const domainKey = (domain || 'MEDICINA').toLowerCase();
+        const dataToSave = {
+            ...stats,
+            savedAtDate: this.getTodayDateStr()
+        };
+        localStorage.setItem(`guest_demo_stats_${domainKey}`, JSON.stringify(dataToSave));
+    }
+}
+
+// Instancias globales
+if (typeof window !== 'undefined') {
+    window.sessionManager = new SessionManager();
+    window.guestSessionManager = GuestSessionManager;
+    window.GuestSessionManager = GuestSessionManager;
+
+    // ✅ Alias Global para fácil acceso desde NetworkService
+    window.handleLogout = () => window.sessionManager.logout();
+
+    window.sessionManager.onStateChange((user) => {
+        if (user) {
+            window.sessionManager.checkSubscriptionStatus();
+        }
+    });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { SessionManager, GuestSessionManager };
+}

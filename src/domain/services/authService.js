@@ -19,7 +19,7 @@ class AuthService {
             const db = require('../../infrastructure/database/db');
             await db.query(`
                 UPDATE public.users 
-                SET usage_count = 0, last_free_renewal = CURRENT_TIMESTAMP 
+                SET usage_count = 0, max_free_limit = 10, last_free_renewal = CURRENT_TIMESTAMP 
                 WHERE id = $1 
                   AND (subscription_tier = 'free' OR subscription_status IN ('pending', 'expired'))
                   AND (last_free_renewal IS NULL OR (last_free_renewal AT TIME ZONE 'America/Lima')::date <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '7 days')::date)

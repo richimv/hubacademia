@@ -623,7 +623,7 @@ ${optionsMarkdown}`;
                         const user = window.sessionManager.getUser();
                         const status = user.subscriptionStatus || user.subscription_status;
                         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-                        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
+                        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
 
                         if (status === 'pending' && usage >= limit) {
                             e.preventDefault();

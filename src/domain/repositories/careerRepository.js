@@ -5,8 +5,22 @@ const { normalizeText } = require('../utils/textUtils');
  * Repositorio para manejar las operaciones de datos de las carreras desde Supabase.
  */
 class CareerRepository {
+    constructor() {
+        this.cache = new Map();
+        this.CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+    }
+
+    clearCache() {
+        this.cache.clear();
+    }
 
     async findAll(filters = {}) {
+        const cacheKey = `findAll_${filters.domain || 'all'}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL_MS)) {
+            return cached.data;
+        }
+
         let query = 'SELECT * FROM careers';
         const params = [];
         if (filters.domain) {
@@ -15,6 +29,8 @@ class CareerRepository {
         }
         query += ' ORDER BY name';
         const { rows } = await db.query(query, params);
+
+        this.cache.set(cacheKey, { timestamp: Date.now(), data: rows });
         return rows;
     }
 
@@ -45,6 +61,7 @@ class CareerRepository {
             'INSERT INTO careers (career_id, name, area, image_url, domain) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [tempCareerId, name, area, image_url, domain]
         );
+        this.clearCache();
         return rows[0];
     }
 
@@ -73,6 +90,7 @@ class CareerRepository {
         if (rows.length === 0) {
             throw new Error(`Carrera con ID ${id} no encontrada.`);
         }
+        this.clearCache();
         return rows[0];
     }
 
@@ -81,6 +99,7 @@ class CareerRepository {
         if (rowCount === 0) {
             throw new Error(`Carrera con ID ${id} no encontrada para eliminar.`);
         }
+        this.clearCache();
         return { success: true };
     }
 }

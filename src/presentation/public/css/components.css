@@ -1827,3 +1827,279 @@
     100% { opacity: 1; transform: scale(1); }
 }
 
+/* ============================================================
+   💬 UNIVERSAL TOOLTIPS & ONBOARDING GUIDES (DUAL-THEME ENGINE)
+   ============================================================ */
+
+.hub-tooltip {
+    position: absolute;
+    z-index: 2147483640;
+    background: var(--card-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.4;
+    box-shadow: var(--shadow-md);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    white-space: normal;
+    max-width: 260px;
+    text-align: center;
+}
+
+.hub-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+[data-theme="light"] .hub-tooltip {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(203, 213, 225, 0.9);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Interactive Guided Hint / Tour Bubble */
+.hub-guided-tip {
+    position: absolute;
+    z-index: 2147483645;
+    width: 330px;
+    max-width: calc(100vw - 32px);
+    background: var(--card-bg);
+    border: 1px solid var(--border-hover);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: var(--shadow-xl), 0 0 20px var(--primary-glow);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+}
+
+.hub-guided-tip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+[data-theme="light"] .hub-guided-tip {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), 0 0 15px rgba(59, 130, 246, 0.15);
+}
+
+.hub-guided-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.65rem;
+}
+
+.hub-guided-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.12);
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    letter-spacing: 0.02em;
+}
+
+.hub-guided-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hub-guided-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border-color);
+    transition: all 0.25s ease;
+}
+
+.hub-guided-dot.active {
+    width: 14px;
+    border-radius: 4px;
+    background: var(--primary);
+}
+
+.hub-guided-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 2px 6px;
+    transition: all 0.2s ease;
+}
+
+.hub-guided-close:hover {
+    color: var(--text-main);
+    background: var(--surface-hover);
+}
+
+.hub-guided-title {
+    margin: 0 0 0.45rem 0;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+}
+
+.hub-guided-desc {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.hub-guided-desc strong {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.hub-guided-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.15rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.hub-guided-nav-btns {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.hub-guided-btn-skip {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0 0.4rem;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.hub-guided-btn-skip:hover {
+    color: var(--text-main);
+    background: var(--surface-hover);
+}
+
+.hub-guided-btn-prev {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    padding: 0 0.85rem;
+    height: 34px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.hub-guided-btn-prev:hover {
+    background: var(--surface-hover);
+    color: var(--text-main);
+}
+
+.hub-guided-btn-primary {
+    background: var(--primary);
+    color: #ffffff !important;
+    border: none;
+    border-radius: 9px;
+    padding: 0 1rem;
+    height: 34px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px var(--primary-glow);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.hub-guided-btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+/* Pulsing highlight on target element */
+.hub-guided-target-pulse {
+    animation: targetPulse 1.6s infinite alternate !important;
+    border-color: var(--primary) !important;
+    position: relative;
+    z-index: 105 !important;
+}
+
+@keyframes targetPulse {
+    0% {
+        box-shadow: 0 0 0 2px var(--primary), 0 0 10px rgba(59, 130, 246, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 0 6px var(--primary), 0 0 22px rgba(59, 130, 246, 0.6);
+    }
+}
+
+/* Onboarding Guide Trigger Button */
+.btn-guide-help {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-guide-help:hover {
+    background: var(--surface-hover);
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.btn-guide-help i {
+    color: var(--primary);
+}
+

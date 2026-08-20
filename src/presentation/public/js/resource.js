@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         let viewTarget = `href="#"`;
-        let viewOnClick = `onclick="event.preventDefault(); alert('Enlace no disponible');"`;
+        let viewOnClick = `onclick="event.preventDefault(); window.uiManager ? window.uiManager.showToast('Enlace no disponible', 'info') : alert('Enlace no disponible');"`;
         let viewClass = 'btn-view';
 
         const isInternalGCS = resource.url && (resource.url.includes('storage.googleapis.com') || resource.url.startsWith('/') || resource.url.includes('hubacademia.com'));
@@ -340,7 +340,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Mock function for saving resources (Library integration)
     async function saveResource(id, btn) {
         if (!window.LibraryService) {
-            alert("El servicio de biblioteca no está disponible o requiere inicio de sesión.");
+            if (window.uiManager) window.uiManager.showToast("El servicio de biblioteca no está disponible o requiere inicio de sesión.", "warning");
+            else alert("El servicio de biblioteca no está disponible o requiere inicio de sesión.");
             return;
         }
         const isSaved = btn.classList.contains('saved');
@@ -349,14 +350,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await window.LibraryService.removeResource(id);
                 btn.classList.remove('saved');
                 btn.innerHTML = '<i class="far fa-bookmark"></i> Guardar a Biblioteca';
+                if (window.uiManager) window.uiManager.showToast("Recurso eliminado de tu biblioteca", "info");
             } else {
                 await window.LibraryService.saveResource(id);
                 btn.classList.add('saved');
                 btn.innerHTML = '<i class="fas fa-bookmark" style="color:var(--primary-color)"></i> Guardado';
+                if (window.uiManager) window.uiManager.showToast("Recurso guardado en tu biblioteca", "success");
             }
         } catch (err) {
             console.error(err);
-            alert("Error al guardar en la biblioteca.");
+            if (window.uiManager) window.uiManager.showToast("Error al guardar en la biblioteca.", "error");
         }
     }
 

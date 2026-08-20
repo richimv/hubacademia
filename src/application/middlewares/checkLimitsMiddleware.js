@@ -50,15 +50,16 @@ const checkAILimits = (type) => {
                 try {
                     await pool.query(`
                         UPDATE users 
-                        SET usage_count = 0, last_free_renewal = CURRENT_TIMESTAMP 
+                        SET usage_count = 0, max_free_limit = 10, last_free_renewal = CURRENT_TIMESTAMP 
                         WHERE id = $1 
                           AND (last_free_renewal IS NULL OR (last_free_renewal AT TIME ZONE 'America/Lima')::date <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '7 days')::date)
                     `, [userId]);
                     
                     // Recargar los valores actualizados de user
-                    const reloadRes = await pool.query("SELECT usage_count, last_free_renewal FROM users WHERE id = $1", [userId]);
+                    const reloadRes = await pool.query("SELECT usage_count, max_free_limit, last_free_renewal FROM users WHERE id = $1", [userId]);
                     if (reloadRes.rows.length > 0) {
                         user.usage_count = reloadRes.rows[0].usage_count;
+                        user.max_free_limit = reloadRes.rows[0].max_free_limit;
                         user.last_free_renewal = reloadRes.rows[0].last_free_renewal;
                     }
                 } catch (e) {
@@ -85,10 +86,11 @@ const checkAILimits = (type) => {
                     const expiresAt = new Date(user.subscription_expires_at);
                     if (Date.now() > expiresAt.getTime()) {
                         // ✅ CORRECCIÓN CRÍTICA: Rebajar Tier Y Status, y resetear vidas como beneficio de fidelización
-                        await pool.query("UPDATE users SET subscription_tier = 'free', subscription_status = 'expired', usage_count = 0, last_free_renewal = CURRENT_TIMESTAMP WHERE id = $1", [userId]);
+                        await pool.query("UPDATE users SET subscription_tier = 'free', subscription_status = 'expired', usage_count = 0, max_free_limit = 10, last_free_renewal = CURRENT_TIMESTAMP WHERE id = $1", [userId]);
                         user.subscription_tier = 'free';
                         user.subscription_status = 'expired';
                         user.usage_count = 0;
+                        user.max_free_limit = 10;
                         user.last_free_renewal = new Date();
                     }
                 }
@@ -151,7 +153,7 @@ const checkAILimits = (type) => {
             // 4. BIFURCACIÓN MAESTRA DE SUBSCRIPCIÓN
             // ✅ MEJORA: Un usuario solo es "Active" si tiene plan premium y status activo.
             const isActiveAccount = user.subscription_status === 'active' && user.subscription_tier !== 'free';
-            const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 20);
+            const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 10);
 
             // 5. CHEQUEO DE LA OPERACIÓN SOLICITADA
             let effectiveType = type;
@@ -207,9 +209,9 @@ const checkAILimits = (type) => {
                             req.cost = 1;
                         } else {
                             // 🪙 CONTROL DE VIDAS DE PRUEBA PARA USUARIOS FREE PENDING
-                            if ((user.usage_count || 0) >= (user.max_free_limit || 20)) {
+                            if ((user.usage_count || 0) >= (user.max_free_limit || 10)) {
                                 return res.status(403).json({
-                                    error: 'Se han agotado tus 20 vidas de prueba gratis. Mejora tu plan a Basic o Advanced para continuar usando los simuladores y tutores IA.',
+                                    error: 'Se han agotado tus 10 vidas de prueba gratis. Mejora tu plan a Basic o Advanced para continuar usando los simuladores y tutores IA.',
                                     reason: 'FREE_LIVES_EXHAUSTED',
                                     paywall: true
                                 });
@@ -265,9 +267,9 @@ const checkAILimits = (type) => {
                     const isBatchImport = req.path.includes('/batch');
 
                     if (isAiGeneration) {
-                        if (tier !== 'advanced' && tier !== 'admin' && tier !== 'elite') {
+                        if (tier !== 'advanced' && tier !== 'admin') {
                             return res.status(403).json({
-                                error: 'La Generación de Flashcards con IA es una función exclusiva para el Plan Avanzado. ¡Mejora tu plan para crear cientos de tarjetas al instante!',
+                                error: 'La Generación de Flashcards con IA es una función exclusiva del Plan Avanzado. ¡Mejora tu plan para crear cientos de tarjetas al instante!',
                                 reason: 'PREMIUM_ONLY_FEATURE',
                                 paywall: true
                             });

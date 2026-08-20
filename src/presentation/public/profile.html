@@ -8,50 +8,40 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/base.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/auth.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/header.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/footer.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/modal.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/sidebar.css?v=c9dd299b">
-    <script src="/js/config.js?v=c9dd299b"></script>
-    <script src="/js/utils/themeManager.js?v=c9dd299b"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/base.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/auth.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/header.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/footer.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/modal.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/sidebar.css?v=aa9d3b4b">
+    <script src="/js/config.js?v=aa9d3b4b"></script>
+    <script src="/js/utils/themeManager.js?v=aa9d3b4b"></script>
     <style>
-        /* Stylized Design System for Profile Page - Dynamic Theme */
-        :root {
-            --profile-bg: var(--bg-main);
-            --profile-card-bg: var(--card-bg);
-            --profile-nested-bg: var(--bg-tertiary);
-            --profile-card-border: 1px solid var(--border-color);
-            --profile-text-primary: var(--text-main);
-            --profile-text-secondary: var(--text-secondary);
-            --manta-pill-gradient: linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%);
-            --manta-pill-glow: 0 4px 20px rgba(59, 130, 246, 0.35), 0 0 15px rgba(6, 182, 212, 0.25);
-        }
-
+        /* Stylized & Professional Design System for User Profile - Dual Theme */
         body {
-            background-color: var(--profile-bg);
-            color: var(--profile-text-primary);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: var(--font-main, 'Inter', system-ui, -apple-system, sans-serif);
             min-height: 100vh;
             margin: 0;
+            -webkit-font-smoothing: antialiased;
         }
 
         .profile-container {
-            max-width: 1040px;
-            margin: 90px auto 4rem;
+            max-width: 980px;
+            margin: 86px auto 3.5rem;
             padding: 0 1.5rem;
             display: flex;
             flex-direction: column;
-            gap: 1.75rem;
-            animation: profileFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            gap: 1.5rem;
+            animation: profileFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes profileFadeIn {
             from {
                 opacity: 0;
-                transform: translateY(16px);
+                transform: translateY(12px);
             }
             to {
                 opacity: 1;
@@ -59,19 +49,23 @@
             }
         }
 
-        /* Header Card */
+        /* Hero Header Card */
         .profile-header-card {
-            background: var(--profile-card-bg);
-            border: var(--profile-card-border);
-            border-radius: 24px;
-            padding: 2.25rem 2.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem 2.25rem;
             display: flex;
             align-items: center;
             gap: 2rem;
             position: relative;
-            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .profile-header-card:hover {
+            border-color: var(--border-hover);
             box-shadow: var(--shadow-md);
-            backdrop-filter: blur(12px);
         }
 
         .profile-avatar-container {
@@ -80,20 +74,20 @@
         }
 
         .profile-avatar {
-            width: 104px;
-            height: 104px;
+            width: 96px;
+            height: 96px;
             border-radius: 50%;
-            background: var(--profile-nested-bg);
-            border: 2px solid rgba(59, 130, 246, 0.4);
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-hover);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            box-shadow: 0 0 24px rgba(59, 130, 246, 0.25);
+            box-shadow: var(--shadow-sm);
         }
 
         .profile-avatar i {
-            font-size: 3.25rem;
+            font-size: 2.8rem;
             color: var(--primary);
         }
 
@@ -107,8 +101,8 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
-            z-index: 1;
+            gap: 0.35rem;
+            min-width: 0;
         }
 
         .profile-name-row {
@@ -119,11 +113,12 @@
         }
 
         .profile-name-row h1 {
-            font-size: 1.85rem;
+            font-size: 1.65rem;
             font-weight: 800;
             margin: 0;
             color: var(--text-main);
-            letter-spacing: -0.5px;
+            letter-spacing: -0.4px;
+            line-height: 1.25;
         }
 
         .btn-icon-edit {
@@ -131,15 +126,14 @@
             border: 1px solid var(--border-color);
             color: var(--primary);
             cursor: pointer;
-            font-size: 0.825rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            padding: 5px 14px;
+            padding: 4px 12px;
             border-radius: 8px;
             display: inline-flex;
             align-items: center;
             gap: 6px;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: var(--shadow-sm);
         }
 
         .btn-icon-edit:hover {
@@ -147,51 +141,51 @@
             border-color: var(--border-hover);
             color: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
         }
 
         .profile-email-row {
             margin: 0;
             color: var(--text-secondary);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             display: flex;
             align-items: center;
             gap: 8px;
+            word-break: break-all;
         }
 
         .profile-badges-row {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            margin-top: 0.5rem;
+            gap: 0.65rem;
+            margin-top: 0.4rem;
             flex-wrap: wrap;
         }
 
         .badge-status-active {
-            background: rgba(16, 185, 129, 0.12);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            font-size: 0.78rem;
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid var(--success-border);
+            font-size: 0.75rem;
             font-weight: 600;
-            padding: 5px 14px;
+            padding: 4px 12px;
             border-radius: 50px;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .badge-premium {
-            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+            background: var(--manta-pill-gradient);
             color: #ffffff;
-            font-weight: 800;
-            padding: 5px 14px;
+            font-weight: 700;
+            padding: 4px 12px;
             border-radius: 50px;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            box-shadow: 0 0 14px rgba(59, 130, 246, 0.4);
+            font-size: 0.75rem;
+            letter-spacing: 0.3px;
+            box-shadow: var(--manta-pill-glow);
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .badge-free {
@@ -199,12 +193,12 @@
             color: var(--text-secondary);
             border: 1px solid var(--border-color);
             font-weight: 600;
-            padding: 5px 14px;
+            padding: 4px 12px;
             border-radius: 50px;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         /* Two Column Grid */
@@ -221,7 +215,8 @@
             .profile-header-card {
                 flex-direction: column;
                 text-align: center;
-                padding: 2rem;
+                padding: 1.75rem;
+                gap: 1.25rem;
             }
             .profile-name-row, .profile-email-row, .profile-badges-row {
                 justify-content: center;
@@ -230,69 +225,97 @@
 
         /* Settings Cards General */
         .settings-card {
-            background: var(--profile-card-bg);
-            border: var(--profile-card-border);
-            border-radius: 22px;
-            padding: 1.85rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.75rem;
             display: flex;
             flex-direction: column;
-            gap: 1.25rem;
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
-            backdrop-filter: blur(8px);
+            gap: 1.2rem;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
             box-shadow: var(--shadow-sm);
         }
 
         .settings-card:hover {
             border-color: var(--border-hover);
             box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
         }
 
         .card-header-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 1rem;
+            gap: 0.75rem;
             flex-wrap: wrap;
         }
 
         .card-header-title {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 1.1rem;
+            gap: 8px;
+            font-size: 1.05rem;
             font-weight: 700;
+            color: var(--text-main);
             flex: 1;
             min-width: 0;
         }
 
         .card-header-title i {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             flex-shrink: 0;
         }
 
         .card-subtitle {
-            margin: 0.35rem 0 0.75rem 0;
-            font-size: 0.875rem;
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+
+        /* Subscription Details Inside Card */
+        .subscription-content-body {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .renewal-banner {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
             color: var(--text-secondary);
-            line-height: 1.5;
+        }
+
+        .renewal-banner i {
+            color: var(--primary);
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .renewal-banner-text strong {
+            color: var(--text-main);
         }
 
         /* Security List inside Card */
         .security-content-body {
             display: flex;
             flex-direction: column;
-            gap: 0.85rem;
+            gap: 0.75rem;
         }
 
         .security-item {
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 0.85rem 1.1rem;
-            background: var(--profile-nested-bg);
+            gap: 12px;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
-            border-radius: 14px;
+            border-radius: 12px;
             transition: border-color 0.2s ease, background 0.2s ease;
         }
 
@@ -302,25 +325,26 @@
         }
 
         .security-item-icon {
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             border-radius: 10px;
-            background: rgba(56, 189, 248, 0.12);
-            color: #38bdf8;
+            background: var(--info-bg);
+            color: var(--info);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             flex-shrink: 0;
         }
 
         .security-item-details {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .security-item-label {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
             text-transform: uppercase;
             font-weight: 700;
@@ -328,9 +352,12 @@
         }
 
         .security-item-val {
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             font-weight: 600;
             color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Usage Grid & Cards */
@@ -339,13 +366,13 @@
         }
 
         .usage-plan-tag {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: var(--primary-glow);
+            border: 1px solid var(--border-hover);
             color: var(--primary);
-            padding: 5px 16px;
+            padding: 4px 12px;
             border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 800;
+            font-size: 0.72rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             white-space: nowrap;
@@ -353,26 +380,24 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            line-height: 1;
-            box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
         }
 
         .usage-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1.25rem;
-            margin-top: 0.5rem;
+            margin-top: 0.25rem;
         }
 
         .usage-item {
-            background: var(--profile-nested-bg);
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.35rem 1.5rem;
+            border-radius: 14px;
+            padding: 1.25rem 1.35rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            gap: 0.85rem;
+            transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
             box-shadow: var(--shadow-sm);
         }
 
@@ -393,7 +418,7 @@
         .usage-title-group {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             min-width: 0;
         }
 
@@ -402,36 +427,35 @@
         }
 
         .usage-icon-pill {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             flex-shrink: 0;
         }
 
         .usage-title {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: var(--text-main);
             line-height: 1.25;
-            word-break: break-word;
         }
 
         .usage-badge-tag {
-            font-size: 0.72rem;
-            color: var(--text-secondary);
+            font-size: 0.7rem;
+            color: var(--text-muted);
             font-weight: 500;
             display: inline-block;
             margin-top: 2px;
         }
 
         .usage-count-val {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 800;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.4px;
             white-space: nowrap;
             flex-shrink: 0;
         }
@@ -448,20 +472,20 @@
         .usage-progress-bar {
             height: 100%;
             border-radius: 9999px;
-            transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .usage-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+            font-size: 0.78rem;
+            color: var(--text-muted);
             gap: 0.5rem;
         }
 
         .usage-footer-left {
-            color: var(--text-muted);
+            color: var(--text-secondary);
             font-weight: 500;
         }
 
@@ -469,20 +493,21 @@
             font-weight: 700;
         }
 
-        /* Actions & Signature Pill Buttons */
+        /* Buttons & CTA */
         .btn-action {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0.85rem 2.2rem;
+            padding: 0.75rem 1.85rem;
             border-radius: 50px;
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             text-decoration: none;
-            gap: 10px;
+            gap: 8px;
             border: none;
+            box-sizing: border-box;
         }
 
         .btn-primary {
@@ -492,8 +517,8 @@
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5), 0 0 20px rgba(6, 182, 212, 0.4);
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 6px 22px rgba(59, 130, 246, 0.45), 0 0 15px rgba(6, 182, 212, 0.35);
             color: #ffffff;
         }
 
@@ -502,9 +527,10 @@
             border: 1px solid var(--border-color);
             color: var(--text-main);
             border-radius: 12px;
-            padding: 0.75rem 1.4rem;
+            padding: 0.65rem 1.25rem;
             cursor: pointer;
             font-weight: 600;
+            font-size: 0.875rem;
             transition: all 0.2s ease;
         }
 
@@ -516,13 +542,12 @@
 
         /* Danger Zone */
         .danger-zone-card {
-            border: 1px solid rgba(239, 68, 68, 0.25);
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.04) 0%, var(--profile-card-bg) 100%);
+            border: 1px solid var(--danger-border);
+            background: var(--danger-bg);
         }
 
         .danger-zone-card:hover {
-            border-color: rgba(239, 68, 68, 0.45);
-            box-shadow: 0 10px 30px -10px rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
         }
 
         .danger-zone-content {
@@ -533,38 +558,40 @@
 
         .card-desc {
             color: var(--text-secondary);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             margin: 0;
             line-height: 1.5;
         }
 
         .btn-danger-glow {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #f87171;
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+            color: var(--danger);
             font-weight: 600;
-            padding: 0.8rem 1.5rem;
+            padding: 0.7rem 1.35rem;
             border-radius: 50px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 0.875rem;
+            align-self: flex-start;
         }
 
         .btn-danger-glow:hover {
-            background: #ef4444;
-            color: white;
-            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
-            border-color: #ef4444;
+            background: var(--danger);
+            color: #ffffff;
+            box-shadow: 0 4px 18px rgba(239, 68, 68, 0.35);
+            border-color: var(--danger);
         }
 
         .btn-danger-pill {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: var(--danger);
             color: #ffffff !important;
             font-weight: 700;
-            padding: 0.75rem 1.75rem;
+            padding: 0.7rem 1.5rem;
             border-radius: 50px;
             border: none;
             cursor: pointer;
@@ -573,14 +600,14 @@
             justify-content: center;
             gap: 8px;
             box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            font-size: 0.9rem;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 0.875rem;
         }
 
         .btn-danger-pill:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 6px 25px rgba(239, 68, 68, 0.5);
-            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+            background: var(--danger-hover);
         }
 
         .btn-danger-pill:disabled {
@@ -591,43 +618,33 @@
 
         @media (max-width: 600px) {
             .profile-container {
-                margin: 75px auto 3rem;
+                margin: 76px auto 2.5rem;
                 padding: 0 1rem;
                 gap: 1.25rem;
             }
             .profile-avatar {
-                width: 92px;
-                height: 92px;
+                width: 84px;
+                height: 84px;
             }
             .profile-avatar i {
-                font-size: 2.75rem;
+                font-size: 2.4rem;
             }
-            .card-header-title {
-                font-size: 0.95rem;
-            }
-            .card-header-row {
-                gap: 0.5rem;
-            }
-            .card-subtitle {
-                margin: 0.4rem 0 0.75rem 0;
-                font-size: 0.825rem;
+            .profile-name-row h1 {
+                font-size: 1.4rem;
             }
             .settings-card {
-                padding: 1.35rem;
-                border-radius: 18px;
+                padding: 1.25rem;
+                border-radius: 16px;
             }
             .usage-grid {
                 grid-template-columns: 1fr;
-                gap: 1rem;
+                gap: 0.85rem;
             }
             .usage-item {
-                padding: 1rem 1.1rem;
+                padding: 1rem;
             }
-            .usage-title {
-                font-size: 0.875rem;
-            }
-            .usage-count-val {
-                font-size: 1.1rem;
+            .btn-danger-glow {
+                align-self: stretch;
             }
         }
     </style>
@@ -671,7 +688,7 @@
                     <p class="profile-email-row"><i class="fas fa-envelope"></i> <span id="user-email">usuario@ejemplo.com</span></p>
                     <div class="profile-badges-row">
                         <div id="plan-badge-container">
-                            <span class="badge-free"><i class="fas fa-seedling"></i> Plan Gratuito</span>
+                            <span class="badge-free"><i class="fas fa-seedling"></i> Plan Gratuito (10 Vidas)</span>
                         </div>
                         <span class="badge-status-active"><i class="fas fa-check-circle"></i> Cuenta Verificada</span>
                     </div>
@@ -682,22 +699,22 @@
             <div class="profile-sections-grid">
                 <!-- Card 1: Mi Suscripción -->
                 <div class="settings-card subscription-card">
-                    <div class="card-header-row" style="color: #fbbf24;">
+                    <div class="card-header-row">
                         <div class="card-header-title">
-                            <i class="fas fa-crown"></i>
+                            <i class="fas fa-crown" style="color: var(--warning);"></i>
                             <span>Mi Suscripción</span>
                         </div>
                     </div>
                     <div id="subscription-status-container" class="subscription-content-body">
-                        <div class="loading-placeholder" style="color: #94a3b8; font-style: italic;">Cargando detalles del plan...</div>
+                        <div class="loading-placeholder" style="color: var(--text-muted); font-style: italic;">Cargando detalles del plan...</div>
                     </div>
                 </div>
 
                 <!-- Card 2: Cuenta y Seguridad -->
                 <div class="settings-card security-card">
-                    <div class="card-header-row" style="color: #38bdf8;">
+                    <div class="card-header-row">
                         <div class="card-header-title">
-                            <i class="fas fa-user-shield"></i>
+                            <i class="fas fa-user-shield" style="color: var(--primary);"></i>
                             <span>Seguridad y Cuenta</span>
                         </div>
                     </div>
@@ -706,14 +723,14 @@
                             <div class="security-item-icon"><i class="fab fa-google"></i></div>
                             <div class="security-item-details">
                                 <span class="security-item-label">Método de Acceso</span>
-                                <span class="security-item-val">Autenticado vía Google OAuth 2.0</span>
+                                <span class="security-item-val">Google OAuth 2.0 Seguro</span>
                             </div>
                         </div>
                         <div class="security-item">
-                            <div class="security-item-icon"><i class="fas fa-check-circle" style="color: #10b981;"></i></div>
+                            <div class="security-item-icon" style="background: var(--success-bg); color: var(--success);"><i class="fas fa-check-circle"></i></div>
                             <div class="security-item-details">
-                                <span class="security-item-label">Estado del Correo</span>
-                                <span class="security-item-val">Verificado e Identidad Confirmada</span>
+                                <span class="security-item-label">Estado de Identidad</span>
+                                <span class="security-item-val">Correo Verificado y Activo</span>
                             </div>
                         </div>
                         <div class="security-item">
@@ -729,30 +746,30 @@
 
             <!-- Full-Width Section: Consumo de IA (Filtered dynamically strictly per plan) -->
             <div id="premium-usage-card" class="settings-card usage-main-card" style="display: none;">
-                <div class="card-header-row" style="color: #60a5fa;">
+                <div class="card-header-row">
                     <div class="card-header-title">
-                        <i class="fas fa-chart-pie"></i>
-                        <span>Consumo de Servicios IA</span>
+                        <i class="fas fa-chart-pie" style="color: var(--primary);"></i>
+                        <span id="usage-section-title">Consumo de Servicios IA</span>
                     </div>
                     <span id="usage-plan-tag" class="usage-plan-tag">Plan Activo</span>
                 </div>
-                <p class="card-subtitle">Monitoreo en tiempo real de las cuotas asignadas a tu nivel de membresía actual.</p>
+                <p class="card-subtitle" id="usage-section-subtitle">Monitoreo en tiempo real de las cuotas asignadas a tu nivel de membresía actual.</p>
                 
                 <div id="premium-usage-container" class="usage-grid">
-                    <div class="loading-placeholder" style="color: #94a3b8; font-style: italic;">Cargando estadísticas de consumo...</div>
+                    <div class="loading-placeholder" style="color: var(--text-muted); font-style: italic;">Cargando estadísticas de consumo...</div>
                 </div>
             </div>
 
             <!-- Danger Zone Card -->
             <div class="settings-card danger-zone-card">
-                <div class="card-header-row" style="color: #ef4444;">
-                    <div class="card-header-title">
+                <div class="card-header-row">
+                    <div class="card-header-title" style="color: var(--danger);">
                         <i class="fas fa-exclamation-triangle"></i>
                         <span>Zona de Peligro</span>
                     </div>
                 </div>
                 <div class="danger-zone-content">
-                    <p class="card-desc" style="color: rgba(239, 68, 68, 0.85);">
+                    <p class="card-desc">
                         La eliminación de la cuenta es definitiva e irreversible. Al confirmar, se eliminarán permanentemente tus registros, avance en simuladores y suscripciones.
                     </p>
                     <button onclick="openDeleteModal()" class="btn-action btn-danger-glow">
@@ -765,31 +782,31 @@
 
     <!-- Delete Modal -->
     <div id="delete-modal" class="modal-overlay">
-        <div class="modal-content" style="border: 1px solid var(--danger-border, rgba(239, 68, 68, 0.3)); background: var(--modal-bg); border-radius: 24px; max-width: 500px; box-shadow: var(--shadow-xl);">
-            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.75rem;">
-                <h3 class="modal-title" style="color: #ef4444; font-size: 1.25rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px;">
+        <div class="modal-content" style="border: 1px solid var(--danger-border); background: var(--modal-bg); border-radius: 20px; max-width: 480px; box-shadow: var(--shadow-xl);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.5rem;">
+                <h3 class="modal-title" style="color: var(--danger); font-size: 1.15rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span>¿Estás absolutamente seguro?</span>
                 </h3>
                 <button onclick="closeDeleteModal()" class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 1.75rem; gap: 1.25rem;">
-                <div style="background: var(--danger-bg, rgba(239, 68, 68, 0.08)); border: 1px solid var(--danger-border, rgba(239, 68, 68, 0.2)); border-radius: 12px; padding: 1rem; color: var(--danger, #ef4444); font-size: 0.875rem; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;">
-                    <i class="fas fa-info-circle" style="margin-top: 2px; flex-shrink: 0; color: #ef4444;"></i>
+            <div class="modal-body" style="padding: 1.5rem; gap: 1.25rem;">
+                <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: 12px; padding: 1rem; color: var(--danger); font-size: 0.875rem; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;">
+                    <i class="fas fa-info-circle" style="margin-top: 2px; flex-shrink: 0;"></i>
                     <span>Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta, historial de chats, favoritos y suscripciones.</span>
                 </div>
                 <div class="form-group" style="margin-top: 0.5rem; text-align: left;">
-                    <label for="delete-password" style="display: block; margin-bottom: 0.6rem; font-weight: 600; color: var(--text-main); font-size: 0.9rem;">
-                        Escribe <span style="color: #ef4444; font-family: monospace; background: rgba(239, 68, 68, 0.15); padding: 2px 6px; border-radius: 4px;">"ELIMINAR"</span> para confirmar:
+                    <label for="delete-password" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-main); font-size: 0.875rem;">
+                        Escribe <span style="color: var(--danger); font-family: var(--font-mono, monospace); background: var(--danger-bg); padding: 2px 6px; border-radius: 4px; font-weight: 700;">"ELIMINAR"</span> para confirmar:
                     </label>
-                    <input type="text" id="delete-password" class="auth-input" placeholder="ELIMINAR" autocomplete="off" style="width: 100%; padding: 0.85rem 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-main); font-size: 0.95rem; outline: none; transition: all 0.2s;">
-                    <div id="delete-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; display: none; font-weight: 500;"><i class="fas fa-exclamation-circle"></i> Debes escribir "ELIMINAR" textualmente.</div>
+                    <input type="text" id="delete-password" class="auth-input" placeholder="ELIMINAR" autocomplete="off" style="width: 100%; padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-main); font-size: 0.9rem; outline: none;">
+                    <div id="delete-error" style="color: var(--danger); font-size: 0.8rem; margin-top: 0.5rem; display: none; font-weight: 500;"><i class="fas fa-exclamation-circle"></i> Debes escribir "ELIMINAR" textualmente.</div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 1.25rem 1.75rem; border-top: 1px solid var(--border-color); background: transparent; display: flex; gap: 0.85rem; justify-content: flex-end;">
-                <button onclick="closeDeleteModal()" class="btn-secondary" style="border-radius: 50px; padding: 0.7rem 1.5rem;">Cancelar</button>
+            <div class="modal-footer" style="padding: 1.25rem 1.5rem; border-top: 1px solid var(--border-color); background: transparent; display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button onclick="closeDeleteModal()" class="btn-secondary">Cancelar</button>
                 <button id="confirm-delete-btn" class="btn-danger-pill">
-                    <i class="fas fa-trash-alt"></i> Sí, eliminar mi cuenta
+                    <i class="fas fa-trash-alt"></i> Sí, eliminar cuenta
                 </button>
             </div>
         </div>
@@ -797,38 +814,38 @@
 
     <!-- Edit Name Modal -->
     <div id="edit-name-modal" class="modal-overlay">
-        <div class="modal-content" style="border: 1px solid var(--border-color); background: var(--modal-bg); border-radius: 24px; max-width: 480px; box-shadow: var(--shadow-xl);">
-            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.75rem;">
-                <h3 class="modal-title" style="color: var(--text-main); font-size: 1.25rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px;">
+        <div class="modal-content" style="border: 1px solid var(--border-color); background: var(--modal-bg); border-radius: 20px; max-width: 460px; box-shadow: var(--shadow-xl);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.5rem;">
+                <h3 class="modal-title" style="color: var(--text-main); font-size: 1.15rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <i class="fas fa-user-edit" style="color: var(--primary);"></i>
                     <span>Editar Nombre</span>
                 </h3>
                 <button onclick="closeEditNameModal()" class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 1.75rem; gap: 1.25rem;">
-                <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Puedes actualizar tu nombre de visualización dentro de la plataforma.</p>
+            <div class="modal-body" style="padding: 1.5rem; gap: 1.25rem;">
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0;">Puedes actualizar tu nombre de visualización dentro de la plataforma (permitido 1 vez por semana).</p>
                 <div class="form-group" style="text-align: left;">
-                    <label for="new-name-input" style="display: block; margin-bottom: 0.6rem; font-weight: 600; color: var(--text-main); font-size: 0.9rem;">Nuevo Nombre:</label>
-                    <input type="text" id="new-name-input" class="auth-input" placeholder="Ej: Dr. House" maxlength="50" style="width: 100%; padding: 0.85rem 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-main); font-size: 0.95rem;">
-                    <div id="edit-name-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; display: none;"><i class="fas fa-exclamation-circle"></i></div>
+                    <label for="new-name-input" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-main); font-size: 0.875rem;">Nuevo Nombre:</label>
+                    <input type="text" id="new-name-input" class="auth-input" placeholder="Ej: Dr. House" maxlength="50" style="width: 100%; padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-main); font-size: 0.9rem;">
+                    <div id="edit-name-error" style="color: var(--danger); font-size: 0.8rem; margin-top: 0.5rem; display: none;"><i class="fas fa-exclamation-circle"></i></div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 1.25rem 1.75rem; border-top: 1px solid var(--border-color); background: transparent; display: flex; gap: 0.85rem; justify-content: flex-end;">
-                <button onclick="closeEditNameModal()" class="btn-secondary" style="border-radius: 50px; padding: 0.7rem 1.5rem;">Cancelar</button>
-                <button id="confirm-edit-name-btn" class="btn-action btn-primary" style="padding: 0.7rem 1.75rem;" onclick="submitNameChange()">Guardar Cambios</button>
+            <div class="modal-footer" style="padding: 1.25rem 1.5rem; border-top: 1px solid var(--border-color); background: transparent; display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button onclick="closeEditNameModal()" class="btn-secondary">Cancelar</button>
+                <button id="confirm-edit-name-btn" class="btn-action btn-primary" onclick="submitNameChange()">Guardar Cambios</button>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=c9dd299b"></script>
-    <script src="/js/services/networkService.js?v=c9dd299b"></script>
-    <script src="/js/services/authApiService.js?v=c9dd299b"></script>
-    <script src="/js/sessionManager.js?v=c9dd299b"></script>
-    <script src="/js/app.js?v=c9dd299b"></script>
-    <script src="/js/ui/sidebar.js?v=c9dd299b"></script>
-    <script src="/js/profile.js?v=c9dd299b"></script>
+    <script src="/js/config.js?v=aa9d3b4b"></script>
+    <script src="/js/services/networkService.js?v=aa9d3b4b"></script>
+    <script src="/js/services/authApiService.js?v=aa9d3b4b"></script>
+    <script src="/js/sessionManager.js?v=aa9d3b4b"></script>
+    <script src="/js/app.js?v=aa9d3b4b"></script>
+    <script src="/js/ui/sidebar.js?v=aa9d3b4b"></script>
+    <script src="/js/profile.js?v=aa9d3b4b"></script>
 
 </body>
 

@@ -17,7 +17,7 @@ Este documento centraliza toda la arquitectura de monetización, el modelo de su
 | **Audio TTS e Imágenes**| No Incluido (Paywall) | Exclusivo (Síntesis TTS Google Cloud + Subida de Imágenes a GCS) | No Incluido (Paywall) |
 | **Generación IA Flashcards** | No Incluido | 30 pedidos / mes (Hasta 20 tarjetas por pedido con Gemini) | No Incluido |
 | **Clonación de Mazos** | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) |
-| **Simulador de Exámenes** | **CAP 15/Día** | **CAP 50/Día** | Descuenta vidas (20 de prueba) |
+| **Simulador de Exámenes** | **CAP 15/Día** | **CAP 50/Día** | Descuenta vidas (10 de prueba semanal) |
 
 ---
 
@@ -34,7 +34,7 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 *   Para evitar fricciones iniciales, `AuthService.js` aprovisiona automáticamente preferencias base en el simulador: target `SERUMS`, carrera `Medicina Humana`, dificultad `Básico` y 5 áreas del temario oficial MINSA.
 
 ### Fase 2.2: El Modelo de Vidas (Freemium de Entrada)
-*   El usuario gratuito opera con un pool de **vidas** o créditos de prueba (columna `usage_count` inicializada en `20`).
+*   El usuario gratuito opera con un pool de **vidas** o créditos de prueba (columna `usage_count` inicializada en `10`, renovada cada 7 días).
 *   Cada acción core (empezar examen, evaluar speaking, mensaje de chat) descuenta créditos (las consultas de chat descuentan exactamente 1 vida y se ejecutan sin RAG). Cuando se agotan, la UI despliega de forma segura el modal paywall bloqueante impidiendo el abuso del servicio.
 
 ### Fase 2.3: Compra y Webhook de Mercado Pago
@@ -66,7 +66,7 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 
 ### Fase 2.5: Control de Expiración
 *   Si la fecha actual supera el valor de `subscription_expires_at`, el middleware reduce de inmediato el nivel a `subscription_tier: 'free'` y actualiza el status a `'expired'`.
-*   Como beneficio por haber sido cliente, se le otorgan **20 nuevas vidas** de prueba y se resetea la fecha de renovación gratuita.
+*   Como beneficio por haber sido cliente, se le otorgan **10 nuevas vidas** de prueba y se resetea la fecha de renovación gratuita.
 
 ---
 
@@ -81,7 +81,7 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 *   **Control Unificado de Consumos (`checkLimitsMiddleware`)**:
     *   **Usuarios Basic Activos**: Tienen asignado un límite de **50 mensajes/día** (`daily_ai_usage`). No utilizan RAG (`useRag = false`) en ninguna circunstancia.
     *   **Usuarios Advanced Activos**: Tienen asignado un límite de **100 mensajes/día** (`daily_ai_usage`) con **hasta 25 consultas RAG/día** (`daily_rag_usage`). Si agotan las 25 consultas RAG, el sistema realiza automáticamente un fallback a IA Estándar (generativo experto sin RAG) consumiendo de la cuota diaria estándar hasta los 100 mensajes.
-    *   **Usuarios Free / Pending**: Consumen **1 vida de prueba** (`usage_count`) por cada consulta enviada al Quiz Tutor o Repaso Tutor, hasta agotar su pool de 20 vidas (`max_free_limit`). NUNCA utilizan RAG (`useRag = false`).
+    *   **Usuarios Free / Pending**: Consumen **1 vida de prueba** (`usage_count`) por cada consulta enviada al Quiz Tutor o Repaso Tutor, hasta agotar su pool de 10 vidas (`max_free_limit`). NUNCA utilizan RAG (`useRag = false`).
     *   **Asistente Guía (Chat General)**: Es 100% estático y efímero para todos los usuarios. Latencia de 0ms, 0 consumo de vidas o cuotas diarias.
 
 ### 3.3 Módulo: Diagnóstico Clínico (Analytics)

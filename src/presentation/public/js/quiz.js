@@ -103,8 +103,11 @@ window.showExamReview = async function () {
     const tutorBtn = document.getElementById('btn-open-quiz-tutor');
     if (tutorBtn) tutorBtn.style.display = 'none';
     try {
-        const resOverlay = document.getElementById('resultsOverlay');
-        if (resOverlay) resOverlay.classList.remove('active');
+        const resOverlay = document.getElementById('resultsOverlay') || elements.resultsOverlay;
+        if (resOverlay) {
+            resOverlay.classList.remove('active');
+            resOverlay.style.display = 'none';
+        }
 
         const qHeader = document.querySelector('.question-header');
         if (qHeader) qHeader.style.display = 'none';
@@ -124,14 +127,16 @@ window.showExamReview = async function () {
         const nextContainer = elements.nextBtnContainer || document.getElementById('nextBtnContainer');
         if (nextContainer) {
             nextContainer.classList.add('hidden');
+            nextContainer.style.display = 'none';
         }
 
-        const reviewContainer = document.getElementById('reviewContainer');
+        const reviewContainer = document.getElementById('reviewContainer') || elements.reviewContainer;
         if (reviewContainer) {
             reviewContainer.classList.remove('hidden');
+            reviewContainer.style.display = 'block';
             const reviewTitleEl = reviewContainer.querySelector('.review-header h2');
             if (reviewTitleEl) {
-                const ctxUpper = state.context.toUpperCase();
+                const ctxUpper = (state.context || 'MEDICINA').toUpperCase();
                 const ctxTitleSuffix = ctxUpper === 'EDUCACION' ? 'Magisterial' : 'Médico';
                 reviewTitleEl.innerHTML = `<i class="fas fa-clipboard-check"></i> Corrección de Simulacro ${ctxTitleSuffix}`;
             }
@@ -148,7 +153,7 @@ window.showExamReview = async function () {
 
         feed.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#3b82f6;"></i><br><p style="color:#cbd5e1; margin-top:1rem;">Cargando revisión...</p></div>';
 
-        const totalProcessed = Math.min(state.currentQuestionIndex, state.questions.length);
+        const totalProcessed = Math.min(Math.max(state.answers ? state.answers.length : 0, state.currentQuestionIndex), state.questions.length);
         const answeredQuestions = state.questions.slice(0, totalProcessed);
 
         feed.innerHTML = '';
@@ -242,13 +247,18 @@ async function init() {
     state.topic = urlParams.get('topic') || '';
     state.context = urlParams.get('context') || 'MEDICINA'; // Default
 
-    // Set dynamic tab title based on context
+    // Set dynamic tab title and module attribute based on context
     const ctxUpper = state.context.toUpperCase();
-    const ctxTitle = ctxUpper === 'EDUCACION' ? 'Simulador Magisterial' : 'Simulador Médico';
+    const isEdu = ctxUpper === 'EDUCACION';
+    document.body.setAttribute('data-module', isEdu ? 'educacion' : 'salud');
+    document.body.classList.remove('module-salud', 'module-educacion');
+    document.body.classList.add(isEdu ? 'module-educacion' : 'module-salud');
+
+    const ctxTitle = isEdu ? 'Simulador Magisterial' : 'Simulador Médico';
     document.title = `${ctxTitle} | Hub Academia`;
 
     // Configurar API_URL dinámicamente según contexto
-    if (ctxUpper === 'EDUCACION') {
+    if (isEdu) {
         API_URL = `${window.AppConfig.API_URL}/api/docente`;
     } else {
         API_URL = `${window.AppConfig.API_URL}/api/medico`;
@@ -302,11 +312,37 @@ async function init() {
         window.location.href = `simulator-dashboard?context=${ctx}`;
     };
 
+    const handleExitClick = async () => {
+        if (state.isFinished) {
+            handleExit();
+            return;
+        }
+
+        // 💾 Guardar progreso actual para permitir reanudar
+        saveSession();
+
+        if (window.confirmationModal && typeof window.confirmationModal.show === 'function') {
+            const confirmed = await window.confirmationModal.show(
+                '¿Deseas pausar y salir del simulacro? Tu progreso quedará guardado para que puedas reanudarlo cuando desees.',
+                'Pausar Simulacro',
+                'Sí, salir',
+                'Continuar examen'
+            );
+            if (confirmed) {
+                handleExit();
+            }
+        } else {
+            if (confirm('¿Deseas pausar y salir del simulacro? Tu progreso quedará guardado.')) {
+                handleExit();
+            }
+        }
+    };
+
     const btnExit = document.getElementById('btn-exit-quiz');
     const btnTopExit = document.getElementById('btn-top-exit');
 
     if (btnExit) btnExit.onclick = handleExit;
-    if (btnTopExit) btnTopExit.onclick = handleExit;
+    if (btnTopExit) btnTopExit.onclick = handleExitClick;
 
     try {
         // ✅ NUEVO: Intentar recuperar sesión previa
@@ -363,8 +399,10 @@ async function init() {
         }
     } catch (error) {
         console.error('Error iniciando quiz:', error);
-        localStorage.removeItem(getStorageKey()); // Auto-Recuperación con la clave correcta
-        alert('Se detectó un examen dañado en memoria. Hemos limpiado el caché de seguridad de tu navegador. Por favor, intenta iniciar el simulacro nuevamente y ya debería funcionar.');
+        localStorage.removeItem(getStorageKey());
+        if (window.confirmationModal) {
+            await window.confirmationModal.showAlert('Se detectó un examen dañado en memoria. Hemos limpiado el caché de seguridad de tu navegador. Por favor, intenta iniciar el simulacro nuevamente.', 'Aviso de Recuperación');
+        }
         window.location.href = '/';
     }
     initLightbox();
@@ -543,20 +581,8 @@ async function startQuiz() {
     };
 
     if (isDemo) {
-        // --- 📊 DEMO ANTI-REPETITION & LIMITS ---
-        // 🔄 REINICIO DIARIO: Si es un nuevo día, reseteamos el contador de sesiones demo
-        const today = new Date().toDateString();
-        const lastDemoDate = localStorage.getItem('demo_sessions_date');
-        let sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
-
-        if (lastDemoDate !== today) {
-            sessionsSent = 0;
-            localStorage.setItem('demo_sessions_count', '0');
-            localStorage.setItem('demo_sessions_date', today);
-        }
-
-        // Mantener el límite de 3 sesiones diarias para no registrados
-        if (sessionsSent >= 3) {
+        // --- 📊 DEMO ANTI-REPETITION & LÍMITE (1 intento por día para visitantes) ---
+        if (window.GuestSessionManager && !window.GuestSessionManager.canTakeDailyDemo()) {
             elements.loadingOverlay.classList.add('hidden');
             if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
                 window.uiManager.showAuthPromptModal();
@@ -591,8 +617,14 @@ async function startQuiz() {
                 throw new Error("No hay preguntas disponibles para la demo.");
             }
 
-            // Increment session count
-            localStorage.setItem('demo_sessions_count', (sessionsSent + 1).toString());
+            // Registrar intento de sesión diaria de visitante de forma centralizada
+            if (window.GuestSessionManager) {
+                window.GuestSessionManager.recordDemoAttempt();
+            } else {
+                const count = parseInt(localStorage.getItem('demo_sessions_count') || '0', 10);
+                localStorage.setItem('demo_sessions_count', (count + 1).toString());
+                localStorage.setItem('demo_sessions_date', new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' }));
+            }
 
             // Guardar IDs vistos para evitar repetición en la siguiente sesión
             const newSeenIds = [...new Set([...seenIds, ...data.questions.map(q => q.id)])];
@@ -628,10 +660,12 @@ async function startQuiz() {
                 ? "Lo sentimos, no hay preguntas disponibles para esta demo en este momento."
                 : "No se pudieron cargar las preguntas de demostración. Por favor, intenta de nuevo más tarde.";
 
-            alert(msg);
+            if (window.confirmationModal) {
+                window.confirmationModal.showAlert(msg, 'Demostración');
+            } else if (window.uiManager) {
+                window.uiManager.showToast(msg, 'warning');
+            }
 
-            // 🛑 CRITICAL: Lanzamos un error controlado para que initQuiz lo maneje si es necesario, 
-            // pero el alert ya dio feedback.
             return;
         }
     } else {
@@ -647,7 +681,7 @@ async function startQuiz() {
             if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                 window.uiManager.showPaywallModal(data.error, 'simulator');
             } else {
-                alert(data.error || "Límite alcanzado.");
+                if (window.uiManager) window.uiManager.showToast(data.error || "Límite alcanzado.", 'warning');
                 window.location.href = '/pricing';
             }
             return;
@@ -657,7 +691,11 @@ async function startQuiz() {
         if (!response.ok && response.status !== 404) {
             elements.loadingOverlay.classList.add('hidden');
             console.error("Server Error:", data.error);
-            alert("Hubo un error interno en el servidor. Por favor, intenta de nuevo o contacta a soporte técnico.");
+            if (window.confirmationModal) {
+                window.confirmationModal.showAlert("Hubo un error interno en el servidor. Por favor, intenta de nuevo o contacta a soporte técnico.", "Error de Servidor");
+            } else if (window.uiManager) {
+                window.uiManager.showToast("Error en el servidor.", 'error');
+            }
             return;
         }
 
@@ -672,7 +710,9 @@ async function startQuiz() {
             if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                 window.uiManager.showPaywallModal('Has abarcado todas las preguntas oficiales y de IA disponibles para este tema.', 'simulator');
             } else {
-                alert('¡Banco Agotado!\n\nHas completado todas las preguntas de este tema. Intenta cambiar de área o dificultad.');
+                if (window.confirmationModal) {
+                    await window.confirmationModal.showAlert('Has completado todas las preguntas de este tema. Intenta cambiar de área o dificultad.', '¡Banco Agotado!');
+                }
                 window.location.href = `simulator-dashboard?context=${state.context || 'MEDICINA'}`;
             }
             return;
@@ -680,7 +720,11 @@ async function startQuiz() {
 
         // 🛠 Error Técnico de IA (500 con flag)
         if (data.technicalError) {
-            alert(data.error || "Hubo un problema técnico al generar preguntas. Por favor, intenta de nuevo.");
+            if (window.confirmationModal) {
+                window.confirmationModal.showAlert(data.error || "Hubo un problema técnico al generar preguntas. Por favor, intenta de nuevo.", "Aviso");
+            } else if (window.uiManager) {
+                window.uiManager.showToast(data.error, 'error');
+            }
             return;
         }
 
@@ -689,14 +733,16 @@ async function startQuiz() {
             if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                 window.uiManager.showPaywallModal(data.error, 'simulator');
             } else {
-                alert(data.error || "Límite alcanzado.");
+                if (window.uiManager) window.uiManager.showToast(data.error || "Límite alcanzado.", 'warning');
                 window.location.href = '/pricing';
             }
             return;
         }
 
         // Fallback genérico para otros errores
-        alert(data.error || 'Hubo un error cargando el simulacro.');
+        if (window.uiManager) {
+            window.uiManager.showToast(data.error || 'Hubo un error cargando el simulacro.', 'error');
+        }
         return;
     }
 
@@ -762,7 +808,7 @@ async function fetchNextBatch() {
             elements.loadingOverlay.classList.add('hidden');
 
             if (response.status === 404 && data.noQuestions) {
-                alert('¡Excelente Trabajo! Has terminado con todas las preguntas disponibles para esta configuración. Puntuando lo que respondiste...');
+                if (window.uiManager) window.uiManager.showToast('¡Excelente Trabajo! Has completado todas las preguntas disponibles. Puntuando...', 'success');
                 return finishQuiz();
             }
 
@@ -780,7 +826,7 @@ async function fetchNextBatch() {
             if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                 window.uiManager.showPaywallModal(data.error, 'simulator');
             } else {
-                alert(data.error || "Límite alcanzado.");
+                if (window.uiManager) window.uiManager.showToast(data.error || "Límite alcanzado.", 'warning');
                 finishQuiz();
             }
             return;
@@ -790,7 +836,7 @@ async function fetchNextBatch() {
         if (!response.ok && response.status !== 404) {
             elements.loadingOverlay.classList.add('hidden');
             console.error("Server Error:", data.error);
-            alert("Error cargando más preguntas. Reintentando...");
+            if (window.uiManager) window.uiManager.showToast("Error cargando más preguntas. Reintentando...", 'warning');
             return;
         }
 
@@ -931,19 +977,23 @@ function renderQuestion() {
     if (elements.currentQ) elements.currentQ.textContent = state.currentQuestionIndex + 1;
     updateProgressUI();
 
-    // Imagen (si existe)
+    // Imagen (si existe y tiene URL válida)
     const imgContainer = document.getElementById('questionImageContainer');
     const imgElement = document.getElementById('questionImage');
     const layout = document.getElementById('questionLayout');
 
-    if (q.image_url) {
-        imgElement.src = window.resolveImageUrl(q.image_url);
-        imgContainer.classList.remove('hidden');
-        if (layout) layout.classList.add('has-image');
-    } else {
-        imgContainer.classList.add('hidden');
-        imgElement.src = '';
-        if (layout) layout.classList.remove('has-image');
+    if (imgContainer && imgElement) {
+        if (q.image_url && typeof q.image_url === 'string' && q.image_url.trim() !== '') {
+            imgElement.src = window.resolveImageUrl(q.image_url);
+            imgContainer.style.display = 'block';
+            imgContainer.classList.remove('hidden');
+            if (layout) layout.classList.add('has-image');
+        } else {
+            imgContainer.style.display = 'none';
+            imgContainer.classList.add('hidden');
+            imgElement.removeAttribute('src');
+            if (layout) layout.classList.remove('has-image');
+        }
     }
 
     // Texto Pregunta
@@ -1083,29 +1133,42 @@ function handleAnswer(selectedIndex, btnElement) {
         }
     }
 
-    // Configurar acción del botón Siguiente
-    elements.nextBtn.onclick = () => {
-        cancelCurrentScroll();
-        if (window.quizTutor) window.quizTutor.toggle(false);
-        state.currentQuestionIndex++;
-        if (state.currentQuestionIndex >= state.maxQuestions) {
-            finishQuiz();
+    // Configurar acción y texto del botón Siguiente / Finalizar
+    const isLastQuestion = (state.currentQuestionIndex + 1) >= state.maxQuestions;
+    if (elements.nextBtn) {
+        if (isLastQuestion) {
+            elements.nextBtn.innerHTML = `Finalizar Simulacro <i class="fas fa-check-circle" style="margin-left: 0.5rem;"></i>`;
         } else {
-            renderQuestion();
+            elements.nextBtn.innerHTML = `Siguiente Pregunta <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>`;
         }
-    };
+
+        elements.nextBtn.onclick = () => {
+            cancelCurrentScroll();
+            if (window.quizTutor) window.quizTutor.toggle(false);
+            state.currentQuestionIndex++;
+            if (state.currentQuestionIndex >= state.maxQuestions) {
+                finishQuiz();
+            } else {
+                renderQuestion();
+            }
+        };
+    }
 
     // 🚀 BIFURCACIÓN DE COMPORTAMIENTO PARA FEEDBACK / SIGUIENTE
     if (state.maxQuestions === 20) {
         // MODO ESTUDIO (20q): Mostrar explicación y el botón siguiente
         elements.explanationText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.") : (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
 
-        if (q.explanation_image_url) {
-            elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);
-            elements.explanationImageContainer.classList.remove('hidden');
-        } else {
-            elements.explanationImageContainer.classList.add('hidden');
-            elements.explanationImage.src = '';
+        if (elements.explanationImage && elements.explanationImageContainer) {
+            if (q.explanation_image_url && typeof q.explanation_image_url === 'string' && q.explanation_image_url.trim() !== '') {
+                elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);
+                elements.explanationImageContainer.style.display = 'block';
+                elements.explanationImageContainer.classList.remove('hidden');
+            } else {
+                elements.explanationImageContainer.style.display = 'none';
+                elements.explanationImageContainer.classList.add('hidden');
+                elements.explanationImage.removeAttribute('src');
+            }
         }
 
         elements.feedbackBox.style.display = 'block';
@@ -1198,7 +1261,7 @@ function startMockTimer() {
     // Si el tiempo ya expiró al iniciar o recuperar, entregamos automáticamente de inmediato
     if (timeLeft <= 0) {
         clearInterval(timerInterval);
-        alert("⏰ ¡El tiempo límite de este simulacro ha expirado! Procederemos a calificar tus respuestas guardadas.");
+        if (window.uiManager) window.uiManager.showToast("⏰ ¡El tiempo límite ha expirado! Calificando tus respuestas...", 'warning', 4000);
         finishQuiz();
         return;
     }
@@ -1221,7 +1284,7 @@ function startMockTimer() {
 
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            alert("⏰ ¡Se acabó el tiempo! Entregando tu simulacro automáticamente...");
+            if (window.uiManager) window.uiManager.showToast("⏰ ¡Se acabó el tiempo! Entregando tu simulacro automáticamente...", 'warning', 4000);
             finishQuiz();
         }
     }, 1000);
@@ -1303,14 +1366,26 @@ async function finishQuiz() {
     const tutorBtn = document.getElementById('btn-open-quiz-tutor');
     if (tutorBtn) tutorBtn.style.display = 'none';
 
+    // Ocultar elementos de pregunta activa
+    const qHeader = document.querySelector('.question-header');
+    if (qHeader) qHeader.style.display = 'none';
+    const qLayout = document.getElementById('questionLayout');
+    if (qLayout) qLayout.style.display = 'none';
+    const nextContainer = elements.nextBtnContainer || document.getElementById('nextBtnContainer');
+    if (nextContainer) {
+        nextContainer.classList.add('hidden');
+        nextContainer.style.display = 'none';
+    }
+
     // Calcular Score Visual
-    const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
     const denominator = state.maxQuestions; // 🎯 Siempre sobre el total configurado (10, 20, 100)
-    elements.finalScore.textContent = `${state.score}/${denominator}`;
+    if (elements.finalScore) {
+        elements.finalScore.textContent = `${state.score}/${denominator}`;
+    }
 
     // Calcular porcentaje para el círculo (SVG dashoffset)
     const actualTotal = denominator || 1;
-    const pct = (state.score / actualTotal) * 100;
+    const pct = Math.min(100, Math.max(0, (state.score / actualTotal) * 100));
 
     // Circunferencia = 2 * PI * r(45) = 282.74
     const circumference = 283;
@@ -1323,7 +1398,12 @@ async function finishQuiz() {
         }, 200);
     }
 
-    elements.resultsOverlay.classList.add('active');
+    const resOverlay = document.getElementById('resultsOverlay') || elements.resultsOverlay;
+    if (resOverlay) {
+        resOverlay.style.display = 'flex';
+        resOverlay.classList.remove('hidden');
+        resOverlay.classList.add('active');
+    }
 
     // 📊 LOCAL STATS SAVING (Guest Demo Persistence)
     const urlParamsFinish = new URLSearchParams(window.location.search);
@@ -1352,7 +1432,11 @@ async function finishQuiz() {
         };
 
         const domainKey = (state.context || 'MEDICINA').toLowerCase();
-        localStorage.setItem(`guest_demo_stats_${domainKey}`, JSON.stringify(currentStats));
+        if (window.GuestSessionManager) {
+            window.GuestSessionManager.saveGuestStats(domainKey, currentStats);
+        } else {
+            localStorage.setItem(`guest_demo_stats_${domainKey}`, JSON.stringify(currentStats));
+        }
         console.log(`💾 Estadísticas demo (${domainKey}) guardadas localmente.`);
 
         // No return early here, let it show the results overlay

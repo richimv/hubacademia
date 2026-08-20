@@ -114,15 +114,27 @@ if (paymentStatus === 'success' || statusDetail === 'approved') {
     window.history.replaceState({}, document.title, window.location.pathname);
 
     // Mostrar feedback
-    alert('¡Pago exitoso! 🎉\nTu cuenta Premium ha sido activada. Disfruta de acceso ilimitado.');
-
-    // Redirigir al dashboard para que vea todo desbloqueado
-    setTimeout(() => window.location.href = '/', 1000); // Updated to index.html (Dashboard view) -> Clean URL /
+    if (window.confirmationModal) {
+        window.confirmationModal.showAlert('¡Tu cuenta Premium ha sido activada exitosamente! Ya tienes acceso ilimitado a todos los simuladores, biblioteca y herramientas.', '¡Pago Exitoso! 🎉', 'Ir al Inicio').then(() => {
+            window.location.href = '/';
+        });
+    } else {
+        alert('¡Pago exitoso! 🎉\nTu cuenta Premium ha sido activada.');
+        setTimeout(() => window.location.href = '/', 1000);
+    }
 
 } else if (paymentStatus === 'failure') {
-    alert('El pago no se pudo completar. Por favor, intenta de nuevo.');
+    if (window.confirmationModal) {
+        window.confirmationModal.showAlert('El pago no se pudo completar. Por favor, intenta de nuevo o prueba con otro medio de pago.', 'Pago No Completado');
+    } else {
+        alert('El pago no se pudo completar. Por favor, intenta de nuevo.');
+    }
 } else if (paymentStatus === 'pending') {
-    alert('Tu pago está en proceso. Te notificaremos cuando se apruebe.');
+    if (window.confirmationModal) {
+        window.confirmationModal.showAlert('Tu pago está en proceso de acreditación. Te notificaremos cuando se apruebe.', 'Pago en Proceso');
+    } else {
+        alert('Tu pago está en proceso. Te notificaremos cuando se apruebe.');
+    }
 }
 
 // Logout helper (Usando SessionManager)
@@ -184,13 +196,21 @@ document.querySelectorAll('.plan-select-btn').forEach(button => {
                 // Redirect to Mercado Pago logic
                 window.location.href = data.init_point;
             } else {
-                alert('Error: No se recibió el link de pago.');
+                if (window.confirmationModal) {
+                    window.confirmationModal.showAlert('No se recibió el enlace de pago de la pasarela. Por favor, intenta nuevamente.', 'Error de Pasarela');
+                } else {
+                    alert('Error: No se recibió el link de pago.');
+                }
                 loading.classList.add('hidden');
             }
 
         } catch (error) {
             console.error("Error de pago:", error);
-            alert('Hubo un problema al conectar con el servidor de pagos. ' + error.message);
+            if (window.confirmationModal) {
+                window.confirmationModal.showAlert('Hubo un problema al conectar con el servidor de pagos: ' + error.message, 'Error de Conexión');
+            } else {
+                alert('Hubo un problema al conectar con el servidor de pagos. ' + error.message);
+            }
             loading.classList.add('hidden');
         }
     });

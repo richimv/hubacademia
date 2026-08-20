@@ -73,6 +73,11 @@ El panel detecta el contexto y ajusta los formularios automáticamente:
     2.  **Generar IA:** Motor basado en **Gemini 2.5 Flash Lite**. Permite seleccionar el dominio y las áreas de estudio específicas para generar lotes de 5 preguntas de alta fidelidad.
     3.  **Nueva:** Formulario manual que cambia sus opciones de target y carrera según el dominio seleccionado en tiempo real.
 
+### 3.3 Optimización Masiva de Ingesta y Paginación (Agosto 2026)
+*   **Ingesta por Lotes (Bulk Batch Insert):** `saveBulkQuestionBankAdmin` procesa la carga masiva en bloques de 50 preguntas por instrucción SQL `INSERT INTO question_bank ... VALUES (...)`, reduciendo los viajes de red en un **90%** (de 500 consultas a solo 10).
+*   **Paginación Eficiente:** `getAllQuestions` soporta los parámetros `page` y `limit` para evitar transferencias innecesarias de payloads pesados.
+*   **Índices Compuestos:** Búsquedas optimizadas mediante `idx_question_bank_created_at`, `idx_question_bank_domain_topic_sub` y `idx_question_bank_career`.
+
 ---
 
 ## 4. 🎓 Módulo de Carreras y Cursos

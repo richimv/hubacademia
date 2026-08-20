@@ -566,15 +566,8 @@ const FlashcardManager = (() => {
 
     function handleExit() {
         console.log("Exiting study session...", { currentDeckId });
-        
-        // Si venimos de nuestra propia web, usamos el botón atrás nativo para no ensuciar el historial
-        if (document.referrer.includes(window.location.host)) {
-            window.history.back();
-        } else {
-            // Fallback si entraron a las flashcards directo desde un marcador/URL
-            const targetUrl = currentDeckId ? `/repaso?deckId=${currentDeckId}` : '/repaso';
-            window.location.replace(targetUrl);
-        }
+        const targetUrl = currentDeckId ? `/repaso?deckId=${currentDeckId}` : '/repaso';
+        window.location.href = targetUrl;
     }
 
     // --- Event Listeners ---

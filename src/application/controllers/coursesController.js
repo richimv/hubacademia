@@ -66,6 +66,7 @@ class CoursesController {
         try {
             const { domain } = req.query;
             const careers = await this.adminService.getAll('career', { domain });
+            res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
             res.json(careers);
         } catch (error) {
             res.status(500).json({ error: 'Error al obtener las carreras' });
@@ -76,6 +77,7 @@ class CoursesController {
         try {
             const { domain } = req.query;
             const courses = await this.adminService.getAll('course', { domain });
+            res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
             res.json(courses);
         } catch (error) {
             if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
@@ -93,6 +95,7 @@ class CoursesController {
     async getStudents(req, res) {
         try {
             const students = await this.adminService.getAll('student');
+            res.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
             res.json(students);
         } catch (error) {
             res.status(500).json({ error: 'Error al obtener los alumnos' });
@@ -102,6 +105,7 @@ class CoursesController {
     async getTopics(req, res) {
         try {
             const topics = await this.adminService.getAll('topic');
+            res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
             res.json(topics);
         } catch (error) {
             res.status(500).json({ error: 'Error al obtener los temas' });
@@ -181,7 +185,14 @@ class CoursesController {
     async getBooks(req, res) {
         try {
             const { type, domain, includeHidden } = req.query; // ✅ Soporte para filtrado por tipo y dominio
-            const books = await this.adminService.getAll('book', { type, domain, includeHidden: includeHidden === 'true' });
+            const isHiddenIncluded = includeHidden === 'true';
+            const books = await this.adminService.getAll('book', { type, domain, includeHidden: isHiddenIncluded });
+            
+            if (isHiddenIncluded) {
+                res.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+            } else {
+                res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+            }
             res.json(books);
         } catch (error) {
             if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
@@ -195,18 +206,10 @@ class CoursesController {
 
     async getMedicalBooks(req, res) {
         try {
-            // Usamos repo directo via adminService (consistente con otros métodos 'hacky' pero efectivos del controlador)
             const bookRepo = this.adminService._getRepository('book');
-
-            // ✅ CORRECCIÓN PROFESIONAL: 
-            // En lugar de adivinar carreras individuales (Enfermería, Medicina, etc.),
-            // filtramos directamente por el ÁREA DE ESTUDIO "Ciencias de la Salud".
-            // Esto incluye automáticamente todas las carreras médicas (Medicina, Enfermería, etc.).
             const areaKeywords = ['Ciencias de la Salud'];
-
-            // ✅ Aumento de límite para mostrar todo el catálogo actual (36+) y futuro cercano.
-            // Idealmente esto debería ser paginado en el futuro.
             const books = await bookRepo.findByArea(areaKeywords, 100);
+            res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
             res.json(books);
         } catch (error) {
             console.error('❌ Error al obtener libros de medicina:', error);

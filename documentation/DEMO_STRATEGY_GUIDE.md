@@ -27,11 +27,11 @@ Para evitar cruces de información entre especialidades:
 - El Tablero detecta si el usuario es invitado y busca los datos en el `localStorage` según el dominio actual.
 - **Fallback de Marketing**: Si el usuario no tiene sesiones previas, se muestran **Datos de Ejemplo (Mock)** contextualmente correctos (temas pedagógicos para educación, temas clínicos para medicina) para demostrar el potencial del sistema.
 
-### 4. Reinicio Diario y Límites de Sesión
+### 4. Reinicio Diario y Límites de Sesión (GuestSessionManager)
 Para incentivar el registro sin bloquear permanentemente al prospecto:
-- **Límite de 3 Sesiones**: El usuario puede realizar hasta 3 simulacros rápidos de 10qs por dominio en un periodo de 24 horas.
-- **Lógica de Reinicio (`Daily Reset`)**: El sistema compara la fecha actual con `localStorage.demo_sessions_date`. Si es un nuevo día, el contador se reinicia a 0 automáticamente.
-- **Anti-Repetición Persistente**: A diferencia del contador, los `guest_seen_ids` persisten para que, si el usuario vuelve al día siguiente, no vea las mismas preguntas que ya respondió. Solo se limpian si el banco de preguntas se agota totalmente para ese usuario.
+- **Límite de 1 Sesión Diaria**: El usuario visitante puede realizar hasta 1 simulacro rápido de 10qs en un periodo de 24 horas (fecha calendario `America/Lima`).
+- **Retención de Datos de 1 Día (TTL Diario)**: La información y métricas obtenidas del simulacro demo (`guest_demo_stats_[domain]`) duran exactamente 1 día. Al iniciar un nuevo día calendario, `GuestSessionManager` purga automáticamente las estadísticas locales del visitante y reinicia el contador de sesiones a 0.
+- **Anti-Repetición Persistente**: A diferencia de las estadísticas efímeras, los `guest_seen_ids` persisten para que, si el usuario vuelve al día siguiente, no vea las mismas preguntas que ya respondió. Solo se limpian si el banco de preguntas se agota totalmente para ese usuario.
 
 ---
 
@@ -72,10 +72,10 @@ Para asegurar que las correcciones lleguen a todos los usuarios de inmediato (ev
 
 | Key | Propósito | Reset |
 |-----|-----------|-------|
-| `demo_sessions_count` | Contador de intentos del día | Diario |
-| `demo_sessions_date` | Fecha de la última sesión | N/A |
+| `demo_sessions_count` | Contador de intentos del día (Máx: 1) | Diario (`America/Lima`) |
+| `demo_sessions_date` | Fecha de la última sesión | Diario (`America/Lima`) |
 | `guest_seen_ids_[domain]` | IDs de preguntas ya respondidas | Al agotar banco |
-| `guest_demo_stats_[domain]` | Data para gráficos de dashboard | Manual / Nunca |
+| `guest_demo_stats_[domain]` | Data para gráficos de dashboard (TTL 1 día) | Diario (`America/Lima`) |
 | `current_exam_session` | Sesión activa (Resiliencia) | Al terminar / Expirar |
 
 ---
@@ -86,7 +86,7 @@ A diferencia de la plataforma web donde los visitantes pueden realizar simulacro
 - **Autenticación Obligatoria (100% SSO)**: Las aplicaciones móviles requieren inicio de sesión con Google desde el primer momento (`/(auth)/login`).
 - **Motivo de Arquitectura**: 
   1. Evitar bypass de cuotas en cliente móvil mediante borrado de almacenamiento local.
-  2. Proteger las vidas sincronizadas (20 vidas en cuenta gratuita en PostgreSQL/Supabase).
+  2. Proteger las vidas sincronizadas (10 vidas en cuenta gratuita en PostgreSQL/Supabase).
   3. Vincular de inmediato el historial y analíticas de simulacros al usuario.
 - **Disponibilidad Inicial de Concursos**:
   - **Educación (`HubDocenteApp`)**: Habilitado exclusivamente el examen objetivo **ASCENSO** (MINEDU). Los demás concursos (**Nombramiento**, **Acceso a Cargos**) se presentan con el distintivo **"Pronto"** para evitar selección prematura.
@@ -96,7 +96,7 @@ A diferencia de la plataforma web donde los visitantes pueden realizar simulacro
 
 ## 💎 Beneficios
 - **Alta Fidelidad**: El usuario prueba el producto REAL, no una maqueta.
-- **Conversión Progresiva**: 3 sesiones diarias en web son suficientes para demostrar el valor antes de pedir el registro.
+- **Conversión Progresiva**: 1 sesión diaria en web es suficiente para demostrar el valor antes de pedir el registro.
 - **Eficiencia**: Cero consumo de créditos de IA para usuarios no registrados.
 - **Orden**: Aislamiento total entre perfiles médicos y docentes desde el primer clic.
 

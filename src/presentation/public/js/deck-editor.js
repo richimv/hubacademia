@@ -41,11 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Let's just go to root for now, or update RepasoManager to read URL.
                 window.location.href = '/repaso';
             } else {
-                alert('Error al crear mazo');
+                if (window.uiManager) window.uiManager.showToast('Error al crear mazo', 'error');
+                else alert('Error al crear mazo');
             }
         } catch (err) {
             console.error(err);
-            alert('Error de conexión');
+            if (window.uiManager) window.uiManager.showToast('Error de conexión', 'warning');
+            else alert('Error de conexión');
         }
     });
 });

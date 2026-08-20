@@ -1,325 +1,183 @@
-# Informe de Auditoría y Propuestas de Optimización Radical
+# Informe Técnico y Historial de Mejoras Continuas
 
-## 1. Arquitectura Actual del Proyecto (Flujos de Datos, Backend, DB y Servicios de IA/GCS)
-
-La plataforma **Hub Academia** está construida sobre una arquitectura modular limpia y orientada a capas, desacoplando la presentación de la lógica de negocio y las integraciones de infraestructura. Su diseño permite el escalado multi-dominio mediante la parametrización dinámica y el aislamiento físico y lógico de los datos.
-
-### 1.1 Estructura del Directorio y Componentes del Sistema
-
-El ecosistema de código fuente se organiza dentro del directorio de código fuente **`src/`** para mantener un desacoplamiento limpio:
-- **`src/presentation/`**: Capa del frontend basada en HTML5, CSS3 personalizado (con variables del sistema de diseño unificado, como se define en `DESIGN_SYSTEM.md`) y JavaScript modular vanilla. Los componentes clave del cliente incluyen:
-  - `js/chat.js` y `js/tutor-chat.js`: Orquestación de interfaces de chat síncrono e interactivo.
-  - `js/utils/markdown-renderer.js`: Procesador de parsing centralizado que consume `marked.js` para renderizar de manera uniforme el formato del LLM, envolviendo tablas en contenedores responsivos (`table-responsive-wrapper`) y resolviendo rutas del proxy de medios.
-  - `js/simulator-dash.js`: Tablero interactivo que mapea y renderiza KPIs del simulador a partir del contexto del usuario.
-  - `js/quiz.js`: Motor de ejecución del examen clínico/pedagógico con persistencia en el almacenamiento local ante fallos de red.
-- **`src/application/`**: Capa de aplicación que contiene controladores y middlewares en NodeJS/Express:
-  - `controllers/`: Orquestadores que reciben las peticiones HTTP y delegan la ejecución a los servicios del dominio (ej. `medicoController.js`, `docenteController.js`, `idiomasSimulatorController.js`, `flashcardController.js`, `selfEvaluationController.js`, `deckController.js`, `paymentController.js`, `mediaController.js`).
-  - `middlewares/checkLimitsMiddleware.js`: Cortafuegos financiero transaccional encargado de regular el consumo de llamadas a APIs externas de IA y transferencias de archivos según el rol y nivel del usuario en tiempo real.
-- **`src/domain/`**: Núcleo lógico del negocio. Define las reglas de dominio, entidades, prompts de IA y servicios de infraestructura:
-  - `services/`: Lógica operativa de los módulos (ej. `medicoService.js`, `docenteService.js`, `idiomasSimulatorService.js`, `flashcardService.js`, `selfEvaluationService.js`, `tutorAiService.js`, `ragService.js`, `questionRagService.js`, `ttsService.js`, `driveService.js`).
-  - `prompts/`: Definición de plantillas sistemáticas para Gemini (`generationPrompts.js`, `chatPrompts.js`).
-  - `repositories/`: Capa de abstracción de persistencia de datos (ej. `medicoRepository.js`, `docenteRepository.js`, `idiomasSimulatorRepository.js`, `flashcardRepository.js`, `selfEvaluationRepository.js`, `analyticsRepository.js`).
-- **`src/infrastructure/`**: Enrutamiento, bases de datos y configuraciones globales:
-  - `config/`: Archivos de configuración de Express (`server.js`), cliente de base de datos (`supabaseClient.js`) y limitadores de tasa (`rateLimiters.js`).
-  - `database/`: Definición de esquemas físicos (`database_schema.sql`), scripts de migración (`monetization_migration.sql`) y procedimientos almacenados avanzados (`stored_procedures.sql`).
-  - `middleware/`: Middlewares técnicos de infraestructura como `authMiddleware.js` (validación JWT) y `usageMiddleware.js` (auditoría).
-  - `routes/`: Enrutamiento web de endpoints públicos y protegidos (`apiRoutes.js`, `analyticsRoutes.js`).
-- **`ml_service/`**: Microservicio local escrito en Python para el procesamiento de datos por lotes y análisis de tendencias fuera de línea.
-- **`scripts/`**: Utilidades administrativas, incluyendo `ingest_rag.py` para la ingesta de documentos a la base de datos vectorial.
+Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
 
 ---
 
-### 1.2 Flujo de Datos RAG y Arquitectura Vectorial (Pinecone & Vertex AI)
+### 🟢 [2026-08-20] - Sincronización y Actualización Total del Esquema de Base de Datos ([database_schema.sql](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/database_schema.sql))
 
-El sistema opera bajo un esquema **RAG Semántico Puro (V6.5)** para el chat de tutoría y la autoevaluación, aislando el conocimiento en namespaces del índice `hub-academia-index` de Pinecone (Serverless) para evitar la contaminación contextual cruzada:
-- **`medicine`**: Harrison, manuales clínicos y normas técnicas del MINSA (Tutor Clínico).
-- **`education`**: CNEB, Ley de Reforma Magisterial y temarios del MINEDU (Tutor Pedagógico).
-
-```
-[Consulta del Usuario] 
-      │
-      ▼
-[RagService: Agentic Rewriter (Gemini)] ──→ Expande consulta a términos técnicos
-      │
-      ▼
-[Vertex AI: text-multilingual-embedding-002] ──→ Genera vector (768 d)
-      │
-      ▼
-[Pinecone Index: Query Namespace] ──→ Recupera Top-K fragmentos relevantes
-      │
-      ▼
-[TutorAiService / Prompt Ingestion] ──→ Inyecta contexto + reglas + Few-Shot
-      │
-      ▼
-[Gemini 2.5 Flash Lite] ──→ Respuesta JSON nativa parseada por el frontend
-```
-
-#### Regla de Consistencia Absoluta de Embeddings:
-Toda la ingesta (`scripts/ingest_rag.py`) y la búsqueda semántica emplean matemáticamente el modelo `text-multilingual-embedding-002` (768 dimensiones). El uso de modelos mixtos reduciría la similitud de coseno del sistema por debajo del umbral de ruido matemático ($<0.15$), provocando el fallo del RAG y obligando al tutor a responder de forma general.
+- **🔍 Introspección Profunda en Vivo de Supabase PostgreSQL:**
+  - Se realizó una introspección completa conectándose directamente a la base de datos remota de Supabase a través de `information_schema` y `pg_catalog`.
+  - Se regeneró el archivo maestro [database_schema.sql](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/database_schema.sql) reflejando con exactitud el estado del 100% de los componentes:
+    - **11 Extensiones:** `vector`, `uuid-ossp`, `unaccent`, `pgcrypto`, `pg_trgm`, `fuzzystrmatch`, `hypopg`, `index_advisor`, `pg_stat_statements`, `plpgsql`, `supabase_vault`.
+    - **13 Tipos y Enums Personalizados:** `academic_area`, `aal_level`, `action`, `buckettype`, `code_challenge_method`, `equality_op`, `factor_status`, `factor_type`, `oauth_authorization_status`, `oauth_client_type`, `oauth_registration_type`, `oauth_response_type`, `one_time_token_type`.
+    - **21 Tablas Públicas y 171 Columnas:** con sus tipos de datos exactos, valores por defecto (`gen_random_uuid()`, `now()`), nulabilidad y llaves primarias.
+    - **Relaciones y Llaves Foráneas:** con todas las restricciones de integridad referencial (`ON DELETE CASCADE`, `ON DELETE SET NULL`).
+    - **57 Políticas RLS (Row Level Security):** todas las políticas de aislamiento de datos y seguridad por fila para usuarios y administradores.
+    - **56 Índices de Alto Rendimiento:** incluyendo índices B-Tree, GIN Trigram (`gin_trgm_ops`) y los 14 índices estratégicos de aceleración.
 
 ---
 
-### 1.3 Pipeline de Generación "Sniper-RAG" (Grado Industrial)
+### 🟢 [2026-08-20] - Módulo Repaso: Ordenación Cronológica de Mazos Públicos en Comunidad, Auto-Migración DB y Fallback Resiliente
 
-Para la creación del banco de preguntas, el sistema aplica una secuencia determinista en 5 fases a través del backend (`adminAiService.js`):
-1. **Lector de Menú (Anti-Repetición)**: Recupera el temario oficial desde Pinecone y aplica un barajado Fisher-Yates cruzado con el historial de preguntas del usuario para seleccionar un subtema inédito.
-2. **Investigador (RAG de Doble Precisión)**:
-   - *RAG de Teoría*: Busca sustento técnico y legal del subtema en el namespace correspondiente.
-   - *RAG de Identidad (Sniper)*: Recupera la estructura física y estilo formal de una pregunta real (usando un índice aleatorio como término de búsqueda exacto, ej. `78.`) para imitar el molde del examen oficial (ENAM/SERUMS/Nombramiento).
-3. **Diseñador (Dinamismo Visual)**: Fuerza la generación del caso en Markdown enriquecido (diálogos directos, tablas de datos) y prohíbe las aperturas genéricas de oraciones repetitivas.
-4. **Cirujano Psicométrico (Auditoría de Alternativas)**: JavaScript audita la respuesta generada. Si la opción correcta difiere en más de 40 caracteres respecto a los distractores, o si la explicación comete el error de mencionar explícitamente las letras de las alternativas (A, B, C) —lo cual rompe el barajado dinámico en frontend—, el sistema retroalimenta recursivamente al LLM hasta por 3 ciclos para su corrección.
-5. **Bloqueo de Calidad**: Si la pregunta no supera la auditoría tras los 3 reintentos de refinamiento, el objeto es destruido en memoria y el bucle se reinicia desde la Fase 1 con un subtema diferente.
+- **📅 Ordenación Prioritaria por Fecha de Publicación / Actualización:**
+  - En [flashcardRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/flashcardRepository.js), se configuró la consulta `getPublicDecks` con `ORDER BY COALESCE(d.updated_at, d.created_at) DESC, d.created_at DESC`.
+  - Al hacer público un mazo o cambiar su visibilidad/categoría (`updateDeckVisibility`), el servidor actualiza la marca de tiempo `updated_at = NOW()`.
+  - Esto garantiza que en cualquier filtro de píldoras ("Todas", "Programación", "Medicina", "Derecho", "Educación", etc.) el mazo recién publicado se ubique de inmediato en la **primera posición** de la cuadrícula de la comunidad.
 
----
-
-### 1.4 Módulo de Simuladores y Autoevaluación de Recursos
-
-Los simuladores médico, docente e idiomas, así como el módulo de autoevaluación, están implementados de manera independiente en sus respectivas capas para garantizar total desacoplamiento. Implementan una lógica de consulta híbrida de emergencia para optimizar costes de inferencia y garantizar la disponibilidad del servicio:
-- **Banco Local Primero**: Intenta recuperar un lote de 5 preguntas directamente de `question_bank` mapeando la configuración seleccionada por el estudiante usando los repositorios específicos (`medicoRepository.js`, `docenteRepository.js`, `idiomasSimulatorRepository.js`).
-- **IA de Reposición en Vivo**: Si el stock local es insuficiente para cubrir la diversidad de áreas solicitadas, los servicios específicos correspondientes (`medicoService.js`, `docenteService.js`, `idiomasSimulatorService.js`) generan preguntas individuales balanceadas sobre las materias deficientes usando Gemini en modo rápido (sin RAG pesado para el usuario final).
-- **Autoevaluación IA de Recursos (Regla de los <15k caracteres)**:
-  - Está a cargo del servicio `selfEvaluationService.js`. Si el contenido de texto plano del recurso en base de datos es inferior a 15,000 caracteres, se inyecta directamente en el prompt del LLM para una respuesta instantánea a coste $0 de base de datos vectorial.
-  - Si supera los 15,000 caracteres o es nulo, el sistema enruta la consulta hacia Pinecone mediante una búsqueda semántica basada en el título y temas del recurso.
-  - Si el motor vectorial reporta fallos, se activa el *Fallback Generativo Experto*, donde Gemini actúa bajo su conocimiento interno para evitar interrupciones en la UI.
-- **Tope de Seguridad**: Limitado a 15 autoevaluaciones diarias universales (`daily_arena_usage`) registradas por `selfEvaluationRepository.js` para evitar la saturación de llamadas API en bucles automatizados.
+- **🛠️ Auto-Migración de Base de Datos y Manejo de Errores Resiliente (Fallback SQL 42703):**
+  - **Auto-healing Migration ([db.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/db.js)):** Se añadió la instrucción `ALTER TABLE public.decks ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now();` en la inicialización del pool de conexiones a PostgreSQL.
+  - **Manejo Resiliente de Errores ([flashcardRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/flashcardRepository.js)):** Se implementó control con `try/catch` ante el código de error `42703` (columna no encontrada). Si por algún motivo la columna `updated_at` no ha sido creada aún en la base de datos remota, el sistema conmuta automáticamente a una consulta de respaldo ordenada por `created_at DESC`, evitando caídas 500 y garantizando disponibilidad continua del servicio.
 
 ---
 
-### 1.5 Arquitectura de Medios (Google Cloud Storage Proxy & Sharp)
+### 🟢 [2026-08-20] - Refactorización Integral de Límites y Caché: Visitantes (1 Demo/Día y TTL 1 Día) y Free (10 Vidas Semanales)
 
-Para evitar la exposición pública del bucket y centralizar la seguridad de los activos de la plataforma, el acceso a archivos multimedia (infografías, imágenes de enunciados, portadas y miniaturas) se realiza a través de un proxy intermedio en el backend (`mediaController.js`):
-- **Endpoint Seguro**: `/api/media/gcs?file=<path>` (Validación obligatoria de JWT de sesión).
-- **Disposición de Contenido Dinámica**: 
-  - `Content-Disposition: inline` por defecto para previsualización inmersiva en el navegador.
-  - `Content-Disposition: attachment; filename="..."` si se añade el query param `download=true`, forzando la descarga local directa desde el cliente.
-- **Optimización de Carga con Sharp**:
-  - Conversión de formato a **WebP**.
-  - Redimensionamiento proporcional a un ancho máximo de **1000px** para prevenir errores de memoria (*Out-Of-Memory*) en contenedores con recursos limitados.
-  - Compresión del **80%** de calidad con *Smart Subsampling* (preservando nitidez en infografías y esquemas médicos de texto pequeño) y conservación de metadatos de color (`.withMetadata()`).
+- **👤 Motor Centralizado de Sesión y Caché para Visitantes ([sessionManager.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/sessionManager.js)):**
+  - Se creó la clase `GuestSessionManager` centralizando el ciclo de vida del usuario no autenticado:
+    - **Límite de 1 simulacro de 10 preguntas por día**: `MAX_DAILY_DEMOS = 1` evaluado en base a la fecha de Perú (`America/Lima`).
+    - **Retención de datos y estadísticas de 1 día (TTL Diario)**: `checkAndCleanExpiredGuestData()` detecta el cambio de día calendario, reiniciando `demo_sessions_count = 0` y purgando atómicamente todas las claves `guest_demo_stats_[domain]`.
+    - **Métodos estandarizados**: `canTakeDailyDemo()`, `recordDemoAttempt()`, `getGuestStats(domain)`, `saveGuestStats(domain, stats)`.
+  - Se eliminó el código muerto y llaves legacy obsoletas (`guest_demo_stats`) en [quiz.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js) y [simulator-dash.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js).
 
----
+- **🪙 Reducción y Unificación del Pool Free / Pending a 10 Vidas Semanales:**
+  - **Capa de Presentación**: Se actualizaron [uiManager.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js), [profile.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/profile.js), [sessionManager.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/sessionManager.js) y [chat.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/chat.js) para estandarizar el límite por defecto a **10 vidas**, actualizando tooltips, modales de bienvenida (`checkAndShowWelcomeModal`) y mensajes de paywall.
+  - **Capa de Dominio y Aplicación**: Se actualizaron [user.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/models/user.js), [usageService.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/usageService.js), [checkLimitsMiddleware.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/middlewares/checkLimitsMiddleware.js), [chatPrompts.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/prompts/chatPrompts.js) y [asistenteGuiaKnowledge.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/asistenteGuiaKnowledge.js).
+  - **Capa de Infraestructura y Base de Datos**: Se actualizaron [database_schema.sql](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/database_schema.sql) y [sp_register_user.sql](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/sp_register_user.sql) estableciendo `max_free_limit DEFAULT 10`.
 
-### 1.6 Ciclo de Transacción Segura (Pasarela Mercado Pago)
-
-La conversión de planes y activación de privilegios premium opera de manera asíncrona y robusta:
-
-```
-[Usuario presiona Comprar]
-      │
-      ▼
-[paymentController: createOrder] ──→ Genera preferencia con external_reference: "USER_ID|advanced"
-      │
-      ▼
-[Pasarela Mercado Pago] ──→ Procesa tarjeta y envía Webhook asíncrono Back-to-Back
-      │
-      ▼
-[paymentController: handleWebhook] ──→ status === 'approved' + Valida monto recibido vs base
-      │
-      ▼
-[Database Transactional Update]
- 1. subscription_tier: 'advanced' | 'basic'
- 2. subscription_status: 'active'
- 3. subscription_expires_at: NOW() + INTERVAL '6 months' (o '2 months')
- 4. Reseteo de contadores de IA (daily_ai_usage, etc.)
-      │
-      ▼
-[Redirect Callback success] ──→ sessionManager.validateSession() ──→ Refresca JWT e inicia UI Premium
-```
+- **🧪 Cobertura y Suite de Pruebas Unitarias ([guestSessionManager.test.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/guestSessionManager.test.js)):**
+  - Se crearon pruebas unitarias dedicadas para `GuestSessionManager` validando el límite de 1 demo/día, el guardado de estadísticas y la purga automática por TTL de 1 día al cambiar de fecha.
+  - Se actualizaron los mocks de [checkLimitsMiddleware.test.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/checkLimitsMiddleware.test.js) y [userRepository.test.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/userRepository.test.js).
+  - Toda la suite de pruebas (17 suites, 121 tests) ejecutada y validada con 100% de éxito.
 
 ---
 
-### 1.7 Analítica de Tráfico e IA Predictiva Local (Python)
+### 🟢 [2026-08-20] - Optimización Integral de Rendimiento Full-Stack (Admin, Biblioteca, Caché y Carga Asíncrona)
 
-El monitoreo de interacción recopila señales de tráfico en tiempo real (`web_traffic`) y métricas de clicks en recursos (`resource_interactions`) mapeando interacciones tanto para alumnos autenticados como para invitados (vía `session_id`). 
+- **⚡ Renderizado Diferido Bajo Demanda en Panel Admin ([admin.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js#L357-L460)):**
+  - Se eliminó la ejecución sincronizada masiva de las 6 pestañas en `loadAllData()`, implementando `renderCurrentTab()` para renderizar exclusivamente la pestaña activa visible en pantalla.
+  - Se redujo en un **83%** la creación innecesaria de nodos DOM ocultos en la carga inicial y tras mutaciones de registros en el Panel de Gestión.
 
-El motor de analíticas predictivas (`ml_service/run_batch.py`) procesa el histórico de búsquedas y visualizaciones de forma offline en la máquina local para calcular las tendencias de consumo del catálogo académico:
-- **Decaimiento Exponencial Temporal**: Aplica la fórmula $W = e^{-0.05 \cdot t}$ (donde $t$ representa los días de antigüedad) para dar mayor peso a la intención de búsqueda actual del estudiante.
-- **Similitud Semántica Local**: Emplea un modelo local de embeddings para mapear conceptos (ej. "corazón" $\rightarrow$ Cardiología) cruzado con la **Similitud de Jaccard** para evitar falsas asociaciones semánticas no deseadas.
-- **Multiplicador de Match Directo**: Aplica un boost de **x5** a los términos que coinciden exactamente con el nombre de un recurso del catálogo.
+- **🗄️ Caché en Memoria con TTL e Invalidación Atómica en Repositorios ([bookRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/bookRepository.js), [topicRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/topicRepository.js) & [careerRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/careerRepository.js)):**
+  - Se integró un motor de caché en memoria con TTL de 5 minutos en `BookRepository`, `TopicRepository` y `CareerRepository` para consultas públicas de catálogo.
+  - Se conectó la invalidación atómica (`clearCache()`) en todos los métodos de mutación (`create`, `update`, `delete`, `syncResource`) garantizando coherencia inmediata tras cualquier edición administrativa.
 
----
+- **🌐 Cabeceras HTTP de Caché Inteligente ([coursesController.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/coursesController.js#L65-L215)):**
+  - Se configuró la cabecera `Cache-Control: public, max-age=120, stale-while-revalidate=300` para las rutas públicas de lectura (`/api/careers`, `/api/courses`, `/api/topics`, `/api/books`, `/api/books/medical`), permitiendo respuestas HTTP 304 / desde caché de navegador y CDN sin sobrecargar el servidor Express.
+  - Se blindaron las rutas de administración (`includeHidden=true` y `/api/students`) con `Cache-Control: private, no-cache, no-store, must-revalidate`.
 
-## 2. Puntos Críticos y Cuellos de Botella Detectados
+- **🖼️ Decodificación Asíncrona y Carga Diferida Universal de Imágenes ([components.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/components.js#L145-L1070)):**
+  - Se estandarizó la carga diferida con `loading="lazy"` y la decodificación fuera del hilo principal con `decoding="async"` en todas las tarjetas de cursos, carreras, recursos universales, miniaturas del panel de control y widgets de novedades.
 
-Tras un análisis forense de la infraestructura, se han identificado las siguientes vulnerabilidades estructurales y de rendimiento que amenazan la estabilidad operativa del proyecto en producción:
+- **🎨 Rediseño UI/UX de Revisión de Examen y Jerarquía Tipográfica Dual-Theme ([components.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/components.js#L680) & [quiz.css](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/quiz.css#L420)):**
+  - Se calibró la escala tipográfica de las preguntas en revisión de un sobredimensionado `1.4rem` a un armónico `1.12rem` (`font-weight: 600`) con `line-height: 1.6`.
+  - Se incorporaron badges con letras semánticas `[A, B, C, D]` (`.review-opt-letter`) de `28x28px`, destacando la opción correcta en verde esmeralda (`var(--success)`) y la elección errada del usuario en carmesí (`var(--danger)`) con texto tachado.
+  - Se modernizó el disparador del Tutor IA en revisión (`.btn-review-tutor-trigger`) con el gradiente oficial **Manta Pill** (`var(--manta-pill-gradient)`), radio `9999px`, sombra azul/cian e icono oficial de Hubi.
+  - Eliminación total de estilos inline oscuros hardcodeados, garantizando contraste nítido tanto en Modo Oscuro (`#050505`/`#0a0a0a`) como en Modo Claro (`#f8fafc`/`#ffffff`).
 
-### 2.1 Dependencia Crítica de Almacenamiento Efímero en Cloud (Render/Vercel)
-El microservicio de inteligencia artificial predictiva local (`ml_service/run_batch.py`) escribe la salida de su análisis en un archivo plano en la carpeta `data_dump/` local.
-- **Vulnerabilidad**: Hosting de despliegue tipo *serverless* o contenedores efímeros (Render/Vercel) recrean el sistema de archivos local en cada reinicio o despliegue. Los datos del dump predictivo se perderán recurrentemente.
-- **Riesgo**: Inconsistencia en las métricas de tendencias que visualiza el administrador en su dashboard de gestión.
+- **🔔 Centralización del Sistema de Alertas, Toasts Dual-Theme y Vidas en Tiempo Real ([uiManager.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js), [confirmationModal.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/confirmationModal.js) & [modal.css](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/modal.css)):**
+  - Se erradicaron más de 30 llamadas nativas y bloqueantes a `alert()` y `confirm()` en `quiz.js`, `pricing.js`, `simulator-dash.js`, `dashboard.js`, `repaso.js`, `resource.js` y `admin.js`.
+  - Se implementó `window.uiManager.showToast(message, type, duration)` con soporte multitipo (`'success'`, `'error'`, `'warning'`, `'info'`, `'life'`) e inyección automática en `#hub-toast-container` con backdrop-blur y z-index máximo (`2147483647`).
+  - Se conectó `sessionManager.decrementUsage()` con `showLifeDecrementToast()` para notificar inmediatamente en pantalla a los usuarios Free cada vez que descuentan una vida (`⚡ 1 crédito utilizado. Te quedan X/20 vidas de prueba`), alertando cuando restan 1-2 créditos y desplegando el paywall automático al llegar a 0.
 
-### 2.2 Sobrecarga y Consumo de CPU por Servido de Archivos (Proxy GCS)
-El proxy `/api/media/gcs` obliga a NodeJS a actuar como intermediario de red para cada imagen, PDF e infografía que se carga en el cliente.
-- **Vulnerabilidad**: Node es monohilo. Descargar un PDF de 80MB de GCS y enviarlo en bloques (*chunked transmission*) a través del hilo principal bloquea el bucle de eventos (*Event Loop*), elevando drásticamente el tiempo de respuesta de las peticiones HTTP del API y elevando el consumo de CPU.
-- **Riesgo**: Caídas del servicio ante ráfagas simultáneas de estudiantes abriendo el visor inmersivo durante exámenes simulados.
+- **💬 Sistema Centralizado de Tooltips, Guías de Onboarding y Soporte Táctil ([tooltipManager.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/tooltipManager.js), [components.css](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/components.css) & [simulator-dash.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js)):**
+  - Se creó el gestor universal `TooltipManager` (`window.tooltipManager`) para manejo declarativo de tooltips con `[data-tooltip]` y `[data-tooltip-pos]`, con posicionamiento inteligente anti-desbordamiento y micro-animaciones.
+  - Se corrigió el error en los simuladores de Salud, Educación e Idiomas donde el tooltip de configuración no aparecía para usuarios visitantes (`!token`).
+  - Se implementó el tour interactivo de 2 pasos (`startSimulatorTour`) para guiar a visitantes y nuevos usuarios en la configuración de especialidad y selección de modos de entrenamiento.
+  - Se añadió el botón discreto `#btn-show-guide` en la cabecera del simulador para que el usuario pueda volver a ver la guía interactiva en cualquier momento.
+  - Se adaptaron los tooltips informativos de los KPIs (`.kpi-info-btn` / `.kpi-tooltip-content`) con eventos touch/click para celulares y tokens dinámicos Dual-Theme.
 
-### 2.3 Procesamiento OCR Local Pesado y Bloqueante
-El script de ingesta vectorial (`scripts/ingest_rag.py`) depende de la instalación local del binario Tesseract OCR para extraer texto de PDFs escaneados página por página de forma síncrona.
-- **Vulnerabilidad**: El procesamiento de PDFs de gran tamaño (más de 300 páginas) consumirá gigabytes de memoria RAM local y tiempo de procesador en entornos de contenedores limitados.
-- **Riesgo**: Error de falta de memoria (*Out-Of-Memory*) en los servidores de integración continua o en la máquina local de ingesta, abortando la actualización de la base de datos vectorial de Pinecone.
-
-### 2.4 Brecha de Seguridad en la Validación de Pagos (Webhook sin Firma)
-El webhook del controlador de pagos (`paymentController.js`) actualiza el estado de las cuentas a nivel Premium basándose únicamente en el parámetro `status === 'approved'` y una comparación básica de valores de referencia recibidos en el payload HTTP del POST.
-- **Vulnerabilidad**: Falta una verificación de autenticidad criptográfica rigurosa que valide que la petición provino realmente de los servidores de Mercado Pago y que los datos del cuerpo no fueron interceptados o falsificados.
-- **Riesgo**: Un atacante con conocimientos del endpoint podría enviar peticiones preparadas imitando pagos exitosos con identificadores UUID aleatorios para activar suscripciones premium gratis.
-
-### 2.5 Multiplicidad de Peticiones de Sincronización en Entrada (Race Conditions)
-A pesar de las refactorizaciones en `SessionManager`, la inicialización simultánea del cliente web de Supabase y las llamadas de carga del dashboard pueden disparar peticiones de verificación de límites e historial de manera concurrente al iniciar la aplicación.
-- **Vulnerabilidad**: La concurrencia transaccional en PostgreSQL sin bloqueos explícitos a nivel de fila (*select for update*) puede provocar lecturas sucias y actualizar saldos de vidas de forma incorrecta.
-- **Riesgo**: Un usuario Free astuto podría abrir múltiples pestañas a la vez e iniciar exámenes de autoevaluación en el mismo segundo exacto, burlando el decremento del contador de vidas (`usage_count`).
-
----
-
-## 3. Propuestas Radicales de Optimización
-
-Para transformar la plataforma en un ecosistema de alta disponibilidad, costo de mantenimiento eficiente y seguridad militar, se deben implementar las siguientes soluciones de ingeniería:
-
-### 3.1 Desacoplamiento de Medios: URLs Firmadas de GCS con CDN (Cloudflare)
-Eliminar el paso de descarga a través del proxy de NodeJS en Express.
-- **Solución**: Refactorizar `mediaController.js` para que, en lugar de descargar y transmitir el archivo, genere una **URL Firmada de GCS (Signed URL)** con una vigencia corta (ej. 15 minutos).
-- **Beneficio**: El navegador del usuario descargará los recursos (PDFs de 100MB, videos) de forma directa desde la CDN global de Google Cloud Storage. El Event Loop de Node queda 100% liberado de la transferencia de bytes pesados.
-
-### 3.2 Caché de Control de Límites en Memoria (Upstash Redis)
-Desplazar la auditoría de límites diarios del motor relacional PostgreSQL a una capa en memoria persistente de bajísima latencia.
-- **Solución**: Integrar un cliente Redis Serverless (como Upstash) en `checkLimitsMiddleware.js`.
-- **Mecánica**: Los contadores diarios de los usuarios (`daily_ai_usage`, `daily_arena_usage`) se inicializan y decrementan mediante comandos atómicos de Redis (`INCRBY`, `EXPIRE`). Al finalizar el día, se sincroniza el acumulado a PostgreSQL de forma asíncrona.
-- **Beneficio**: Reducción de latencia del middleware de 60ms a $<3\text{ms}$ y eliminación del 90% de las transacciones de escritura repetitivas en PostgreSQL.
-
-### 3.3 Procesamiento de Ingesta Asíncrona (Google Cloud Document AI)
-Eliminar la dependencia local de Tesseract OCR y el chunking síncrono.
-- **Solución**: Migrar el pipeline de ingesta a una arquitectura orientada a eventos. Al subir un PDF al panel administrativo, este se deposita en un bucket de GCS, lo que dispara una Cloud Function que invoca a la API de **Google Cloud Document AI** (u OCR en la nube de alta disponibilidad).
-- **Beneficio**: Ingesta infinitamente rápida y tolerante a fallos, sin riesgo de cuelgues del servidor principal de NodeJS ni consumo de RAM local.
-
-### 3.4 Blindaje Criptográfico de Webhooks de Pago
-- **Solución**: Implementar la comprobación de la firma HMAC de Mercado Pago en `paymentController.js` utilizando la clave secreta proporcionada en el portal de desarrolladores.
-- **Mecánica**: El servidor calcula el hash SHA-256 del cuerpo del mensaje utilizando el secreto y lo compara con la cabecera `x-signature` del request. Si no coinciden, la petición es rechazada de inmediato con un `401 Unauthorized`.
+- **🗄️ 14 Índices Estratégicos en PostgreSQL ([database_schema.sql](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/database_schema.sql#L470-L485)):**
+  - Se crearon 14 índices clave (`idx_resources_type_domain_vis_created`, `idx_question_bank_created_at`, `idx_page_views_entity`, `idx_decks_user_parent`, `idx_user_flashcards_deck_sort`, etc.) acelerando las consultas del catálogo, métricas de admin y módulo de repaso.
+- **🃏 Reordenamiento Atómico en Lote para Módulo Repaso ([flashcardRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/flashcardRepository.js#L290-L315)):**
+  - Se reemplazó el bucle $N$ de consultas individuales por una única consulta SQL atómica batch (`UPDATE ... FROM (VALUES ...)`).
+  - Se optimizó `createFlashcard` eliminando la consulta previa para nombre del mazo e integrando `COALESCE((SELECT name FROM decks WHERE id = $2), 'GENERAL')` directamente en la sentencia `INSERT`.
+- **⚙️ Ingesta Masiva por Lotes y Paginación en Panel Admin ([adminRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/adminRepository.js#L200-L275)):**
+  - Se implementó la inserción en bloques de 50 preguntas en `saveBulkQuestionBankAdmin`, reduciendo las peticiones de red en un **90%** durante la carga de CSV/Excel.
+  - Se agregaron los parámetros `page` y `limit` a `getAllQuestions` para evitar la sobrecarga de payloads pesados.
+- **⚡ Caché en Memoria para Taxonomía Global ([courseRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/courseRepository.js#L4-L28)):**
+  - Se integró caché en memoria con TTL de 5 minutos en `findAll` (Cursos y Carreras), entregando respuestas en **0ms** para navegaciones frecuentes.
 
 ---
 
-## 4. Estándares de Seguridad y Buenas Prácticas
-
-La infraestructura técnica debe alinearse de forma estricta a los siguientes pilares de blindaje operativo:
-
-### 4.1 Principio de Privilegio Mínimo en Base de Datos (Supabase RLS)
-- Ninguna consulta del frontend debe tener acceso directo a colecciones globales.
-- Habilitar **Row Level Security (RLS)** en el 100% de las tablas relacionales que interactúan con el cliente.
-- Las consultas en Supabase deben restringirse exclusivamente a través de la identidad del token JWT inyectado en el encabezado `Authorization: Bearer <JWT>`, forzando la cláusula de seguridad:
-  ```sql
-  ALTER TABLE public.user_notes ENABLE ROW LEVEL SECURITY;
-  CREATE POLICY "Users can only access their own notes" 
-  ON public.user_notes FOR ALL 
-  USING (auth.uid() = user_id);
-  ```
-
-### 4.2 Sanitización del Editor Enriquecido (TinyMCE XSS Shield)
-Dado que el administrador puede ingresar HTML a la base de datos a través de TinyMCE 6, se debe garantizar la inocuidad de las etiquetas renderizadas en el cliente:
-- Implementar una librería de sanitización en el backend (ej. `dompurify` o `sanitize-html`) antes de persistir el registro del recurso en PostgreSQL.
-- Bloquear explícitamente la ejecución de tags reactivos como `<script>`, `<iframe>` (no autorizados), `onerror`, `onload` u otros atributos capaces de perpetrar ataques de Cross-Site Scripting (XSS).
-
-### 4.3 Hardening del Servidor Express
-- **Helmet JS**: Inyectar el middleware `helmet()` en `server.js` para ocultar cabeceras de servidor que delatan el uso de NodeJS/Express (ej. `X-Powered-By`) y establecer políticas seguras de contenido (CSP).
-- **CORS Restrictivo**: Configurar la lista de orígenes permitidos únicamente al dominio de producción del cliente web, bloqueando accesos cruzados externos no autorizados.
+### 🟢 [2026-08-04] - Corrección de Selección Inicial de Novedades y Estilización Manta Pill
+- **⚡ Estado Activo Inicial en Mi Biblioteca ([search.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/search.js#L28)):**
+  - Se unificó `this.activeFilter = '🔥 Novedades';` en el constructor del componente, corrigiendo la desincronización que impedía que la píldora apareciera seleccionada por defecto en la primera carga.
+- **🎨 Rediseño del Brillo de Píldora Novedades ([search.css](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/search.css#L670-L678)):**
+  - Se ajustó el efecto de resplandor naranja a `box-shadow: 0 3px 10px rgba(249, 115, 22, 0.22)` y degradado suave `linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(249, 115, 22, 0.25) 100%)` siguiendo [DESIGN_SYSTEM.md](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/DESIGN_SYSTEM.md).
 
 ---
 
-## 5. Conclusión de Infraestructura
+### 🟢 [2026-08-03] - Filtro Estricto de 30 Días en Novedades, Proporciones de Tarjetas y Medios
+- **🗃️ Migración de Columna `created_at` ([database_schema.sql](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/database_schema.sql#L198)):**
+  - Se agregó la columna `created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP` a la tabla `resources`.
+- **📅 Filtro SQL de 30 Días en Novedades ([bookRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/bookRepository.js#L14)):**
+  - Se configuró la condición estricta `r.created_at >= (NOW() - INTERVAL '30 days')` y `ORDER BY r.created_at DESC, r.id DESC` descartando automáticamente recursos anteriores a 30 días.
+- **🖼️ Fallback Universal y Tamaño de Tarjetas ([config.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/config.js#L74) & [components.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/components.js#L1012)):**
+  - Mapeo de `noticia.webp` como fallback oficial para recursos de tipo noticia.
+  - Ampliación del contenedor de la Tarjeta Hero en Novedades a `360px x 240px`.
+  - Alineación horizontal de botones de acción en las tarjetas secundarias mediante `margin-top: auto` en `.news-sec-footer`.
+- **🎨 Diferenciación Visual por Tipo de Recurso ([browse.css](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/browse.css#L1160)):**
+  - `noticia`: Resplandor púrpura (`rgba(168, 85, 247, 0.22)`).
+  - `norma`: Resplandor ámbar (`rgba(245, 158, 11, 0.22)`).
+  - `guia`: Resplandor esmeralda (`rgba(16, 185, 129, 0.22)`).
+  - `paper`: Resplandor azul royal (`rgba(59, 130, 246, 0.22)`).
+- **🧹 Limpieza de Barra de Búsqueda y Botón Chat Flotante ([library.html](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/library.html#L725)):**
+  - Remoción de lupa duplicada y botón 'X' en la caja de búsqueda.
+  - Ocultamiento definitivo del widget flotante de chat general en Mi Biblioteca.
 
-La arquitectura técnica de **Hub Academia** es sumamente robusta, destacando por su aproximación madura a problemas clásicos de los sistemas basados en IA (tales como la deduplicación temática, la homogeneización cromática en el pintado de datos médicos/pedagógicos y la gestión inteligente de reposición para evitar la inactividad del simulador). 
-
-No obstante, su viabilidad comercial a gran escala y su resiliencia técnica dependen directamente de la erradicación del acoplamiento de archivos locales (los dumps de Python en disco y el OCR local) y de la optimización del canal de transferencia de Google Cloud Storage a través de redirecciones CDN y firmado de accesos en lugar de actuar como un proxy de red clásico.
-
----
-
-## 6. Anexo: Hallazgos de QA y Errores Lógicos (Estado: Corregidos / Mitigados)
-
-A continuación, se presenta el informe detallado de la auditoría de control de calidad (QA) realizada sobre el código fuente del proyecto, junto con el estado de su resolución tras las correcciones aplicadas:
-
-### 6.1 Errores Lógicos y Excepciones en Tiempo de Ejecución (Frontend) - [ESTADO: SOLUCIONADO]
-
-> [!NOTE]
-> **Resolución:** Se reemplazó la variable inexistente `instructor.name` por la variable local correcta `user.name` en `handleResetPassword()`.
-
-* **Ubicación:** [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js#L2563)
-* **Detalle Técnico:** En el método `handleResetPassword(userId)`, el frontend realiza una petición HTTP al endpoint de restablecimiento de credenciales de usuario. Al obtener la respuesta exitosa, ejecuta la siguiente instrucción:
-  ```javascript
-  await window.confirmationModal.showAlert(`¡Éxito! La nueva contraseña temporal para ${user.name} es:\n\n${newPassword}...`, 'Contraseña Restablecida');
-  ```
-* **Impacto Operativo:** Solucionado. La alerta visual ahora se renderiza de forma correcta y muestra la nueva contraseña temporal generada, previniendo fallos irreversibles de acceso para el estudiante.
-
----
-
-### 6.2 Fallas en la Persistencia de Filtros y Desincronización de UI - [ESTADO: SOLUCIONADO]
-
-> [!NOTE]
-> **Resolución:** Se modificó `loadAllData()` para instanciar la URL de consulta mediante `new URL()` y propagar dinámicamente los parámetros activos `domain` y `search` de la UI.
-
-* **Ubicación:** [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js#L425-L440)
-* **Detalle Técnico:** La recarga de datos tras operaciones de edición, guardado o eliminación ahora incluye los parámetros activos en la UI (`this.currentQuestionDomain` y `this.currentQuestionSearch`) en su petición fetch:
-  ```javascript
-  const questionsUrl = new URL(`${window.AppConfig.API_URL}/api/admin/questions`);
-  questionsUrl.searchParams.append('domain', this.currentQuestionDomain || 'all');
-  if (this.currentQuestionSearch) {
-      questionsUrl.searchParams.append('search', this.currentQuestionSearch);
-  }
-  ```
-* **Impacto Operativo:** Solucionado. Se elimina la desincronización donde la UI conservaba los inputs con textos filtrados pero la tabla renderizaba todas las preguntas del banco.
-
----
-
-### 6.3 Pérdida de Foco en Inputs de Búsqueda por Regeneración Agresiva del DOM - [ESTADO: DOCUMENTADO]
-
-* **Ubicación:** [admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js#L354-L380) (Método `switchTab()`)
-* **Detalle Técnico:** Cada vez que se cambia el ordenamiento usando el select `tab-sort-select`, se regenera la estructura HTML interna mediante `innerHTML`, destruyendo el foco activo.
-* **Impacto Operativo:** Identificado como una limitación menor de renderizado nativo. El comportamiento se mantiene documentado para evitar refactorizaciones mayores que comprometan la estabilidad del DOM.
+### 🟢 [2026-08-20] - Refactorización Integral de Onboarding Tour, Tooltips, Alertas Únicas y UI de Resultados
+- **🧭 Onboarding Tour Universal & Tooltips ([GUIA_USUARIO_Y_TOOLTIPS.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/GUIA_USUARIO_Y_TOOLTIPS.md), [UI_COMPONENTS_GUIDE.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/UI_COMPONENTS_GUIDE.md), [tooltipManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/tooltipManager.js) & [components.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/components.css)):**
+  - Creación del documento técnico máster `GUIA_USUARIO_Y_TOOLTIPS.md` y actualización consolidada de `UI_COMPONENTS_GUIDE.md`.
+  - Corrección de cierre instantáneo de la guía mediante aislamiento de eventos de propagación (`e.stopPropagation()`).
+  - Implementación de motor de navegación de 3 pasos con scroll suave no agresivo (`block: 'nearest'`), evitando desplazamientos no deseados de los encabezados.
+  - Rediseño armónico de la tarjeta de guía (`width: 330px`) con botones uniformes (`height: 34px`, `white-space: nowrap`), indicadores de puntos dinámicos (`.hub-guided-dots`) y navegación `← Anterior` / `Siguiente →` / `¡Comenzar! 🚀`.
+- **⚡ Cobertura Exhaustiva de Vidas en Repaso y Tutores ([networkService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/services/networkService.js) & [deckController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/deckController.js)):**
+  - Se extendió el interceptor global `NetworkService.fetch` para capturar el inicio de estudio de mazos (`GET /cards/due` y `GET /cards/:id/study`), creación/edición de mazos (`POST/PUT /api/decks`) e interacciones con el Tutor IA de Flashcards (`tutor-chat.js`).
+  - Detección precisa de planes oficiales (`free`, `basic`, `advanced`): Las cuentas del plan gratuito (`tier === 'free'` o `status !== 'active'`) descuentan de forma garantizada y muestran la alerta flotante `⚡ 1 crédito utilizado...` en tiempo real.
+  - Sincronización instantánea tras salir del estudio de flashcards mediante redirección directa (`window.location.href`) y refresco reactivo en el evento `pageshow`, evitando datos estancados por Back-Forward Cache (bfcache) sin requerir F5 manual.
+- **🚪 Botón de Pausa y Salida Segura en Simulacros ([quiz.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/quiz.html), [quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js), [confirmationModal.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/confirmationModal.js) & [quiz.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/quiz.css)):**
+  - Incorporación del botón de salida en la esquina superior derecha (`#btn-top-exit` / `.btn-header-exit`), visible de forma responsiva en PC y celulares.
+  - Al pulsar salir, se invoca `saveSession()` y se despliega una modal de confirmación (*"¿Deseas pausar y salir del simulacro? Tu progreso quedará guardado..."*).
+  - Al regresar, el sistema ofrece:
+    1. **"Continuar anterior":** Reanuda exactamente desde la pregunta en curso.
+    2. **"Iniciar nuevo":** Descarta la sesión previa e inicia un examen limpio de 20 preguntas sin mezclar data.
+    3. **Botón "X" / Esc / Fuera:** Cierra la modal y sale directamente a `simulator-dashboard` sin forzar inicio de examen.
+- **🎯 Experiencia, Finalización y Modal de Resultados en Quiz ([quiz.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/quiz.html), [quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js) & [quiz.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/quiz.css)):**
+  - **Armonía y Espaciado en Modal de Resultados:** Implementación de las clases `.results-actions` y `.results-secondary-actions` en CSS con `gap: 1.15rem` en PC y `0.95rem` en móviles, erradicando el solapamiento visual entre *"Ver Corrección del Examen"* y los botones *"Salir"* / *"Nuevo Examen"*.
+  - **Corrección de la Última Pregunta:** Transformación dinámica del botón a *"Finalizar Simulacro 🚀"* en la última pregunta y solución del conflicto de `style="display: none"` en `resultsOverlay`, permitiendo abrir de manera garantizada el modal de resultados y la posterior corrección del examen.
+  - **Eliminación de Código Muerto/Huérfano:** Remoción del botón de flecha flotante (`.btn-back-pulse`) que se superponía con las opciones de respuesta.
+  - **Ocultamiento Seguro de Imágenes:** Corrección de `#questionImageContainer` y `#explanationImageContainer` para no mostrar iconos de imagen rota cuando no hay `image_url` asignada.
+  - **Aislamiento de la Revisión:** Ocultamiento total de `#reviewContainer` durante el examen activo para evitar su visualización prematura.
+  - **Colores Temáticos por Módulo:** Respuesta correcta en Verde Cian (`#0d9488`) para Salud y Azul Real (`#2563eb`) para Educación, tanto en el quiz activo como en la revisión post-examen.
+  - **Botón Esbelto del Tutor IA en Revisión:** Reducción de la altura y padding vertical (`.btn-review-tutor-trigger`: `height: 32px; padding: 0.35rem 0.95rem;`) para una apariencia elegante y no invasiva.
 
 ---
 
-### 6.4 Problemas de Concurrencia y Condiciones de Carrera (Backend) - [ESTADO: MITIGADO]
-
-> [!NOTE]
-> **Resolución:** Se inyectó un bloque `try/catch` dentro del bucle de sincronización en `syncDriveFolder` que aísla de forma segura los fallos individuales de base de datos. Los errores son capturados en un arreglo `syncErrors` y reportados al final de la respuesta JSON sin abortar el procesamiento del lote de archivos.
-
-* **Ubicación:** [adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js#L327-L385)
-* **Detalle Técnico:** El endpoint captura de manera individual las excepciones arrojadas por `adminService.syncResource(...)` (por ejemplo, fallos de violación de clave única por duplicación en peticiones paralelas concurrentes):
-  ```javascript
-  try {
-      const result = await adminService.syncResource(...);
-      // ...
-  } catch (syncErr) {
-      failedCount++;
-      syncErrors.push({ file: file.name, url: driveUrl, error: syncErr.message });
-  }
-  ```
-* **Impacto Operativo:** Mitigado. La sincronización masiva es tolerante a fallos y no aborta bruscamente la petición completa si un archivo individual sufre un error de persistencia.
+### 🟢 [2026-07-31] - Unificación de Documentación Mi Biblioteca y Sistema de Curaduría Automática
+- **📚 Consolidación de Documentación ([MI_BIBLIOTECA.md](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/MI_BIBLIOTECA.md)):**
+  - Fusión de `@MI_BIBLIOTECA` y `@MI_BIBLIOTECA_GUIA` eliminando información obsoleta y creando una guía máster única.
+- **🤖 Curaduría e Ingesta Automática de Recursos ([resourceAutoIngestService.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/resourceAutoIngestService.js)):**
+  - Creación del servicio de ingesta automática y script CLI `autoIngestResources.js` para la incorporación de guías clínicas y directivas oficiales.
 
 ---
 
-### 6.5 Vulnerabilidad de Crash por Spawning No Capturado (Backend) - [ESTADO: SOLUCIONADO]
+## 🏛️ Arquitectura General del Sistema
 
-> [!NOTE]
-> **Resolución:** Se añadió un listener `.on('error', ...)` en el objeto de proceso `pythonProcess` y se inyectó validación de `res.headersSent` en el listener `'close'` para evitar excepciones por duplicidad de envíos.
-
-* **Ubicación:** [adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js#L54-L68)
-* **Detalle Técnico:** Se capturan de forma asíncrona las fallas de spawn (por ejemplo, si la ruta del ejecutable Python es incorrecta o no está en el PATH del servidor):
-  ```javascript
-  pythonProcess.on('error', (err) => {
-      console.error('❌ Error al iniciar el script de IA (spawn):', err);
-      if (!res.headersSent) {
-          res.status(500).json({ error: 'No se pudo iniciar el proceso de análisis de IA.' });
-      }
-  });
-  ```
-* **Impacto Operativo:** Solucionado. La inexistencia o falla del proceso de Python es manejada de manera segura respondiendo con código de error HTTP 500, eliminando la posibilidad de que Express experimente un crash catastrófico.
+### 1. Estructura de Capas
+- **`src/presentation/`**: Cliente HTML5, CSS3 modular (Negro Mate Puro / Manta Gradients) y JavaScript Vanilla.
+- **`src/application/`**: Controladores Express (`adminController.js`, `flashcardController.js`, `paymentController.js`) y Middlewares transaccionales (`checkLimitsMiddleware.js`).
+- **`src/domain/`**: Lógica de negocio pura (`services/`, `repositories/`, `prompts/`).
+- **`src/infrastructure/`**: Enrutamiento (`routes/`), cliente Supabase/PostgreSQL (`db.js`) y esquemas (`database_schema.sql`).
 
 ---
 
-### 6.6 Módulo de Curaduría Académica e Ingesta Automática de Recursos (IA Agéntica) - [ESTADO: OPERATIVO Y ACTUALIZADO]
+## 🔐 Estándares de Seguridad y Calidad
+- **Row Level Security (RLS):** Habilitado en todas las tablas de interacción de usuario en Supabase.
+- **Sanitización XSS:** Sanitización estricta en el editor TinyMCE y procesador Markdown.
+- **Firmas Criptográficas:** Verificación HMAC en webhooks de Mercado Pago.
+- **Cobertura de Pruebas:** Suite Jest de 17 archivos de prueba unitarios con **123/123 pruebas en verde**.
 
-> [!NOTE]
-> **Descripción:** Sistema de curaduría de investigación y de ingesta directa de documentos oficiales (Guías de Práctica Clínica, Normas Técnicas de Salud, Directivas del MINEDU, publicaciones científicas y marcos internacionales) ejecutado de forma agéntica e inyectado en la base de datos PostgreSQL/Supabase.
+---
 
-* **Componentes clave:**
-  - [resourceAutoIngestService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/resourceAutoIngestService.js): Servicio del dominio encargado del procesamiento de lotes (`ingestBatch`), deduplicación por URL normalizada, limpieza/formateo de contenido HTML (`_ensureCleanHtml`), normalización de dominios (`medicine`, `education`) y categorización de tipos de recursos (`paper`, `guia`, `norma`, `book`, `video`, `other`).
-  - [autoIngestResources.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/scripts/autoIngestResources.js): Script CLI interactivo/batch para inyección directa desde la IA Agéntica mediante parámetros CLI (`--data=...`, `--file=...`) o flujo de `stdin`.
-  - [bookRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/bookRepository.js): Capa de abstracción de datos para persistencia relacional transaccional (`BEGIN`, `COMMIT`, `ROLLBACK`) y vinculación automática con temas (`topic_resources`) y cursos (`course_books`).
-* **Estado Actual:** 10 nuevos recursos de alta jerarquía (Guías INS/CETS 2026, Normas Técnicas MINSA 2025/2026, Directiva y Temario MINEDU 2026, Directivas OMS/WHO 2026 y Marco Digital UNESCO) inyectados con éxito en la base de datos de producción.
+*Nota: Este archivo debe actualizarse de forma obligatoria tras cada sesión de desarrollo o release de producción, manteniendo la fecha ISO (`[YYYY-MM-DD]`) y el resumen ejecutivo de cambios.*

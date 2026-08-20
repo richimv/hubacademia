@@ -158,7 +158,7 @@ router.get('/internal/ml-data', coursesController.getDataForML);
 
 // --- Rutas del Simulador Médico ---
 router.post('/medico/start', auth, checkAILimits('simulator'), medicoController.startQuiz);
-router.post('/medico/next-batch', auth, checkAILimits('simulator'), medicoController.getNextBatch);
+router.post('/medico/next-batch', auth, medicoController.getNextBatch);
 router.get('/medico/demo', optionalAuth, medicoController.getDemoQuestions);
 router.post('/medico/submit', auth, medicoController.submitScore);
 router.get('/medico/stats', optionalAuth, medicoController.getStats);
@@ -167,7 +167,7 @@ router.get('/medico/leaderboard', auth, medicoController.getLeaderboard);
 
 // --- Rutas del Simulador Docente ---
 router.post('/docente/start', auth, checkAILimits('simulator'), docenteController.startQuiz);
-router.post('/docente/next-batch', auth, checkAILimits('simulator'), docenteController.getNextBatch);
+router.post('/docente/next-batch', auth, docenteController.getNextBatch);
 router.get('/docente/demo', optionalAuth, docenteController.getDemoQuestions);
 router.post('/docente/submit', auth, docenteController.submitScore);
 router.get('/docente/stats', optionalAuth, docenteController.getStats);

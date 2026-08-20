@@ -139,25 +139,25 @@ describe('app.js Presentation Orchestrator', () => {
             });
         });
 
-        test('debe retornar Plan Pro y tier-pro para suscripción activa pro', () => {
-            const userPro = {
-                subscriptionTier: 'pro',
-                subscriptionStatus: 'active'
-            };
-            expect(appModule.getTierBadgeConfig(userPro)).toEqual({
-                tierLabel: 'Plan Pro',
-                tierClass: 'tier-pro'
-            });
-        });
-
-        test('debe formatear tiers personalizados activos con clase tier-premium', () => {
+        test('debe retornar Plan Básico y tier-basic para suscripción activa basic', () => {
             const userBasic = {
                 subscriptionTier: 'basic',
                 subscriptionStatus: 'active'
             };
             expect(appModule.getTierBadgeConfig(userBasic)).toEqual({
-                tierLabel: 'Plan Basic',
-                tierClass: 'tier-premium'
+                tierLabel: 'Plan Básico',
+                tierClass: 'tier-basic'
+            });
+        });
+
+        test('debe retornar Plan Gratuito para cuentas con status pending o tier free', () => {
+            const userPending = {
+                subscriptionTier: 'basic',
+                subscriptionStatus: 'pending'
+            };
+            expect(appModule.getTierBadgeConfig(userPending)).toEqual({
+                tierLabel: 'Plan Gratuito',
+                tierClass: 'tier-free'
             });
         });
     });

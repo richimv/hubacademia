@@ -171,4 +171,31 @@ describe('DeckController Security & Cost Limits', () => {
             }));
         });
     });
+
+    describe('Community Public Decks Sorting & Visibility', () => {
+        it('should call DeckService.getPublicDecks with category and page parameters', async () => {
+            mockReq.query = { page: '1', limit: '20', category: 'Tecnología' };
+            const mockPublicDecks = [
+                { id: 'deck-latest', name: 'Mazo Reciente', category: 'Tecnología', updated_at: new Date().toISOString() },
+                { id: 'deck-older', name: 'Mazo Antiguo', category: 'Tecnología', updated_at: new Date(Date.now() - 86400000).toISOString() }
+            ];
+            DeckService.getPublicDecks.mockResolvedValue(mockPublicDecks);
+
+            await deckController.getPublicDecks(mockReq, mockRes);
+
+            expect(DeckService.getPublicDecks).toHaveBeenCalledWith(1, 20, 'Tecnología');
+            expect(mockRes.json).toHaveBeenCalledWith({ success: true, decks: mockPublicDecks });
+        });
+
+        it('should update deck visibility with category parameter', async () => {
+            mockReq.params = { deckId: 'deck-1' };
+            mockReq.body = { is_public: true, category: 'Derecho' };
+            DeckService.updateDeckVisibility.mockResolvedValue({ id: 'deck-1', is_public: true, category: 'Derecho' });
+
+            await deckController.toggleVisibility(mockReq, mockRes);
+
+            expect(DeckService.updateDeckVisibility).toHaveBeenCalledWith('user-123', 'deck-1', true, 'Derecho');
+            expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+        });
+    });
 });

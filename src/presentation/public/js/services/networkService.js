@@ -41,23 +41,28 @@ class NetworkService {
             headers
         };
 
-        // Detectar si es un endpoint que consume vidas para free/pending (se excluye el Asistente Guía General Chat)
-        const isConsumptionEndpoint = 
-            (url.includes('/api/chat') && !url.includes('/conversations') && !(options.headers && (options.headers['X-General-Chat'] || options.headers['x-general-chat']))) ||
-            url.includes('/api/medico/') ||
-            url.includes('/api/docente/') ||
-            url.includes('/api/decks') ||
-            url.includes('/api/analytics/diagnostic');
+        // Detectar si es un endpoint que consume vidas para free/pending
+        const isStudyEndpoint = url.includes('/cards/due') || (url.includes('/cards/') && url.includes('/study')) || url.includes('/study-public');
+        const isDeckWriteEndpoint = url.includes('/api/decks') && (options.method === 'POST' || options.method === 'PUT') && !url.includes('/visibility') && !url.includes('/reorder') && !url.includes('/tree');
+        const isSimulatorStart = (url.includes('/api/medico/start') || url.includes('/api/docente/start')) && (options.method === 'POST' || !options.method);
+        const isTutorOrAIChat = url.includes('/api/chat') && !url.includes('/conversations') && !(options.headers && (options.headers['X-General-Chat'] || options.headers['x-general-chat'])) && (options.method === 'POST' || !options.method);
+        const isDiagnostic = url.includes('/api/analytics/diagnostic') && options.method === 'POST';
 
-        const isWriteMethod = options.method === 'POST' || options.method === 'PUT' || options.method === 'PATCH';
+        const isConsumptionEndpoint = isStudyEndpoint || isDeckWriteEndpoint || isSimulatorStart || isTutorOrAIChat || isDiagnostic;
 
         let optimisticallyDecremented = false;
 
-        if (isConsumptionEndpoint && isWriteMethod && window.sessionManager) {
+        if (isConsumptionEndpoint && window.sessionManager) {
             const currentUser = window.sessionManager.getUser();
-            if (currentUser && currentUser.subscriptionStatus !== 'active' && currentUser.role !== 'admin') {
-                window.sessionManager.decrementUsage(1);
-                optimisticallyDecremented = true;
+            if (currentUser && currentUser.role !== 'admin') {
+                const tier = String(currentUser.subscriptionTier || currentUser.subscription_tier || 'free').toLowerCase();
+                const status = String(currentUser.subscriptionStatus || currentUser.subscription_status || 'pending').toLowerCase();
+                const isPaidActive = (tier === 'basic' || tier === 'advanced') && status === 'active';
+
+                if (!isPaidActive) {
+                    window.sessionManager.decrementUsage(1);
+                    optimisticallyDecremented = true;
+                }
             }
         }
 
@@ -106,7 +111,7 @@ class NetworkService {
                 }
 
                 // Sincronizar vidas en segundo plano tras respuesta exitosa, o revertir si falló
-                if (response.ok && isConsumptionEndpoint && isWriteMethod && window.sessionManager) {
+                if (response.ok && isConsumptionEndpoint && window.sessionManager) {
                     window.sessionManager.refreshUser().catch(() => {});
                 } else if (!response.ok && optimisticallyDecremented && window.sessionManager) {
                     window.sessionManager.refreshUser().catch(() => {});

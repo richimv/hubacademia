@@ -1,9 +1,27 @@
 const db = require('../../infrastructure/database/db');
 
 class BookRepository {
+    constructor() {
+        this.cache = new Map();
+        this.CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+    }
+
+    clearCache() {
+        this.cache.clear();
+    }
 
     async findAll(filters = {}) {
         const { type, domain, includeHidden, isNews } = filters;
+
+        // Cache para consultas públicas de catálogo
+        const isPublicCacheable = !includeHidden;
+        const cacheKey = `findAll_${type || 'all'}_${domain || 'all'}_${!!isNews}`;
+        if (isPublicCacheable) {
+            const cached = this.cache.get(cacheKey);
+            if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL_MS)) {
+                return cached.data;
+            }
+        }
 
         const params = [];
         const conditions = [];
@@ -55,6 +73,11 @@ class BookRepository {
         `;
 
         const { rows } = await db.query(query, params);
+
+        if (isPublicCacheable) {
+            this.cache.set(cacheKey, { timestamp: Date.now(), data: rows });
+        }
+
         return rows;
     }
 
@@ -140,6 +163,7 @@ class BookRepository {
             }
 
             await db.query('COMMIT');
+            this.clearCache();
             return newResource;
         } catch (error) {
             await db.query('ROLLBACK');
@@ -220,6 +244,7 @@ class BookRepository {
             }
 
             await db.query('COMMIT');
+            this.clearCache();
             return rows[0];
         } catch (error) {
             await db.query('ROLLBACK');
@@ -232,6 +257,7 @@ class BookRepository {
         if (rowCount === 0) {
             throw new Error(`Recurso (libro) con ID ${id} no encontrado para eliminar.`);
         }
+        this.clearCache();
         return { success: true };
     }
     /**

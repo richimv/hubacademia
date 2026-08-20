@@ -177,14 +177,14 @@ class DashboardManager {
             if (res.ok) {
                 // Recargar todo el dashboard para ver los nuevos datos
                 await this.init();
-                alert('¡Análisis de IA completado exitosamente!');
+                if (window.uiManager) window.uiManager.showToast('¡Análisis de IA completado exitosamente!', 'success');
             } else {
                 const err = await res.json();
-                alert('Error: ' + (err.error || 'Falló el análisis'));
+                if (window.uiManager) window.uiManager.showToast('Error: ' + (err.error || 'Falló el análisis'), 'error');
             }
         } catch (e) {
             console.error(e);
-            alert('Error de conexión con el servidor de IA.');
+            if (window.uiManager) window.uiManager.showToast('Error de conexión con el servidor de IA.', 'warning');
         } finally {
             btn.innerHTML = originalText;
             btn.disabled = false;

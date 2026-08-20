@@ -31,7 +31,7 @@ describe('Check Limits Middleware', () => {
             subscription_tier: 'free',
             subscription_status: 'pending',
             usage_count: 5,
-            max_free_limit: 20,
+            max_free_limit: 10,
             daily_ai_usage: 0,
             last_usage_reset: todayPer,
             last_free_renewal: new Date().toISOString() // Avoid weekly reset block in middleware
@@ -50,7 +50,7 @@ describe('Check Limits Middleware', () => {
 
     it('should set req.usageType to null and req.cost to 0 for chat_standard (General Chat zero consumption)', async () => {
         dbUser.subscription_tier = 'free';
-        dbUser.usage_count = 20; // Exhausted lives
+        dbUser.usage_count = 10; // Exhausted lives
 
         const middleware = checkAILimits('chat_standard');
         await middleware(mockReq, mockRes, mockNext);
@@ -87,7 +87,7 @@ describe('Check Limits Middleware', () => {
     it('should enforce limits for monthly_flashcards for free user with lives exhausted', async () => {
         mockReq.path = '/generate';
         dbUser.subscription_tier = 'free';
-        dbUser.usage_count = 20;
+        dbUser.usage_count = 10;
 
         const middleware = checkAILimits('monthly_flashcards');
         await middleware(mockReq, mockRes, mockNext);
@@ -171,7 +171,7 @@ describe('Check Limits Middleware', () => {
         mockReq.body = { context: { type: 'quiz_tutor' } };
         dbUser.subscription_tier = 'free';
         dbUser.subscription_status = 'pending';
-        dbUser.usage_count = 20;
+        dbUser.usage_count = 10;
 
         const middleware = checkAILimits('chat_standard');
         await middleware(mockReq, mockRes, mockNext);

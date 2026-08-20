@@ -85,7 +85,7 @@ Registrarte en la plataforma es **instantáneo y 100% gratuito**, sin formulario
 
 1. **Paso 1**: Haz clic en el botón **"Acceder"** ubicado en la barra superior.
 2. **Paso 2**: Selecciona tu cuenta de **Google** (vía selección de correos o Google One Tap).
-3. **Paso 3**: ¡Listo! Tu acceso se activará en 1 clic y recibirás automáticamente **20 vidas de prueba gratis** para rendir simulacros oficiales de **SERUMS** o **ASCENSO**.`,
+3. **Paso 3**: ¡Listo! Tu acceso se activará en 1 clic y recibirás automáticamente **10 vidas de prueba gratis** para rendir simulacros oficiales de **SERUMS** o **ASCENSO**.`,
                 sugerencias: this.pills.visitor
             },
 

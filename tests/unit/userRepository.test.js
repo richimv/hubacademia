@@ -23,7 +23,7 @@ describe('UserRepository', () => {
                 subscription_status: 'active',
                 payment_id: 'pay-456',
                 usage_count: 5,
-                max_free_limit: 20,
+                max_free_limit: 10,
                 subscription_tier: 'basic',
                 subscription_expires_at: '2026-12-31',
                 daily_simulator_usage: 2,

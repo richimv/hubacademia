@@ -155,8 +155,8 @@ class LibraryService {
     }
 
     _dispatchError(msg) {
-        // Opcional: Integrar con sistema de notificaciones toast
-        alert(msg);
+        if (window.uiManager) window.uiManager.showToast(msg, 'error');
+        else console.error('[LibraryService Error]', msg);
     }
 }
 

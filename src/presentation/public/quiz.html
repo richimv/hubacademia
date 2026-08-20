@@ -11,14 +11,14 @@
     <!-- CSS Moderno (Glassmorphism) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Centralized Design System Tokens -->
-    <link rel="stylesheet" href="/css/theme.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/quiz.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/modal.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/components.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/tutor.css?v=c9dd299b">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=c9dd299b">
-    <script src="/js/config.js?v=c9dd299b"></script>
-    <script src="/js/utils/themeManager.js?v=c9dd299b"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/quiz.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/modal.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/components.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/tutor.css?v=aa9d3b4b">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=aa9d3b4b">
+    <script src="/js/config.js?v=aa9d3b4b"></script>
+    <script src="/js/utils/themeManager.js?v=aa9d3b4b"></script>
 </head>
 
 <body class="quiz-body">
@@ -38,32 +38,31 @@
         </div>
     </div>
 
-    <!-- NEW: Back Button -->
-    <a href="javascript:history.back()" class="btn-back-pulse" title="Salir del Quiz">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-
     <!-- Contenedor del Quiz -->
     <div class="quiz-container">
         <div class="question-header">
-            <div>
-                <span
-                    style="color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Pregunta
-                    <span id="currentQ">1</span>/<span id="maxQ">10</span></span>
-                <div
-                    style="height: 6px; width: 100px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 0.5rem; overflow: hidden;">
-                    <div id="progressBar"
-                        style="height: 100%; width: 10%; background: #3b82f6; transition: width 0.3s;"></div>
+            <div class="header-progress-group">
+                <span class="question-count-label">
+                    Pregunta <span id="currentQ">1</span>/<span id="maxQ">10</span>
+                </span>
+                <div class="progress-bar-container">
+                    <div id="progressBar" class="progress-bar-fill"></div>
                 </div>
             </div>
-            <div class="timer-badge">
-                <i class="fas fa-clock"></i>
-                <span id="timer">45s</span>
+            <div class="header-right-actions">
+                <div class="timer-badge" style="display: none;">
+                    <i class="fas fa-clock"></i>
+                    <span id="timer">45s</span>
+                </div>
+                <button id="btn-top-exit" class="btn-header-exit" title="Pausar y Salir del Simulacro">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Salir</span>
+                </button>
             </div>
         </div>
 
         <div id="questionLayout" class="question-layout-grid">
-            <div id="questionImageContainer" class="hidden q-image-container-premium">
+            <div id="questionImageContainer" class="q-image-container-premium" style="display: none;">
                 <img id="questionImage" src="" alt="Imagen de contexto" loading="lazy">
             </div>
 
@@ -76,19 +75,19 @@
             <!-- Botones generados por JS -->
         </div>
 
-        <div id="feedbackBox" class="feedback-box">
+        <div id="feedbackBox" class="feedback-box" style="display: none;">
             <h5 id="explanation-title" class="mb-3" style="color: #60a5fa; font-weight: 700; letter-spacing: -0.02em;">
                 <i class="fas fa-info-circle"></i> Sustento Técnico
             </h5>
             <div id="explanationText" style="font-size: 1.15rem; line-height: 1.6; color: #93c5fd; margin-bottom: 1.5rem;"></div>
-            <div id="explanationImageContainer" class="hidden q-explanation-image-container-premium">
+            <div id="explanationImageContainer" class="q-explanation-image-container-premium" style="display: none;">
                 <img id="explanationImage" src="" alt="Imagen explicativa" loading="lazy">
             </div>
         </div>
 
-        <div id="nextBtnContainer" class="next-btn-container hidden" style="display: none;">
+        <div id="nextBtnContainer" class="next-btn-container" style="display: none;">
             <button id="btn-open-quiz-tutor" class="btn-tutor-ai-action" type="button" style="display: none;">
-                <img src="/assets/hubifrente.png" alt="Hubi" style="width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; margin-right: 6px;">
+                <img src="/assets/hubifrente.png" alt="Hubi" style="width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; margin-right: 6px;">
                 <span>Consultar Tutor IA</span>
             </button>
             <button id="nextBtn" class="btn-next-premium" type="button">
@@ -97,7 +96,7 @@
         </div>
 
         <!-- Contenedor Post-Examen (Hidden) -->
-        <div id="reviewContainer" class="review-container hidden">
+        <div id="reviewContainer" class="review-container" style="display: none;">
             <div class="review-header">
                 <h2><i class="fas fa-clipboard-check"></i> Corrección de Simulacro</h2>
                 <button id="btn-top-exit" class="btn-top-exit"><i class="fas fa-times"></i> Salir</button>
@@ -121,82 +120,22 @@
                 </svg>
                 <span class="score-value" id="finalScore">0/10</span>
             </div>
-            <p style="color: #94a3b8; margin-bottom: 2rem;">¿Qué te pareció el nivel?</p>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">¿Qué te pareció el nivel?</p>
 
-            <div class="actions" style="flex-direction: column;">
-                <button id="btn-review-exam" type="button" onclick="event.preventDefault(); window.showExamReview(); return false;" class="btn-neon"
-                    style="width: 100%; margin-bottom: 1rem;">
-                    <i class="fas fa-eye"></i> Ver Corrección del Examen
+            <div class="results-actions">
+                <button id="btn-review-exam" type="button" onclick="event.preventDefault(); window.showExamReview(); return false;" class="btn-results-review">
+                    <i class="fas fa-clipboard-check"></i> Ver Corrección del Examen
                 </button>
-                <div style="display: flex; gap: 1rem; justify-content: center; width: 100%;">
-                    <button id="btn-exit-quiz" class="btn-secondary"
-                        style="flex: 1; padding: 0.75rem 1.5rem; border-radius: 12px; cursor: pointer;">
-                        Salir
+                <div class="results-secondary-actions">
+                    <button id="btn-exit-quiz" class="btn-secondary">
+                        <i class="fas fa-sign-out-alt"></i> Salir
                     </button>
-                    <button onclick="window.startNewExam()" class="btn-secondary"
-                        style="flex: 1; padding: 0.75rem 1.5rem; border-radius: 12px; cursor: pointer;">
-                        Nuevo Examen
+                    <button onclick="window.startNewExam()" class="btn-secondary">
+                        <i class="fas fa-redo"></i> Nuevo Examen
                     </button>
                 </div>
             </div>
         </div>
-        <style>
-        /* 🌑 Unified Dark Loader System */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(20px);
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-
-        .loading-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 3.5rem;
-            border-radius: 2.5rem;
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 1);
-            max-width: 400px;
-            width: 90%;
-        }
-
-        .premium-spinner {
-            width: 70px;
-            height: 70px;
-            border: 3px solid rgba(255, 255, 255, 0.05);
-            border-top: 3px solid #fff;
-            border-radius: 50%;
-            margin: 0 auto 2.5rem;
-            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-title {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: #fff;
-            margin-bottom: 1rem;
-            letter-spacing: -0.03em;
-        }
-
-        .loading-subtitle {
-            color: #64748b;
-            font-size: 1.1rem;
-        }
-    </style>
     </div>
 
     <!-- Visor Lightbox Premium para Imágenes -->
@@ -214,20 +153,20 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=c9dd299b"></script>
+    <script src="/js/config.js?v=aa9d3b4b"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=c9dd299b"></script>
-    <script src="/js/services/networkService.js?v=c9dd299b"></script>
-    <script src="/js/services/authApiService.js?v=c9dd299b"></script>
-    <script src="/js/services/analyticsApiService.js?v=c9dd299b"></script>
-    <script src="/js/sessionManager.js?v=c9dd299b"></script>
-    <script src="/js/ui/components.js?v=c9dd299b"></script>
-    <script src="/js/ui/confirmationModal.js?v=c9dd299b"></script>
-    <script src="/js/ui/uiManager.js?v=c9dd299b"></script>
-    <script src="/js/app.js?v=c9dd299b"></script>
-    <script src="/js/quiz-tutor.js?v=c9dd299b"></script>
-    <script type="module" src="/js/quiz.js?v=c9dd299b"></script>
+    <script src="/js/utils/markdown-renderer.js?v=aa9d3b4b"></script>
+    <script src="/js/services/networkService.js?v=aa9d3b4b"></script>
+    <script src="/js/services/authApiService.js?v=aa9d3b4b"></script>
+    <script src="/js/services/analyticsApiService.js?v=aa9d3b4b"></script>
+    <script src="/js/sessionManager.js?v=aa9d3b4b"></script>
+    <script src="/js/ui/components.js?v=aa9d3b4b"></script>
+    <script src="/js/ui/confirmationModal.js?v=aa9d3b4b"></script>
+    <script src="/js/ui/uiManager.js?v=aa9d3b4b"></script>
+    <script src="/js/app.js?v=aa9d3b4b"></script>
+    <script src="/js/quiz-tutor.js?v=aa9d3b4b"></script>
+    <script type="module" src="/js/quiz.js?v=aa9d3b4b"></script>
 </body>
 
 </html>

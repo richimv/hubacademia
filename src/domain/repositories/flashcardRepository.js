@@ -1,5 +1,4 @@
 const db = require('../../infrastructure/database/db');
-const crypto = require('crypto');
 
 class FlashcardRepository {
 
@@ -89,69 +88,134 @@ class FlashcardRepository {
 
     async createDeck(userId, name, type = 'USER', sourceModule = 'MANUAL', icon = '📚', parentId = null, description = null, color = null, category = 'General') {
         const query = `
-            INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description, color, category)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id, name, icon, color, parent_id, description, category
+            INSERT INTO decks (user_id, name, type, source_module, icon, parent_id, description, color, category, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+            RETURNING id, name, icon, color, parent_id, description, category, created_at, updated_at
         `;
         const result = await db.query(query, [userId, name, type, sourceModule, icon, parentId, description, color, category || 'General']);
         return result.rows[0];
     }
 
     async updateDeck(userId, deckId, name, icon, description = null, color = null, category = 'General') {
-        const query = `
-            UPDATE decks 
-            SET name = $3, icon = $4, description = $5, color = $6, category = $7
-            WHERE id = $2 AND user_id = $1
-            RETURNING id, name, icon, color, description, category
-        `;
-        const result = await db.query(query, [userId, deckId, name, icon, description, color, category || 'General']);
-
-        if (result.rows.length > 0) {
-            const updateCardsQuery = `
-                UPDATE user_flashcards 
-                SET topic = $1 
-                WHERE deck_id = $2 AND user_id = $3
+        try {
+            const query = `
+                UPDATE decks 
+                SET name = $3, icon = $4, description = $5, color = $6, category = $7, updated_at = NOW()
+                WHERE id = $2 AND user_id = $1
+                RETURNING id, name, icon, color, description, category, updated_at
             `;
-            await db.query(updateCardsQuery, [name, deckId, userId]);
-        }
+            const result = await db.query(query, [userId, deckId, name, icon, description, color, category || 'General']);
 
-        return result.rows[0];
+            if (result.rows.length > 0) {
+                const updateCardsQuery = `
+                    UPDATE user_flashcards 
+                    SET topic = $1 
+                    WHERE deck_id = $2 AND user_id = $3
+                `;
+                await db.query(updateCardsQuery, [name, deckId, userId]);
+            }
+
+            return result.rows[0];
+        } catch (error) {
+            if (error.code === '42703') {
+                const query = `
+                    UPDATE decks 
+                    SET name = $3, icon = $4, description = $5, color = $6, category = $7
+                    WHERE id = $2 AND user_id = $1
+                    RETURNING id, name, icon, color, description, category
+                `;
+                const result = await db.query(query, [userId, deckId, name, icon, description, color, category || 'General']);
+
+                if (result.rows.length > 0) {
+                    const updateCardsQuery = `
+                        UPDATE user_flashcards 
+                        SET topic = $1 
+                        WHERE deck_id = $2 AND user_id = $3
+                    `;
+                    await db.query(updateCardsQuery, [name, deckId, userId]);
+                }
+
+                return result.rows[0];
+            }
+            throw error;
+        }
     }
 
     async updateDeckVisibility(userId, deckId, isPublic, category = null) {
-        let query = `
-            UPDATE decks 
-            SET is_public = $3
-        `;
-        const params = [userId, deckId, isPublic];
+        try {
+            let query = `
+                UPDATE decks 
+                SET is_public = $3, updated_at = NOW()
+            `;
+            const params = [userId, deckId, isPublic];
 
-        if (category) {
-            query += `, category = $4 WHERE id = $2 AND user_id = $1 RETURNING id, is_public, category`;
-            params.push(category);
-        } else {
-            query += ` WHERE id = $2 AND user_id = $1 RETURNING id, is_public, COALESCE(category, 'General') as category`;
+            if (category) {
+                query += `, category = $4 WHERE id = $2 AND user_id = $1 RETURNING id, is_public, category, updated_at`;
+                params.push(category);
+            } else {
+                query += ` WHERE id = $2 AND user_id = $1 RETURNING id, is_public, COALESCE(category, 'General') as category, updated_at`;
+            }
+
+            const result = await db.query(query, params);
+            return result.rows[0];
+        } catch (error) {
+            if (error.code === '42703') {
+                let query = `
+                    UPDATE decks 
+                    SET is_public = $3
+                `;
+                const params = [userId, deckId, isPublic];
+
+                if (category) {
+                    query += `, category = $4 WHERE id = $2 AND user_id = $1 RETURNING id, is_public, category`;
+                    params.push(category);
+                } else {
+                    query += ` WHERE id = $2 AND user_id = $1 RETURNING id, is_public, COALESCE(category, 'General') as category`;
+                }
+
+                const result = await db.query(query, params);
+                return result.rows[0];
+            }
+            throw error;
         }
-
-        const result = await db.query(query, params);
-        return result.rows[0];
     }
 
     async getPublicDecks(page = 1, limit = 20, category = 'ALL') {
         const offset = (page - 1) * limit;
-        const query = `
-            SELECT 
-                d.id, d.name, d.icon, d.description, d.color, COALESCE(d.category, 'General') as category,
-                d.saves_count, d.likes_count, d.created_at,
-                u.name as author_name,
-                (SELECT COUNT(*) FROM user_flashcards uf WHERE uf.deck_id = d.id) as total_cards
-            FROM decks d
-            LEFT JOIN users u ON d.user_id = u.id
-            WHERE d.is_public = true AND ($3 = 'ALL' OR COALESCE(d.category, 'General') = $3)
-            ORDER BY d.saves_count DESC, d.created_at DESC
-            LIMIT $1 OFFSET $2
-        `;
-        const result = await db.query(query, [limit, offset, category || 'ALL']);
-        return result.rows;
+        try {
+            const query = `
+                SELECT 
+                    d.id, d.name, d.icon, d.description, d.color, COALESCE(d.category, 'General') as category,
+                    d.saves_count, d.likes_count, d.created_at, d.updated_at,
+                    u.name as author_name,
+                    (SELECT COUNT(*) FROM user_flashcards uf WHERE uf.deck_id = d.id) as total_cards
+                FROM decks d
+                LEFT JOIN users u ON d.user_id = u.id
+                WHERE d.is_public = true AND ($3 = 'ALL' OR COALESCE(d.category, 'General') = $3)
+                ORDER BY COALESCE(d.updated_at, d.created_at) DESC, d.created_at DESC
+                LIMIT $1 OFFSET $2
+            `;
+            const result = await db.query(query, [limit, offset, category || 'ALL']);
+            return result.rows;
+        } catch (error) {
+            if (error.code === '42703') {
+                const fallbackQuery = `
+                    SELECT 
+                        d.id, d.name, d.icon, d.description, d.color, COALESCE(d.category, 'General') as category,
+                        d.saves_count, d.likes_count, d.created_at,
+                        u.name as author_name,
+                        (SELECT COUNT(*) FROM user_flashcards uf WHERE uf.deck_id = d.id) as total_cards
+                    FROM decks d
+                    LEFT JOIN users u ON d.user_id = u.id
+                    WHERE d.is_public = true AND ($3 = 'ALL' OR COALESCE(d.category, 'General') = $3)
+                    ORDER BY d.created_at DESC
+                    LIMIT $1 OFFSET $2
+                `;
+                const fallbackResult = await db.query(fallbackQuery, [limit, offset, category || 'ALL']);
+                return fallbackResult.rows;
+            }
+            throw error;
+        }
     }
 
     async incrementDeckSaves(deckId) {
@@ -257,16 +321,16 @@ class FlashcardRepository {
     }
 
     async createFlashcard(userId, deckId, front, back, imageUrl = null, backImageUrl = null, audioUrlFront = null, audioUrlBack = null, ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
-        const deckQuery = `SELECT name FROM decks WHERE id = $1`;
-        const deckRes = await db.query(deckQuery, [deckId]);
-        const topic = deckRes.rows[0]?.name || 'GENERAL';
-
         const query = `
             INSERT INTO user_flashcards (user_id, deck_id, front_content, back_content, topic, interval_days, easiness_factor, repetition_number, next_review_at, image_url, explanation_image_url, audio_url_frente, audio_url_dorso, tts_lang_frente, tts_lang_dorso, hide_text_frente, hide_text_dorso)
-            VALUES ($1, $2, $3, $4, $5, 0, 2.5, 0, NOW(), $6, $7, $8, $9, $10, $11, $12, $13)
+            VALUES (
+                $1, $2, $3, $4, 
+                COALESCE((SELECT name FROM decks WHERE id = $2), 'GENERAL'), 
+                0, 2.5, 0, NOW(), $5, $6, $7, $8, $9, $10, $11, $12
+            )
             RETURNING id, front_content, back_content, topic, image_url, explanation_image_url, audio_url_frente, audio_url_dorso, tts_lang_frente, tts_lang_dorso, hide_text_frente, hide_text_dorso
         `;
-        const result = await db.query(query, [userId, deckId, front, back, topic, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack]);
+        const result = await db.query(query, [userId, deckId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack]);
         return result.rows[0];
     }
 
@@ -287,30 +351,30 @@ class FlashcardRepository {
     }
 
     async updateFlashcardsOrder(userId, deckId, sortedIds) {
+        if (!sortedIds || sortedIds.length === 0) return;
+
         const checkQuery = `SELECT id FROM decks WHERE id = $1 AND user_id = $2`;
         const checkRes = await db.query(checkQuery, [deckId, userId]);
         if (checkRes.rows.length === 0) throw new Error("Deck not found or access denied");
 
-        const client = await db.pool().connect();
-        try {
-            await client.query('BEGIN');
-            const updateQuery = `
-                UPDATE user_flashcards 
-                SET sort_order = $1 
-                WHERE id = $2 AND deck_id = $3 AND user_id = $4
-            `;
+        const valuesClause = sortedIds.map((_, index) => `($${index * 2 + 1}::uuid, $${index * 2 + 2}::int)`).join(', ');
+        const params = [];
+        sortedIds.forEach((id, index) => {
+            params.push(id, index);
+        });
 
-            for (let i = 0; i < sortedIds.length; i++) {
-                await client.query(updateQuery, [i, sortedIds[i], deckId, userId]);
-            }
+        params.push(deckId, userId);
+        const deckIdParamIndex = params.length - 1;
+        const userIdParamIndex = params.length;
 
-            await client.query('COMMIT');
-        } catch (e) {
-            await client.query('ROLLBACK');
-            throw e;
-        } finally {
-            client.release();
-        }
+        const batchQuery = `
+            UPDATE user_flashcards AS uf
+            SET sort_order = v.ord
+            FROM (VALUES ${valuesClause}) AS v(id, ord)
+            WHERE uf.id = v.id AND uf.deck_id = $${deckIdParamIndex} AND uf.user_id = $${userIdParamIndex}
+        `;
+
+        await db.query(batchQuery, params);
     }
 
     async deleteBulkFlashcards(userId, cardIds) {

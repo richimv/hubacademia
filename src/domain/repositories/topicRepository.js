@@ -1,8 +1,22 @@
 const db = require('../../infrastructure/database/db');
 
 class TopicRepository {
+    constructor() {
+        this.cache = null;
+        this.cacheTimestamp = 0;
+        this.CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+    }
+
+    clearCache() {
+        this.cache = null;
+        this.cacheTimestamp = 0;
+    }
 
     async findAll() {
+        if (this.cache && (Date.now() - this.cacheTimestamp < this.CACHE_TTL_MS)) {
+            return this.cache;
+        }
+
         // ✅ SOLUCIÓN: Hacer que findAll() obtenga también los IDs de los libros/recursos asociados.
         const { rows } = await db.query(`
             SELECT 
@@ -15,6 +29,9 @@ class TopicRepository {
             FROM topics t
             ORDER BY t.name;
         `);
+
+        this.cache = rows;
+        this.cacheTimestamp = Date.now();
         return rows;
     }
 
@@ -42,6 +59,7 @@ class TopicRepository {
                 await Promise.all(insertPromises);
             }
             await client.query('COMMIT');
+            this.clearCache();
             return newTopic;
         } catch (e) {
             await client.query('ROLLBACK');
@@ -67,6 +85,7 @@ class TopicRepository {
                 await Promise.all(insertPromises);
             }
             await client.query('COMMIT');
+            this.clearCache();
             return updatedTopic;
         } catch (e) {
             await client.query('ROLLBACK');
@@ -81,6 +100,7 @@ class TopicRepository {
         if (rowCount === 0) {
             throw new Error(`Tema con ID ${id} no encontrado para eliminar.`);
         }
+        this.clearCache();
         return { success: true };
     }
 }

@@ -27,22 +27,21 @@ function getTierBadgeConfig(user) {
     const tier = (user.subscriptionTier || 'free').toLowerCase();
     const isActive = user.subscriptionStatus === 'active';
 
-    if (!isActive) {
+    if (!isActive || tier === 'free') {
         return { tierLabel: 'Plan Gratuito', tierClass: 'tier-free' };
     }
 
     if (tier === 'advanced' || tier === 'avanzado') {
         return { tierLabel: 'Plan Avanzado', tierClass: 'tier-advanced' };
     }
-    
-    if (tier === 'pro') {
-        return { tierLabel: 'Plan Pro', tierClass: 'tier-pro' };
+
+    if (tier === 'basic' || tier === 'basico') {
+        return { tierLabel: 'Plan Básico', tierClass: 'tier-basic' };
     }
 
-    const formattedTier = tier.charAt(0).toUpperCase() + tier.slice(1);
     return {
-        tierLabel: `Plan ${formattedTier}`,
-        tierClass: 'tier-premium'
+        tierLabel: 'Plan Básico',
+        tierClass: 'tier-basic'
     };
 }
 
@@ -422,10 +421,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-// Resetear estados de botones al volver a la página (evita spinners infinitos)
+// Resetear estados de botones y refrescar vidas al volver a la página (evita spinners infinitos y datos desactualizados)
 window.addEventListener('pageshow', () => {
-    console.log('🔄 [App] Página mostrada. Reseteando estados de botones...');
+    console.log('🔄 [App] Página mostrada. Reseteando estados de botones y actualizando sesión...');
     ensureThemeToggleButton();
+    if (window.sessionManager) {
+        window.sessionManager.refreshUser().catch(() => {});
+    }
     
     const restoreButtons = () => {
         document.querySelectorAll('[data-original-html]').forEach(btn => {

@@ -1571,7 +1571,8 @@ class RepasoManager {
             if (window.uiManager && window.uiManager.showAuthPromptModal) {
                 window.uiManager.showAuthPromptModal('La Carga Masiva (Excel) es una función exclusiva para usuarios Premium. ¡Ahorra tiempo mejorando tu plan!');
             } else {
-                alert('La Carga Masiva es una función Premium.');
+                if (window.uiManager) window.uiManager.showToast('La Carga Masiva es una función Premium.', 'warning');
+                else alert('La Carga Masiva es una función Premium.');
             }
             return;
         }

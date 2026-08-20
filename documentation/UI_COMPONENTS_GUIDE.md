@@ -1,75 +1,59 @@
-# 🧩 Guía de Componentes de UI: Hub Academia
+# 🧩 Guía Maestra de Componentes de UI: Hub Academia
 
-Esta documentación detalla el funcionamiento del sistema de notificaciones, modales, plantillas y gestión de la biblioteca personal de la plataforma. El objetivo es centralizar el feedback del usuario y mantener una arquitectura de componentes limpia y premium.
+> **Versión:** 2.0.0  
+> **Área:** Presentation Layer / UI & UX Core Components  
+> **Archivos Fuente:** `src/presentation/public/js/ui/` (`uiManager.js`, `confirmationModal.js`, `tooltipManager.js`, `components.js`, `libraryUI.js`)
+
+Esta documentación técnica detalla la arquitectura, APIs y estándares de implementación de los componentes interactivos centrales de la plataforma: **alertas, notificaciones (toasts), modales de sistema, tooltips contextuales, tours de onboarding y gestión de biblioteca**.
 
 ---
 
 ## 1. 📢 UIManager (`uiManager.js`)
 
-El `UIManager` es el orquestador global de la interfaz. Maneja notificaciones no intrusivas, estados de red y visores de medios.
+El `UIManager` es el orquestador global de la interfaz accesible mediante `window.uiManager`. Maneja notificaciones en tiempo real, estados de red, modales de paywall y visores de medios.
 
 ### 1.1. Sistema de Notificaciones (Toasts)
-Utilizado para dar feedback rápido (éxito, error, advertencia) sin interrumpir el flujo del usuario.
+Feedback visual rápido, no intrusivo y reactivo con animación y soporte dual-theme.
 
-**Uso:**
 ```javascript
 // Notificación de éxito
-window.uiManager.showToast('✅ ¡Cambios guardados con éxito!');
+window.uiManager.showToast('✅ ¡Cambios guardados con éxito!', 'success', 3000);
 
 // Notificación de error
-window.uiManager.showToast('❌ Error al procesar la solicitud.');
+window.uiManager.showToast('❌ Error al procesar la solicitud.', 'error', 4000);
 
 // Notificación de advertencia
-window.uiManager.showToast('⚠️ Faltan campos por completar.');
+window.uiManager.showToast('⚠️ Faltan campos por completar.', 'warning', 3500);
+
+// Notificación informativa
+window.uiManager.showToast('ℹ️ Modo fuera de línea activado.', 'info', 3000);
 ```
 
-**Arquitectura:**
-- **Z-Index:** Las notificaciones tienen un `z-index: 2147483647` (el máximo absoluto), lo que garantiza que siempre se vean por encima de cualquier modal o visor.
-- **Auto-hide:** Se ocultan automáticamente tras 4 segundos.
+### 1.2. Notificación de Vidas en Tiempo Real (`showLifeDecrementToast`)
+Notificación instantánea vinculada al consumo de créditos en cuentas Free/Pending:
+```javascript
+// Disparado centralizadamente por SessionManager al iniciar un simulacro o acción de consumo
+window.uiManager.showLifeDecrementToast(remainingLives, maxLimit);
+```
+* **Estado Normal (3 a 10 vidas):** `⚡ 1 crédito utilizado. Te quedan 9/10 vidas de prueba.` (Toast tipo `life`).
+* **Estado Crítico (1 o 2 vidas):** `⚠️ ¡Atención! Te quedan solo 1/10 vidas de prueba.` (Toast tipo `warning`).
+* **Estado Agotado (0 vidas):** `🔒 Has agotado tus vidas de prueba semanal.` y apertura automática del `PaywallModal`.
 
-### 1.2. Monitor de Conectividad
-Muestra una "píldora" de estado cuando el usuario pierde la conexión, informando que el sistema entrará en modo resiliencia (trabajo local).
+### 1.3. Modales de Suscripción y Autenticación
+* **Paywall / Límite de Cuota:** `window.uiManager.showPaywallModal(customMessage, featureName)`
+* **Invitación de Registro a Visitantes:** `window.uiManager.showAuthPromptModal()`
 
 ---
 
-## 2. Modales y Bloqueo de Scroll (Global)
+## 2. 🪟 ConfirmationModal (`confirmationModal.js`)
 
-Para garantizar una experiencia premium y evitar el "Scroll Chaining" (cuando el fondo se mueve al llegar al límite del modal), Hub Academia utiliza un estándar global:
+Reemplazo premium, accesible y asíncrono para `window.confirm()` y `window.alert()`, con soporte completo de promesas `async/await`.
 
-### Estándar de Implementación:
-1.  **CSS Bloqueo:** Siempre se debe usar la clase `.modal-open` en el `body` para desactivar el scroll de fondo.
-2.  **Overscroll Behavior:** Los contenedores de los modales (`.modal-overlay` y `.modal-body`) deben tener `overscroll-behavior: contain;`.
-3.  **Gestión JS:** Todos los modales deben registrarse mediante `window.uiManager.pushModalState(id)` y cerrarse con `popModalState(id)`.
-
-```css
-/* modal.css */
-body.modal-open {
-    overflow: hidden !important;
-}
-
-.modal-body {
-    overscroll-behavior: contain;
-}
-```
-
-### Estética Premium (Glassmorphism):
-- **Overlay:** `rgba(0, 0, 0, 0.85)` con `backdrop-filter: blur(10px)`.
-- **Z-Index:** El estándar global para modales es `2000000` para asegurar que floten sobre cabeceras y otros elementos de la UI.
-
----
-
-## 3. 🪟 ConfirmationModal (`confirmationModal.js`)
-
-Componente premium que reemplaza a `confirm()` y `alert()` nativos. Utiliza promesas para una integración limpia con `async/await`.
-
-### 3.1. Confirmación de Acción
-Para acciones que requieren consentimiento (ej. eliminar una tarjeta).
-
-**Uso:**
+### 2.1. Confirmación de Acción (Diálogo Interactivo)
 ```javascript
 const confirmed = await window.confirmationModal.show(
-    '¿Estás seguro de eliminar esta tarjeta?', 
-    'Eliminar Contenido', 
+    '¿Estás seguro de eliminar este mazo de tarjetas?', 
+    'Eliminar Mazo', 
     'Sí, eliminar', 
     'Cancelar'
 );
@@ -79,72 +63,84 @@ if (confirmed) {
 }
 ```
 
-### 2.2. Alerta de Usuario (Aviso)
-Para mensajes que el usuario debe leer y aceptar obligatoriamente.
-
-**Uso:**
+### 2.2. Alerta / Aviso Obligatorio
 ```javascript
 await window.confirmationModal.showAlert(
-    'Tu suscripción ha expirado. Por favor, actualiza tu plan.', 
-    'Aviso de Cuenta'
+    'Has completado todas las preguntas de este tema. Intenta cambiar de área o dificultad.', 
+    '¡Banco Agotado!',
+    'Entendido'
 );
 ```
 
 ---
 
-## 3. 🎨 Plantillas de Componentes (`components.js`)
+## 3. 💬 TooltipManager & Onboarding Tour (`tooltipManager.js`)
 
-Este archivo contiene funciones "puras" que generan estructuras HTML dinámicas basadas en datos. Ayuda a separar la lógica de negocio (en `search.js` o `admin.js`) de la presentación.
+Gestor unificado de tooltips declarativos y asistente guiado de 3 pasos para la plataforma.
 
-### 3.1. Funcionalidad de Carruseles
-Incluye lógica global para el desplazamiento suave (`smooth scroll`) de carruseles y la inicialización automática de botones de navegación.
+### 3.1. Tooltips Declarativos (HTML)
+Añadir atributos en cualquier etiqueta HTML:
+```html
+<button class="btn-primary" data-tooltip="Generar preguntas oficiales con IA" data-tooltip-pos="top">
+    Iniciar
+</button>
+```
 
-**Uso de Inicialización:**
+### 3.2. Onboarding Tour Guiado
 ```javascript
-// Detecta si el carrusel tiene overflow y muestra/ocultar flechas automáticamente
-window.initializeCarousel('mi-contenedor-id');
+// Iniciar el tour en modo forzado (ej. botón 'Guía')
+window.TooltipManager.startSimulatorTour(true);
+
+// Cerrar cualquier tooltip o tour activo
+window.TooltipManager.hide();
 ```
 
 ---
 
-## 4. 📚 Mi Biblioteca UI (`libraryUI.js`)
+## 4. 🪟 Estándar Global de Modales y Control de Scroll
 
-Controlador premium para el "Drawer" (panel lateral) de recursos guardados, favoritos y notas personales.
+Para evitar el molesto *Scroll Chaining* (desplazamiento del fondo cuando el modal llega al tope):
 
-### 4.1. Gestión de Estados
-Actualiza automáticamente todos los iconos de "Guardar" o "Favorito" en la página mediante un `MutationObserver`.
-
-### 4.2. Editor de Notas Premium
-Incluye un sistema de edición con soporte para Markdown y selección de colores personalizados. Utiliza `window.confirmationModal` para confirmaciones de borrado.
+1. **Clase Bloqueadora en Body:** Todo modal activo añade `document.body.classList.add('modal-open')`.
+2. **Overscroll Contain:**
+   ```css
+   body.modal-open {
+       overflow: hidden !important;
+   }
+   .modal-body, .results-overlay, .confirmation-modal-overlay {
+       overscroll-behavior: contain;
+   }
+   ```
+3. **Pila de Estados (History / ESC):** `window.uiManager.pushModalState(id)` y `window.uiManager.popModalState(id)`.
 
 ---
 
-## 5. 🏗️ Jerarquía Visual y Z-Index
+## 5. 🎨 Plantillas de Componentes y Carruseles (`components.js`)
 
-Para evitar colisiones visuales ("z-index wars"), se ha establecido el siguiente estándar de capas:
+Generación de estructuras DOM limpias y funcionales:
+* **Inicializador de Carruseles:** `window.initializeCarousel('contenedor-id')` para scroll horizontal suave con flechas adaptativas.
+* **Componentes de Tarjeta Hero & Novedades:** Renderizadores estandarizados para noticias, guías, normas y papers.
 
-| Capa | Z-Index | Descripción |
+---
+
+## 6. 🏗️ Jerarquía Visual y Z-Index
+
+Para prevenir colisiones visuales ("z-index wars"):
+
+| Capa | Rango Z-Index | Componentes |
 | :--- | :--- | :--- |
-| **Notifications (Toasts)** | `2147483647` | Nivel máximo. Nada puede tapar una notificación. |
-| **Modales (Overlays)** | `2000000` | Modales de creación, edición y configuración. |
-| **Header / Navigation** | `1000` | Menú superior y navegación persistente. |
-| **Main Content** | `1` - `100` | Flujo normal de la página. |
-
-### 🚨 Adaptación Dinámica por Barra de Vidas (Trial Bar)
-- La barra lateral (`.global-sidebar`) y la cabecera (`.main-header`) reaccionan al estado `body.has-trial-mode` desplazándose verticalmente según la variable CSS `--trial-bar-height` (46px).
-- En computadoras de escritorio, la barra lateral inicia en `top: var(--trial-bar-height)` para evitar solapamientos con el botón de hamburguesa. En celulares, se mantiene en `top: 0` ocupando `100vh` de forma inmersiva.
-
-### 📚 Cuadrícula Responsiva de Biblioteca
-- El contenedor `#library-page-container` en `library.html` fuerza exactamente **6 columnas por fila en PC** y se adapta de manera fluida a **3 columnas en teléfonos móviles**, evitando que los elementos de tarjetas y textos queden comprimidos.
-
-> [!IMPORTANT]
-> Nunca uses un `z-index` superior a `2,000,000` en componentes de página regulares. El rango superior está reservado exclusivamente para el sistema de feedback global (`UIManager`).
+| **Feedback Crítico (Toasts)** | `2147483647` | `window.uiManager.showToast`, Toasts de Vidas |
+| **Lightbox / Visor de Medios** | `11000` | `.lightbox-modal` |
+| **Onboarding Tour & Tooltips** | `9000` - `10000` | `.hub-guided-tip`, `.hub-tooltip` |
+| **Modales de Sistema** | `2000000` | `confirmationModal`, `paywallModal`, `authPromptModal` |
+| **Overlays de Examen / Resultados** | `100` - `9999` | `#resultsOverlay`, `#loading-overlay` |
+| **Cabecera Persistente & Sidebar** | `1000` | `.main-header`, `.global-sidebar` |
+| **Contenido Principal** | `1` - `100` | Tarjetas, grids y layouts de página |
 
 ---
 
-## 4. 📚 Mejores Prácticas para Desarrolladores
+## 7. 📚 Mejores Prácticas para Desarrolladores
 
-1. **Eradicación de `alert()`:** Está prohibido el uso de `alert()` o `confirm()` nativos. Siempre utiliza `window.uiManager.showToast()` o `window.confirmationModal`.
-2. **Contexto de Modal:** Al abrir una modal manual, asegúrate de añadir la clase `active` al overlay para disparar las animaciones y el `backdrop-filter`.
-3. **Escucha de 'Escape':** Los componentes de UI en esta carpeta ya manejan el cierre automáticamente con la tecla `Escape` y clics fuera del contenedor principal.
-4. **Caché de Scripts:** Al realizar cambios en estos archivos core, recuerda actualizar la versión en el HTML (ej: `uiManager.js?v=v2`) para que los usuarios reciban la actualización de inmediato.
+1. **Eradicación Total de Popups Nativos:** Prohibido el uso de `window.alert()` o `window.confirm()`.
+2. **Aislamiento de Eventos en Botones de UI:** Utilizar `e.stopPropagation()` al manipular elementos superpuestos.
+3. **Sin Clases Huérfanas:** Asegurarse de que los selectores CSS de botones (`.btn-results-review`, `.btn-secondary`, `.btn-review-tutor-trigger`) pertenezcan al diseño Manta y respeten la paleta dual (Salud = Teal / Educación = Royal Blue).

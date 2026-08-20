@@ -1,485 +1,1045 @@
--- Database Schema Dump (Consolidated & Synchronized)
--- Updated: 2026-05-05
+-- ==============================================================================
+-- HUB ACADEMIA - MASTER PRODUCTION DATABASE SCHEMA (SUPABASE POSTGRESQL 15+)
+-- Synchronized directly from live Supabase PostgreSQL Instance
+-- Updated: 2026-08-20
+-- ==============================================================================
 
--- Extensions
+-- ------------------------------------------------------------------------------
+-- 1. EXTENSIONS
+-- ------------------------------------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS "fuzzystrmatch" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "hypopg" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "index_advisor" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "plpgsql" WITH SCHEMA pg_catalog;
+CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA vault;
+CREATE EXTENSION IF NOT EXISTS "unaccent" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "vector" WITH SCHEMA extensions;
 
--- Enums (Note: These must be created before they are used in tables)
--- CREATE TYPE ACADEMIC_AREA AS ENUM ('Medicina', 'Idiomas', 'Educación', 'Otros');
+-- ------------------------------------------------------------------------------
+-- 2. CUSTOM TYPES & ENUMS
+-- ------------------------------------------------------------------------------
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'aal_level') THEN
+        CREATE TYPE auth.aal_level AS ENUM ('aal1', 'aal2', 'aal3');
+    END IF;
+END $$;
 
--- Table: careers
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'academic_area') THEN
+        CREATE TYPE public.academic_area AS ENUM ('Ciencias de la Salud', 'Ingenierías', 'Ciencias Empresariales', 'Ciencias Sociales y Humanidades', 'Arquitectura y Diseño', 'Ciencias Exactas');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'action') THEN
+        CREATE TYPE realtime.action AS ENUM ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'ERROR');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'buckettype') THEN
+        CREATE TYPE storage.buckettype AS ENUM ('STANDARD', 'ANALYTICS', 'VECTOR');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'code_challenge_method') THEN
+        CREATE TYPE auth.code_challenge_method AS ENUM ('s256', 'plain');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'equality_op') THEN
+        CREATE TYPE realtime.equality_op AS ENUM ('eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in', 'like', 'ilike', 'is', 'match', 'imatch', 'isdistinct');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'factor_status') THEN
+        CREATE TYPE auth.factor_status AS ENUM ('unverified', 'verified');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'factor_type') THEN
+        CREATE TYPE auth.factor_type AS ENUM ('totp', 'webauthn', 'phone');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'oauth_authorization_status') THEN
+        CREATE TYPE auth.oauth_authorization_status AS ENUM ('pending', 'approved', 'denied', 'expired');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'oauth_client_type') THEN
+        CREATE TYPE auth.oauth_client_type AS ENUM ('public', 'confidential');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'oauth_registration_type') THEN
+        CREATE TYPE auth.oauth_registration_type AS ENUM ('dynamic', 'manual');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'oauth_response_type') THEN
+        CREATE TYPE auth.oauth_response_type AS ENUM ('code');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'one_time_token_type') THEN
+        CREATE TYPE auth.one_time_token_type AS ENUM ('confirmation_token', 'reauthentication_token', 'recovery_token', 'email_change_token_new', 'email_change_token_current', 'phone_change_token');
+    END IF;
+END $$;
+
+-- ------------------------------------------------------------------------------
+-- 3. TABLES DEFINITIONS & PRIMARY KEYS
+-- ------------------------------------------------------------------------------
+
+-- Table: public.careers
 CREATE TABLE IF NOT EXISTS public.careers (
-    id INTEGER NOT NULL DEFAULT nextval('careers_id_seq'::regclass),
-    career_id CHARACTER VARYING(50) NOT NULL,
-    name CHARACTER VARYING(255) NOT NULL,
-    area CHARACTER VARYING(100) NOT NULL, -- Simplified from USER-DEFINED for documentation portability
+    id INTEGER DEFAULT nextval('careers_id_seq'::regclass) NOT NULL,
+    career_id VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    area academic_area NOT NULL,
     image_url TEXT,
+    domain VARCHAR(50) DEFAULT 'medicine'::character varying,
     CONSTRAINT careers_pkey PRIMARY KEY (id)
 );
 
--- Table: chat_messages
-CREATE TABLE IF NOT EXISTS public.chat_messages (
-    id BIGINT NOT NULL,
-    conversation_id BIGINT NOT NULL,
-    sender TEXT NOT NULL,
-    content TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT chat_messages_pkey PRIMARY KEY (id)
-);
-
--- Table: conversations
-CREATE TABLE IF NOT EXISTS public.conversations (
-    id BIGINT NOT NULL,
-    title TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    user_id UUID,
-    CONSTRAINT conversations_pkey PRIMARY KEY (id)
-);
-
--- Table: course_books
+-- Table: public.course_books
 CREATE TABLE IF NOT EXISTS public.course_books (
     course_id INTEGER NOT NULL,
     resource_id INTEGER NOT NULL,
     CONSTRAINT course_books_pkey PRIMARY KEY (course_id, resource_id)
 );
 
--- Table: course_careers
+-- Table: public.course_careers
 CREATE TABLE IF NOT EXISTS public.course_careers (
     course_id INTEGER NOT NULL,
     career_id INTEGER NOT NULL,
     CONSTRAINT course_careers_pkey PRIMARY KEY (course_id, career_id)
 );
 
--- Table: course_topics
+-- Table: public.course_topics
 CREATE TABLE IF NOT EXISTS public.course_topics (
     course_id INTEGER NOT NULL,
     topic_id INTEGER NOT NULL,
-    unit_name CHARACTER VARYING(255) DEFAULT 'General'::character varying,
+    unit_name VARCHAR(255) DEFAULT 'General'::character varying,
     CONSTRAINT course_topics_pkey PRIMARY KEY (course_id, topic_id)
 );
 
--- Table: courses
+-- Table: public.courses
 CREATE TABLE IF NOT EXISTS public.courses (
-    id INTEGER NOT NULL DEFAULT nextval('courses_id_seq'::regclass),
-    course_id CHARACTER VARYING(50) NOT NULL,
-    name CHARACTER VARYING(255) NOT NULL,
+    id INTEGER DEFAULT nextval('courses_id_seq'::regclass) NOT NULL,
+    course_id VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
     image_url TEXT,
+    domain VARCHAR(50) DEFAULT 'medicine'::character varying,
     CONSTRAINT courses_pkey PRIMARY KEY (id)
 );
 
--- Table: decks
+-- Table: public.decks
 CREATE TABLE IF NOT EXISTS public.decks (
-    id UUID NOT NULL DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
-    name CHARACTER VARYING(100) NOT NULL,
-    type CHARACTER VARYING(20) DEFAULT 'USER'::character varying,
-    source_module CHARACTER VARYING(50) DEFAULT 'MANUAL'::character varying,
-    icon CHARACTER VARYING(50) DEFAULT '📚'::character varying,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    user_id UUID,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(20) DEFAULT 'USER'::character varying,
+    source_module VARCHAR(50) DEFAULT 'MANUAL'::character varying,
+    icon VARCHAR(50) DEFAULT '📚'::character varying,
+    created_at TIMESTAMPTZ DEFAULT now(),
     parent_id UUID,
+    description TEXT,
+    is_public BOOLEAN DEFAULT false,
+    cloned_from_id INTEGER,
+    likes_count INTEGER DEFAULT 0,
+    saves_count INTEGER DEFAULT 0,
+    color VARCHAR(50) DEFAULT NULL::character varying,
+    category VARCHAR(50) DEFAULT 'General'::character varying,
+    updated_at TIMESTAMPTZ DEFAULT now(),
     CONSTRAINT decks_pkey PRIMARY KEY (id)
 );
 
--- Table: documents
-CREATE TABLE IF NOT EXISTS public.documents (
-    id BIGINT NOT NULL DEFAULT nextval('documents_id_seq'::regclass),
-    content TEXT,
-    metadata JSONB,
-    fts TSVECTOR,
-    embedding VECTOR(768),
-    CONSTRAINT documents_pkey PRIMARY KEY (id)
-);
-
--- Table: feedback
-CREATE TABLE IF NOT EXISTS public.feedback (
-    id INTEGER NOT NULL DEFAULT nextval('feedback_id_seq'::regclass),
-    query TEXT NOT NULL,
-    response TEXT NOT NULL,
-    is_helpful BOOLEAN NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    user_id UUID,
-    message_id BIGINT,
-    CONSTRAINT feedback_pkey PRIMARY KEY (id)
-);
-
--- Table: page_views
+-- Table: public.page_views
 CREATE TABLE IF NOT EXISTS public.page_views (
-    id BIGINT NOT NULL DEFAULT nextval('page_views_id_seq'::regclass),
-    entity_type CHARACTER VARYING(50) NOT NULL,
+    id BIGINT DEFAULT nextval('page_views_id_seq'::regclass) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
     entity_id INTEGER NOT NULL,
     user_id UUID,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     CONSTRAINT page_views_pkey PRIMARY KEY (id)
 );
 
--- Table: question_bank
+-- Table: public.question_bank
 CREATE TABLE IF NOT EXISTS public.question_bank (
-    id UUID NOT NULL DEFAULT gen_random_uuid(),
-    domain CHARACTER VARYING(255) DEFAULT 'GENERAL'::character varying,
-    topic CHARACTER VARYING(100) NOT NULL,
-    difficulty CHARACTER VARYING(50) DEFAULT 'Intermedio'::character varying,
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    domain VARCHAR(255) DEFAULT 'GENERAL'::character varying,
+    topic VARCHAR(100) NOT NULL,
+    difficulty VARCHAR(50) DEFAULT 'Intermedio'::character varying,
     question_text TEXT NOT NULL,
     options JSONB NOT NULL,
     correct_option_index INTEGER NOT NULL,
     explanation TEXT,
     times_used INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    created_at TIMESTAMPTZ DEFAULT now(),
     question_hash TEXT,
     image_url TEXT,
-    target CHARACTER VARYING(255),
-    career CHARACTER VARYING(100),
-    subtopic CHARACTER VARYING(255),
+    target VARCHAR(255),
+    career VARCHAR(100),
+    subtopic VARCHAR(255),
     explanation_image_url TEXT,
     visual_support_recommendation TEXT,
     audio_text TEXT,
     CONSTRAINT question_bank_pkey PRIMARY KEY (id)
 );
 
--- Table: quiz_history
--- NOTA: Los nombres de los tópicos (topic) deben seguir el estándar gramatical (e/de minúsculas)
--- Ej: 'Ética e Interculturalidad', 'Gestión de Servicios de Salud', 'Cuidado Integral de Salud'
+-- Table: public.quiz_history
 CREATE TABLE IF NOT EXISTS public.quiz_history (
-    id UUID NOT NULL DEFAULT uuid_generate_v4(),
+    id UUID DEFAULT uuid_generate_v4() NOT NULL,
     user_id UUID NOT NULL,
-    topic CHARACTER VARYING(100) NOT NULL,
-    difficulty CHARACTER VARYING(20) DEFAULT 'ENAM'::character varying,
+    topic VARCHAR(100) NOT NULL,
+    difficulty VARCHAR(20) DEFAULT 'ENAM'::character varying,
     score INTEGER NOT NULL,
     total_questions INTEGER NOT NULL,
-    weak_points TEXT[],
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    area_stats JSONB DEFAULT '{}'::jsonb, -- Estructura: {"Nombre Tópico": {"correct": X, "total": Y}}
-    target CHARACTER VARYING(50),
-    career CHARACTER VARYING(100),
+    weak_points text[],
+    created_at TIMESTAMPTZ DEFAULT now(),
+    area_stats JSONB DEFAULT '{}'::jsonb,
+    target VARCHAR(50),
+    career VARCHAR(100),
     CONSTRAINT quiz_history_pkey PRIMARY KEY (id)
 );
 
--- Table: quiz_scores
-CREATE TABLE IF NOT EXISTS public.quiz_scores (
-    id BIGINT NOT NULL,
-    user_id UUID NOT NULL,
-    topic CHARACTER VARYING(255) NOT NULL,
-    difficulty CHARACTER VARYING(50),
-    score INTEGER NOT NULL DEFAULT 0,
-    rounds_completed INTEGER DEFAULT 1,
-    correct_answers_count INTEGER DEFAULT 0,
-    total_questions_played INTEGER DEFAULT 10,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
-    CONSTRAINT quiz_scores_pkey PRIMARY KEY (id)
-);
-
--- Table: arena_scores
-CREATE TABLE IF NOT EXISTS public.arena_scores (
-    id SERIAL PRIMARY KEY,
-    user_id UUID NOT NULL,
-    score INTEGER NOT NULL,
-    total_questions INTEGER DEFAULT 0,
-    correct_answers INTEGER DEFAULT 0,
-    max_combo INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Table: resources
+-- Table: public.resources
 CREATE TABLE IF NOT EXISTS public.resources (
-    id INTEGER NOT NULL DEFAULT nextval('resources_id_seq'::regclass),
-    resource_id CHARACTER VARYING(50) NOT NULL,
-    title CHARACTER VARYING(255) NOT NULL,
-    author CHARACTER VARYING(255),
-    url CHARACTER VARYING(255),
-    image_url CHARACTER VARYING(500),
-    resource_type CHARACTER VARYING(50) DEFAULT 'book'::character varying,
+    id INTEGER DEFAULT nextval('resources_id_seq'::regclass) NOT NULL,
+    resource_id VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(255),
+    url VARCHAR(255),
+    image_url VARCHAR(500),
+    resource_type VARCHAR(50) DEFAULT 'book'::character varying,
     is_premium BOOLEAN DEFAULT false,
     content_html TEXT,
-    domain CHARACTER VARYING(50) DEFAULT 'medicine'::character varying,
+    domain VARCHAR(50) DEFAULT 'medicine'::character varying,
     visible BOOLEAN DEFAULT true,
     open_directly BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT resources_pkey PRIMARY KEY (id),
-    CONSTRAINT resources_url_key UNIQUE (url)
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT resources_pkey PRIMARY KEY (id)
 );
 
--- Table: search_history
+-- Table: public.search_history
 CREATE TABLE IF NOT EXISTS public.search_history (
-    id INTEGER NOT NULL DEFAULT nextval('search_history_id_seq'::regclass),
+    id INTEGER DEFAULT nextval('search_history_id_seq'::regclass) NOT NULL,
     query TEXT NOT NULL,
     results_count INTEGER NOT NULL,
     is_educational_query BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    source CHARACTER VARYING(50) DEFAULT 'search_bar'::character varying,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    source VARCHAR(50) DEFAULT 'search_bar'::character varying,
     user_id UUID,
     CONSTRAINT search_history_pkey PRIMARY KEY (id)
 );
 
--- Table: topic_resources
+-- Table: public.topic_resources
 CREATE TABLE IF NOT EXISTS public.topic_resources (
     topic_id INTEGER NOT NULL,
     resource_id INTEGER NOT NULL,
     CONSTRAINT topic_resources_pkey PRIMARY KEY (topic_id, resource_id)
 );
 
--- Table: topics
+-- Table: public.topics
 CREATE TABLE IF NOT EXISTS public.topics (
-    id INTEGER NOT NULL DEFAULT nextval('topics_id_seq'::regclass),
-    topic_id CHARACTER VARYING(50) NOT NULL,
-    name CHARACTER VARYING(255) NOT NULL,
+    id INTEGER DEFAULT nextval('topics_id_seq'::regclass) NOT NULL,
+    topic_id VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
     CONSTRAINT topics_pkey PRIMARY KEY (id)
 );
 
--- Table: user_book_library
+-- Table: public.user_book_library
 CREATE TABLE IF NOT EXISTS public.user_book_library (
     user_id UUID NOT NULL,
     book_id INTEGER NOT NULL,
     is_saved BOOLEAN DEFAULT false,
     is_favorite BOOLEAN DEFAULT false,
-    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT user_book_library_pkey PRIMARY KEY (user_id, book_id)
 );
 
--- Table: user_course_library
+-- Table: public.user_course_library
 CREATE TABLE IF NOT EXISTS public.user_course_library (
     user_id UUID NOT NULL,
     course_id INTEGER NOT NULL,
     is_saved BOOLEAN DEFAULT false,
     is_favorite BOOLEAN DEFAULT false,
-    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT user_course_library_pkey PRIMARY KEY (user_id, course_id)
 );
 
--- Table: user_flashcards
+-- Table: public.user_flashcards
 CREATE TABLE IF NOT EXISTS public.user_flashcards (
-    id UUID NOT NULL DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL,
+    id UUID DEFAULT uuid_generate_v4() NOT NULL,
+    user_id UUID,
     front_content TEXT NOT NULL,
     back_content TEXT NOT NULL,
-    topic CHARACTER VARYING(100),
+    topic VARCHAR(100),
     source_quiz_id UUID,
     repetition_number INTEGER DEFAULT 0,
     easiness_factor REAL DEFAULT 2.5,
     interval_days INTEGER DEFAULT 0,
-    last_reviewed_at TIMESTAMP WITH TIME ZONE,
-    next_review_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    last_reviewed_at TIMESTAMPTZ,
+    next_review_at TIMESTAMPTZ DEFAULT now(),
+    created_at TIMESTAMPTZ DEFAULT now(),
     deck_id UUID,
     sort_order INTEGER DEFAULT 0,
+    last_quality INTEGER DEFAULT 0,
     image_url TEXT,
     explanation_image_url TEXT,
-    audio_url_frente TEXT, -- ✅ NUEVO: Voz para el frente
-    audio_url_dorso TEXT,  -- ✅ NUEVO: Voz para el dorso
-    tts_lang_frente CHARACTER VARYING(10),
-    tts_lang_dorso CHARACTER VARYING(10),
+    is_template BOOLEAN DEFAULT false,
+    audio_url_frente TEXT,
+    audio_url_dorso TEXT,
+    tts_lang_frente VARCHAR(10) DEFAULT 'es-ES'::character varying,
+    tts_lang_dorso VARCHAR(10) DEFAULT 'es-ES'::character varying,
     hide_text_frente BOOLEAN DEFAULT false,
     hide_text_dorso BOOLEAN DEFAULT false,
-    is_template BOOLEAN DEFAULT false,
     CONSTRAINT user_flashcards_pkey PRIMARY KEY (id)
 );
 
--- Table: user_question_history
+-- Table: public.user_notes
+CREATE TABLE IF NOT EXISTS public.user_notes (
+    id BIGINT DEFAULT nextval('user_notes_id_seq'::regclass) NOT NULL,
+    user_id UUID NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    source_type TEXT DEFAULT 'manual'::text,
+    source_conversation_id BIGINT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    color VARCHAR(50) DEFAULT NULL::character varying,
+    CONSTRAINT user_notes_pkey PRIMARY KEY (id)
+);
+
+-- Table: public.user_question_history
 CREATE TABLE IF NOT EXISTS public.user_question_history (
-    id UUID NOT NULL DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
     user_id UUID,
     question_id UUID,
-    seen_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),
+    seen_at TIMESTAMP DEFAULT now(),
     times_seen INTEGER DEFAULT 1,
     CONSTRAINT user_question_history_pkey PRIMARY KEY (id)
 );
 
--- Table: user_simulator_preferences
+-- Table: public.user_simulator_preferences
 CREATE TABLE IF NOT EXISTS public.user_simulator_preferences (
     user_id UUID NOT NULL,
-    domain CHARACTER VARYING(50) NOT NULL,
-    config_json JSONB NOT NULL DEFAULT '{}'::jsonb,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    domain VARCHAR(50) NOT NULL,
+    config_json JSONB DEFAULT '{}'::jsonb NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now(),
     CONSTRAINT user_simulator_preferences_pkey PRIMARY KEY (user_id, domain)
 );
 
--- Table: users
+-- Table: public.users
 CREATE TABLE IF NOT EXISTS public.users (
-    id UUID NOT NULL,
-    name CHARACTER VARYING(255) NOT NULL,
-    email CHARACTER VARYING(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
     password_hash TEXT,
-    role CHARACTER VARYING(20) NOT NULL,
-    subscription_status CHARACTER VARYING(50) DEFAULT 'pending'::character varying,
-    subscription_tier CHARACTER VARYING(50) DEFAULT 'free'::character varying,
-    subscription_expires_at TIMESTAMP WITH TIME ZONE,
-    payment_id CHARACTER VARYING(255) DEFAULT NULL::character varying,
+    role VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    id UUID NOT NULL,
+    subscription_status VARCHAR(50) DEFAULT 'pending'::character varying,
+    payment_id VARCHAR(255) DEFAULT NULL::character varying,
     usage_count INTEGER DEFAULT 0,
-    max_free_limit INTEGER DEFAULT 20,
-    daily_ai_usage INTEGER DEFAULT 0,
-    daily_rag_usage INTEGER DEFAULT 0, -- [NEW] For RAG Chat limits
-    daily_simulator_usage INTEGER DEFAULT 0, -- [NEW] For Safety Caps
+    max_free_limit INTEGER DEFAULT 50,
+    updated_at TIMESTAMPTZ DEFAULT now(),
     monthly_flashcards_usage INTEGER DEFAULT 0,
+    subscription_tier VARCHAR(50) DEFAULT 'free'::character varying,
+    subscription_expires_at TIMESTAMPTZ,
+    daily_ai_usage INTEGER DEFAULT 0,
     last_usage_reset DATE,
-    last_free_renewal TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_name_change_at TIMESTAMP WITH TIME ZONE, -- [NEW] Para restricción de cambios
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    daily_simulator_usage INTEGER DEFAULT 0,
+    last_name_change_at TIMESTAMPTZ,
+    daily_import_usage INTEGER DEFAULT 0,
+    last_free_renewal TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    daily_rag_usage INTEGER DEFAULT 0,
     CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 
--- Table: web_traffic
+-- Table: public.web_traffic
 CREATE TABLE IF NOT EXISTS public.web_traffic (
     session_id UUID NOT NULL,
     user_id UUID,
-    last_ping TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_ping TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     is_mobile BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT web_traffic_pkey PRIMARY KEY (session_id)
 );
 
--- Table: user_notes
-CREATE TABLE IF NOT EXISTS public.user_notes (
-    id BIGSERIAL PRIMARY KEY,
-    user_id UUID NOT NULL,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    source_type TEXT DEFAULT 'manual', -- 'chat', 'flashcard', 'manual'
-    source_conversation_id BIGINT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
+-- ------------------------------------------------------------------------------
+-- 4. FOREIGN KEYS & REFERENTIAL CONSTRAINTS
+-- ------------------------------------------------------------------------------
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'course_books_course_id_fkey') THEN
+        ALTER TABLE public.course_books ADD CONSTRAINT course_books_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
--- Foreign Keys
-ALTER TABLE ONLY public.course_topics ADD CONSTRAINT course_topics_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id);
-ALTER TABLE ONLY public.course_topics ADD CONSTRAINT course_topics_topic_id_fkey FOREIGN KEY (topic_id) REFERENCES public.topics(id);
-ALTER TABLE ONLY public.course_books ADD CONSTRAINT course_books_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id);
-ALTER TABLE ONLY public.course_books ADD CONSTRAINT course_books_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id);
-ALTER TABLE ONLY public.chat_messages ADD CONSTRAINT chat_messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id);
-ALTER TABLE ONLY public.conversations ADD CONSTRAINT conversations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.feedback ADD CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.search_history ADD CONSTRAINT search_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.page_views ADD CONSTRAINT page_views_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.course_careers ADD CONSTRAINT course_careers_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id);
-ALTER TABLE ONLY public.course_careers ADD CONSTRAINT course_careers_career_id_fkey FOREIGN KEY (career_id) REFERENCES public.careers(id);
-ALTER TABLE ONLY public.topic_resources ADD CONSTRAINT topic_resources_topic_id_fkey FOREIGN KEY (topic_id) REFERENCES public.topics(id);
-ALTER TABLE ONLY public.topic_resources ADD CONSTRAINT topic_resources_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id);
-ALTER TABLE ONLY public.user_course_library ADD CONSTRAINT user_course_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.user_course_library ADD CONSTRAINT user_course_library_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id);
-ALTER TABLE ONLY public.user_book_library ADD CONSTRAINT user_book_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.user_book_library ADD CONSTRAINT user_book_library_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.resources(id);
-ALTER TABLE ONLY public.user_flashcards ADD CONSTRAINT user_flashcards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.quiz_history ADD CONSTRAINT quiz_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.user_question_history ADD CONSTRAINT user_question_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.user_question_history ADD CONSTRAINT user_question_history_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.question_bank(id);
-ALTER TABLE ONLY public.decks ADD CONSTRAINT decks_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.user_flashcards ADD CONSTRAINT user_flashcards_deck_id_fkey FOREIGN KEY (deck_id) REFERENCES public.decks(id);
-ALTER TABLE ONLY public.user_simulator_preferences ADD CONSTRAINT user_simulator_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-ALTER TABLE ONLY public.arena_scores ADD CONSTRAINT arena_scores_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-ALTER TABLE ONLY public.user_notes ADD CONSTRAINT user_notes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'course_books_resource_id_fkey') THEN
+        ALTER TABLE public.course_books ADD CONSTRAINT course_books_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
--- Row Level Security (RLS)
-ALTER TABLE public.quiz_scores ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read for Leaderboard" ON public.quiz_scores FOR SELECT USING (true);
-CREATE POLICY "Authenticated Insert" ON public.quiz_scores FOR INSERT WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'course_careers_career_id_fkey') THEN
+        ALTER TABLE public.course_careers ADD CONSTRAINT course_careers_career_id_fkey FOREIGN KEY (career_id) REFERENCES public.careers(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Documents" ON public.documents FOR SELECT USING (true);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'course_careers_course_id_fkey') THEN
+        ALTER TABLE public.course_careers ADD CONSTRAINT course_careers_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE public.decks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage own decks" ON public.decks FOR ALL USING (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'course_topics_course_id_fkey') THEN
+        ALTER TABLE public.course_topics ADD CONSTRAINT course_topics_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE public.user_flashcards ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage own flashcards" ON public.user_flashcards FOR ALL USING (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'course_topics_topic_id_fkey') THEN
+        ALTER TABLE public.course_topics ADD CONSTRAINT course_topics_topic_id_fkey FOREIGN KEY (topic_id) REFERENCES public.topics(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE public.quiz_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own history" ON public.quiz_history FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own history" ON public.quiz_history FOR INSERT WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'decks_parent_id_fkey') THEN
+        ALTER TABLE public.decks ADD CONSTRAINT decks_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.decks(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE public.arena_scores ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Leaderboard Arena" ON public.arena_scores FOR SELECT USING (true);
-CREATE POLICY "Users insert own arena score" ON public.arena_scores FOR INSERT WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'decks_user_id_fkey') THEN
+        ALTER TABLE public.decks ADD CONSTRAINT decks_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
-ALTER TABLE public.user_simulator_preferences ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage own preferences" ON public.user_simulator_preferences FOR ALL USING (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'page_views_user_id_fkey') THEN
+        ALTER TABLE public.page_views ADD CONSTRAINT page_views_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
-ALTER TABLE public.user_notes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own notes" ON public.user_notes FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create own notes" ON public.user_notes FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can edit own notes" ON public.user_notes FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own notes" ON public.user_notes FOR DELETE USING (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'quiz_history_user_id_fkey') THEN
+        ALTER TABLE public.quiz_history ADD CONSTRAINT quiz_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'search_history_user_id_fkey') THEN
+        ALTER TABLE public.search_history ADD CONSTRAINT search_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'topic_resources_resource_id_fkey') THEN
+        ALTER TABLE public.topic_resources ADD CONSTRAINT topic_resources_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'topic_resources_topic_id_fkey') THEN
+        ALTER TABLE public.topic_resources ADD CONSTRAINT topic_resources_topic_id_fkey FOREIGN KEY (topic_id) REFERENCES public.topics(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_book_library_book_id_fkey') THEN
+        ALTER TABLE public.user_book_library ADD CONSTRAINT user_book_library_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.resources(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_book_library_user_id_fkey') THEN
+        ALTER TABLE public.user_book_library ADD CONSTRAINT user_book_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_course_library_course_id_fkey') THEN
+        ALTER TABLE public.user_course_library ADD CONSTRAINT user_course_library_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_course_library_user_id_fkey') THEN
+        ALTER TABLE public.user_course_library ADD CONSTRAINT user_course_library_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_flashcards_deck_id_fkey') THEN
+        ALTER TABLE public.user_flashcards ADD CONSTRAINT user_flashcards_deck_id_fkey FOREIGN KEY (deck_id) REFERENCES public.decks(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_flashcards_user_id_fkey') THEN
+        ALTER TABLE public.user_flashcards ADD CONSTRAINT user_flashcards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_question_history_question_id_fkey') THEN
+        ALTER TABLE public.user_question_history ADD CONSTRAINT user_question_history_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.question_bank(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_question_history_user_id_fkey') THEN
+        ALTER TABLE public.user_question_history ADD CONSTRAINT user_question_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_simulator_preferences_user_id_fkey') THEN
+        ALTER TABLE public.user_simulator_preferences ADD CONSTRAINT user_simulator_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'web_traffic_user_id_fkey') THEN
+        ALTER TABLE public.web_traffic ADD CONSTRAINT web_traffic_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- ------------------------------------------------------------------------------
+-- 5. ROW LEVEL SECURITY (RLS) POLICIES
+-- ------------------------------------------------------------------------------
 ALTER TABLE public.careers ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Careers" ON public.careers FOR SELECT USING (true);
-
-ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Courses" ON public.courses FOR SELECT USING (true);
-
-ALTER TABLE public.topics ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Topics" ON public.topics FOR SELECT USING (true);
-
-ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Resources" ON public.resources FOR SELECT USING (true);
-
 ALTER TABLE public.course_books ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Course Books" ON public.course_books FOR SELECT USING (true);
-
 ALTER TABLE public.course_careers ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Course Careers" ON public.course_careers FOR SELECT USING (true);
-
 ALTER TABLE public.course_topics ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Course Topics" ON public.course_topics FOR SELECT USING (true);
-
-ALTER TABLE public.topic_resources ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Topic Resources" ON public.topic_resources FOR SELECT USING (true);
-
-ALTER TABLE public.question_bank ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Question Bank" ON public.question_bank FOR SELECT USING (true);
-
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own profile" ON public.users FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update own profile" ON public.users FOR UPDATE USING (auth.uid() = id);
-
-ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage own conversations" ON public.conversations FOR ALL USING (auth.uid() = user_id);
-
-ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage own messages" ON public.chat_messages FOR ALL USING (
-    EXISTS (
-        SELECT 1 FROM public.conversations c 
-        WHERE c.id = chat_messages.conversation_id AND c.user_id = auth.uid()
-    )
-);
-
-ALTER TABLE public.user_book_library ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage own book library" ON public.user_book_library FOR ALL USING (auth.uid() = user_id);
-
-ALTER TABLE public.user_course_library ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage own course library" ON public.user_course_library FOR ALL USING (auth.uid() = user_id);
-
-ALTER TABLE public.user_question_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage own question history" ON public.user_question_history FOR ALL USING (auth.uid() = user_id);
-
-ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage own feedback" ON public.feedback FOR ALL USING (auth.uid() = user_id);
-
-ALTER TABLE public.search_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage own search history" ON public.search_history FOR ALL USING (auth.uid() = user_id);
-
+ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.decks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.page_views ENABLE ROW LEVEL SECURITY;
-
+ALTER TABLE public.question_bank ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.search_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.topic_resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_book_library ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_course_library ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_flashcards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_question_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_simulator_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.web_traffic ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public Read Careers" ON public.careers;
+CREATE POLICY "Public Read Careers" ON public.careers
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
 
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_flashcards_user_review ON public.user_flashcards(user_id, next_review_at);
-CREATE INDEX IF NOT EXISTS idx_quiz_history_user_date ON public.quiz_history(user_id, created_at);
-CREATE INDEX IF NOT EXISTS idx_arena_scores_score ON public.arena_scores (score DESC);
-CREATE INDEX IF NOT EXISTS idx_question_bank_domain_target ON public.question_bank(domain, target);
-CREATE INDEX IF NOT EXISTS idx_question_bank_hash ON public.question_bank(question_hash);
-CREATE INDEX IF NOT EXISTS idx_user_notes_user_id ON public.user_notes(user_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_resources_url ON public.resources(url);
+DROP POLICY IF EXISTS "Public careers are viewable by everyone." ON public.careers;
+CREATE POLICY "Public careers are viewable by everyone." ON public.careers
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
 
--- Auto-update trigger for user_notes
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql' SET search_path = public;
+DROP POLICY IF EXISTS "Public Read Course Books" ON public.course_books;
+CREATE POLICY "Public Read Course Books" ON public.course_books
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
 
-CREATE TRIGGER update_user_notes_updated_at
-    BEFORE UPDATE ON public.user_notes
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+DROP POLICY IF EXISTS "Public data is viewable by everyone." ON public.course_books;
+CREATE POLICY "Public data is viewable by everyone." ON public.course_books
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public Read Course Careers" ON public.course_careers;
+CREATE POLICY "Public Read Course Careers" ON public.course_careers
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public read access for course_careers" ON public.course_careers;
+CREATE POLICY "Public read access for course_careers" ON public.course_careers
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public read course_careers" ON public.course_careers;
+CREATE POLICY "Public read course_careers" ON public.course_careers
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public Read Course Topics" ON public.course_topics;
+CREATE POLICY "Public Read Course Topics" ON public.course_topics
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public data is viewable by everyone." ON public.course_topics;
+CREATE POLICY "Public data is viewable by everyone." ON public.course_topics
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public Read Courses" ON public.courses;
+CREATE POLICY "Public Read Courses" ON public.courses
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public data is viewable by everyone." ON public.courses;
+CREATE POLICY "Public data is viewable by everyone." ON public.courses
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Users manage own decks" ON public.decks;
+CREATE POLICY "Users manage own decks" ON public.decks
+    AS PERMISSIVE
+    FOR ALL
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Public Read Question Bank" ON public.question_bank;
+CREATE POLICY "Public Read Question Bank" ON public.question_bank
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public Read Questions" ON public.question_bank;
+CREATE POLICY "Public Read Questions" ON public.question_bank
+    AS PERMISSIVE
+    FOR SELECT
+    TO authenticated
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Users insert own history" ON public.quiz_history;
+CREATE POLICY "Users insert own history" ON public.quiz_history
+    AS PERMISSIVE
+    FOR INSERT
+    TO public
+    WITH CHECK ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users view own history" ON public.quiz_history;
+CREATE POLICY "Users view own history" ON public.quiz_history
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Public Read Resources" ON public.resources;
+CREATE POLICY "Public Read Resources" ON public.resources
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public data is viewable by everyone." ON public.resources;
+CREATE POLICY "Public data is viewable by everyone." ON public.resources
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Users can create and view their own search history." ON public.search_history;
+CREATE POLICY "Users can create and view their own search history." ON public.search_history
+    AS PERMISSIVE
+    FOR ALL
+    TO public
+    USING ((auth.uid() = user_id))
+    WITH CHECK ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can manage own search history" ON public.search_history;
+CREATE POLICY "Users can manage own search history" ON public.search_history
+    AS PERMISSIVE
+    FOR ALL
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Public Read Topic Resources" ON public.topic_resources;
+CREATE POLICY "Public Read Topic Resources" ON public.topic_resources
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public read access for topic_resources" ON public.topic_resources;
+CREATE POLICY "Public read access for topic_resources" ON public.topic_resources
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public read topic_resources" ON public.topic_resources;
+CREATE POLICY "Public read topic_resources" ON public.topic_resources
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public Read Topics" ON public.topics;
+CREATE POLICY "Public Read Topics" ON public.topics
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Public data is viewable by everyone." ON public.topics;
+CREATE POLICY "Public data is viewable by everyone." ON public.topics
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+DROP POLICY IF EXISTS "Users can delete from their own book library" ON public.user_book_library;
+CREATE POLICY "Users can delete from their own book library" ON public.user_book_library
+    AS PERMISSIVE
+    FOR DELETE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can delete own book library" ON public.user_book_library;
+CREATE POLICY "Users can delete own book library" ON public.user_book_library
+    AS PERMISSIVE
+    FOR DELETE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can insert into their own book library" ON public.user_book_library;
+CREATE POLICY "Users can insert into their own book library" ON public.user_book_library
+    AS PERMISSIVE
+    FOR INSERT
+    TO public
+    WITH CHECK ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can insert own book library" ON public.user_book_library;
+CREATE POLICY "Users can insert own book library" ON public.user_book_library
+    AS PERMISSIVE
+    FOR INSERT
+    TO public
+    WITH CHECK ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can manage own book library" ON public.user_book_library;
+CREATE POLICY "Users can manage own book library" ON public.user_book_library
+    AS PERMISSIVE
+    FOR ALL
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can update own book library" ON public.user_book_library;
+CREATE POLICY "Users can update own book library" ON public.user_book_library
+    AS PERMISSIVE
+    FOR UPDATE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can update their own book library" ON public.user_book_library;
+CREATE POLICY "Users can update their own book library" ON public.user_book_library
+    AS PERMISSIVE
+    FOR UPDATE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can view own book library" ON public.user_book_library;
+CREATE POLICY "Users can view own book library" ON public.user_book_library
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can view their own book library" ON public.user_book_library;
+CREATE POLICY "Users can view their own book library" ON public.user_book_library
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can delete from their own course library" ON public.user_course_library;
+CREATE POLICY "Users can delete from their own course library" ON public.user_course_library
+    AS PERMISSIVE
+    FOR DELETE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can delete own course library" ON public.user_course_library;
+CREATE POLICY "Users can delete own course library" ON public.user_course_library
+    AS PERMISSIVE
+    FOR DELETE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can insert into their own course library" ON public.user_course_library;
+CREATE POLICY "Users can insert into their own course library" ON public.user_course_library
+    AS PERMISSIVE
+    FOR INSERT
+    TO public
+    WITH CHECK ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can insert own course library" ON public.user_course_library;
+CREATE POLICY "Users can insert own course library" ON public.user_course_library
+    AS PERMISSIVE
+    FOR INSERT
+    TO public
+    WITH CHECK ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can manage own course library" ON public.user_course_library;
+CREATE POLICY "Users can manage own course library" ON public.user_course_library
+    AS PERMISSIVE
+    FOR ALL
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can update own course library" ON public.user_course_library;
+CREATE POLICY "Users can update own course library" ON public.user_course_library
+    AS PERMISSIVE
+    FOR UPDATE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can update their own course library" ON public.user_course_library;
+CREATE POLICY "Users can update their own course library" ON public.user_course_library
+    AS PERMISSIVE
+    FOR UPDATE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can view own course library" ON public.user_course_library;
+CREATE POLICY "Users can view own course library" ON public.user_course_library
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can view their own course library" ON public.user_course_library;
+CREATE POLICY "Users can view their own course library" ON public.user_course_library
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users manage own flashcards" ON public.user_flashcards;
+CREATE POLICY "Users manage own flashcards" ON public.user_flashcards
+    AS PERMISSIVE
+    FOR ALL
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Usuarios pueden borrar sus propias notas" ON public.user_notes;
+CREATE POLICY "Usuarios pueden borrar sus propias notas" ON public.user_notes
+    AS PERMISSIVE
+    FOR DELETE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Usuarios pueden crear sus propias notas" ON public.user_notes;
+CREATE POLICY "Usuarios pueden crear sus propias notas" ON public.user_notes
+    AS PERMISSIVE
+    FOR INSERT
+    TO public
+    WITH CHECK ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Usuarios pueden editar sus propias notas" ON public.user_notes;
+CREATE POLICY "Usuarios pueden editar sus propias notas" ON public.user_notes
+    AS PERMISSIVE
+    FOR UPDATE
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Usuarios pueden ver sus propias notas" ON public.user_notes;
+CREATE POLICY "Usuarios pueden ver sus propias notas" ON public.user_notes
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can manage own question history" ON public.user_question_history;
+CREATE POLICY "Users can manage own question history" ON public.user_question_history
+    AS PERMISSIVE
+    FOR ALL
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users insert own history" ON public.user_question_history;
+CREATE POLICY "Users insert own history" ON public.user_question_history
+    AS PERMISSIVE
+    FOR INSERT
+    TO public
+    WITH CHECK ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users view own history" ON public.user_question_history;
+CREATE POLICY "Users view own history" ON public.user_question_history
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users manage own preferences" ON public.user_simulator_preferences;
+CREATE POLICY "Users manage own preferences" ON public.user_simulator_preferences
+    AS PERMISSIVE
+    FOR ALL
+    TO public
+    USING ((auth.uid() = user_id))
+;
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
+CREATE POLICY "Users can update own profile" ON public.users
+    AS PERMISSIVE
+    FOR UPDATE
+    TO public
+    USING ((auth.uid() = id))
+;
+
+DROP POLICY IF EXISTS "Users can update their own data." ON public.users;
+CREATE POLICY "Users can update their own data." ON public.users
+    AS PERMISSIVE
+    FOR UPDATE
+    TO public
+    USING ((auth.uid() = id))
+    WITH CHECK ((auth.uid() = id))
+;
+
+DROP POLICY IF EXISTS "Users can view own profile" ON public.users;
+CREATE POLICY "Users can view own profile" ON public.users
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING ((auth.uid() = id))
+;
+
+DROP POLICY IF EXISTS "Users can view their own data." ON public.users;
+CREATE POLICY "Users can view their own data." ON public.users
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING ((auth.uid() = id))
+;
+
+DROP POLICY IF EXISTS "Admins y Servidor ven tráfico" ON public.web_traffic;
+CREATE POLICY "Admins y Servidor ven tráfico" ON public.web_traffic
+    AS PERMISSIVE
+    FOR SELECT
+    TO public
+    USING (true)
+;
+
+-- ------------------------------------------------------------------------------
+-- 6. PERFORMANCE & UNIQUE INDEXES
+-- ------------------------------------------------------------------------------
+CREATE UNIQUE INDEX careers_career_id_key ON public.careers USING btree (career_id);
+CREATE INDEX idx_course_books_course ON public.course_books USING btree (course_id);
+CREATE INDEX idx_course_books_resource ON public.course_books USING btree (resource_id);
+CREATE UNIQUE INDEX courses_course_id_key ON public.courses USING btree (course_id);
+CREATE INDEX idx_courses_name_trgm ON public.courses USING gin (f_unaccent((name)::text) gin_trgm_ops);
+CREATE INDEX idx_decks_public_category ON public.decks USING btree (is_public, category) WHERE (is_public = true);
+CREATE INDEX idx_decks_user_parent ON public.decks USING btree (user_id, parent_id, type);
+CREATE INDEX idx_page_views_entity ON public.page_views USING btree (entity_type, entity_id);
+CREATE INDEX idx_qbank_domain ON public.question_bank USING btree (domain);
+CREATE INDEX idx_qbank_topic ON public.question_bank USING btree (topic);
+CREATE INDEX idx_question_bank_career ON public.question_bank USING btree (career);
+CREATE INDEX idx_question_bank_created_at ON public.question_bank USING btree (created_at DESC);
+CREATE INDEX idx_question_bank_domain_topic_sub ON public.question_bank USING btree (domain, topic, subtopic);
+CREATE UNIQUE INDEX question_bank_question_hash_key ON public.question_bank USING btree (question_hash);
+CREATE INDEX idx_quiz_history_user_date ON public.quiz_history USING btree (user_id, created_at);
+CREATE INDEX idx_resources_created_at ON public.resources USING btree (created_at DESC);
+CREATE INDEX idx_resources_type_domain_vis_created ON public.resources USING btree (resource_type, domain, visible, created_at DESC);
+CREATE UNIQUE INDEX resources_resource_id_key ON public.resources USING btree (resource_id);
+CREATE UNIQUE INDEX resources_url_key ON public.resources USING btree (url);
+CREATE INDEX idx_search_history_query ON public.search_history USING btree (query);
+CREATE INDEX idx_topic_resources_resource ON public.topic_resources USING btree (resource_id);
+CREATE INDEX idx_topic_resources_topic ON public.topic_resources USING btree (topic_id);
+CREATE INDEX idx_topics_name_trgm ON public.topics USING gin (f_unaccent((name)::text) gin_trgm_ops);
+CREATE UNIQUE INDEX topics_topic_id_key ON public.topics USING btree (topic_id);
+CREATE INDEX idx_flashcards_user_review ON public.user_flashcards USING btree (user_id, next_review_at);
+CREATE INDEX idx_user_flashcards_deck_sort ON public.user_flashcards USING btree (deck_id, sort_order, created_at);
+CREATE INDEX idx_user_flashcards_user_deck_next ON public.user_flashcards USING btree (user_id, deck_id, next_review_at);
+CREATE INDEX idx_uhist_user_q ON public.user_question_history USING btree (user_id, question_id);
+CREATE UNIQUE INDEX unique_user_question ON public.user_question_history USING btree (user_id, question_id);
+CREATE UNIQUE INDEX user_question_history_user_id_question_id_key ON public.user_question_history USING btree (user_id, question_id);
+CREATE INDEX idx_users_name_trgm ON public.users USING gin (f_unaccent((name)::text) gin_trgm_ops);
+CREATE INDEX idx_users_subscription_status ON public.users USING btree (subscription_status);
+CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email);
+CREATE INDEX idx_web_traffic_daily ON public.web_traffic USING btree (created_at);
+CREATE INDEX idx_web_traffic_pulse ON public.web_traffic USING btree (last_ping);

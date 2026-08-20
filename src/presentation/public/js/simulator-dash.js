@@ -632,8 +632,8 @@ const SimulatorDash = (() => {
             renderGuestDemoData();
         }
 
-        // 5. Tooltip para usuarios nuevos sin configuración
-        if (token && !activeConfig) showFirstVisitTip();
+        // 5. Guía de Onboarding interactiva para visitantes y nuevos usuarios
+        setupOnboardingGuide();
 
         // 6. Setup Language Navigation Tabs (Idiomas-only)
         setupLanguageTabs();
@@ -643,86 +643,44 @@ const SimulatorDash = (() => {
         setupLessonEditor();
     }
 
-    function showFirstVisitTip() {
-        const btn = document.getElementById('btn-start-config');
-        if (!btn) return;
+    function setupOnboardingGuide() {
+        const btnGuide = document.getElementById('btn-show-guide');
+        if (btnGuide) {
+            btnGuide.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.tooltipManager) {
+                    window.tooltipManager.startSimulatorTour(true);
+                }
+            };
+        }
 
-        // --- NEON PULSE: Persiste hasta que el usuario guarde una configuración ---
-        const pulseStyle = document.createElement('style');
-        pulseStyle.id = 'neon-pulse-style';
-        pulseStyle.textContent = `
-            @keyframes neonPulse {
-                0%, 100% { box-shadow: 0 0 5px rgba(96,165,250,0.4), 0 0 15px rgba(96,165,250,0.15); }
-                50%      { box-shadow: 0 0 12px rgba(96,165,250,0.7), 0 0 30px rgba(96,165,250,0.25), 0 0 4px rgba(96,165,250,0.5) inset; }
+        // Si es visitante o usuario sin configuración personalizada previa, sugerir tour guiado
+        setTimeout(() => {
+            if (window.tooltipManager && (!activeConfig || !localStorage.getItem('authToken'))) {
+                window.tooltipManager.startSimulatorTour(false);
             }
-            #btn-start-config.neon-active {
-                animation: neonPulse 2s ease-in-out infinite;
-                border-color: rgba(96,165,250,0.5) !important;
+        }, 800);
+
+        // Soporte Touch / Tap para Tooltips de KPIs informativos
+        document.addEventListener('click', (e) => {
+            const kpiBtn = e.target.closest('.kpi-info-btn');
+            if (kpiBtn) {
+                e.stopPropagation();
+                const container = kpiBtn.closest('.kpi-info-container');
+                if (container) {
+                    const wasActive = container.classList.contains('active');
+                    document.querySelectorAll('.kpi-info-container.active').forEach(c => c.classList.remove('active'));
+                    if (!wasActive) container.classList.add('active');
+                }
+                return;
             }
-        `;
-        document.head.appendChild(pulseStyle);
-        btn.classList.add('neon-active');
 
-        // --- TOOLTIP: Solo se muestra una vez, 15 segundos ---
-        if (localStorage.getItem('hasSeenConfigTip')) return;
-
-        const tip = document.createElement('div');
-        tip.id = 'config-tip';
-        tip.innerHTML = `
-            <style>
-                #config-tip {
-                    position: absolute;
-                    top: calc(100% + 12px);
-                    right: 0;
-                    background: rgba(15, 23, 42, 0.95);
-                    backdrop-filter: blur(12px);
-                    border: 1px solid rgba(96, 165, 250, 0.3);
-                    border-radius: 14px;
-                    padding: 0.9rem 1.1rem;
-                    color: #e2e8f0;
-                    font-size: 0.82rem;
-                    line-height: 1.5;
-                    width: 240px;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(96,165,250,0.1);
-                    z-index: 100;
-                    animation: tipFadeIn 0.5s ease-out;
-                }
-                #config-tip::before {
-                    content: '';
-                    position: absolute;
-                    top: -7px;
-                    right: 24px;
-                    width: 12px;
-                    height: 12px;
-                    background: rgba(15, 23, 42, 0.95);
-                    border-top: 1px solid rgba(96, 165, 250, 0.3);
-                    border-left: 1px solid rgba(96, 165, 250, 0.3);
-                    transform: rotate(45deg);
-                }
-                #config-tip .tip-icon { color: #60a5fa; margin-right: 4px; }
-                @keyframes tipFadeIn {
-                    from { opacity: 0; transform: translateY(-6px); }
-                    to   { opacity: 1; transform: translateY(0); }
-                }
-            </style>
-            <i class="fas fa-lightbulb tip-icon"></i>
-            <strong>Tip:</strong> Tu simulador está configurado por defecto. Personaliza tu meta y áreas de estudio aquí.
-        `;
-
-        btn.parentElement.style.position = 'relative';
-        btn.parentElement.appendChild(tip);
-
-        const dismissTip = () => {
-            if (!document.getElementById('config-tip')) return;
-            tip.style.animation = 'tipFadeIn 0.3s ease-out reverse forwards';
-            setTimeout(() => tip.remove(), 300);
-            localStorage.setItem('hasSeenConfigTip', 'true');
-        };
-
-        // Auto-dismiss after 15 seconds
-        setTimeout(dismissTip, 15000);
-        // Also dismiss when clicking the config button
-        btn.addEventListener('click', dismissTip, { once: true });
+            // Si hace clic fuera, cerrar cualquier KPI tooltip abierto
+            if (!e.target.closest('.kpi-tooltip-content')) {
+                document.querySelectorAll('.kpi-info-container.active').forEach(c => c.classList.remove('active'));
+            }
+        });
     }
 
     function updateModeLinks(ctxConfig) {
@@ -783,22 +741,15 @@ const SimulatorDash = (() => {
 
                     // 1. Visitante check (Redirección Únete)
                     if (!token && window.uiManager) {
-                        // EXCEPCIÓN: Permitir Modo Rápido (Arcade) para Invitados con LÍMITE
+                        // EXCEPCIÓN: Permitir Modo Rápido (Arcade) para Invitados con LÍMITE (1 al día)
                         const isArcade = id === 'btn-mode-arcade';
 
                         if (isArcade) {
-                            // 🔄 REINICIO DIARIO: Reseteamos contador si es un nuevo día
-                            const today = new Date().toDateString();
-                            const lastDemoDate = localStorage.getItem('demo_sessions_date');
-                            let sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
+                            const canTake = window.GuestSessionManager 
+                                ? window.GuestSessionManager.canTakeDailyDemo()
+                                : parseInt(localStorage.getItem('demo_sessions_count') || '0', 10) < 1;
 
-                            if (lastDemoDate !== today) {
-                                sessionsSent = 0;
-                                localStorage.setItem('demo_sessions_count', '0');
-                                localStorage.setItem('demo_sessions_date', today);
-                            }
-
-                            if (sessionsSent >= 3) {
+                            if (!canTake) {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 window.uiManager.showAuthPromptModal();
@@ -1328,7 +1279,8 @@ const SimulatorDash = (() => {
                 }
 
                 if (selectedAreas.length === 0) {
-                    alert('Debes seleccionar al menos un área de estudio.');
+                    if (window.uiManager) window.uiManager.showToast('Debes seleccionar al menos un área de estudio.', 'warning');
+                    else alert('Debes seleccionar al menos un área de estudio.');
                     return;
                 }
 
@@ -1805,7 +1757,8 @@ const SimulatorDash = (() => {
             // ✅ MOCK ANALYSIS FOR GUESTS: No call to API
             if (!token) {
                 setTimeout(() => {
-                    const localStats = JSON.parse(localStorage.getItem('guest_demo_stats') || '{}');
+                    const localStats = (window.GuestSessionManager && window.GuestSessionManager.getGuestStats(currentContext))
+                        || JSON.parse(localStorage.getItem(`guest_demo_stats_${currentContext.toLowerCase()}`) || '{}');
                     stateLoading.style.display = 'none';
                     stateResults.style.display = 'block';
 
@@ -1969,7 +1922,7 @@ const SimulatorDash = (() => {
                 console.error("AI Analysis Failed", err);
                 stateLoading.style.display = 'none';
                 stateInitial.style.display = 'flex';
-                alert("Hubo un problema de conexión al tutor de inteligencia artificial. Intenta nuevamente.");
+                if (window.uiManager) window.uiManager.showToast("Hubo un problema de conexión al tutor de IA. Intenta nuevamente.", 'warning');
             }
         }
 
@@ -1994,10 +1947,12 @@ const SimulatorDash = (() => {
         renderGuestBanner();
 
         // --- 🌈 Arcade Mode Glow for Guests ---
-        const sessionsSent = parseInt(localStorage.getItem('demo_sessions_count') || '0');
+        const canTake = window.GuestSessionManager
+            ? window.GuestSessionManager.canTakeDailyDemo()
+            : parseInt(localStorage.getItem('demo_sessions_count') || '0', 10) < 1;
         const arcadeBtn = document.getElementById('btn-mode-arcade');
 
-        if (sessionsSent < 3 && arcadeBtn) {
+        if (canTake && arcadeBtn) {
             const arcadeCard = arcadeBtn.closest('.mode-card');
             if (arcadeCard) {
                 // Inject styles for the glow
@@ -2305,13 +2260,16 @@ const SimulatorDash = (() => {
         });
         renderDoughnutChart(demoDoughnutData);
 
-        // 5. Persistence: Check for local demo stats (Domain-Specific)
-        const domainKey = currentContext.toLowerCase();
-        const localStatsStr = localStorage.getItem(`guest_demo_stats_${domainKey}`);
+        // 5. Persistence: Check for local demo stats (Domain-Specific with 1-Day TTL)
+        const stats = window.GuestSessionManager
+            ? window.GuestSessionManager.getGuestStats(currentContext)
+            : (() => {
+                const raw = localStorage.getItem(`guest_demo_stats_${currentContext.toLowerCase()}`);
+                return raw ? JSON.parse(raw) : null;
+            })();
 
-        if (localStatsStr) {
+        if (stats) {
             try {
-                const stats = JSON.parse(localStatsStr);
                 currentAvgScore = stats.avgScore || '0';
                 if (scoreEl) scoreEl.textContent = currentAvgScore;
                 if (scoreBar) scoreBar.style.width = `${(parseFloat(currentAvgScore || 0) / 20) * 100}%`;
@@ -2433,7 +2391,7 @@ const SimulatorDash = (() => {
                 if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
                     window.uiManager.showAuthPromptModal();
                 } else {
-                    alert('Debes registrarte o iniciar sesión para acceder a esta sección.');
+                    if (window.uiManager) window.uiManager.showToast('Debes iniciar sesión para acceder a esta sección.', 'warning');
                 }
                 return;
             }
@@ -2737,7 +2695,7 @@ const SimulatorDash = (() => {
                     if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                         window.uiManager.showPaywallModal();
                     } else {
-                        alert('Acceso premium requerido para cargar lecciones teóricas.');
+                        if (window.uiManager) window.uiManager.showToast('Acceso premium requerido para cargar lecciones teóricas.', 'warning');
                     }
                     explanationEl.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:2rem;"><i class="fas fa-lock fa-2x" style="margin-bottom:0.5rem; color:#f59e0b;"></i><br>Lección bloqueada. Actualiza a Premium para aprender con IA.</div>';
                 }
@@ -3323,7 +3281,7 @@ const SimulatorDash = (() => {
             btnAiFill.onclick = async () => {
                 const word = document.getElementById('vocab-word').value.trim();
                 if (!word) {
-                    alert("Por favor escribe la palabra a autocompletar.");
+                    if (window.uiManager) window.uiManager.showToast("Por favor escribe la palabra a autocompletar.", "warning");
                     return;
                 }
 
@@ -3346,7 +3304,7 @@ const SimulatorDash = (() => {
                         if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                             window.uiManager.showPaywallModal(null, 'languages');
                         } else {
-                            alert('Has alcanzado tus límites en la versión gratuita.');
+                            if (window.uiManager) window.uiManager.showToast('Has alcanzado tus límites en la versión gratuita.', 'warning');
                         }
                         // Sincronización gestionada por NetworkService
                         return;
@@ -3359,7 +3317,7 @@ const SimulatorDash = (() => {
                         document.getElementById('vocab-example').value = data.data.example_sentence || '';
                         // Sincronización gestionada por NetworkService
                     } else {
-                        alert(data.error || "No se pudo autocompletar.");
+                        if (window.uiManager) window.uiManager.showToast(data.error || "No se pudo autocompletar.", "error");
                     }
                 } catch (e) {
                     console.error("AI completion error:", e);
@@ -3378,7 +3336,7 @@ const SimulatorDash = (() => {
                 const example = document.getElementById('vocab-example').value.trim();
 
                 if (!word || !translation) {
-                    alert("La palabra y su traducción son obligatorias.");
+                    if (window.uiManager) window.uiManager.showToast("La palabra y su traducción son obligatorias.", "warning");
                     return;
                 }
 
@@ -3405,7 +3363,7 @@ const SimulatorDash = (() => {
                         closeModal();
                         loadVocabulary();
                     } else {
-                        alert(data.error || "Error al guardar la palabra.");
+                        if (window.uiManager) window.uiManager.showToast(data.error || "Error al guardar la palabra.", "error");
                     }
                 } catch (e) {
                     console.error("Save vocabulary error:", e);
@@ -3434,7 +3392,7 @@ const SimulatorDash = (() => {
                         if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                             window.uiManager.showPaywallModal();
                         } else {
-                            alert('Límite de Flashcards alcanzado. Pásate a Premium.');
+                            if (window.uiManager) window.uiManager.showToast('Límite de Flashcards alcanzado. Pásate a Premium.', 'warning');
                         }
                         return;
                     }
@@ -3450,7 +3408,7 @@ const SimulatorDash = (() => {
 
                         loadVocabulary();
                     } else {
-                        alert(data.error || "No se pudieron exportar las palabras.");
+                        if (window.uiManager) window.uiManager.showToast(data.error || "No se pudieron exportar las palabras.", "error");
                     }
                 } catch (e) {
                     console.error("Export flashcards error:", e);

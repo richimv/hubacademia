@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fill Data
     document.getElementById('user-name').textContent = user.name || 'Usuario';
     const emailEl = document.getElementById('user-email');
-    emailEl.innerHTML = `${user.email} <i class="fas fa-check-circle" style="color: #10b981; font-size: 0.9rem; margin-left: 5px;" title="Verificado vía Google"></i>`;
+    emailEl.innerHTML = `${user.email} <i class="fas fa-check-circle" style="color: var(--success); font-size: 0.85rem; margin-left: 5px;" title="Verificado vía Google"></i>`;
 
     const avatarBadge = document.getElementById('user-avatar-badge');
     if (avatarBadge) {
@@ -25,13 +25,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tier = String(user.subscriptionTier || 'free').toLowerCase();
 
     if (user.role === 'admin') {
-        badgeContainer.innerHTML = '<span class="badge-premium" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;"><i class="fas fa-shield-alt"></i> Administrador</span>';
+        badgeContainer.innerHTML = '<span class="badge-premium" style="background: var(--primary);"><i class="fas fa-shield-alt"></i> Administrador Global</span>';
     } else if (tier === 'advanced') {
-        badgeContainer.innerHTML = '<span class="badge-premium" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #000; font-weight: 800;"><i class="fas fa-crown"></i> Plan Advanced</span>';
+        badgeContainer.innerHTML = '<span class="badge-premium" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff;"><i class="fas fa-crown"></i> Plan Advanced</span>';
     } else if (tier === 'basic') {
-        badgeContainer.innerHTML = '<span class="badge-premium" style="background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); color: white;"><i class="fas fa-star"></i> Plan Basic</span>';
+        badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-star"></i> Plan Basic</span>';
     } else {
-        badgeContainer.innerHTML = '<span class="badge-free"><i class="fas fa-seedling"></i> Plan Gratuito</span>';
+        badgeContainer.innerHTML = '<span class="badge-free"><i class="fas fa-seedling"></i> Plan Gratuito (10 Vidas)</span>';
     }
 
     // Update Security & Role Info
@@ -45,6 +45,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderSubscriptionDetails(user);
     renderUsageDetails(user);
 });
+
+/**
+ * Calcula la fecha de la próxima renovación semanal para usuarios Free
+ * @param {Object} user - Objeto de usuario
+ * @returns {{ formattedDate: string, daysLeft: number }}
+ */
+function getNextFreeRenewalInfo(user) {
+    const lastRenewalStr = user.lastFreeRenewal || user.last_free_renewal;
+    if (!lastRenewalStr) {
+        return { formattedDate: "Cada 7 días", daysLeft: 7 };
+    }
+
+    try {
+        const lastRenewalDate = new Date(lastRenewalStr);
+        const nextRenewalDate = new Date(lastRenewalDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        const diffMs = nextRenewalDate.getTime() - now.getTime();
+        const daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        const rawDate = nextRenewalDate.toLocaleDateString('es-ES', options);
+        const formattedDate = rawDate.charAt(0).toUpperCase() + rawDate.slice(1);
+
+        return { formattedDate, daysLeft };
+    } catch (e) {
+        console.warn('⚠️ Error al calcular fecha de renovación:', e);
+        return { formattedDate: "Cada 7 días", daysLeft: 7 };
+    }
+}
 
 /**
  * Renderiza los detalles de la suscripción
@@ -64,11 +93,11 @@ function renderSubscriptionDetails(user) {
         container.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">ROL ADMINISTRADOR <i class="fas fa-shield-alt" style="color: var(--primary);"></i></span>
-                    <span style="background: rgba(59, 130, 246, 0.15); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">ILIMITADO</span>
+                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">ROL ADMINISTRADOR <i class="fas fa-shield-alt" style="color: var(--primary);"></i></span>
+                    <span style="background: var(--primary-glow); color: var(--primary); border: 1px solid var(--border-hover); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">ILIMITADO</span>
                 </div>
-                <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">
-                    <i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i> Posees acceso total y sin restricciones a todos los servicios de IA y administración.
+                <div style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">
+                    <i class="fas fa-check-circle" style="color: var(--success); margin-right: 6px;"></i> Posees acceso total y sin restricciones a todos los servicios de IA y administración de la plataforma.
                 </div>
             </div>
         `;
@@ -76,38 +105,38 @@ function renderSubscriptionDetails(user) {
     }
 
     if (isPremium) {
-        const dateStr = expiresAt ? new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Acceso Vitalicio';
+        const dateStr = expiresAt ? new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Acceso Activo';
         
         let planPerks = '';
         if (tier === 'basic') {
             planPerks = `
-                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0; font-size: 0.875rem; color: var(--text-secondary);">
-                    <div><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i> 50 Consultas diarias al Tutor IA Estándar</div>
-                    <div><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i> 15 Simulacros completos por día</div>
-                    <div><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i> Flashcards Manuales Ilimitadas</div>
+                <div style="display: flex; flex-direction: column; gap: 0.45rem; margin: 0.25rem 0; font-size: 0.85rem; color: var(--text-secondary);">
+                    <div><i class="fas fa-check-circle" style="color: var(--success); margin-right: 8px;"></i> 50 Consultas diarias al Tutor IA Estándar</div>
+                    <div><i class="fas fa-check-circle" style="color: var(--success); margin-right: 8px;"></i> 15 Simulacros completos por día</div>
+                    <div><i class="fas fa-check-circle" style="color: var(--success); margin-right: 8px;"></i> Flashcards Manuales Ilimitadas</div>
                 </div>
             `;
         } else {
             planPerks = `
-                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0; font-size: 0.875rem; color: var(--text-secondary);">
-                    <div><i class="fas fa-check-circle" style="color: #fbbf24; margin-right: 8px;"></i> 100 Consultas diarias al Tutor IA Estándar</div>
-                    <div><i class="fas fa-check-circle" style="color: #fbbf24; margin-right: 8px;"></i> 25 Consultas diarias de Especialidad (RAG)</div>
-                    <div><i class="fas fa-check-circle" style="color: #fbbf24; margin-right: 8px;"></i> 50 Simulacros completos por día</div>
-                    <div><i class="fas fa-check-circle" style="color: #fbbf24; margin-right: 8px;"></i> 30 Generaciones de Flashcards con IA al mes</div>
+                <div style="display: flex; flex-direction: column; gap: 0.45rem; margin: 0.25rem 0; font-size: 0.85rem; color: var(--text-secondary);">
+                    <div><i class="fas fa-check-circle" style="color: var(--warning); margin-right: 8px;"></i> 100 Consultas diarias al Tutor IA Estándar</div>
+                    <div><i class="fas fa-check-circle" style="color: var(--warning); margin-right: 8px;"></i> 25 Consultas diarias de Especialidad (RAG)</div>
+                    <div><i class="fas fa-check-circle" style="color: var(--warning); margin-right: 8px;"></i> 50 Simulacros completos por día</div>
+                    <div><i class="fas fa-check-circle" style="color: var(--warning); margin-right: 8px;"></i> 30 Generaciones de Flashcards con IA al mes</div>
                 </div>
             `;
         }
 
         container.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">PLAN ${tier.toUpperCase()} <i class="fas fa-check-circle" style="color: #10b981; margin-left: 4px;"></i></span>
-                    <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">ACTIVO</span>
+                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">PLAN ${tier.toUpperCase()} <i class="fas fa-check-circle" style="color: var(--success); margin-left: 4px;"></i></span>
+                    <span style="background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">ACTIVO</span>
                 </div>
 
                 ${planPerks}
 
-                <div style="color: var(--text-secondary); font-size: 0.875rem; display: flex; align-items: center; gap: 8px;">
+                <div style="color: var(--text-secondary); font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
                     <i class="far fa-calendar-alt" style="color: var(--primary);"></i> Vence el: <strong style="color: var(--text-main);">${dateStr}</strong>
                 </div>
 
@@ -117,18 +146,28 @@ function renderSubscriptionDetails(user) {
             </div>
         `;
     } else {
+        const renewalInfo = getNextFreeRenewalInfo(user);
+
         container.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">PLAN GRATUITO</span>
-                    <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">LIMITADO</span>
+                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">PLAN GRATUITO</span>
+                    <span style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">10 VIDAS / SEMANA</span>
                 </div>
 
-                <p style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5; margin: 0;">
-                    Actualmente cuentas con cuotas restringidas de exploración. Actualiza a un plan Premium para desbloquear simulacros ilimitados y el tutor inteligente.
-                </p>
+                <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem; color: var(--text-secondary);">
+                    <div><i class="fas fa-bolt" style="color: var(--warning); margin-right: 8px;"></i> <strong>10 Créditos semanales</strong> de acceso para simuladores y tutorías</div>
+                    <div><i class="fas fa-redo-alt" style="color: var(--primary); margin-right: 8px;"></i> <strong>Recarga automática</strong> cada 7 días</div>
+                </div>
 
-                <a href="/pricing" class="btn-action btn-primary" style="width: 100%; font-size: 0.95rem; padding: 0.85rem;">
+                <div class="renewal-banner">
+                    <i class="far fa-calendar-check"></i>
+                    <div class="renewal-banner-text">
+                        Próxima recarga: <strong>${renewalInfo.formattedDate}</strong>
+                    </div>
+                </div>
+
+                <a href="/pricing" class="btn-action btn-primary" style="width: 100%; margin-top: 0.25rem;">
                     💎 Activar Plan Basic o Advanced
                 </a>
             </div>
@@ -147,7 +186,7 @@ function openDeleteModal() {
     deleteError.style.display = 'none';
     const btn = document.getElementById('confirm-delete-btn');
     if (btn) {
-        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar mi cuenta';
+        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar cuenta';
         btn.disabled = false;
     }
     deleteInput.focus();
@@ -179,7 +218,7 @@ document.getElementById('confirm-delete-btn').addEventListener('click', async ()
         console.error(error);
         deleteError.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message || 'Error al eliminar cuenta'}`;
         deleteError.style.display = 'block';
-        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar mi cuenta';
+        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar cuenta';
         btn.disabled = false;
     }
 });
@@ -241,14 +280,14 @@ async function submitNameChange() {
 }
 
 /**
- * Genera el HTML simétrico y estilizado de una tarjeta de consumo
+ * Genera el HTML de una tarjeta de consumo
  */
-function createUsageCardHTML({ title, icon, colorRGB, badge, countVal, percentage, labelLeft, labelRight }) {
+function createUsageCardHTML({ title, icon, colorHex, colorBg, badge, countVal, percentage, labelLeft, labelRight }) {
     return `
         <div class="usage-item">
             <div class="usage-item-header">
                 <div class="usage-title-group">
-                    <div class="usage-icon-pill" style="background: rgba(${colorRGB}, 0.12); color: rgb(${colorRGB});">
+                    <div class="usage-icon-pill" style="background: ${colorBg}; color: ${colorHex};">
                         <i class="${icon}"></i>
                     </div>
                     <div class="usage-title-text-wrap">
@@ -256,27 +295,28 @@ function createUsageCardHTML({ title, icon, colorRGB, badge, countVal, percentag
                         <span class="usage-badge-tag">${badge}</span>
                     </div>
                 </div>
-                <div class="usage-count-val" style="color: rgb(${colorRGB});">${countVal}</div>
+                <div class="usage-count-val" style="color: ${colorHex};">${countVal}</div>
             </div>
             <div class="usage-progress-bg">
-                <div class="usage-progress-bar" style="width: ${percentage}%; background: rgb(${colorRGB});"></div>
+                <div class="usage-progress-bar" style="width: ${percentage}%; background: ${colorHex};"></div>
             </div>
             <div class="usage-footer">
                 <span class="usage-footer-left">${labelLeft}</span>
-                <span class="usage-footer-right" style="color: rgb(${colorRGB});">${labelRight}</span>
+                <span class="usage-footer-right" style="color: ${colorHex};">${labelRight}</span>
             </div>
         </div>
     `;
 }
 
 /**
- * Renderiza el consumo detallado de cuotas de IA
- * FILTRADO ESTRICTO SEGÚN EL PLAN (Basic vs Advanced vs Free)
+ * Renderiza el consumo detallado de cuotas
  */
 function renderUsageDetails(user) {
     const usageCard = document.getElementById('premium-usage-card');
     const container = document.getElementById('premium-usage-container');
     const planTag = document.getElementById('usage-plan-tag');
+    const titleEl = document.getElementById('usage-section-title');
+    const subtitleEl = document.getElementById('usage-section-subtitle');
 
     if (!usageCard || !container) return;
 
@@ -295,11 +335,14 @@ function renderUsageDetails(user) {
     }
 
     if (isAdmin) {
+        if (titleEl) titleEl.textContent = 'Acceso de Administrador';
+        if (subtitleEl) subtitleEl.textContent = 'Permisos globales para todos los módulos y herramientas de la plataforma.';
+
         container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 2.25rem 2rem; background: var(--profile-nested-bg); border: 1px dashed var(--border-color); border-radius: 18px;">
-                <i class="fas fa-shield-alt" style="font-size: 2.2rem; color: var(--primary); margin-bottom: 0.75rem;"></i>
-                <h4 style="color: var(--text-main); margin: 0 0 0.5rem 0; font-weight: 700; font-size: 1.1rem;">Acceso Ilimitado de Administrador</h4>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0 auto; max-width: 580px; line-height: 1.5;">Tu cuenta posee permisos globales y acceso sin restricciones ni límites de cuota en todas las funciones de IA.</p>
+            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: var(--bg-tertiary); border: 1px dashed var(--border-color); border-radius: 14px;">
+                <i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
+                <h4 style="color: var(--text-main); margin: 0 0 0.4rem 0; font-weight: 700; font-size: 1.05rem;">Acceso Ilimitado de Administrador</h4>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0 auto; max-width: 540px; line-height: 1.5;">Tu cuenta posee permisos globales y acceso sin restricciones ni límites de cuota en todas las funciones de IA.</p>
             </div>
         `;
         return;
@@ -308,6 +351,9 @@ function renderUsageDetails(user) {
     const limits = user.limits || {};
 
     if (isPremium) {
+        if (titleEl) titleEl.textContent = 'Consumo de Servicios IA';
+        if (subtitleEl) subtitleEl.textContent = 'Monitoreo en tiempo real de las cuotas asignadas a tu nivel de membresía actual.';
+
         let cardsHTML = '';
 
         // 1. Tutor IA Estándar (Basic & Advanced)
@@ -319,7 +365,8 @@ function renderUsageDetails(user) {
         cardsHTML += createUsageCardHTML({
             title: 'Tutor de IA Estándar',
             icon: 'fas fa-comments',
-            colorRGB: '59, 130, 246', // Blue
+            colorHex: 'var(--primary)',
+            colorBg: 'var(--info-bg)',
             badge: 'Diario',
             countVal: `${aiUsed} / ${aiLimit}`,
             percentage: aiPct,
@@ -337,7 +384,8 @@ function renderUsageDetails(user) {
             cardsHTML += createUsageCardHTML({
                 title: 'Consultas RAG Especializadas',
                 icon: 'fas fa-brain',
-                colorRGB: '20, 184, 166', // Teal
+                colorHex: 'var(--accent-teal)',
+                colorBg: 'rgba(20, 184, 166, 0.12)',
                 badge: 'Diario (Advanced)',
                 countVal: `${ragUsed} / ${ragLimit}`,
                 percentage: ragPct,
@@ -355,11 +403,12 @@ function renderUsageDetails(user) {
         cardsHTML += createUsageCardHTML({
             title: 'Simulacros y Exámenes',
             icon: 'fas fa-stethoscope',
-            colorRGB: '139, 92, 246', // Purple
+            colorHex: 'var(--accent-purple)',
+            colorBg: 'rgba(139, 92, 246, 0.12)',
             badge: 'Diario',
             countVal: `${simUsed} / ${simLimit}`,
             percentage: simPct,
-            labelLeft: 'Generación de casos y evaluaciones',
+            labelLeft: 'Evaluaciones rendidas hoy',
             labelRight: `Disponibles: ${simRemaining}`
         });
 
@@ -373,7 +422,8 @@ function renderUsageDetails(user) {
             cardsHTML += createUsageCardHTML({
                 title: 'Generador de Flashcards',
                 icon: 'fas fa-clone',
-                colorRGB: '245, 158, 11', // Amber
+                colorHex: 'var(--warning)',
+                colorBg: 'var(--warning-bg)',
                 badge: 'Mensual (Advanced)',
                 countVal: `${fcUsed} / ${fcLimit}`,
                 percentage: fcPct,
@@ -385,53 +435,52 @@ function renderUsageDetails(user) {
         container.innerHTML = cardsHTML;
     } else {
         // Plan Free / Pending
+        if (titleEl) titleEl.textContent = 'Créditos de Vidas Semanales';
+        if (subtitleEl) subtitleEl.textContent = 'Tus créditos se recargan automáticamente a 10 cada 7 días para practicar en simulacros y consultar al Tutor IA.';
+
         const usageCount = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
+        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
         const remaining = Math.max(0, maxFreeLimit - usageCount);
         const pct = Math.min(100, (remaining / maxFreeLimit) * 100);
 
-        const lastRenewalStr = user.lastFreeRenewal || user.last_free_renewal;
-        let renewalDateText = "";
-        if (lastRenewalStr) {
-            try {
-                const lastRenewalDate = new Date(lastRenewalStr);
-                const nextRenewalDate = new Date(lastRenewalDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-                const options = { weekday: 'long', day: 'numeric', month: 'long' };
-                const formattedDate = nextRenewalDate.toLocaleDateString('es-ES', options);
-                renewalDateText = `Reinicio: ${formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}`;
-            } catch (e) {
-                console.warn('⚠️ Error al formatear fecha de renovación:', e);
-            }
+        const renewalInfo = getNextFreeRenewalInfo(user);
+        
+        let colorHex = 'var(--success)';
+        let colorBg = 'var(--success-bg)';
+        if (remaining <= 2 && remaining > 0) {
+            colorHex = 'var(--warning)';
+            colorBg = 'var(--warning-bg)';
+        } else if (remaining === 0) {
+            colorHex = 'var(--danger)';
+            colorBg = 'var(--danger-bg)';
         }
 
         container.innerHTML = `
             <div class="usage-item" style="grid-column: 1 / -1;">
                 <div class="usage-item-header">
                     <div class="usage-title-group">
-                        <div class="usage-icon-pill" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">
+                        <div class="usage-icon-pill" style="background: ${colorBg}; color: ${colorHex};">
                             <i class="fas fa-bolt"></i>
                         </div>
                         <div class="usage-title-text-wrap">
-                            <div class="usage-title">Créditos Semanales de Exploración</div>
-                            <span class="usage-badge-tag">Cuota Semanal</span>
+                            <div class="usage-title">Créditos de Exploración Disponibles</div>
+                            <span class="usage-badge-tag">Recarga Semanal (10 Vidas)</span>
                         </div>
                     </div>
-                    <div class="usage-count-val" style="color: #f59e0b;">${remaining} / ${maxFreeLimit}</div>
+                    <div class="usage-count-val" style="color: ${colorHex};">${remaining} / ${maxFreeLimit}</div>
                 </div>
                 <div class="usage-progress-bg">
-                    <div class="usage-progress-bar" style="width: ${pct}%; background: #f59e0b;"></div>
+                    <div class="usage-progress-bar" style="width: ${pct}%; background: ${colorHex};"></div>
                 </div>
                 <div class="usage-footer">
-                    <span class="usage-footer-left">Créditos para simulacros e IA</span>
-                    <span class="usage-footer-right" style="color: #f59e0b;">Disponibles: ${remaining}</span>
+                    <span class="usage-footer-left">Consumidos en esta semana: ${usageCount}</span>
+                    <span class="usage-footer-right" style="color: ${colorHex};">Disponibles: ${remaining} vidas</span>
                 </div>
-                ${renewalDateText ? `
-                <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                    <span><i class="far fa-calendar-alt" style="margin-right: 6px; color: #60a5fa;"></i>Renovación cada 7 días</span>
-                    <span style="color: #60a5fa; font-weight: 600;">${renewalDateText}</span>
+                <div style="margin-top: 0.4rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); font-size: 0.825rem; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                    <span><i class="fas fa-clock" style="margin-right: 6px; color: var(--primary);"></i>Próxima recarga semanal:</span>
+                    <span style="color: var(--text-main); font-weight: 700;">${renewalInfo.formattedDate}</span>
                 </div>
-                ` : ''}
             </div>
         `;
     }
-}
+}

@@ -356,9 +356,11 @@ class AdminManager {
 
     switchTab(tabId) {
         this.clearBulkSelection();
+        this.currentTab = tabId;
         // 1. Gestionar clases de botones
         document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
-        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+        const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
 
         // 2. Gestionar visibilidad de contenedores (Forzar display para evitar errores CSS)
         document.querySelectorAll('.tab-content').forEach(c => {
@@ -372,14 +374,20 @@ class AdminManager {
             activeContainer.style.display = 'block'; // ✅ FORZAR VISIBLE
         }
 
-        // 3. Renderizar contenido (Lazy Load o Refresh)
-        if (tabId === 'tab-courses') this.displayBaseCourses();
-        if (tabId === 'tab-topics') this.displayTopics();
-        if (tabId === 'tab-students') this.displayStudents();
-        if (tabId === 'tab-books') this.displayBooks();
-        if (tabId === 'tab-careers') this.displayCareers();
-        if (tabId === 'tab-questions') this.displayQuestions();
+        // 3. Renderizar bajo demanda la pestaña activa
+        this.renderCurrentTab();
+    }
 
+    renderCurrentTab() {
+        const activeTab = this.currentTab || document.querySelector('.admin-tabs .tab-link.active')?.dataset.tab || 'tab-careers';
+        this.currentTab = activeTab;
+
+        if (activeTab === 'tab-courses') this.displayBaseCourses();
+        else if (activeTab === 'tab-topics') this.displayTopics();
+        else if (activeTab === 'tab-students') this.displayStudents();
+        else if (activeTab === 'tab-books') this.displayBooks();
+        else if (activeTab === 'tab-careers') this.displayCareers();
+        else if (activeTab === 'tab-questions') this.displayQuestions();
     }
 
     // ELIMINADO: _getAuthHeaders ahora es manejado automáticamente por NetworkService
@@ -449,22 +457,13 @@ class AdminManager {
 
             this.allCareers = await careersRes.json();
             this.allCourses = await coursesRes.json();
-
             this.allStudents = await studentsRes.json();
             this.allTopics = await topicsRes.json();
-            this.allBooks = await booksRes.json(); // Cargar libros
-
-            // OPTIMIZACIÓN: No cargamos todas las preguntas de golpe aquí si queremos soporte dinámico,
-            // pero para no romper el flujo actual, cargamos el primer lote.
+            this.allBooks = await booksRes.json();
             this.allQuestions = await questionsRes.json();
 
-            // CORRECCIÓN: Renderizar todas las pestañas DESPUÉS de que todos los datos se hayan cargado
-            this.displayCareers();
-            this.displayBaseCourses();
-            this.displayStudents();
-            this.displayTopics();
-            this.displayBooks();
-            this.displayQuestions();
+            // ✅ OPTIMIZACIÓN: Renderizar de forma reactiva y limpia solo la pestaña activa
+            this.renderCurrentTab();
 
         } catch (error) {
             console.error('❌ Error cargando datos iniciales:', error);
@@ -2927,7 +2926,11 @@ class AdminManager {
             window.XLSX.writeFile(wb, "HubAcademia_Plantilla_Banco_Preguntas.xlsx");
         } else {
             console.error('SheetJS no detectado');
-            alert("No se cargaron los recursos para descargar el excel. Refresca la página.");
+            if (window.confirmationModal) {
+                window.confirmationModal.showAlert("No se cargaron los recursos para descargar el excel. Refresca la página.", "Descarga de Plantilla");
+            } else {
+                alert("No se cargaron los recursos para descargar el excel. Refresca la página.");
+            }
         }
     }
 

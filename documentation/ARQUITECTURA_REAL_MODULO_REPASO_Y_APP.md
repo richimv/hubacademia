@@ -142,3 +142,11 @@ Durante la sesión de estudio, el usuario voltea la tarjeta (Giro 3D / Flip) y c
 - `POST /api/flashcard/review`: Registrar calificación SM-2 (`cardId`, `quality`, `currentInterval`, `currentEf`, `currentReps`).
 - `POST /api/decks/:deckId/generate`: Generación automática de flashcards con Gemini IA a partir de un tema.
 - `POST /api/chat`: Tutor IA contextual de la flashcard (`context: 'flashcard_tutor'`, inyectando `deckCategory`, `front`, `back`).
+
+---
+
+## 5. ⚡ Optimización de Rendimiento SQL y Persistencia Atómica (Agosto 2026)
+- **Reordenamiento Atómico en Lote (`updateFlashcardsOrder`):** Implementación de consulta atómica `UPDATE user_flashcards AS uf SET sort_order = v.ord FROM (VALUES ...) AS v(id, ord) WHERE uf.id = v.id AND uf.deck_id = $1 AND uf.user_id = $2`, reduciendo $N$ viajes de red a **1 sola transacción atómica**.
+- **Inserción Atómica de Tarjeta (`createFlashcard`):** Inlining de búsqueda de nombre del mazo con `COALESCE((SELECT name FROM decks WHERE id = $2), 'GENERAL')` directamente en la sentencia `INSERT`, eliminando viajes de red innecesarios.
+- **Índices de Alto Rendimiento:** Indexación en `decks(user_id, parent_id, type)`, `decks(is_public, category, saves_count DESC)`, `user_flashcards(deck_id, sort_order ASC, created_at ASC)` y `user_flashcards(user_id, deck_id, next_review_at)`.
+

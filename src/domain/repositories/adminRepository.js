@@ -73,7 +73,7 @@ class AdminRepository {
         };
     }
 
-    async getAllQuestions(domain, search) {
+    async getAllQuestions(domain, search, page = 1, limit = 100) {
         let query = `
             SELECT id, question_text, domain, target, career, topic, subtopic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, explanation_image_url, image_url, visual_support_recommendation
             FROM question_bank 
@@ -95,7 +95,11 @@ class AdminRepository {
             query += ` WHERE ` + conditions.join(' AND ');
         }
 
-        query += ` ORDER BY created_at DESC LIMIT 1000`;
+        const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 1000);
+        const safeOffset = Math.max((parseInt(page, 10) - 1) * safeLimit, 0);
+
+        params.push(safeLimit, safeOffset);
+        query += ` ORDER BY created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`;
 
         const result = await db.query(query, params);
         return result.rows;
@@ -128,8 +132,6 @@ class AdminRepository {
         const { rows } = await db.query(query, [audioText, career, excludeId]);
         return rows[0] ? rows[0].count : 0;
     }
-
-
 
     async updateQuestion(id, { question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation }) {
         const updateQuery = `
@@ -209,66 +211,72 @@ class AdminRepository {
             const canonicalDomain = (val) => {
                 const allowed = ['medicine', 'education'];
                 const v = String(val || '').toLowerCase().trim().replace(/\s+/g, '_');
-                return allowed.includes(v) ? v : 'medicine'; // Fallback seguro
+                return allowed.includes(v) ? v : 'medicine';
             };
 
-            const query = `
-                INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career, visual_support_recommendation)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-                ON CONFLICT (question_hash) DO UPDATE SET 
-                    target = EXCLUDED.target,
-                    image_url = EXCLUDED.image_url,
-                    explanation = EXCLUDED.explanation,
-                    explanation_image_url = EXCLUDED.explanation_image_url,
-                    options = EXCLUDED.options,
-                    career = EXCLUDED.career,
-                    subtopic = EXCLUDED.subtopic,
-                    visual_support_recommendation = EXCLUDED.visual_support_recommendation
-                RETURNING id;
-            `;
+            const BATCH_SIZE = 50;
+            for (let i = 0; i < questionsArray.length; i += BATCH_SIZE) {
+                const batch = questionsArray.slice(i, i + BATCH_SIZE);
+                const values = [];
+                const valuePlaceholders = [];
 
-            for (const q of questionsArray) {
-                const domain = canonicalDomain(q.domain);          // Siempre canónico
-                const target = q.target || 'N/A';
-                const exactTopic = q.topic || 'General';            // Área de estudio
-                const exactSubtopic = q.subtopic || null;           // Subtema clínico (nullable)
-                const difficulty = canonicalDifficulty(q.difficulty);
-                const question_text = decodeHtmlEntities(formatPlainTextToHtml(String(q.question_text || q.question || '')));
-                
-                let options = q.options;
-                if (!Array.isArray(options)) {
-                    const a = q.option_a || q.opcion_a || q.OPCION_A || q.optionA || q.opcionA || '';
-                    const b = q.option_b || q.opcion_b || q.OPCION_B || q.optionB || q.opcionB || '';
-                    const c = q.option_c || q.opcion_c || q.OPCION_C || q.optionC || q.opcionC || '';
-                    const d = q.option_d || q.opcion_d || q.OPCION_D || q.optionD || q.opcionD || '';
-                    const e = q.option_e || q.opcion_e || q.OPCION_E || q.optionE || q.opcionE || '';
-                    if (a || b || c) {
-                        options = [a, b, c];
-                        if (d) options.push(d);
-                        if (e) options.push(e);
-                    } else {
-                        options = [];
+                batch.forEach((q, idx) => {
+                    const domain = canonicalDomain(q.domain);
+                    const target = q.target || 'N/A';
+                    const exactTopic = q.topic || 'General';
+                    const exactSubtopic = q.subtopic || null;
+                    const difficulty = canonicalDifficulty(q.difficulty);
+                    const question_text = decodeHtmlEntities(formatPlainTextToHtml(String(q.question_text || q.question || '')));
+
+                    let options = q.options;
+                    if (!Array.isArray(options)) {
+                        const a = q.option_a || q.opcion_a || q.OPCION_A || q.optionA || q.opcionA || '';
+                        const b = q.option_b || q.opcion_b || q.OPCION_B || q.optionB || q.opcionB || '';
+                        const c = q.option_c || q.opcion_c || q.OPCION_C || q.optionC || q.opcionC || '';
+                        const d = q.option_d || q.opcion_d || q.OPCION_D || q.optionD || q.opcionD || '';
+                        const e = q.option_e || q.opcion_e || q.OPCION_E || q.optionE || q.opcionE || '';
+                        if (a || b || c) {
+                            options = [a, b, c];
+                            if (d) options.push(d);
+                            if (e) options.push(e);
+                        } else {
+                            options = [];
+                        }
                     }
-                }
-                const optionsStr = JSON.stringify(options || []);
-                
-                const correct_option_index = parseInt(q.correct_option_index !== undefined ? q.correct_option_index : (q.correct_answer !== undefined ? q.correct_answer : (q.correctAnswerIndex || 0)), 10);
-                const explanation = decodeHtmlEntities(formatPlainTextToHtml(q.explanation || ''));
-                const explanation_image_url = q.explanation_image_url || q.EXPLICACION_IMAGEN || null;
-                const image_url = q.image_url || null;
-                const career = q.career || null;
+                    const optionsStr = JSON.stringify(options || []);
+                    const correct_option_index = parseInt(q.correct_option_index !== undefined ? q.correct_option_index : (q.correct_answer !== undefined ? q.correct_answer : (q.correctAnswerIndex || 0)), 10);
+                    const explanation = decodeHtmlEntities(formatPlainTextToHtml(q.explanation || ''));
+                    const explanation_image_url = q.explanation_image_url || q.EXPLICACION_IMAGEN || null;
+                    const image_url = q.image_url || null;
+                    const career = q.career || null;
 
-                const normTopic = String(exactTopic || 'General').toLowerCase().trim();
-                const normText = String(question_text || '').toLowerCase().trim();
-                const rawStringForHash = `${normTopic}-${normText}-${optionsStr}`;
-                const hash = crypto.createHash('md5').update(rawStringForHash).digest('hex');
+                    const normTopic = String(exactTopic || 'General').toLowerCase().trim();
+                    const normText = String(question_text || '').toLowerCase().trim();
+                    const rawStringForHash = `${normTopic}-${normText}-${optionsStr}`;
+                    const hash = crypto.createHash('md5').update(rawStringForHash).digest('hex');
 
-                await client.query(query, [
-                    domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr,
-                    correct_option_index, explanation, explanation_image_url, image_url, hash, career,
-                    q.visual_support_recommendation || null
-                ]);
-                insertedCount++;
+                    const offset = idx * 14;
+                    valuePlaceholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14})`);
+
+                    values.push(domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr, correct_option_index, explanation, explanation_image_url, image_url, hash, career, q.visual_support_recommendation || null);
+                });
+
+                const batchQuery = `
+                    INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career, visual_support_recommendation)
+                    VALUES ${valuePlaceholders.join(', ')}
+                    ON CONFLICT (question_hash) DO UPDATE SET 
+                        target = EXCLUDED.target,
+                        image_url = EXCLUDED.image_url,
+                        explanation = EXCLUDED.explanation,
+                        explanation_image_url = EXCLUDED.explanation_image_url,
+                        options = EXCLUDED.options,
+                        career = EXCLUDED.career,
+                        subtopic = EXCLUDED.subtopic,
+                        visual_support_recommendation = EXCLUDED.visual_support_recommendation;
+                `;
+
+                await client.query(batchQuery, values);
+                insertedCount += batch.length;
             }
 
             await client.query('COMMIT');

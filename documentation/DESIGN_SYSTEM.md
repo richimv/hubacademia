@@ -384,3 +384,67 @@ Las aplicaciones móviles de React Native / Expo (`HubDocenteApp` y `HubSaludApp
   })
   ```
 
+---
+
+## 9. 📋 Sistema de Revisión de Examen (Correction Mode & Dual-Theme UI)
+
+La pantalla de revisión post-examen (`.review-container`) ofrece un análisis detallado y pedagógico de cada pregunta respondida, cumpliendo estrictamente con la paleta de tokens dinámicos:
+
+1. **Jerarquía Tipográfica Armónica:**
+   - **Enunciado de la Pregunta (`.review-q-text`):** `1.12rem` | SemiBold (600) | `var(--text-main)`.
+   - **Badge de Pregunta (`.review-q-badge`):** `0.78rem` | Bold (700) | `border-radius: 9999px` | Fondo azul translúcido `rgba(59, 130, 246, 0.12)`.
+   - **Opciones de Respuesta (`.review-opt`):** `0.95rem` | Regular (400) | `border-radius: 12px` | `var(--bg-tertiary)`.
+2. **Badges de Opciones y Letras Semánticas:**
+   - Cada opción cuenta con un contenedor cuadrado/circular (`.review-opt-letter`) de `28x28px` con las letras [A, B, C, D].
+   - **Opción Correcta (`.r-correct`):** Fondo `var(--success-bg)`, borde `var(--success-border)`. Letra con fondo verde esmeralda `#10b981` y badge "Respuesta Correcta".
+   - **Opción Errónea Marcada (`.r-wrong`):** Fondo `var(--danger-bg)`, borde `var(--danger-border)`. Letra con fondo carmesí `#ef4444`, texto tachado y badge "Tu Elección".
+3. **Caja de Sustento Pedagógico (`.review-explanation`):**
+   - Encabezado con etiqueta dorada/ámbar (`.review-exp-tag`) `<i class="fas fa-lightbulb"></i> Explicación Oficial`.
+   - Cuerpo en tipografía `0.95rem` con interlineado `1.65` y color `var(--text-secondary)`.
+4. **Disparador del Tutor IA en Revisión (`.btn-review-tutor-trigger`):**
+   - Botón en forma de píldora con el gradiente de marca Manta Pill (`linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%)`).
+   - Icono oficial de Hubi (`/assets/hubifrente.png`) de 18x18px.
+   - Sombra con resplandor cian/azul `box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35)`.
+5. **Responsividad Móvil (<= 768px):**
+   - Contenedor al 100% de ancho con padding adaptativo `1.25rem 0.85rem`.
+   - Reducción armoniosa de fuentes (enunciado `1.05rem`, opciones `0.9rem`).
+
+---
+
+## 10. 🔔 Sistema Centralizado de Alertas, Toasts y Vidas en Tiempo Real
+
+Para erradicar popups nativos y bloqueantes (`alert()` y `confirm()`), la plataforma cuenta con una arquitectura de alertas reactivas y no intrusivas:
+
+1. **Modal de Confirmación y Alerta (`window.confirmationModal`):**
+   - Basado en `.confirmation-modal-card` con tokens dinámicos (`--modal-bg`, `--text-main`, `--border-color`).
+   - Métodos asíncronos `show(msg, title, confirmText, cancelText): Promise<boolean>` y `showAlert(msg, title, btnText): Promise<boolean>`.
+   - Iconos reactivos contextuales (Peligro/Eliminar en rojo `fa-exclamation-triangle`, Éxito en verde `fa-check-circle`, Reanudar en violeta `fa-history`, Consulta en azul `fa-question-circle`).
+2. **Toast Global Flotante (`window.uiManager.showToast`):**
+   - Contenedor flotante en z-index máximo (`2147483647`).
+   - Glassmorphism con bordes y sombra dual-theme `border-radius: 9999px`.
+   - Tipos semánticos: `'success'`, `'error'`, `'warning'`, `'info'`, `'life'`.
+3. **Notificación de Vidas en Tiempo Real (`window.uiManager.showLifeDecrementToast`):**
+   - Cada consumo de crédito en cuentas Free dispara instantáneamente un toast con rayo dorado:  
+     `⚡ 1 crédito utilizado. Te quedan X/20 vidas de prueba.`
+   - Si quedan 1 o 2 vidas: `⚠️ ¡Atención! Te quedan solo X/20 vidas de prueba.` (Toast de advertencia).
+   - Al agotarse las vidas (`remaining <= 0`): `🔒 Has agotado tus vidas de prueba semanal.` y apertura automática del `PaywallModal`.
+
+---
+
+## 11. 💬 Sistema Centralizado de Tooltips y Onboarding Guía (`TooltipManager`)
+
+La plataforma cuenta con un gestor universal de tooltips declarativos y guías interactivas para onboarding de nuevos usuarios y visitantes:
+
+1. **Tooltips Declarativos Universales (`.hub-tooltip`):**
+   - Se activan mediante atributos `data-tooltip="Mensaje explicativo"` y `data-tooltip-pos="top|bottom|left|right"`.
+   - Soporte Dual-Theme automático consumiendo `--card-bg`, `--text-main`, `--border-color` y `--shadow-md`.
+   - Compatibilidad total con pantallas táctiles (apertura por tap y cierre al tocar fuera).
+2. **Guías de Onboarding Interactivas (`.hub-guided-tip`):**
+   - Burbuja flotante con badge indicativo (`.hub-guided-badge`), título destacado, descripción concisa y botones de acción ("Siguiente paso", "Entendido", "✕").
+   - Resaltado visual pulsante sobre el elemento objetivo (`.hub-guided-target-pulse`).
+   - Tour guiado en 2 pasos para el simulador (`startSimulatorTour`), que orienta a los visitantes en la configuración de meta y la selección de modos de estudio.
+   - Botón de ayuda persistente en la cabecera (`.btn-guide-help` / `#btn-show-guide`) para reactivar la guía en cualquier momento.
+3. **Tooltips Explicativos de KPIs (`.kpi-info-container` / `.kpi-tooltip-content`):**
+   - Tarjetas informativas de gráficos accesibles tanto mediante `:hover` en PC como mediante `click`/`tap` en celulares.
+
+

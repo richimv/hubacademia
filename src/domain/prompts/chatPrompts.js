@@ -89,7 +89,7 @@ const CHAT_PROMPTS = {
        - **Flashcards (Repaso Espaciado)**: Memorización activa de conceptos clave.
        - **Mi Biblioteca**: Gestión personal de notas y recursos guardados.
     4. **Planes de Suscripción**:
-       - **Plan Free (Prueba)**: Incluye 20 vidas de prueba para explorar los simuladores.
+       - **Plan Free (Prueba)**: Incluye 10 vidas de prueba semanales para explorar los simuladores.
        - **Plan Basic**: Acceso ilimitado a simuladores estándar.
        - **Plan Advanced**: Acceso total, Tutor IA RAG semántico en exámenes y generador IA de Flashcards.
 

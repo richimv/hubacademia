@@ -300,7 +300,7 @@ class UIManager {
         const status = user.subscriptionStatus || user.subscription_status;
         if (status !== 'active' && user.role !== 'admin') {
             const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
+            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
             if (usage >= limit) {
                 this.showPaywallModal();
                 return { allowed: false, reason: 'limit_reached' };
@@ -333,19 +333,19 @@ class UIManager {
                 return { allowed: true, ...data };
             } else if (response.status === 403 || !data.allowed) {
                 if (user && window.sessionManager) {
-                    user.usageCount = data.usage || 20;
+                    user.usageCount = data.usage || 10;
                     window.sessionManager.notifyStateChange();
                 }
                 this.showPaywallModal();
                 return { allowed: false, reason: 'limit_reached' };
             } else {
                 console.error('Error verificando acceso:', data);
-                alert('Error al verificar acceso. Reintenta.');
+                this.showToast('Error al verificar acceso. Reintenta.', 'error');
                 return { allowed: false, reason: 'error' };
             }
         } catch (error) {
             console.error('Error de red:', error);
-            alert('Error de conexión.');
+            this.showToast('Error de conexión.', 'warning');
             return { allowed: false, reason: 'network' };
         }
     }
@@ -428,7 +428,7 @@ class UIManager {
 
             // Freemium: Solo bloquear si ya no tiene usos
             const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
+            const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
             return usage >= limit;
         }
 
@@ -1138,7 +1138,7 @@ class UIManager {
         // 🛡️ DETECCIÓN DE TIER Y PROPIEDADES (Robusto: camelCase o snake_case)
         const userTier = (user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
         const usageCount = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
+        const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
         const dailySimUsage = user.dailySimulatorUsage !== undefined ? user.dailySimulatorUsage : (user.daily_simulator_usage || 0);
 
         // 1. Lógica para Usuarios FREE (Vidas Globales)
@@ -1210,7 +1210,7 @@ class UIManager {
             } else {
                 // Tier FREE o EXPIRED
                 config.title = '¡Prueba Gratuita Finalizada! 💎';
-                config.message = customMsg || 'Has consumido tus 20 vidas de prueba gratuitas. Activa un plan premium para continuar practicando sin interrupciones.';
+                config.message = customMsg || 'Has consumido tus 10 vidas de prueba gratuitas. Activa un plan premium para continuar practicando sin interrupciones.';
                 config.btnText = 'Ver Planes Premium';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-crown';
@@ -1556,7 +1556,7 @@ class UIManager {
                 }
                 .freemium-toast i { color: #ffd700; }
             </style>
-            <div id="freemium-status-bar" class="freemium-status-bar" title="Tus créditos de vidas se restablecen a 20 cada 7 días automáticamente">
+            <div id="freemium-status-bar" class="freemium-status-bar" title="Tus créditos de vidas se restablecen a 10 cada 7 días automáticamente">
                 <div class="status-content">
                     <span class="probation-text">⚡ <span class="hide-mobile">PLAN </span>GRATUITO</span>
                     <div class="usage-pill">
@@ -1598,7 +1598,11 @@ class UIManager {
         const bar = document.getElementById('freemium-status-bar');
         const countSpan = document.getElementById('free-usage-count');
 
-        if (isExcludedPage || !user || user.subscriptionStatus === 'active' || user.role === 'admin') {
+        const tier = user ? String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase() : 'free';
+        const status = user ? String(user.subscriptionStatus || user.subscription_status || 'pending').toLowerCase() : 'pending';
+        const isPaidActive = user && (tier === 'basic' || tier === 'advanced') && status === 'active';
+
+        if (isExcludedPage || !user || isPaidActive || user.role === 'admin') {
             if (bar) bar.style.display = 'none';
             document.body.classList.remove('has-trial-mode'); // ✅ Remove class
             return;
@@ -1613,7 +1617,7 @@ class UIManager {
         }
 
         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
-        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 20);
+        const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
         const remaining = Math.max(0, limit - usage);
 
         if (countSpan) {
@@ -1648,19 +1652,89 @@ class UIManager {
     }
 
     /**
-     * Muestra un Toast temporal.
+     * Muestra un Toast temporal no intrusivo con soporte de tipos e iconos dual-theme.
+     * @param {string} message - Texto del mensaje
+     * @param {'info'|'success'|'error'|'warning'|'life'} type - Tipo semántico del toast
+     * @param {number} duration - Duración en milisegundos (default: 3200)
      */
-    showToast(message) {
-        const toast = document.getElementById('freemium-toast');
-        const msgEl = document.getElementById('freemium-toast-msg');
-        if (toast && msgEl) {
-            msgEl.textContent = message;
-            toast.classList.add('show');
-            // Ocultar a los 3s
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+    showToast(message, type = 'info', duration = 3200) {
+        let container = document.getElementById('hub-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'hub-toast-container';
+            container.className = 'hub-toast-container';
+            document.body.appendChild(container);
         }
+
+        const toast = document.createElement('div');
+        toast.className = `hub-toast toast-${type}`;
+        
+        let iconHtml = '<i class="fas fa-info-circle"></i>';
+        if (type === 'success') iconHtml = '<i class="fas fa-check-circle"></i>';
+        else if (type === 'error') iconHtml = '<i class="fas fa-times-circle"></i>';
+        else if (type === 'warning') iconHtml = '<i class="fas fa-exclamation-triangle"></i>';
+        else if (type === 'life') iconHtml = '<i class="fas fa-bolt"></i>';
+
+        toast.innerHTML = `
+            <span class="hub-toast-icon">${iconHtml}</span>
+            <span class="hub-toast-msg">${message}</span>
+        `;
+
+        container.appendChild(toast);
+
+        // Forzar reflow para animación suave
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentElement) toast.parentElement.removeChild(toast);
+            }, 300);
+        }, duration);
+    }
+
+    /**
+     * Muestra una notificación en tiempo real cuando se consume una vida en cuenta Free.
+     * @param {number} remaining - Vidas restantes
+     * @param {number} limit - Límite total (10)
+     */
+    showLifeDecrementToast(remaining, limit = 10) {
+        if (remaining <= 0) {
+            this.showToast('🔒 Has agotado tus vidas de prueba semanal.', 'error', 4000);
+            setTimeout(() => {
+                this.showPaywallModal();
+            }, 800);
+            return;
+        }
+
+        if (remaining === 1 || remaining === 2) {
+            this.showToast(`⚠️ ¡Atención! Te quedan solo ${remaining}/${limit} vidas de prueba.`, 'warning', 3500);
+        } else {
+            this.showToast(`⚡ 1 crédito utilizado. Te quedan ${remaining}/${limit} vidas de prueba.`, 'life', 2800);
+        }
+    }
+
+    /**
+     * Reemplazo centralizado y seguro de alert()
+     */
+    showAlert(message, title = 'Aviso', buttonText = 'Aceptar') {
+        if (window.confirmationModal && typeof window.confirmationModal.showAlert === 'function') {
+            return window.confirmationModal.showAlert(message, title, buttonText);
+        }
+        this.showToast(message, 'info');
+        return Promise.resolve(true);
+    }
+
+    /**
+     * Reemplazo centralizado y seguro de confirm()
+     */
+    showConfirm(message, title = 'Confirmación', confirmText = 'Confirmar', cancelText = 'Cancelar') {
+        if (window.confirmationModal && typeof window.confirmationModal.show === 'function') {
+            return window.confirmationModal.show(message, title, confirmText, cancelText);
+        }
+        return Promise.resolve(window.confirm(message));
     }
     /**
      * Muestra el modal de bienvenida o renovación de vidas semanal para usuarios free.
@@ -1693,10 +1767,10 @@ class UIManager {
         const modalId = 'welcome-freemium-modal';
         if (document.getElementById(modalId)) return;
 
-        const titleText = isRenewal ? '¡Tus 20 vidas semanales están listas!' : 'Bienvenido a Hub Academia';
+        const titleText = isRenewal ? '¡Tus 10 vidas semanales están listas!' : 'Bienvenido a Hub Academia';
         const bodyText = isRenewal 
-            ? 'Hemos renovado tu cuenta. Recibiste de regalo <strong>20 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA esta semana.'
-            : 'Tu cuenta ha sido configurada correctamente. Dispones de <strong>20 créditos de uso</strong> para explorar todas las herramientas de estudio y productividad de la plataforma.';
+            ? 'Hemos renovado tu cuenta. Recibiste de regalo <strong>10 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA esta semana.'
+            : 'Tu cuenta ha sido configurada correctamente. Dispones de <strong>10 créditos de uso</strong> para explorar todas las herramientas de estudio y productividad de la plataforma.';
         const buttonText = isRenewal ? '¡A estudiar!' : 'Acceder al Hub';
 
         const modalHTML = `

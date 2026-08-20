@@ -2,8 +2,22 @@ const db = require('../../infrastructure/database/db');
 const { normalizeText } = require('../utils/textUtils');
 
 class CourseRepository {
+    constructor() {
+        this.cache = new Map();
+        this.CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+    }
+
+    clearCache() {
+        this.cache.clear();
+    }
 
     async findAll(filters = {}) {
+        const cacheKey = `findAll_${filters.domain || 'all'}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL_MS)) {
+            return cached.data;
+        }
+
         let query = `
             SELECT 
                 c.id,
@@ -25,6 +39,8 @@ class CourseRepository {
         }
         query += ' ORDER BY c.name ASC';
         const { rows } = await db.query(query, params);
+
+        this.cache.set(cacheKey, { timestamp: Date.now(), data: rows });
         return rows;
     }
 
