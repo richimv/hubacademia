@@ -193,6 +193,13 @@ class RepasoManager {
         document.getElementById('main-content').style.display = 'block';
 
         this.bindEvents();
+
+        // Sugerir guía interactiva para usuarios nuevos
+        setTimeout(() => {
+            if (window.tooltipManager && !localStorage.getItem('hasSeenRepasoTour_v1')) {
+                window.tooltipManager.startRepasoTour(false);
+            }
+        }, 800);
     }
 
     /**
@@ -473,9 +480,15 @@ class RepasoManager {
         if (!container) return;
 
         container.innerHTML = `
-            <div class="repaso-dashboard-header" style="margin-bottom: 2rem;">
-                <h2 style="margin-bottom: 0.5rem;">Centro de Repaso</h2>
-                <p style="color: var(--text-muted); font-size: 0.95rem;">Gestiona y repasa tus mazos personales de flashcards.</p>
+            <div class="repaso-dashboard-header">
+                <div class="repaso-header-top-row">
+                    <h2 class="repaso-header-title">Centro de Repaso</h2>
+                    <button id="btn-repaso-guide" class="btn-guide-hero" data-tooltip="Ver guía rápida de repaso" aria-label="Guía rápida">
+                        <i class="fas fa-circle-question"></i>
+                        <span>Guía</span>
+                    </button>
+                </div>
+                <p class="repaso-header-subtitle">Gestiona y repasa tus mazos personales de flashcards con repetición espaciada.</p>
             </div>
             <div id="root-decks-grid" class="decks-grid">
                 <div class="deck-skeleton-card"></div>
@@ -483,6 +496,17 @@ class RepasoManager {
                 <div class="deck-skeleton-card"></div>
             </div>
         `;
+
+        const btnGuide = container.querySelector('#btn-repaso-guide');
+        if (btnGuide) {
+            btnGuide.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.tooltipManager) {
+                    window.tooltipManager.startRepasoTour(true);
+                }
+            };
+        }
 
         if (!this.token) {
             this.renderGuestMisMazosBanner();
@@ -891,21 +915,27 @@ class RepasoManager {
                     </div>
 
                     <div style="flex-grow: 1; min-width: 0;">
-                        <h1 class="deck-title">${deck?.name || 'Mazo sin nombre'}</h1>
+                        <div class="deck-title-top-row">
+                            <h1 class="deck-title">${deck?.name || 'Mazo sin nombre'}</h1>
+                            <button id="btn-deck-tour" class="btn-guide-hero btn-guide-deck" data-tooltip="Ver guía rápida de este mazo" aria-label="Guía del mazo">
+                                <i class="fas fa-circle-question"></i>
+                                <span>Guía</span>
+                            </button>
+                        </div>
                         
                         <div class="deck-meta">
-                            <div style="display:flex; align-items:center; gap:0.4rem;">
-                                <i class="fas fa-layer-group"></i> ${total} <span class="desktop-only">tarjetas</span>
+                            <div class="deck-meta-pill">
+                                <i class="fas fa-layer-group" style="color: var(--primary);"></i> <span>${total}</span> <span class="meta-label">tarjetas</span>
                             </div>
-                            <div style="display:flex; align-items:center; gap:0.4rem; color:${pending > 0 ? '#f87171' : '#94a3b8'};">
-                                <i class="fas fa-clock"></i> ${pending} <span class="desktop-only">pendientes</span>
+                            <div class="deck-meta-pill ${pending > 0 ? 'pill-pending' : ''}">
+                                <i class="fas fa-clock" style="color: ${pending > 0 ? '#f87171' : '#94a3b8'};"></i> <span>${pending}</span> <span class="meta-label">pendientes</span>
                             </div>
-                            <div style="display:flex; align-items:center; gap:0.4rem; color:#34d399;">
-                                <i class="fas fa-brain"></i> ${mastered} <span class="desktop-only">dominadas</span>
+                            <div class="deck-meta-pill pill-mastered">
+                                <i class="fas fa-brain" style="color: #34d399;"></i> <span>${mastered}</span> <span class="meta-label">dominadas</span>
                             </div>
                         </div>
 
-                        <div class="action-bar">
+                        <div class="action-bar" id="deck-action-bar">
                             ${total > 0 && localStorage.getItem('authToken') ? `
                             <button type="button" class="btn-premium btn-premium-primary btn-fh-study">
                                 <i class="fas fa-play"></i> <span class="btn-text">Estudiar Ahora</span>
@@ -934,7 +964,7 @@ class RepasoManager {
                             </button>
 
                             ${this.token && deck.type !== 'SYSTEM' ? `
-                            <button type="button" class="btn-premium btn-premium-secondary btn-fh-guide">
+                            <button type="button" class="btn-premium btn-premium-secondary btn-fh-guide" data-tooltip="Abrir cuaderno de notas y resúmenes del mazo">
                                 <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
                             </button>
                             ` : ''}
@@ -954,6 +984,17 @@ class RepasoManager {
         `;
 
         // Direct Event Bindings for folder header
+        const btnDeckTour = container.querySelector('#btn-deck-tour');
+        if (btnDeckTour) {
+            btnDeckTour.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.tooltipManager) {
+                    window.tooltipManager.startDeckViewTour(true);
+                }
+            };
+        }
+
         const btnStudy = container.querySelector('.btn-fh-study');
         if (btnStudy) btnStudy.onclick = () => this.startStudy(deck.id, deck.name, total);
 

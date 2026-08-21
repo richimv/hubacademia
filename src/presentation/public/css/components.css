@@ -2103,3 +2103,32 @@
     color: var(--primary);
 }
 
+.btn-guide-hero {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.65rem 1.1rem;
+    height: 38px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-guide-hero:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.btn-guide-hero i {
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+

@@ -1,31 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Página Principal / Ecosistema Educativo y de Salud -->
   <url>
     <loc>https://www.hubacademia.com/</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- Simulador de Exámenes MINEDU y MINSA -->
   <url>
-    <loc>https://www.hubacademia.com/login</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://www.hubacademia.com/pricing</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://www.hubacademia.com/course</loc>
+    <loc>https://www.hubacademia.com/simulator-dashboard</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
+
+  <!-- Centro de Repaso Espaciado SM-2 y Flashcards -->
+  <url>
+    <loc>https://www.hubacademia.com/repaso</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+
+  <!-- Mi Biblioteca de Recursos Oficiales y Balotarios -->
+  <url>
+    <loc>https://www.hubacademia.com/library</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Planes y Precios Premium -->
+  <url>
+    <loc>https://www.hubacademia.com/pricing</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Páginas Legales -->
   <url>
     <loc>https://www.hubacademia.com/privacy</loc>
-    <priority>0.5</priority>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>
   <url>
     <loc>https://www.hubacademia.com/terms</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://www.hubacademia.com/resource</loc>
-    <priority>0.8</priority>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>

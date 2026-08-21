@@ -335,23 +335,64 @@
     border-radius: 12px;
 }
 
+.deck-title-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+}
+
 .deck-title {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: var(--text-main) !important;
-    margin-bottom: 0.5rem;
+    margin: 0;
     line-height: 1.25;
     letter-spacing: -0.02em;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.btn-guide-deck {
+    flex-shrink: 0;
 }
 
 .deck-meta {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     color: var(--text-secondary);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
     font-weight: 600;
+}
+
+.deck-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.deck-meta-pill.pill-pending {
+    border-color: rgba(248, 113, 113, 0.35);
+    background: rgba(248, 113, 113, 0.08);
+}
+
+.deck-meta-pill.pill-mastered {
+    border-color: rgba(52, 211, 153, 0.35);
+    background: rgba(52, 211, 153, 0.08);
 }
 
 .deck-progress {
@@ -1260,5 +1301,90 @@
     box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15) !important;
 }
 
+/* Header de Repaso Dashboard con Botón Guía en la Fila Superior */
+.repaso-dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 2rem;
+    width: 100%;
+}
 
+.repaso-header-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
 
+.repaso-header-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.repaso-header-subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.repaso-dashboard-header .btn-guide-hero {
+    flex-shrink: 0;
+}
+
+/* Responsividad para Header y Vista de Mazo en Móviles */
+@media (max-width: 640px) {
+    .repaso-header-title {
+        font-size: 1.25rem;
+    }
+
+    .repaso-header-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .deck-title {
+        font-size: 1.2rem;
+    }
+
+    .btn-guide-hero {
+        padding: 0.45rem 0.8rem !important;
+        height: 34px !important;
+        font-size: 0.8rem !important;
+        border-radius: 10px !important;
+    }
+
+    .deck-meta {
+        gap: 0.35rem;
+        margin-bottom: 1rem;
+    }
+
+    .deck-meta-pill {
+        font-size: 0.72rem;
+        padding: 0.15rem 0.45rem;
+        gap: 0.25rem;
+    }
+
+    .deck-meta-pill i {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .repaso-header-title {
+        font-size: 1.15rem;
+    }
+
+    .deck-title {
+        font-size: 1.1rem;
+    }
+
+    .deck-meta-pill .meta-label {
+        display: inline-block;
+    }
+}

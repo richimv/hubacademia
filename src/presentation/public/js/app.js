@@ -224,9 +224,6 @@ function updateHeaderUI(user) {
                             <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>
                         </span>
                         <span class="user-menu-email">${user.email}</span>
-                        <div class="user-usage-badge ${tierClass}" style="margin-top: 6px; font-size: 0.75rem; font-weight: 700; color: var(--primary);">
-                            ⭐ ${tierLabel.toUpperCase()}
-                        </div>
                     </div>
                     
                     <div class="user-menu-group">

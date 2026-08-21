@@ -1,3 +1,38 @@
+# ==========================================
+# Hub Academia - Robots.txt
+# https://www.hubacademia.com
+# ==========================================
+
 User-agent: *
+# ✅ Páginas Públicas Principales
 Allow: /
+Allow: /pricing
+Allow: /repaso
+Allow: /simulator-dashboard
+Allow: /library
+Allow: /privacy
+Allow: /terms
+
+# ✅ Recursos Estáticos (Permite que Googlebot renderice la UI completa)
+Allow: /css/
+Allow: /js/
+Allow: /assets/
+Allow: /favicon.ico
+
+# 🚫 Rutas Obsoletas / Draft (Preservadas en código pero no indexables)
+Disallow: /login
+Disallow: /course
+Disallow: /resource
+Disallow: /simulators
+
+# 🚫 Rutas de Sesión Privada y Backend
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /deck-editor
+Disallow: /profile
+Disallow: /flashcards
+Disallow: /quiz
+Disallow: /api/
+
+# 🗺️ Mapa del Sitio Oficial
 Sitemap: https://www.hubacademia.com/sitemap.xml

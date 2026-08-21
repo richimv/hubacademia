@@ -53,7 +53,7 @@ class TooltipManager {
             const target = e.target.closest('[data-tooltip]');
             if (target && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
                 // Si el elemento es un botón de acción principal o disparador del tour, no bloquear su acción
-                if (!target.closest('.btn-guide-help') && !target.closest('.hub-guided-tip')) {
+                if (!target.closest('.btn-guide-help') && !target.closest('.btn-guide-hero') && !target.closest('.hub-guided-tip')) {
                     const text = target.getAttribute('data-tooltip');
                     if (text) {
                         const pos = target.getAttribute('data-tooltip-pos') || 'top';
@@ -69,7 +69,7 @@ class TooltipManager {
 
             // C. Manejo de clics fuera de la Guía de Tour
             // Si el clic ocurrió dentro de la guía interactiva o en el botón de ayuda que abre la guía, NO cerrar
-            if (e.target.closest('.hub-guided-tip') || e.target.closest('.btn-guide-help') || e.target.closest('#btn-show-guide')) {
+            if (e.target.closest('.hub-guided-tip') || e.target.closest('.btn-guide-help') || e.target.closest('.btn-guide-hero') || e.target.closest('.btn-guide-deck') || e.target.closest('#btn-show-guide') || e.target.closest('#btn-repaso-guide') || e.target.closest('#btn-deck-tour')) {
                 return;
             }
 
@@ -173,6 +173,7 @@ class TooltipManager {
         this.currentTourSteps = steps;
         this.currentTourIndex = 0;
         this.tourOptions = options;
+        this.activeTourKey = options.storageKey || 'hasSeenSimulatorTour_v2';
 
         this.renderTourStep(this.currentTourIndex);
     }
@@ -365,11 +366,11 @@ class TooltipManager {
             }, 200);
         }
 
-        const storageKey = 'hasSeenSimulatorTour_v2';
-        localStorage.setItem(storageKey, 'true');
+        const key = this.activeTourKey || 'hasSeenSimulatorTour_v2';
+        localStorage.setItem(key, 'true');
 
         if (completed && window.uiManager) {
-            window.uiManager.showToast('¡Excelente! Ya conoces las opciones clave para iniciar tu preparación.', 'success');
+            window.uiManager.showToast('¡Excelente! Ya conoces las funciones clave para tu aprendizaje.', 'success');
         }
     }
 
@@ -408,7 +409,115 @@ class TooltipManager {
             }
         ];
 
-        this.startTour(steps);
+        this.startTour(steps, { storageKey });
+    }
+
+    /**
+     * Tour estándar para el Centro de Repaso / Flashcards.
+     * @param {boolean} force - Si es true, inicia el tour aunque ya haya sido visto antes.
+     */
+    startRepasoTour(force = false) {
+        // Si el usuario está viendo la vista interior de un mazo, derivar al tour específico de mazo
+        const folderView = document.getElementById('folder-view');
+        if (folderView && folderView.style.display !== 'none') {
+            return this.startDeckViewTour(force);
+        }
+
+        const storageKey = 'hasSeenRepasoTour_v1';
+        if (!force && localStorage.getItem(storageKey)) return;
+
+        const createTarget = document.querySelector('.create-deck-card') || document.querySelector('#btn-explorer-create') || '#btn-explorer-create';
+        const explorerTarget = document.querySelector('#explorer-sidebar') || document.querySelector('#deck-tree') || '#deck-tree';
+        const deckGridTarget = document.querySelector('#root-decks-grid') || document.querySelector('.decks-grid') || '#root-decks-grid';
+
+        const steps = [
+            {
+                target: createTarget,
+                badge: 'Paso 1 de 3',
+                icon: 'fa-folder-plus',
+                title: '1. Crea y Estructura tus Mazos',
+                description: 'Organiza tus materias en <strong>carpetas y submazos jerárquicos</strong>. Puedes crear mazos desde cero o importar preguntas en lote.',
+                position: 'bottom'
+            },
+            {
+                target: explorerTarget,
+                badge: 'Paso 2 de 3',
+                icon: 'fa-sitemap',
+                title: '2. Explorador y Comunidad',
+                description: 'Navega en el árbol de carpetas o visita la <strong>Comunidad</strong> para descubrir y clonar mazos públicos creados por otros estudiantes.',
+                position: 'right'
+            },
+            {
+                target: deckGridTarget,
+                badge: 'Paso 3 de 3',
+                icon: 'fa-brain',
+                title: '3. Repaso Inteligente (SM-2)',
+                description: 'Haz clic en cualquier mazo para iniciar tu <strong>sesión de estudio diario</strong>, gestionar tus preguntas o consultar a tu <strong>Tutor IA de Flashcards</strong>.',
+                position: 'top'
+            }
+        ];
+
+        this.startTour(steps, { storageKey });
+    }
+
+    /**
+     * Tour contextual dentro de la vista interior de un Mazo de Flashcards.
+     * @param {boolean} force - Si es true, inicia el tour aunque ya haya sido visto antes.
+     */
+    startDeckViewTour(force = false) {
+        const storageKey = 'hasSeenDeckViewTour_v1';
+        if (!force && localStorage.getItem(storageKey)) return;
+
+        const studyTarget = document.querySelector('.btn-fh-study') || document.querySelector('.btn-fh-demo') || '.action-bar';
+        const addTarget = document.querySelector('.btn-fh-add') || '.action-bar';
+        const guideTarget = document.querySelector('.btn-fh-guide') || '.action-bar';
+        const statsTarget = document.querySelector('.btn-fh-stats') || document.querySelector('.btn-fh-visibility') || '.action-bar';
+        const subdecksTarget = document.querySelector('#subdecks-container') || document.querySelector('#cards-container') || '#folder-view';
+
+        const steps = [
+            {
+                target: studyTarget,
+                badge: 'Paso 1 de 5',
+                icon: 'fa-play',
+                title: '1. Iniciar Repaso Espaciado',
+                description: 'Inicia tu práctica diaria. El algoritmo <strong>SM-2</strong> programará las preguntas según tu memoria para consolidar tu aprendizaje a largo plazo.',
+                position: 'bottom'
+            },
+            {
+                target: addTarget,
+                badge: 'Paso 2 de 5',
+                icon: 'fa-plus-circle',
+                title: '2. Crear y Añadir Tarjetas',
+                description: 'Agrega preguntas con anverso, reverso explicativo e imágenes, o genera tarjetas instantáneas con <strong>Inteligencia Artificial</strong>.',
+                position: 'bottom'
+            },
+            {
+                target: guideTarget,
+                badge: 'Paso 3 de 5',
+                icon: 'fa-book-open',
+                title: '3. Cuaderno de Estudio del Mazo',
+                description: 'Accede a un cuaderno enriquecido con <strong>tablas, resúmenes y notas teóricas</strong> para repasar antes de practicar.',
+                position: 'bottom'
+            },
+            {
+                target: statsTarget,
+                badge: 'Paso 4 de 5',
+                icon: 'fa-chart-pie',
+                title: '4. Métricas y Visibilidad',
+                description: 'Consulta tus métricas de retención y dominio. Además, puedes <strong>hacer público</strong> tu mazo para compartirlo en la comunidad.',
+                position: 'bottom'
+            },
+            {
+                target: subdecksTarget,
+                badge: 'Paso 5 de 5',
+                icon: 'fa-list-check',
+                title: '5. Sub-Mazos y Tarjetas',
+                description: 'Organiza ramas temáticas en <strong>Sub-Mazos</strong> y utiliza el buscador para filtrar, editar o revisar todas tus flashcards individuales.',
+                position: 'top'
+            }
+        ];
+
+        this.startTour(steps, { storageKey });
     }
 }
 

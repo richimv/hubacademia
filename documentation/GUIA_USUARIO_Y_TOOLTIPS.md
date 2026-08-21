@@ -147,7 +147,51 @@ El sistema garantiza notificaciones reactivas instantáneas (`⚡ 1 crédito uti
 
 ---
 
-## 💻 7. Guía de Uso Rápido para Desarrolladores
+## 🗂️ 7. Sistema de Onboarding Tour en el Módulo de Repaso (Flashcards)
+
+Para facilitar la curva de aprendizaje de estudiantes nuevos (`Free / Pending`), se implementó la **Miniguía Contextual de Repaso**:
+
+```mermaid
+graph TD
+    A[Usuario ingresa a Centro de Repaso] --> B{¿Está en Dashboard o dentro de un Mazo?}
+    B -- Dashboard de Repaso --> C[TooltipManager: startRepasoTour]
+    C --> C1[1. Crear y Estructurar Mazos]
+    C --> C2[2. Explorador de Carpetas y Comunidad]
+    C --> C3[3. Repaso con Algoritmo SM-2 y Tutor IA]
+    
+    B -- Dentro de un Mazo --> D[TooltipManager: startDeckViewTour]
+    D --> D1[1. Iniciar Repaso Espaciado SM-2]
+    D --> D2[2. Crear y Añadir Tarjetas / IA]
+    D --> D3[3. Cuaderno de Estudio del Mazo]
+    D --> D4[4. Métricas de Dominio y Visibilidad]
+    D --> D5[5. Sub-Mazos y Gestión de Tarjetas]
+```
+
+### 1. Botón Guía en la Fila Superior del Título (`#btn-repaso-guide` y `#btn-deck-tour`)
+* **En Dashboard (`.repaso-header-top-row`):** El botón `Guía` se sitúa en la misma fila horizontal a la altura del título *"Centro de Repaso"*, en el extremo derecho, tanto en PC como en móviles, manteniendo el subtítulo fluido debajo.
+* **Dentro de un Mazo (`.deck-title-top-row`):** Se integró el botón `#btn-deck-tour` a la derecha del nombre del mazo para lanzar a demanda el tour de 5 pasos.
+
+### 2. Estadísticas Minimalistas y Responsivas (`.deck-meta-pill`)
+* Para evitar que textos como *"dominadas"* se corten en pantallas móviles, las estadísticas del mazo se encapsularon en micro-píldoras (`.deck-meta-pill`) con iconos minimalistas, espaciado adaptable y ajuste de línea automático sin truncamientos.
+
+### 3. Tour Contextual del Mazo (5 Pasos Detallados)
+1. **Paso 1 (`.btn-fh-study`):** Repetición espaciada con el algoritmo SM-2.
+2. **Paso 2 (`.btn-fh-add`):** Creación de flashcards y generación con IA.
+3. **Paso 3 (`.btn-fh-guide`):** Cuaderno de estudio enriquecido con tablas y resúmenes.
+4. **Paso 4 (`.btn-fh-stats` / `.btn-fh-visibility`):** Métricas de retención y publicación a la comunidad.
+5. **Paso 5 (`#subdecks-container` / `#cards-container`):** Sub-mazos temáticos, buscador y edición de tarjetas.
+
+---
+
+## 👤 8. Optimización del Menú de Usuario en Header (Jerarquía Limpia)
+
+Siguiendo las mejores prácticas de diseño de perfiles (Google Account, Linear, Vercel):
+* **Botón Navbar (`#user-menu-toggle`):** Muestra Avatar, Nombre (`.user-header-name`) y el Plan Oficial (`.user-header-tier`, ej. *Plan Gratuito*, *Plan Básico*, *Plan Avanzado*).
+* **Dropdown (`#user-menu-dropdown`):** Muestra el Nombre con icono de verificación y el Correo Electrónico (`.user-menu-email`). Se eliminó la etiqueta inferior redundante (`.user-usage-badge`), logrando una tarjeta de perfil pulcra y sin duplicidades visuales.
+
+---
+
+## 💻 9. Guía de Uso Rápido para Desarrolladores
 
 ### 1. Activar un Tooltip Sencillo en cualquier elemento HTML
 Basta con añadir los atributos `data-tooltip` y opcionalmente `data-tooltip-pos`:
@@ -157,20 +201,24 @@ Basta con añadir los atributos `data-tooltip` y opcionalmente `data-tooltip-pos
 </button>
 ```
 
-### 2. Disparar el Tour Guiado Programáticamente
+### 2. Disparar los Tours Guiados Programáticamente
 ```javascript
-// Iniciar el tour forzando el paso 1 (ideal para botones de ayuda o 'Guía')
+// Iniciar tour del Simulador (Salud / Educación)
 window.TooltipManager.startSimulatorTour(true);
+
+// Iniciar tour de Repaso (Dashboard o Mazo)
+window.TooltipManager.startRepasoTour(true);
 ```
 
 ### 3. Cerrar cualquier Tooltip o Tour Activo
 ```javascript
-window.TooltipManager.hide();
+window.TooltipManager.hideTooltip();
+window.TooltipManager.endTour();
 ```
 
 ---
 
-## 🔗 8. Matriz de Documentación UI/UX Centralizada
+## 🔗 10. Matriz de Documentación UI/UX Centralizada
 
 Para evitar duplicación y mantener la verdad técnica del proyecto:
 * 📖 [UI_COMPONENTS_GUIDE.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/UI_COMPONENTS_GUIDE.md): Catálogo exhaustivo de APIs y componentes Frontend (`UIManager`, `ConfirmationModal`, `Components.js`).
@@ -179,10 +227,11 @@ Para evitar duplicación y mantener la verdad técnica del proyecto:
 
 ---
 
-## 🧪 9. Criterios de Aceptación y Calidad (QA)
+## 🧪 11. Criterios de Aceptación y Calidad (QA)
 
-- [x] **Alerta Única de Vida:** El toast de descuento de vida se dispara exactamente una vez al pulsar iniciar simulacro y nunca en las preguntas subsiguientes o cargas de batch.
-- [x] **Modal de Resultados Armonioso:** Espaciado limpio entre *"Ver Corrección del Examen"* y los botones de acción inferior tanto en PC como en pantallas táctiles de 360px-480px.
-- [x] **Sin Solapamientos en Tour:** La tarjeta del tooltip nunca obstruye botones críticos ni se desborda fuera de la pantalla en dispositivos móviles.
-- [x] **Navegación Fluida:** Los botones `← Anterior`, `Siguiente →` y `¡Comenzar! 🚀` tienen tamaño idéntico (`34px` de alto) y no sufren saltos de línea.
-- [x] **Identidad Visual por Módulo:** Coherencia de colores temáticos (Salud = Verde Cian / Educación = Azul Royal) en el quiz y en la revisión.
+- [x] **Botón Guía Horizontal:** En el Simulador, el botón `Guía` se sitúa en la misma fila a la izquierda de `Configurar Examen`, sin desbordes en PC ni celulares.
+- [x] **Jerarquía en Header:** Menú de usuario sin etiquetas duplicadas del plan.
+- [x] **Miniguía en Repaso:** Tour de 3 pasos en el Dashboard de Repaso y de 4 pasos dentro del mazo, con transiciones fluidas y posicionamiento inteligente anti-desborde.
+- [x] **Alerta Única de Vida:** El toast de descuento de vida se dispara exactamente una vez al iniciar simulacro o estudiar un mazo.
+- [x] **Modal de Resultados Armonioso:** Espaciado limpio entre *"Ver Corrección del Examen"* y los botones secundarios.
+- [x] **Pruebas Unitarias:** 18 suites ejecutadas al 100% (128/128 tests en verde).

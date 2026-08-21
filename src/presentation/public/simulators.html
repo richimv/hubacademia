@@ -4,22 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simuladores | Hub Academia</title>
+    <title>Simuladores - Hub Academia</title>
+    <!-- ✅ PÁGINA PRIVADA/DRAFT: Deshabilitar indexación en motores de búsqueda -->
+    <meta name="robots" content="noindex, nofollow">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=cb523f65">
-    <link rel="stylesheet" href="/css/base.css?v=cb523f65">
-    <link rel="stylesheet" href="/css/components.css?v=cb523f65">
-    <link rel="stylesheet" href="/css/header.css?v=cb523f65">
-    <link rel="stylesheet" href="/css/footer.css?v=cb523f65">
-    <link rel="stylesheet" href="/css/dashboard.css?v=cb523f65">
-    <link rel="stylesheet" href="/css/simulators.css?v=cb523f65">
-    <link rel="stylesheet" href="/css/modules.css?v=cb523f65">
-    <link rel="stylesheet" href="/css/modal.css?v=cb523f65">
-    <link rel="stylesheet" href="/css/sidebar.css?v=cb523f65">
-    <script src="/js/config.js?v=cb523f65"></script>
-    <script src="/js/utils/themeManager.js?v=cb523f65"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=725839fb">
+    <link rel="stylesheet" href="/css/base.css?v=725839fb">
+    <link rel="stylesheet" href="/css/components.css?v=725839fb">
+    <link rel="stylesheet" href="/css/header.css?v=725839fb">
+    <link rel="stylesheet" href="/css/footer.css?v=725839fb">
+    <link rel="stylesheet" href="/css/dashboard.css?v=725839fb">
+    <link rel="stylesheet" href="/css/simulators.css?v=725839fb">
+    <link rel="stylesheet" href="/css/modules.css?v=725839fb">
+    <link rel="stylesheet" href="/css/modal.css?v=725839fb">
+    <link rel="stylesheet" href="/css/sidebar.css?v=725839fb">
+    <script src="/js/config.js?v=725839fb"></script>
+    <script src="/js/utils/themeManager.js?v=725839fb"></script>
 </head>
 
 <body class="hero-hidden">
@@ -60,45 +62,53 @@
         <div class="footer-container">
             <div class="footer-brand">
                 <a href="/" class="footer-logo">
-                    <img src="/assets/logo.png" alt="Hub Academia Logo">
+                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
                     Hub Academia
                 </a>
-                <p class="footer-slogan">Tu plataforma de aprendizaje inteligente. Simulacros, flashcards y asistente interactivo para salud y educación.</p>
+                <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
             </div>
             <div class="footer-links-col">
-                <h4 class="footer-heading">Explorar</h4>
+                <h4 class="footer-heading">Módulos de Estudio</h4>
                 <ul class="footer-links-list">
-                    <li><a href="/" class="footer-link">Inicio</a></li>
-                    <li><a href="/library" class="footer-link">Mi biblioteca</a></li>
-                    <li><a href="pricing" class="footer-link">Precios</a></li>
+                    <li><a href="/simulator-dashboard?context=EDUCACION" class="footer-link">Simulacro Ascenso Docente</a></li>
+                    <li><a href="/simulator-dashboard?context=MEDICINA" class="footer-link">Simulacro SERUMS & ENAM</a></li>
+                    <li><a href="/repaso" class="footer-link">Repaso Espaciado SM-2</a></li>
                 </ul>
             </div>
             <div class="footer-links-col">
-                <h4 class="footer-heading">Legal y Ayuda</h4>
+                <h4 class="footer-heading">Plataforma</h4>
                 <ul class="footer-links-list">
-                    <li><a href="privacy" class="footer-link">Política de Privacidad</a></li>
-                    <li><a href="terms" class="footer-link">Términos y Condiciones</a></li>
-                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto</a></li>
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="/library" class="footer-link">Mi Biblioteca</a></li>
+                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Soporte</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="/terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto y Ayuda</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
+            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados. Preparación oficial para MINEDU y MINSA en Perú.</div>
         </div>
     </footer>
 
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=cb523f65"></script>
-    <script src="/js/services/networkService.js?v=cb523f65"></script>
-    <script src="/js/services/authApiService.js?v=cb523f65"></script>
-    <script src="/js/services/analyticsApiService.js?v=cb523f65"></script>
-    <script src="/js/sessionManager.js?v=cb523f65"></script>
-    <script src="/js/ui/uiManager.js?v=cb523f65"></script>
-    <script src="/js/ui/confirmationModal.js?v=cb523f65"></script>
-    <script src="/js/ui/sidebar.js?v=cb523f65"></script>
-    <script src="/js/app.js?v=cb523f65"></script>
-    <script src="/js/simulatorsHub.js?v=cb523f65"></script>
+    <script src="/js/config.js?v=725839fb"></script>
+    <script src="/js/services/networkService.js?v=725839fb"></script>
+    <script src="/js/services/authApiService.js?v=725839fb"></script>
+    <script src="/js/services/analyticsApiService.js?v=725839fb"></script>
+    <script src="/js/sessionManager.js?v=725839fb"></script>
+    <script src="/js/ui/uiManager.js?v=725839fb"></script>
+    <script src="/js/ui/confirmationModal.js?v=725839fb"></script>
+    <script src="/js/ui/sidebar.js?v=725839fb"></script>
+    <script src="/js/app.js?v=725839fb"></script>
+    <script src="/js/simulatorsHub.js?v=725839fb"></script>
 
 </body>
 

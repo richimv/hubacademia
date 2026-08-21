@@ -2,6 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env'), override: true });
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 
 class Server {
     constructor() {
@@ -113,6 +114,9 @@ class Server {
     configureMiddleware() {
         console.log('🔧 Configurando middleware...');
 
+        // ✅ RENDIMIENTO Y SEO: Compresión Gzip/Deflate para respuestas rápidas y Core Web Vitals
+        this.app.use(compression());
+
         // ✅ FIX: Habilitar trust proxy para Render (necesario para rate-limit)
         this.app.set('trust proxy', 1);
         this.app.disable('x-powered-by');
@@ -194,6 +198,20 @@ class Server {
             maxAge: '30d',
             immutable: true
         }));
+
+        // ✅ SEO: Servir robots.txt con tipo de contenido exacto
+        this.app.get('/robots.txt', (req, res) => {
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+            res.sendFile(path.join(publicPath, 'robots.txt'));
+        });
+
+        // ✅ SEO: Servir sitemap.xml con tipo de contenido XML exacto
+        this.app.get('/sitemap.xml', (req, res) => {
+            res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            res.sendFile(path.join(publicPath, 'sitemap.xml'));
+        });
 
         // 2. Sin caché para HTML (siempre la versión más reciente)
         this.app.use(express.static(publicPath, {

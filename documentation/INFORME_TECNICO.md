@@ -126,6 +126,17 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
   - Remoción de lupa duplicada y botón 'X' en la caja de búsqueda.
   - Ocultamiento definitivo del widget flotante de chat general en Mi Biblioteca.
 
+### 🟢 [2026-08-21] - Optimización de Botón Guía en Simulador, Jerarquía en Header y Onboarding de Repaso
+- **📍 Reubicación Horizontal del Botón Guía ([simulator-dashboard.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/simulator-dashboard.html) & [simulator-dashboard.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/simulator-dashboard.css)):**
+  - Se agrupó `#btn-show-guide` y `#btn-start-config` dentro del contenedor flex `.context-hero-buttons-row`, situando el botón *"? Guía"* a la izquierda de *"Configurar Examen"* en la misma fila horizontal.
+  - Adaptación responsiva mediante flexbox para pantallas móviles (`height: 40px`, bordes redondeados `10px-12px`).
+- **👤 Limpieza de Jerarquía Visual en Header ([app.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/app.js)):**
+  - Se eliminó la etiqueta inferior redundante `.user-usage-badge` del menú desplegable (`#user-menu-dropdown`), preservando el plan oficial en el botón de la barra de navegación (`.user-header-tier`) y manteniendo un dropdown limpio con Nombre y Correo verificado.
+- **🗂️ Miniguía de Onboarding para el Módulo Repaso ([tooltipManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/tooltipManager.js), [repaso.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/repaso.js) & [repaso.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/repaso.css)):**
+  - **Alineación en Fila Superior (`.repaso-header-top-row` & `.deck-title-top-row`):** En el Dashboard de Repaso y en la vista de Mazo, el botón `Guía` se sitúa en la misma línea a la altura del título en el extremo derecho en PC y móviles.
+  - **Estadísticas Responsivas (`.deck-meta-pill`):** Rediseño minimalista de las métricas (tarjetas, pendientes y dominadas) en píldoras estilizadas que nunca se truncan ni desbordan en pantallas móviles.
+  - **Tour de 5 Pasos en Mazo (`startDeckViewTour`):** Cobertura interactiva completa que explica: 1) Estudio espaciado SM-2, 2) Creación manual e IA de tarjetas, 3) Cuaderno de notas/resumen, 4) Métricas y visibilidad pública, y 5) Gestión de Sub-Mazos y lista de flashcards.
+
 ### 🟢 [2026-08-20] - Refactorización Integral de Onboarding Tour, Tooltips, Alertas Únicas y UI de Resultados
 - **🧭 Onboarding Tour Universal & Tooltips ([GUIA_USUARIO_Y_TOOLTIPS.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/GUIA_USUARIO_Y_TOOLTIPS.md), [UI_COMPONENTS_GUIDE.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/UI_COMPONENTS_GUIDE.md), [tooltipManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/tooltipManager.js) & [components.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/components.css)):**
   - Creación del documento técnico máster `GUIA_USUARIO_Y_TOOLTIPS.md` y actualización consolidada de `UI_COMPONENTS_GUIDE.md`.
