@@ -8,7 +8,17 @@ const SECURITY_LIMITS = {
     MAX_BATCH_SIZE: 100         // Tarjetas por archivo Excel
 };
 
+const DECK_CATEGORIES = new Set([
+    'General', 'Medicina', 'Educación', 'Matemáticas',
+    'Historia', 'Derecho', 'Ciencia', 'Tecnología'
+]);
+
 class DeckController {
+    _normalizeCategory = (category, fallback = 'General') => {
+        const value = String(category || '').trim();
+        return DECK_CATEGORIES.has(value) ? value : fallback;
+    };
+
     /**
      * Helper to get common user context.
      */
@@ -165,7 +175,8 @@ class DeckController {
                 return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
             }
 
-            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null, description || null, color || null, category || 'General');
+            const safeCategory = this._normalizeCategory(category);
+            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null, description || null, color || null, safeCategory);
             await this._syncUsage(req);
             res.json({ success: true, deck });
         } catch (error) {
@@ -193,7 +204,8 @@ class DeckController {
                 return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
             }
 
-            const deck = await DeckService.updateDeck(userId, deckId, name, icon, description, color || null, category || 'General');
+            const safeCategory = this._normalizeCategory(category);
+            const deck = await DeckService.updateDeck(userId, deckId, name, icon, description, color || null, safeCategory);
             
             // 🪙 CONSUMO DE VIDA: Solo si se está guardando una GUÍA (Descripción)
             // Si solo cambia nombre o icono, es gratis.
@@ -737,7 +749,7 @@ class DeckController {
             }
 
             const mediaController = require('./mediaController');
-            const gcsPath = await mediaController.uploadFile(req.file, 'flashcards');
+            const gcsPath = await mediaController.uploadFile(req.file, 'flashcards', true, req.user.id);
 
             await this._syncUsage(req);
             res.json({ success: true, imageUrl: gcsPath });
@@ -753,7 +765,10 @@ class DeckController {
         try {
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 20;
-            const category = req.query.category || 'ALL';
+            const requestedCategory = req.query.category || 'ALL';
+            const category = requestedCategory === 'ALL'
+                ? 'ALL'
+                : this._normalizeCategory(requestedCategory);
             const decks = await DeckService.getPublicDecks(page, limit, category);
             res.json({ success: true, decks });
         } catch (error) {
@@ -774,7 +789,8 @@ class DeckController {
             if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión' });
             if (typeof is_public !== 'boolean') return res.status(400).json({ error: 'Estado de visibilidad inválido' });
 
-            const updated = await DeckService.updateDeckVisibility(userId, deckId, is_public, category || null);
+            const safeCategory = category ? this._normalizeCategory(category) : null;
+            const updated = await DeckService.updateDeckVisibility(userId, deckId, is_public, safeCategory);
             res.json({ success: true, deck: updated });
         } catch (error) {
             console.error('[toggleVisibility] Error:', error);

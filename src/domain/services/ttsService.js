@@ -1,7 +1,7 @@
 const textToSpeech = require('@google-cloud/text-to-speech');
 const { Storage } = require('@google-cloud/storage');
-const path = require('path');
 const crypto = require('crypto');
+const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 
 /**
  * TtsService: Gestiona la síntesis de voz usando Google Cloud Text-to-Speech.
@@ -11,21 +11,11 @@ class TtsService {
     constructor() {
         console.log('📡 [TtsService] Inicializando motor de voz...');
         
-        const options = {};
-        const storageOptions = {};
-        
-        // Reutilizamos la lógica de credenciales de DriveService
-        if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-            const keyPath = path.join(__dirname, '../../../service-account-key.json');
-            options.keyFilename = keyPath;
-            storageOptions.keyFilename = keyPath;
-        } else {
-            storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-        }
+        const googleAuthOptions = resolveGoogleAuthOptions('TtsService');
 
         try {
-            this.client = new textToSpeech.TextToSpeechClient(options);
-            this.storage = new Storage(storageOptions);
+            this.client = new textToSpeech.TextToSpeechClient(googleAuthOptions);
+            this.storage = new Storage(googleAuthOptions);
             this.bucketName = process.env.GCS_BUCKET_NAME || 'chatbot-tutor-medical-images';
             
             // 🎙️ Configuración de Voces Premium (Neural2)
@@ -51,17 +41,6 @@ class TtsService {
      * @returns {Promise<string>} Nombre de la voz neuronal configurada
      */
     async resolveVoiceName(lang) {
-        try {
-            const LanguageRepository = require('../repositories/languageRepository');
-            const languageRepo = new LanguageRepository();
-            const dbVoice = await languageRepo.getLanguageVoice(lang);
-            if (dbVoice) {
-                return dbVoice;
-            }
-        } catch (dbErr) {
-            console.warn('⚠️ [TtsService] Error al consultar idiomas en BD, usando voiceMap:', dbErr.message);
-        }
-
         let voiceConfig = this.voiceMap[lang];
         if (!voiceConfig) {
             const prefix = lang.split('-')[0];

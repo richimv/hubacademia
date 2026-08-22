@@ -1273,7 +1273,7 @@ class UIManager {
                            <i id="${modalId}-icon" class="fas ${config.icon}" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));"></i>
                         </div>
                         <div id="${modalId}-text" class="auth-prompt-main-text" style="font-size: 1.05rem; color: var(--text-main); line-height: 1.6;">
-                            ${config.message}
+                            ${this._escapeHtml(config.message)}
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1310,7 +1310,7 @@ class UIManager {
             const btnTextEl = document.getElementById(`${modalId}-btn-text`);
 
             if (titleEl) titleEl.innerText = config.title;
-            if (textEl) textEl.innerHTML = config.message;
+            if (textEl) textEl.textContent = config.message;
             if (iconEl) iconEl.className = `fas ${config.icon}`;
             if (btnEl) btnEl.onclick = () => window.location.href = config.btnUrl;
             if (btnTextEl) btnTextEl.innerText = config.btnText;
@@ -1669,16 +1669,23 @@ class UIManager {
         const toast = document.createElement('div');
         toast.className = `hub-toast toast-${type}`;
         
-        let iconHtml = '<i class="fas fa-info-circle"></i>';
-        if (type === 'success') iconHtml = '<i class="fas fa-check-circle"></i>';
-        else if (type === 'error') iconHtml = '<i class="fas fa-times-circle"></i>';
-        else if (type === 'warning') iconHtml = '<i class="fas fa-exclamation-triangle"></i>';
-        else if (type === 'life') iconHtml = '<i class="fas fa-bolt"></i>';
+        let iconClass = 'fa-info-circle';
+        if (type === 'success') iconClass = 'fa-check-circle';
+        else if (type === 'error') iconClass = 'fa-times-circle';
+        else if (type === 'warning') iconClass = 'fa-exclamation-triangle';
+        else if (type === 'life') iconClass = 'fa-bolt';
 
-        toast.innerHTML = `
-            <span class="hub-toast-icon">${iconHtml}</span>
-            <span class="hub-toast-msg">${message}</span>
-        `;
+        const iconWrapper = document.createElement('span');
+        iconWrapper.className = 'hub-toast-icon';
+        const icon = document.createElement('i');
+        icon.className = `fas ${iconClass}`;
+        iconWrapper.appendChild(icon);
+
+        const messageWrapper = document.createElement('span');
+        messageWrapper.className = 'hub-toast-msg';
+        messageWrapper.textContent = String(message || '');
+
+        toast.append(iconWrapper, messageWrapper);
 
         container.appendChild(toast);
 
@@ -1693,6 +1700,15 @@ class UIManager {
                 if (toast.parentElement) toast.parentElement.removeChild(toast);
             }, 300);
         }, duration);
+    }
+
+    _escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     /**

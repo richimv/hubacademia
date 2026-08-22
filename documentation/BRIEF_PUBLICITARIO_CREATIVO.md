@@ -107,7 +107,7 @@ Está enfocado en las evaluaciones más decisivas de la carrera médica en el Pe
 ## 🧠 4. MÓDULO REPASO: "FLASHCARDS & APRENDIZAJE INTELIGENTE"
 
 ### 📌 4.1 ¿Qué es y a quién está dirigido?
-Es el motor de retención y memorización a largo plazo de Hub Academia. Está dirigido a **estudiantes universitarios, postulantes y profesionales de cualquier disciplina** (Medicina, Educación, Derecho, Idiomas, Tecnología, Matemáticas, Historia, Ciencias Generales) que necesitan asimilar y retener grandes volúmenes de información densa.
+Es el motor de retención y memorización a largo plazo de Hub Academia. Está dirigido a **estudiantes universitarios, postulantes y profesionales de cualquier disciplina** (Medicina, Educación, Derecho, Tecnología, Matemáticas, Historia, Ciencias Generales) que necesitan asimilar y retener grandes volúmenes de información densa.
 
 ---
 
@@ -115,7 +115,7 @@ Es el motor de retención y memorización a largo plazo de Hub Academia. Está d
 1. **Algoritmo Científico SuperMemo-2 (Repetición Espaciada - SRS):**
    - Basado en la ciencia cognitiva para combatir la **Curva del Olvido**. El sistema calcula el intervalo matemático exacto (1 día, 3 días, 7 días, 1 mes) en que debe reaparecer una tarjeta según la facilidad de recuerdo del alumno (Otra vez, Difícil, Bien, Fácil), logrando una retención superior al 90% con el mínimo tiempo de repaso.
 2. **Generación Automática de Mazos con IA en Segundos:**
-   - El usuario solo escribe un tema (ej. *"Antibióticos betalactámicos"*, *"Principios del CNEB"*, *"Verbos irregulares en francés"*) o pega un texto largo, y la IA genera instantáneamente hasta **20 tarjetas interactivas estructuradas** con preguntas, respuestas y conceptos clave.
+   - El usuario solo escribe un tema (ej. *"Antibióticos betalactámicos"*, *"Principios del CNEB"*, *"Patrones de diseño de software"*) o pega un texto largo, y la IA genera instantáneamente hasta **20 tarjetas interactivas estructuradas** con preguntas, respuestas y conceptos clave.
 3. **Voz Neural Multi-Idioma de Alta Fidelidad (Google Cloud TTS):**
    - Reproducción de audio con pronunciación nativa realista en 5 idiomas: **Español, Inglés, Francés, Italiano y Alemán**.
    - Incluye el **Modo Listening (Modo Escucha)**, que oculta el texto para obligar al estudiante a entrenar la comprensión auditiva antes de voltear la tarjeta.
@@ -141,7 +141,7 @@ Es el motor de retención y memorización a largo plazo de Hub Academia. Está d
 | **1. Hub Academia (Global)** | Docentes, Médicos, Enfermeros, Universitarios | Ecosistema 4 en 1 para dominar exámenes oficiales del Estado. | Simulador + Tutor IA RAG + Flashcards + Biblioteca. | Confianza, Vanguardia, Certeza de Éxito. |
 | **2. Educación (Docente Pro)** | Maestros EBR Inicial, Primaria, Secundaria, EBA, EBE | Superar Ascenso y Nombramiento con casuísticas del CNEB. | Tutor con leyes magisteriales y simulacros de 60q. | Empatía, Realización Profesional, Seguridad. |
 | **3. Salud (Simulador Clínico)** | Médicos, Enfermeros, Internos, Obstetras | Adjudicar la mejor plaza SERUMS y Residentado Médico. | Casos clínicos estructurados con NTS MINSA e infografías. | Rigor Científico, Eficiencia de Tiempo, Prestigio. |
-| **4. Repaso (Flashcards IA)** | Estudiantes de todas las carreras y aprendices de idiomas | Retener conceptos densos y dominar idiomas sin olvidar. | Algoritmo SuperMemo-2, Audio Neural y creación IA en 3s. | Agilidad Mental, Facilidad, Dominio Total. |
+| **4. Repaso (Flashcards IA)** | Estudiantes y profesionales de distintas disciplinas | Retener conceptos densos y consolidar conocimiento a largo plazo. | Algoritmo SuperMemo-2, Audio Neural y creación IA en 3s. | Agilidad Mental, Facilidad, Dominio Total. |
 
 ---
 

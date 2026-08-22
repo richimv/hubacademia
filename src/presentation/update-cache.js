@@ -3,11 +3,33 @@ const path = require('path');
 const crypto = require('crypto');
 
 const d = path.join(__dirname, 'public');
-const version = crypto.randomBytes(4).toString('hex');
+const assetRoots = ['css', 'js'];
+
+function walkFiles(directory) {
+    if (!fs.existsSync(directory)) return [];
+    return fs.readdirSync(directory, { withFileTypes: true })
+        .flatMap((entry) => {
+            const fullPath = path.join(directory, entry.name);
+            return entry.isDirectory() ? walkFiles(fullPath) : [fullPath];
+        });
+}
+
+const assetFiles = assetRoots
+    .flatMap((folder) => walkFiles(path.join(d, folder)))
+    .sort((left, right) => left.localeCompare(right));
+
+const hash = crypto.createHash('sha256');
+assetFiles.forEach((filePath) => {
+    hash.update(path.relative(d, filePath).replace(/\\/g, '/'));
+    hash.update(fs.readFileSync(filePath));
+});
+const version = hash.digest('hex').slice(0, 12);
+let updatedFiles = 0;
 
 fs.readdirSync(d).filter(f => f.endsWith('.html')).forEach(f => {
     const p = path.join(d, f);
     let c = fs.readFileSync(p, 'utf8');
+    const original = c;
 
     // 1. Cache bust all local CSS files (href="css/..." or href="/css/...")
     const cssRegex = /(href="(?:\/)?css\/[^"]+\.css)(?:\?v=[^"]+)?(?=")/g;
@@ -17,6 +39,10 @@ fs.readdirSync(d).filter(f => f.endsWith('.html')).forEach(f => {
     const jsRegex = /(src="(?:\/)?js\/[^"]+\.js)(?:\?v=[^"]+)?(?=")/g;
     c = c.replace(jsRegex, `$1?v=${version}`);
 
-    fs.writeFileSync(p, c);
-    console.log(`Updated ${f} to version ${version}`);
+    if (c !== original) {
+        fs.writeFileSync(p, c);
+        updatedFiles += 1;
+    }
 });
+
+console.log(`Asset version ${version}; HTML files updated: ${updatedFiles}`);

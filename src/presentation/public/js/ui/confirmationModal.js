@@ -83,7 +83,7 @@ class ConfirmationModal {
      * @returns {Promise<boolean>} - Se resuelve a true si se confirma, false si se cancela.
      */
     show(message, title = 'Confirmación', confirmText = 'Confirmar', cancelText = 'Cancelar') {
-        this.messageElement.innerHTML = (message || '').replace(/\n/g, '<br>');
+        this._setMessage(message);
         this.titleElement.textContent = title;
         this.confirmBtn.textContent = confirmText;
         this.cancelBtn.textContent = cancelText;
@@ -107,7 +107,7 @@ class ConfirmationModal {
     }
 
     showAlert(message, title = 'Aviso', buttonText = 'Aceptar') {
-        this.messageElement.innerHTML = (message || '').replace(/\n/g, '<br>');
+        this._setMessage(message);
         this.titleElement.textContent = title;
         this.confirmBtn.textContent = buttonText;
 
@@ -160,6 +160,12 @@ class ConfirmationModal {
         iconContainer.style.background = iconBg;
         iconContainer.style.border = iconBorder;
         iconContainer.style.color = iconColor;
+    }
+
+    _setMessage(message) {
+        if (!this.messageElement) return;
+        this.messageElement.textContent = String(message || '');
+        this.messageElement.style.whiteSpace = 'pre-line';
     }
 
     handleConfirm() {

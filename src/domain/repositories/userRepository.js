@@ -67,6 +67,42 @@ class UserRepository {
         return result.rowCount > 0;
     }
 
+    /**
+     * Reserva vidas gratuitas con una única operación condicional para impedir
+     * que solicitudes concurrentes sobrepasen el límite.
+     */
+    async consumeFreeUsage(userId, amount = 1) {
+        const result = await db.query(`
+            UPDATE public.users
+            SET usage_count = COALESCE(usage_count, 0) + $2
+            WHERE id = $1
+              AND COALESCE(usage_count, 0) + $2 <= COALESCE(max_free_limit, 10)
+            RETURNING usage_count, COALESCE(max_free_limit, 10) AS max_free_limit
+        `, [userId, amount]);
+
+        if (result.rows.length > 0) {
+            return {
+                allowed: true,
+                usage: result.rows[0].usage_count,
+                limit: result.rows[0].max_free_limit
+            };
+        }
+
+        const current = await db.query(`
+            SELECT COALESCE(usage_count, 0) AS usage_count,
+                   COALESCE(max_free_limit, 10) AS max_free_limit
+            FROM public.users
+            WHERE id = $1
+        `, [userId]);
+
+        if (current.rows.length === 0) throw new Error('Usuario no encontrado');
+        return {
+            allowed: false,
+            usage: current.rows[0].usage_count,
+            limit: current.rows[0].max_free_limit
+        };
+    }
+
     async findByRole(role) {
         const res = await db.query(`SELECT * FROM users WHERE role = $1 ORDER BY name`, [role]);
         return res.rows.map(row => this._mapRowToUser(row));

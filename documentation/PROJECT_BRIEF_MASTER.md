@@ -116,7 +116,7 @@ El sistema de chat en Hub Academia no es un chatbot monolítico, sino una suite 
    - **Frontend:** `flashcards.html` / `tutor-chat.js` (Activación al girar la tarjeta en la sesión SM-2).
    - **Backend:** `chatController.js` ↔ `tutorAiService.js` (Modelo: `gemini-3.1-flash-lite`).
    - **Inyección de Contexto de Tarjeta:** Recibe la disciplina (`deckCategory`), nombre del mazo (`deckName`), tema (`topic`), anverso (`front`), reverso (`back`) e imágenes adjuntas.
-   - **Especialización Multidisciplinaria Pura:** Adapta automáticamente su rigor y marco analítico a la materia de la tarjeta (**Derecho**, **Medicina**, **Educación**, **Idiomas**, **Tecnología / Programación**, **Matemáticas**, **Historia**, **Ciencias**, **General**).
+   - **Especialización Multidisciplinaria Pura:** Adapta automáticamente su rigor y marco analítico a la materia de la tarjeta (**Derecho**, **Medicina**, **Educación**, **Tecnología / Programación**, **Matemáticas**, **Historia**, **Ciencias**, **General**).
    - **Aislamiento Temático Estricto (CERO CONTAMINACIÓN):**
      - **Sin RAG en Pinecone:** No ejecuta búsquedas vectoriales médicas ni pedagógicas en materias ajenas, garantizando **cero contaminación temática**.
      - Prohibición estricta de emitir descargos médicos o citas del MINSA en materias ajenas a medicina.
@@ -126,7 +126,7 @@ El sistema de chat en Hub Academia no es un chatbot monolítico, sino una suite 
 
 ### 3.4 🧠 Módulo de Repaso Espaciado y Flashcards (SuperMemo-2 SRS)
 * **Gestión Jerárquica:** Mazos del sistema (oficiales) y mazos personalizados creados por el usuario con soporte de submazos multinivel.
-* **Categorías Oficiales:** Medicina, Educación, Derecho, Idiomas, Tecnología, Matemáticas, Historia, Ciencia y General.
+* **Categorías Oficiales:** Medicina, Educación, Derecho, Tecnología, Matemáticas, Historia, Ciencia y General.
 * **Algoritmo SuperMemo-2:** Calcula repeticiones, factor de facilidad ($EF \ge 1.3$) e intervalos en días según la autoevaluación del alumno (Otra vez, Difícil, Bien, Fácil).
 * **Multimedia y Accesibilidad:**
   * Texto enriquecido de hasta 1,000 caracteres por cara.
@@ -292,4 +292,3 @@ A continuación se detalla la totalidad de las tecnologías, frameworks, librer�
 | **PyMuPDF (fitz)** | Python OCR/PDF | Extracción rápida de texto y metadatos de documentos PDF académicos. |
 | **Pdf2image + Pytesseract** | Tesseract OCR | Extracción óptica de caracteres en documentos escaneados antiguos. |
 | **Psycopg2** | Python DB | Conexión directa a PostgreSQL para persistencia de datos vectoriales y chunks RAG. |
-

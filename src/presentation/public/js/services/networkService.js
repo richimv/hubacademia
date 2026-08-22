@@ -14,25 +14,31 @@ class NetworkService {
         if (url && typeof url !== 'string') {
             url = url.toString();
         }
-        // 1. Asegurar que tenemos el token más fresco de Supabase
-        let token = null;
-        if (window.AuthApiService) {
-            token = await window.AuthApiService.getValidToken();
-        } else {
-            token = localStorage.getItem('authToken');
-        }
-
-        // 2. Configurar Headers Centralizados
+        // 1. Respetar una identidad explícita del flujo llamador. Esto es
+        // especialmente importante dentro de onAuthStateChange(SIGNED_IN), donde
+        // volver a consultar la sesión de Supabase puede competir con su persistencia.
         const headers = {
             ...options.headers
         };
+        const hasExplicitAuthorization = Object.keys(headers)
+            .some(headerName => headerName.toLowerCase() === 'authorization');
+
+        // 2. Si el llamador no proporcionó Authorization, obtener el token fresco.
+        let token = null;
+        if (!hasExplicitAuthorization) {
+            if (window.AuthApiService) {
+                token = await window.AuthApiService.getValidToken();
+            } else {
+                token = localStorage.getItem('authToken');
+            }
+        }
 
         // 🛡️ FIX: No forzar application/json si el body es FormData (permite que el browser ponga el boundary)
         if (!(options.body instanceof FormData) && !headers['Content-Type']) {
             headers['Content-Type'] = 'application/json';
         }
 
-        if (token && token !== 'null' && token !== 'undefined') {
+        if (!hasExplicitAuthorization && token && token !== 'null' && token !== 'undefined') {
             headers['Authorization'] = `Bearer ${token}`;
         }
 

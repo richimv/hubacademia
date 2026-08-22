@@ -111,7 +111,7 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Personalidad de Mentor**: Evolución de "asistente conciso" a "tutor proactivo". El sistema ahora permite explicaciones extensas, ejemplos prácticos y expansión de conocimientos (gramática, dosis, etimología, etc.) aunque no estén en la tarjeta.
 - **Contexto Dinámico**: El sistema inyecta el contenido de la tarjeta como punto de partida, pero el tutor utiliza su conocimiento interno completo para resolver dudas laterales.
 - **Memoria de Sesión**: Historial volátil gestionado por el frontend que se resetea al cambiar de flashcard, manteniendo el enfoque en el tema actual.
-- **Versatilidad Disciplinaria**: El tutor adapta su lenguaje y rigor técnico según la materia (Medicina, Idiomas, Leyes, etc.).
+- **Versatilidad Disciplinaria**: El tutor adapta su lenguaje y rigor técnico según la materia (Medicina, Educación, Derecho, Tecnología, etc.).
 - **Descubrimiento de UX (Neon Glow Pulse)**: Animación sutil de borde neón (tonos azul/púrpura) y pulsación de brillo en el botón flotante al revelar la respuesta. Este diseño minimalista reemplaza al antiguo sistema de partículas, garantizando un TTI (Time To Interactive) óptimo en dispositivos móviles y guiando el ojo del usuario de manera no intrusiva.
 
 ### E. Visualización Adaptativa y Escena 3D
@@ -123,7 +123,6 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 - **Motor de IA Multidominio**: El prompt maestro en `flashcardService.js` ha sido refactorizado para aplicar estrategias pedagógicas específicas según el área:
     - **Medicina**: Enfoque en razonamiento clínico, síntomas y diagnósticos diferenciales (Juicio clínico vs. Definición).
     - **Educación**: Enfoque en teorías del aprendizaje, gestión de aula y estrategias aplicadas para docentes.
-    - **Idiomas (Listening/Speaking)**: Regla de "Pureza Lingüística" que obliga a un anverso 100% puro en el idioma objetivo para una síntesis de voz (TTS) impecable, con traducción aislada en el reverso.
 - **Active Recall Reforzado**: Todas las generaciones fuerzan el formato "Disparador Mental" -> "Respuesta Atómica", optimizando la retención a largo plazo.
 
 ### G. Seguridad, Monetización y Control de Cuotas (V16)
@@ -183,7 +182,7 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - **Frente (Anverso/Pregunta):** Con borde azul translúcido (`rgba(59, 130, 246, 0.18)`) y foco con brillo azul suave.
     - **Dorso (Reverso/Respuesta):** Con borde púrpura translúcido (`rgba(139, 92, 246, 0.18)`) y foco con brillo morado suave.
 - **Grilla de Controles Alineada:** Los controles de audio TTS (Generación y Selector de Idioma) y de visibilidad de texto se reordenaron en filas internas (`.settings-row`) con bordes divisorios delgados.
-- **Sincronización Dinámica de Idiomas:** Implementación del método `syncTtsLanguageSelectors()` que habilita/deshabilita el selector dropdown de idioma y ajusta su opacidad (`.settings-lang-select-container.enabled`) de forma dinámica en base al estado activo del checkbox "Generar audio TTS". Se dispara en eventos de cambio, al limpiar el modal (`_clearCardModal`) y al editar (`openEditCardModal`).
+- **Sincronización Dinámica de Voces TTS:** Implementación del método `syncTtsLanguageSelectors()` que habilita/deshabilita el selector de voz y ajusta su opacidad (`.settings-lang-select-container.enabled`) de forma dinámica en base al estado activo del checkbox "Generar audio TTS". Se dispara en eventos de cambio, al limpiar el modal (`_clearCardModal`) y al editar (`openEditCardModal`).
 - **Botón con Brillo Invitación:** Se añadió la clase `.btn-add-card-glow` al botón dinámico "+ Añadir Tarjeta" en `repaso.js`, aplicando una animación infinita de box-shadow azul translúcido (`@keyframes btn-pulse-glow`) para incentivar e indicar al usuario de forma clara el punto de acción para crear nuevas tarjetas.
 - **Corrección de Giro en Flashcards (Efecto Reflejado):** Al remover el efecto de profundidad perspectiva 3D en el sprint anterior, se eliminó accidentalmente la propiedad `transform-style: preserve-3d;` en la clase `.card` de `flashcards.css`. Esto causaba que las caras de la tarjeta se aplanaran, impidiendo que `backface-visibility: hidden` ocultase el reverso de la cara frontal al rotar la tarjeta, mostrando la pregunta reflejada horizontalmente. Se restauró `transform-style: preserve-3d;` a `.card` para solucionar este comportamiento regresivo sin reintroducir la distorsión de perspectiva de cámara exagerada.
 
@@ -198,7 +197,7 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 ### P. Clasificación por Áreas Temáticas y Filtrado en Comunidad (Agosto 2026 - V22)
 - **Persistencia en Base de Datos**: Se incorporó la columna `category` (`VARCHAR(50) DEFAULT 'General'`) e índice optimizado `idx_decks_public_category` en la tabla `decks`.
 - **Estructura por Capas**:
-  - `domain/`: Repositorio (`flashcardRepository.js`) y servicio (`deckService.js`) actualizados para crear, editar, listar y filtrar mazos por temática (`Medicina`, `Educación`, `Matemáticas`, `Historia`, `Idiomas`, `Derecho`, `Ciencia`, `General`).
+  - `domain/`: Repositorio (`flashcardRepository.js`) y servicio (`deckService.js`) actualizados para crear, editar, listar y filtrar mazos por temática (`Medicina`, `Educación`, `Matemáticas`, `Historia`, `Derecho`, `Ciencia`, `Tecnología`, `General`).
   - `application/`: `deckController.js` procesa el filtro de categoría en `getPublicDecks`, `createDeck`, `updateDeck` y `toggleVisibility`.
   - `presentation/`: Se inyectó una barra de filtrado por pills (`.community-category-bar`, `.category-pill`) en la vista **Comunidad** para filtrado en tiempo real sin recargar la página. Modal de creación/edición de mazos y confirmación de publicación actualizados con selector de temática responsivo y estilizado.
 - **Formato Visual Profesional**: Insignias de temática (`.deck-category-tag`) con tipografía estilizada, alineación responsiva y diseño sobrio sin saturación de bordes o efectos invasivos.
@@ -272,7 +271,7 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Se actualizaron los botones principales ("Estudiar Ahora", "Hacer Público") de azul (`#3b82f6`) al degradado oficial Naranja Manta (`linear-gradient(135deg, #f97316 0%, #ea580c 100%)`) con sombra `box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35)`.
 - **Especialización Multidisciplinaria del Chat Tutor de Repaso y Cero Contaminación Temática (V35)**:
   - **Inyección Estructurada de Metadatos de Mazo y Flashcard**:
-    - `flashcards.js` y `tutor-chat.js` capturan y transmiten el contexto integral: `deckCategory` (*Derecho*, *Idiomas*, *Medicina*, *Educación*, etc.), `deckName`, `topic`, `front`, `back`, `imageUrl` y `explanationImageUrl`.
+    - `flashcards.js` y `tutor-chat.js` capturan y transmiten el contexto integral: `deckCategory` (*Derecho*, *Tecnología*, *Medicina*, *Educación*, etc.), `deckName`, `topic`, `front`, `back`, `imageUrl` y `explanationImageUrl`.
   - **Preservación de Especialización en `chatController.js`**:
     - Se aisló la especialización `flashcard_tutor` impidiendo que sea aplanada a medicina.
     - Se estructura el prompt con mentalidad, doctrina y marco conceptual adaptado a la materia real del mazo.
@@ -318,6 +317,16 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Se añadieron casos de prueba en `deckSecurityLimits.test.js` para verificar la llamada de `getPublicDecks` por categoría y la actualización con `updated_at`.
     - 17/17 suites de prueba pasando (123/123 pruebas al 100%).
 
+- **Posicionamiento Inteligente del Tour Guía y Depuración de KPIs de Mazos (V40)**:
+  - **Algoritmo de Posicionamiento Anti-Solapamiento en Tour Guía**:
+    - Se refactorizó `positionHint` en `tooltipManager.js` calculando la intersección del área rectangular (`overlapArea`) entre la tarjeta flotante del tooltip y el elemento objetivo en pantalla.
+    - Evalúa iterativamente las posiciones candidatas (`bottom`, `top`, `right`, `left`), seleccionando automáticamente la variante con **cero solapamiento (0px de obstrucción)**.
+    - Se ajustaron los selectores en `startRepasoTour` para apuntar a la cabecera `.explorer-sidebar-header` en el Paso 2 (evitando cubrir el árbol de carpetas o el botón "EXPLORADOR" en móviles y escritorios).
+    - Se incorporó `targetElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })` para garantizar el centrado óptimo del elemento objetivo en pantalla antes de calcular coordenadas.
+  - **Depuración y Purificación de Analíticas/KPIs de Mazos**:
+    - Se desvinculó la tabla `quiz_history` (simulacros/exámenes culminados de Salud y Educación) de la generación de analíticas de mapas de actividad del módulo de repaso en `analyticsRepository.js` y `analyticsService.js`.
+    - Se habilitó la filtración contextual por `deckId` en `/api/analytics/heatmap?deckId=...`, permitiendo que el modal de estadísticas (`openStatsModal` en `repaso.js`) contabilice exclusivamente las tarjetas repasadas (`user_flashcards`) del mazo seleccionado.
+
 ---
 
-**Documentación Técnica Actualizada - 20 de Agosto, 2026.**
+**Documentación Técnica Actualizada - 22 de Agosto, 2026.**

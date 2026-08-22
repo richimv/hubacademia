@@ -17,7 +17,7 @@ Acceso centralizado a recursos educativos organizados por Carreras y Cursos.
 - **Videos y Artículos:** Material complementario curado.
 - **Organización:** Filtrado inteligente por áreas de estudio.
 
-### 2. 🤖 Tutor IA Personalizado (Gemini 2.5)
+### 2. 🤖 Tutor IA Personalizado (Vertex AI / Gemini)
 Un asistente virtual disponible 24/7 para resolver dudas teóricas.
 - **RAG (Retrieval Augmented Generation):** El tutor no "alucina"; consulta nuestra base de datos de libros antes de responder para dar referencias precisas.
 - **Contexto Académico:** Entiende sobre los cursos y mallas curriculares de la institución.
@@ -41,7 +41,7 @@ El proyecto utiliza una arquitectura moderna y escalable de 4 capas.
 
 ### Backend
 - **Tecnología:** Node.js + Express.
-- **IA Engine:** Google Vertex AI (Gemini 2.5 Flash) con Function Calling.
+- **IA Engine:** Google Vertex AI (Gemini 3.1 Flash-Lite, con modelos de contingencia en el tutor).
 - **Despliegue:** **Render** (Web Service).
 
 ### Base de Datos
@@ -49,8 +49,8 @@ El proyecto utiliza una arquitectura moderna y escalable de 4 capas.
 - **Características:** Tablas relacionales para usuarios, cursos, libros e historial de chat.
 
 ### Infraestructura Adicional
-- **Correos:** **Resend** (Notificaciones transaccionales).
-- **Almacenamiento:** Supabase Storage (para portadas y recursos).
+- **Almacenamiento:** Google Cloud Storage para imágenes, audio y recursos.
+- **RAG:** Pinecone y PostgreSQL/Supabase.
 
 ---
 
@@ -67,7 +67,7 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
 ## 🔧 Instalación y Despliegue Local
 
 ### Requisitos
-- Node.js v18+
+- Node.js 20 a 24 (Node 22 recomendado)
 - Cuenta en Google Cloud (Vertex AI)
 - Cuenta en Supabase
 - Credenciales de Mercado Pago
@@ -82,7 +82,7 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
 
 2. **Instalar Dependencias**
    ```bash
-   npm install
+   npm ci
    ```
 
 3. **Configurar Servicio de ML (Python)**
@@ -106,14 +106,13 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
    NODE_ENV=development
    
    # Base de Datos (Supabase)
-   DB_HOST=aws-0-us-west-1.pooler.supabase.com
-   DB_USER=postgres
-   DB_PASSWORD=tu_password
-   DB_NAME=postgres
+   NODE_DATABASE_URL=postgresql://usuario:password@host:6543/postgres
+   PYTHON_DATABASE_URL=postgresql://usuario:password@host:5432/postgres
    
    # Google Vertex AI
    GOOGLE_CLOUD_PROJECT=tu-proyecto-id
    GOOGLE_CLOUD_LOCATION=us-central1
+   GCS_BUCKET_NAME=tu-bucket
    
    # Mercado Pago
    MP_ACCESS_TOKEN=APP_USR-xxxxxx
@@ -123,7 +122,12 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
    BACKEND_URL=http://localhost:3000
    ```
 
-4. **Correr en Desarrollo**
+4. **Generar versiones deterministas de assets**
+   ```bash
+   npm run build
+   ```
+
+5. **Correr en Desarrollo**
    ```bash
    # Terminal 1: Backend & Frontend
    npm run dev
@@ -132,6 +136,12 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
    # Asegúrate de tener el entorno activado
    python -m ml_service.app
    ```
+
+Usa [.env.example](.env.example) como inventario de variables, sin copiar valores reales al repositorio. El archivo local `.env` y `service-account-key.json` permanecen ignorados.
+
+## Despliegue controlado
+
+Antes de desplegar cambios de seguridad o esquema, consulta [SECURITY_HARDENING_RELEASE_2026-08-21.md](documentation/SECURITY_HARDENING_RELEASE_2026-08-21.md) y [PRODUCTION_COMPLETION_PROMPTS_2026-08-22.md](documentation/PRODUCTION_COMPLETION_PROMPTS_2026-08-22.md). Las migraciones deben aplicarse con respaldo verificado antes de activar `SECURE_QUIZ_SESSIONS_ENABLED`.
 
 ---
 

@@ -2,48 +2,100 @@ const axios = require('axios');
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 const sharp = require('sharp');
-const db = require('../../infrastructure/database/db');
-const driveService = require('../../domain/services/driveService');
+const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
+
+const ALLOWED_MEDIA_PREFIXES = new Set([
+    'questions',
+    'explanations',
+    'thumbnails',
+    'editor-content',
+    'recursos',
+    'cursos',
+    'carreras',
+    'flashcards',
+    'audio-cards',
+    'audio',
+    'tts_cache'
+]);
+
+function normalizeMediaPath(rawPath) {
+    if (typeof rawPath !== 'string' || !rawPath.trim()) return null;
+
+    let value = rawPath.trim();
+    try {
+        value = decodeURIComponent(value);
+    } catch (error) {
+        return null;
+    }
+
+    value = value.replace(/\\/g, '/');
+    if (value.startsWith('/') || value.includes('\0') || value.includes('..')) return null;
+
+    const normalized = path.posix.normalize(value);
+    if (normalized === '.' || normalized.startsWith('../') || normalized.includes('/../')) return null;
+
+    const prefix = normalized.split('/')[0];
+    if (!ALLOWED_MEDIA_PREFIXES.has(prefix)) return null;
+    return normalized;
+}
+
+function extractMediaPath(rawValue) {
+    if (typeof rawValue !== 'string' || !rawValue.trim()) return null;
+
+    let value = rawValue.trim();
+    try {
+        if (/^https?:\/\//i.test(value)) {
+            const parsed = new URL(value);
+            const fileParam = parsed.searchParams.get('file') || parsed.searchParams.get('path');
+            if (fileParam) value = fileParam;
+            else return null;
+        } else if (value.includes('?file=')) {
+            value = value.split('?file=')[1].split('&')[0];
+        } else if (value.includes('?path=')) {
+            value = value.split('?path=')[1].split('&')[0];
+        }
+    } catch (error) {
+        return null;
+    }
+
+    return normalizeMediaPath(value);
+}
 
 class MediaController {
     constructor() {
-        // ✅ MEJORA: Autenticación robusta (Usa variable de entorno o fallback local)
-        const storageOptions = {};
-        if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-            storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-        } else {
-            storageOptions.keyFilename = path.join(__dirname, '../../../service-account-key.json');
-        }
-
-        this.storage = new Storage(storageOptions);
+        this.storage = new Storage(resolveGoogleAuthOptions('MediaController'));
         this.bucketName = process.env.GCS_BUCKET_NAME || 'chatbot-tutor-medical-images';
     }
 
     /**
      * ✅ NUEVO: Optimiza un buffer de imagen y lo convierte a WebP.
      */
-    async _optimizeImage(buffer) {
-        try {
-            return await sharp(buffer)
-                .resize({ width: 1000, withoutEnlargement: true }) // Reducido para evitar OOM (Out Of Memory) en Render
-                .webp({
-                    quality: 80,
-                    smartSubsampling: true // ✅ MEJORA: Bordes más nítidos para texto y diagramas
-                })
-                .withMetadata() // ✅ MEJORA: Preservar perfiles de color y orientación
-                .toBuffer();
-        } catch (error) {
-            console.error('❌ Error optimizando imagen con Sharp:', error);
-            return buffer; // Fallback al original si falla
+    async _validateImageBuffer(buffer) {
+        const image = sharp(buffer, { limitInputPixels: 40_000_000, failOn: 'warning' });
+        const metadata = await image.metadata();
+        if (!['jpeg', 'png', 'webp'].includes(metadata.format)) {
+            throw new Error('El contenido del archivo no corresponde a una imagen JPG, PNG o WebP válida.');
         }
+        return metadata;
+    }
+
+    async _optimizeImage(buffer) {
+        await this._validateImageBuffer(buffer);
+        return sharp(buffer, { limitInputPixels: 40_000_000, failOn: 'warning' })
+            .rotate()
+            .resize({ width: 1000, withoutEnlargement: true })
+            .webp({ quality: 80, smartSubsampling: true })
+            .toBuffer();
     }
 
     /**
      * Sube un archivo a GCS con optimización automática a WebP.
      * Retorna su ruta relativa (ej: 'explanations/nombre.webp')
      */
-    async uploadFile(file, folder = 'explanations', optimize = true) {
+    async uploadFile(file, folder = 'explanations', optimize = true, ownerId = null) {
         try {
+            if (!file?.buffer || !Buffer.isBuffer(file.buffer)) throw new Error('Archivo de imagen inválido.');
+            if (!ALLOWED_MEDIA_PREFIXES.has(folder)) throw new Error('Carpeta de media no permitida.');
             const bucket = this.storage.bucket(this.bucketName);
 
             let buffer = file.buffer;
@@ -51,24 +103,29 @@ class MediaController {
             let contentType = file.mimetype;
 
             // ✅ OPTIMIZACIÓN A WEBP
-            if (optimize && contentType.startsWith('image/')) {
-                buffer = await this._optimizeImage(buffer);
-                // Cambiar extensión a .webp
-                const baseName = path.parse(fileName).name;
-                fileName = `${baseName}.webp`;
-                contentType = 'image/webp';
+            if (contentType.startsWith('image/')) {
+                if (optimize) {
+                    buffer = await this._optimizeImage(buffer);
+                    const baseName = path.parse(fileName).name;
+                    fileName = `${baseName}.webp`;
+                    contentType = 'image/webp';
+                } else {
+                    await this._validateImageBuffer(buffer);
+                }
             }
 
             const finalFileName = `${Date.now()}-${fileName}`;
             const gcsPath = `${folder}/${finalFileName}`;
             const gcsFile = bucket.file(gcsPath);
 
-            await gcsFile.save(buffer, {
+            const saveOptions = {
                 metadata: {
                     contentType,
-                    cacheControl: 'public, max-age=31536000' // ✅ MEJORA: Caché de 1 año (Estilo Netflix)
+                    cacheControl: 'public, max-age=31536000'
                 }
-            });
+            };
+            if (ownerId) saveOptions.metadata.metadata = { ownerId: String(ownerId) };
+            await gcsFile.save(buffer, saveOptions);
 
             console.log(`✅ Archivo subido y optimizado a GCS: ${gcsPath}`);
             return gcsPath;
@@ -81,20 +138,33 @@ class MediaController {
     /**
      * ✅ NUEVO: Elimina un archivo de GCS de forma segura.
      */
-    async deleteFile(gcsPath) {
-        if (!gcsPath || gcsPath.startsWith('http')) return;
+    async deleteFile(gcsPath, options = {}) {
+        const normalizedPath = extractMediaPath(gcsPath);
+        if (!normalizedPath) return false;
 
         try {
             const bucket = this.storage.bucket(this.bucketName);
-            const file = bucket.file(gcsPath);
+            const file = bucket.file(normalizedPath);
             const [exists] = await file.exists();
 
-            if (exists) {
-                await file.delete();
-                console.log(`🗑️ Archivo eliminado de GCS: ${gcsPath}`);
+            if (!exists) return false;
+
+            if (options.requireAuthorization) {
+                const isAdmin = options.isAdmin === true;
+                if (!isAdmin) {
+                    if (!options.actorId || !normalizedPath.startsWith('flashcards/')) return false;
+                    const [metadata] = await file.getMetadata();
+                    const ownerId = metadata?.metadata?.ownerId;
+                    if (!ownerId || String(ownerId) !== String(options.actorId)) return false;
+                }
             }
+
+            await file.delete();
+            console.log(`🗑️ Archivo eliminado de GCS: ${normalizedPath}`);
+            return true;
         } catch (error) {
-            console.error(`⚠️ Error eliminando archivo de GCS (${gcsPath}):`, error.message);
+            console.error(`⚠️ Error eliminando archivo de GCS (${normalizedPath}):`, error.message);
+            return false;
         }
     }
 
@@ -128,7 +198,8 @@ class MediaController {
             }
 
             if (!gcsPath) return res.status(400).send('Falta el parámetro de archivo (file/path).');
-            if (gcsPath.startsWith('http')) return res.redirect(gcsPath);
+            gcsPath = normalizeMediaPath(gcsPath);
+            if (!gcsPath) return res.status(403).send('Ruta de media no permitida.');
 
             const bucket = this.storage.bucket(this.bucketName);
             const file = bucket.file(gcsPath);
@@ -160,7 +231,8 @@ class MediaController {
             const baseName = path.basename(gcsPath);
 
             res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
-            res.setHeader('Content-Disposition', isDownload ? `attachment; filename="${baseName}"` : 'inline');
+            const forceDownload = isDownload || ext === '.svg';
+            res.setHeader('Content-Disposition', forceDownload ? `attachment; filename="${baseName}"` : 'inline');
             res.setHeader('Cache-Control', isAdminOnly ? 'no-cache' : 'public, max-age=31536000, immutable'); // Cache 1 año para usuarios
 
             file.createReadStream().pipe(res);
@@ -237,16 +309,16 @@ class MediaController {
             const { url } = req.body;
             if (!url) return res.status(400).json({ error: 'Falta la URL de la imagen' });
 
-            // Extraer el path de GCS de la URL si es necesario
-            // La URL suele ser algo como https://.../api/media/gcs?file=folder/image.webp
-            let gcsPath = url;
-            if (url.includes('?file=')) {
-                gcsPath = url.split('?file=')[1];
-            } else if (url.includes('?path=')) {
-                gcsPath = url.split('?path=')[1];
-            }
+            const gcsPath = extractMediaPath(url);
+            if (!gcsPath) return res.status(400).json({ error: 'Ruta de media inválida.' });
 
-            await this.deleteFile(gcsPath);
+            const deleted = await this.deleteFile(gcsPath, {
+                requireAuthorization: true,
+                actorId: req.user?.id,
+                isAdmin: req.user?.role === 'admin'
+            });
+
+            if (!deleted) return res.status(403).json({ error: 'No autorizado para eliminar este archivo.' });
             res.json({ success: true });
         } catch (error) {
             console.error('Error in handleDeleteMedia:', error);

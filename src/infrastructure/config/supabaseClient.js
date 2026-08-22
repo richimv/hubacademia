@@ -8,6 +8,14 @@ if (!supabaseUrl || !supabaseKey) {
     console.error('❌ Faltan variables de entorno SUPABASE_URL o SUPABASE_KEY en el Backend.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Cliente exclusivamente servidor: no debe persistir ni refrescar sesiones
+// compartidas. Cada petición autenticada entrega su JWT de usuario a getUser().
+const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
+    }
+});
 
 module.exports = supabase;

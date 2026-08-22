@@ -222,7 +222,8 @@ class AnalyticsController {
     async getHeatmap(req, res) {
         try {
             const userId = req.user.id;
-            const heatmap = await this.analyticsService.getHeatmapData(userId);
+            const { deckId } = req.query;
+            const heatmap = await this.analyticsService.getHeatmapData(userId, deckId || null);
             res.json({ success: true, heatmap });
         } catch (error) {
             console.error('❌ Error in getHeatmap:', error);

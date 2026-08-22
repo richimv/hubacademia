@@ -47,6 +47,7 @@ def refresh_data():
     """Descarga datos frescos de SQL y recalcula vectores"""
     print("   🔄 Conectando a Supabase...")
     global_data["courses_df"] = get_courses_data()
+    global_data["books_df"] = get_books_data()
     global_data["topics_df"] = get_all_topics()
     
     if ml_model:
@@ -61,7 +62,18 @@ def refresh_data():
             print(f"   🧠 Vectorizando {len(df)} cursos...")
             global_data["embeddings"] = ml_model.encode(df['soup'].tolist())
 
-        # B. Vectorizar Temas
+        # B. Vectorizar Libros
+        if not global_data["books_df"].empty:
+            df_b = global_data["books_df"]
+            df_b['soup'] = (
+                df_b['name'].fillna('') + " " +
+                df_b['author'].fillna('') + " " +
+                df_b['topics_soup'].fillna('')
+            )
+            print(f"   🧠 Vectorizando {len(df_b)} libros...")
+            global_data["book_embeddings"] = ml_model.encode(df_b['soup'].tolist())
+
+        # C. Vectorizar Temas
         if not global_data["topics_df"].empty:
             df_t = global_data["topics_df"]
             print(f"   🧠 Vectorizando {len(df_t)} temas...")
@@ -72,6 +84,15 @@ initialize_app()
 
 
 # --- 3. ENDPOINTS (RUTAS API) ---
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({
+        "status": "ok",
+        "modelLoaded": ml_model is not None,
+        "coursesLoaded": len(global_data["courses_df"]),
+        "booksLoaded": len(global_data["books_df"])
+    })
 
 # @app.route('/api/recommendations') ELIMINADO: Redundante.
 

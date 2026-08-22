@@ -269,10 +269,12 @@ class MedicoService {
 
         quizData.areaStats = areaStats;
 
-        const attemptId = await medicoRepository.saveQuizHistory(userId, quizData);
+        const savedAttempt = await medicoRepository.saveQuizHistory(userId, quizData);
+        const attemptId = typeof savedAttempt === 'object' ? savedAttempt.attemptId : savedAttempt;
+        const wasCreated = typeof savedAttempt === 'object' ? savedAttempt.wasCreated : true;
         console.log(`💾 [MedicoService] Historial de examen guardado. Intento ID: ${attemptId}`);
 
-        return { attemptId, flashcardsCreated: 0 };
+        return { attemptId, flashcardsCreated: 0, wasCreated };
     }
 
     async incrementUserSimulatorUsage(userId) {

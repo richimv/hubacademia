@@ -3,10 +3,11 @@
  * Renders a 14-day activity bar chart using pure CSS/JS.
  */
 class ActivityHeatmap {
-    constructor(containerId) {
+    constructor(containerId, deckId = null) {
         this.container = document.getElementById(containerId);
-        // Usamos la variable global para apuntar directamente al backend, evitando posibles problemas de proxy en Vercel
-        this.apiUrl = `${window.AppConfig.API_URL}/api/analytics/heatmap`;
+        this.deckId = deckId;
+        const queryStr = deckId ? `?deckId=${encodeURIComponent(deckId)}` : '';
+        this.apiUrl = `${window.AppConfig.API_URL}/api/analytics/heatmap${queryStr}`;
         this.token = localStorage.getItem('authToken');
         this.tooltip = null;
     }

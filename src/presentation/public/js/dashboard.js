@@ -42,7 +42,7 @@ class DashboardManager {
             document.getElementById('loading').innerHTML = `
                 <div style="text-align: center; color: #ef4444;">
                     <i class="fas fa-exclamation-triangle fa-2x"></i>
-                    <p style="margin-top: 1rem;">Error cargando datos: ${error.message}</p>
+                    <p style="margin-top: 1rem;">Error cargando datos: ${this._escapeHtml(error.message)}</p>
                     <button onclick="window.location.reload()" class="btn" style="margin-top:1rem">Reintentar</button>
                 </div>
             `;
@@ -125,23 +125,26 @@ class DashboardManager {
                 </div>`;
             }
 
-            const confidencePercent = Math.round(pred.confidence * 100);
+            const confidencePercent = Math.max(0, Math.min(100, Math.round(Number(pred.confidence || 0) * 100)));
+            const safePredictionName = this._escapeHtml(predictionName);
+            const safeReason = this._escapeHtml(pred.reason || 'Sin explicación disponible.');
+            const safeSearchCount = Number.isFinite(Number(pred.searchCount)) ? Math.max(0, Number(pred.searchCount)) : 0;
 
             return `
             <div class="ai-card">
                 <div class="ai-header">
                     <div class="ai-title"><i class="${icon}"></i> ${title}</div>
                     <div style="color: #94a3b8; font-size: 0.75rem;">
-                        Basado en ${pred.searchCount || 0} búsquedas
+                        Basado en ${safeSearchCount} búsquedas
                     </div>
                 </div>
                 
                 <div class="ai-prediction">
-                    ${typeIcon} ${predictionName}
+                    ${typeIcon} ${safePredictionName}
                 </div>
                 
                 <div class="ai-reason">
-                    "${pred.reason}"
+                    "${safeReason}"
                 </div>
 
                 <div class="confidence-section" style="margin-top:auto;">
@@ -190,6 +193,15 @@ class DashboardManager {
             btn.disabled = false;
             btn.style.opacity = '1';
         }
+    }
+
+    _escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
 

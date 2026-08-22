@@ -1,3 +1,9 @@
+const escapeCourseHtml = value => window.escapeHtml
+    ? window.escapeHtml(value ?? '')
+    : String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[character]);
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (window.sessionManager) window.sessionManager.initialize();
 
@@ -43,7 +49,7 @@ async function loadCourseData(id) {
         console.error('Error loading course:', error);
         container.innerHTML = `<div class="error-state">
             <p>Error al cargar el curso. Por favor, intenta nuevamente.</p>
-            <p class="error-details" style="font-size: 0.8rem; color: #666;">${error.message}</p>
+            <p class="error-details" style="font-size: 0.8rem; color: #666;">${escapeCourseHtml(error.message)}</p>
             <a href="/" class="btn-primary">Volver al inicio</a>
         </div>`;
     }
@@ -156,7 +162,7 @@ function renderCourse(course, container) {
                 <div class="hero-content">
                     <div class="hero-identity">
                         <div class="hero-text">
-                            <h1 class="hero-title">${course.name}</h1>
+                            <h1 class="hero-title">${escapeCourseHtml(course.name)}</h1>
                         </div>
                     </div>
                 </div>

@@ -179,6 +179,19 @@ CREATE TABLE IF NOT EXISTS public.page_views (
     CONSTRAINT page_views_pkey PRIMARY KEY (id)
 );
 
+-- Table: public.payment_events
+CREATE TABLE IF NOT EXISTS public.payment_events (
+    payment_id TEXT PRIMARY KEY,
+    user_id UUID NOT NULL,
+    plan_id TEXT NOT NULL,
+    amount NUMERIC(12, 2) NOT NULL,
+    status TEXT DEFAULT 'processing'::text NOT NULL,
+    received_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    processed_at TIMESTAMPTZ,
+    error_message TEXT,
+    CONSTRAINT payment_events_status_check CHECK (status = ANY (ARRAY['processing'::text, 'processed'::text, 'failed'::text]))
+);
+
 -- Table: public.question_bank
 CREATE TABLE IF NOT EXISTS public.question_bank (
     id UUID DEFAULT gen_random_uuid() NOT NULL,
@@ -215,7 +228,47 @@ CREATE TABLE IF NOT EXISTS public.quiz_history (
     area_stats JSONB DEFAULT '{}'::jsonb,
     target VARCHAR(50),
     career VARCHAR(100),
+    source_session_id UUID,
     CONSTRAINT quiz_history_pkey PRIMARY KEY (id)
+);
+
+-- Tables: server-authoritative simulator sessions
+CREATE TABLE IF NOT EXISTS public.quiz_sessions (
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    user_id UUID,
+    domain VARCHAR(20) NOT NULL,
+    status VARCHAR(20) DEFAULT 'active' NOT NULL,
+    expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '24 hours') NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    completed_at TIMESTAMPTZ,
+    submitted_at TIMESTAMPTZ,
+    quiz_history_id UUID,
+    CONSTRAINT quiz_sessions_pkey PRIMARY KEY (id),
+    CONSTRAINT quiz_sessions_domain_check CHECK (domain IN ('medicine', 'education')),
+    CONSTRAINT quiz_sessions_status_check CHECK (status IN ('active', 'completed', 'submitted')),
+    CONSTRAINT quiz_sessions_history_id_fkey FOREIGN KEY (quiz_history_id) REFERENCES public.quiz_history(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.quiz_session_questions (
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    session_id UUID NOT NULL,
+    bank_question_id UUID,
+    position INTEGER NOT NULL,
+    public_payload JSONB NOT NULL,
+    answer_payload JSONB NOT NULL,
+    selected_option_index INTEGER,
+    is_correct BOOLEAN,
+    answered_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    CONSTRAINT quiz_session_questions_pkey PRIMARY KEY (id),
+    CONSTRAINT quiz_session_questions_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.quiz_sessions(id) ON DELETE CASCADE,
+    CONSTRAINT quiz_session_questions_position_unique UNIQUE (session_id, position),
+    CONSTRAINT quiz_session_questions_position_check CHECK (position >= 0),
+    CONSTRAINT quiz_session_questions_answer_consistency CHECK (
+        (selected_option_index IS NULL AND is_correct IS NULL AND answered_at IS NULL)
+        OR
+        (selected_option_index IS NOT NULL AND is_correct IS NOT NULL AND answered_at IS NOT NULL)
+    )
 );
 
 -- Table: public.resources
@@ -445,6 +498,12 @@ DO $$ BEGIN
 END $$;
 
 DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'quiz_sessions_user_id_fkey') THEN
+        ALTER TABLE public.quiz_sessions ADD CONSTRAINT quiz_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'search_history_user_id_fkey') THEN
         ALTER TABLE public.search_history ADD CONSTRAINT search_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
     END IF;
@@ -532,8 +591,11 @@ ALTER TABLE public.course_topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.decks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.page_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.question_bank ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quiz_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_session_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.search_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.topic_resources ENABLE ROW LEVEL SECURITY;
@@ -643,21 +705,14 @@ CREATE POLICY "Users manage own decks" ON public.decks
     USING ((auth.uid() = user_id))
 ;
 
+-- Question bank is intentionally not readable through PostgREST. The answer
+-- key (correct_option_index) is served only by protected server-side flows.
 DROP POLICY IF EXISTS "Public Read Question Bank" ON public.question_bank;
-CREATE POLICY "Public Read Question Bank" ON public.question_bank
-    AS PERMISSIVE
-    FOR SELECT
-    TO public
-    USING (true)
-;
-
 DROP POLICY IF EXISTS "Public Read Questions" ON public.question_bank;
-CREATE POLICY "Public Read Questions" ON public.question_bank
-    AS PERMISSIVE
-    FOR SELECT
-    TO authenticated
-    USING (true)
-;
+REVOKE SELECT ON TABLE public.question_bank FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.payment_events FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.quiz_sessions FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.quiz_session_questions FROM PUBLIC, anon, authenticated;
 
 DROP POLICY IF EXISTS "Users insert own history" ON public.quiz_history;
 CREATE POLICY "Users insert own history" ON public.quiz_history
@@ -1016,6 +1071,7 @@ CREATE INDEX idx_courses_name_trgm ON public.courses USING gin (f_unaccent((name
 CREATE INDEX idx_decks_public_category ON public.decks USING btree (is_public, category) WHERE (is_public = true);
 CREATE INDEX idx_decks_user_parent ON public.decks USING btree (user_id, parent_id, type);
 CREATE INDEX idx_page_views_entity ON public.page_views USING btree (entity_type, entity_id);
+CREATE INDEX idx_payment_events_user_id ON public.payment_events USING btree (user_id, received_at DESC);
 CREATE INDEX idx_qbank_domain ON public.question_bank USING btree (domain);
 CREATE INDEX idx_qbank_topic ON public.question_bank USING btree (topic);
 CREATE INDEX idx_question_bank_career ON public.question_bank USING btree (career);
@@ -1023,6 +1079,9 @@ CREATE INDEX idx_question_bank_created_at ON public.question_bank USING btree (c
 CREATE INDEX idx_question_bank_domain_topic_sub ON public.question_bank USING btree (domain, topic, subtopic);
 CREATE UNIQUE INDEX question_bank_question_hash_key ON public.question_bank USING btree (question_hash);
 CREATE INDEX idx_quiz_history_user_date ON public.quiz_history USING btree (user_id, created_at);
+CREATE UNIQUE INDEX quiz_history_source_session_unique ON public.quiz_history USING btree (source_session_id) WHERE (source_session_id IS NOT NULL);
+CREATE INDEX quiz_sessions_user_status_idx ON public.quiz_sessions USING btree (user_id, status, expires_at DESC);
+CREATE INDEX quiz_session_questions_session_idx ON public.quiz_session_questions USING btree (session_id, position);
 CREATE INDEX idx_resources_created_at ON public.resources USING btree (created_at DESC);
 CREATE INDEX idx_resources_type_domain_vis_created ON public.resources USING btree (resource_type, domain, visible, created_at DESC);
 CREATE UNIQUE INDEX resources_resource_id_key ON public.resources USING btree (resource_id);

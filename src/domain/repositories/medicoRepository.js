@@ -202,11 +202,6 @@ class MedicoRepository {
     }
 
     async saveQuizHistory(userId, quizData) {
-        const query = `
-            INSERT INTO quiz_history (user_id, topic, difficulty, score, total_questions, weak_points, area_stats, target, career)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id;
-        `;
         const totalQ = quizData.totalQuestions || quizData.total_questions || (quizData.questions ? quizData.questions.length : 10);
         const scoreInt = Math.round(Number(quizData.score) || 0);
         const finalTopic = quizData.topic || 'Multi-Área';
@@ -223,10 +218,34 @@ class MedicoRepository {
             quizData.target || 'SERUMS',
             quizData.career || null
         ];
+        let query = `
+            INSERT INTO quiz_history (user_id, topic, difficulty, score, total_questions, weak_points, area_stats, target, career)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, TRUE AS inserted;
+        `;
+        if (quizData.sourceSessionId) {
+            values.push(quizData.sourceSessionId);
+            query = `
+                WITH inserted_row AS (
+                    INSERT INTO quiz_history (
+                        user_id, topic, difficulty, score, total_questions, weak_points,
+                        area_stats, target, career, source_session_id
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    ON CONFLICT (source_session_id) WHERE source_session_id IS NOT NULL DO NOTHING
+                    RETURNING id
+                )
+                SELECT id, TRUE AS inserted FROM inserted_row
+                UNION ALL
+                SELECT id, FALSE AS inserted FROM quiz_history WHERE source_session_id = $10
+                LIMIT 1;
+            `;
+        }
         const res = await db.query(query, values);
         const quizHistoryId = res.rows[0].id;
+        const wasCreated = res.rows[0].inserted === true;
 
-        if (quizData.questions && Array.isArray(quizData.questions)) {
+        if (wasCreated && quizData.questions && Array.isArray(quizData.questions)) {
             for (const q of quizData.questions) {
                 if (q.id) {
                     try {
@@ -251,7 +270,7 @@ class MedicoRepository {
             }
         }
 
-        return quizHistoryId;
+        return { attemptId: quizHistoryId, wasCreated };
     }
 
     async getQuizEvolution(userId, target, limit, timeFilter = '', areas = null, career = null) {

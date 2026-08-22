@@ -13,42 +13,6 @@ class Server {
     }
 
     async setup() {
-        // ✅ AUTOMATIC CACHE BUSTING: Runs on startup to version JS and CSS files in all HTML pages
-        try {
-            console.log('🔄 Ejecutando Cache Busting Automático...');
-            const fs = require('fs');
-            const path = require('path');
-            const crypto = require('crypto');
-            
-            const publicPath = path.join(__dirname, '../../presentation/public');
-            const version = crypto.randomBytes(4).toString('hex');
-            
-            if (fs.existsSync(publicPath)) {
-                fs.readdirSync(publicPath).filter(f => f.endsWith('.html')).forEach(f => {
-                    const filePath = path.join(publicPath, f);
-                    // Asegurar que no esté marcado como de solo lectura
-                    try {
-                        fs.chmodSync(filePath, 0o666);
-                    } catch (e) {}
-
-                    let content = fs.readFileSync(filePath, 'utf8');
-                    
-                    // 1. Cache bust all local CSS files (href="css/..." or href="/css/...")
-                    const cssRegex = /(href="(?:\/)?css\/[^"]+\.css)(?:\?v=[^"]+)?(?=")/g;
-                    content = content.replace(cssRegex, `$1?v=${version}`);
-                    
-                    // 2. Cache bust all local JS files (src="js/..." or src="/js/...")
-                    const jsRegex = /(src="(?:\/)?js\/[^"]+\.js)(?:\?v=[^"]+)?(?=")/g;
-                    content = content.replace(jsRegex, `$1?v=${version}`);
-                    
-                    fs.writeFileSync(filePath, content, 'utf8');
-                });
-                console.log(`✅ Cache Busting Completado. Nueva versión de assets: ${version}`);
-            }
-        } catch (cacheError) {
-            console.warn('⚠️ No se pudo ejecutar el Cache Busting automático:', cacheError.message);
-        }
-
         this.setupGlobalErrorHandlers();
         await this.testDBConnection();
         this.configureMiddleware();
@@ -61,35 +25,11 @@ class Server {
             // ✅ CORRECCIÓN: Importar 'db' aquí para asegurar que .env se haya cargado.
             const db = require('../database/db');
 
-            // ✅ SANITIZACIÓN GLOBAL DE CREDENCIALES DE GOOGLE CLOUD
-            // Evita que rutas locales de Windows copiadas a producción (Render/Linux) causen fallos críticos ENOENT
-            let keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-            if (keyPath) {
-                const fs = require('fs');
-                const fileExists = fs.existsSync(keyPath);
-                if (!fileExists) {
-                    console.warn(`⚠️ [AuthSanitizer] La ruta GOOGLE_APPLICATION_CREDENTIALS (${keyPath}) es inválida o no existe en este servidor.`);
-                    const fallbackRootKey = path.join(__dirname, '../../../service-account-key.json');
-                    if (fs.existsSync(fallbackRootKey)) {
-                        console.log(`✅ [AuthSanitizer] Cargando archivo de credenciales de respaldo de la raíz: ${fallbackRootKey}`);
-                        process.env.GOOGLE_APPLICATION_CREDENTIALS = fallbackRootKey;
-                    } else {
-                        console.warn(`🚨 [AuthSanitizer] No se encontró service-account-key.json de respaldo. Limpiando variable para evitar fallos ENOENT.`);
-                        delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
-                    }
-                }
-            }
+            // Producción usa ADC; el archivo local solo se admite en desarrollo/test.
+            require('./googleCredentials').resolveGoogleAuthOptions('ServerAuth');
 
             // Realizar una consulta simple para verificar la conexión
             const client = await db.query('SELECT NOW()'); // query() ahora llama a getPool() internamente
-
-            // ✅ SOLUCIÓN DEFINITIVA: Asegurar que la extensión 'unaccent' exista.
-            // Esto garantiza que la función esté disponible para todas las conexiones del pool.
-            await db.query('CREATE EXTENSION IF NOT EXISTS "unaccent"');
-            console.log('🔧 Extensión "unaccent" verificada.');
-            // ✅ SOLUCIÓN CRÍTICA: Habilitar la extensión para búsquedas con tolerancia a errores (fuzzy search).
-            await db.query('CREATE EXTENSION IF NOT EXISTS "fuzzystrmatch"');
-            console.log('🔧 Extensión "fuzzystrmatch" (para Levenshtein) verificada.');
 
             // ✅ CORRECCIÓN: Ahora que db.query devuelve el objeto de resultado completo, volvemos a usar client.rows[0].now
             console.log('💾 PostgreSQL conectado exitosamente. Hora del servidor de BD:', client.rows[0].now);
@@ -121,12 +61,30 @@ class Server {
         this.app.set('trust proxy', 1);
         this.app.disable('x-powered-by');
 
-        // Basic security headers without a strict CSP, to avoid breaking OAuth/CDN flows.
+        // CSP inicia en report-only para medir compatibilidad con scripts inline/CDN.
         this.app.use((req, res, next) => {
             res.setHeader('X-Content-Type-Options', 'nosniff');
             res.setHeader('X-Frame-Options', 'SAMEORIGIN');
             res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
             res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
+            res.setHeader('Content-Security-Policy-Report-Only', [
+                "default-src 'self'",
+                "base-uri 'self'",
+                "object-src 'none'",
+                "frame-ancestors 'self'",
+                "form-action 'self' https://accounts.google.com",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+                "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+                "img-src 'self' data: blob: https:",
+                "connect-src 'self' https: wss:",
+                "media-src 'self' blob: https:",
+                "frame-src 'self' https://accounts.google.com https://*.google.com https://*.youtube.com https://www.youtube-nocookie.com",
+                "worker-src 'self' blob:"
+            ].join('; '));
+            if (process.env.NODE_ENV === 'production' && (req.secure || req.headers['x-forwarded-proto'] === 'https')) {
+                res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+            }
             next();
         });
 
@@ -159,23 +117,13 @@ class Server {
         }));
 
         // ✅ EXPRESS.JSON Y URLENCODED CON LÍMITE HOLGADO
-        this.app.use(express.json({
-            limit: '10mb',
-            verify: (req, res, buf) => {
-                req.rawBody = buf.toString();
-            }
-        }));
+        this.app.use(express.json({ limit: '10mb' }));
         this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-        // ✅ MIDDLEWARE DE LOG SIMPLIFICADO
+        // Logs de telemetría sin body, prompt, token ni rawBody.
         this.app.use((req, res, next) => {
             if (req.method === 'POST' && req.path === '/api/chat') {
-                console.log('📥 CHAT REQUEST:', {
-                    method: req.method,
-                    path: req.path,
-                    body: req.body,
-                    rawBody: req.rawBody
-                });
+                console.log('📥 CHAT REQUEST', { method: req.method, path: req.path });
             }
             next();
         });
@@ -257,7 +205,7 @@ class Server {
             'login', 'admin', 'chat', 'dashboard',
             'pricing', 'privacy', 'terms', 'quiz', 'course', 'career', 'category',
             'profile', 'deck-editor', 'flashcards', 'repaso', 'simulator-dashboard',
-            'simulators', 'resource', 'language-tutor', 'library', 'my-vocabulary'
+            'simulators', 'resource', 'library'
         ];
 
         pages.forEach(page => {

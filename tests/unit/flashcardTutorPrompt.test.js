@@ -15,7 +15,6 @@ describe('Flashcard Tutor Prompt Builder & Isolation', () => {
         expect(prompt).toContain('Derecho');
         expect(prompt).toContain('Medicina/Salud');
         expect(prompt).toContain('Educación');
-        expect(prompt).toContain('Idiomas');
         expect(prompt).toContain('Tecnología / Programación');
     });
 

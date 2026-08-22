@@ -84,7 +84,7 @@ describe('AdminAiService', () => {
 
 
 
-    describe('generateRAGQuestions - Non-Languages (Syllabus/Standard Flow)', () => {
+    describe('generateRAGQuestions - Standard RAG Flow', () => {
         it('should execute full RAG pipeline and handle refinement for standard domains like ASCENSO', async () => {
             db.query.mockResolvedValue({ rows: [] });
 

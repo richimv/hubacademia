@@ -9,6 +9,13 @@
 // GLOBAL: Lógica de Auto-Scroll para Carruseles
 window.carouselInterval = null;
 
+// Todos los valores provenientes del catálogo/administración pasan por este
+// escape antes de interpolarse en plantillas HTML.
+const safeHtmlValue = value => window.escapeHtml
+    ? window.escapeHtml(value ?? '')
+    : String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
 /**
  * Inicia el desplazamiento suave del carrusel.
  * @param {string} trackId - ID del contenedor.
@@ -137,6 +144,8 @@ function getIconForItem(name, type) {
 
 function createBrowseCardHTML(item, type) {
     const iconClass = getIconForItem(item.name, type);
+    const safeName = safeHtmlValue(item.name || 'Sin nombre');
+    const safeId = safeHtmlValue(item.id);
 
     // MEJORA: Card para Carreras con soporte de imagen TIPO POSTER
     if (type === 'career') {
@@ -144,12 +153,12 @@ function createBrowseCardHTML(item, type) {
         if (item.image_url) {
             const finalImage = window.resolveImageUrl(item.image_url);
             return `
-                <div class="browse-card career-card full-image-card" data-type="career" data-id="${item.id}" style="cursor: pointer;">
-                    <img src="${finalImage}" alt="${item.name}" class="browse-card-image-full" loading="lazy" decoding="async" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
+                <div class="browse-card career-card full-image-card" data-type="career" data-id="${safeId}" style="cursor: pointer;">
+                    <img src="${safeHtmlValue(finalImage)}" alt="${safeName}" class="browse-card-image-full" loading="lazy" decoding="async" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
                     
                     <div class="browse-card-overlay">
                         <div class="browse-card-content overlay-content">
-                            <h3 class="browse-card-title text-white" style="font-size: 1.25rem;">${item.name}</h3>
+                            <h3 class="browse-card-title text-white" style="font-size: 1.25rem;">${safeName}</h3>
                         </div>
                         <div class="browse-card-cta overlay-cta">
                             <span>Ver Cursos</span>
@@ -168,10 +177,10 @@ function createBrowseCardHTML(item, type) {
         `;
 
         return `
-            <div class="browse-card career-card" data-type="career" data-id="${item.id}" style="cursor: pointer;">
+            <div class="browse-card career-card" data-type="career" data-id="${safeId}" style="cursor: pointer;">
                 ${iconOrImage}
                 <div class="browse-card-content">
-                    <h3 class="browse-card-title">${item.name}</h3>
+                    <h3 class="browse-card-title">${safeName}</h3>
                 </div>
                 <div class="browse-card-cta">
                     <span>Ver Cursos</span>
@@ -183,12 +192,13 @@ function createBrowseCardHTML(item, type) {
 
     // Card para Cursos (DISEÑO TIPO POSTER/NETFLIX SI HAY IMAGEN)
     if (type === 'course') {
-        const codeHTML = item.code ? `<span class="course-card-code">${item.code}</span>` : '';
+        const safeCode = safeHtmlValue(item.code || '');
+        const codeHTML = item.code ? `<span class="course-card-code">${safeCode}</span>` : '';
 
         const actionButtons = `
             <div class="card-actions">
-                <button class="action-btn save-btn js-library-btn" data-id="${item.id}" data-type="course" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
-                <button class="action-btn fav-btn js-library-btn" data-id="${item.id}" data-type="course" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
+                <button class="action-btn save-btn js-library-btn" data-id="${safeId}" data-type="course" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
+                <button class="action-btn fav-btn js-library-btn" data-id="${safeId}" data-type="course" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
             </div>
         `;
 
@@ -196,14 +206,14 @@ function createBrowseCardHTML(item, type) {
         if (item.image_url) {
             const finalImage = window.resolveImageUrl(item.image_url);
             return `
-                <div class="browse-card course-card full-image-card" data-type="course" data-id="${item.id}" style="cursor: pointer;">
-                    <img src="${finalImage}" alt="${item.name}" class="browse-card-image-full" loading="lazy" decoding="async" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
+                <div class="browse-card course-card full-image-card" data-type="course" data-id="${safeId}" style="cursor: pointer;">
+                    <img src="${safeHtmlValue(finalImage)}" alt="${safeName}" class="browse-card-image-full" loading="lazy" decoding="async" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
                     
                     ${actionButtons}
 
                     <div class="browse-card-overlay">
                          <div class="browse-card-content overlay-content">
-                            <h3 class="browse-card-title text-white">${item.name}</h3>
+                            <h3 class="browse-card-title text-white">${safeName}</h3>
                             ${codeHTML}
                          </div>
                          <div class="browse-card-cta overlay-cta">
@@ -223,12 +233,12 @@ function createBrowseCardHTML(item, type) {
         `;
 
         return `
-            <div class="browse-card course-card" data-type="course" data-id="${item.id}" style="cursor: pointer;">
+            <div class="browse-card course-card" data-type="course" data-id="${safeId}" style="cursor: pointer;">
                 ${actionButtons}
                 ${iconOrImage}
                 <div class="browse-card-content">
                     <div class="course-card-header">
-                        <h3 class="browse-card-title">${item.name}</h3>
+                        <h3 class="browse-card-title">${safeName}</h3>
                         ${codeHTML}
                     </div>
                 </div>
@@ -246,7 +256,7 @@ function createBrowseCardHTML(item, type) {
                 <i class="fas ${iconClass}"></i>
             </div>
             <div class="browse-card-content">
-                <h3 class="browse-card-title">${item.name}</h3>
+                <h3 class="browse-card-title">${safeName}</h3>
             </div>
         `;
     }
@@ -287,20 +297,24 @@ function createFilterSidebarHTML(careers) {
 function createSearchResultCardHTML(course) {
     const careers = course.careerIds || [];
     const iconClass = getIconForItem(course.name, 'course');
-    const codeHTML = course.code ? `<span class="course-card-code">${course.code}</span>` : '';
+    const safeName = safeHtmlValue(course.name || 'Curso sin nombre');
+    const safeId = safeHtmlValue(course.id);
+    const safeCode = safeHtmlValue(course.code || '');
+    const safeDescription = safeHtmlValue(course.description || '');
+    const codeHTML = course.code ? `<span class="course-card-code">${safeCode}</span>` : '';
 
     return `
-        <div class="browse-card course-card" style="cursor: pointer;" data-type="course" data-id="${course.id}">
+        <div class="browse-card course-card" style="cursor: pointer;" data-type="course" data-id="${safeId}">
             <div class="card-bookmark-ribbon"><i class="fas fa-bookmark"></i></div>
             <div class="browse-card-icon">
                 <i class="fas ${iconClass}"></i>
             </div>
             <div class="browse-card-content">
                 <div class="course-card-header">
-                    <h3 class="browse-card-title">${course.name}</h3>
+                    <h3 class="browse-card-title">${safeName}</h3>
                     ${codeHTML}
                 </div>
-                <p class="course-card-description" style="display:none;">${course.description || ''}</p>
+                <p class="course-card-description" style="display:none;">${safeDescription}</p>
             </div>
             <div class="browse-card-cta">
                 <span>Ver detalles</span>
@@ -597,6 +611,11 @@ function createUnifiedResourceCardHTML(item) {
     const url = item.url || '#';
     // Homologación de tipos para cubrir libros, artículos, normas, etc.
     const type = item.type || item.resource_type || 'other';
+    const safeTitle = safeHtmlValue(title);
+    const safeAuthor = safeHtmlValue(author);
+    const safeType = safeHtmlValue(type);
+    const safeId = safeHtmlValue(item.id);
+    const safeSize = safeHtmlValue(item.size || '');
 
     // 2. Registrar URL de forma segura en UI Manager para accesos protegidos
     if (url && url !== '#') {
@@ -659,7 +678,7 @@ function createUnifiedResourceCardHTML(item) {
     const displayImage = window.resolveImageUrl(rawImage, type);
 
     // Siempre renderizamos la imagen (ya sea la del recurso o la artística por defecto)
-    let visualHTML = `<img src="${displayImage}" alt="${title}" class="urc-image" loading="lazy" decoding="async" onerror="this.src='${window.getDefaultResourceImage(type)}'">`;
+    let visualHTML = `<img src="${safeHtmlValue(displayImage)}" alt="${safeTitle}" class="urc-image" loading="lazy" decoding="async" onerror="this.src='${safeHtmlValue(window.getDefaultResourceImage(type))}'">`;
 
     // El fallback de icono ahora es solo decorativo o para estados de error crítico,
     // pero por defecto lo mantenemos oculto ya que la imagen siempre debería cubrir el fondo.
@@ -671,20 +690,20 @@ function createUnifiedResourceCardHTML(item) {
 
     // 6. Ensamblaje del Componente Universal
     return `
-        <div class="unified-resource-card ${displayImage ? 'has-bg-image' : ''}" data-resource-type="${type}">
+        <div class="unified-resource-card ${displayImage ? 'has-bg-image' : ''}" data-resource-type="${safeType}" data-resource-id="${safeId}" data-is-premium="${isPremium}" data-open-directly="${openDirectly}">
             
             <!-- Zona de Acciones Flotantes (Librería) -->
             <div class="urc-library-actions">
-                <button class="urc-action-btn js-library-btn action-save" data-id="${item.id}" data-type="${type === 'course' ? 'course' : 'book'}" data-action="save" title="Guardar">
+                <button class="urc-action-btn js-library-btn action-save" data-id="${safeId}" data-type="${type === 'course' ? 'course' : 'book'}" data-action="save" title="Guardar">
                     <i class="far fa-bookmark"></i>
                 </button>
-                <button class="urc-action-btn js-library-btn action-fav" data-id="${item.id}" data-type="${type === 'course' ? 'course' : 'book'}" data-action="favorite" title="Favorito">
+                <button class="urc-action-btn js-library-btn action-fav" data-id="${safeId}" data-type="${type === 'course' ? 'course' : 'book'}" data-action="favorite" title="Favorito">
                     <i class="far fa-heart"></i>
                 </button>
             </div>
 
             <!-- Zona Superior: Visual (Clicable) -->
-            <div class="urc-visual-zone" role="button" tabindex="0" onclick="window.uiManager.unlockAndNavigate('${item.id}', '${type}', ${isPremium}, ${openDirectly})" title="Ver detalles de ${title}">
+            <div class="urc-visual-zone" role="button" tabindex="0" title="Ver detalles de ${safeTitle}">
                 ${visualHTML}
                 ${displayImage ? fallbackHTML : ''}
                 
@@ -695,16 +714,16 @@ function createUnifiedResourceCardHTML(item) {
             </div>
 
             <!-- Zona Inferior: Información (Clicable) -->
-            <div class="urc-info-zone" role="button" tabindex="0" onclick="window.uiManager.unlockAndNavigate('${item.id}', '${type}', ${isPremium}, ${openDirectly})" title="Ver detalles de ${title}">
+            <div class="urc-info-zone" role="button" tabindex="0" title="Ver detalles de ${safeTitle}">
                 <div class="urc-meta">
-                    ${item.size ? `<span class="urc-size"><i class="fas fa-hdd"></i> ${item.size}</span>` : ''}
+                    ${item.size ? `<span class="urc-size"><i class="fas fa-hdd"></i> ${safeSize}</span>` : ''}
                 </div>
                 
-                <h4 class="urc-title" title="${title}">${title}</h4>
+                <h4 class="urc-title" title="${safeTitle}">${safeTitle}</h4>
                 
                 ${author ? `
-                    <div class="urc-author" title="${author}">
-                        <i class="fas fa-user-edit"></i> ${author}
+                    <div class="urc-author" title="${safeAuthor}">
+                        <i class="fas fa-user-edit"></i> ${safeAuthor}
                     </div>
                 ` : ''}
             </div>
@@ -1111,3 +1130,28 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
         </div>
     `;
 }
+
+// Navegación de tarjetas sin inline onclick. Los datos viajan en data-* y se
+// convierten a valores controlados antes de llegar al UI manager.
+document.addEventListener('click', event => {
+    const zone = event.target.closest('.urc-visual-zone, .urc-info-zone');
+    if (!zone || event.target.closest('.js-library-btn')) return;
+
+    const card = zone.closest('.unified-resource-card');
+    if (!card || !window.uiManager?.unlockAndNavigate) return;
+
+    window.uiManager.unlockAndNavigate(
+        card.dataset.resourceId,
+        card.dataset.resourceType || 'other',
+        card.dataset.isPremium === 'true',
+        card.dataset.openDirectly === 'true'
+    );
+});
+
+document.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const zone = event.target.closest('.urc-visual-zone, .urc-info-zone');
+    if (!zone) return;
+    event.preventDefault();
+    zone.click();
+});

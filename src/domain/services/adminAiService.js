@@ -1,6 +1,7 @@
 const { VertexAI } = require('@google-cloud/vertexai');
 const QuestionRagService = require('./questionRagService');
 const genPrompts = require('../prompts/generationPrompts');
+const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 
 /**
  * 👑 ADMIN AI SERVICE (V7.1): Generación de Alta Fidelidad para Banco Oficial.
@@ -9,24 +10,7 @@ const genPrompts = require('../prompts/generationPrompts');
  */
 class AdminAiService {
     constructor() {
-        // Sanitizar GOOGLE_APPLICATION_CREDENTIALS si es una ruta local de Windows o no existe
-        const fs = require('fs');
-        const path = require('path');
-        let keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-        if (keyPath) {
-            const fileExists = fs.existsSync(keyPath);
-            if (!fileExists) {
-                console.warn(`⚠️ [VertexAuth] La ruta GOOGLE_APPLICATION_CREDENTIALS (${keyPath}) es inválida o no existe en este entorno.`);
-                const fallbackRootKey = path.join(__dirname, '../../../service-account-key.json');
-                if (fs.existsSync(fallbackRootKey)) {
-                    console.log(`✅ [VertexAuth] Usando archivo de credenciales de respaldo: ${fallbackRootKey}`);
-                    process.env.GOOGLE_APPLICATION_CREDENTIALS = fallbackRootKey;
-                } else {
-                    console.warn(`🚨 [VertexAuth] No se encontró service-account-key.json de respaldo. Limpiando variable para evitar fallos ENOENT.`);
-                    delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
-                }
-            }
-        }
+        resolveGoogleAuthOptions('VertexAuth');
 
         const project = process.env.GOOGLE_CLOUD_PROJECT;
         const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';

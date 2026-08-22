@@ -69,19 +69,6 @@
     --accent: #10b981;
     --accent-rgb: 16, 185, 129;
 }
-.sim-card.card-lang-exam {
-    --accent: #a855f7;
-    --accent-rgb: 168, 85, 247;
-}
-.sim-card.card-lang-chat {
-    --accent: #7c3aed;
-    --accent-rgb: 124, 58, 237;
-}
-.sim-card.card-lang-vocab {
-    --accent: #10b981;
-    --accent-rgb: 16, 185, 129;
-}
-
 .sim-card {
     position: relative;
     padding: 2rem 1.75rem;

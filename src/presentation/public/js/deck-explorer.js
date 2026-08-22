@@ -183,7 +183,16 @@ class DeckExplorer {
             ? RepasoManager.renderWhiteIcon(deck.icon, 'fas fa-folder') 
             : `<i class="${deck.icon || 'fas fa-folder'}" style="color:#ffffff !important;"></i>`;
             
-        label.innerHTML = `<span class="tree-icon-wrapper" style="margin-right:8px; width:20px; text-align:center; flex-shrink:0; color:inherit;">${displayIcon}</span> <span class="tree-text-label" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:inherit;">${deck.name}</span>`;
+        const iconWrapper = document.createElement('span');
+        iconWrapper.className = 'tree-icon-wrapper';
+        iconWrapper.style.cssText = 'margin-right:8px; width:20px; text-align:center; flex-shrink:0; color:inherit;';
+        iconWrapper.innerHTML = displayIcon;
+
+        const textLabel = document.createElement('span');
+        textLabel.className = 'tree-text-label';
+        textLabel.style.cssText = 'white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:inherit;';
+        textLabel.textContent = String(deck.name || 'Mazo sin nombre');
+        label.append(iconWrapper, textLabel);
 
         // Click Action -> Set Active & Load View
         content.onclick = () => {
@@ -279,7 +288,6 @@ class DeckExplorer {
         { fa: 'fas fa-book-open', color: '#2dd4bf', label: 'Libro' },
         { fa: 'fas fa-brain', color: '#f472b6', label: 'Cerebro' },
         { fa: 'fas fa-stethoscope', color: '#22d3ee', label: 'Medicina' },
-        { fa: 'fas fa-comments', color: '#a78bfa', label: 'Idiomas' },
         { fa: 'fas fa-lightbulb', color: '#fbbf24', label: 'Idea' },
         { fa: 'fas fa-graduation-cap', color: '#818cf8', label: 'Estudio' },
         { fa: 'fas fa-microscope', color: '#c084fc', label: 'Ciencia' },

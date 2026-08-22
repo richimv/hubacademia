@@ -41,22 +41,20 @@ class AuthController {
      * Endpoint para sincronización desde el frontend tras login con Google
      */
     async syncUser(req, res) {
-        const { email, name, id } = req.body;
-
-        if (!email || !id) {
-            return res.status(400).json({ error: 'Faltan datos requeridos (email, id).' });
+        const identity = req.authIdentity;
+        if (!identity || !identity.id || !identity.email) {
+            return res.status(401).json({ error: 'Identidad Supabase no verificada.' });
         }
 
+        const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 120) : undefined;
+
         try {
-            const user = await this.authService.syncGoogleUser({ email, name, id });
-            res.status(200).json({ message: 'Sincronización exitosa', user });
+            const user = await this.authService.syncGoogleUser({ identity, name });
+            const { passwordHash, ...safeUser } = user;
+            res.status(200).json({ message: 'Sincronización exitosa', user: safeUser });
         } catch (error) {
             console.error('❌ Error en syncUser:', error);
-            // Devolver el mensaje real para poder arreglar el 500 inmediatamente
-            res.status(500).json({ 
-                error: 'Error al sincronizar usuario.', 
-                details: error.message 
-            });
+            res.status(500).json({ error: 'Error al sincronizar usuario.' });
         }
     }
 

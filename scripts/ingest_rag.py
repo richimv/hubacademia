@@ -55,9 +55,6 @@ def extract_metadata(file_path):
         namespace = "medicine"
     elif "educacion" in parent_folder or "docente" in parent_folder or "minedu" in parent_folder:
         namespace = "education"
-    elif "idiomas" in parent_folder or "english" in parent_folder:
-        namespace = "languages"
-
     # Título limpio y año
     year_match = re.search(r'(20\d{2})', filename)
     year = year_match.group(1) if year_match else "Desconocido"

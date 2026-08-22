@@ -112,15 +112,14 @@ A continuación se detalla el significado estratégico de cada métrica visible 
     -   *Propósito:* Cálculo basado en suscripciones activas por el costo del Plan Avanzado.
     -   *Valor:* Visibilidad financiera rápida para medir la rentabilidad del proyecto sin necesidad de entrar a plataformas de pago externas.
 
-## 7. Diagnósticos Inteligentes y Fallback Estático Multi-Módulo
+## 7. Diagnósticos Inteligentes y Fallback Estático por Dominio
 
 El sistema de diagnósticos profundos asistidos por IA está estructurado para optimizar costos de API (Vertex AI) y garantizar una experiencia de usuario fluida sin paywalls intrusivos.
 
-### A. Soporte Multi-Módulo
+### A. Dominios soportados
 Los diagnósticos se adaptan dinámicamente al contexto activo del estudiante:
 *   **MEDICINA (Default):** Evalúa áreas clínicas clave como Ginecología, Pediatría, Medicina Interna, etc.
 *   **EDUCACION:** Evalúa competencias pedagógicas y de escala magisterial (Comprensión Lectora, Razonamiento Lógico, Convivencia Escolar, etc.).
-*   **IDIOMAS:** Evalúa las 4 habilidades del MCER (Reading, Listening, Vocabulary, Grammar) y proporciona equivalencias estimadas para exámenes oficiales (IELTS, TOEFL, CELI, CILS).
 
 ### B. Flujo de Control de Cuotas y Fallback
 Para evitar el consumo desmedido de cuotas de LLM y prevenir errores 403 blocks visibles al usuario:
@@ -143,7 +142,6 @@ El gráfico lineal de evolución (`evolutionChart`) ha sido repotenciado para tr
 ### B. Gráfico de Dona de Distribución por Temas
 Ubicado de manera responsiva a la derecha del gráfico lineal, el nuevo gráfico circular (`topicDoughnutChart`) muestra la distribución volumétrica de preguntas respondidas por el alumno:
 *   **MEDICINA (SERUMS):** Agrupa y muestra exclusivamente los 5 subtemas del **Grupo D (Salud Pública y Gestión)**: *Salud Pública*, *Cuidado Integral de Salud*, *Ética e Interculturalidad*, *Investigación* y *Gestión de Servicios de Salud*.
-*   **IDIOMAS:** Muestra los 4 subtemas transversales del módulo: *Grammar & Use of English*, *Vocabulary & Context*, *Reading Comprehension* y *Listening Comprehension*.
 *   **EDUCACION:** Consolida la sumatoria de preguntas agrupadas bajo los 4 ejes principales de la especialidad: *Enfoques y Principios del CNEB*, *Teorías y Procesos del Aprendizaje*, *Planificación y Evaluación* y *Clima Escolar e Inclusión*.
 *   **Diseño Limpio:** El gráfico no pinta nombres en los segmentos del lienzo, sino a través de una leyenda de colores y valores numéricos + porcentajes. El nombre de cada tema/grupo solo se expone al posar el cursor encima (hover) mediante el atributo `title` nativo y la interacción con tooltips.
 

@@ -13,29 +13,245 @@
     <!-- CSS Moderno (Glassmorphism) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Centralized Design System Tokens -->
-    <link rel="stylesheet" href="/css/theme.css?v=725839fb">
-    <link rel="stylesheet" href="/css/quiz.css?v=725839fb">
-    <link rel="stylesheet" href="/css/modal.css?v=725839fb">
-    <link rel="stylesheet" href="/css/components.css?v=725839fb">
-    <link rel="stylesheet" href="/css/tutor.css?v=725839fb">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=725839fb">
-    <script src="/js/config.js?v=725839fb"></script>
-    <script src="/js/utils/themeManager.js?v=725839fb"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=4dfb61f234f8">
+    <link rel="stylesheet" href="/css/quiz.css?v=4dfb61f234f8">
+    <link rel="stylesheet" href="/css/modal.css?v=4dfb61f234f8">
+    <link rel="stylesheet" href="/css/components.css?v=4dfb61f234f8">
+    <link rel="stylesheet" href="/css/tutor.css?v=4dfb61f234f8">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=4dfb61f234f8">
+    <script src="/js/config.js?v=4dfb61f234f8"></script>
+    <script src="/js/utils/themeManager.js?v=4dfb61f234f8"></script>
+
+    <!-- Critical Loading Screen CSS (Inmune a problemas de caché del navegador) -->
+    <style>
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 1.5rem;
+            opacity: 1;
+            visibility: visible;
+            box-sizing: border-box;
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .loading-overlay.hidden {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+        .loading-card {
+            background: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 2.75rem 2.25rem 2.25rem;
+            text-align: center;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+            animation: loadingCardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .loading-card-glow {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 240px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, transparent 70%);
+            filter: blur(30px);
+            pointer-events: none;
+            opacity: 0.85;
+        }
+        @keyframes loadingCardEnter {
+            from { opacity: 0; transform: scale(0.94) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .loading-spinner-box {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .spinner-orbital-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 3px solid rgba(59, 130, 246, 0.12);
+            border-top-color: #3b82f6;
+            border-right-color: #60a5fa;
+            animation: spinOrbital 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+        .spinner-orbital-ring.ring-secondary {
+            inset: 7px;
+            border: 2px dashed rgba(59, 130, 246, 0.25);
+            border-bottom-color: #3b82f6;
+            animation: spinOrbitalReverse 2.4s linear infinite;
+        }
+        .spinner-center-icon {
+            font-size: 1.65rem;
+            color: #3b82f6;
+            filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.5));
+            animation: pulseIcon 2s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        @keyframes spinOrbital { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spinOrbitalReverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes pulseIcon { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.14); opacity: 1; } }
+        .loading-mode-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem 0.95rem;
+            border-radius: 50px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #60a5fa;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 1.15rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .loading-mode-pill i { font-size: 0.75rem; }
+        .loading-title {
+            color: #f8fafc;
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem 0;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+        }
+        .loading-subtitle {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0 0 1.5rem 0;
+        }
+        .loading-progress-track {
+            width: 100%;
+            max-width: 240px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            margin: 0 auto 1.75rem;
+            overflow: hidden;
+            position: relative;
+        }
+        .loading-progress-bar {
+            position: absolute;
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(90deg, transparent, #3b82f6, #8b5cf6, transparent);
+            border-radius: 999px;
+            animation: loadingIndeterminate 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        @keyframes loadingIndeterminate { 0% { left: -50%; } 100% { left: 100%; } }
+        .loading-tip-card {
+            background: #121212;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.25rem 1.35rem;
+            text-align: left;
+            position: relative;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        .tip-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .tip-bulb-icon { color: #f59e0b; font-size: 0.9rem; }
+        .tip-card-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #60a5fa;
+        }
+        .loading-tip-text {
+            font-size: 0.9rem;
+            line-height: 1.55;
+            color: #cbd5e1;
+            margin: 0;
+            transition: opacity 0.35s ease;
+        }
+        @media (max-width: 640px) {
+            .loading-card { padding: 2.25rem 1.25rem 1.75rem; border-radius: 20px; }
+            .loading-spinner-box { width: 70px; height: 70px; margin-bottom: 1.25rem; }
+            .spinner-center-icon { font-size: 1.35rem; }
+            .loading-title { font-size: 1.3rem; }
+            .loading-subtitle { font-size: 0.88rem; margin-bottom: 1.25rem; }
+            .loading-progress-track { margin-bottom: 1.5rem; }
+            .loading-tip-card { padding: 1rem 1.15rem; }
+            .loading-tip-text { font-size: 0.85rem; }
+        }
+        [data-theme="light"] .loading-overlay { background: rgba(241, 245, 249, 0.85); }
+        [data-theme="light"] .loading-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04); }
+        [data-theme="light"] .loading-title { color: #0f172a; }
+        [data-theme="light"] .loading-subtitle { color: #475569; }
+        [data-theme="light"] .loading-tip-card { background: #f8fafc; border-color: #e2e8f0; }
+        [data-theme="light"] .loading-tip-text { color: #334155; }
+        [data-theme="light"] .loading-progress-track { background: #e2e8f0; }
+    </style>
 </head>
 
 <body class="quiz-body">
 
-    <!-- Pantalla de Carga (Glassmorphism UI) -->
-    <div id="loadingOverlay" class="loading-overlay hidden">
+    <!-- Pantalla de Carga Profesional (Glassmorphism & Theme Aware) -->
+    <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-card">
-            <div class="premium-spinner"></div>
-            <h2 id="loadingTitle" class="loading-title">Preparando simulacro...</h2>
-            <p id="loadingSubtitle" class="loading-subtitle" style="margin-bottom: 2.5rem;">Consultando fuentes oficiales y configurando preguntas...</p>
+            <!-- Glow ambiental superior -->
+            <div class="loading-card-glow"></div>
             
-            <!-- Tip Box Dinámico -->
-            <div class="tip-box" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 1.5rem; border: 1px dashed rgba(255,255,255,0.1); margin: 0 auto; max-width: 320px;">
-                <p style="color: #3b82f6; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">¿Sabías que?</p>
-                <p id="loadingTip" style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5; transition: opacity 0.5s ease; opacity: 0;">Cargando tips de estudio...</p>
+            <!-- Spinner Orbital con Icono Dinámico -->
+            <div class="loading-spinner-box">
+                <div class="spinner-orbital-ring"></div>
+                <div class="spinner-orbital-ring ring-secondary"></div>
+                <div class="spinner-center-icon">
+                    <i id="loadingIcon" class="fas fa-brain"></i>
+                </div>
+            </div>
+
+            <!-- Mode & Context Pill Badge -->
+            <div id="loadingModeBadge" class="loading-mode-pill">
+                <i class="fas fa-bolt-lightning"></i>
+                <span id="loadingModeText">Simulacro Interactivo</span>
+            </div>
+
+            <!-- Título y Subtítulo Dinámico -->
+            <h2 id="loadingTitle" class="loading-title">Preparando simulacro...</h2>
+            <p id="loadingSubtitle" class="loading-subtitle">Consultando banco oficial y estructurando preguntas...</p>
+
+            <!-- Barra de Progreso Indeterminada -->
+            <div class="loading-progress-track">
+                <div class="loading-progress-bar"></div>
+            </div>
+
+            <!-- Tip Box Dinámico con Animación Suave -->
+            <div class="loading-tip-card">
+                <div class="tip-card-header">
+                    <i class="fas fa-lightbulb tip-bulb-icon"></i>
+                    <span class="tip-card-tag">Consejo de Estudio</span>
+                </div>
+                <p id="loadingTip" class="loading-tip-text">Cargando tips de estudio...</p>
             </div>
         </div>
     </div>
@@ -101,7 +317,7 @@
         <div id="reviewContainer" class="review-container" style="display: none;">
             <div class="review-header">
                 <h2><i class="fas fa-clipboard-check"></i> Corrección de Simulacro</h2>
-                <button id="btn-top-exit" class="btn-top-exit"><i class="fas fa-times"></i> Salir</button>
+                <button id="btn-review-exit" class="btn-top-exit" type="button"><i class="fas fa-times"></i> Salir</button>
             </div>
             <div id="reviewFeed" class="review-feed">
                 <!-- Tarjetas inyectadas por JS -->
@@ -155,20 +371,20 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=725839fb"></script>
+    <script src="/js/config.js?v=4dfb61f234f8"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=725839fb"></script>
-    <script src="/js/services/networkService.js?v=725839fb"></script>
-    <script src="/js/services/authApiService.js?v=725839fb"></script>
-    <script src="/js/services/analyticsApiService.js?v=725839fb"></script>
-    <script src="/js/sessionManager.js?v=725839fb"></script>
-    <script src="/js/ui/components.js?v=725839fb"></script>
-    <script src="/js/ui/confirmationModal.js?v=725839fb"></script>
-    <script src="/js/ui/uiManager.js?v=725839fb"></script>
-    <script src="/js/app.js?v=725839fb"></script>
-    <script src="/js/quiz-tutor.js?v=725839fb"></script>
-    <script type="module" src="/js/quiz.js?v=725839fb"></script>
+    <script src="/js/utils/markdown-renderer.js?v=4dfb61f234f8"></script>
+    <script src="/js/services/networkService.js?v=4dfb61f234f8"></script>
+    <script src="/js/services/authApiService.js?v=4dfb61f234f8"></script>
+    <script src="/js/services/analyticsApiService.js?v=4dfb61f234f8"></script>
+    <script src="/js/sessionManager.js?v=4dfb61f234f8"></script>
+    <script src="/js/ui/components.js?v=4dfb61f234f8"></script>
+    <script src="/js/ui/confirmationModal.js?v=4dfb61f234f8"></script>
+    <script src="/js/ui/uiManager.js?v=4dfb61f234f8"></script>
+    <script src="/js/app.js?v=4dfb61f234f8"></script>
+    <script src="/js/quiz-tutor.js?v=4dfb61f234f8"></script>
+    <script type="module" src="/js/quiz.js?v=4dfb61f234f8"></script>
 </body>
 
 </html>

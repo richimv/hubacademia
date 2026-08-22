@@ -14,7 +14,8 @@ const state = {
     topic: '',
     maxQuestions: 20, // 🎯 Study Mode Limit
     isLoadingBatch: false,
-    quizId: null // ✅ NUEVO: ID único de sesión para evitar colisiones en localStorage
+    quizId: null, // ✅ NUEVO: ID único de sesión para evitar colisiones en localStorage
+    quizSessionId: null // ✅ Identificador de sesión de simulador
 };
 
 // Exponer estado para diagnóstico
@@ -41,39 +42,49 @@ function getStorageKey() {
     return `simulator_active_session_${userId}`;
 }
 
-// 💡 TIPS DINÁMICOS PARA LA ESPERA (Evitar aburrimiento)
+// 💡 TIPS DINÁMICOS Y RECURSOS DE CARGA POR ÁREA
 const LOADING_RESOURCES = {
     'MEDICINA': {
-        title: 'Preparando tu Entrenamiento Médico',
-        subtitle: 'Sincronizando con Biblioteca Médica...',
+        title: 'Preparando Simulacro de Salud',
+        subtitle: 'Consultando especificaciones oficiales y casuística...',
+        icon: 'fa-stethoscope',
         tips: [
-            "El lavado de manos es la medida más costo-efectiva en salud pública.",
-            "En el SERUMS, la gestión de la cadena de frío es crítica para el éxito del PAI.",
-            "TIP: La norma técnica de salud establece que los EESS I-1 no cuentan con laboratorio.",
-            "Dato: El Perú tiene 12 Determinantes Sociales de la Salud según el modelo de la OMS.",
-            "Recuerda: El consentimiento informado es un derecho fundamental del paciente.",
-            "Tip Rápido: Los indicadores de impacto evalúan el cambio en el estado de salud a largo plazo."
+            "El lavado de manos clínico es la medida más costo-efectiva para prevenir infecciones intrahospitalarias.",
+            "En el SERUMS, la cadena de frío y el registro oportuno garantizan la efectividad del esquema nacional de vacunación.",
+            "La Norma Técnica de Salud categoriza a los EESS I-1 para atención ambulatoria y actividades de prevención comunitaria.",
+            "El consentimiento informado es un derecho fundamental del paciente en todo procedimiento clínico.",
+            "En emergencias hipertensivas, la meta es reducir la PAM no más del 20-25% durante la primera hora de estabilización.",
+            "Los determinantes sociales de la salud impactan de manera directa en los indicadores epidemiológicos a largo plazo.",
+            "En atención primaria, la anamnesis estructurada y el examen físico orientado definen el 85% de la orientación diagnóstica."
         ]
     },
     'EDUCACION': {
-        title: 'Preparando tu Entrenamiento Magisterial',
-        subtitle: 'Analizando Casuística Pedagógica...',
+        title: 'Preparando Entrenamiento Magisterial',
+        subtitle: 'Analizando casuística pedagógica y rúbricas CNEB...',
+        icon: 'fa-chalkboard-user',
         tips: [
-            "La retroalimentación descriptiva es la más efectiva para el aprendizaje autónomo.",
-            "El andamiaje pedagógico ayuda al estudiante a transitar a su Zona de Desarrollo Próximo.",
-            "Dato: El CNEB se basa en un enfoque por competencias y un perfil de egreso nacional.",
-            "Tip: En casos de conflicto en el aula, prioriza siempre la mediación y el diálogo.",
-            "Sabías que: El error constructivo es una oportunidad valiosa de aprendizaje según el MINEDU.",
-            "Clave: La evaluación formativa busca regular el aprendizaje, no solo calificarlo."
+            "La retroalimentación por descubrimiento o reflexión es la más potente para consolidar el aprendizaje autónomo.",
+            "El andamiaje pedagógico acompaña al estudiante en su Zona de Desarrollo Próximo hacia el logro de competencias.",
+            "El CNEB evalúa mediante estándares y criterios claros, orientados a la mejora continua y no a la simple calificación.",
+            "En situaciones de conflicto escolar, prioriza siempre la mediación reflexiva, la empatía y los acuerdos democráticos.",
+            "El error constructivo es una oportunidad didáctica valiosa para que los estudiantes autorregulen su razonamiento.",
+            "El Diseño Universal para el Aprendizaje (DUA) garantiza accesibilidad, participación y progreso para todos los estudiantes.",
+            "El conflicto cognitivo se produce cuando los saberes previos entran en disonancia con un nuevo reto pedagógico."
         ]
     }
 };
+
+let tipInterval = null;
 
 // Elementos DOM
 const elements = {
     loadingOverlay: document.getElementById('loadingOverlay'),
     loadingTitle: document.getElementById('loadingTitle'),
     loadingSubtitle: document.getElementById('loadingSubtitle'),
+    loadingIcon: document.getElementById('loadingIcon'),
+    loadingModeBadge: document.getElementById('loadingModeBadge'),
+    loadingModeText: document.getElementById('loadingModeText'),
+    loadingTip: document.getElementById('loadingTip'),
     questionText: document.getElementById('questionText'),
     optionsGrid: document.getElementById('optionsGrid'),
     // Header Progress
@@ -92,6 +103,86 @@ const elements = {
     explanationImageContainer: document.getElementById('explanationImageContainer'),
     explanationImage: document.getElementById('explanationImage')
 };
+
+/**
+ * 🛠️ Muestra la pantalla de carga profesional con animaciones, icono y rotación de tips
+ */
+function showLoadingOverlay(customTitle = null, customSubtitle = null) {
+    const overlay = elements.loadingOverlay || document.getElementById('loadingOverlay');
+    if (!overlay) return;
+
+    const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
+    const resources = LOADING_RESOURCES[ctxKey] || LOADING_RESOURCES['MEDICINA'];
+
+    // Icono del área
+    const iconEl = elements.loadingIcon || document.getElementById('loadingIcon');
+    if (iconEl) {
+        iconEl.className = `fas ${resources.icon || 'fa-brain'}`;
+    }
+
+    // Badge del Modo
+    const modeTextEl = elements.loadingModeText || document.getElementById('loadingModeText');
+    if (modeTextEl) {
+        if (state.maxQuestions === 10) {
+            modeTextEl.textContent = 'Simulacro Rápido · 10 Preguntas';
+        } else if (state.maxQuestions === 20) {
+            modeTextEl.textContent = 'Modo Estudio · 20 Preguntas';
+        } else if (state.maxQuestions === 100 || state.mode === 'real') {
+            modeTextEl.textContent = 'Simulacro Real · Temporizador Oficial';
+        } else if (state.targetExam) {
+            modeTextEl.textContent = `${state.targetExam} · ${state.maxQuestions || 10} Preguntas`;
+        } else {
+            modeTextEl.textContent = `${state.maxQuestions || 10} Preguntas`;
+        }
+    }
+
+    // Título y Subtítulo
+    const titleEl = elements.loadingTitle || document.getElementById('loadingTitle');
+    const subtitleEl = elements.loadingSubtitle || document.getElementById('loadingSubtitle');
+    if (titleEl) titleEl.innerText = customTitle || resources.title;
+    if (subtitleEl) subtitleEl.innerText = customSubtitle || resources.subtitle;
+
+    // Rotación suave de tips
+    const tipEl = elements.loadingTip || document.getElementById('loadingTip');
+    if (tipEl && resources.tips && resources.tips.length > 0) {
+        if (tipInterval) clearInterval(tipInterval);
+        let tipIdx = Math.floor(Math.random() * resources.tips.length);
+        tipEl.innerText = resources.tips[tipIdx];
+        tipEl.style.opacity = '1';
+
+        tipInterval = setInterval(() => {
+            if (overlay.classList.contains('hidden')) {
+                clearInterval(tipInterval);
+                tipInterval = null;
+                return;
+            }
+            tipEl.style.opacity = '0';
+            setTimeout(() => {
+                tipIdx = (tipIdx + 1) % resources.tips.length;
+                tipEl.innerText = resources.tips[tipIdx];
+                tipEl.style.opacity = '1';
+            }, 350);
+        }, 3800);
+    }
+
+    overlay.classList.remove('hidden');
+}
+
+/**
+ * 🛠️ Oculta suavemente la pantalla de carga y limpia temporizadores
+ */
+function hideLoadingOverlay() {
+    if (tipInterval) {
+        clearInterval(tipInterval);
+        tipInterval = null;
+    }
+    const manualOverlay = document.getElementById('loading-overlay');
+    if (manualOverlay) manualOverlay.remove();
+    const overlay = elements.loadingOverlay || document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+}
 
 // ==========================================
 // 🚀 ASIGNACIÓN TEMPRANA (Para evitar Race Conditions)
@@ -139,6 +230,14 @@ window.showExamReview = async function () {
                 const ctxUpper = (state.context || 'MEDICINA').toUpperCase();
                 const ctxTitleSuffix = ctxUpper === 'EDUCACION' ? 'Magisterial' : 'Médico';
                 reviewTitleEl.innerHTML = `<i class="fas fa-clipboard-check"></i> Corrección de Simulacro ${ctxTitleSuffix}`;
+            }
+            const reviewExitBtn = reviewContainer.querySelector('.btn-top-exit') || document.getElementById('btn-review-exit');
+            if (reviewExitBtn) {
+                reviewExitBtn.onclick = (e) => {
+                    e.preventDefault();
+                    const ctx = state.context || 'MEDICINA';
+                    window.location.href = `simulator-dashboard?context=${ctx}`;
+                };
             }
         }
 
@@ -298,6 +397,9 @@ async function init() {
     }
     if (elements.maxQ) elements.maxQ.textContent = state.maxQuestions;
 
+    // Mostrar de inmediato overlay estilizado con contexto resuelto
+    showLoadingOverlay();
+
     // Timer Logic: Only show for Real Mock (100 questions) - Users request
     const timerBadge = document.querySelector('.timer-badge');
     if (state.maxQuestions === 100 && timerBadge) {
@@ -340,9 +442,11 @@ async function init() {
 
     const btnExit = document.getElementById('btn-exit-quiz');
     const btnTopExit = document.getElementById('btn-top-exit');
+    const btnReviewExit = document.getElementById('btn-review-exit');
 
     if (btnExit) btnExit.onclick = handleExit;
     if (btnTopExit) btnTopExit.onclick = handleExitClick;
+    if (btnReviewExit) btnReviewExit.onclick = handleExit;
 
     try {
         // ✅ NUEVO: Intentar recuperar sesión previa
@@ -355,6 +459,7 @@ async function init() {
             if (recovered.timeLeft !== undefined && recovered.timeLeft <= 0) {
                 resume = true; // Forzar reanudación para calificar automáticamente
             } else if (window.confirmationModal && typeof window.confirmationModal.show === 'function') {
+                hideLoadingOverlay();
                 const configText = recovered.targetExam || 'examen';
                 resume = await window.confirmationModal.show(
                     `Tienes un simulacro de ${configText} iniciado previamente. ¿Deseas continuar respondiéndolo o prefieres comenzar uno nuevo?`,
@@ -418,6 +523,7 @@ function saveSession() {
         ...state,
         savedAt: Date.now(), // ✅ Expiración tracker
         quizId: state.quizId,
+        quizSessionId: state.quizSessionId,
         timeLeft: state.timeLeft, // ✅ Persistencia del cronómetro
         isFinished: false
     }));
@@ -483,6 +589,7 @@ function loadSession() {
         if (data.difficulty) state.difficulty = data.difficulty;
         if (data.areas && Array.isArray(data.areas) && data.areas.length > 0) state.areas = data.areas;
         if (data.topic) state.topic = data.topic;
+        if (data.quizSessionId) state.quizSessionId = data.quizSessionId;
 
         if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
             return data;
@@ -529,35 +636,8 @@ window.startNewExam = function () {
 
 // 2. Iniciar Quiz (Llamada al Backend)
 async function startQuiz() {
-    // Mostrar Loading Dinámico y Tips
-    const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
-    const resources = LOADING_RESOURCES[ctxKey];
-
-    if (elements.loadingTitle) elements.loadingTitle.innerText = resources.title;
-    if (elements.loadingSubtitle) elements.loadingSubtitle.innerText = resources.subtitle;
-    
-    // Iniciar rotador de tips
-    const tipElement = document.getElementById('loadingTip');
-    if (tipElement) {
-        let tipIdx = 0;
-        tipElement.innerText = resources.tips[0];
-        tipElement.style.opacity = '1';
-        
-        const tipInterval = setInterval(() => {
-            if (elements.loadingOverlay.classList.contains('hidden')) {
-                clearInterval(tipInterval);
-                return;
-            }
-            tipElement.style.opacity = '0';
-            setTimeout(() => {
-                tipIdx = (tipIdx + 1) % resources.tips.length;
-                tipElement.innerText = resources.tips[tipIdx];
-                tipElement.style.opacity = '1';
-            }, 500);
-        }, 3500);
-    }
-
-    elements.loadingOverlay.classList.remove('hidden');
+    // Mostrar Pantalla de Carga y Tips Dinámicos
+    showLoadingOverlay();
 
     let data;
     let response; // ✅ Declare here for function-wide scope
@@ -747,6 +827,7 @@ async function startQuiz() {
     }
 
     state.questions = data.questions;
+    state.quizSessionId = data.quizSessionId || null;
     // 💡 ACTUALIZACIÓN DE TEMA: Si el backend rotó el tema (ej: Medicina -> Cardiología), actualizamos el estado.
     if (data.topic) {
         state.topic = data.topic;
@@ -760,7 +841,7 @@ async function startQuiz() {
     state.startTime = Date.now();
 
     // Ocultar Loading y mostrar primera pregunta
-    elements.loadingOverlay.classList.add('hidden');
+    hideLoadingOverlay();
     saveSession(); // Guardar estado inicial
     renderQuestion();
 
@@ -778,18 +859,22 @@ async function fetchNextBatch() {
     const urlParamsNext = new URLSearchParams(window.location.search);
     if (urlParamsNext.get('demo') === 'true') return;
 
+    // Si ya tenemos todas las preguntas requeridas para el simulacro cargadas en memoria, no solicitar más
+    if (state.questions.length >= state.maxQuestions) return;
+
     state.isLoadingBatch = true;
     state.batchLoadFailed = false; // Reset status
-    console.log("🔄 Fetching next batch...");
+    console.log(`🔄 Solicitando siguiente lote (${state.questions.length}/${state.maxQuestions})...`);
 
     try {
         const seenIds = state.questions
             .map(q => q.id)
-            .filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
+            .filter(Boolean);
 
         const response = await window.NetworkService.fetch(`${API_URL}/next-batch`, {
             method: 'POST',
             body: JSON.stringify({
+                quizSessionId: state.quizSessionId || undefined,
                 topic: state.topic, // Legacy compatibility
                 target: state.targetExam,
                 areas: state.areas,
@@ -805,11 +890,13 @@ async function fetchNextBatch() {
 
         // 🚦 Manejo del Error 500/404 Controlado (Límite Básico u otros)
         if (!response.ok || !data.success) {
-            elements.loadingOverlay.classList.add('hidden');
+            hideLoadingOverlay();
 
             if (response.status === 404 && data.noQuestions) {
-                if (window.uiManager) window.uiManager.showToast('¡Excelente Trabajo! Has completado todas las preguntas disponibles. Puntuando...', 'success');
-                return finishQuiz();
+                if (window.uiManager) window.uiManager.showToast('Has completado todas las preguntas disponibles.', 'info');
+                state.maxQuestions = state.questions.length; // Ajustar total al mazo real disponible
+                updateProgressUI();
+                return;
             }
 
             if (window.uiManager && window.uiManager.showToast) {
@@ -822,7 +909,7 @@ async function fetchNextBatch() {
 
         // 🚦 Manejo del Error 403 (Banco Agotado o Paywall)
         if (response.status === 403) {
-            elements.loadingOverlay.classList.add('hidden');
+            hideLoadingOverlay();
             if (window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
                 window.uiManager.showPaywallModal(data.error, 'simulator');
             } else {
@@ -834,22 +921,23 @@ async function fetchNextBatch() {
 
         // 🛠 Error de Servidor (500) u Otros (No 404)
         if (!response.ok && response.status !== 404) {
-            elements.loadingOverlay.classList.add('hidden');
+            hideLoadingOverlay();
             console.error("Server Error:", data.error);
             if (window.uiManager) window.uiManager.showToast("Error cargando más preguntas. Reintentando...", 'warning');
             return;
         }
 
-        if (data.success && data.questions.length > 0) {
+        if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
             state.questions.push(...data.questions);
-            console.log(`✅ Batch loaded. Total questions: ${state.questions.length}`);
+            console.log(`✅ Lote cargado exitosamente. Total acumulado: ${state.questions.length}/${state.maxQuestions}`);
 
             // 🔄 Refrescar áreas por si el backend rotó algo (opcional pero robusto)
             if (data.areas && data.areas.length > 0) {
                 state.areas = data.areas;
             }
 
-            updateProgressUI(); // Update progress bar with new total? Or keep relative to 20?
+            saveSession();
+            updateProgressUI();
         }
     } catch (error) {
         console.error("Error fetching batch:", error);
@@ -859,17 +947,24 @@ async function fetchNextBatch() {
         }
     } finally {
         state.isLoadingBatch = false;
-        // 🛠️ FIX SENIOR: Eliminar cargador y disparar renderizado de la pregunta que estaba esperando
+        // 🛠️ FIX SENIOR: Eliminar cargador y disparar renderizado si estábamos esperando la pregunta
         const manualOverlay = document.getElementById('loading-overlay');
         if (manualOverlay) manualOverlay.remove();
-        if (elements.loadingOverlay) elements.loadingOverlay.classList.add('hidden');
 
-        // Si estábamos esperando el lote para mostrar la siguiente pregunta, renderizarla ahora
+        const overlay = elements.loadingOverlay || document.getElementById('loadingOverlay');
+        const isWaiting = overlay && !overlay.classList.contains('hidden') && overlay.style.display !== 'none';
+
         if (state.questions[state.currentQuestionIndex]) {
-            renderQuestion();
+            if (isWaiting || !elements.questionText || !elements.questionText.textContent.trim()) {
+                hideLoadingOverlay();
+                renderQuestion();
+            }
         } else if (state.batchLoadFailed) {
-            // Si falló y no hay más preguntas cargadas, mostrar interfaz de reintento
+            hideLoadingOverlay();
             showNetworkRetryOverlay();
+        } else if (state.currentQuestionIndex >= state.maxQuestions) {
+            hideLoadingOverlay();
+            finishQuiz();
         }
     }
 }
@@ -890,71 +985,25 @@ function renderQuestion() {
         return finishQuiz();
     }
 
-    // 🛠️ Función Helper para eliminar overlays de carga (Global y Manual)
-    function hideLoadingOverlay() {
-        const manualOverlay = document.getElementById('loading-overlay');
-        if (manualOverlay) manualOverlay.remove();
-        if (elements.loadingOverlay) {
-            elements.loadingOverlay.classList.add('hidden');
-            elements.loadingOverlay.classList.remove('flex');
-        }
-    }
-
     const q = state.questions[state.currentQuestionIndex];
 
     // If we ran out of questions but haven't hit maxQuestions yet (wait for batch?)
     if (!q) {
+        const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
+        const resources = LOADING_RESOURCES[ctxKey] || LOADING_RESOURCES['MEDICINA'];
+
         if (state.isLoadingBatch) {
-            hideLoadingOverlay();
-
-            // Crear overlay glassmorphism premium siguiendo el DESIGN_SYSTEM (Negro Puro)
-            const overlay = document.createElement('div');
-            overlay.id = 'loading-overlay';
-            Object.assign(overlay.style, {
-                position: 'fixed',
-                top: '0',
-                left: '0',
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.85)', // NEGRO PURO
-                backdropFilter: 'blur(20px)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: '10000',
-                color: 'white',
-                textAlign: 'center',
-                transition: 'opacity 0.4s ease'
-            });
-
-            const ctxKey = (['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam) || state.context === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
-            const resources = LOADING_RESOURCES[ctxKey];
-            const randomTip = resources.tips[Math.floor(Math.random() * resources.tips.length)];
-
-            overlay.innerHTML = `
-                <div class="loader-content" style="padding: 3.5rem; border-radius: 2.5rem; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 1);">
-                    <div class="spinner-box" style="position: relative; width: 70px; height: 70px; margin: 0 auto 2.5rem;">
-                        <div style="position: absolute; width: 100%; height: 100%; border: 3px solid rgba(255,255,255,0.05); border-radius: 50%;"></div>
-                        <div style="position: absolute; width: 100%; height: 100%; border: 3px solid transparent; border-top: 3px solid #fff; border-radius: 50%; animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
-                    </div>
-                    <h3 style="margin-bottom: 0.5rem; font-size: 1.75rem; font-weight: 800; color: #fff; letter-spacing: -0.03em;">${resources.title}</h3>
-                    <p style="color: #64748b; font-size: 1rem; margin-bottom: 2rem;">${resources.subtitle}</p>
-                    
-                    <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 1.25rem; border: 1px dashed rgba(255,255,255,0.1); max-width: 320px;">
-                        <p style="color: #3b82f6; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">¿Sabías que?</p>
-                        <p id="dynamic-tip" style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5;">${randomTip}</p>
-                    </div>
-                </div>
-                <style>
-                    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                </style>
-            `;
-            document.body.appendChild(overlay);
+            showLoadingOverlay(resources.title, "Obteniendo siguiente bloque de preguntas oficiales...");
+            if (elements.questionText) elements.questionText.innerHTML = '';
             return; // Detenemos el renderizado de la pregunta hasta que cargue
         } else if (state.batchLoadFailed) {
             hideLoadingOverlay();
             showNetworkRetryOverlay();
+            return;
+        } else if (state.questions.length < state.maxQuestions) {
+            showLoadingOverlay(resources.title, "Obteniendo siguiente bloque de preguntas oficiales...");
+            if (elements.questionText) elements.questionText.innerHTML = '';
+            fetchNextBatch();
             return;
         } else {
             // No more questions available, but we haven't hit maxQuestions.
@@ -964,12 +1013,13 @@ function renderQuestion() {
             return finishQuiz();
         }
     }
-    elements.loadingOverlay.classList.add('hidden');
+    hideLoadingOverlay();
 
     // Trigger Batch Load if we are close to end of current array using local threshold
-    // E.g., if we have 5 qs, and we are at index 3, load more.
+    // E.g., if we have 5 qs, and we are at index 3 (Question 4), prefetch next batch in background.
     if (state.questions.length < state.maxQuestions &&
-        state.questions.length - state.currentQuestionIndex <= 2) {
+        (state.questions.length - state.currentQuestionIndex) <= 2 &&
+        !state.isLoadingBatch) {
         fetchNextBatch();
     }
 
@@ -1315,36 +1365,21 @@ function removePendingSubmission(quizId) {
 
 // ✅ Interfaz de Reintento ante caídas de conexión durante la carga de lotes
 function showNetworkRetryOverlay() {
-    const existing = document.getElementById('loading-overlay') || document.getElementById('network-retry-overlay');
+    const existing = document.getElementById('network-retry-overlay');
     if (existing) existing.remove();
 
     const overlay = document.createElement('div');
     overlay.id = 'network-retry-overlay';
-    Object.assign(overlay.style, {
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        backdropFilter: 'blur(20px)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: '10000',
-        color: 'white',
-        textAlign: 'center'
-    });
+    overlay.className = 'loading-overlay';
 
     overlay.innerHTML = `
-        <div class="loader-content" style="padding: 3.5rem; border-radius: 2.5rem; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 1); max-width: 400px; width: 90%;">
-            <div style="font-size: 3rem; margin-bottom: 1.5rem; color: #f59e0b;">
+        <div class="loading-card" style="max-width: 420px;">
+            <div style="font-size: 2.5rem; margin-bottom: 1.25rem; color: #f59e0b;">
                 <i class="fas fa-wifi"></i>
             </div>
-            <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 800; color: #fff;">Error de Conexión</h3>
-            <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.5;">No pudimos cargar la siguiente ronda de preguntas. Revisa tu señal de internet.</p>
-            <button id="btn-retry-batch" style="background: #3b82f6; border: none; padding: 0.75rem 2rem; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <h3 class="loading-title" style="margin-bottom: 0.5rem;">Error de Conexión</h3>
+            <p class="loading-subtitle" style="margin-bottom: 1.75rem;">No pudimos conectar con el servidor para cargar las preguntas. Verifica tu conexión a internet.</p>
+            <button id="btn-retry-batch" class="btn-primary" style="padding: 0.75rem 2rem; border-radius: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
                 <i class="fas fa-sync"></i> Reintentar Carga
             </button>
         </div>
@@ -1352,10 +1387,13 @@ function showNetworkRetryOverlay() {
 
     document.body.appendChild(overlay);
 
-    document.getElementById('btn-retry-batch').onclick = () => {
-        overlay.remove();
-        fetchNextBatch();
-    };
+    const retryBtn = document.getElementById('btn-retry-batch');
+    if (retryBtn) {
+        retryBtn.onclick = () => {
+            overlay.remove();
+            fetchNextBatch();
+        };
+    }
 }
 
 async function finishQuiz() {
@@ -1454,6 +1492,7 @@ async function finishQuiz() {
     state.score = actualScore;
 
     const payload = {
+        quizSessionId: state.quizSessionId || undefined,
         topic: state.areas && state.areas.length > 1 ? 'Multi-Área' : (state.topic || 'General'),
         areas: state.areas || [],
         target: state.targetExam,
@@ -1477,7 +1516,7 @@ async function finishQuiz() {
             body: JSON.stringify(payload)
         });
 
-        console.log("✅ Resultados guardados y Flashcards generadas.");
+        console.log("✅ Resultados guardados con éxito.");
 
         // Sincronización de sesión y vidas gestionada centralizadamente por NetworkService.fetch
 

@@ -45,7 +45,7 @@ CREATE TABLE public.decks (
     user_id UUID NOT NULL REFERENCES public.users(id),
     name VARCHAR(100) NOT NULL,
     description TEXT,                         -- Guía de Estudio enriquecida (HTML / Markdown)
-    category VARCHAR(50) DEFAULT 'General',   -- 'Medicina', 'Educación', 'Derecho', 'Idiomas', 'Tecnología', 'Ciencia', 'General'
+    category VARCHAR(50) DEFAULT 'General',   -- 'Medicina', 'Educación', 'Derecho', 'Tecnología', 'Ciencia', 'General'
     type VARCHAR(20) DEFAULT 'USER',          -- 'SYSTEM' (Mazos Oficiales), 'USER' (Mazos Creados)
     source_module VARCHAR(50) DEFAULT 'MANUAL',-- 'MANUAL', 'AI_GENERATED', 'QUIZ_FAILURE'
     icon VARCHAR(50) DEFAULT '📚',            -- Emoji o identificador de icono
@@ -90,12 +90,11 @@ CREATE TABLE public.user_flashcards (
 1. **Medicina** (Casos clínicos, diagnóstico, farmacología)
 2. **Educación** (Pedagogía CNEB, teorías de aprendizaje, didáctica)
 3. **Derecho** (Doctrina jurídica, códigos, jurisprudencia)
-4. **Idiomas** (Vocabulario puro, pronunciación, gramática)
-5. **Tecnología** (Programación, algoritmos, arquitectura de software)
-6. **Matemáticas** (Fórmulas, teoremas, cálculo)
-7. **Historia** (Cronologías, hitos, acontecimientos)
-8. **Ciencia** (Física, química, biología)
-9. **General** (Conocimientos generales)
+4. **Tecnología** (Programación, algoritmos, arquitectura de software)
+5. **Matemáticas** (Fórmulas, teoremas, cálculo)
+6. **Historia** (Cronologías, hitos, acontecimientos)
+7. **Ciencia** (Física, química, biología)
+8. **General** (Conocimientos generales)
 
 ---
 
@@ -149,4 +148,3 @@ Durante la sesión de estudio, el usuario voltea la tarjeta (Giro 3D / Flip) y c
 - **Reordenamiento Atómico en Lote (`updateFlashcardsOrder`):** Implementación de consulta atómica `UPDATE user_flashcards AS uf SET sort_order = v.ord FROM (VALUES ...) AS v(id, ord) WHERE uf.id = v.id AND uf.deck_id = $1 AND uf.user_id = $2`, reduciendo $N$ viajes de red a **1 sola transacción atómica**.
 - **Inserción Atómica de Tarjeta (`createFlashcard`):** Inlining de búsqueda de nombre del mazo con `COALESCE((SELECT name FROM decks WHERE id = $2), 'GENERAL')` directamente en la sentencia `INSERT`, eliminando viajes de red innecesarios.
 - **Índices de Alto Rendimiento:** Indexación en `decks(user_id, parent_id, type)`, `decks(is_public, category, saves_count DESC)`, `user_flashcards(deck_id, sort_order ASC, created_at ASC)` y `user_flashcards(user_id, deck_id, next_review_at)`.
-

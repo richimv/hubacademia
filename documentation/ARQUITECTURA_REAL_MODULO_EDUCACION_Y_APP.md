@@ -601,4 +601,37 @@ Para replicar con precisión las funcionalidades de la web en la aplicación mó
 
 
 
+## 📱 5. Implementación en Aplicaciones Móviles (HubSaludApp y HubDocenteApp)
 
+Para mantener paridad total de experiencia entre la plataforma Web y las aplicaciones móviles nativas (React Native / Expo):
+
+### 1. Componente `UserGuideModal.tsx`
+* **Arquitectura:** Modal con fondo Blur/Glassmorphism y contenedor GlassCard (`maxWidth: 400`).
+* **Navegación:** Carrusel de 3 pasos con dots interactivos y botones `← Anterior` y `Siguiente →` / `¡Comenzar! 🚀`.
+* **Disparadores:**
+  * **Manual:** Botón `? Guía` estilizado en el banner de configuración activa (`home.tsx`), a la izquierda de `Configurar`.
+  * **Automático:** Almacenamiento seguro en `AppStorage` (`hasSeenSimulatorGuide_salud` / `hasSeenSimulatorGuide_docente`) para mostrarlo al usuario únicamente en su primer inicio de sesión.
+
+### 2. Componente `KpiInfoModal.tsx`
+* **Interactividad en Dashboard:** Al pulsar sobre cualquier tarjeta de KPI o cabecera de gráfico, se abre una modal semántica con:
+  1. Definición clara de la métrica (Puntaje Vigesimal, Precisión %, Diagnósticos/Casos Correctos, Errores).
+  2. Fórmula matemática de cálculo.
+  3. Recomendación formativa y metas mínimas requeridas según el concurso oficial (SERUMS / ENAM / Residentado en Salud; Nombramiento / Ascenso en Docente).
+
+### 3. Sincronización de 10 Vidas de Prueba
+* El pool de prueba gratuito para usuarios `free / pending` está unificado en **10 vidas** en todo el frontend móvil (`AuthContext.tsx`, `profile.tsx`, `ScreenHeader.tsx`, `terms-and-conditions.tsx`).
+* Notificaciones flotantes no invasivas con `LifeToast.tsx` (`⚡ 1 crédito utilizado. Te quedan X/10 vidas de prueba`).
+
+---
+
+## 🧪 6. Criterios de Aceptación y Calidad (QA)
+
+- [x] **Botón Guía Horizontal:** En Web y Móvil, el botón `Guía` se sitúa junto a `Configurar Examen`, sin desbordes.
+- [x] **Jerarquía en Header:** Menú de usuario sin etiquetas duplicadas del plan.
+- [x] **Miniguía en Repaso:** Tour de 3 pasos en el Dashboard de Repaso y de 4 pasos dentro del mazo.
+- [x] **Guía Móvil Nativa:** Modal interactiva de 3 pasos (`UserGuideModal.tsx`) en `HubSaludApp` y `HubDocenteApp`.
+- [x] **Tooltips Interactivos de KPIs Móviles:** Modal explicativa (`KpiInfoModal.tsx`) al tocar cualquier tarjeta de KPI o gráfico.
+- [x] **Alerta Única de Vida:** El toast de descuento de vida se dispara exactamente una vez al iniciar simulacro o estudiar un mazo.
+- [x] **Modal de Resultados Armonioso:** Espaciado limpio entre *"Ver Corrección del Examen"* y los botones secundarios.
+- [x] **Avatar Hubi en Revisión:** Botón de Tutor IA en revisión de examen con icono y avatar de Hubi.
+- [x] **Pruebas Unitarias y Tipado:** 19 suites Jest (149/149 tests en verde) y TypeScript sin errores (`0 errors`).

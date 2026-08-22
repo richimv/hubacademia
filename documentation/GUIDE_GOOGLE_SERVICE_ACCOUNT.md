@@ -1,6 +1,6 @@
 # Guía: Creación de Cuentas de Servicio Específicas en Google Cloud
 
-Esta guía detalla los pasos para crear cuentas de servicio individuales en Google Cloud Platform (GCP). Seguir este proceso te permitirá aislar los permisos, administrar cuotas individuales y controlar los costos de manera independiente para cada una de tus aplicaciones (Hub Academia, Proyecto de Idiomas, KiaraBot, etc.).
+Esta guía detalla los pasos para crear cuentas de servicio individuales en Google Cloud Platform (GCP). Seguir este proceso te permitirá aislar los permisos, administrar cuotas individuales y controlar los costos de manera independiente para cada una de tus aplicaciones (Hub Academia, KiaraBot, etc.).
 
 ---
 
@@ -23,9 +23,9 @@ Sigue estos pasos en la consola de Google Cloud:
 ### Paso 2.2: Crear la Cuenta de Servicio
 1. Haz clic en el botón superior **+ Crear cuenta de servicio**.
 2. **Detalles de la cuenta de servicio:**
-   * **Nombre de la cuenta de servicio:** Escribe un nombre descriptivo (ej. `idiomas-backend-service` o `kiarabot-service`).
-   * **ID de la cuenta de servicio:** Se generará automáticamente a partir del nombre (ej. `idiomas-backend-service@tu-proyecto.iam.gserviceaccount.com`).
-   * **Descripción de la cuenta de servicio:** Describe su propósito (ej. "Acceso a IA y TTS para el nuevo portal de Idiomas").
+   * **Nombre de la cuenta de servicio:** Escribe un nombre descriptivo (ej. `hubacademia-backend-service` o `kiarabot-service`).
+   * **ID de la cuenta de servicio:** Se generará automáticamente a partir del nombre (ej. `hubacademia-backend-service@tu-proyecto.iam.gserviceaccount.com`).
+   * **Descripción de la cuenta de servicio:** Describe su propósito (ej. "Acceso a Vertex AI, TTS y Storage para Hub Academia").
 3. Haz clic en **Crear y continuar**.
 
 ### Paso 2.3: Otorgar Roles (Permisos Mínimos Necesarios)
@@ -53,7 +53,7 @@ Una vez creada la cuenta de servicio, debes obtener el archivo de credenciales p
 3. Haz clic en el botón **Agregar clave** > **Crear clave nueva**.
 4. Selecciona el formato **JSON** (recomendado) y haz clic en **Crear**.
 5. Se descargará automáticamente un archivo `.json` en tu computadora (ej. `nombre-proyecto-xxxxxx.json`).
-6. **Importante:** Renombra este archivo a `service-account-key.json` y colócalo en la raíz de tu respectivo proyecto (`idiomas-project/` o `kiarabot/`).
+6. **Importante:** Renombra este archivo a `service-account-key.json` y colócalo en la raíz del proyecto correspondiente. Debe permanecer fuera de Git mediante `.gitignore` y no utilizarse como archivo en producción cuando la plataforma disponga de credenciales administradas.
 
 ---
 
@@ -66,7 +66,7 @@ En el archivo `.env` de tu nueva aplicación independiente, configura la ruta ab
 GOOGLE_APPLICATION_CREDENTIALS="./service-account-key.json"
 
 # Configuración del Bucket de Storage exclusivo (Recomendado)
-GCS_BUCKET_NAME="bucket-exclusivo-idiomas-prod"
+GCS_BUCKET_NAME="bucket-exclusivo-hubacademia-prod"
 ```
 
 ---

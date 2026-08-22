@@ -209,16 +209,16 @@ class TooltipManager {
 
         // Verificar si el elemento ya está visible en el viewport
         const rect = targetElement.getBoundingClientRect();
-        const isInViewport = rect.top >= 60 && rect.bottom <= (window.innerHeight - 60);
+        const isInViewport = rect.top >= 80 && rect.bottom <= (window.innerHeight - 80);
 
         if (!isInViewport) {
-            // Solo hacer scroll suave si está fuera del área visible
-            targetElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // Centrar suavemente el elemento en pantalla para asegurar espacio suficiente arriba y abajo
+            targetElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
             setTimeout(() => {
                 this.displayHintCard(targetElement, step, index, this.currentTourSteps.length);
-            }, 300);
+            }, 350);
         } else {
-            // Si ya está visible, renderizar inmediatamente sin desplazar la pantalla
+            // Si ya está visible, renderizar inmediatamente
             this.displayHintCard(targetElement, step, index, this.currentTourSteps.length);
         }
     }
@@ -275,7 +275,7 @@ class TooltipManager {
         // Resaltar elemento objetivo
         target.classList.add('hub-guided-target-pulse');
 
-        // Posicionar con protección anti-desborde
+        // Posicionar con algoritmo anti-solapamiento estricto
         this.positionHint(hint, target, position);
 
         // Handlers de botones
@@ -303,11 +303,13 @@ class TooltipManager {
 
         requestAnimationFrame(() => {
             hint.classList.add('visible');
+            // Re-calcular posición por si las dimensiones del DOM cambiaron tras aplicar estilos
+            this.positionHint(hint, target, position);
         });
     }
 
     /**
-     * Calcula la posición absoluta de la tarjeta de guía evitando salir del viewport.
+     * Calcula la posición absoluta de la tarjeta de guía garantizando cero solapamiento con el objetivo.
      */
     positionHint(hint, target, position) {
         const rect = target.getBoundingClientRect();
@@ -315,37 +317,70 @@ class TooltipManager {
         const scrollX = window.scrollX || document.documentElement.scrollLeft;
         const scrollY = window.scrollY || document.documentElement.scrollTop;
 
-        let top = 0;
-        let left = 0;
+        const hintWidth = hintRect.width || 330;
+        const hintHeight = hintRect.height || 200;
+        const isMobile = window.innerWidth < 768;
 
-        // Decidir posición vertical inteligente si no cabe
-        let finalPos = position;
-        if (position === 'bottom' && (rect.bottom + hintRect.height + 20 > window.innerHeight)) {
-            finalPos = 'top';
-        } else if (position === 'top' && (rect.top - hintRect.height - 20 < 0)) {
-            finalPos = 'bottom';
+        // Definir lista de posiciones ordenadas por preferencia
+        let candidates = [position];
+        if (isMobile) {
+            candidates = [position === 'top' ? 'top' : 'bottom', position === 'top' ? 'bottom' : 'top', 'right', 'left'];
+        } else {
+            const allPos = ['bottom', 'top', 'right', 'left'];
+            candidates = [position, ...allPos.filter(p => p !== position)];
         }
 
-        if (finalPos === 'bottom') {
-            top = rect.bottom + scrollY + 12;
-            left = rect.left + scrollX + (rect.width / 2) - (hintRect.width / 2);
-        } else if (finalPos === 'top') {
-            top = rect.top + scrollY - hintRect.height - 12;
-            left = rect.left + scrollX + (rect.width / 2) - (hintRect.width / 2);
-        } else if (finalPos === 'right') {
-            top = rect.top + scrollY + (rect.height / 2) - (hintRect.height / 2);
-            left = rect.right + scrollX + 12;
-        } else if (finalPos === 'left') {
-            top = rect.top + scrollY + (rect.height / 2) - (hintRect.height / 2);
-            left = rect.left + scrollX - hintRect.width - 12;
+        let bestPos = position;
+        let bestCoords = { top: rect.bottom + scrollY + 12, left: rect.left + scrollX };
+        let minOverlapArea = Infinity;
+
+        for (const pos of candidates) {
+            let cTop = 0;
+            let cLeft = 0;
+
+            if (pos === 'bottom') {
+                cTop = rect.bottom + 12;
+                cLeft = rect.left + (rect.width / 2) - (hintWidth / 2);
+            } else if (pos === 'top') {
+                cTop = rect.top - hintHeight - 12;
+                cLeft = rect.left + (rect.width / 2) - (hintWidth / 2);
+            } else if (pos === 'right') {
+                cTop = rect.top + (rect.height / 2) - (hintHeight / 2);
+                cLeft = rect.right + 12;
+            } else if (pos === 'left') {
+                cTop = rect.top + (rect.height / 2) - (hintHeight / 2);
+                cLeft = rect.left - hintWidth - 12;
+            }
+
+            // Ajustar horizontalmente dentro de los límites visibles del viewport
+            const maxLeft = window.innerWidth - hintWidth - 12;
+            const clampLeft = Math.max(12, Math.min(cLeft, maxLeft));
+
+            // Ajustar verticalmente dentro del viewport
+            const maxTop = window.innerHeight - hintHeight - 12;
+            const clampTop = Math.max(12, Math.min(cTop, maxTop));
+
+            // Calcular intersección (solapamiento) entre la tarjeta flotante y el elemento objetivo
+            const oLeft = Math.max(clampLeft, rect.left);
+            const oRight = Math.min(clampLeft + hintWidth, rect.right);
+            const oTop = Math.max(clampTop, rect.top);
+            const oBottom = Math.min(clampTop + hintHeight, rect.bottom);
+
+            const overlapW = Math.max(0, oRight - oLeft);
+            const overlapH = Math.max(0, oBottom - oTop);
+            const overlapArea = overlapW * overlapH;
+
+            if (overlapArea < minOverlapArea) {
+                minOverlapArea = overlapArea;
+                bestPos = pos;
+                bestCoords = { top: clampTop + scrollY, left: clampLeft + scrollX };
+                if (overlapArea === 0) break; // Posición óptima sin obstrucción encontrada
+            }
         }
 
-        // Evitar desborde horizontal
-        const maxLeft = window.innerWidth - hintRect.width - 16;
-        left = Math.max(16, Math.min(left, maxLeft));
-
-        hint.style.top = `${top}px`;
-        hint.style.left = `${left}px`;
+        hint.dataset.pos = bestPos;
+        hint.style.top = `${bestCoords.top}px`;
+        hint.style.left = `${bestCoords.left}px`;
     }
 
     /**
@@ -375,7 +410,7 @@ class TooltipManager {
     }
 
     /**
-     * Tour estándar para el Simulador de Exámenes (Educación, Salud, Idiomas).
+     * Tour estándar para los simuladores de Educación y Salud.
      * @param {boolean} force - Si es true, inicia el tour aunque ya haya sido visto antes.
      */
     startSimulatorTour(force = false) {
@@ -427,7 +462,7 @@ class TooltipManager {
         if (!force && localStorage.getItem(storageKey)) return;
 
         const createTarget = document.querySelector('.create-deck-card') || document.querySelector('#btn-explorer-create') || '#btn-explorer-create';
-        const explorerTarget = document.querySelector('#explorer-sidebar') || document.querySelector('#deck-tree') || '#deck-tree';
+        const explorerTarget = document.querySelector('.explorer-sidebar-header') || document.querySelector('#explorer-sidebar') || document.querySelector('#deck-tree') || '#deck-tree';
         const deckGridTarget = document.querySelector('#root-decks-grid') || document.querySelector('.decks-grid') || '#root-decks-grid';
 
         const steps = [
@@ -445,7 +480,7 @@ class TooltipManager {
                 icon: 'fa-sitemap',
                 title: '2. Explorador y Comunidad',
                 description: 'Navega en el árbol de carpetas o visita la <strong>Comunidad</strong> para descubrir y clonar mazos públicos creados por otros estudiantes.',
-                position: 'right'
+                position: 'bottom'
             },
             {
                 target: deckGridTarget,

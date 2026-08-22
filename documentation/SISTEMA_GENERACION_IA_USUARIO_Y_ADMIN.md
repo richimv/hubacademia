@@ -85,35 +85,14 @@ Para mitigar el colapso de variedad y evitar que la IA use siempre las mismas ap
 
 ---
 
-## 🌐 Integración del Dominio de Idiomas (Languages)
+## 🎯 Alcance actual de generación
 
-El sistema ha sido extendido para dar soporte completo a la generación de preguntas para el aprendizaje de lenguas extranjeras, unificando los criterios bajo las cuatro capas arquitectónicas:
+* **Dominios canónicos:** `medicine` y `education`, validados mediante lista blanca en `adminRepository.js`.
+* **Dificultad canónica:** `Senior`, coherente con las 817 preguntas activas verificadas en producción.
+* **Modelo de IA:** `gemini-3.1-flash-lite` mediante Google AI Studio REST y Vertex AI como canal alterno; el fallback operacional se mantiene dentro del servicio de generación.
+* **Persistencia:** los lotes aprobados se almacenan en `question_bank`; la generación respeta el historial y los identificadores UUID válidos para evitar repeticiones y errores de consulta.
 
-### 1. Modelo de Datos y Validación
-* **Dominio Canónico**: Se registra en la base de datos como `'languages'`. El repositorio (`adminRepository.js`) valida y autoriza este dominio en la lista blanca de `canonicalDomain`.
-* **Dificultad Adaptable (MCER/CEFR)**: En lugar de forzar `'Senior'`, se autorizan y guardan los niveles estándar del Marco Común Europeo de Referencia para las lenguas (`'A1'`, `'A2'`, `'B1'`, `'B2'`, `'C1'`, `'C2'`) en la columna `difficulty` gracias a la actualización de `canonicalDifficulty`.
-* **Variantes de Dialecto**: El dialecto o variante regional se mapea en la columna `career` (ej. `'en-US'` para inglés estadounidense, `'en-GB'` para inglés británico, `'it-IT'` para italiano).
-
-### 2. Flujo Específico de Calidad y Generación
-Al detectar un target de idiomas (ej. `MCER`, `TOEFL`, `IELTS`), el servicio de IA (`adminAiService.js`) conmuta al pipeline de idiomas:
-* **Idioma del Contenido**: El enunciado (`question_text`), las opciones y los scripts de audio se generan al 100% en el idioma objetivo. La explicación didáctica se escribe en **español** para facilitar el autoaprendizaje del alumno.
-* **Placeholder Obligatorio**: Para las áreas de *Grammar & Use of English* y *Vocabulary & Context*, se valida y exige la inyección de exactamente un espacio en blanco (`_____`) en el enunciado de la pregunta.
-* **Soporte de Audio**: En la habilidad *Listening Comprehension*, se crea un script pedagógico (máx. 100 palabras) almacenado en la columna `audio_text` para su posterior síntesis por el motor TTS.
-* **Auditoría Psicométrica de Idiomas**: Comprueba asimetrías de longitud entre la alternativa correcta y los distractores (máximo 30 caracteres de desviación respecto a la media de distractores, y máximo 40 caracteres de diferencia entre la opción de máxima y mínima longitud) y el formato JSON. Sanea referencias a letras (`A`, `B`, `C`, `D`) de manera determinista al final del flujo.
-* **Directrices de Evitación de Redundancia Verbal (Golden Rule #9)**: Se instruye al modelo a no repetir la raíz o infinitivo del verbo a conjugar de forma corrida en la oración (evitando enunciados erróneos como `"Io _____ leggere ogni giorno"` con opción correcta `"leggo"`). El infinitivo del verbo a evaluar debe ser omitido o ir encerrado en paréntesis.
-* **Validación de Adyacencia Léxica**: El auditor psicométrico (`_checkQuality`) localiza el espacio en blanco y extrae las palabras inmediatamente contiguas (anterior y posterior). Si la respuesta correcta comparte una raíz o prefijo común de $\ge 4$ caracteres (o coincidencia total para raíces cortas $\ge 3$ caracteres) con alguna de estas palabras adyacentes, la pregunta es catalogada como inválida (`isValid: false`) y rechazada para refinamiento.
-* **Evitación de Redundancia de Saludo/Respuesta (Golden Rule #10)**: Si la pregunta de idioma contiene un interrogativo de estado/modo (como `"come"` o `"how"`), se prohíbe que las opciones de respuesta contengan adverbios o palabras de respuesta de estado (como `"bene"`, `"well"`, `"fine"`, `"good"`). El auditor de calidad psicométrica valida esto programáticamente, obligando a la IA a refinar y limpiar las opciones redundantes (ej: cambiar `"sta bene lei"` a `"sta Lei"` o simplemente `"sta"`).
-* **Sanitización de Exclusiones y Prevención de Desplazamientos en Base de Datos**: Para evitar errores `500` en producción causados por tipos no compatibles con `uuid` en base de datos PostgreSQL (al pasar valores `null` o cadenas malformadas en el arreglo de preguntas vistas `seenIds`/`excludeIds` en la consulta `id <> ALL($paramIdx::uuid[])`), el cliente (`quiz.js`) y los repositorios (`idiomasSimulatorRepository.js`, `docenteRepository.js`, `medicoRepository.js`) filtran estrictamente los arreglos usando una expresión regular de UUID. Adicionalmente, `saveQuestionBankBatch` garantiza consistencia posicional devolviendo un arreglo de la misma longitud que la lista de preguntas recibidas, inyectando `null` para cualquier inserción fallida y previniendo el desplazamiento de índices en la asignación final del servicio.
-* **Unificación de Modelo Único (`gemini-3.1-flash-lite`)**: Toda la infraestructura de Inteligencia Artificial en Hub Academia (Generación de Preguntas, Tutor IA en Simulacros, Asistente de Flashcards, Analizador de Rendimiento y RAG Rewriter) utiliza de forma exclusiva e inderogable el modelo **`gemini-3.1-flash-lite`**, tanto en el canal primario (Google AI Studio REST) como en el canal secundario (Vertex AI SDK).
-
-Para elevar el rigor de razonamiento pedagógico y la calidad de las justificaciones en las explicaciones, se ha actualizado la generación de preguntas en todos los módulos (Medicina, Educación e Idiomas) al modelo **`gemini-3.1-flash-lite`**:
-  * **Canal Principal (Google AI Studio REST)**: Si la clave `GEMINI_API_KEY` se encuentra presente en el archivo `.env`, el sistema efectúa peticiones HTTP POST directas vía Axios a la API de Google AI Studio. Este canal garantiza acceso inmediato y nativo a `gemini-3.1-flash-lite` con razonamiento y latencia reducida.
-  * **Canal Secundario (Vertex AI)**: En ausencia de la API key o ante fallos del canal REST, se invoca Vertex AI directo con `gemini-3.1-flash-lite`. Si la API de Vertex AI devuelve un error de tipo `404` (modelo no disponible o falta de acceso en el proyecto/región), se intercepta el fallo y se aplica un downgrade controlado de emergencia a `gemini-2.5-flash-lite` (a temperatura `0.4`), manteniendo el simulador operativo sin pérdida de servicio.
-
-
-
--------------------------------------------------------------
-
+---
 
 # 🧪 Casos de Uso: Selección, Optimización y Distribución IA (V6)
 
@@ -237,9 +216,4 @@ Para garantizar la precisión técnica, el sistema utiliza dos prospectos base e
 
 ---
 
-**Documentación Integrada (Medicina + Educación + Idiomas) - Actualizado el 25 de Junio, 2026.**
-
-### 🛡️ Robustez de Generación de Idiomas en Producción (V4.20)
-* **Manejo de Bypass de RAG de Idiomas**: El motor de generación en `adminAiService.js` conmuta a la lógica pura de generación de lenguaje al detectar targets de la lista de idiomas. Se robusteció la lista blanca agregando explícitamente `'IDIOMAS'` y `'LANGUAGES'` a `LANGUAGE_TARGETS`, impidiendo que peticiones con estos nombres colapsen en el flujo RAG de medicina/educación por falta de archivos en Pinecone.
-* **Sanidad de `question_text` y Control de Nulos**: Se añadieron validaciones estrictas de existencia para `question` en `_checkQuality` y `_generateSingleQuestion` (tanto en la fase inicial como en el bucle de refinamiento de la IA) para mitigar excepciones de puntero nulo (`TypeError` al asignar metadatos como `.topic`, `.difficulty`, etc.) cuando la API de Gemini devuelve formatos de respuesta vacíos, nulos o malformados en produccion.
-* **Ignorado de Pistas y Parentesis en Colisiones Verbales**: Para evitar falsos positivos y rechazos sistemáticos infinitos en preguntas de gramática/vocabulario de idiomas (donde el verbo base a conjugar se especifica formalmente entre paréntesis al lado del blanco, p.ej. `Io _____ (leggere) ogni giorno` frente a la respuesta `leggo`), el auditor de calidad psicométrica de adyacencia léxica remueve dinámicamente bloques entre paréntesis `(...)` y corchetes `[...]` de la pregunta antes de extraer las palabras contiguas al espacio en blanco `_____`. Esto permite que el sistema acepte y apruebe las preguntas didácticas de idiomas válidas sin entrar en descartes fallidos continuos.
+**Documentación integrada de Medicina y Educación — actualizada el 22 de agosto de 2026.**

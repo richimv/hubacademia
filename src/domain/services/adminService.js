@@ -269,10 +269,6 @@ class AdminService {
         return await adminRepository.countOtherQuestionsWithAudio(audioText, career, excludeId);
     }
 
-    async countVocabulariesWithAudioUrl(audioUrl) {
-        return 0;
-    }
-
     async updateSingleQuestion(id, data) {
         let expectedOptions = 4;
         if (data.target === 'RESIDENTADO') {

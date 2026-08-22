@@ -145,20 +145,46 @@ exports.handleWebhook = async (req, res) => {
             const data = await payment.get({ id: paymentId });
 
             if (data.status === 'approved') {
-                const parts = data.external_reference.split('|');
-                const userId = parts[0];
-                const planId = parts[1] || 'basic'; // Fallback a basic si falta
-                const paidAmount = data.transaction_amount;
+                const reference = typeof data.external_reference === 'string'
+                    ? data.external_reference.split('|')
+                    : [];
+                const [userId, planId, unexpectedPart] = reference;
+                const paidAmount = Number(data.transaction_amount);
 
-                const plan = PLANS[planId] || PLANS.basic;
+                // No se permite activar un plan por referencia incompleta o
+                // desconocida. No existe fallback silencioso a basic.
+                if (!userId || !planId || unexpectedPart || !PLANS[planId]) {
+                    throw new Error('Referencia de pago inválida o plan no reconocido.');
+                }
 
-                if (paidAmount >= plan.price - 0.1) { // Tolerancia decimal
+                const plan = PLANS[planId];
+                if (!Number.isFinite(paidAmount) || Math.abs(paidAmount - plan.price) > 0.01) {
+                    throw new Error(`Monto de pago no coincide con el plan ${planId}.`);
+                }
+
+                // Reclamo idempotente y activación en una sola transacción:
+                // un replay nunca debe duplicar beneficios ni dejar el ledger
+                // en processing después de una interrupción parcial.
+                const client = await pool.pool().connect();
+                try {
+                    await client.query('BEGIN');
+                    const claim = await client.query(`
+                        INSERT INTO payment_events (payment_id, user_id, plan_id, amount, status)
+                        VALUES ($1, $2, $3, $4, 'processing')
+                        ON CONFLICT (payment_id) DO UPDATE
+                            SET status = 'processing', error_message = NULL
+                            WHERE payment_events.status = 'failed'
+                        RETURNING payment_id
+                    `, [String(paymentId), userId, planId, paidAmount]);
+
+                    if (!claim.rows || claim.rows.length === 0) {
+                        await client.query('COMMIT');
+                        console.log(`ℹ️ Webhook duplicado ignorado para payment_id=${paymentId}`);
+                        return;
+                    }
+
                     const todayDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' });
-                    
-                    // 🔄 LÓGICA DE ACTIVACIÓN / UPGRADE:
-                    // 1. Si el usuario ya es Basic y compra Advanced -> SUMAR tiempo (Upgrade con regalo).
-                    // 2. Si es una compra inicial o tras expiración -> NOW() + Intervalo.
-                    // Nota: La UI ya bloquea comprar el mismo tier o uno inferior.
+
                     const updateQuery = `
                         UPDATE users SET 
                             subscription_status = 'active',
@@ -167,7 +193,7 @@ exports.handleWebhook = async (req, res) => {
                                 WHEN subscription_tier = 'basic' AND $1 = 'advanced' THEN GREATEST(subscription_expires_at, NOW()) + INTERVAL '${plan.months} months'
                                 ELSE NOW() + INTERVAL '${plan.months} months'
                             END,
-                            usage_count = 0, -- Resetear vidas globales al pagar (Fidelización)
+                            usage_count = 0,
                             daily_ai_usage = 0,
                             monthly_flashcards_usage = 0,
                             daily_simulator_usage = 0,
@@ -175,13 +201,41 @@ exports.handleWebhook = async (req, res) => {
                             payment_id = $2,
                             last_free_renewal = CURRENT_TIMESTAMP
                         WHERE id = $3
+                        RETURNING id
                     `;
 
-                    await pool.query(updateQuery, [planId, paymentId, userId, todayDate]);
+                    const updated = await client.query(updateQuery, [planId, paymentId, userId, todayDate]);
+                    if (!updated.rows || updated.rows.length === 0) {
+                        throw new Error('Usuario asociado al pago no encontrado.');
+                    }
+
+                    await client.query(`
+                        UPDATE payment_events
+                        SET status = 'processed', processed_at = NOW()
+                        WHERE payment_id = $1
+                    `, [String(paymentId)]);
+                    await client.query('COMMIT');
                     console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado en Plan ${planId.toUpperCase()}`);
-                }
- else {
-                    console.warn(`⚠️ Alerta: Pago aprobado pero monto sospechoso (${paidAmount}) para usuario ${userId}, Plan esperado: ${plan.price}`);
+                } catch (processingError) {
+                    await client.query('ROLLBACK').catch(rollbackError => {
+                        console.error('⚠️ No se pudo revertir el webhook:', rollbackError.message);
+                    });
+                    // El INSERT inicial se revierte junto con la transacción;
+                    // conservar un estado failed permite auditar y reintentar
+                    // sin ocultar el error original.
+                    try {
+                        await pool.query(`
+                            INSERT INTO payment_events (payment_id, user_id, plan_id, amount, status, error_message)
+                            VALUES ($1, $2, $3, $4, 'failed', LEFT($5, 1000))
+                            ON CONFLICT (payment_id) DO UPDATE
+                            SET status = 'failed', error_message = EXCLUDED.error_message
+                        `, [String(paymentId), userId, planId, paidAmount, processingError.message]);
+                    } catch (auditError) {
+                        console.error('⚠️ No se pudo registrar el fallo del webhook:', auditError.message);
+                    }
+                    throw processingError;
+                } finally {
+                    client.release();
                 }
             }
         }

@@ -71,16 +71,28 @@ class AuthApiService {
     }
 
     // ✅ ÚNICO MÉTODO DE ACCESO: Sincronización Google OAuth
-    static async syncGoogleUser(supabaseUser) {
+    static async syncGoogleUser(supabaseUser, accessToken = null) {
+        if (!supabaseUser) {
+            throw new Error('No se recibió el usuario autenticado de Supabase.');
+        }
+
+        // En SIGNED_IN se debe usar directamente el token entregado por Supabase.
+        // El fallback conserva compatibilidad con llamadas fuera de ese callback.
+        const bearerToken = accessToken || await this.getValidToken();
+        if (!bearerToken || this.isTokenExpired(bearerToken)) {
+            throw new Error('No se recibió una sesión válida de Supabase.');
+        }
+
         const API_URL = this.getApiUrl();
         const payload = {
-            id: supabaseUser.id,
-            email: supabaseUser.email,
             name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || 'Usuario Google'
         };
 
         const response = await window.NetworkService.fetch(`${API_URL}/api/auth/sync`, {
             method: 'POST',
+            headers: {
+                Authorization: `Bearer ${bearerToken}`
+            },
             body: JSON.stringify(payload),
         });
 
@@ -152,4 +164,14 @@ class AuthApiService {
         }
         return data;
     }
+}
+
+// Exponer el servicio de forma explícita: las declaraciones `class` de un
+// script clásico no siempre se publican como propiedades de window.
+if (typeof window !== 'undefined') {
+    window.AuthApiService = AuthApiService;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = AuthApiService;
 }

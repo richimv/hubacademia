@@ -317,7 +317,7 @@ Para evitar la duplicidad de preguntas durante las sesiones de estudio y simulac
 ## 12. Mejoras de Configuración, Simulacros Reales y Versión Demo (Mayo 2026)
 Para refinar la experiencia de configuración de estudio y los simulacros interactivos, se implementaron las siguientes adiciones:
 1. **Selección por Grupos (Frontend)**: Se implementó un checkbox maestro dinámico en el encabezado de cada sección de áreas dentro del modal de configuración. Este permite al usuario marcar o desmarcar todas las áreas de dicho grupo de golpe, manteniendo el comportamiento reactivo si decide desmarcar una de forma manual.
-2. **Evasión de Filtro en Simulacro Real (Universal)**: Al activar el modo de Simulacro Real (indicado mediante el parámetro `mode=real` en las peticiones al backend), el motor de autoevaluación ignora cualquier filtro de áreas/tópicos activos. En su lugar, el backend consulta preguntas de forma variada y equitativa de *todas* las áreas definidas para ese target en particular, garantizando una simulación integral del examen real para todos los módulos (Medicina, Educación e Idiomas).
+2. **Evasión de Filtro en Simulacro Real (Universal)**: Al activar el modo de Simulacro Real (indicado mediante el parámetro `mode=real` en las peticiones al backend), el motor de autoevaluación ignora cualquier filtro de áreas/tópicos activos. En su lugar, el backend consulta preguntas de forma variada y equitativa de *todas* las áreas definidas para ese target en particular, garantizando una simulación integral del examen real para Medicina y Educación.
 3. **Mapeo de KPI en Demo de Educación**: Se corrigió el mapeo de demostración de los KPIs de Invitado para Educación, sustituyendo las áreas obsoletas de Nombramiento (ej. Razonamiento Lógico, Comprensión Lectora) por las de la nueva configuración de Ascenso Docente (ej. Constructivismo, Enfoque por competencias, etc.).
 4. **Remoción de Glow en Demo**: Se ocultó la animación pulsante (neon pulse glow) y el tooltip de sugerencia sobre el botón "Configurar Examen" para visitantes que no hayan iniciado sesión (`!token`), reduciendo el ruido visual para los usuarios demo.
 
@@ -355,10 +355,21 @@ El sistema de Inteligencia Artificial se segmenta claramente en dos componentes 
 
 ### 14.2 Tutores IA de Exámenes (Quiz) y Repaso (Flashcards)
 Para profundizar en las casuísticas pedagógicas, principios constructivistas del CNEB y guías oficiales, se integran los Tutores Contextuales RAG:
-1. **Contextualización Integral**: Al activarse en un simulador (`quiz_tutor`) o tarjeta (`flashcard_tutor`), la IA recibe los metadatos completos del reactivo (enunciado, alternativas, opción correcta, respuesta seleccionada por el estudiante, acierto/error y explicación oficial) **junto con la configuración exacta del examen** (`examContext`: EDUCACION/MEDICINA/IDIOMAS, `target`: ASCENSO/NOMBRAMIENTO/SERUMS, `career`: e.g. EBR Primaria o Especialidad Secundaria, `difficulty`, `areas` y `mode`).
+1. **Contextualización Integral**: Al activarse en un simulador (`quiz_tutor`) o tarjeta (`flashcard_tutor`), la IA recibe los metadatos completos del reactivo (enunciado, alternativas, opción correcta, respuesta seleccionada por el estudiante, acierto/error y explicación oficial) **junto con la configuración exacta del examen** (`examContext`: EDUCACION/MEDICINA, `target`: ASCENSO/NOMBRAMIENTO/SERUMS, `career`: e.g. EBR Primaria o Especialidad Secundaria, `difficulty`, `areas` y `mode`).
 2. **RAG Semántico (Pinecone)**: Resuelve dudas sobre teorías del aprendizaje (Piaget, Vygotsky), enfoques transversales o rúbricas de evaluación del MINEDU utilizando RAG semántico sobre el namespace de educación (`education`), garantizando respuestas alineadas con el Currículo Nacional de Educación Básica (CNEB) y RVM 094-2020-MINEDU.
 3. **Control de Interfaz y Revisión**:
    - En simuladores activos (10q/20q), el botón del Tutor IA se habilita al responder cada pregunta.
    - **En la pantalla de culminación y revisión del examen (`showExamReview`)**: El botón de Tutor IA se remueve/oculta automáticamente de las tarjetas de pregunta y el panel flotante se cierra, ya que cada reactivo presenta de forma directa su explicación técnica y sustento oficial.
 4. **Modo Pantalla Completa en Escritorio (PC)**: Los paneles laterales de tutoría cuentan con el botón de expansión a pantalla completa (100vw x 100vh, `.tutor-chat-panel.chat-fullscreen`) para facilitar la lectura de tablas comparativas y esquemas Markdown en computadoras.
 5. **Monetización**: Los usuarios logueados consumen 1 vida global (`usage_count`) por respuesta exitosa en usuarios Free/Pending o 1 uso de su cuota activa en usuarios Premium (Basic/Advanced).
+
+---
+
+## 16. Paginación Reactiva por Lotes y Propagación de Sesión Segura (Agosto 2026)
+Para asegurar la continuidad en simulacros magisteriales (10q, 20q y Simulacros Reales):
+1. **Prefetch Proactivo (`quiz.js`)**:
+   - Las preguntas se solicitan en bloques de 5 (`/api/docente/start` y `/api/docente/next-batch`).
+   - Al estar a 2 preguntas de concluir el bloque en memoria (`questions.length - currentQuestionIndex <= 2`), el cliente solicita en segundo plano el siguiente lote enviando `seenIds`.
+2. **Sincronización `quizSessionId` y `configType`**:
+   - El cliente envía `quizSessionId` en `/next-batch` y `/submit`, evitando errores `400 Bad Request` en entornos con validación de sesión estricta y previniendo el truncamiento a 5 preguntas.
+   - Se propaga el `configType` ('default' vs 'custom') para mantener la coherencia de áreas y casuísticas evaluadas.

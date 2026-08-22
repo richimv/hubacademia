@@ -4,6 +4,20 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 
 ---
 
+### 🟢 [2026-08-22] - Módulo Repaso: Posicionamiento Inteligente Anti-Solapamiento en Tour Guía y Purificación de KPIs de Mazos
+
+- **📍 Algoritmo Anti-Solapamiento de Tooltips en Tour Guía ([tooltipManager.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/tooltipManager.js)):**
+  - Se implementó un algoritmo dinámico que calcula la intersección del área rectangular (`overlapArea`) entre la tarjeta flotante del tooltip y el elemento objetivo en pantalla.
+  - Evalúa iterativamente posiciones candidatas (`bottom`, `top`, `right`, `left`), garantizando la selección de una posición con **cero solapamiento (0px de obstrucción)**.
+  - Se afinó la selección de objetivos en `startRepasoTour` asociando el Paso 2 a la cabecera `.explorer-sidebar-header` para evitar que el tooltip cubra la etiqueta "EXPLORADOR" o el árbol de carpetas en vista móvil y de escritorio.
+  - Se incorporó `targetElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })` para asegurar el centrado óptimo del elemento objetivo en pantalla antes de calcular coordenadas.
+
+- **📊 Purificación de Analíticas y KPIs de Mazos ([analyticsRepository.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/analyticsRepository.js) & [analyticsService.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/analyticsService.js)):**
+  - Se desvinculó la tabla `quiz_history` (exámenes/simulacros culminados de los módulos Salud y Educación) de las estadísticas del mapa de actividad de los mazos.
+  - Se habilitó la filtración contextual por `deckId` en `/api/analytics/heatmap?deckId=...`, permitiendo que la ventana de estadísticas (`openStatsModal` en `repaso.js`) y `ActivityHeatmap` contabilicen de forma pura y exclusiva las revisiones de tarjetas (`user_flashcards`) del mazo seleccionado.
+
+---
+
 ### 🟢 [2026-08-20] - Sincronización y Actualización Total del Esquema de Base de Datos ([database_schema.sql](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/database/database_schema.sql))
 
 - **🔍 Introspección Profunda en Vivo de Supabase PostgreSQL:**
@@ -82,7 +96,7 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 
 - **💬 Sistema Centralizado de Tooltips, Guías de Onboarding y Soporte Táctil ([tooltipManager.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/tooltipManager.js), [components.css](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/components.css) & [simulator-dash.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js)):**
   - Se creó el gestor universal `TooltipManager` (`window.tooltipManager`) para manejo declarativo de tooltips con `[data-tooltip]` y `[data-tooltip-pos]`, con posicionamiento inteligente anti-desbordamiento y micro-animaciones.
-  - Se corrigió el error en los simuladores de Salud, Educación e Idiomas donde el tooltip de configuración no aparecía para usuarios visitantes (`!token`).
+  - Se corrigió el error en los simuladores de Salud y Educación donde el tooltip de configuración no aparecía para usuarios visitantes (`!token`).
   - Se implementó el tour interactivo de 2 pasos (`startSimulatorTour`) para guiar a visitantes y nuevos usuarios en la configuración de especialidad y selección de modos de entrenamiento.
   - Se añadió el botón discreto `#btn-show-guide` en la cabecera del simulador para que el usuario pueda volver a ver la guía interactiva en cualquier momento.
   - Se adaptaron los tooltips informativos de los KPIs (`.kpi-info-btn` / `.kpi-tooltip-content`) con eventos touch/click para celulares y tokens dinámicos Dual-Theme.
@@ -136,6 +150,24 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
   - **Alineación en Fila Superior (`.repaso-header-top-row` & `.deck-title-top-row`):** En el Dashboard de Repaso y en la vista de Mazo, el botón `Guía` se sitúa en la misma línea a la altura del título en el extremo derecho en PC y móviles.
   - **Estadísticas Responsivas (`.deck-meta-pill`):** Rediseño minimalista de las métricas (tarjetas, pendientes y dominadas) en píldoras estilizadas que nunca se truncan ni desbordan en pantallas móviles.
   - **Tour de 5 Pasos en Mazo (`startDeckViewTour`):** Cobertura interactiva completa que explica: 1) Estudio espaciado SM-2, 2) Creación manual e IA de tarjetas, 3) Cuaderno de notas/resumen, 4) Métricas y visibilidad pública, y 5) Gestión de Sub-Mazos y lista de flashcards.
+
+### 🟢 [2026-08-21] - Integración de Guía de Usuario, Tooltips de KPIs, Avatar Hubi y Sincronización de 10 Vidas en HubSaludApp y HubDocenteApp
+- **🧭 Onboarding Tour & Guía Interactiva en Apps Móviles ([UserGuideModal.tsx](file:///c:/Users/ricar/Downloads/PROYECTOS/HubSaludApp/src/presentation/components/UserGuideModal.tsx) & [home.tsx](file:///c:/Users/ricar/Downloads/PROYECTOS/HubSaludApp/app/(tabs)/home.tsx)):**
+  - Implementación del componente `UserGuideModal.tsx` en `HubSaludApp` y `HubDocenteApp` con navegación en 3 pasos: (1) Convocatoria y especialidad médica/docente, (2) 3 modalidades de simulador (10q, 20q con Tutor IA, Simulacro Real con cronómetro), (3) Analíticas de progreso y Tutor IA en corrección de examen.
+  - Inserción del botón `? Guía` en el banner de configuración de la pantalla principal (`home.tsx`) junto al botón `Configurar`.
+  - Apertura automática en la primera visita mediante persistencia local segura con `AppStorage` (`hasSeenSimulatorGuide_salud` y `hasSeenSimulatorGuide_docente`).
+- **📊 Modales Explicativas y Tooltips de KPIs ([KpiInfoModal.tsx](file:///c:/Users/ricar/Downloads/PROYECTOS/HubSaludApp/src/presentation/components/KpiInfoModal.tsx) & [home.tsx](file:///c:/Users/ricar/Downloads/PROYECTOS/HubSaludApp/app/(tabs)/home.tsx)):**
+  - Creación del componente `KpiInfoModal.tsx` con explicaciones detalladas, fórmulas de cálculo (escala vigesimal 0-20, porcentaje de aciertos) y metas recomendadas para cada KPI: Puntuación Promedio, Precisión Global, Aciertos / Diagnósticos Correctos, Errores Clínicos / Pedagógicos, Tendencia Histórica y Dominio por Especialidades / Grupos Pedagógicos.
+  - Integración interactiva: al tocar cualquier tarjeta de KPI o cabecera de gráfico en el dashboard se abre la ventana explicativa con recomendaciones formativas.
+- **⚡ Sincronización Universal de 10 Vidas de Prueba (Pool Free/Pending):**
+  - Actualización del límite por defecto de 20 a **10 vidas** en `AuthContext.tsx`, `ScreenHeader.tsx`, `profile.tsx` y `terms-and-conditions.tsx` en ambas aplicaciones móviles.
+  - Implementación del componente `LifeToast.tsx` para emitir notificaciones flotantes con microanimaciones elásticas cuando se descuenta un crédito o cuando el saldo de vidas es bajo.
+- **🩺 Avatar de Hubi en Botón de Tutor IA en Revisión:**
+  - En `results.tsx` de ambas apps, se integró el avatar ilustrativo de Hubi (`assets/images/hubifrente.png`) en el botón de activación del Tutor IA en cada caso clínico / casuística pedagógica.
+- **📈 Mapeo y Dominio Pedagógico CNEB en HubDocenteApp:**
+  - Sincronización de `CANONICAL_SUBAREAS_MAP` en `PedagogicalBarChart.tsx` y `docenteService.js` para reflejar las 6 subáreas curriculares oficiales sin duplicaciones.
+
+---
 
 ### 🟢 [2026-08-20] - Refactorización Integral de Onboarding Tour, Tooltips, Alertas Únicas y UI de Resultados
 - **🧭 Onboarding Tour Universal & Tooltips ([GUIA_USUARIO_Y_TOOLTIPS.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/GUIA_USUARIO_Y_TOOLTIPS.md), [UI_COMPONENTS_GUIDE.md](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/UI_COMPONENTS_GUIDE.md), [tooltipManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/tooltipManager.js) & [components.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/components.css)):**

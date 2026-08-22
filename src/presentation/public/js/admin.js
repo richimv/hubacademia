@@ -608,7 +608,7 @@ class AdminManager {
                         <i class="fas fa-search"></i>
                         <input type="text" class="admin-search-input-dynamic" 
                             placeholder="Buscar preguntas (Servidor)..." 
-                            value="${this.currentQuestionSearch}"
+                            value="${this.escapeHtml(this.currentQuestionSearch)}"
                             oninput="window.adminManager.handleDynamicSearch(this.value)">
                     </div>
 
@@ -1285,7 +1285,7 @@ class AdminManager {
                         <!-- UX MEJORA: Campo Autor Validado -->
                         <div class="form-group">
                             <label for="generic-author">Autor/Creador (*)</label>
-                            <input type="text" id="generic-author" name="generic-author" value="${this.currentItem?.author || ''}" required placeholder="Ej: Drake, Richard L.; Vogl, A. Wayne">
+                            <input type="text" id="generic-author" name="generic-author" value="${this.escapeHtml(this.currentItem?.author || '')}" required placeholder="Ej: Drake, Richard L.; Vogl, A. Wayne">
                                 <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.8em;">
                                     <i class="fas fa-info-circle"></i> Formato obligatorio: <b>Nombre, Apellido</b>. Separa múltiples autores con punto y coma (;).
                                 </small>
@@ -1413,6 +1413,7 @@ class AdminManager {
         }
 
         fieldsContainer.innerHTML = fieldsHTML;
+        this.hydrateImagePreviews(fieldsContainer);
         this.genericModal.style.display = 'flex';
 
         // LÓGICA DE SUSCRIPCIONES DINÁMICAS Y CONSISTENCIA PARA ESTUDIANTES
@@ -1642,7 +1643,13 @@ class AdminManager {
                 _input.onchange = null;
                 _input.onchange = () => {
                     if (_input.files.length > 0) {
-                        _info.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color);"></i> Archivo listo: <b>${_input.files[0].name}</b> (Se ignorará el texto)`;
+                        _info.replaceChildren();
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle';
+                        icon.style.color = 'var(--success-color)';
+                        const label = document.createElement('span');
+                        label.textContent = ` Archivo listo: ${_input.files[0].name} (Se ignorará el texto)`;
+                        _info.append(icon, label);
                         _info.style.color = 'var(--success-color)';
                     }
                 };
@@ -1769,13 +1776,12 @@ class AdminManager {
     }
 
     createImageUploadGroup(id, label, value = '') {
-        const isExternal = value.startsWith('http');
-        const token = localStorage.getItem('authToken');
-        const previewUrl = value ? (isExternal ? value : `${window.AppConfig.API_URL}/api/media/preview?path=${value}&token=${token}`) : '';
         const escapedValue = this.escapeHtml(value);
+        const safeExternalUrl = this.getSafeExternalImageUrl(value);
+        const escapedPreviewUrl = this.escapeHtml(safeExternalUrl || '');
 
         return `
-            <div class="form-group image-upload-group" style="margin-bottom: 20px; border: 1px dashed var(--border-color); padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.02);">
+            <div class="form-group image-upload-group" data-image-upload-id="${this.escapeHtml(id)}" style="margin-bottom: 20px; border: 1px dashed var(--border-color); padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.02);">
                 <label for="${id}-url" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
                     <i class="fas fa-image" style="color: var(--accent-color);"></i> ${label}
                 </label>
@@ -1799,9 +1805,9 @@ class AdminManager {
                 </div>
 
                 <!-- Contenedor de Previsualización -->
-                <div id="${id}-preview-container" style="display: ${value ? 'block' : 'none'}; margin-top: 10px; text-align: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                <div id="${id}-preview-container" style="display: ${safeExternalUrl ? 'block' : 'none'}; margin-top: 10px; text-align: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
                     <small style="display: block; color: var(--text-muted); margin-bottom: 5px;">Vista Previa:</small>
-                    <img id="${id}-preview-img" src="${previewUrl}" alt="Preview" 
+                    <img id="${id}-preview-img" src="${escapedPreviewUrl}" alt="Preview"
                         style="max-width: 100%; max-height: 180px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
                         onerror="this.parentElement.style.display='none'">
                 </div>
@@ -1824,6 +1830,8 @@ class AdminManager {
         if (urlInput) urlInput.value = '';
         if (fileInput) fileInput.value = '';
         if (preview) preview.style.display = 'none';
+        const previewImg = document.getElementById(`${id}-preview-img`);
+        this.revokePreviewObjectUrl(previewImg);
 
         if (info) {
             info.innerHTML = `<i class="fas fa-trash" style="color: var(--danger-color);"></i> Imagen marcada para eliminar al guardar.`;
@@ -1836,7 +1844,7 @@ class AdminManager {
      */
     updateLivePreview(id) {
         if (this.previewTimer) clearTimeout(this.previewTimer);
-        this.previewTimer = setTimeout(() => {
+        this.previewTimer = setTimeout(async () => {
             const urlInput = document.getElementById(`${id}-url`);
             const previewContainer = document.getElementById(`${id}-preview-container`);
             const previewImg = document.getElementById(`${id}-preview-img`);
@@ -1850,30 +1858,79 @@ class AdminManager {
                 return;
             }
 
-            const isExternal = value.startsWith('http');
-            const previewUrl = window.resolveImageUrl(value);
+            await this.loadImagePreview(id, value);
+        }, 750); // Aumentado a 750ms para permitir escribir nombres completos sin spam de consola
+    }
 
-            // Carga Asíncrona: Validar éxito antes de mostrar para evitar parpadeos y 404s visuales
+    hydrateImagePreviews(root) {
+        if (!root) return;
+        root.querySelectorAll('.image-upload-group[data-image-upload-id]').forEach(group => {
+            const id = group.dataset.imageUploadId;
+            const value = document.getElementById(`${id}-url`)?.value?.trim();
+            if (value) this.loadImagePreview(id, value);
+        });
+    }
+
+    getSafeExternalImageUrl(value) {
+        if (!value) return null;
+        try {
+            const url = new URL(value);
+            return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    revokePreviewObjectUrl(previewImg) {
+        if (previewImg?.dataset?.objectUrl) {
+            URL.revokeObjectURL(previewImg.dataset.objectUrl);
+            delete previewImg.dataset.objectUrl;
+        }
+    }
+
+    async loadImagePreview(id, value) {
+        const urlInput = document.getElementById(`${id}-url`);
+        const previewContainer = document.getElementById(`${id}-preview-container`);
+        const previewImg = document.getElementById(`${id}-preview-img`);
+        if (!urlInput || !previewContainer || !previewImg || urlInput.value.trim() !== value) return;
+
+        let previewUrl = this.getSafeExternalImageUrl(value);
+        let objectUrl = null;
+        try {
+            if (!previewUrl) {
+                const response = await window.NetworkService.fetch(
+                    `${window.AppConfig.API_URL}/api/media/preview?path=${encodeURIComponent(value)}`
+                );
+                if (!response.ok) throw new Error(`Vista previa no disponible (${response.status})`);
+                objectUrl = URL.createObjectURL(await response.blob());
+                previewUrl = objectUrl;
+            }
+
             const tempImg = new Image();
             tempImg.onload = () => {
-                // Sincronía: Verificar que el valor del input no haya cambiado durante la carga
-                if (urlInput.value.trim() === value) {
-                    previewImg.src = previewUrl;
-                    previewContainer.style.display = 'block';
+                if (urlInput.value.trim() !== value) {
+                    if (objectUrl) URL.revokeObjectURL(objectUrl);
+                    return;
                 }
+                this.revokePreviewObjectUrl(previewImg);
+                previewImg.src = previewUrl;
+                if (objectUrl) previewImg.dataset.objectUrl = objectUrl;
+                previewContainer.style.display = 'block';
             };
             tempImg.onerror = () => {
-                if (urlInput.value.trim() === value) {
-                    previewContainer.style.display = 'none';
-                }
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+                if (urlInput.value.trim() === value) previewContainer.style.display = 'none';
             };
             tempImg.src = previewUrl;
-        }, 750); // Aumentado a 750ms para permitir escribir nombres completos sin spam de consola
+        } catch (error) {
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+            if (urlInput.value.trim() === value) previewContainer.style.display = 'none';
+        }
     }
 
     createSelect(id, label, options, selectedValue, optional = false) {
         let optionsHTML = optional ? '<option value="">-- Ninguno --</option>' : '';
-        optionsHTML += options.map(opt => `<option value="${opt.id}" ${opt.id === selectedValue ? 'selected' : ''}>${opt.name}</option>`).join('');
+        optionsHTML += options.map(opt => `<option value="${this.escapeHtml(opt.id)}" ${opt.id === selectedValue ? 'selected' : ''}>${this.escapeHtml(opt.name)}</option>`).join('');
         return `<div class="form-group"><label for="${id}">${label}</label><select id="${id}">${optionsHTML}</select></div>`;
     }
 
@@ -1888,7 +1945,7 @@ class AdminManager {
         let optionsHTML = optional ? '<option value="">-- Ninguno --</option>' : '';
         // MEJORA: Usar una comparación no estricta (==) para comparar el valor final (que puede ser string o número)
         // con el `opt.id` de las opciones, que siempre es un string desde el HTML.
-        optionsHTML += options.map(opt => `<option value="${opt.id}" ${opt.id == finalSelectedValue ? 'selected' : ''}>${opt.name}</option>`).join('');
+        optionsHTML += options.map(opt => `<option value="${this.escapeHtml(opt.id)}" ${opt.id == finalSelectedValue ? 'selected' : ''}>${this.escapeHtml(opt.name)}</option>`).join('');
         return `
             <div class="form-group searchable-dropdown-container" data-name="${id}">
                 <label for="${id}">${label}</label>
@@ -1913,10 +1970,11 @@ class AdminManager {
         const itemsHTML = sortedOptions.map(opt => {
             const checked = numericSelectedIds.includes(opt.id) ? 'checked' : '';
             const displayLabel = type === 'book' ? `${opt.title} (by ${opt.author})` : opt.name;
+            const safeOptionId = this.escapeHtml(opt.id);
             return `
                 <div class="checkbox-item">
-                    <input type="checkbox" id="${name}-${opt.id}" name="${name}" value="${opt.id}" ${checked}>
-                    <label for="${name}-${opt.id}">${displayLabel}</label>
+                    <input type="checkbox" id="${name}-${safeOptionId}" name="${name}" value="${safeOptionId}" ${checked}>
+                    <label for="${name}-${safeOptionId}">${this.escapeHtml(displayLabel)}</label>
                 </div>
             `;
         }).join('');
@@ -1938,9 +1996,33 @@ class AdminManager {
 
     addScheduleRow(day = '', startTime = '', endTime = '', room = '', notes = '') {
         const container = document.getElementById('schedule-container');
+        if (!container) return;
         const newRow = document.createElement('div');
         newRow.className = 'schedule-row';
-        newRow.innerHTML = `<input type="text" class="schedule-day" placeholder="Día" value="${day}" required> <input type="time" class="schedule-start" value="${startTime}" required><input type="time" class="schedule-end" value="${endTime}" required><input type="text" class="schedule-room" placeholder="Salón" value="${room}"><input type="text" class="schedule-notes" placeholder="Notas/Carrera (Opcional)" value="${notes}"><button type="button" class="remove-schedule-row">×</button>`;
+
+        const createInput = (type, className, placeholder, value, required = false) => {
+            const input = document.createElement('input');
+            input.type = type;
+            input.className = className;
+            if (placeholder) input.placeholder = placeholder;
+            input.value = String(value || '');
+            input.required = required;
+            return input;
+        };
+
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'remove-schedule-row';
+        removeButton.textContent = '×';
+
+        newRow.append(
+            createInput('text', 'schedule-day', 'Día', day, true),
+            createInput('time', 'schedule-start', '', startTime, true),
+            createInput('time', 'schedule-end', '', endTime, true),
+            createInput('text', 'schedule-room', 'Salón', room),
+            createInput('text', 'schedule-notes', 'Notas/Carrera (Opcional)', notes),
+            removeButton
+        );
         container.appendChild(newRow);
     }
 
@@ -1963,7 +2045,7 @@ class AdminManager {
         });
 
         // Crear el select de temas (oculto, usado como plantilla) - AHORA CON BUSCADOR
-        const topicOptions = allTopics.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        const topicOptions = allTopics.map(t => `<option value="${this.escapeHtml(t.id)}">${this.escapeHtml(t.name)}</option>`).join('');
 
         return `
                 <div class="form-group unit-manager-container">
@@ -1995,17 +2077,17 @@ class AdminManager {
 
     _createUnitHTML(unitName, topics) {
         const topicsHTML = topics.map(t => `
-                <div class="unit-topic-item" data-id="${t.id}">
-                    <span class="topic-name">${t.name}</span>
+                <div class="unit-topic-item" data-id="${this.escapeHtml(t.id)}">
+                    <span class="topic-name">${this.escapeHtml(t.name)}</span>
                     <button type="button" class="remove-topic-btn" title="Quitar tema">×</button>
-                    <input type="hidden" name="unit-topic-id" value="${t.id}">
+                    <input type="hidden" name="unit-topic-id" value="${this.escapeHtml(t.id)}">
                 </div>
                 `).join('');
 
         return `
                 <div class="unit-item card-3d">
                     <div class="unit-header">
-                        <input type="text" class="unit-name-input" placeholder="Nombre de la Unidad" value="${unitName}">
+                        <input type="text" class="unit-name-input" placeholder="Nombre de la Unidad" value="${this.escapeHtml(unitName)}">
                             <button type="button" class="remove-unit-btn" title="Eliminar Unidad"><i class="fas fa-trash"></i></button>
                     </div>
                     <div class="unit-topics-list">
@@ -2035,8 +2117,8 @@ class AdminManager {
 
             if (pdfs.length > 0 || links.length > 0) {
                 hasMaterials = true;
-                pdfs.forEach(p => { materialsHTML += `<span class="material-preview-item pdf">${p.name}</span>`; });
-                links.forEach(l => { materialsHTML += `<span class="material-preview-item link">${l.name}</span>`; });
+                pdfs.forEach(p => { materialsHTML += `<span class="material-preview-item pdf">${this.escapeHtml(p.name)}</span>`; });
+                links.forEach(l => { materialsHTML += `<span class="material-preview-item link">${this.escapeHtml(l.name)}</span>`; });
             }
         });
 

@@ -449,19 +449,18 @@ class AnalyticsService {
         };
     }
 
-    async getHeatmapData(userId) {
+    async getHeatmapData(userId, deckId = null) {
         const heatmap = {};
-        const res = await this.analyticsRepo.getHeatmapDataRaw(userId);
-        
-        // Add Quizzes (Value: 2 points per quiz)
-        res.quizResRows.forEach(row => {
-            heatmap[row.day] = (heatmap[row.day] || 0) + parseInt(row.count) * 2;
-        });
+        const res = await this.analyticsRepo.getHeatmapDataRaw(userId, deckId);
 
-        // Add Cards (Value: 1 point per card)
-        res.cardResRows.forEach(row => {
-            heatmap[row.day] = (heatmap[row.day] || 0) + parseInt(row.count);
-        });
+        // Contabilizar exclusivamente repasos de tarjetas (user_flashcards)
+        if (res && res.cardResRows) {
+            res.cardResRows.forEach(row => {
+                if (row.day) {
+                    heatmap[row.day] = (heatmap[row.day] || 0) + parseInt(row.count);
+                }
+            });
+        }
 
         return heatmap;
     }

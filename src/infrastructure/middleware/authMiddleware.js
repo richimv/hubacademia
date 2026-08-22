@@ -2,12 +2,13 @@ const supabase = require('../config/supabaseClient');
 const UserRepository = require('../../domain/repositories/userRepository');
 const userRepository = new UserRepository();
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 // Caché en memoria para almacenar verificaciones exitosas de tokens (token -> { user, cachedAt, exp })
 const tokenCache = new Map();
 
 // Limpiar caché periódicamente para evitar fugas de memoria
-setInterval(() => {
+const tokenCacheCleanupTimer = setInterval(() => {
     const now = Date.now();
     for (const [token, entry] of tokenCache.entries()) {
         if (now > entry.cachedAt + 3 * 60 * 1000 || now / 1000 > entry.exp) {
@@ -15,42 +16,108 @@ setInterval(() => {
         }
     }
 }, 60 * 1000);
+tokenCacheCleanupTimer.unref?.();
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 500;
+
+function getAuthErrorMetadata(error = {}) {
+    return {
+        name: String(error.name || ''),
+        message: String(error.message || ''),
+        code: String(error.code || error.cause?.code || ''),
+        status: Number(error.status || 0)
+    };
+}
+
+function isRetryableAuthError(error) {
+    const { name, message, code, status } = getAuthErrorMetadata(error);
+    const normalized = `${name} ${message} ${code}`.toLowerCase();
+
+    return name === 'AuthRetryableFetchError'
+        || status === 0
+        || status === 408
+        || status === 429
+        || status >= 500
+        || normalized.includes('fetch failed')
+        || normalized.includes('network')
+        || normalized.includes('timeout')
+        || normalized.includes('econnreset')
+        || normalized.includes('enotfound')
+        || normalized.includes('eai_again');
+}
+
+function isInvalidAuthError(error) {
+    const { message, code, status } = getAuthErrorMetadata(error);
+    const normalized = `${message} ${code}`.toLowerCase();
+
+    if (isRetryableAuthError(error)) return false;
+
+    return status === 400
+        || status === 401
+        || status === 403
+        || normalized.includes('invalid jwt')
+        || normalized.includes('bad_jwt')
+        || normalized.includes('expired')
+        || normalized.includes('auth session missing')
+        || normalized.includes('invalid claim');
+}
 
 async function getUserWithRetry(token, retries = MAX_RETRIES) {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             const { data: { user }, error } = await supabase.auth.getUser(token);
-            if (error) throw error; // Re-throw to cache if it's a supabase error (401, etc) - though 401 shouldn't be retried usually, but network errors will be caught below. 
-            // Wait, supabase-js returns error object, doesn't throw for 401. 
-            // We should only retry on NETWORK errors (detected via catch block) or 5xx.
-            // But getUser failing with 401 is permanent. 
+            if (error) throw error;
             return { user, error: null };
         } catch (err) {
-            const isNetworkError = err.cause && (
-                err.cause.code === 'ECONNRESET' || 
-                err.cause.code === 'ETIMEDOUT' || 
-                err.cause.code === 'UND_ERR_CONNECT_TIMEOUT' || 
-                err.message.includes('fetch failed')
-            );
-
-            if (isNetworkError && attempt < retries) {
-                console.warn(`⚠️ Supabase Auth Network Error (Attempt ${attempt}/${retries}): ${err.message}. Retrying in ${RETRY_DELAY_MS}ms...`);
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            if (isRetryableAuthError(err) && attempt < retries) {
+                const delay = RETRY_DELAY_MS * attempt;
+                const meta = getAuthErrorMetadata(err);
+                console.warn(`⚠️ Supabase Auth temporal (${attempt}/${retries}, ${meta.name || meta.code || meta.status}). Reintentando en ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
                 continue;
             }
-            // If it's the last attempt or not a network error, return/throw
-            if (attempt === retries) throw err;
             throw err;
         }
     }
 }
 
+function getBearerToken(req) {
+    const header = req.header('Authorization');
+    if (!header || !/^Bearer\s+/i.test(header)) return null;
+    const token = header.replace(/^Bearer\s+/i, '').trim();
+    return token || null;
+}
+
+async function getVerifiedIdentity(token) {
+    const decoded = jwt.decode(token);
+    if (!decoded || !decoded.exp || Date.now() / 1000 > decoded.exp) {
+        const error = new Error('Sesión inválida o expirada.');
+        error.status = 401;
+        throw error;
+    }
+
+    const cached = tokenCache.get(token);
+    const now = Date.now();
+    if (cached && now < cached.cachedAt + 3 * 60 * 1000) return cached.user;
+
+    const result = await getUserWithRetry(token);
+    if (!result.user) {
+        const error = new Error('Sesión inválida o expirada.');
+        error.status = 401;
+        throw error;
+    }
+
+    tokenCache.set(token, {
+        user: result.user,
+        cachedAt: now,
+        exp: decoded.exp
+    });
+    return result.user;
+}
+
 async function auth(req, res, next) {
-    const authHeader = req.header('Authorization');
-    let token = authHeader ? authHeader.split(' ')[1] : req.query.token;
+    const token = getBearerToken(req);
 
     if (!token) {
         return res.status(401).json({ error: 'Acceso denegado. Token no provisto.' });
@@ -87,23 +154,13 @@ async function auth(req, res, next) {
                     });
                 }
             } catch (err) {
-                const msg = err.message || '';
-                const status = err.status || 0;
-                
-                const isClientError = msg.includes('invalid JWT') || 
-                                      msg.includes('expired') || 
-                                      msg.includes('invalid claim') || 
-                                      msg.includes('Auth session missing') || 
-                                      status === 400;
-
-                if (isClientError) {
-                    console.warn('⚠️ Sesión de usuario inválida:', msg);
+                if (isInvalidAuthError(err)) {
+                    console.warn('⚠️ Sesión de usuario inválida:', err.message);
                     tokenCache.delete(token);
                     return res.status(401).json({ error: 'Sesión expirada. Por favor inicie sesión nuevamente.' });
                 }
 
-                const isConnectionError = err.code === 'ENOTFOUND' || err.syscall === 'getaddrinfo' || msg.includes('fetch failed');
-                if (isConnectionError) {
+                if (isRetryableAuthError(err)) {
                     console.warn('⚠️ Supabase Auth Connectivity Warning (DNS/Network).');
                 } else {
                     console.error('❌ Supabase Auth unexpected error:', err);
@@ -134,8 +191,7 @@ async function auth(req, res, next) {
 }
 
 async function optionalAuth(req, res, next) {
-    const authHeader = req.header('Authorization');
-    const token = authHeader ? authHeader.split(' ')[1] : req.query.token;
+    const token = getBearerToken(req);
     if (!token) return next();
 
     try {
@@ -184,4 +240,49 @@ const adminOnly = (req, res, next) => {
     }
 };
 
-module.exports = { auth, optionalAuth, adminOnly };
+/**
+ * Verifica solamente la identidad del proveedor Supabase para flujos como
+ * /auth/sync, donde todavía no existe un usuario local en PostgreSQL.
+ * No acepta tokens por query string ni confía en id/email del body.
+ */
+async function authIdentity(req, res, next) {
+    const token = getBearerToken(req);
+    if (!token) return res.status(401).json({ error: 'Acceso denegado. Token Bearer no provisto.' });
+
+    try {
+        req.authIdentity = await getVerifiedIdentity(token);
+        return next();
+    } catch (error) {
+        if (isInvalidAuthError(error)) {
+            return res.status(401).json({ error: 'Sesión inválida o expirada.' });
+        }
+
+        const meta = getAuthErrorMetadata(error);
+        console.error('❌ Error verificando identidad Supabase:', meta);
+        return res.status(503).json({ error: 'Servicio de autenticación no disponible.' });
+    }
+}
+
+/**
+ * Protege endpoints internos consumidos por jobs/servicios ML.
+ * Requiere ML_SERVICE_TOKEN o INTERNAL_API_TOKEN en el entorno de ejecución.
+ */
+function internalServiceAuth(req, res, next) {
+    const configuredToken = process.env.ML_SERVICE_TOKEN || process.env.INTERNAL_API_TOKEN;
+    if (!configuredToken) {
+        return res.status(503).json({ error: 'Servicio interno no configurado.' });
+    }
+
+    const presentedToken = req.get('x-internal-token') || getBearerToken(req);
+    if (!presentedToken) return res.status(401).json({ error: 'Credencial de servicio requerida.' });
+
+    const expected = Buffer.from(configuredToken);
+    const actual = Buffer.from(presentedToken);
+    const matches = expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+    if (!matches) return res.status(403).json({ error: 'Credencial de servicio inválida.' });
+
+    req.serviceIdentity = 'ml-service';
+    return next();
+}
+
+module.exports = { auth, optionalAuth, adminOnly, authIdentity, internalServiceAuth };

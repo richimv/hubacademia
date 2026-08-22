@@ -68,10 +68,11 @@ class RepasoManager {
     static _resolveIcon(icon, fallbackFA = 'fas fa-folder') {
         // Default fallback
         if (!icon) return { faClass: fallbackFA, color: '#60a5fa' };
-        // Already HTML
-        if (icon.startsWith('<')) return { faClass: null, html: icon, color: '#60a5fa' };
-        // FontAwesome class string
-        if (icon.startsWith('fa')) return { faClass: icon, color: RepasoManager._iconColor(icon) };
+        const iconValue = String(icon).trim();
+        // FontAwesome class string limitada a clases conocidas; nunca se acepta HTML persistido.
+        if (/^(?:fas|far|fab|fal|fad|fa-solid|fa-regular)(?:\s+fa-[a-z0-9-]+)+$/i.test(iconValue)) {
+            return { faClass: iconValue, color: RepasoManager._iconColor(iconValue) };
+        }
 
         // Map emojis → FA + color
         const emojiMap = {
@@ -96,11 +97,11 @@ class RepasoManager {
             '👁️': { fa: 'fas fa-eye', color: '#67e8f9' },
             '🧬': { fa: 'fas fa-dna', color: '#34d399' },
         };
-        if (emojiMap[icon]) {
-            return { faClass: emojiMap[icon].fa, color: emojiMap[icon].color };
+        if (emojiMap[iconValue]) {
+            return { faClass: emojiMap[iconValue].fa, color: emojiMap[iconValue].color };
         }
-        // Unknown emoji — render as-is
-        return { faClass: null, html: icon, color: '#94a3b8' };
+        // Símbolos desconocidos se muestran únicamente como texto neutralizado.
+        return { faClass: null, html: window.escapeHtml(iconValue), color: '#94a3b8' };
     }
 
     /**
@@ -577,7 +578,6 @@ class RepasoManager {
             { id: 'Educación', name: 'Educación', icon: 'fas fa-graduation-cap' },
             { id: 'Matemáticas', name: 'Matemáticas', icon: 'fas fa-calculator' },
             { id: 'Historia', name: 'Historia', icon: 'fas fa-landmark' },
-            { id: 'Idiomas', name: 'Idiomas', icon: 'fas fa-language' },
             { id: 'Derecho', name: 'Derecho', icon: 'fas fa-balance-scale' },
             { id: 'Ciencia', name: 'Ciencia', icon: 'fas fa-flask' },
             { id: 'Tecnología', name: 'Tecnología', icon: 'fas fa-laptop-code' },
@@ -663,16 +663,16 @@ class RepasoManager {
                     <!-- Desktop layout -->
                     <div class="deck-card-desktop">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-                            <span class="deck-category-tag"><i class="${catObj.icon}"></i> ${catObj.name}</span>
-                            <div style="color: #94a3b8; font-size: 0.75rem;"><i class="fas fa-download"></i> ${deck.saves_count || 0}</div>
+                            <span class="deck-category-tag"><i class="${catObj.icon}"></i> ${escapeHtml(catObj.name)}</span>
+                            <div style="color: #94a3b8; font-size: 0.75rem;"><i class="fas fa-download"></i> ${Math.max(0, Number(deck.saves_count) || 0)}</div>
                         </div>
                         <div style="font-size:1.6rem; margin-bottom:0.4rem;">${iconHtml}</div>
-                        <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${deck.name}</h3>
+                        <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${escapeHtml(deck.name)}</h3>
                         <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.4rem;">
-                            ${deck.total_cards || 0} tarjetas
+                            ${Math.max(0, Number(deck.total_cards) || 0)} tarjetas
                         </div>
                         <div style="font-size:0.75rem; color:#f97316; font-weight:600; margin-bottom:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            > Por: <span style="color:var(--text-secondary)">${deck.author_name || 'Estudiante'}</span>
+                            &gt; Por: <span style="color:var(--text-secondary)">${escapeHtml(deck.author_name || 'Estudiante')}</span>
                         </div>
                         <div style="margin-top:auto; width:100%;">
                             <button type="button" class="btn-clone-deck btn-clone-desktop">
@@ -685,9 +685,9 @@ class RepasoManager {
                     <div class="deck-card-mobile">
                         <div style="font-size:1.3rem; flex-shrink:0;">${iconHtml}</div>
                         <div style="flex:1; min-width:0;">
-                            <div style="font-size:0.9rem; font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${deck.name}</div>
+                            <div style="font-size:0.9rem; font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(deck.name)}</div>
                             <div style="font-size:0.75rem; color:var(--text-muted);">
-                                ${deck.total_cards || 0} tarj. • <i class="fas fa-download"></i> ${deck.saves_count || 0}
+                                ${Math.max(0, Number(deck.total_cards) || 0)} tarj. • <i class="fas fa-download"></i> ${Math.max(0, Number(deck.saves_count) || 0)}
                             </div>
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; flex-shrink:0;">
@@ -695,7 +695,7 @@ class RepasoManager {
                                 title="Clonar Mazo">
                                 <i class="fas fa-clone"></i>
                             </button>
-                            <span class="deck-category-tag"><i class="${catObj.icon}"></i> ${catObj.name}</span>
+                            <span class="deck-category-tag"><i class="${catObj.icon}"></i> ${escapeHtml(catObj.name)}</span>
                         </div>
                     </div>
                 `;
@@ -916,7 +916,7 @@ class RepasoManager {
 
                     <div style="flex-grow: 1; min-width: 0;">
                         <div class="deck-title-top-row">
-                            <h1 class="deck-title">${deck?.name || 'Mazo sin nombre'}</h1>
+                            <h1 class="deck-title">${escapeHtml(deck?.name || 'Mazo sin nombre')}</h1>
                             <button id="btn-deck-tour" class="btn-guide-hero btn-guide-deck" data-tooltip="Ver guía rápida de este mazo" aria-label="Guía del mazo">
                                 <i class="fas fa-circle-question"></i>
                                 <span>Guía</span>
@@ -1041,7 +1041,6 @@ class RepasoManager {
                             <option value="Educación" ${currentCat === 'Educación' ? 'selected' : ''}>🎓 Educación</option>
                             <option value="Matemáticas" ${currentCat === 'Matemáticas' ? 'selected' : ''}>📐 Matemáticas</option>
                             <option value="Historia" ${currentCat === 'Historia' ? 'selected' : ''}>📜 Historia</option>
-                            <option value="Idiomas" ${currentCat === 'Idiomas' ? 'selected' : ''}>🗣️ Idiomas</option>
                             <option value="Derecho" ${currentCat === 'Derecho' ? 'selected' : ''}>⚖️ Derecho</option>
                             <option value="Ciencia" ${currentCat === 'Ciencia' ? 'selected' : ''}>🔬 Ciencia</option>
                             <option value="Tecnología" ${currentCat === 'Tecnología' ? 'selected' : ''}>💻 Tecnología</option>
@@ -1219,7 +1218,7 @@ class RepasoManager {
             card.style.cursor = 'pointer';
 
             const isSystem = deck.type === 'SYSTEM';
-            const mastery = deck.mastery_percentage || 0;
+            const mastery = Math.max(0, Math.min(100, Number(deck.mastery_percentage) || 0));
             const iconHtml = RepasoManager.renderDeckIconHtml(deck, 'fas fa-folder-open');
             const hasDue = parseInt(deck.due_cards) > 0;
             const badgeClass = isSystem ? 'badge-system' : 'badge-user';
@@ -1260,10 +1259,10 @@ class RepasoManager {
                         ${actionBtns}
                     </div>
                     <div class="deck-card-icon-center">${iconHtml}</div>
-                    <h3 class="deck-card-title-text" title="${escapeHtml(deck.name)}">${deck.name}</h3>
+                    <h3 class="deck-card-title-text" title="${escapeHtml(deck.name)}">${escapeHtml(deck.name)}</h3>
                     <div class="deck-card-meta-text">
-                        <span>${deck.total_cards || 0} tarjetas</span>
-                        ${hasDue ? `<span class="deck-due-tag">${deck.due_cards} pend.</span>` : ''}
+                        <span>${Math.max(0, Number(deck.total_cards) || 0)} tarjetas</span>
+                        ${hasDue ? `<span class="deck-due-tag">${Math.max(0, Number(deck.due_cards) || 0)} pend.</span>` : ''}
                     </div>
                     <div class="deck-card-footer-box">
                         <div class="deck-mastery-header">
@@ -1279,10 +1278,10 @@ class RepasoManager {
                 <div class="deck-card-mobile">
                     <div class="deck-card-mob-icon">${iconHtml}</div>
                     <div class="deck-card-mob-info">
-                        <div class="deck-card-mob-title">${deck.name}</div>
+                        <div class="deck-card-mob-title">${escapeHtml(deck.name)}</div>
                         <div class="deck-card-mob-meta">
-                            <span>${deck.total_cards || 0} tarj.</span>
-                            ${hasDue ? `<span class="deck-due-tag">${deck.due_cards} pend.</span>` : ''}
+                            <span>${Math.max(0, Number(deck.total_cards) || 0)} tarj.</span>
+                            ${hasDue ? `<span class="deck-due-tag">${Math.max(0, Number(deck.due_cards) || 0)} pend.</span>` : ''}
                         </div>
                     </div>
                     <div class="deck-card-mob-side">
@@ -1884,7 +1883,7 @@ class RepasoManager {
 
         // Render Heatmap (Fixed init instead of empty render)
         if (window.ActivityHeatmap) {
-            const heatmap = new ActivityHeatmap('activity-heatmap');
+            const heatmap = new ActivityHeatmap('activity-heatmap', this.currentDeck?.id);
             heatmap.init();
         }
     }
@@ -2329,7 +2328,7 @@ class RepasoManager {
         document.getElementById('card-back').value = back;
         document.getElementById('modal-title').innerText = 'Editar Tarjeta';
 
-        // ✅ Cargar idiomas y visibilidad
+        // ✅ Cargar configuración TTS y visibilidad
         const langFront = document.getElementById('card-tts-lang-front');
         const langBack = document.getElementById('card-tts-lang-back');
         if (langFront) langFront.value = ttsLangFront || 'es-ES';

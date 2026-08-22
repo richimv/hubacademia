@@ -202,11 +202,7 @@ class AdminRepository {
             let insertedCount = 0;
             const crypto = require('crypto');
 
-            const canonicalDifficulty = (val) => {
-                const allowedCEFR = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-                const cleanVal = String(val || '').toUpperCase().trim();
-                return allowedCEFR.includes(cleanVal) ? cleanVal : 'Senior';
-            };
+            const canonicalDifficulty = () => 'Senior';
 
             const canonicalDomain = (val) => {
                 const allowed = ['medicine', 'education'];

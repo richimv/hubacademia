@@ -60,6 +60,10 @@ class LibraryUI {
         }
 
         document.body.addEventListener('click', (e) => this._handleBodyClick(e));
+        document.body.addEventListener('error', (e) => {
+            const image = e.target.closest?.('img[data-fallback-src]');
+            if (image && image.src !== image.dataset.fallbackSrc) image.src = image.dataset.fallbackSrc;
+        }, true);
 
         if (this.isPageMode) {
             // Leer tab por defecto de la URL (?tab=resources / saved / favorites / notes)
@@ -135,6 +139,16 @@ class LibraryUI {
     }
 
     _handleBodyClick(e) {
+        const noteAction = e.target.closest('[data-note-action]');
+        if (noteAction) {
+            e.preventDefault();
+            e.stopPropagation();
+            const { noteAction: action, noteId } = noteAction.dataset;
+            if (action === 'delete') this.deleteNote(noteId);
+            else this.openNoteEditor(noteId);
+            return;
+        }
+
         const btn = e.target.closest(this.selectors.btn);
         if (btn) {
             e.preventDefault();
@@ -146,6 +160,17 @@ class LibraryUI {
                     setTimeout(() => btn.style.transform = "scale(1)", 200);
                     this.service.toggleItem(btn.dataset.type, btn.dataset.id, btn.dataset.action);
                 });
+            }
+            return;
+        }
+
+        const resource = e.target.closest('[data-library-resource]');
+        if (resource) {
+            const { itemId, itemType, itemTitle, itemKind, premium } = resource.dataset;
+            if (itemKind === 'course') {
+                window.location.href = `course?id=${encodeURIComponent(itemId)}`;
+            } else {
+                window.uiManager.unlockResource(itemId, itemType || 'book', premium === 'true', itemTitle || 'Recurso');
             }
             return;
         }
@@ -280,7 +305,8 @@ class LibraryUI {
 
         const counts = {};
         items.forEach(item => {
-            const t = item._resourceType || 'other';
+            const rawType = item._resourceType || 'other';
+            const t = this.typeLabels[rawType] ? rawType : 'other';
             counts[t] = (counts[t] || 0) + 1;
         });
 
@@ -484,28 +510,24 @@ class LibraryUI {
     }
 
     _createDrawerItemHTML(item) {
-        const typeLabel = item._uiType === 'course' ? 'Curso' : (item.resource_type || 'Recurso');
+        const typeLabel = item._uiType === 'course' ? 'Curso' : (this.typeLabels[item.resource_type] || 'Recurso');
         const title = item.title || item.name || 'Sin título';
 
         const rType = item.resource_type || item._uiType || 'other';
-        const coverImage = window.resolveImageUrl(item.image_url, rType);
-        const fallbackImg = window.getDefaultResourceImage(rType);
-
-        let clickAttr = '';
-        if (item._uiType === 'course') {
-            clickAttr = `onclick="window.location.href='course?id=${item.id}'"`;
-        } else {
-            const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
-            const titleEscaped = title.replace(/'/g, "\\'");
-            clickAttr = `onclick="window.uiManager.unlockResource('${item.id}', '${item.type || 'book'}', ${isPremium}, '${titleEscaped}')"`;
-        }
+        const coverImage = this._safeImageUrl(window.resolveImageUrl(item.image_url, rType));
+        const fallbackImg = this._safeImageUrl(window.getDefaultResourceImage(rType));
+        const isPremium = item.is_premium === true || String(item.is_premium).toLowerCase() === 'true' || item.is_premium === 1;
+        const escape = window.escapeHtml;
 
         return `
-            <div class="library-item" ${clickAttr}>
-                <img src="${coverImage}" alt="${title}" class="resource-cover" onerror="this.src='${fallbackImg}'">
+            <div class="library-item" data-library-resource data-item-id="${escape(item.id)}"
+                 data-item-kind="${item._uiType === 'course' ? 'course' : 'resource'}"
+                 data-item-type="${escape(item.type || 'book')}" data-premium="${isPremium}"
+                 data-item-title="${escape(title)}">
+                <img src="${escape(coverImage)}" alt="${escape(title)}" class="resource-cover" data-fallback-src="${escape(fallbackImg)}">
                 <div class="library-item-info">
-                    <div class="library-item-title">${title}</div>
-                    <div class="library-item-type">${typeLabel}</div>
+                    <div class="library-item-title">${escape(title)}</div>
+                    <div class="library-item-type">${escape(typeLabel)}</div>
                 </div>
             </div>
         `;
@@ -516,7 +538,7 @@ class LibraryUI {
         const sourceLabel = note.source_type === 'chat' ? 'Chat' : (note.source_type === 'flashcard' ? 'Flashcard' : 'Manual');
         const dateStr = new Date(note.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
 
-        let color = note.color || '#f59e0b';
+        let color = this._safeNoteColor(note.color);
         if (!note.color) {
             if (note.source_type === 'chat') color = '#3b82f6';
             else if (note.source_type === 'audio_assistant') color = '#8b5cf6';
@@ -525,20 +547,21 @@ class LibraryUI {
         }
 
         if (this.isPageMode) {
+            const noteId = window.escapeHtml(note.id);
             return `
-                <div class="note-card" data-note-id="${note.id}" onclick="window.libraryUI.openNoteEditor('${note.id}')" style="--note-color: ${color};">
+                <div class="note-card" data-note-id="${noteId}" data-note-action="edit" style="--note-color: ${color};">
                     <div class="note-card-accent"></div>
                     <div class="note-card-actions">
-                        <button class="note-card-action-btn edit" onclick="event.stopPropagation(); window.libraryUI.openNoteEditor('${note.id}')" title="Editar nota">
+                        <button class="note-card-action-btn edit" data-note-id="${noteId}" data-note-action="edit" title="Editar nota">
                             <i class="fas fa-pen"></i>
                         </button>
-                        <button class="note-card-action-btn delete" onclick="event.stopPropagation(); window.libraryUI.deleteNote('${note.id}')" title="Eliminar nota">
+                        <button class="note-card-action-btn delete" data-note-id="${noteId}" data-note-action="delete" title="Eliminar nota">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                     <div class="note-card-content">
-                        <h4 class="note-card-title">${note.title || 'Sin título'}</h4>
-                        <p class="note-card-preview">${preview || 'Sin contenido...'}${note.content && note.content.length > 140 ? '...' : ''}</p>
+                        <h4 class="note-card-title">${window.escapeHtml(note.title || 'Sin título')}</h4>
+                        <p class="note-card-preview">${window.escapeHtml(preview || 'Sin contenido...')}${note.content && note.content.length > 140 ? '...' : ''}</p>
                     </div>
                     <div class="note-card-footer">
                         <span class="note-card-badge" style="background: ${color}15; color: ${color};">${sourceLabel}</span>
@@ -548,14 +571,28 @@ class LibraryUI {
             `;
         } else {
             return `
-                <div class="library-item note-item" data-note-id="${note.id}" onclick="window.libraryUI.openNoteEditor('${note.id}')" style="border-left: 4px solid ${color};">
+                <div class="library-item note-item" data-note-id="${window.escapeHtml(note.id)}" data-note-action="edit" style="border-left: 4px solid ${color};">
                     <div class="library-item-info">
-                        <div class="library-item-title">${note.title}</div>
-                        <div class="note-preview">${preview}...</div>
+                        <div class="library-item-title">${window.escapeHtml(note.title || 'Sin título')}</div>
+                        <div class="note-preview">${window.escapeHtml(preview)}...</div>
                         <div class="note-source" style="color:${color}; font-weight:600;">${sourceLabel} <span style="color:#94a3b8; font-weight:normal;">· ${dateStr}</span></div>
                     </div>
                 </div>
             `;
+        }
+    }
+
+    _safeNoteColor(value) {
+        return /^#[0-9a-f]{6}$/i.test(String(value || '')) ? value : '#64748b';
+    }
+
+    _safeImageUrl(value) {
+        if (!value) return '';
+        try {
+            const url = new URL(value, window.location.origin);
+            return ['http:', 'https:', 'blob:'].includes(url.protocol) ? url.href : '';
+        } catch (error) {
+            return '';
         }
     }
 
@@ -696,7 +733,7 @@ class LibraryUI {
             `;
             
             const sourceLabel = note.source_type === 'chat' ? 'Nota de Chat' : (note.source_type === 'flashcard' ? 'Nota de Repaso' : 'Nota');
-            headerText.innerHTML = `<i class="fas fa-sticky-note" style="color: ${note.color || '#f59e0b'}"></i> ${sourceLabel}`;
+            headerText.innerHTML = `<i class="fas fa-sticky-note" style="color: ${this._safeNoteColor(note.color)}"></i> ${sourceLabel}`;
 
             this.switchToViewer();
         } else {
@@ -774,7 +811,7 @@ class LibraryUI {
             const note = (data.notes || []).find(n => n.id == this.editingNoteId);
             if (note) {
                 const sourceLabel = note.source_type === 'chat' ? 'Nota de Chat' : (note.source_type === 'flashcard' ? 'Nota de Repaso' : 'Nota');
-                headerText.innerHTML = `<i class="fas fa-sticky-note" style="color: ${note.color || '#f59e0b'}"></i> ${sourceLabel}`;
+                headerText.innerHTML = `<i class="fas fa-sticky-note" style="color: ${this._safeNoteColor(note.color)}"></i> ${sourceLabel}`;
             }
         }
     }
@@ -841,7 +878,9 @@ class LibraryUI {
         if (!text) return '';
 
         // ✅ USAR RENDERIZADOR UNIFICADO
-        return window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
+        return window.MarkdownRenderer
+            ? window.MarkdownRenderer.render(text)
+            : window.escapeHtml(text).replace(/\n/g, '<br>');
     }
 
     async deleteNote(noteId) {

@@ -48,7 +48,6 @@ El ecosistema de chat de Hub Academia se divide en 3 modalidades con arquitectur
   - **Derecho:** Doctrina jurídica, preceptos normativos y jurisprudencia.
   - **Medicina / Salud:** Fisiopatología, diagnóstico, clínica y farmacología.
   - **Educación:** Didáctica, enfoque por competencias y lineamientos CNEB.
-  - **Idiomas:** Gramática, pronunciación, etimología y tablas comparativas.
   - **Tecnología / Programación:** Arquitectura de software, algoritmos, redes, bases de datos y buenas prácticas de código.
   - **Matemáticas, Historia, Ciencias y General:** Marco conceptual y analítico de la materia.
 - **Aislamiento Temático Estricto (CERO CONTAMINACIÓN):**

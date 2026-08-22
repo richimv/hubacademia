@@ -5,6 +5,7 @@ class SessionManager {
         this.currentUser = null;
         this.onStateChangeCallbacks = [];
         this.lastSyncTime = 0; // Para throttling global
+        this.lastSyncAttemptTime = 0;
         this.initSupabaseListener();
         this.initPromise = null;
     }
@@ -15,7 +16,20 @@ class SessionManager {
             window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 console.log(`📡 [SessionGate] Evento: ${event}`);
 
-                if (event === 'SIGNED_IN' && session) {
+                // Mantener sincronizado el espejo local cuando Supabase renueva el JWT.
+                if (event === 'TOKEN_REFRESHED' && session?.access_token) {
+                    localStorage.setItem('authToken', session.access_token);
+                    return;
+                }
+
+                // INITIAL_SESSION recupera únicamente una sesión que quedó válida en
+                // Supabase pero no alcanzó a sincronizarse/guardarse localmente.
+                // Si ya existe authToken, initialize() hará getMe() y evita otro sync.
+                const needsInitialRecovery = event === 'INITIAL_SESSION'
+                    && session
+                    && !localStorage.getItem('authToken');
+
+                if ((event === 'SIGNED_IN' || needsInitialRecovery) && session) {
                     // 🛡️ BLOQUEO ATÓMICO: Evitar doble sincronización (One Tap vs Listener)
                     if (window._isGlobalSyncing || this.isSyncing) {
                         console.log('⏳ Sincronización en curso o bloqueada por throttle, ignorando evento.');
@@ -25,10 +39,12 @@ class SessionManager {
                     // 🛡️ THROTTLING AGRESIVO: Evitar ráfagas de Supabase (especialmente en init)
                     const now = Date.now();
                     const throttleWindow = 5000; // 5 segundos de gracia entre intentos
-                    if (now - this.lastSyncTime < throttleWindow) {
+                    const lastSyncActivity = Math.max(this.lastSyncTime, this.lastSyncAttemptTime);
+                    if (now - lastSyncActivity < throttleWindow) {
                         console.log('📡 [SessionGate] Sync bloqueado por ráfaga (5s throttle).');
                         return;
                     }
+                    this.lastSyncAttemptTime = now;
 
                     // Si ya tenemos el mismo usuario cargado y el token es igual, no re-sincronizar
                     if (this.currentUser && this.currentUser.id === session.user.id && localStorage.getItem('authToken') === session.access_token) {
@@ -43,11 +59,18 @@ class SessionManager {
                         // Sincronizar unificada
                         // ✅ NUEVO: Verificar si ya tenemos el mismo email sincronizado para evitar 429
                         if (this.currentUser && this.currentUser.email === session.user.email) {
+                            localStorage.setItem('authToken', session.access_token);
                             console.log('📡 [SessionGate] Usuario ya sincronizado (Match por Email).');
                             return;
                         }
 
-                        const syncResponse = await AuthApiService.syncGoogleUser(session.user);
+                        // El token recibido en este mismo evento es la fuente de verdad.
+                        // No volver a consultar getSession() dentro del callback de Supabase:
+                        // durante SIGNED_IN la persistencia interna puede no haber terminado aún.
+                        const syncResponse = await window.AuthApiService.syncGoogleUser(
+                            session.user,
+                            session.access_token
+                        );
                         
                         if (syncResponse && syncResponse.user) {
                             // console.log('✅ Usuario Sincronizado:', syncResponse.user.email);
@@ -288,7 +311,7 @@ class GuestSessionManager {
             localStorage.setItem('demo_sessions_date', today);
 
             // Eliminar estadísticas locales para que los datos duren exactamente 1 día
-            const domains = ['medicina', 'educacion', 'idiomas', 'medicine', 'education'];
+            const domains = ['medicina', 'educacion', 'medicine', 'education'];
             domains.forEach(dom => {
                 localStorage.removeItem(`guest_demo_stats_${dom}`);
             });

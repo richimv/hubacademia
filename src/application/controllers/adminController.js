@@ -297,9 +297,8 @@ class AdminController {
                         const gcsAudioPath = `tts_cache/${career}_${textHash}.mp3`;
                         
                         const otherQuestionsCount = await adminService.countOtherQuestionsWithAudio(audio_text, career, id);
-                        const vocabCount = await adminService.countVocabulariesWithAudioUrl(gcsAudioPath);
-                        
-                        if (otherQuestionsCount === 0 && vocabCount === 0) {
+
+                        if (otherQuestionsCount === 0) {
                             await mediaController.deleteFile(gcsAudioPath);
                         }
                     } catch (gcsErr) {

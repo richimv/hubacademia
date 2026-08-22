@@ -116,14 +116,23 @@ describe('PaymentController - handleWebhook', () => {
         const mockGet = jest.fn().mockResolvedValue({
             status: 'approved',
             external_reference: 'user_123|advanced',
-            transaction_amount: 25.0
+            transaction_amount: 24.90
         });
         Payment.mockImplementation(() => {
             return { get: mockGet };
         });
 
-        // Mock database query behavior
-        pool.query.mockResolvedValue({ rows: [] });
+        // Mock database transaction behavior
+        const client = {
+            query: jest.fn()
+                .mockResolvedValueOnce({})
+                .mockResolvedValueOnce({ rows: [{ payment_id: dataId }] })
+                .mockResolvedValueOnce({ rows: [{ id: 'user_123' }] })
+                .mockResolvedValueOnce({ rows: [] })
+                .mockResolvedValueOnce({}),
+            release: jest.fn()
+        };
+        pool.pool.mockReturnValue({ connect: jest.fn().mockResolvedValue(client) });
 
         await paymentController.handleWebhook(mockReq, mockRes);
 
@@ -133,6 +142,45 @@ describe('PaymentController - handleWebhook', () => {
         await new Promise(resolve => setImmediate(resolve));
 
         expect(mockGet).toHaveBeenCalledWith({ id: dataId });
-        expect(pool.query).toHaveBeenCalled();
+        expect(client.query).toHaveBeenCalledWith('COMMIT');
+        expect(client.release).toHaveBeenCalled();
+    });
+
+    it('should ignore a replayed payment_id without updating the user', async () => {
+        const ts = '1700000000';
+        const requestId = 'replay-request';
+        const dataId = 'replayed-payment';
+        const secret = 'test_webhook_secret_key';
+        const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+        const calculatedHash = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+
+        mockReq.headers['x-signature'] = `ts=${ts},v1=${calculatedHash}`;
+        mockReq.headers['x-request-id'] = requestId;
+        mockReq.query = { 'data.id': dataId, type: 'payment' };
+
+        Payment.mockImplementation(() => ({
+            get: jest.fn().mockResolvedValue({
+                status: 'approved',
+                external_reference: 'user_123|advanced',
+                transaction_amount: 24.90
+            })
+        }));
+
+        const client = {
+            query: jest.fn()
+                .mockResolvedValueOnce({})
+                .mockResolvedValueOnce({ rows: [] })
+                .mockResolvedValueOnce({}),
+            release: jest.fn()
+        };
+        pool.pool.mockReturnValue({ connect: jest.fn().mockResolvedValue(client) });
+
+        await paymentController.handleWebhook(mockReq, mockRes);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(mockRes.sendStatus).toHaveBeenCalledWith(200);
+        expect(client.query).toHaveBeenCalledWith('COMMIT');
+        expect(client.query).not.toHaveBeenCalledWith(expect.stringContaining('UPDATE users'), expect.anything());
+        expect(client.release).toHaveBeenCalled();
     });
 });

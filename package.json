@@ -4,12 +4,21 @@
   "description": "Chatbot Tutor Académico con IA - Arquitectura 4 Capas",
   "main": "src/infrastructure/config/server.js",
   "scripts": {
+    "build": "node src/presentation/update-cache.js",
     "start": "node src/infrastructure/config/server.js",
     "dev": "nodemon src/infrastructure/config/server.js",
     "test": "jest"
   },
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "overrides": {
+    "gaxios@^6.0.2": {
+      "uuid": "^11.1.1"
+    }
+  },
   "dependencies": {
-    "@google-cloud/storage": "^7.19.0",
+    "@google-cloud/storage": "^8.0.1",
     "@google-cloud/text-to-speech": "^6.4.0",
     "@google-cloud/vertexai": "^1.10.0",
     "@pinecone-database/pinecone": "^7.2.0",
@@ -26,12 +35,12 @@
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
     "jsonwebtoken": "^9.0.2",
-    "mercadopago": "^2.11.0",
+    "mercadopago": "^3.4.0",
     "multer": "^2.0.2",
-    "natural": "^8.1.0",
+    "natural": "8.1.1",
     "node-fetch": "^2.7.0",
     "pg": "^8.16.3",
-    "sharp": "^0.33.5",
+    "sharp": "^0.35.3",
     "snowball": "^0.3.1"
   },
   "devDependencies": {

@@ -5,7 +5,7 @@ const router = express.Router();
 const { coursesController, analyticsController, authController, chatController, usageController, adminController, medicoController, docenteController, flashcardController, userPreferencesController, mediaController, speechController } = require('../../application/controllers');
 
 // --- Importar Middleware ---
-const { auth, optionalAuth, adminOnly } = require('../middleware/authMiddleware');
+const { auth, optionalAuth, adminOnly, authIdentity, internalServiceAuth } = require('../middleware/authMiddleware');
 const usageMiddleware = require('../middleware/usageMiddleware');
 const checkAILimits = require('../../application/middlewares/checkLimitsMiddleware'); // ✅ NUEVO LÍMITE DE PRECIOS
 const { authLimiter } = require('../config/rateLimiters');
@@ -18,12 +18,18 @@ const path = require('path');
 const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 50 * 1024 * 1024 },
+    limits: {
+        fileSize: 12 * 1024 * 1024,
+        files: 2,
+        fields: 50,
+        parts: 52
+    },
     fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|webp/;
-        const mimetype = filetypes.test(file.mimetype);
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        if (mimetype && extname) return cb(null, true);
+        const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+        const allowedExtensions = new Set(['.jpeg', '.jpg', '.png', '.webp']);
+        if (allowedMimeTypes.has(file.mimetype) && allowedExtensions.has(path.extname(file.originalname).toLowerCase())) {
+            return cb(null, true);
+        }
         cb(new Error('Solo se permiten imágenes (JPG, PNG, WebP)'));
     }
 });
@@ -52,8 +58,6 @@ const paymentRoutes = require('./paymentRoutes');
 router.use('/payment', paymentRoutes);
 
 // ✅ NUEVO: PROXY DE MEDIOS (Google Drive & GCS)
-router.get('/media/explanation/:id', optionalAuth, (req, res) => mediaController.serveExplanationImage(req, res));
-router.get('/media/resource/:id', optionalAuth, (req, res) => mediaController.serveResourceImage(req, res));
 router.get('/media/preview', auth, adminOnly, (req, res) => mediaController.serveGCSPreview(req, res));
 router.get('/media/gcs', optionalAuth, (req, res) => mediaController.serveGCSGeneral(req, res));
 router.delete('/media/delete', auth, (req, res) => mediaController.handleDeleteMedia(req, res));
@@ -78,7 +82,7 @@ router.post('/users/preferences', auth, (req, res) => userPreferencesController.
 
 // --- Rutas de Autenticación (Exclusivo Google OAuth) ---
 router.get('/auth/me', auth, authController.getMe);
-router.post('/auth/sync', authLimiter, authController.syncUser); 
+router.post('/auth/sync', authLimiter, authIdentity, authController.syncUser);
 router.put('/auth/profile', auth, authController.updateProfile);
 router.delete('/auth/delete-account', auth, authController.deleteAccount);
 
@@ -137,13 +141,14 @@ const analyticsRoutes = require('./analyticsRoutes');
 router.use('/analytics', analyticsRoutes);
 
 // --- Rutas Internas (para servicios de ML) ---
-router.get('/internal/analytics-data', analyticsController.getAnalyticsForML);
-router.get('/internal/ml-data', coursesController.getDataForML);
+router.get('/internal/analytics-data', internalServiceAuth, analyticsController.getAnalyticsForML);
+router.get('/internal/ml-data', internalServiceAuth, coursesController.getDataForML);
 
 // --- Rutas del Simulador Médico ---
 router.post('/medico/start', auth, checkAILimits('simulator'), medicoController.startQuiz);
 router.post('/medico/next-batch', auth, medicoController.getNextBatch);
 router.get('/medico/demo', optionalAuth, medicoController.getDemoQuestions);
+router.post('/medico/answer', optionalAuth, medicoController.answerQuestion);
 router.post('/medico/submit', auth, medicoController.submitScore);
 router.get('/medico/stats', optionalAuth, medicoController.getStats);
 router.get('/medico/evolution', optionalAuth, medicoController.getEvolution);
@@ -153,6 +158,7 @@ router.get('/medico/leaderboard', auth, medicoController.getLeaderboard);
 router.post('/docente/start', auth, checkAILimits('simulator'), docenteController.startQuiz);
 router.post('/docente/next-batch', auth, docenteController.getNextBatch);
 router.get('/docente/demo', optionalAuth, docenteController.getDemoQuestions);
+router.post('/docente/answer', optionalAuth, docenteController.answerQuestion);
 router.post('/docente/submit', auth, docenteController.submitScore);
 router.get('/docente/stats', optionalAuth, docenteController.getStats);
 router.get('/docente/evolution', optionalAuth, docenteController.getEvolution);

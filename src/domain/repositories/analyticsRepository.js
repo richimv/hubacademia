@@ -316,25 +316,23 @@ class AnalyticsRepository {
         return [];
     }
 
-    async getHeatmapDataRaw(userId) {
-        const quizQuery = `
-            SELECT to_char(created_at, 'YYYY-MM-DD') as day, COUNT(*) as count
-            FROM quiz_history
-            WHERE user_id = $1
-            GROUP BY day
-        `;
-        const cardQuery = `
+    async getHeatmapDataRaw(userId, deckId = null) {
+        const params = [userId];
+        let cardQuery = `
             SELECT to_char(last_reviewed_at, 'YYYY-MM-DD') as day, COUNT(*) as count
             FROM user_flashcards
             WHERE user_id = $1 AND last_reviewed_at IS NOT NULL
-            GROUP BY day
         `;
-        const [quizRes, cardRes] = await Promise.all([
-            db.query(quizQuery, [userId]),
-            db.query(cardQuery, [userId])
-        ]);
+
+        if (deckId) {
+            cardQuery += ` AND deck_id = $2`;
+            params.push(deckId);
+        }
+
+        cardQuery += ` GROUP BY day`;
+
+        const cardRes = await db.query(cardQuery, params);
         return {
-            quizResRows: quizRes.rows,
             cardResRows: cardRes.rows
         };
     }

@@ -4,8 +4,6 @@ const UserPreferencesService = require('../../domain/services/userPreferencesSer
 const userPreferencesService = new UserPreferencesService();
 const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ SUPABASE CLIENT
 
-const JWT_SECRET = process.env.JWT_SECRET || 'este-es-un-secreto-muy-largo-y-seguro-para-desarrollo';
-
 class AuthService {
     constructor(userRepository = new UserRepository(), usageService = new UsageService(userRepository)) {
         this.userRepository = userRepository;
@@ -41,8 +39,18 @@ class AuthService {
     }
 
     // ✅ MEJORA: Lógica de sincronización atómica para Google OAuth
-    async syncGoogleUser({ email, name, id }) {
+    async syncGoogleUser({ identity, email, name, id }) {
         try {
+            const verifiedIdentity = identity || { id, email };
+            if (!verifiedIdentity?.id || !verifiedIdentity?.email) {
+                throw new Error('Identidad de proveedor incompleta.');
+            }
+
+            const normalizedEmail = String(verifiedIdentity.email).trim().toLowerCase();
+            const safeName = (typeof name === 'string' && name.trim())
+                ? name.trim().slice(0, 120)
+                : (verifiedIdentity.user_metadata?.full_name || verifiedIdentity.user_metadata?.name || normalizedEmail.split('@')[0]);
+
             // Log nivel INFO - No es error, es éxito de vinculación si ya existe
             // console.log(`📡 [AuthSync] Procesando sesión Google para: ${email.toLowerCase()}`);
 
@@ -51,14 +59,14 @@ class AuthService {
                 'hubacademia01@gmail.com'
             ];
 
-            const isAutoAdmin = adminEmails.includes(email.toLowerCase());
+            const isAutoAdmin = adminEmails.includes(normalizedEmail);
 
             // 1. Delegamos el registro/sincronización al repositorio (vía stored procedure)
             // El repositorio usa sp_register_user que hace un UPSERT atómico.
             const userData = {
-                id: id,
-                email: email.toLowerCase(),
-                name: name || email.split('@')[0],
+                id: verifiedIdentity.id,
+                email: normalizedEmail,
+                name: safeName,
                 role: isAutoAdmin ? 'admin' : 'student'
             };
 

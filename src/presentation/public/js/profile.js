@@ -11,13 +11,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fill Data
     document.getElementById('user-name').textContent = user.name || 'Usuario';
     const emailEl = document.getElementById('user-email');
-    emailEl.innerHTML = `${user.email} <i class="fas fa-check-circle" style="color: var(--success); font-size: 0.85rem; margin-left: 5px;" title="Verificado vía Google"></i>`;
+    emailEl.textContent = user.email || '';
+    const verifiedIcon = document.createElement('i');
+    verifiedIcon.className = 'fas fa-check-circle';
+    verifiedIcon.style.cssText = 'color: var(--success); font-size: 0.85rem; margin-left: 5px;';
+    verifiedIcon.title = 'Verificado vía Google';
+    emailEl.appendChild(verifiedIcon);
 
     const avatarBadge = document.getElementById('user-avatar-badge');
     if (avatarBadge) {
         const photoUrl = user.picture || user.avatar_url || user.avatarUrl;
-        if (photoUrl) {
-            avatarBadge.innerHTML = `<img src="${photoUrl}" alt="${user.name || 'Usuario'}" class="profile-avatar-img">`;
+        const safePhotoUrl = getSafeProfileImageUrl(photoUrl);
+        if (safePhotoUrl) {
+            const image = document.createElement('img');
+            image.src = safePhotoUrl;
+            image.alt = user.name || 'Usuario';
+            image.className = 'profile-avatar-img';
+            avatarBadge.replaceChildren(image);
         }
     }
 
@@ -45,6 +55,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderSubscriptionDetails(user);
     renderUsageDetails(user);
 });
+
+function getSafeProfileImageUrl(value) {
+    if (!value) return null;
+    try {
+        const url = new URL(value, window.location.origin);
+        return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+    } catch (error) {
+        return null;
+    }
+}
 
 /**
  * Calcula la fecha de la próxima renovación semanal para usuarios Free
@@ -82,7 +102,8 @@ function renderSubscriptionDetails(user) {
     const container = document.getElementById('subscription-status-container');
     if (!container) return;
 
-    const tier = String(user.subscriptionTier || 'free').toLowerCase();
+    const rawTier = String(user.subscriptionTier || 'free').toLowerCase();
+    const tier = ['basic', 'advanced'].includes(rawTier) ? rawTier : 'free';
     const expiresAt = user.subscriptionExpiresAt;
     const status = user.subscriptionStatus || user.subscription_status;
 
@@ -216,7 +237,7 @@ document.getElementById('confirm-delete-btn').addEventListener('click', async ()
         await window.sessionManager.logout();
     } catch (error) {
         console.error(error);
-        deleteError.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message || 'Error al eliminar cuenta'}`;
+        deleteError.textContent = error.message || 'Error al eliminar cuenta';
         deleteError.style.display = 'block';
         btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, eliminar cuenta';
         btn.disabled = false;
@@ -320,7 +341,8 @@ function renderUsageDetails(user) {
 
     if (!usageCard || !container) return;
 
-    const tier = String(user.subscriptionTier || 'free').toLowerCase();
+    const rawTier = String(user.subscriptionTier || 'free').toLowerCase();
+    const tier = ['basic', 'advanced'].includes(rawTier) ? rawTier : 'free';
     const status = user.subscriptionStatus || user.subscription_status;
     const isPremium = tier !== 'free' && status === 'active';
     const isAdmin = user.role === 'admin';

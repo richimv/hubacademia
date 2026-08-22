@@ -1,4 +1,6 @@
 const medicoService = require('../../domain/services/medicoService');
+const quizSessionService = require('../../domain/services/quizSessionService');
+const { secureQuizSessionsEnabled, sendQuizSessionError } = require('./quizSessionControllerSupport');
 const UsageService = require('../../domain/services/usageService');
 const usageService = new UsageService();
 
@@ -44,6 +46,9 @@ class MedicoController {
 
             const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode };
             const quizData = await medicoService.generateQuiz(categoryOptions, user.id, limit, user.subscriptionTier);
+            const secureSession = secureQuizSessionsEnabled()
+                ? await quizSessionService.createSession({ userId: user.id, domain: 'medicine', questions: quizData.questions })
+                : null;
 
             const returnedTopic = quizData.topic || finalAreas[0];
             const logTopic = finalAreas.length > 1 ? `Multi-Área (${finalAreas.length} áreas)` : returnedTopic;
@@ -54,13 +59,16 @@ class MedicoController {
                 topic: returnedTopic,
                 areas: quizData.areas || finalAreas,
                 round: round,
-                questions: quizData.questions,
+                quizSessionId: secureSession?.quizSessionId || null,
+                quizSessionExpiresAt: secureSession?.expiresAt || null,
+                questions: secureSession?.questions || quizData.questions,
                 isPremium: isPremium,
                 source: quizData.source
             });
 
         } catch (error) {
             console.error('❌ [Error] startQuiz (Medico):', error);
+            if (sendQuizSessionError(res, error)) return;
             if (error.cause) {
                 console.error('🔍 [Causa Original]:', error.cause);
             }
@@ -87,12 +95,20 @@ class MedicoController {
 
     async submitScore(req, res) {
         try {
-            const { topic, areas, target, difficulty, career, score, correct_answers_count, total_questions, rounds_completed, questions } = req.body;
+            const { quizSessionId, topic, areas, target, difficulty, career, score, total_questions, questions } = req.body;
             const userId = req.user.id;
 
-            if (score === undefined || !topic) {
+            if (!topic || (!quizSessionId && score === undefined)) {
                 return res.status(400).json({ error: 'Datos de puntaje incompletos.' });
             }
+
+            if (quizSessionId && !secureQuizSessionsEnabled()) {
+                return res.status(409).json({ error: 'El flujo seguro del simulador aún no está habilitado.' });
+            }
+
+            const grading = quizSessionId
+                ? await quizSessionService.gradeForSubmission({ sessionId: quizSessionId, userId, domain: 'medicine' })
+                : null;
 
             const result = await medicoService.submitQuizResult(userId, {
                 topic,
@@ -100,15 +116,20 @@ class MedicoController {
                 target,
                 career,
                 difficulty,
-                score,
-                totalQuestions: total_questions || 10,
-                questions: questions || []
+                score: grading?.score ?? score,
+                totalQuestions: grading?.totalQuestions ?? total_questions ?? 10,
+                questions: grading?.questions || questions || [],
+                sourceSessionId: grading?.sessionId || null
             });
+
+            if (grading) {
+                await quizSessionService.markSubmitted(grading.sessionId, result.attemptId);
+            }
 
             const tier = String(req.user.subscriptionTier || 'free').toLowerCase();
             const isActiveAccount = req.user.subscriptionStatus === 'active';
 
-            if (isActiveAccount && ['basic', 'advanced'].includes(tier)) {
+            if (result.wasCreated !== false && isActiveAccount && ['basic', 'advanced'].includes(tier)) {
                 try {
                     await medicoService.incrementUserSimulatorUsage(userId);
                     console.log(`📉 [Simulator Limit] +1 Simulator Usage (Culminación) para Premium: ${req.user.email}`);
@@ -121,11 +142,14 @@ class MedicoController {
                 success: true,
                 message: 'Puntaje registrado exitosamente.',
                 attemptId: result.attemptId,
-                flashcardsCreated: result.flashcardsCreated
+                flashcardsCreated: result.flashcardsCreated,
+                score: grading?.score ?? score,
+                totalQuestions: grading?.totalQuestions ?? total_questions
             });
 
         } catch (error) {
             console.error('Error en submitScore (Medico):', error);
+            if (sendQuizSessionError(res, error)) return;
             res.status(500).json({ error: 'Error guardando el puntaje.' });
         }
     }
@@ -214,8 +238,12 @@ class MedicoController {
 
     async getNextBatch(req, res) {
         try {
-            const { target, areas, difficulty, topic, career, seenIds, mode } = req.body;
+            const { quizSessionId, target, areas, difficulty, topic, career, seenIds, mode } = req.body;
             const userId = req.user.id;
+
+            if (secureQuizSessionsEnabled() && !quizSessionId) {
+                return res.status(400).json({ error: 'Identificador de sesión requerido.' });
+            }
 
             const finalTarget = target || 'SERUMS';
             const finalCareer = career || 'Medicina Humana';
@@ -226,22 +254,32 @@ class MedicoController {
             }
 
             const result = await medicoService.generateQuiz(
-                { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode },
+                { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode, configType: req.body.configType },
                 userId,
                 5,
                 req.user.subscriptionTier,
                 seenIds || []
             );
+            const secureQuestions = secureQuizSessionsEnabled() && quizSessionId
+                ? await quizSessionService.appendQuestions({
+                    sessionId: quizSessionId,
+                    userId,
+                    domain: 'medicine',
+                    questions: result.questions
+                })
+                : null;
 
             res.json({
                 success: true,
-                questions: result.questions,
+                quizSessionId: quizSessionId || null,
+                questions: secureQuestions || result.questions,
                 areas: result.areas || finalAreas,
                 source: result.source
             });
 
         } catch (error) {
             console.error('❌ [Error] getNextBatch (Medico):', error);
+            if (sendQuizSessionError(res, error)) return;
             if (error.message && error.message.includes("No hay preguntas disponibles")) {
                 return res.status(404).json({ error: error.message, noQuestions: true });
             }
@@ -263,17 +301,48 @@ class MedicoController {
 
             const medicoRepository = require('../../domain/repositories/medicoRepository');
             const questions = await medicoRepository.getRandomDemoQuestions(limit, excludeIds, target, career, difficulty, areas);
+            const secureSession = secureQuizSessionsEnabled()
+                ? await quizSessionService.createSession({
+                    userId: req.user?.id || null,
+                    domain: 'medicine',
+                    questions
+                })
+                : null;
 
             res.json({
                 success: true,
-                questions: questions,
+                quizSessionId: secureSession?.quizSessionId || null,
+                quizSessionExpiresAt: secureSession?.expiresAt || null,
+                questions: secureSession?.questions || questions,
                 topic: `DEMO: ${target}`,
                 isPremium: false,
                 source: 'BANK'
             });
         } catch (error) {
             console.error('Error fetching demo questions (Medico):', error);
+            if (sendQuizSessionError(res, error)) return;
             res.status(500).json({ error: 'Error cargando preguntas de demostración.' });
+        }
+    }
+
+    async answerQuestion(req, res) {
+        try {
+            if (!secureQuizSessionsEnabled()) {
+                return res.status(404).json({ error: 'Flujo seguro no habilitado.' });
+            }
+            const { quizSessionId, sessionQuestionId, selectedOptionIndex } = req.body;
+            const answer = await quizSessionService.recordAnswer({
+                sessionId: quizSessionId,
+                sessionQuestionId,
+                selectedOptionIndex,
+                userId: req.user?.id || null,
+                domain: 'medicine'
+            });
+            res.json({ success: true, answer });
+        } catch (error) {
+            console.error('Error registrando respuesta (Medico):', error);
+            if (sendQuizSessionError(res, error)) return;
+            res.status(500).json({ error: 'Error registrando la respuesta.' });
         }
     }
 }

@@ -47,18 +47,15 @@ Dado que el simulador guarda el progreso en `localStorage` para permitir recarga
 
 ## 🛠️ Implementación por Módulo
 
-### 🩺 Módulo de Simuladores (Médico, Educación e Idiomas)
+### 🩺 Módulo de Simuladores (Medicina y Educación)
 - **Activación**: Al hacer clic en "Simulacro Rápido" (10 preguntas) como invitado.
 - **Configuración Permitida (Evolución V2.1)**:
   - Los visitantes pueden abrir el modal de configuración de exámenes y aplicar una configuración general bajo el **"Modo Examen Oficial"**. La configuración se guarda localmente en `localStorage` (`simActiveConfig_[context]`).
   - No se permite seleccionar "Práctica Personalizada"; al intentarlo, se muestra el modal de registro y se revierte la selección.
   - Al igual que un usuario registrado, si un visitante no ha aplicado una configuración previamente, no se le permitirá iniciar el simulacro de 10qs, y en su lugar se abrirá y agitará el modal de configuración.
 - **Filtrado en Motor Demo**:
-  - El endpoint `/api/[medico/docente/idiomas-simulator]/demo` recibe parámetros de consulta opcionales (`target`, `career`, `difficulty`, `areas`) del cliente.
+  - Los endpoints `/api/medico/demo` y `/api/docente/demo` reciben parámetros de consulta opcionales (`target`, `career`, `difficulty`, `areas`) del cliente.
   - Si existen, el motor demo filtra dinámicamente las preguntas del banco real para adaptar el simulacro al examen configurado.
-- **Audios de Comprensión (Listening) en Modo Demo**:
-  - Para el módulo de Idiomas, la consulta a la base de datos para modo demo extrae y retorna de forma segura la columna `audio_text`.
-  - Esto habilita al frontend (PC y móviles) a reproducir los archivos de audio de comprensión auditiva llamando al endpoint `/api/tts` (que usa `optionalAuth` y está abierto a invitados) sin comprometer la seguridad de la cuenta.
 - **Mapeo de Dominios**: El frontend mapea automáticamente `MEDICINA -> medicine` y `EDUCACION -> education` para compatibilidad con el esquema de la DB.
 
 ### 🚀 Control de Versiones (Cache Busting)
@@ -99,4 +96,3 @@ A diferencia de la plataforma web donde los visitantes pueden realizar simulacro
 - **Conversión Progresiva**: 1 sesión diaria en web es suficiente para demostrar el valor antes de pedir el registro.
 - **Eficiencia**: Cero consumo de créditos de IA para usuarios no registrados.
 - **Orden**: Aislamiento total entre perfiles médicos y docentes desde el primer clic.
-

@@ -17,10 +17,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderResource(resource);
     } catch (error) {
         console.error('Error fetching resource:', error);
-        wrapper.innerHTML = `<div class="error-state">No se pudo cargar la información del recurso. ${error.message}</div>`;
+        wrapper.textContent = 'No se pudo cargar la información del recurso.';
+        wrapper.className = 'error-state';
     }
 
     function renderResource(resource) {
+        const escape = value => window.escapeHtml ? window.escapeHtml(value ?? '') : String(value ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const safeId = escape(resource.id);
+        const safeTitle = escape(resource.title || 'Recurso sin título');
+        const safeAuthor = escape(resource.author || 'Autor Anónimo');
+        const safeType = escape(resource.resource_type || 'other');
+
         document.title = `${resource.title} - Hub Academia`;
 
         // Determine cover logic
@@ -49,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const fallbackImg = window.getDefaultResourceImage(rType);
 
         // Usar la imagen resuelta con fallback a la imagen artística por defecto
-        let visualHTML = `<img src="${coverImage}" alt="Portada de ${resource.title}" class="resource-cover" onerror="this.src='${fallbackImg}'">`;
+        let visualHTML = `<img src="${escape(coverImage)}" alt="Portada de ${safeTitle}" class="resource-cover" onerror="this.src='${escape(fallbackImg)}'">`;
 
         if (isVideo) {
             visualHTML = `
@@ -64,10 +73,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
         }
-
-        let viewTarget = `href="#"`;
-        let viewOnClick = `onclick="event.preventDefault(); window.uiManager ? window.uiManager.showToast('Enlace no disponible', 'info') : alert('Enlace no disponible');"`;
-        let viewClass = 'btn-view';
 
         const isInternalGCS = resource.url && (resource.url.includes('storage.googleapis.com') || resource.url.startsWith('/') || resource.url.includes('hubacademia.com'));
 
@@ -117,17 +122,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         wrapper.innerHTML = `
             <div class="resource-hero">
                 <div class="resource-cover-wrapper">
-                    ${visualHTML}
+                        ${visualHTML}
                     
                     <div class="resource-cover-overlay-btn">
-                        <button onclick="openResourceLink(${resource.id}, '${resource.url}', ${resource.is_premium}, '${resource.resource_type}')" class="btn-view" style="box-shadow: 0 8px 25px rgba(0,0,0,0.5);">
+                        <button data-open-resource="true" class="btn-view" style="box-shadow: 0 8px 25px rgba(0,0,0,0.5);">
                             <i class="fas fa-external-link-alt"></i> Ver Recurso
                         </button>
                     </div>
                 </div>
                 <div class="resource-info">
-                    <h1>${resource.title}</h1>
-                    <p><i class="fas fa-user-edit"></i> ${resource.author || 'Autor Anónimo'}</p>
+                    <h1>${safeTitle}</h1>
+                    <p><i class="fas fa-user-edit"></i> ${safeAuthor}</p>
                     <div style="margin-top: 10px;">
                         ${resource.is_premium ? '<span class="badge premium"><i class="fas fa-crown"></i> PRO</span>' : ''}
                     </div>
@@ -135,10 +140,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 <div class="resource-actions">
                     <!-- Integración con Mi Biblioteca / LibraryUI -->
-                    <button class="btn-save btn-primary js-library-btn action-save" data-id="${resource.id}" data-type="book" data-action="save">
+                    <button class="btn-save btn-primary js-library-btn action-save" data-id="${safeId}" data-type="book" data-action="save">
                         <i class="far fa-bookmark"></i> Agregar a mi Biblioteca
                     </button>
-                    <button class="btn-save btn-primary js-library-btn action-fav" data-id="${resource.id}" data-type="book" data-action="favorite">
+                    <button class="btn-save btn-primary js-library-btn action-fav" data-id="${safeId}" data-type="book" data-action="favorite">
                         <i class="far fa-heart"></i> Favorito
                     </button>
                 </div>
@@ -150,6 +155,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             </div>
         `;
+
+        const openResourceButton = wrapper.querySelector('[data-open-resource="true"]');
+        if (openResourceButton) {
+            openResourceButton.addEventListener('click', () => {
+                openResourceLink(resource.id, resource.url || '', Boolean(resource.is_premium), resource.resource_type || 'book');
+            });
+        }
 
         // MEJORA PROFESIONAL: Envolver todas las tablas en un contenedor responsivo dinámicamente
         // Esto evita que las tablas de 10+ columnas rompan el layout sin usar el hack de 'display: block' en la tabla.

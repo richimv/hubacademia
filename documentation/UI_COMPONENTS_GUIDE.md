@@ -143,4 +143,23 @@ Para prevenir colisiones visuales ("z-index wars"):
 
 1. **Eradicación Total de Popups Nativos:** Prohibido el uso de `window.alert()` o `window.confirm()`.
 2. **Aislamiento de Eventos en Botones de UI:** Utilizar `e.stopPropagation()` al manipular elementos superpuestos.
-3. **Sin Clases Huérfanas:** Asegurarse de que los selectores CSS de botones (`.btn-results-review`, `.btn-secondary`, `.btn-review-tutor-trigger`) pertenezcan al diseño Manta y respeten la paleta dual (Salud = Teal / Educación = Royal Blue).
+3. **Sin Clases Huérfanas:** Asegurarse de que los selectores CSS de botones pertenezcan al diseño central y respeten las variables del tema (`theme.css`).
+
+---
+
+## 8. ⏳ Pantalla de Carga y Modos de Espera de Simulacros
+
+Para garantizar una experiencia fluida y profesional durante la obtención del banco de preguntas (inicio de examen y carga de lotes intermedios), se implementó un sistema de carga centralizado y reactivo:
+
+### 8.1. Arquitectura de Componentes (`quiz.html` & `quiz.css`)
+* **Contenedor Principal (`.loading-overlay`):** Overlay fijo de pantalla completa con desenfoque de fondo glassmorphism (`backdrop-filter: blur(20px) saturate(180%)`), z-index `10000` y transiciones suaves de opacidad.
+* **Tarjeta Central (`.loading-card`):** Contenedor con radio de `24px`, sombra `0 25px 50px -12px rgba(0,0,0,0.35)` y gradiente ambiental superior (`.loading-card-glow`).
+* **Spinner Dual Orbital (`.loading-spinner-box`):** Doble anillo en rotación orbital continua (`.spinner-orbital-ring` y `.ring-secondary`) con icono central contextual (`#loadingIcon`) que pulsa suavemente.
+* **Badge de Modalidad (`.loading-mode-pill`):** Micro-etiqueta que informa el modo activo (ej. `⚡ SIMULACRO RÁPIDO · 10 PREGUNTAS`, `✨ MODO ESTUDIO · 20 PREGUNTAS` o `⏱️ SIMULACRO REAL · TEMPORIZADOR OFICIAL`).
+* **Barra de Progreso Indeterminada (`.loading-progress-track` & `.loading-progress-bar`):** Indicador lineal animado con gradiente continuo que comunica actividad en tiempo real.
+* **Tarjeta de Consejos (`.loading-tip-card`):** Caja de tips de alto rendimiento pedagógico/clínico que rota dinámicamente cada 3.8s con efecto fade-in / fade-out.
+
+### 8.2. Controladores en JavaScript (`quiz.js`)
+* **`showLoadingOverlay(customTitle, customSubtitle)`:** Muestra el overlay, resuelve el contexto (`MEDICINA` o `EDUCACION`), configura icono, modo, títulos y arranca la rotación de tips con limpieza automática de timers.
+* **`hideLoadingOverlay()`:** Oculta el overlay mediante la clase `.hidden` y detiene inmediatamente los intervalos para evitar fugas de memoria.
+* **Feedback Táctil en Selección de Modos (`simulator-dash.js`):** Al hacer clic en una tarjeta de modo válida, el botón de acción cambia su estado a `<i class="fas fa-circle-notch fa-spin"></i> Preparando...` para brindar respuesta inmediata.

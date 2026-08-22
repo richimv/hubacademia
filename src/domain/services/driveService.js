@@ -1,6 +1,6 @@
 const { google } = require('googleapis');
-const path = require('path');
 const axios = require('axios');
+const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 
 /**
  * DriveService: Gestiona la comunicación con la API de Google Drive v3
@@ -13,14 +13,8 @@ class DriveService {
         
         const authOptions = {
             scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+            ...resolveGoogleAuthOptions('DriveService')
         };
-
-        if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-            authOptions.keyFile = path.join(__dirname, '../../../service-account-key.json');
-            console.log('📁 [DriveService] Usando fallback local:', authOptions.keyFile);
-        } else {
-            console.log('🔑 [DriveService] Usando credenciales de variable de entorno.');
-        }
 
         this.auth = new google.auth.GoogleAuth(authOptions);
         this.drive = google.drive({ version: 'v3', auth: this.auth });

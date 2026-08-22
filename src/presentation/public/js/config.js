@@ -55,9 +55,9 @@
         }
 
         // Caso GCS: Es una ruta como "test.png" o "folders/image.jpg"
-        const token = localStorage.getItem('authToken');
-        const tokenParam = token ? `&token=${token}` : '';
-        return `${window.AppConfig.API_URL}/api/media/gcs?file=${encodeURIComponent(url)}${tokenParam}`;
+        // Los tokens nunca viajan en query string: se filtran en logs, historial,
+        // Referer y cachés. Las peticiones fetch autenticadas usan Authorization.
+        return `${window.AppConfig.API_URL}/api/media/gcs?file=${encodeURIComponent(url)}`;
     };
 
     /**

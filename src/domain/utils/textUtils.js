@@ -1,5 +1,6 @@
-const natural = require('natural');
-const stemmer = natural.PorterStemmerEs; // Stemmer en español
+// Importar solo el stemmer evita cargar analizadores de sentimiento ESM que no
+// se usan y mantiene este módulo CommonJS compatible con Node/Jest.
+const stemmer = require('natural/lib/natural/stemmers/porter_stemmer_es');
 
 function normalizeText(text) {
     if (!text) return '';

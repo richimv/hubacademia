@@ -44,7 +44,7 @@ class UserPreferencesController {
                 return res.status(400).json({ error: 'Domain and config_json are mandatory parameters.' });
             }
 
-            // Preserve difficulty in config_json for simulator settings (such as CEFR levels)
+            // Preserve difficulty when it is part of the simulator configuration.
 
             const updatedConfig = await this.preferencesService.savePreferences(userId, domain, config_json);
 

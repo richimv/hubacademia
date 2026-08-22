@@ -160,3 +160,17 @@ Para profundizar en el estudio de diagnósticos, tratamientos y normas técnicas
 2. **Contextualización Inmediata**: La IA recibe metadatos del caso clínico (enunciado, opciones de respuesta, alternativa correcta, distractor seleccionado del usuario y sustento oficial del banco).
 3. **RAG Semántico (Pinecone)**: Las consultas médicas se resuelven utilizando RAG semántico en el namespace de salud (`medicine`), conectando con la biblioteca digital médica (Normas Técnicas de Salud, Guías de Práctica Clínica y literatura estándar).
 4. **Monetización**: Consume 1 uso de la cuota diaria estándar para usuarios Premium Active (Basic/Advanced), y 2 vidas por consulta para usuarios Free/Pending.
+
+---
+
+## 13. Paginación Reactiva por Lotes y Propagación de Sesión Segura (Agosto 2026)
+Con el objetivo de garantizar una navegación continua y sin interrupciones en simulacros de 10, 20 o 100 preguntas:
+1. **Prefetch Proactivo de Lotes**:
+   - El cliente (`quiz.js`) solicita preguntas en bloques de 5 en 5 (`/start` y `/next-batch`).
+   - Al encontrarse a 2 preguntas de agotar el bloque en memoria (`questions.length - currentQuestionIndex <= 2`), el cliente dispara automáticamente en segundo plano la carga del siguiente lote (`fetchNextBatch()`).
+   - Si el usuario avanza antes de que culmine la carga, el sistema muestra el overlay de carga estilizado de forma no disruptiva y reanuda en cuanto el bloque arriba.
+2. **Propagación Integral de `quizSessionId`**:
+   - Se sincronizó el identificador de sesión seguro `quizSessionId` generado por el backend en `/start` a través del estado de sesión (`state.quizSessionId`), la persistencia en `localStorage`, las peticiones secundarias `/next-batch` y el envío final `/submit`.
+   - Esto previene rechazos `400 Bad Request` en entornos con `SECURE_QUIZ_SESSIONS_ENABLED` y evita truncamientos prematuros en la pregunta 5.
+3. **Preservación de Estado de Interacción**:
+   - La finalización de lotes en segundo plano preserva la interacción en pantalla del usuario sin reinicios de formulario ni borrado de opciones seleccionadas.
