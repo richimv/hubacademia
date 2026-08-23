@@ -1939,7 +1939,10 @@ const SimulatorDash = (() => {
             } catch (e) { console.error("Error parsing local stats", e); }
         }
 
-        updateScoreSub(currentAvgScore);
+        const scoreSubEl = document.getElementById('stat-score-sub');
+        if (scoreSubEl) {
+            scoreSubEl.textContent = 'Basado en tus últimos simulacros';
+        }
 
         // 6. Ocultar Loading
         const loading = document.getElementById('loading');
