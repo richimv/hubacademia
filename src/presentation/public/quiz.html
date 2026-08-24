@@ -13,14 +13,14 @@
     <!-- CSS Moderno (Glassmorphism) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Centralized Design System Tokens -->
-    <link rel="stylesheet" href="/css/theme.css?v=98169a3d2fdb">
-    <link rel="stylesheet" href="/css/quiz.css?v=98169a3d2fdb">
-    <link rel="stylesheet" href="/css/modal.css?v=98169a3d2fdb">
-    <link rel="stylesheet" href="/css/components.css?v=98169a3d2fdb">
-    <link rel="stylesheet" href="/css/tutor.css?v=98169a3d2fdb">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=98169a3d2fdb">
-    <script src="/js/config.js?v=98169a3d2fdb"></script>
-    <script src="/js/utils/themeManager.js?v=98169a3d2fdb"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=d488a3f343f7">
+    <link rel="stylesheet" href="/css/quiz.css?v=d488a3f343f7">
+    <link rel="stylesheet" href="/css/modal.css?v=d488a3f343f7">
+    <link rel="stylesheet" href="/css/components.css?v=d488a3f343f7">
+    <link rel="stylesheet" href="/css/tutor.css?v=d488a3f343f7">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=d488a3f343f7">
+    <script src="/js/config.js?v=d488a3f343f7"></script>
+    <script src="/js/utils/themeManager.js?v=d488a3f343f7"></script>
 
     <!-- Critical Loading Screen CSS (Inmune a problemas de caché del navegador) -->
     <style>
@@ -294,10 +294,13 @@
         </div>
 
         <div id="feedbackBox" class="feedback-box" style="display: none;">
-            <h5 id="explanation-title" class="mb-3" style="color: #60a5fa; font-weight: 700; letter-spacing: -0.02em;">
-                <i class="fas fa-info-circle"></i> Sustento Técnico
-            </h5>
-            <div id="explanationText" style="font-size: 1.15rem; line-height: 1.6; color: #93c5fd; margin-bottom: 1.5rem;"></div>
+            <div class="feedback-box-header">
+                <div class="feedback-badge" id="explanationBadge">
+                    <i class="fas fa-stethoscope" id="explanationIcon"></i>
+                    <span id="explanationTitleText">Sustento Clínico Oficial</span>
+                </div>
+            </div>
+            <div id="explanationText" class="feedback-explanation-text"></div>
             <div id="explanationImageContainer" class="q-explanation-image-container-premium" style="display: none;">
                 <img id="explanationImage" src="" alt="Imagen explicativa" loading="lazy">
             </div>
@@ -371,20 +374,20 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=98169a3d2fdb"></script>
+    <script src="/js/config.js?v=d488a3f343f7"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=98169a3d2fdb"></script>
-    <script src="/js/services/networkService.js?v=98169a3d2fdb"></script>
-    <script src="/js/services/authApiService.js?v=98169a3d2fdb"></script>
-    <script src="/js/services/analyticsApiService.js?v=98169a3d2fdb"></script>
-    <script src="/js/sessionManager.js?v=98169a3d2fdb"></script>
-    <script src="/js/ui/components.js?v=98169a3d2fdb"></script>
-    <script src="/js/ui/confirmationModal.js?v=98169a3d2fdb"></script>
-    <script src="/js/ui/uiManager.js?v=98169a3d2fdb"></script>
-    <script src="/js/app.js?v=98169a3d2fdb"></script>
-    <script src="/js/quiz-tutor.js?v=98169a3d2fdb"></script>
-    <script type="module" src="/js/quiz.js?v=98169a3d2fdb"></script>
+    <script src="/js/utils/markdown-renderer.js?v=d488a3f343f7"></script>
+    <script src="/js/services/networkService.js?v=d488a3f343f7"></script>
+    <script src="/js/services/authApiService.js?v=d488a3f343f7"></script>
+    <script src="/js/services/analyticsApiService.js?v=d488a3f343f7"></script>
+    <script src="/js/sessionManager.js?v=d488a3f343f7"></script>
+    <script src="/js/ui/components.js?v=d488a3f343f7"></script>
+    <script src="/js/ui/confirmationModal.js?v=d488a3f343f7"></script>
+    <script src="/js/ui/uiManager.js?v=d488a3f343f7"></script>
+    <script src="/js/app.js?v=d488a3f343f7"></script>
+    <script src="/js/quiz-tutor.js?v=d488a3f343f7"></script>
+    <script type="module" src="/js/quiz.js?v=d488a3f343f7"></script>
 </body>
 
 </html>

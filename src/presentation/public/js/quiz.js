@@ -1223,6 +1223,16 @@ function handleAnswer(selectedIndex, btnElement) {
             }
         }
 
+        const isEdu = (state.context || '').toUpperCase() === 'EDUCACION' || ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam);
+        const titleTextEl = document.getElementById('explanationTitleText');
+        const iconEl = document.getElementById('explanationIcon');
+        if (titleTextEl) {
+            titleTextEl.textContent = isEdu ? 'Sustento Pedagógico Oficial' : 'Sustento Clínico Oficial';
+        }
+        if (iconEl) {
+            iconEl.className = isEdu ? 'fas fa-graduation-cap' : 'fas fa-stethoscope';
+        }
+
         elements.feedbackBox.style.display = 'flex';
         if (!isCorrect) {
             elements.feedbackBox.classList.add('error');

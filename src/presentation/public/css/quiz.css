@@ -761,29 +761,138 @@ body.module-educacion .option-btn.correct .option-letter {
     color: white !important;
 }
 
-/* Feedback Area */
+/* ==========================================================================
+   Feedback Area & Explanation Box (Themed: Salud vs Educación)
+   ========================================================================== */
 .feedback-box {
-    margin-top: 2rem;
-    padding: 2rem;
-    background: rgba(59, 130, 246, 0.05);
-    border: 1px solid rgba(59, 130, 246, 0.1); 
-    border-radius: 12px;
+    margin-top: 1.75rem;
+    padding: 1.5rem 1.75rem;
+    border-radius: 16px;
     display: none;
     flex-direction: column;
-    gap: 1.5rem;
-    animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    gap: 0.85rem;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    transition: all 0.25s ease;
 }
 
-.feedback-box.error {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.25);
+/* Default / Salud Theme (Teal / Emerald) */
+.feedback-box,
+[data-module="salud"] .feedback-box,
+[data-module="medicina"] .feedback-box,
+body.module-salud .feedback-box {
+    background: rgba(13, 148, 136, 0.05);
+    border: 1px solid rgba(13, 148, 136, 0.22);
+    box-shadow: 0 4px 20px rgba(13, 148, 136, 0.06);
 }
 
-#explanationText, #explanationText p {
-    font-size: 1.45rem !important;
-    line-height: 1.6;
-    color: var(--quiz-text-secondary);
+/* Educación Theme (Blue / Indigo) */
+[data-module="educacion"] .feedback-box,
+body.module-educacion .feedback-box {
+    background: rgba(37, 99, 235, 0.05);
+    border: 1px solid rgba(37, 99, 235, 0.22);
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.06);
+}
+
+/* Light Theme Support */
+[data-theme="light"] .feedback-box,
+[data-theme="light"] [data-module="salud"] .feedback-box,
+[data-theme="light"] body.module-salud .feedback-box {
+    background: rgba(13, 148, 136, 0.04);
+    border-color: rgba(13, 148, 136, 0.3);
+    box-shadow: 0 2px 12px rgba(13, 148, 136, 0.08);
+}
+
+[data-theme="light"] [data-module="educacion"] .feedback-box,
+[data-theme="light"] body.module-educacion .feedback-box {
+    background: rgba(37, 99, 235, 0.04);
+    border-color: rgba(37, 99, 235, 0.3);
+    box-shadow: 0 2px 12px rgba(37, 99, 235, 0.08);
+}
+
+/* Header & Badge */
+.feedback-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.feedback-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     font-family: var(--font-main);
+}
+
+/* Salud Badge */
+.feedback-badge,
+[data-module="salud"] .feedback-badge,
+[data-module="medicina"] .feedback-badge,
+body.module-salud .feedback-badge {
+    background: rgba(13, 148, 136, 0.12);
+    color: #14b8a6;
+    border: 1px solid rgba(13, 148, 136, 0.28);
+}
+
+[data-theme="light"] .feedback-badge,
+[data-theme="light"] [data-module="salud"] .feedback-badge,
+[data-theme="light"] body.module-salud .feedback-badge {
+    background: rgba(13, 148, 136, 0.1);
+    color: #0f766e;
+    border-color: rgba(13, 148, 136, 0.25);
+}
+
+/* Educación Badge */
+[data-module="educacion"] .feedback-badge,
+body.module-educacion .feedback-badge {
+    background: rgba(37, 99, 235, 0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(37, 99, 235, 0.28);
+}
+
+[data-theme="light"] [data-module="educacion"] .feedback-badge,
+[data-theme="light"] body.module-educacion .feedback-badge {
+    background: rgba(37, 99, 235, 0.1);
+    color: #1d4ed8;
+    border-color: rgba(37, 99, 235, 0.25);
+}
+
+/* Explanation Text with clean spacing */
+.feedback-explanation-text,
+#explanationText {
+    font-size: 1.15rem;
+    line-height: 1.65;
+    color: var(--quiz-text-secondary, #cbd5e1);
+    font-family: var(--font-main);
+    margin: 0;
+}
+
+[data-theme="light"] .feedback-explanation-text,
+[data-theme="light"] #explanationText {
+    color: #334155;
+}
+
+#explanationText p {
+    margin: 0.6rem 0;
+    line-height: 1.65;
+}
+
+#explanationText p:first-child {
+    margin-top: 0;
+}
+
+#explanationText p:last-child {
+    margin-bottom: 0;
+}
+
+/* Error Variation (Incorrect option selected) */
+.feedback-box.error {
+    border-left: 4px solid var(--quiz-danger, #ef4444);
 }
 
 @keyframes slideUp {
