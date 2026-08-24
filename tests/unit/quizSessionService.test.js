@@ -40,17 +40,18 @@ describe('QuizSessionService', () => {
         });
 
         const storedQuestion = quizSessionRepository.createSession.mock.calls[0][0].questions[0];
-        expect(storedQuestion.publicPayload).not.toHaveProperty('correct_option_index');
-        expect(storedQuestion.publicPayload).not.toHaveProperty('explanation');
+        expect(storedQuestion.publicPayload).toHaveProperty('correct_option_index', 1);
+        expect(storedQuestion.publicPayload).toHaveProperty('explanation', 'Explicación privada');
         expect(storedQuestion.answerPayload).toEqual(expect.objectContaining({
             correct_option_index: 1,
             explanation: 'Explicación privada'
         }));
         expect(result.questions[0]).toEqual(expect.objectContaining({
             id: BANK_QUESTION_ID,
-            sessionQuestionId: SESSION_QUESTION_ID
+            sessionQuestionId: SESSION_QUESTION_ID,
+            correct_option_index: 1,
+            explanation: 'Explicación privada'
         }));
-        expect(result.questions[0]).not.toHaveProperty('correct_option_index');
     });
 
     it('rejects malformed questions before opening a session', async () => {

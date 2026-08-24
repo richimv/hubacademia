@@ -95,40 +95,52 @@ class QuizSessionService {
             }
 
             const {
-                correct_option_index,
-                correct_index,
                 correctAnswer,
                 correct_answer,
                 answer_index,
                 isCorrect,
                 solution,
-                explanation,
-                explanation_image_url,
                 ...publicPayload
             } = question;
 
+            const explanation = question.explanation || '';
+            const explanationImageUrl = question.explanation_image_url || null;
             const bankQuestionId = UUID_PATTERN.test(String(question.id || '')) ? question.id : null;
             return {
                 bankQuestionId,
                 publicPayload: {
                     ...publicPayload,
                     id: bankQuestionId,
-                    options: [...options]
+                    options: [...options],
+                    correct_option_index: correctOptionIndex,
+                    explanation: explanation,
+                    explanation_image_url: explanationImageUrl
                 },
                 answerPayload: {
                     correct_option_index: correctOptionIndex,
-                    explanation: explanation || '',
-                    explanation_image_url: explanation_image_url || null
+                    explanation: explanation,
+                    explanation_image_url: explanationImageUrl
                 }
             };
         });
     }
 
     _toClientQuestion(row) {
+        const publicPayload = row.public_payload || {};
+        const answerPayload = row.answer_payload || {};
         return {
-            ...(row.public_payload || {}),
-            id: row.bank_question_id || row.public_payload?.id || null,
-            sessionQuestionId: row.id
+            ...publicPayload,
+            id: row.bank_question_id || publicPayload.id || null,
+            sessionQuestionId: row.id,
+            correct_option_index: publicPayload.correct_option_index !== undefined 
+                ? publicPayload.correct_option_index 
+                : (answerPayload.correct_option_index !== undefined ? Number(answerPayload.correct_option_index) : undefined),
+            explanation: publicPayload.explanation !== undefined 
+                ? publicPayload.explanation 
+                : (answerPayload.explanation || ''),
+            explanation_image_url: publicPayload.explanation_image_url !== undefined 
+                ? publicPayload.explanation_image_url 
+                : (answerPayload.explanation_image_url || null)
         };
     }
 
