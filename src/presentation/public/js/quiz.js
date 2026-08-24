@@ -1205,7 +1205,9 @@ function handleAnswer(selectedIndex, btnElement) {
     }
 
     // 🚀 BIFURCACIÓN DE COMPORTAMIENTO PARA FEEDBACK / SIGUIENTE
-    if (state.maxQuestions === 20) {
+    const isStudyMode = Number(state.maxQuestions) === 20 || state.mode === 'study' || (Number(state.maxQuestions) !== 10 && Number(state.maxQuestions) !== 100);
+
+    if (isStudyMode) {
         // MODO ESTUDIO (20q): Mostrar explicación y el botón siguiente
         elements.explanationText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.") : (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
 
@@ -1221,7 +1223,7 @@ function handleAnswer(selectedIndex, btnElement) {
             }
         }
 
-        elements.feedbackBox.style.display = 'block';
+        elements.feedbackBox.style.display = 'flex';
         if (!isCorrect) {
             elements.feedbackBox.classList.add('error');
         } else {
@@ -1283,11 +1285,15 @@ function handleAnswer(selectedIndex, btnElement) {
         }
     }
 
-    // 📜 Desplazamiento suave e inmediato de pantalla hacia los botones Siguiente / Tutor IA tras renderizado
+    // 📜 Desplazamiento suave e inteligente tras responder
     setTimeout(() => {
-        const nextContainer = elements.nextBtnContainer || document.getElementById('nextBtnContainer');
-        if (nextContainer && nextContainer.style.display !== 'none') {
-            nextContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (isStudyMode && elements.feedbackBox && elements.feedbackBox.style.display !== 'none') {
+            elements.feedbackBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            const nextContainer = elements.nextBtnContainer || document.getElementById('nextBtnContainer');
+            if (nextContainer && nextContainer.style.display !== 'none') {
+                nextContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
     }, 100);
 }
