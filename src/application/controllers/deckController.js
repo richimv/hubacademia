@@ -23,12 +23,14 @@ class DeckController {
      * Helper to get common user context.
      */
     _getUserContext = (req) => {
-        const tier = (req.user?.subscription_tier || req.userTier || 'free').toLowerCase();
+        const rawTier = req.user?.subscriptionTier || req.user?.subscription_tier || req.userTier || 'free';
+        const tier = String(rawTier).toLowerCase();
+        const role = String(req.user?.role || '').toLowerCase();
         return {
             userId: req.user ? req.user.id : 'GUEST',
             isGuest: !req.user,
             userTier: tier,
-            isAdvanced: ['advanced', 'admin'].includes(tier)
+            isAdvanced: ['advanced', 'admin'].includes(tier) || role === 'admin'
         };
     }
 

@@ -4,6 +4,18 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 
 ---
 
+### 🟢 [2026-08-25] - Corrección de Permisos de Subida de Imágenes para Usuarios Advanced y Manejo Limpio de Paywall
+
+- **🖼️ Corrección de Mapeo de Atributos de Membresía ([deckController.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/deckController.js)):**
+  - Se refactorizó `_getUserContext` para acceder correctamente al atributo camelCase `req.user?.subscriptionTier` expuesto por el modelo `User`, además de `req.user?.subscription_tier` y `req.userTier`.
+  - Soluciona el error en el que la API `POST /api/cards/upload-image` rechazaba con status 403 las solicitudes de usuarios con plan `advanced` o rol `admin` al asumir erróneamente que tenían un plan `free`.
+
+- **💳 Optimización del Flujo de Excepciones Paywall ([repaso.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/repaso.js) & [deck-explorer.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/deck-explorer.js)):**
+  - Se actualizó el manejador `_uploadFileToGCS` para extraer el mensaje explicativo provisto por el servidor (`data.error`) y mostrar el modal dinámico de suscripción `showPaywallModal(data.error, 'flashcards')`.
+  - Se suprimió la emisión de notificaciones erróneas en consola ("Save card network error: Error: Créditos agotados") y toasts redundantes de error de red.
+
+---
+
 ### 🟢 [2026-08-22] - Módulo Repaso: Posicionamiento Inteligente Anti-Solapamiento en Tour Guía y Purificación de KPIs de Mazos
 
 - **📍 Algoritmo Anti-Solapamiento de Tooltips en Tour Guía ([tooltipManager.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/tooltipManager.js)):**

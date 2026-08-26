@@ -463,7 +463,7 @@ class DeckExplorer {
                 toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | table image | code help',
                 images_upload_handler: async (blobInfo) => {
                     const user = window.sessionManager?.getUser();
-                    const tier = (user?.subscriptionStatus || user?.subscription_tier || 'free').toLowerCase();
+                    const tier = (user?.subscriptionTier || user?.subscription_tier || 'free').toLowerCase();
                     
                     const editor = window.tinymce.get('deck-guide-textarea');
                     if (editor) {

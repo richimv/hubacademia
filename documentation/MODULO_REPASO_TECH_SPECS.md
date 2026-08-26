@@ -327,6 +327,14 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Se desvinculó la tabla `quiz_history` (simulacros/exámenes culminados de Salud y Educación) de la generación de analíticas de mapas de actividad del módulo de repaso en `analyticsRepository.js` y `analyticsService.js`.
     - Se habilitó la filtración contextual por `deckId` en `/api/analytics/heatmap?deckId=...`, permitiendo que el modal de estadísticas (`openStatsModal` en `repaso.js`) contabilice exclusivamente las tarjetas repasadas (`user_flashcards`) del mazo seleccionado.
 
+- **Corrección de Permisos de Subida de Imágenes para Usuarios Advanced y Manejo Limpio de Paywall (V41)**:
+  - **Identificación de Tier de Usuario en `_getUserContext`**:
+    - Se refactorizó `_getUserContext` en `deckController.js` para extraer `req.user?.subscriptionTier` (propiedad camelCase mapeada por `User` domain model), garantizando que los usuarios con plan `advanced` o rol `admin` sean reconocidos correctamente con `isAdvanced = true`.
+    - Resuelve el error 403 en `POST /api/cards/upload-image` donde usuarios Advanced eran tratados erróneamente como plan `free`.
+  - **Manejo Amigable de Errores y Modal de Suscripción**:
+    - Se actualizó `_uploadFileToGCS` en `repaso.js` y `deck-explorer.js` para extraer el mensaje explicativo del servidor (`data.error`) y mostrar el modal oficial de pago `showPaywallModal(errMsg, 'flashcards')`.
+    - Se evitó la emisión de notificaciones redundantes o erróneas de "Créditos agotados" o "Error de red" al presentar la oferta de membresía.
+
 ---
 
-**Documentación Técnica Actualizada - 22 de Agosto, 2026.**
+**Documentación Técnica Actualizada - 25 de Agosto, 2026.**
