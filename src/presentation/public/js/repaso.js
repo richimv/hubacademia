@@ -2261,6 +2261,62 @@ class RepasoManager {
             }
 
             if (res.status === 403) {
+                const errorData = await res.json().catch(() => ({}));
+                if (window.uiManager) window.uiManager.showPaywallModal(errorData.error, 'flashcards');
+                return;
+            }
+
+            if (res.ok) {
+                this.invalidateCache(deckId);
+                this.closeCardModal();
+                this.loadFolder(deckId, false);
+                this._pendingBulkCards = [];
+                // Sincronización gestionada por NetworkService
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                window.uiManager.showToast(`❌ Error al guardar tarjeta: ${errorData.error || res.statusText}`);
+            }
+        } catch (err) {
+            console.error('Save card error:', err);
+            if (!err.isPaywall) {
+                window.uiManager.showToast(`❌ ${err.message || 'Error de red al guardar tarjeta.'}`);
+            }
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+    }
+
+    /**
+     * Helper interno para subir archivos a GCS
+     */
+    async _uploadFileToGCS(file, folder) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/cards/upload-image`, {
+            method: 'POST',
+            body: formData
+        });
+
+        let data;
+        try {
+            const text = await res.text();
+            data = JSON.parse(text);
+        } catch (e) {
+            throw new Error(`Error del servidor (${res.status}). Es posible que la imagen sea demasiado pesada.`);
+        }
+
+        if (res.status === 403) {
+            const errMsg = data?.error || 'La subida de imágenes para tarjetas es una función exclusiva del Plan Avanzado.';
+            if (window.uiManager) window.uiManager.showPaywallModal(errMsg, 'flashcards');
+            const paywallErr = new Error(errMsg);
+            paywallErr.isPaywall = true;
+            throw paywallErr;
+        }
+
         if (res.ok && data.imageUrl) {
             return data.imageUrl;
         } else {
