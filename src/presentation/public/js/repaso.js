@@ -628,7 +628,9 @@ class RepasoManager {
                 }
             });
 
-            grid.innerHTML = '<div style="text-align:center; padding:2rem; grid-column: 1 / -1;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#f97316"></i></div>';
+            if (grid.children.length === 0 || grid.querySelector('.fa-spin')) {
+                grid.innerHTML = '<div style="text-align:center; padding:2rem; grid-column: 1 / -1;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#f97316"></i></div>';
+            }
         }
 
         // Mantener a la vista la píldora seleccionada con animación suave
@@ -1646,6 +1648,11 @@ class RepasoManager {
      * Interceptor for browser navigation (Back/Forward) and selection mode.
      */
     handlePopState(e) {
+        // 🛡️ Omitir la recarga del dashboard/comunidad si el evento popstate proviene del cierre manual de un modal
+        if (window.uiManager && window.uiManager.isClosingModalState) {
+            return;
+        }
+
         // 1. UI Selection Overrides
         if (this.isSelectionMode && (!e.state || !e.state.selectionMode)) {
             this.toggleSelectAllCards(false);
@@ -1663,9 +1670,17 @@ class RepasoManager {
             if (!this.currentDeck || String(this.currentDeck.id) !== String(deckId)) {
                 this.loadFolder(deckId, false);
             }
-        } else if (view === 'dashboard') {
+        } else if (view === 'dashboard' || (!view && this.activeTab === 'mis-mazos')) {
+            const grid = document.getElementById('root-decks-grid');
+            if (grid && grid.children.length > 0 && this.activeTab === 'mis-mazos') {
+                return; // Preservar la grilla cargada sin parpadear
+            }
             this.loadDashboard(false);
         } else {
+            const grid = document.getElementById('community-decks-grid');
+            if (grid && grid.children.length > 0 && this.activeTab === 'comunidad') {
+                return; // Preservar la grilla de comunidad sin parpadear
+            }
             this.loadCommunity(false);
         }
     }

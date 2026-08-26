@@ -178,7 +178,11 @@ class UIManager {
             }
             // Hacer "atrás" invisible si cerramos manual para no ensuciar el historial extra
             if (window.history.state && window.history.state.modalOpen) {
+                this.isClosingModalState = true;
                 window.history.back();
+                setTimeout(() => {
+                    this.isClosingModalState = false;
+                }, 150);
             }
         }
     }
