@@ -65,6 +65,16 @@ El backend validará la URL y los campos, guardándolos en la tabla "resources" 
 ---
 
 ## 📋 Registro de Ejecución y Noticias Ingestadas (Logs)
+- **Fecha:** 25 de agosto de 2026
+- **Recursos Ingestados:**
+  1. **MINEDU (education):** [Minedu impulsará titulación de colegios de Ica para mejorar su infraestructura](https://www.gob.pe/institucion/minedu/noticias/1434484-minedu-impulsara-titulacion-de-colegios-de-ica-para-mejorar-su-infraestructura)
+  2. **MINSA (medicine):** [Ministro Dyer premia a los “Bebés Mamoncitos 2026” y destaca la lactancia materna como el mejor alimento](https://www.gob.pe/institucion/minsa/noticias/1434638-ministro-dyer-premia-a-los-bebes-mamoncitos-2026-y-destaca-la-lactancia-materna-como-el-mejor-alimento)
+  3. **MINSA (medicine):** [Ministro de Salud recorre el San Bartolomé y anuncia acciones para mejorar la atención](https://www.gob.pe/institucion/minsa/noticias/1434614-ministro-de-salud-recorre-el-san-bartolome-y-anuncia-acciones-para-mejorar-la-atencion)
+  4. **MINSA (medicine):** [Diris Lima Este reconoce a 33 brigadistas de la Municipalidad de Santa Anita por fortalecer su preparación ante emergencias](https://www.gob.pe/institucion/minsa/noticias/1434496-diris-lima-este-reconoce-a-33-brigadistas-de-la-municipalidad-de-santa-anita-por-fortalecer-su-preparacion-ante-emergencias)
+  5. **MINSA (medicine):** [En jornada de 24 horas, especialistas del Hospital Nacional Cayetano Heredia salvan la vida de 14 pacientes con arritmias](https://www.gob.pe/institucion/minsa/noticias/1434481-en-jornada-de-24-horas-especialistas-del-hospital-nacional-cayetano-heredia-salvan-la-vida-de-14-pacientes-con-arritmias)
+  6. **MINSA (medicine):** [Semana de lactancia materna: conoce a los bebés mamoncitos Minsa](https://www.gob.pe/institucion/minsa/noticias/1434282-semana-de-lactancia-materna-conoce-a-los-bebes-mamoncitos-minsa)
+- **Estado de Ingesta:** ✅ 6/6 Noticias verificadas e ingestadas exitosamente en la tabla `resources` de PostgreSQL.
+
 - **Fecha:** 15 de agosto de 2026
 - **Recursos Ingestados:**
   1. **MINEDU (education):** [Minedu alista beca para mejores talentos de los COAR](https://www.gob.pe/institucion/minedu/noticias/1430869-minedu-alista-beca-para-mejores-talentos-de-los-coar)

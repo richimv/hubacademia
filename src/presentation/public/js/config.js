@@ -84,11 +84,9 @@
 
     // ✅ SUPABASE SINGLETON INITIALIZATION
     // Inicializamos el cliente una sola vez para evitar advertencias de "Multiple GoTrueClient instances".
-    if (typeof supabase !== 'undefined') {
+    if (typeof supabase !== 'undefined' && !window.supabaseClient) {
         window.supabaseClient = supabase.createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
         console.log('✅ Supabase Singleton Initialized.');
-    } else {
-        // console.warn('⚠️ Librería Supabase no detectada al cargar config.js'); // SIlenced to prevent unnecessary console noise on pages that don't need Supabase Auth
     }
 
     /**

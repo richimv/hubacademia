@@ -4,6 +4,18 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 
 ---
 
+### 🟢 [2026-08-26] - Corrección de GoTrueClient Singleton y Eliminación de Scripts Duplicados en Frontend
+
+- **🔐 Supabase GoTrueClient Singleton Estricto ([config.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/config.js#L85-L92)):**
+  - Se agregó la condición de guarda `!window.supabaseClient` en la inicialización de Supabase en `config.js` para evitar crear múltiples instancias de `GoTrueClient` compitiendo por la clave `sb-rayjtupppcbhzjizhamn-auth-token` en el `localStorage`.
+  - Erradica el warning en consola de producción: *"Multiple GoTrueClient instances detected in the same browser context"*.
+
+- **🧹 Limpieza de Scripts HTML Duplicados (Todas las vistas HTML):**
+  - Se eliminó la doble inclusión de `<script src="/js/config.js"></script>` presente en el `<body>` de `admin.html`, `course.html`, `dashboard.html`, `deck-editor.html`, `flashcards.html`, `index.html`, `library.html`, `login.html`, `pricing.html`, `profile.html`, `quiz.html`, `repaso.html`, `resource.html`, `simulator-dashboard.html` y `simulators.html`.
+  - Mantiene una única carga en el `<head>`, optimizando los tiempos de parseo del DOM.
+
+---
+
 ### 🟢 [2026-08-25] - Corrección de Permisos de Subida de Imágenes para Usuarios Advanced y Manejo Limpio de Paywall
 
 - **🖼️ Corrección de Mapeo de Atributos de Membresía ([deckController.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/deckController.js)):**
