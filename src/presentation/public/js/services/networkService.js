@@ -47,13 +47,6 @@ class NetworkService {
             headers
         };
 
-        // Asegurar que sessionManager haya resuelto la sesión antes de evaluar consumo
-        if (window.sessionManager && !window.sessionManager.getUser() && window.sessionManager.initPromise) {
-            try {
-                await window.sessionManager.initPromise;
-            } catch (_) {}
-        }
-
         // Detectar si es un endpoint que consume vidas para free/pending
         const isStudyEndpoint = url.includes('/cards/due') || url.includes('/flashcard/due') || (url.includes('/cards/') && url.includes('/study')) || url.includes('/study-public');
         const isDeckWriteEndpoint = (url.includes('/api/decks') || url.includes('/api/cards')) && (options.method === 'POST' || options.method === 'PUT') && !url.includes('/visibility') && !url.includes('/reorder') && !url.includes('/tree');
@@ -66,7 +59,14 @@ class NetworkService {
 
         let optimisticallyDecremented = false;
 
-        if (isConsumptionEndpoint && window.sessionManager) {
+        if (isConsumptionEndpoint && window.sessionManager && !url.includes('/api/auth/')) {
+            // Asegurar que sessionManager haya resuelto la sesión antes de evaluar consumo si está en curso
+            if (!window.sessionManager.getUser() && window.sessionManager.initPromise) {
+                try {
+                    await window.sessionManager.initPromise;
+                } catch (_) {}
+            }
+
             const currentUser = window.sessionManager.getUser();
             if (currentUser && currentUser.role !== 'admin') {
                 const tier = String(currentUser.subscriptionTier || currentUser.subscription_tier || 'free').toLowerCase();
