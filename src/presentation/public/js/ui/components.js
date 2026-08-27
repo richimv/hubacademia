@@ -455,9 +455,13 @@ function createTopicViewHTML(topic, description, books = [], showChatButton = fa
 
 
 function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = false) {
-    // SOLUCIÓN: Usar 'item.title' si el tipo es 'book', de lo contrario usar 'item.name'.
-    let displayName = type === 'book' ? item.title : item.name;
-    if (type === 'question') {
+    let displayName = item.name;
+    if (type === 'book') {
+        displayName = item.title || item.name || 'Recurso sin título';
+    } else if (type === 'case') {
+        const cleanCaseText = item.description_text ? item.description_text.replace(/<[^>]*>/g, '').trim() : '';
+        displayName = item.title || (item.code ? `Caso: ${item.code}` : '') || (cleanCaseText ? (cleanCaseText.length > 80 ? cleanCaseText.substring(0, 80) + '...' : cleanCaseText) : 'Casuística sin título');
+    } else if (type === 'question') {
         const cleanText = item.question_text ? item.question_text.replace(/<[^>]*>/g, '') : '';
         displayName = cleanText ? (cleanText.substring(0, 80) + '...') : 'Pregunta sin texto';
     }
@@ -470,6 +474,20 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`;
     } else if (type === 'question') {
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--primary-light); padding: 2px 8px; border-radius: 4px; color: var(--text-dark); display:inline-block; margin-top:0.25rem;">${item.domain?.toUpperCase() || ''} | ${item.target || 'General'}</span>`;
+    } else if (type === 'case') {
+        const codeBadge = item.code ? `<span class="area-badge" style="font-size: 0.7rem; background: rgba(99, 102, 241, 0.15); padding: 2px 8px; border-radius: 4px; color: #818cf8; font-weight: 700; display:inline-block; border: 1px solid rgba(99, 102, 241, 0.3);">${item.code}</span>` : '';
+        const domainText = item.domain === 'medicine' ? 'Salud Profesional' : item.domain === 'education' ? 'Educación Docente' : (item.domain ? item.domain.toUpperCase() : 'General');
+        const domainBadge = `<span class="area-badge" style="font-size: 0.7rem; background: rgba(59, 130, 246, 0.15); padding: 2px 8px; border-radius: 4px; color: #60a5fa; display:inline-block;">${domainText}</span>`;
+        const qCount = parseInt(item.questions_count, 10) || 0;
+        const questionsBadge = `<span class="area-badge" style="font-size: 0.7rem; background: rgba(16, 185, 129, 0.15); padding: 2px 8px; border-radius: 4px; color: #34d399; display:inline-block;"><i class="fas fa-link"></i> ${qCount} ${qCount === 1 ? 'pregunta vinculada' : 'preguntas vinculadas'}</span>`;
+        
+        areaBadge = `
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">
+                ${codeBadge}
+                ${domainBadge}
+                ${questionsBadge}
+            </div>
+        `;
     } else if (type === 'student') {
         const tier = (item.subscriptionTier || item.subscription_tier || 'free').toUpperCase();
         const status = (item.subscriptionStatus || item.subscription_status || 'inactive').toUpperCase();
@@ -515,6 +533,12 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     }
 
     // Subtitulo formateado
+    if (type === 'case' && !subtitle && item.description_text) {
+        const cleanDesc = item.description_text.replace(/<[^>]*>/g, '').trim();
+        if (cleanDesc && cleanDesc !== displayName) {
+            subtitle = cleanDesc.length > 120 ? cleanDesc.substring(0, 120) + '...' : cleanDesc;
+        }
+    }
     const subtitleHTML = subtitle ? `<div class="item-subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">${subtitle}</div>` : '';
 
     const resourceTypeAttr = type === 'book' ? `data-resource-type="${item.resource_type || item.type || 'other'}"` : `data-resource-type="${type}"`;
@@ -931,8 +955,59 @@ window.UIComponents.createReviewCardHTML = function (config) {
         </div>`;
     }
 
+    let caseScenarioHTML = '';
+    const hasCaseContent = Boolean(
+        (question.case_description && String(question.case_description).trim()) ||
+        (question.case_image_url && typeof question.case_image_url === 'string' && question.case_image_url.trim()) ||
+        (question.case_table_html && typeof question.case_table_html === 'string' && question.case_table_html.trim())
+    );
+
+    const isEducation = (window.location.search.includes('context=EDUCACION') || (career && !career.includes('Medicina') && !career.includes('Enfermería')));
+    const caseLabel = isEducation ? 'Casuística Anidada' : 'Viñeta Clínica Compartida';
+    const caseOrderNum = question.case_order || (index + 1);
+
+    if (hasCaseContent) {
+        const rawCaseDesc = question.case_description || '';
+        const caseDescHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(rawCaseDesc) : rawCaseDesc;
+        
+        let caseImgHTML = '';
+        if (question.case_image_url) {
+            const safeResolve = window.resolveImageUrl || (url => url);
+            caseImgHTML = `
+            <div class="review-case-image-wrap">
+                <img src="${safeResolve(question.case_image_url)}" loading="lazy" alt="Material del caso">
+            </div>`;
+        }
+
+        let caseTableHTML = '';
+        if (question.case_table_html) {
+            caseTableHTML = `<div class="review-case-table-wrap">${question.case_table_html}</div>`;
+        }
+
+        caseScenarioHTML = `
+        <div class="review-case-box">
+            <div class="review-case-badge-row">
+                <span class="review-case-pill">
+                    <i class="fas fa-layer-group"></i> ${caseLabel}
+                </span>
+                <span class="review-case-order-pill">Pregunta ${caseOrderNum}</span>
+            </div>
+            ${rawCaseDesc.trim() ? `<div class="review-case-body">${caseDescHTML}</div>` : ''}
+            ${caseImgHTML}
+            ${caseTableHTML}
+        </div>`;
+    } else if (question.case_id) {
+        caseScenarioHTML = `
+        <div class="review-case-minimal-pill-row">
+            <span class="review-case-pill">
+                <i class="fas fa-link"></i> ${caseLabel} • Pregunta ${caseOrderNum}
+            </span>
+        </div>`;
+    }
+
     return `
     <div class="review-card ${question.image_url ? 'has-image' : ''}" data-qindex="${index}">
+        ${caseScenarioHTML}
         <div class="review-card-header">
             <span class="review-q-badge">Pregunta ${index + 1}</span>
             <div class="review-q-text">
