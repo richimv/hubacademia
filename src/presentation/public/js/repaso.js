@@ -141,8 +141,11 @@ class RepasoManager {
 
 
     async init() {
-        // No longer enforcing redirect here.
-        // Component will handle missing token by showing restricted views.
+        if (window.sessionManager) {
+            try {
+                await window.sessionManager.initialize();
+            } catch (_) {}
+        }
 
         // Init Components
         await this.explorer.init();

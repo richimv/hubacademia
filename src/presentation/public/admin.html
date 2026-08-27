@@ -10,14 +10,14 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- NUEVA ESTRUCTURA CSS -->
-    <link rel="stylesheet" href="/css/components.css?v=d488a3f343f7"> <!-- SOLUCIÓN: Cargar los estilos de los componentes -->
-    <link rel="stylesheet" href="/css/theme.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/base.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/header.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/admin.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/admin-units.css?v=d488a3f343f7"> <!-- NUEVO: Estilos para el gestor de unidades -->
-    <link rel="stylesheet" href="/css/modal.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/sidebar.css?v=d488a3f343f7">
+    <link rel="stylesheet" href="/css/components.css?v=1277c7932928"> <!-- SOLUCIÓN: Cargar los estilos de los componentes -->
+    <link rel="stylesheet" href="/css/theme.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/base.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/header.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/admin.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/admin-units.css?v=1277c7932928"> <!-- NUEVO: Estilos para el gestor de unidades -->
+    <link rel="stylesheet" href="/css/modal.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/sidebar.css?v=1277c7932928">
     <!-- CORRECCIÓN: Eliminados archivos CSS que ya no existen para limpiar la consola -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
@@ -31,8 +31,8 @@
 
     <!-- Editor Profesional: TinyMCE 6 (Mini-Word con soporte avanzado de Excel/Tablas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
-    <script src="/js/config.js?v=d488a3f343f7"></script>
-    <script src="/js/utils/themeManager.js?v=d488a3f343f7"></script>
+    <script src="/js/config.js?v=1277c7932928"></script>
+    <script src="/js/utils/themeManager.js?v=1277c7932928"></script>
 </head>
 
 <body>
@@ -50,25 +50,24 @@
 
     <div class="admin-container" id="admin-main-container">
         <div class="admin-tabs">
-            <button class="tab-link active" data-tab="tab-careers">Carreras</button>
-            <button class="tab-link" data-tab="tab-courses">Cursos</button>
-            <button class="tab-link" data-tab="tab-students">Alumnos</button>
-            <button class="tab-link" data-tab="tab-topics">Temas</button>
-            <button class="tab-link" data-tab="tab-books">Recursos</button>
-            <!-- NUEVO: Pestaña para inyección masiva de preguntas -->
-            <button class="tab-link" data-tab="tab-questions">Preguntas</button>
-
+            <button class="tab-link active" data-tab="tab-careers"><i class="fas fa-graduation-cap"></i> Carreras</button>
+            <button class="tab-link" data-tab="tab-courses"><i class="fas fa-chalkboard-teacher"></i> Cursos</button>
+            <button class="tab-link" data-tab="tab-students"><i class="fas fa-users"></i> Alumnos</button>
+            <button class="tab-link" data-tab="tab-topics"><i class="fas fa-tags"></i> Temas</button>
+            <button class="tab-link" data-tab="tab-books"><i class="fas fa-book"></i> Recursos</button>
+            <button class="tab-link" data-tab="tab-questions"><i class="fas fa-question-circle"></i> Preguntas</button>
+            <button class="tab-link" data-tab="tab-cases"><i class="fas fa-layer-group"></i> Casuísticas / Casos</button>
         </div>
 
         <!-- Contenido de las Pestañas -->
 
         <div id="tab-careers" class="tab-content active"></div>
         <div id="tab-courses" class="tab-content"></div>
-
         <div id="tab-students" class="tab-content"></div>
         <div id="tab-topics" class="tab-content"></div>
         <div id="tab-books" class="tab-content"></div>
         <div id="tab-questions" class="tab-content"></div>
+        <div id="tab-cases" class="tab-content"></div>
 
     </div>
 
@@ -114,24 +113,27 @@
     <!-- Barra de Acciones Masivas (Flotante) -->
     <div id="admin-bulk-actions-bar" class="admin-bulk-actions-bar">
         <span class="bulk-actions-text" id="bulk-actions-text">0 elementos seleccionados</span>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
             <button type="button" class="btn-secondary" id="bulk-cancel-selection-btn" style="height: 36px; padding: 0 15px; font-size: 0.85rem;">Desmarcar todos</button>
+            <button type="button" class="btn-primary" id="bulk-link-case-btn" style="height: 36px; padding: 0 15px; background: #6366f1; border-color: #6366f1; font-size: 0.85rem; display: none; align-items: center; gap: 6px;">
+                <i class="fas fa-link"></i> Encadenar en Caso
+            </button>
             <button type="button" class="btn-primary" id="bulk-delete-btn" style="height: 36px; padding: 0 15px; background: #ef4444; border-color: #ef4444; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
                 <i class="fas fa-trash-alt"></i> Eliminar Seleccionados
             </button>
         </div>
     </div>
 
-    <script src="/js/services/networkService.js?v=d488a3f343f7"></script>
-    <script src="/js/services/authApiService.js?v=d488a3f343f7"></script> <!-- NUEVO: Servicio de API de Auth -->
-    <script src="/js/sessionManager.js?v=d488a3f343f7"></script> <!-- NUEVO: Gestor de sesión -->
-    <script src="/js/ui/uiManager.js?v=d488a3f343f7"></script> <!-- NUEVO: Gestor UI -->
-    <script src="/js/ui/components.js?v=d488a3f343f7"></script> <!-- CORRECCIÓN: Incluir el script de componentes -->
-    <script src="/js/ui/confirmationModal.js?v=d488a3f343f7"></script> <!-- NUEVO: Modal de confirmación -->
-    <script src="/js/security.js?v=d488a3f343f7"></script> <!-- NUEVO: Escudo de Seguridad -->
-    <script src="/js/ui/sidebar.js?v=d488a3f343f7"></script>
-    <script src="/js/app.js?v=d488a3f343f7"></script> <!-- NUEVO: Inicialización global -->
-    <script src="/js/admin.js?v=d488a3f343f7"></script> <!-- Forzar recarga absoluta -->
+    <script src="/js/services/networkService.js?v=1277c7932928"></script>
+    <script src="/js/services/authApiService.js?v=1277c7932928"></script> <!-- NUEVO: Servicio de API de Auth -->
+    <script src="/js/sessionManager.js?v=1277c7932928"></script> <!-- NUEVO: Gestor de sesión -->
+    <script src="/js/ui/uiManager.js?v=1277c7932928"></script> <!-- NUEVO: Gestor UI -->
+    <script src="/js/ui/components.js?v=1277c7932928"></script> <!-- CORRECCIÓN: Incluir el script de componentes -->
+    <script src="/js/ui/confirmationModal.js?v=1277c7932928"></script> <!-- NUEVO: Modal de confirmación -->
+    <script src="/js/security.js?v=1277c7932928"></script> <!-- NUEVO: Escudo de Seguridad -->
+    <script src="/js/ui/sidebar.js?v=1277c7932928"></script>
+    <script src="/js/app.js?v=1277c7932928"></script> <!-- NUEVO: Inicialización global -->
+    <script src="/js/admin.js?v=1277c7932928"></script> <!-- Forzar recarga absoluta -->
 </body>
 
 </html>

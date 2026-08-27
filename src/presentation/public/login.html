@@ -10,10 +10,10 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/base.css?v=d488a3f343f7">
-    <script src="/js/config.js?v=d488a3f343f7"></script>
-    <script src="/js/utils/themeManager.js?v=d488a3f343f7"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/base.css?v=1277c7932928">
+    <script src="/js/config.js?v=1277c7932928"></script>
+    <script src="/js/utils/themeManager.js?v=1277c7932928"></script>
     <style>
         :root {
             --primary-bg: var(--bg-main);
@@ -204,9 +204,9 @@
 
     <!-- Scripts de Lógica -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=d488a3f343f7"></script>
-    <script src="/js/services/authApiService.js?v=d488a3f343f7"></script>
-    <script src="/js/sessionManager.js?v=d488a3f343f7"></script>
+    <script src="/js/services/networkService.js?v=1277c7932928"></script>
+    <script src="/js/services/authApiService.js?v=1277c7932928"></script>
+    <script src="/js/sessionManager.js?v=1277c7932928"></script>
 
     <script>
         /**
@@ -218,18 +218,35 @@
             const googleBtn = document.getElementById('google-login-btn');
             if (googleBtn) {
                 googleBtn.addEventListener('click', async () => {
+                    const client = typeof window.getSupabaseClient === 'function'
+                        ? window.getSupabaseClient()
+                        : window.supabaseClient;
+
+                    if (!client) {
+                        alert('El servicio de autenticación se está iniciando. Por favor reintenta en breve.');
+                        return;
+                    }
+
+                    const originalHTML = googleBtn.innerHTML;
+                    googleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
+                    googleBtn.style.pointerEvents = 'none';
+                    googleBtn.style.opacity = '0.7';
+
                     const urlParams = new URLSearchParams(window.location.search);
                     let redirectTo = window.location.origin + '/';
                     if (urlParams.get('redirect') === 'chat') {
                         redirectTo += '?openChat=true';
                     }
                     try {
-                        const { error } = await window.supabaseClient.auth.signInWithOAuth({
+                        const { error } = await client.auth.signInWithOAuth({
                             provider: 'google',
-                            options: { redirectTo }
+                            options: { redirectTo, queryParams: { prompt: 'select_account' } }
                         });
                         if (error) throw error;
                     } catch (err) {
+                        googleBtn.innerHTML = originalHTML;
+                        googleBtn.style.pointerEvents = 'auto';
+                        googleBtn.style.opacity = '1';
                         console.error('❌ Error OAuth:', err);
                     }
                 });

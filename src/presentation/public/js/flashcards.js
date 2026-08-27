@@ -67,6 +67,12 @@ const FlashcardManager = (() => {
                 return;
             }
 
+            if (window.sessionManager) {
+                try {
+                    await window.sessionManager.initialize();
+                } catch (_) {}
+            }
+
             try {
                 await loadCards(token);
             } catch (error) {

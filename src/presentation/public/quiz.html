@@ -13,14 +13,14 @@
     <!-- CSS Moderno (Glassmorphism) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Centralized Design System Tokens -->
-    <link rel="stylesheet" href="/css/theme.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/quiz.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/modal.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/components.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/tutor.css?v=d488a3f343f7">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=d488a3f343f7">
-    <script src="/js/config.js?v=d488a3f343f7"></script>
-    <script src="/js/utils/themeManager.js?v=d488a3f343f7"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/quiz.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/modal.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/components.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/tutor.css?v=1277c7932928">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=1277c7932928">
+    <script src="/js/config.js?v=1277c7932928"></script>
+    <script src="/js/utils/themeManager.js?v=1277c7932928"></script>
 
     <!-- Critical Loading Screen CSS (Inmune a problemas de caché del navegador) -->
     <style>
@@ -279,6 +279,20 @@
             </div>
         </div>
 
+        <!-- 📖 Contenedor de Casuística / Situación Compartida -->
+        <div id="caseScenarioContainer" class="case-scenario-card" style="display: none;">
+            <div class="case-badge">
+                <i class="fas fa-layer-group"></i>
+                <span id="caseBadgeText">Casuística Anidada</span>
+                <span id="caseOrderBadge" class="case-order-tag">Pregunta 1</span>
+            </div>
+            <div id="caseDescriptionText" class="case-description-body"></div>
+            <div id="caseImageContainer" class="case-image-wrap" style="display: none;">
+                <img id="caseImage" src="" alt="Material de apoyo del caso" loading="lazy">
+            </div>
+            <div id="caseTableContainer" class="case-table-wrap" style="display: none;"></div>
+        </div>
+
         <div id="questionLayout" class="question-layout-grid">
             <div id="questionImageContainer" class="q-image-container-premium" style="display: none;">
                 <img id="questionImage" src="" alt="Imagen de contexto" loading="lazy">
@@ -307,11 +321,14 @@
         </div>
 
         <div id="nextBtnContainer" class="next-btn-container" style="display: none;">
+            <button id="prevBtn" class="btn-prev-premium" type="button" style="display: none;">
+                <i class="fas fa-arrow-left"></i> <span>Anterior</span>
+            </button>
             <button id="btn-open-quiz-tutor" class="btn-tutor-ai-action" type="button" style="display: none;">
                 <img src="/assets/hubifrente.png" alt="Hubi" style="width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; margin-right: 6px;">
                 <span>Consultar Tutor IA</span>
             </button>
-            <button id="nextBtn" class="btn-next-premium" type="button">
+            <button id="nextBtn" class="btn-next-premium" type="button" style="display: none;">
                 Siguiente Pregunta <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>
             </button>
         </div>
@@ -376,17 +393,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=d488a3f343f7"></script>
-    <script src="/js/services/networkService.js?v=d488a3f343f7"></script>
-    <script src="/js/services/authApiService.js?v=d488a3f343f7"></script>
-    <script src="/js/services/analyticsApiService.js?v=d488a3f343f7"></script>
-    <script src="/js/sessionManager.js?v=d488a3f343f7"></script>
-    <script src="/js/ui/components.js?v=d488a3f343f7"></script>
-    <script src="/js/ui/confirmationModal.js?v=d488a3f343f7"></script>
-    <script src="/js/ui/uiManager.js?v=d488a3f343f7"></script>
-    <script src="/js/app.js?v=d488a3f343f7"></script>
-    <script src="/js/quiz-tutor.js?v=d488a3f343f7"></script>
-    <script type="module" src="/js/quiz.js?v=d488a3f343f7"></script>
+    <script src="/js/utils/markdown-renderer.js?v=1277c7932928"></script>
+    <script src="/js/services/networkService.js?v=1277c7932928"></script>
+    <script src="/js/services/authApiService.js?v=1277c7932928"></script>
+    <script src="/js/services/analyticsApiService.js?v=1277c7932928"></script>
+    <script src="/js/sessionManager.js?v=1277c7932928"></script>
+    <script src="/js/ui/components.js?v=1277c7932928"></script>
+    <script src="/js/ui/confirmationModal.js?v=1277c7932928"></script>
+    <script src="/js/ui/uiManager.js?v=1277c7932928"></script>
+    <script src="/js/app.js?v=1277c7932928"></script>
+    <script src="/js/quiz-tutor.js?v=1277c7932928"></script>
+    <script type="module" src="/js/quiz.js?v=1277c7932928"></script>
 </body>
 
 </html>

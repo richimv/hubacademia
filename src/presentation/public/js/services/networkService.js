@@ -47,14 +47,22 @@ class NetworkService {
             headers
         };
 
+        // Asegurar que sessionManager haya resuelto la sesión antes de evaluar consumo
+        if (window.sessionManager && !window.sessionManager.getUser() && window.sessionManager.initPromise) {
+            try {
+                await window.sessionManager.initPromise;
+            } catch (_) {}
+        }
+
         // Detectar si es un endpoint que consume vidas para free/pending
-        const isStudyEndpoint = url.includes('/cards/due') || (url.includes('/cards/') && url.includes('/study')) || url.includes('/study-public');
-        const isDeckWriteEndpoint = url.includes('/api/decks') && (options.method === 'POST' || options.method === 'PUT') && !url.includes('/visibility') && !url.includes('/reorder') && !url.includes('/tree');
+        const isStudyEndpoint = url.includes('/cards/due') || url.includes('/flashcard/due') || (url.includes('/cards/') && url.includes('/study')) || url.includes('/study-public');
+        const isDeckWriteEndpoint = (url.includes('/api/decks') || url.includes('/api/cards')) && (options.method === 'POST' || options.method === 'PUT') && !url.includes('/visibility') && !url.includes('/reorder') && !url.includes('/tree');
+        const isDeckClone = url.includes('/clone') && (options.method === 'POST' || !options.method);
         const isSimulatorStart = (url.includes('/api/medico/start') || url.includes('/api/docente/start')) && (options.method === 'POST' || !options.method);
         const isTutorOrAIChat = url.includes('/api/chat') && !url.includes('/conversations') && !(options.headers && (options.headers['X-General-Chat'] || options.headers['x-general-chat'])) && (options.method === 'POST' || !options.method);
         const isDiagnostic = url.includes('/api/analytics/diagnostic') && options.method === 'POST';
 
-        const isConsumptionEndpoint = isStudyEndpoint || isDeckWriteEndpoint || isSimulatorStart || isTutorOrAIChat || isDiagnostic;
+        const isConsumptionEndpoint = isStudyEndpoint || isDeckWriteEndpoint || isDeckClone || isSimulatorStart || isTutorOrAIChat || isDiagnostic;
 
         let optimisticallyDecremented = false;
 
