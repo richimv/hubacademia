@@ -473,7 +473,25 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     if (type === 'career' && item.area) {
         areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`;
     } else if (type === 'question') {
-        areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--primary-light); padding: 2px 8px; border-radius: 4px; color: var(--text-dark); display:inline-block; margin-top:0.25rem;">${item.domain?.toUpperCase() || ''} | ${item.target || 'General'}</span>`;
+        const domainText = item.domain?.toUpperCase() || '';
+        const targetText = item.target || 'General';
+        const topicText = item.topic ? ` | ${item.topic}` : '';
+        const baseBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--primary-light, rgba(59, 130, 246, 0.15)); padding: 2px 8px; border-radius: 4px; color: var(--text-dark, #60a5fa); display:inline-block;">${domainText} | ${targetText}${topicText}</span>`;
+        
+        let caseBadge = '';
+        if (item.case_id) {
+            const caseCode = item.case_code || 'CASO';
+            const caseOrder = item.case_order ? `Preg. #${item.case_order}` : '';
+            const caseTitle = item.case_title ? ` - ${item.case_title}` : '';
+            caseBadge = `<span class="area-badge case-linked-badge" style="font-size: 0.7rem; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); padding: 2px 8px; border-radius: 4px; color: #a5b4fc; font-weight: 700; display:inline-block;" title="Vinculada al Caso: ${caseCode}${caseTitle}"><i class="fas fa-layer-group"></i> ${caseCode} ${caseOrder ? `• ${caseOrder}` : ''}</span>`;
+        }
+
+        areaBadge = `
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">
+                ${baseBadge}
+                ${caseBadge}
+            </div>
+        `;
     } else if (type === 'case') {
         const codeBadge = item.code ? `<span class="area-badge" style="font-size: 0.7rem; background: rgba(99, 102, 241, 0.15); padding: 2px 8px; border-radius: 4px; color: #818cf8; font-weight: 700; display:inline-block; border: 1px solid rgba(99, 102, 241, 0.3);">${item.code}</span>` : '';
         const domainText = item.domain === 'medicine' ? 'Salud Profesional' : item.domain === 'education' ? 'Educación Docente' : (item.domain ? item.domain.toUpperCase() : 'General');
@@ -538,6 +556,8 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         if (cleanDesc && cleanDesc !== displayName) {
             subtitle = cleanDesc.length > 120 ? cleanDesc.substring(0, 120) + '...' : cleanDesc;
         }
+    } else if (type === 'question' && !subtitle && item.case_title) {
+        subtitle = `<span style="color: #94a3b8; font-size: 0.8rem;"><i class="fas fa-layer-group" style="color:#818cf8; margin-right: 4px;"></i>Caso: <strong>${item.case_title}</strong></span>`;
     }
     const subtitleHTML = subtitle ? `<div class="item-subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">${subtitle}</div>` : '';
 

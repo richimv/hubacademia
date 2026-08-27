@@ -371,6 +371,27 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
             expect(html).toContain('Salud Profesional');
             expect(html).toContain('1 pregunta vinculada');
         });
+
+        it('renders question item card with linked case badge, order number, and domain', () => {
+            const questionItem = {
+                id: 101,
+                question_text: 'Lee la siguiente situación y responda las preguntas: Una mañana soleada los niños...',
+                domain: 'education',
+                target: 'ASCENSO',
+                topic: 'Pedagogía',
+                case_id: 'case-abc-123',
+                case_code: 'CASO-EBR-01',
+                case_order: 1,
+                case_title: 'Situación de Aprendizaje al Aire Libre'
+            };
+
+            const html = createAdminItemCardHTML(questionItem, 'question');
+            expect(html).not.toContain('undefined');
+            expect(html).toContain('EDUCATION | ASCENSO | Pedagogía');
+            expect(html).toContain('CASO-EBR-01');
+            expect(html).toContain('Preg. #1');
+            expect(html).toContain('Caso: <strong>Situación de Aprendizaje al Aire Libre</strong>');
+        });
     });
 });
 
