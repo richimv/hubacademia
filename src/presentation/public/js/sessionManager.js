@@ -123,9 +123,16 @@ class SessionManager {
         this.initSupabaseListener();
         if (!this.initPromise) {
             this.initPromise = (async () => {
-                // 1. 🛡️ IMPORTANTE: NO borrar el hash aquí. 
-                // Supabase necesita el hash en la URL para leer el token tras el redirect de Google.
-                // Si lo borramos ahora, el login manual "muere" al regresar.
+                // 1. 🛡️ IMPORTANTE: Si regresamos de Google OAuth con el hash en la URL,
+                // esperamos a que onAuthStateChange maneje el token fresco y NO llamamos getMe con un token viejo.
+                const isOAuthReturn = typeof window !== 'undefined' && window.location.hash && (
+                    window.location.hash.includes('access_token') || window.location.hash.includes('id_token')
+                );
+
+                if (isOAuthReturn) {
+                    console.log('⚡ [SessionManager] Retorno OAuth detectado en URL. Delegando a onAuthStateChange...');
+                    return this.currentUser;
+                }
 
                 // 2. Recuperar sesión local si existe
                 const token = localStorage.getItem('authToken');

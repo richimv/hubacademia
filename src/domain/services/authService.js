@@ -21,12 +21,17 @@ class AuthService {
         if (!user) return null;
 
         try {
-            const { createClient } = require('@supabase/supabase-js');
-            const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-            const { data: { user: sbUser }, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+            const supabaseAdmin = supabase.supabaseAdmin || (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+                ? require('@supabase/supabase-js').createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+                : null);
 
-            if (!error && sbUser) {
-                user.emailVerified = !!sbUser.email_confirmed_at;
+            if (supabaseAdmin) {
+                const { data: { user: sbUser }, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+                if (!error && sbUser) {
+                    user.emailVerified = !!sbUser.email_confirmed_at;
+                } else {
+                    user.emailVerified = false;
+                }
             } else {
                 user.emailVerified = false;
             }

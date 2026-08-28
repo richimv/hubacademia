@@ -97,8 +97,11 @@ class NetworkService {
                         throw error;
                     }
 
-                    // Si el backend dice que la sesión expiró, forzamos limpieza
-                    if (window.sessionManager) {
+                    // 🛡️ NO forzar logout si estamos en pleno flujo de login / OAuth / Sync
+                    const isAuthenticating = window._isAuthenticating || window._isGlobalSyncing || (window.location.hash && window.location.hash.includes('access_token')) || url.includes('/api/auth/sync');
+
+                    // Si el backend dice que la sesión expiró y NO estamos en login, forzamos limpieza
+                    if (window.sessionManager && !isAuthenticating) {
                         // Notificar al usuario antes de redirigir si es posible
                         if (window.uiManager && window.uiManager.showToast) {
                             window.uiManager.showToast('Tu sesión ha expirado. Por seguridad, debes volver a ingresar.', 'warning');

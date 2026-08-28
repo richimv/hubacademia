@@ -4,16 +4,16 @@
 
 CREATE OR REPLACE FUNCTION sp_register_user(
     p_id UUID,
-    p_name VARCHAR,
-    p_email VARCHAR,
+    p_name TEXT,
+    p_email TEXT,
     p_password_hash TEXT,
-    p_role VARCHAR DEFAULT 'student'
+    p_role TEXT DEFAULT 'student'
 )
 RETURNS SETOF public.users AS $$
 BEGIN
-    -- Realizamos un UPSERT: 
-    -- 1. Si el correo ya existe, actualizamos el registro (Vinculación de cuenta/ID)
-    -- 2. Si es nuevo, insertamos.
+    -- Realizamos un UPSERT atómico: 
+    -- 1. Si el correo ya existe, sincronizamos el ID y actualizamos timestamp.
+    -- 2. Si es nuevo, insertamos el registro.
     RETURN QUERY
     INSERT INTO public.users (
         id, name, email, password_hash, role, 
@@ -27,9 +27,11 @@ BEGIN
     )
     ON CONFLICT (email) 
     DO UPDATE SET
-        id = EXCLUDED.id, -- Importante: Sincronizar el ID de Supabase
+        id = EXCLUDED.id, -- Sincronizar el ID de Supabase Auth
         name = EXCLUDED.name,
         updated_at = NOW()
     RETURNING *;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.sp_register_user(uuid, text, text, text, text) FROM PUBLIC, anon, authenticated;
