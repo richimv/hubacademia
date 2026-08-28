@@ -3,7 +3,7 @@ const crypto = require('crypto');
 
 class MedicoRepository {
 
-    async findQuestionsInBankBatch(target, topics, limit = 5, userId, career = null, difficulty = null, sessionSeenIds = []) {
+    async findQuestionsInBankBatch(target, topics, limit = 10, userId, career = null, difficulty = null, sessionSeenIds = []) {
         const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
         const seenRes = await db.query(seenQuery, [userId]);
         let seenIds = seenRes.rows.map(r => r.question_id);
@@ -15,48 +15,55 @@ class MedicoRepository {
         // Sanitize to only valid UUID strings
         seenIds = seenIds.filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
 
-        console.log(`🔎 [MedicoRepo] Usuario ${userId} ha visto ${seenIds.length} preguntas (24h + sesión actual).`);
+        console.log(`🔎 [MedicoRepo] Usuario ${userId} ha visto ${seenIds.length} preguntas (24h + sesión actual). Solicitando lote de ${limit}.`);
 
         const filterTopics = topics && topics.length > 0 && !topics.includes('*') && !topics.includes('ALL') && !topics.includes('all');
-        let whereClauses = `WHERE domain = 'medicine' AND ($2::text IS NULL OR target = $2)`;
+        let whereClauses = `WHERE qb.domain = 'medicine' AND ($2::text IS NULL OR qb.target = $2)`;
         if (filterTopics) {
-            whereClauses += ` AND unaccent(UPPER(topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))`;
+            whereClauses += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))`;
         }
 
         const params = [topics, target];
         let paramIdx = 3;
 
         if (career) {
-            whereClauses += ` AND (career IS NULL OR career = $${paramIdx}) `;
+            whereClauses += ` AND (qb.career IS NULL OR qb.career = $${paramIdx}) `;
             params.push(career);
             paramIdx++;
         }
 
         const isMixtoDifficulty = !difficulty || ['MIXTO', 'TODOS', 'ALL', 'MIXED', 'DEFAULT', 'GENERAL'].includes(String(difficulty).toUpperCase().trim());
         if (!isMixtoDifficulty) {
-            whereClauses += ` AND difficulty = $${paramIdx} `;
+            whereClauses += ` AND qb.difficulty = $${paramIdx} `;
             params.push(difficulty);
             paramIdx++;
         }
 
         if (seenIds.length > 0) {
-            whereClauses += ` AND id <> ALL($${paramIdx}::uuid[]) `;
+            whereClauses += ` AND qb.id <> ALL($${paramIdx}::uuid[]) `;
             params.push(seenIds);
             paramIdx++;
         }
 
         const query = `
             WITH BalancedPool AS (
-                SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, domain, topic, audio_text,
-                       ROW_NUMBER() OVER(PARTITION BY topic ORDER BY RANDOM()) as rn
-                FROM question_bank
+                SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
+                       qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.audio_text,
+                       qb.case_id, qb.case_order,
+                       cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
+                       cs.image_url as case_image_url, cs.table_html as case_table_html,
+                       ROW_NUMBER() OVER(PARTITION BY qb.topic ORDER BY RANDOM()) as rn
+                FROM question_bank qb
+                LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
                 ${whereClauses}
             )
-            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, domain, topic, audio_text
+            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, 
+                   image_url, domain, topic, audio_text, case_id, case_order,
+                   case_code, case_title, case_description, case_image_url, case_table_html
             FROM BalancedPool 
             WHERE rn <= CASE 
-                WHEN array_length($1::text[], 1) >= 5 THEN 1 
-                WHEN array_length($1::text[], 1) >= 2 THEN 3 
+                WHEN array_length($1::text[], 1) >= 5 THEN 2 
+                WHEN array_length($1::text[], 1) >= 2 THEN 5 
                 ELSE $${paramIdx} 
             END
             ORDER BY RANDOM() 
@@ -65,17 +72,49 @@ class MedicoRepository {
         params.push(limit);
 
         const res = await db.query(query, params);
+        let questions = res.rows;
 
-        if (res.rows.length > 0) {
+        // If any question in batch belongs to a case, retrieve and cluster all its sibling questions consecutively
+        const caseIdsInBatch = [...new Set(questions.filter(q => q.case_id).map(q => q.case_id))];
+        if (caseIdsInBatch.length > 0) {
             try {
-                const fetchedIds = res.rows.map(r => r.id);
-                await db.query(`UPDATE question_bank SET times_used = times_used + 1 WHERE id = ANY($1::uuid[])`, [fetchedIds]);
-            } catch (err) {
-                console.error("❌ Error actualizando times_used:", err.message);
+                const siblingRes = await db.query(`
+                    SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
+                           qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.audio_text,
+                           qb.case_id, qb.case_order,
+                           cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
+                           cs.image_url as case_image_url, cs.table_html as case_table_html
+                    FROM question_bank qb
+                    JOIN case_scenarios cs ON qb.case_id = cs.id
+                    WHERE qb.case_id = ANY($1::uuid[])
+                    ORDER BY qb.case_id, qb.case_order ASC, qb.created_at ASC
+                `, [caseIdsInBatch]);
+
+                const siblingMap = new Map();
+                siblingRes.rows.forEach(sq => {
+                    if (!siblingMap.has(sq.case_id)) siblingMap.set(sq.case_id, []);
+                    siblingMap.get(sq.case_id).push(sq);
+                });
+
+                const processedCaseIds = new Set();
+                const reassembled = [];
+
+                for (const q of questions) {
+                    if (!q.case_id) {
+                        reassembled.push(q);
+                    } else if (!processedCaseIds.has(q.case_id)) {
+                        processedCaseIds.add(q.case_id);
+                        const siblings = siblingMap.get(q.case_id) || [q];
+                        reassembled.push(...siblings);
+                    }
+                }
+                questions = reassembled;
+            } catch (caseErr) {
+                console.error("⚠️ Error clusterizando preguntas de caso en MedicoRepo:", caseErr.message);
             }
         }
 
-        return res.rows.map(row => ({
+        return questions.map(row => ({
             id: row.id,
             question_text: row.question_text,
             options: row.options,
@@ -84,40 +123,51 @@ class MedicoRepository {
             explanation_image_url: row.explanation_image_url,
             image_url: row.image_url,
             topic: row.topic,
-            audio_text: row.audio_text
+            audio_text: row.audio_text,
+            case_id: row.case_id || null,
+            case_order: row.case_id ? (parseInt(row.case_order, 10) || 1) : null,
+            case_code: row.case_code || null,
+            case_title: row.case_title || null,
+            case_description: row.case_description || null,
+            case_image_url: row.case_image_url || null,
+            case_table_html: row.case_table_html || null
         }));
     }
 
     async getRandomDemoQuestions(limit = 10, excludeIds = [], target = null, career = null, difficulty = null, areas = null) {
-        // Sanitize excludeIds to only valid UUID strings
         let sanitizedExcludeIds = [];
         if (excludeIds && Array.isArray(excludeIds)) {
             sanitizedExcludeIds = excludeIds.filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
         }
 
         let query = `
-            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, domain, topic, target
-            FROM question_bank
-            WHERE domain = 'medicine'
+            SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
+                   qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.target,
+                   qb.case_id, qb.case_order,
+                   cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
+                   cs.image_url as case_image_url, cs.table_html as case_table_html
+            FROM question_bank qb
+            LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
+            WHERE qb.domain = 'medicine'
         `;
         const params = [];
         let paramIdx = 1;
 
         if (target) {
-            query += ` AND target = $${paramIdx} `;
+            query += ` AND qb.target = $${paramIdx} `;
             params.push(target);
             paramIdx++;
         }
 
         if (career) {
-            query += ` AND (career IS NULL OR career = $${paramIdx}) `;
+            query += ` AND (qb.career IS NULL OR qb.career = $${paramIdx}) `;
             params.push(career);
             paramIdx++;
         }
 
         const isMixtoDifficulty = !difficulty || ['MIXTO', 'TODOS', 'ALL', 'MIXED', 'DEFAULT', 'GENERAL'].includes(String(difficulty).toUpperCase().trim());
         if (!isMixtoDifficulty) {
-            query += ` AND difficulty = $${paramIdx} `;
+            query += ` AND qb.difficulty = $${paramIdx} `;
             params.push(difficulty);
             paramIdx++;
         }
@@ -125,14 +175,14 @@ class MedicoRepository {
         if (areas) {
             const areasArray = Array.isArray(areas) ? areas : String(areas).split(',').map(a => a.trim()).filter(Boolean);
             if (areasArray.length > 0) {
-                query += ` AND unaccent(UPPER(topic)) = ANY(SELECT unaccent(UPPER(unnest($${paramIdx}::text[])))) `;
+                query += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($${paramIdx}::text[])))) `;
                 params.push(areasArray);
                 paramIdx++;
             }
         }
 
         if (sanitizedExcludeIds.length > 0) {
-            query += ` AND id <> ALL($${paramIdx}::uuid[]) `;
+            query += ` AND qb.id <> ALL($${paramIdx}::uuid[]) `;
             params.push(sanitizedExcludeIds);
             paramIdx++;
         }
@@ -141,7 +191,66 @@ class MedicoRepository {
         params.push(limit);
 
         const res = await db.query(query, params);
-        return res.rows;
+        let questions = res.rows;
+
+        // Cluster cases in demo if present
+        const caseIdsInBatch = [...new Set(questions.filter(q => q.case_id).map(q => q.case_id))];
+        if (caseIdsInBatch.length > 0) {
+            try {
+                const siblingRes = await db.query(`
+                    SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
+                           qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.target,
+                           qb.case_id, qb.case_order,
+                           cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
+                           cs.image_url as case_image_url, cs.table_html as case_table_html
+                    FROM question_bank qb
+                    JOIN case_scenarios cs ON qb.case_id = cs.id
+                    WHERE qb.case_id = ANY($1::uuid[])
+                    ORDER BY qb.case_id, qb.case_order ASC, qb.created_at ASC
+                `, [caseIdsInBatch]);
+
+                const siblingMap = new Map();
+                siblingRes.rows.forEach(sq => {
+                    if (!siblingMap.has(sq.case_id)) siblingMap.set(sq.case_id, []);
+                    siblingMap.get(sq.case_id).push(sq);
+                });
+
+                const processedCaseIds = new Set();
+                const reassembled = [];
+
+                for (const q of questions) {
+                    if (!q.case_id) {
+                        reassembled.push(q);
+                    } else if (!processedCaseIds.has(q.case_id)) {
+                        processedCaseIds.add(q.case_id);
+                        const siblings = siblingMap.get(q.case_id) || [q];
+                        reassembled.push(...siblings);
+                    }
+                }
+                questions = reassembled;
+            } catch (e) {
+                console.error("⚠️ Error clusterizando demo cases en MedicoRepo:", e.message);
+            }
+        }
+
+        return questions.map(row => ({
+            id: row.id,
+            question_text: row.question_text,
+            options: row.options,
+            correct_option_index: row.correct_option_index,
+            explanation: row.explanation,
+            explanation_image_url: row.explanation_image_url,
+            image_url: row.image_url,
+            topic: row.topic,
+            target: row.target,
+            case_id: row.case_id || null,
+            case_order: row.case_id ? (parseInt(row.case_order, 10) || 1) : null,
+            case_code: row.case_code || null,
+            case_title: row.case_title || null,
+            case_description: row.case_description || null,
+            case_image_url: row.case_image_url || null,
+            case_table_html: row.case_table_html || null
+        }));
     }
 
     async saveQuestionBankBatch(questions, defaultTopic, target, defaultCareer = null) {
@@ -294,8 +403,12 @@ class MedicoRepository {
         }
 
         if (limit) {
-            if (limit === 'real') {
+            if (limit === 'real' || limit === '100') {
                 filter += ` AND total_questions >= 50`;
+            } else if (parseInt(limit, 10) === 10 || limit === 'arcade') {
+                filter += ` AND total_questions <= 15`;
+            } else if (parseInt(limit, 10) === 20 || limit === 'study') {
+                filter += ` AND total_questions > 15 AND total_questions < 50`;
             } else {
                 params.push(parseInt(limit, 10));
                 filter += ` AND total_questions = $${params.length}`;

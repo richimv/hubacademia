@@ -82,12 +82,17 @@
     console.log('✅ Configuración Cargada Exitosamente.');
     console.log('📍 API:', window.AppConfig.API_URL);
 
-    // ✅ SUPABASE SINGLETON INITIALIZATION
-    // Inicializamos el cliente una sola vez para evitar advertencias de "Multiple GoTrueClient instances".
-    if (typeof supabase !== 'undefined' && !window.supabaseClient) {
-        window.supabaseClient = supabase.createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
-        console.log('✅ Supabase Singleton Initialized.');
-    }
+    // ✅ SUPABASE SINGLETON INITIALIZATION & FACTORY
+    // Permite recuperar o inicializar el cliente en cualquier momento del ciclo de vida del DOM
+    window.getSupabaseClient = function () {
+        if (!window.supabaseClient && typeof supabase !== 'undefined' && window.AppConfig) {
+            window.supabaseClient = supabase.createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+            console.log('✅ Supabase Singleton Initialized.');
+        }
+        return window.supabaseClient || null;
+    };
+
+    window.getSupabaseClient();
 
     /**
      * ✅ GLOBAL UTILITY: escapeHtml

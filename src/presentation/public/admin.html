@@ -10,14 +10,14 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- NUEVA ESTRUCTURA CSS -->
-    <link rel="stylesheet" href="/css/components.css?v=c586d8b28712"> <!-- SOLUCIÓN: Cargar los estilos de los componentes -->
-    <link rel="stylesheet" href="/css/theme.css?v=c586d8b28712">
-    <link rel="stylesheet" href="/css/base.css?v=c586d8b28712">
-    <link rel="stylesheet" href="/css/header.css?v=c586d8b28712">
-    <link rel="stylesheet" href="/css/admin.css?v=c586d8b28712">
-    <link rel="stylesheet" href="/css/admin-units.css?v=c586d8b28712"> <!-- NUEVO: Estilos para el gestor de unidades -->
-    <link rel="stylesheet" href="/css/modal.css?v=c586d8b28712">
-    <link rel="stylesheet" href="/css/sidebar.css?v=c586d8b28712">
+    <link rel="stylesheet" href="/css/components.css?v=28e9f50a33f3"> <!-- SOLUCIÓN: Cargar los estilos de los componentes -->
+    <link rel="stylesheet" href="/css/theme.css?v=28e9f50a33f3">
+    <link rel="stylesheet" href="/css/base.css?v=28e9f50a33f3">
+    <link rel="stylesheet" href="/css/header.css?v=28e9f50a33f3">
+    <link rel="stylesheet" href="/css/admin.css?v=28e9f50a33f3">
+    <link rel="stylesheet" href="/css/admin-units.css?v=28e9f50a33f3"> <!-- NUEVO: Estilos para el gestor de unidades -->
+    <link rel="stylesheet" href="/css/modal.css?v=28e9f50a33f3">
+    <link rel="stylesheet" href="/css/sidebar.css?v=28e9f50a33f3">
     <!-- CORRECCIÓN: Eliminados archivos CSS que ya no existen para limpiar la consola -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- CORRECCIÓN: Añadir Favicon para el ícono de la pestaña -->
@@ -31,8 +31,8 @@
 
     <!-- Editor Profesional: TinyMCE 6 (Mini-Word con soporte avanzado de Excel/Tablas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
-    <script src="/js/config.js?v=c586d8b28712"></script>
-    <script src="/js/utils/themeManager.js?v=c586d8b28712"></script>
+    <script src="/js/config.js?v=28e9f50a33f3"></script>
+    <script src="/js/utils/themeManager.js?v=28e9f50a33f3"></script>
 </head>
 
 <body>
@@ -42,8 +42,10 @@
             <img src="/assets/logo.png" alt="Logo" class="logo-img">
             <span class="logo-text">Panel de Gestión</span>
         </a>
-        <div class="header-nav">
-            <!-- REFACTORIZACIÓN: Enlace a la nueva página de dashboard -->
+        <div class="header-nav" style="display: flex; align-items: center; gap: 1rem;">
+            <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Cambiar tema">
+                <i class="fas fa-sun"></i>
+            </button>
             <a href="/dashboard" class="nav-link">📊 Estadísticas</a>
         </div>
     </header>
@@ -124,16 +126,16 @@
         </div>
     </div>
 
-    <script src="/js/services/networkService.js?v=c586d8b28712"></script>
-    <script src="/js/services/authApiService.js?v=c586d8b28712"></script> <!-- NUEVO: Servicio de API de Auth -->
-    <script src="/js/sessionManager.js?v=c586d8b28712"></script> <!-- NUEVO: Gestor de sesión -->
-    <script src="/js/ui/uiManager.js?v=c586d8b28712"></script> <!-- NUEVO: Gestor UI -->
-    <script src="/js/ui/components.js?v=c586d8b28712"></script> <!-- CORRECCIÓN: Incluir el script de componentes -->
-    <script src="/js/ui/confirmationModal.js?v=c586d8b28712"></script> <!-- NUEVO: Modal de confirmación -->
-    <script src="/js/security.js?v=c586d8b28712"></script> <!-- NUEVO: Escudo de Seguridad -->
-    <script src="/js/ui/sidebar.js?v=c586d8b28712"></script>
-    <script src="/js/app.js?v=c586d8b28712"></script> <!-- NUEVO: Inicialización global -->
-    <script src="/js/admin.js?v=c586d8b28712"></script> <!-- Forzar recarga absoluta -->
+    <script src="/js/services/networkService.js?v=28e9f50a33f3"></script>
+    <script src="/js/services/authApiService.js?v=28e9f50a33f3"></script> <!-- NUEVO: Servicio de API de Auth -->
+    <script src="/js/sessionManager.js?v=28e9f50a33f3"></script> <!-- NUEVO: Gestor de sesión -->
+    <script src="/js/ui/uiManager.js?v=28e9f50a33f3"></script> <!-- NUEVO: Gestor UI -->
+    <script src="/js/ui/components.js?v=28e9f50a33f3"></script> <!-- CORRECCIÓN: Incluir el script de componentes -->
+    <script src="/js/ui/confirmationModal.js?v=28e9f50a33f3"></script> <!-- NUEVO: Modal de confirmación -->
+    <script src="/js/security.js?v=28e9f50a33f3"></script> <!-- NUEVO: Escudo de Seguridad -->
+    <script src="/js/ui/sidebar.js?v=28e9f50a33f3"></script>
+    <script src="/js/app.js?v=28e9f50a33f3"></script> <!-- NUEVO: Inicialización global -->
+    <script src="/js/admin.js?v=28e9f50a33f3"></script> <!-- Forzar recarga absoluta -->
 </body>
 
 </html>

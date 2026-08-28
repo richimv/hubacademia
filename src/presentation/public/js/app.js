@@ -277,13 +277,11 @@ function updateHeaderUI(user) {
 window.triggerGoogleLogin = async (buttonElement = null) => {
     console.log('🖱️ [AuthManager] Iniciando flujo Google OAuth...');
 
-    // Inicialización perezosa (lazy) por si las librerías se cargaron en desorden
-    if (!window.supabaseClient && typeof supabase !== 'undefined' && window.AppConfig) {
-        window.supabaseClient = supabase.createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
-        console.log('✅ Supabase Client inicializado de forma diferida (lazy).');
-    }
+    const client = typeof window.getSupabaseClient === 'function'
+        ? window.getSupabaseClient()
+        : window.supabaseClient;
 
-    if (!window.supabaseClient) {
+    if (!client) {
         window.uiManager?.showToast('⏳ El servicio de autenticación se está preparando. Reintenta en breve.');
         return;
     }
@@ -300,7 +298,7 @@ window.triggerGoogleLogin = async (buttonElement = null) => {
     window._isAuthenticating = true;
 
     try {
-        const { error } = await window.supabaseClient.auth.signInWithOAuth({
+        const { error } = await client.auth.signInWithOAuth({
             provider: 'google',
             options: { 
                 redirectTo: window.location.href,

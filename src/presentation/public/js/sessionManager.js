@@ -4,16 +4,30 @@ class SessionManager {
     constructor() {
         this.currentUser = null;
         this.onStateChangeCallbacks = [];
-        this.lastSyncTime = 0; // Para throttling global
+        this.lastSyncTime = 0; // Para throttling global de peticiones pasivas
         this.lastSyncAttemptTime = 0;
+        this._listenerAttached = false;
         this.initSupabaseListener();
         this.initPromise = null;
     }
 
+    // ✅ Helper para obtener o inicializar el cliente de Supabase
+    getSupabaseClient() {
+        if (typeof window.getSupabaseClient === 'function') {
+            return window.getSupabaseClient();
+        }
+        if (!window.supabaseClient && typeof supabase !== 'undefined' && window.AppConfig) {
+            window.supabaseClient = supabase.createClient(window.AppConfig.SUPABASE_URL, window.AppConfig.SUPABASE_ANON_KEY);
+        }
+        return window.supabaseClient || null;
+    }
+
     // ✅ Centralizar la escucha de Supabase
     initSupabaseListener() {
-        if (window.supabaseClient) {
-            window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        const client = this.getSupabaseClient();
+        if (client && !this._listenerAttached) {
+            this._listenerAttached = true;
+            client.auth.onAuthStateChange(async (event, session) => {
                 console.log(`📡 [SessionGate] Evento: ${event}`);
 
                 // Mantener sincronizado el espejo local cuando Supabase renueva el JWT.
@@ -30,18 +44,18 @@ class SessionManager {
                     && !localStorage.getItem('authToken');
 
                 if ((event === 'SIGNED_IN' || needsInitialRecovery) && session) {
-                    // 🛡️ BLOQUEO ATÓMICO: Evitar doble sincronización (One Tap vs Listener)
+                    // 🛡️ BLOQUEO ATÓMICO: Evitar doble sincronización concurrente
                     if (window._isGlobalSyncing || this.isSyncing) {
-                        console.log('⏳ Sincronización en curso o bloqueada por throttle, ignorando evento.');
+                        console.log('⏳ Sincronización en curso, ignorando evento duplicado.');
                         return;
                     }
 
-                    // 🛡️ THROTTLING AGRESIVO: Evitar ráfagas de Supabase (especialmente en init)
+                    // 🛡️ THROTTLING: Evitar ráfagas de eventos duplicados
                     const now = Date.now();
-                    const throttleWindow = 5000; // 5 segundos de gracia entre intentos
+                    const throttleWindow = 3000;
                     const lastSyncActivity = Math.max(this.lastSyncTime, this.lastSyncAttemptTime);
                     if (now - lastSyncActivity < throttleWindow) {
-                        console.log('📡 [SessionGate] Sync bloqueado por ráfaga (5s throttle).');
+                        console.log('📡 [SessionGate] Sync bloqueado por ráfaga (throttle).');
                         return;
                     }
                     this.lastSyncAttemptTime = now;
@@ -53,43 +67,34 @@ class SessionManager {
                     }
 
                     try {
+                        this.isSyncing = true;
                         window._isGlobalSyncing = true;
                         window._isAuthenticating = true; 
 
-                        // Sincronizar unificada
-                        // ✅ NUEVO: Verificar si ya tenemos el mismo email sincronizado para evitar 429
-                        if (this.currentUser && this.currentUser.email === session.user.email) {
-                            localStorage.setItem('authToken', session.access_token);
-                            console.log('📡 [SessionGate] Usuario ya sincronizado (Match por Email).');
-                            return;
-                        }
-
                         // El token recibido en este mismo evento es la fuente de verdad.
-                        // No volver a consultar getSession() dentro del callback de Supabase:
-                        // durante SIGNED_IN la persistencia interna puede no haber terminado aún.
                         const syncResponse = await window.AuthApiService.syncGoogleUser(
                             session.user,
                             session.access_token
                         );
                         
                         if (syncResponse && syncResponse.user) {
-                            // console.log('✅ Usuario Sincronizado:', syncResponse.user.email);
                             this.currentUser = syncResponse.user;
-                            this.lastSyncTime = Date.now(); // Marcar éxito para throttling
+                            this.lastSyncTime = Date.now();
                             localStorage.setItem('authToken', session.access_token);
                             
                             // Notificar UI
                             this.notifyStateChange();
                             
                             // ✅ LIMPIEZA SEGURA: Solo borramos el hash DESPUÉS de una sincronización exitosa
-                            if (window.location.hash.includes('access_token')) {
+                            if (window.location.hash.includes('access_token') || window.location.hash.includes('id_token')) {
                                 console.log('🧹 Limpiando URL (Login exitoso)');
-                                window.history.replaceState(null, '', window.location.pathname);
+                                window.history.replaceState(null, '', window.location.pathname + window.location.search);
                             }
                         }
                     } catch (err) {
                         console.error('❌ Error en ciclo de vida Auth:', err);
                     } finally {
+                        this.isSyncing = false;
                         window._isGlobalSyncing = false;
                         window._isAuthenticating = false;
                     }
@@ -115,6 +120,7 @@ class SessionManager {
     }
 
     initialize() {
+        this.initSupabaseListener();
         if (!this.initPromise) {
             this.initPromise = (async () => {
                 // 1. 🛡️ IMPORTANTE: NO borrar el hash aquí. 

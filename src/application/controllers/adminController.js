@@ -167,12 +167,172 @@ class AdminController {
 
     async getAllQuestions(req, res) {
         try {
-            const { domain, search } = req.query;
-            const rows = await adminService.getAllQuestions(domain, search);
+            const { domain, search, page, limit, caseFilter } = req.query;
+            const rows = await adminService.getAllQuestions(domain, search, page, limit, caseFilter);
             res.json(rows);
         } catch (error) {
             console.error('Error fetching questions:', error);
             res.status(500).json({ error: 'Error interno obteniendo preguntas.' });
+        }
+    }
+
+    async getAllCases(req, res) {
+        try {
+            const { domain, search, page, limit } = req.query;
+            const rows = await adminService.getAllCases(domain, search, page, limit);
+            res.json(rows);
+        } catch (error) {
+            console.error('Error fetching cases:', error);
+            res.status(500).json({ error: 'Error interno obteniendo casuísticas.' });
+        }
+    }
+
+    async getCaseById(req, res) {
+        try {
+            const { id } = req.params;
+            const caseData = await adminService.getCaseById(id);
+            if (!caseData) {
+                return res.status(404).json({ error: 'Casuística no encontrada.' });
+            }
+            res.json(caseData);
+        } catch (error) {
+            console.error('Error fetching case by ID:', error);
+            res.status(500).json({ error: 'Error interno obteniendo la casuística.' });
+        }
+    }
+
+    async createCase(req, res) {
+        try {
+            const body = req.body || {};
+            const rawDescription = body.description_text || body.enunciado || body.situacion || body.text || '';
+            const description_text = typeof rawDescription === 'string' ? rawDescription.trim() : '';
+
+            const rawCode = body.code && body.code.trim() !== '' ? body.code.trim() : `CASO-${Date.now().toString().slice(-4)}`;
+            const cleanDesc = description_text ? description_text.replace(/<[^>]*>/g, '').trim() : '';
+            const rawTitle = body.title && body.title.trim() !== '' ? body.title.trim() : (cleanDesc.length > 60 ? cleanDesc.substring(0, 57) + '...' : cleanDesc || rawCode);
+
+            let image_url = body.image_url && body.image_url.trim() !== '' ? body.image_url.trim() : null;
+            if (req.file) {
+                try {
+                    image_url = await mediaController.uploadFile(req.file, 'cases');
+                } catch (imgErr) {
+                    console.error('Error uploading case image:', imgErr);
+                }
+            }
+
+            const table_html = body.table_html && body.table_html.trim() !== '' ? body.table_html.trim() : null;
+            const domain = body.domain || 'education';
+            const target = body.target || 'N/A';
+            const topic = body.topic || 'General';
+
+            const created = await adminService.createCase({
+                code: rawCode,
+                title: rawTitle,
+                description_text: description_text,
+                image_url,
+                table_html,
+                domain,
+                target,
+                topic
+            });
+            res.json({ success: true, case: created });
+        } catch (error) {
+            console.error('Error creating case:', error);
+            res.status(500).json({ error: error.message || 'Error interno creando casuística.' });
+        }
+    }
+
+    async updateCase(req, res) {
+        try {
+            const { id } = req.params;
+            const body = req.body || {};
+            
+            let image_url = body.image_url !== undefined ? (body.image_url.trim() || null) : undefined;
+            if (req.file) {
+                try {
+                    const oldCase = await adminService.getCaseById(id);
+                    if (oldCase && oldCase.image_url) {
+                        await mediaController.deleteFile(oldCase.image_url);
+                    }
+                    image_url = await mediaController.uploadFile(req.file, 'cases');
+                } catch (imgErr) {
+                    console.error('Error uploading case image:', imgErr);
+                }
+            } else if (body.deleteImage === 'true') {
+                const oldCase = await adminService.getCaseById(id);
+                if (oldCase && oldCase.image_url) {
+                    try { await mediaController.deleteFile(oldCase.image_url); } catch (e) {}
+                }
+                image_url = null;
+            }
+
+            const payload = {
+                code: body.code !== undefined ? body.code.trim() : undefined,
+                title: body.title !== undefined ? body.title.trim() : undefined,
+                description_text: body.description_text !== undefined ? body.description_text.trim() : undefined,
+                image_url: image_url,
+                table_html: body.table_html !== undefined ? (body.table_html.trim() || null) : undefined,
+                domain: body.domain || undefined,
+                target: body.target || undefined,
+                topic: body.topic || undefined
+            };
+
+            const updated = await adminService.updateCase(id, payload);
+            res.json({ success: true, case: updated });
+        } catch (error) {
+            console.error('Error updating case:', error);
+            res.status(500).json({ error: error.message || 'Error interno actualizando casuística.' });
+        }
+    }
+
+    async deleteCase(req, res) {
+        try {
+            const { id } = req.params;
+
+            const oldCase = await adminService.getCaseById(id);
+            if (oldCase) {
+                if (oldCase.image_url) {
+                    try { await mediaController.deleteFile(oldCase.image_url); } catch (e) { console.error('Error deleting case image:', e); }
+                }
+                const embeddedPaths = [
+                    ...this._extractGcsPaths(oldCase.description_text),
+                    ...this._extractGcsPaths(oldCase.table_html)
+                ];
+                for (const gcsPath of embeddedPaths) {
+                    try { await mediaController.deleteFile(gcsPath); } catch (e) { console.error('Error deleting case embedded image:', e); }
+                }
+            }
+
+            const success = await adminService.deleteCase(id);
+            res.json({ success });
+        } catch (error) {
+            console.error('Error deleting case:', error);
+            res.status(500).json({ error: 'Error interno eliminando casuística.' });
+        }
+    }
+
+    async linkQuestionsToCase(req, res) {
+        try {
+            const { caseId, questions } = req.body;
+            if (!caseId || !Array.isArray(questions) || questions.length === 0) {
+                return res.status(400).json({ error: 'caseId y un array de preguntas son requeridos.' });
+            }
+            const result = await adminService.linkQuestionsToCase(caseId, questions);
+            res.json(result);
+        } catch (error) {
+            console.error('Error linking questions to case:', error);
+            res.status(500).json({ error: error.message || 'Error interno vinculando preguntas al caso.' });
+        }
+    }
+
+    async unlinkQuestionFromCase(req, res) {
+        try {
+            const { questionId } = req.params;
+            const success = await adminService.unlinkQuestionFromCase(questionId);
+            res.json({ success });
+        } catch (error) {
+            console.error('Error unlinking question from case:', error);
+            res.status(500).json({ error: 'Error interno desvinculando la pregunta.' });
         }
     }
 
@@ -186,7 +346,9 @@ class AdminController {
                 subtopic: sanitize(req.body.subtopic),
                 target: sanitize(req.body.target),
                 topic: sanitize(req.body.topic) || 'General',
-                explanation: sanitize(req.body.explanation) || ''
+                explanation: sanitize(req.body.explanation) || '',
+                case_id: sanitize(req.body.case_id),
+                case_order: parseInt(req.body.case_order, 10) || 1
             };
 
             if (typeof q.options === 'string') {
@@ -229,7 +391,9 @@ class AdminController {
                 target: sanitize(req.body.target),
                 topic: sanitize(req.body.topic) || 'General',
                 difficulty: sanitize(req.body.difficulty) || 'Senior',
-                explanation: sanitize(req.body.explanation) || ''
+                explanation: sanitize(req.body.explanation) || '',
+                case_id: sanitize(req.body.case_id),
+                case_order: parseInt(req.body.case_order, 10) || 1
             };
 
             if (typeof q.options === 'string') {
@@ -474,6 +638,22 @@ class AdminController {
                         }
                         const isDeleted = await adminService.deleteSingleQuestion(id);
                         if (isDeleted) successCount++;
+                    } else if (type === 'case') {
+                        const oldCase = await adminService.getCaseById(id);
+                        if (oldCase) {
+                            if (oldCase.image_url) {
+                                try { await mediaController.deleteFile(oldCase.image_url); } catch (e) {}
+                            }
+                            const embeddedPaths = [
+                                ...this._extractGcsPaths(oldCase.description_text),
+                                ...this._extractGcsPaths(oldCase.table_html)
+                            ];
+                            for (const gcsPath of embeddedPaths) {
+                                try { await mediaController.deleteFile(gcsPath); } catch (e) {}
+                            }
+                        }
+                        const isDeleted = await adminService.deleteCase(id);
+                        if (isDeleted) successCount++;
                     } else {
                         const entityId = (['student', 'admin'].includes(type)) ? String(id) : parseInt(id, 10);
                         const oldItem = await adminService.getById(type, entityId);
@@ -529,5 +709,12 @@ module.exports = {
     deleteSingleQuestion: controller.deleteSingleQuestion.bind(controller),
     syncDriveFolder: controller.syncDriveFolder.bind(controller),
     uploadEditorImage: controller.uploadEditorImage.bind(controller),
-    bulkDelete: controller.bulkDelete.bind(controller)
+    bulkDelete: controller.bulkDelete.bind(controller),
+    getAllCases: controller.getAllCases.bind(controller),
+    getCaseById: controller.getCaseById.bind(controller),
+    createCase: controller.createCase.bind(controller),
+    updateCase: controller.updateCase.bind(controller),
+    deleteCase: controller.deleteCase.bind(controller),
+    linkQuestionsToCase: controller.linkQuestionsToCase.bind(controller),
+    unlinkQuestionFromCase: controller.unlinkQuestionFromCase.bind(controller)
 };

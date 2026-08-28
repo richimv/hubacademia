@@ -94,6 +94,7 @@ const elements = {
     timer: document.getElementById('timer'),
     feedbackBox: document.getElementById('feedbackBox'),
     explanationText: document.getElementById('explanationText'),
+    prevBtn: document.getElementById('prevBtn'),
     nextBtn: document.getElementById('nextBtn'),
     nextBtnContainer: document.getElementById('nextBtnContainer'),
     resultsOverlay: document.getElementById('resultsOverlay'),
@@ -199,6 +200,9 @@ window.showExamReview = async function () {
             resOverlay.classList.remove('active');
             resOverlay.style.display = 'none';
         }
+
+        const caseContainer = document.getElementById('caseScenarioContainer');
+        if (caseContainer) caseContainer.style.display = 'none';
 
         const qHeader = document.querySelector('.question-header');
         if (qHeader) qHeader.style.display = 'none';
@@ -317,7 +321,10 @@ window.openTutorForReviewQuestion = function (qIndex) {
         career: q.career || state.career || '',
         examContext: state.context.toUpperCase() === 'EDUCACION' ? 'EDUCACION' : 'MEDICINA',
         difficulty: state.difficulty || 'Senior',
-        areas: state.areas || []
+        areas: state.areas || [],
+        caseDescription: q.case_description || null,
+        caseTitle: q.case_title || null,
+        caseOrder: q.case_order || null
     };
 
     if (window.quizTutor) {
@@ -654,7 +661,7 @@ async function startQuiz() {
             areas: state.areas,
             career: state.career,
             difficulty: state.difficulty,
-            limit: Math.min(5, state.maxQuestions),
+            limit: Math.min(10, state.maxQuestions),
             mode: state.mode,
             configType: state.configType
         })
@@ -1017,8 +1024,10 @@ function renderQuestion() {
 
     // Trigger Batch Load if we are close to end of current array using local threshold
     // E.g., if we have 5 qs, and we are at index 3 (Question 4), prefetch next batch in background.
+    // Trigger Batch Load if we are close to end of current array using local threshold
+    // Prefetch next batch when remaining questions in memory <= 3
     if (state.questions.length < state.maxQuestions &&
-        (state.questions.length - state.currentQuestionIndex) <= 2 &&
+        (state.questions.length - state.currentQuestionIndex) <= 3 &&
         !state.isLoadingBatch) {
         fetchNextBatch();
     }
@@ -1026,6 +1035,79 @@ function renderQuestion() {
     // Actualizar UI Header
     if (elements.currentQ) elements.currentQ.textContent = state.currentQuestionIndex + 1;
     updateProgressUI();
+
+    // 📖 Renderizar Caso / Situación Compartida si la pregunta pertenece a una Casuística
+    const caseContainer = document.getElementById('caseScenarioContainer');
+    if (caseContainer) {
+        const hasCase = Boolean(
+            (q.case_id && typeof q.case_id === 'string' && q.case_id.trim() !== '') ||
+            (q.case_code && typeof q.case_code === 'string' && q.case_code.trim() !== '') ||
+            (q.case_description && typeof q.case_description === 'string' && q.case_description.trim() !== '') ||
+            (q.case_image_url && typeof q.case_image_url === 'string' && q.case_image_url.trim() !== '') ||
+            (q.case_table_html && typeof q.case_table_html === 'string' && q.case_table_html.trim() !== '')
+        );
+
+        if (hasCase) {
+            const caseBadgeText = document.getElementById('caseBadgeText');
+            const caseOrderBadge = document.getElementById('caseOrderBadge');
+            const caseTitle = document.getElementById('caseTitle');
+            const caseDesc = document.getElementById('caseDescriptionText');
+            const caseImgContainer = document.getElementById('caseImageContainer');
+            const caseImg = document.getElementById('caseImage');
+            const caseTableContainer = document.getElementById('caseTableContainer');
+
+            const isEducation = (state.context || '').toUpperCase() === 'EDUCACION';
+            const caseLabel = isEducation ? 'Casuística Anidada' : 'Viñeta Clínica Compartida';
+
+            if (caseBadgeText) {
+                caseBadgeText.textContent = caseLabel;
+            }
+
+            if (caseOrderBadge) {
+                const orderNum = q.case_order ? Number(q.case_order) : 1;
+                caseOrderBadge.textContent = `Pregunta ${orderNum}`;
+            }
+
+            if (caseTitle) {
+                caseTitle.style.display = 'none';
+            }
+
+            if (caseDesc) {
+                const rawDesc = q.case_description || '';
+                if (rawDesc.trim()) {
+                    caseDesc.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(rawDesc) : rawDesc;
+                    caseDesc.style.display = 'block';
+                } else {
+                    caseDesc.innerHTML = '';
+                    caseDesc.style.display = 'none';
+                }
+            }
+
+            if (caseImgContainer && caseImg) {
+                if (q.case_image_url && typeof q.case_image_url === 'string' && q.case_image_url.trim()) {
+                    caseImg.src = window.resolveImageUrl(q.case_image_url);
+                    caseImgContainer.style.display = 'block';
+                } else {
+                    caseImgContainer.style.display = 'none';
+                    caseImg.removeAttribute('src');
+                }
+            }
+
+            if (caseTableContainer) {
+                if (q.case_table_html && typeof q.case_table_html === 'string' && q.case_table_html.trim()) {
+                    caseTableContainer.innerHTML = q.case_table_html;
+                    caseTableContainer.style.display = 'block';
+                } else {
+                    caseTableContainer.innerHTML = '';
+                    caseTableContainer.style.display = 'none';
+                }
+            }
+
+            caseContainer.style.display = 'block';
+        } else {
+            caseContainer.style.display = 'none';
+        }
+    }
 
     // Imagen (si existe y tiene URL válida)
     const imgContainer = document.getElementById('questionImageContainer');
@@ -1105,7 +1187,6 @@ function renderQuestion() {
 
         const textSpan = document.createElement('span');
         textSpan.className = 'option-text';
-        // También procesar Markdown en opciones por si acaso (aunque menos común)
         if (window.MarkdownRenderer) {
             textSpan.innerHTML = window.MarkdownRenderer.render(String(opt || '')).replace(/^<p>|<\/p>$/g, '');
         } else if (window.marked && window.marked.parse) {
@@ -1121,12 +1202,51 @@ function renderQuestion() {
         elements.optionsGrid.appendChild(btn);
     });
 
-    // 🔄 REANIMAR INTERFAZ SI LA PREGUNTA YA HABÍA SIDO RESPONDIDA EN LA SESIÓN RECUPERADA
+    // 🔙 Configurar Botón Anterior
+    const prevBtn = elements.prevBtn || document.getElementById('prevBtn');
+    if (prevBtn) {
+        if (state.currentQuestionIndex > 0) {
+            prevBtn.classList.remove('hidden');
+            prevBtn.style.display = 'inline-flex';
+            prevBtn.onclick = () => handlePreviousQuestion();
+        } else {
+            prevBtn.classList.add('hidden');
+            prevBtn.style.display = 'none';
+        }
+    }
+
+    // 🔄 REANIMAR INTERFAZ SI LA PREGUNTA YA HABÍA SIDO RESPONDIDA EN LA SESIÓN RECUPERADA O AL NAVEGAR ATRÁS
     const existingAns = state.answers[state.currentQuestionIndex];
     if (existingAns && existingAns.userAnswer !== undefined) {
         const optionBtns = elements.optionsGrid.querySelectorAll('button');
         if (optionBtns[existingAns.userAnswer]) {
-            handleAnswer(existingAns.userAnswer, optionBtns[existingAns.userAnswer]);
+            handleAnswer(existingAns.userAnswer, optionBtns[existingAns.userAnswer], true);
+        }
+    } else {
+        if (elements.feedbackBox) {
+            elements.feedbackBox.classList.add('hidden');
+            elements.feedbackBox.style.display = 'none';
+        }
+        const nextBtn = elements.nextBtn || document.getElementById('nextBtn');
+        if (nextBtn) {
+            nextBtn.classList.add('hidden');
+            nextBtn.style.display = 'none';
+        }
+        const tutorBtn = document.getElementById('btn-open-quiz-tutor');
+        if (tutorBtn) {
+            tutorBtn.classList.add('hidden');
+            tutorBtn.style.display = 'none';
+        }
+
+        const nextContainer = elements.nextBtnContainer || document.getElementById('nextBtnContainer');
+        if (nextContainer) {
+            if (state.currentQuestionIndex > 0) {
+                nextContainer.classList.remove('hidden');
+                nextContainer.style.display = 'flex';
+            } else {
+                nextContainer.classList.add('hidden');
+                nextContainer.style.display = 'none';
+            }
         }
     }
 }
@@ -1144,27 +1264,28 @@ function updateProgressUI() {
 }
 
 // 4. Manejar Respuesta
-function handleAnswer(selectedIndex, btnElement) {
+function handleAnswer(selectedIndex, btnElement, isReplaying = false) {
     const q = state.questions[state.currentQuestionIndex];
     if (!q) return;
 
-    // Deshabilitar todos los botones
+    // Deshabilitar todos los botones para evitar re-marcado
     const allBtns = elements.optionsGrid.querySelectorAll('button');
     allBtns.forEach(b => b.disabled = true);
 
     const isCorrect = selectedIndex === q.correct_option_index;
 
-    // Guardar respuesta por índice explícito para evitar duplicación al reanudar
-    state.answers[state.currentQuestionIndex] = {
-        questionId: state.currentQuestionIndex,
-        userAnswer: selectedIndex,
-        isCorrect: isCorrect
-    };
+    if (!isReplaying) {
+        // Guardar respuesta por índice explícito para evitar duplicación al reanudar
+        state.answers[state.currentQuestionIndex] = {
+            questionId: state.currentQuestionIndex,
+            userAnswer: selectedIndex,
+            isCorrect: isCorrect
+        };
 
-    // Recalcular puntaje exacto basado en respuestas únicas
-    state.score = state.answers.filter(a => a && a.isCorrect).length;
-
-    saveSession(); // ✅ PERSISTENCIA INMEDIATA
+        // Recalcular puntaje exacto basado en respuestas únicas
+        state.score = state.answers.filter(a => a && a.isCorrect).length;
+        saveSession(); // ✅ PERSISTENCIA INMEDIATA
+    }
 
     // --- Retroalimentación Visual ---
     if (state.maxQuestions === 100) {
@@ -1185,23 +1306,16 @@ function handleAnswer(selectedIndex, btnElement) {
 
     // Configurar acción y texto del botón Siguiente / Finalizar
     const isLastQuestion = (state.currentQuestionIndex + 1) >= state.maxQuestions;
-    if (elements.nextBtn) {
+    const nextBtn = elements.nextBtn || document.getElementById('nextBtn');
+    if (nextBtn) {
         if (isLastQuestion) {
-            elements.nextBtn.innerHTML = `Finalizar Simulacro <i class="fas fa-check-circle" style="margin-left: 0.5rem;"></i>`;
+            nextBtn.innerHTML = `Finalizar Simulacro <i class="fas fa-check-circle" style="margin-left: 0.5rem;"></i>`;
         } else {
-            elements.nextBtn.innerHTML = `Siguiente Pregunta <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>`;
+            nextBtn.innerHTML = `Siguiente Pregunta <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>`;
         }
-
-        elements.nextBtn.onclick = () => {
-            cancelCurrentScroll();
-            if (window.quizTutor) window.quizTutor.toggle(false);
-            state.currentQuestionIndex++;
-            if (state.currentQuestionIndex >= state.maxQuestions) {
-                finishQuiz();
-            } else {
-                renderQuestion();
-            }
-        };
+        nextBtn.classList.remove('hidden');
+        nextBtn.style.display = 'inline-flex';
+        nextBtn.onclick = () => handleNextQuestion();
     }
 
     // 🚀 BIFURCACIÓN DE COMPORTAMIENTO PARA FEEDBACK / SIGUIENTE
@@ -1209,7 +1323,9 @@ function handleAnswer(selectedIndex, btnElement) {
 
     if (isStudyMode) {
         // MODO ESTUDIO (20q): Mostrar explicación y el botón siguiente
-        elements.explanationText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.") : (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
+        if (elements.explanationText) {
+            elements.explanationText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.") : (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
+        }
 
         if (elements.explanationImage && elements.explanationImageContainer) {
             if (q.explanation_image_url && typeof q.explanation_image_url === 'string' && q.explanation_image_url.trim() !== '') {
@@ -1233,32 +1349,38 @@ function handleAnswer(selectedIndex, btnElement) {
             iconEl.className = isEdu ? 'fas fa-graduation-cap' : 'fas fa-stethoscope';
         }
 
-        elements.feedbackBox.style.display = 'flex';
-        if (!isCorrect) {
-            elements.feedbackBox.classList.add('error');
-        } else {
-            elements.feedbackBox.classList.remove('error');
-        }
-
-        if (elements.nextBtnContainer) {
-            elements.nextBtnContainer.classList.remove('hidden');
-            elements.nextBtnContainer.style.display = 'flex';
+        if (elements.feedbackBox) {
+            elements.feedbackBox.classList.remove('hidden');
+            elements.feedbackBox.style.display = 'flex';
+            if (!isCorrect) {
+                elements.feedbackBox.classList.add('error');
+            } else {
+                elements.feedbackBox.classList.remove('error');
+            }
         }
     } else {
         // MODO RÁPIDO (10q) o SIMULACRO REAL (100q): Ocultamos explicación/feedback box, mostramos solo botón siguiente
-        elements.feedbackBox.style.display = 'none';
-        if (elements.nextBtnContainer) {
-            elements.nextBtnContainer.classList.remove('hidden');
-            elements.nextBtnContainer.style.display = 'flex';
+        if (elements.feedbackBox) {
+            elements.feedbackBox.classList.add('hidden');
+            elements.feedbackBox.style.display = 'none';
         }
+    }
+
+    const nextContainer = elements.nextBtnContainer || document.getElementById('nextBtnContainer');
+    if (nextContainer) {
+        nextContainer.classList.remove('hidden');
+        nextContainer.style.display = 'flex';
     }
 
     // Configurar y mostrar botón de Tutor IA (No disponible en vivo durante modo rápido de 10q ni simulacro real de 100q)
     const tutorBtn = document.getElementById('btn-open-quiz-tutor');
     if (tutorBtn) {
-        if (state.maxQuestions === 100 || state.maxQuestions === 10 || state.mode === 'arcade') {
+        const isBlindMode = Number(state.maxQuestions) === 100 || Number(state.maxQuestions) === 10 || state.mode === 'arcade' || state.mode === 'real';
+        if (isBlindMode) {
+            tutorBtn.classList.add('hidden');
             tutorBtn.style.display = 'none';
         } else {
+            tutorBtn.classList.remove('hidden');
             tutorBtn.style.display = 'inline-flex';
             tutorBtn.onclick = () => {
                 const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || 
@@ -1274,11 +1396,10 @@ function handleAnswer(selectedIndex, btnElement) {
                 const currentAns = state.answers[state.currentQuestionIndex];
                 const qContext = {
                     id: currentQ.id || `q-${state.currentQuestionIndex}`,
-                    questionText: currentQ.question_text,
-                    options: currentQ.options,
+                    text: currentQ.question_text || currentQ.question || '',
+                    options: currentQ.options || [],
+                    userAnswer: currentAns ? currentAns.userAnswer : null,
                     correctOptionIndex: currentQ.correct_option_index,
-                    correctOptionText: currentQ.options[currentQ.correct_option_index] || '',
-                    userOptionIndex: currentAns ? currentAns.userAnswer : null,
                     userOptionText: currentAns ? currentQ.options[currentAns.userAnswer] : '',
                     isUserCorrect: currentAns ? currentAns.isCorrect : false,
                     explanation: currentQ.explanation || '',
@@ -1290,7 +1411,9 @@ function handleAnswer(selectedIndex, btnElement) {
                     areas: state.areas || [],
                     mode: state.mode || ''
                 };
-                window.quizTutor.toggle(true, qContext);
+                if (window.quizTutor) {
+                    window.quizTutor.toggle(true, qContext);
+                }
             };
         }
     }
@@ -1306,6 +1429,26 @@ function handleAnswer(selectedIndex, btnElement) {
             }
         }
     }, 100);
+}
+
+function handlePreviousQuestion() {
+    if (state.currentQuestionIndex > 0) {
+        cancelCurrentScroll();
+        if (window.quizTutor) window.quizTutor.toggle(false);
+        state.currentQuestionIndex--;
+        renderQuestion();
+    }
+}
+
+function handleNextQuestion() {
+    cancelCurrentScroll();
+    if (window.quizTutor) window.quizTutor.toggle(false);
+    state.currentQuestionIndex++;
+    if (state.currentQuestionIndex >= state.maxQuestions) {
+        finishQuiz();
+    } else {
+        renderQuestion();
+    }
 }
 
 // 5. Temporizador Real Mock (Maestro)
@@ -1558,7 +1701,11 @@ async function finishQuiz() {
 
 
 // Auto-init
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 
 // --- 🖼️ Visor Lightbox Premium (Zoom, Drag, Gestos) ---
 function initLightbox() {
@@ -1902,7 +2049,10 @@ window.openQuizTutorForReview = function (index) {
         isUserCorrect: ans ? ans.isCorrect : false,
         explanation: q.explanation || '',
         topic: q.topic || state.topic || 'General',
-        target: q.target || state.targetExam || ''
+        target: q.target || state.targetExam || '',
+        caseDescription: q.case_description || null,
+        caseTitle: q.case_title || null,
+        caseOrder: q.case_order || null
     };
     
     if (window.quizTutor) {

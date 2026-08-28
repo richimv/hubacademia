@@ -6,21 +6,28 @@ const rateLimit = require('express-rate-limit');
  */
 const globalApiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 500, // ✅ AJUSTE: Aumentado a 500 para ser más flexible durante el desarrollo.
-    standardHeaders: true, // Devuelve la información del rate limit en los headers `RateLimit-*`
-    legacyHeaders: false, // Deshabilita los headers `X-RateLimit-*`
+    max: 1000, // Flexible para desarrollo y producción
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+        const ip = req.ip || req.connection?.remoteAddress || '';
+        return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || req.hostname === 'localhost';
+    },
     message: { error: 'Demasiadas peticiones desde esta IP, por favor intente de nuevo después de 15 minutos.' }
 });
 
 /**
- * Limitador más estricto para las rutas sensibles de autenticación (login, register).
- * Ayuda a prevenir ataques de fuerza bruta.
+ * Limitador para las rutas de autenticación (/auth/sync).
  */
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 20, // ✅ AJUSTE: Aumentado a 20 intentos por IP cada 15 minutos. Más razonable.
+    max: 100, // 100 intentos por IP cada 15 minutos
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => {
+        const ip = req.ip || req.connection?.remoteAddress || '';
+        return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || req.hostname === 'localhost';
+    },
     message: { error: 'Demasiados intentos de autenticación desde esta IP, por favor intente de nuevo después de 5 minutos.' }
 });
 

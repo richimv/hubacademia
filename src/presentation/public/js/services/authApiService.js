@@ -26,15 +26,19 @@ class AuthApiService {
 
     // ✅ Obtener Token Fresco (Supabase -> LocalStorage)
     static async getValidToken() {
-        if (window.supabaseClient) {
+        const client = typeof window.getSupabaseClient === 'function'
+            ? window.getSupabaseClient()
+            : window.supabaseClient;
+
+        if (client) {
             try {
                 // Intentar recuperar la sesión actual de la SDK de Supabase (Fuente de verdad)
-                let { data: { session }, error } = await window.supabaseClient.auth.getSession();
+                let { data: { session }, error } = await client.auth.getSession();
                 
                 // Si la sesión existe pero el token ya expiró o expirará pronto, forzar refreshSession
                 if (session && session.access_token && this.isTokenExpired(session.access_token)) {
                     console.log("🕒 [AuthApiService] Token de acceso Supabase expirado. Forzando refresco de sesión...");
-                    const refreshResult = await window.supabaseClient.auth.refreshSession();
+                    const refreshResult = await client.auth.refreshSession();
                     if (refreshResult.data && refreshResult.data.session) {
                         session = refreshResult.data.session;
                     }
@@ -45,7 +49,7 @@ class AuthApiService {
                     const localToken = localStorage.getItem('authToken');
                     if (localToken && localToken !== 'undefined' && localToken !== 'null') {
                         console.log("🕒 [AuthApiService] Sesión ausente pero token local presente. Intentando recuperar mediante refreshSession...");
-                        const refreshResult = await window.supabaseClient.auth.refreshSession();
+                        const refreshResult = await client.auth.refreshSession();
                         if (refreshResult.data && refreshResult.data.session) {
                             session = refreshResult.data.session;
                         }

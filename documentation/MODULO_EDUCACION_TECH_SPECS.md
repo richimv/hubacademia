@@ -365,11 +365,36 @@ Para profundizar en las casuísticas pedagógicas, principios constructivistas d
 
 ---
 
-## 16. Paginación Reactiva por Lotes y Propagación de Sesión Segura (Agosto 2026)
+## 16. Paginación Reactiva por Lotes de 10 y Propagación de Sesión Segura (Agosto 2026)
 Para asegurar la continuidad en simulacros magisteriales (10q, 20q y Simulacros Reales):
-1. **Prefetch Proactivo (`quiz.js`)**:
-   - Las preguntas se solicitan en bloques de 5 (`/api/docente/start` y `/api/docente/next-batch`).
-   - Al estar a 2 preguntas de concluir el bloque en memoria (`questions.length - currentQuestionIndex <= 2`), el cliente solicita en segundo plano el siguiente lote enviando `seenIds`.
+1. **Lotes de 10 Reactivos (`quiz.js`)**:
+   - Las preguntas se solicitan en bloques de 10 (`/api/docente/start` y `/api/docente/next-batch`).
+   - Un examen estándar de 10 preguntas se carga completamente en una sola consulta inicial.
+   - En exámenes de 20 preguntas o más, al estar a 3 preguntas de concluir el bloque en memoria (`questions.length - currentQuestionIndex <= 3`), el cliente solicita en segundo plano el siguiente lote de 10 enviando `seenIds`.
 2. **Sincronización `quizSessionId` y `configType`**:
-   - El cliente envía `quizSessionId` en `/next-batch` y `/submit`, evitando errores `400 Bad Request` en entornos con validación de sesión estricta y previniendo el truncamiento a 5 preguntas.
+   - El cliente envía `quizSessionId` en `/next-batch` y `/submit`, evitando errores `400 Bad Request` en entornos con validación de sesión estricta.
    - Se propaga el `configType` ('default' vs 'custom') para mantener la coherencia de áreas y casuísticas evaluadas.
+
+---
+
+## 17. Casuísticas Agrupadas y Situaciones Compartidas (Agosto 2026)
+
+Para reproducir fielmente la estructura de los exámenes oficiales del MINEDU (Ascenso y Nombramiento) donde una situación o texto compartido sirve de base para 2 o más preguntas consecutivas:
+
+1. **Entidad `case_scenarios`**:
+   - Tabla dedicada protegida con RLS que almacena `code`, `title`, `description_text` (enunciado común), `image_url` y `table_html` (cuadros comparativos).
+   - Las preguntas en `question_bank` se asocian mediante `case_id` (FK) y `case_order` (orden 1, 2, 3...).
+2. **Algoritmo de Clustering Contiguo (`docenteRepository.js`)**:
+   - Al seleccionar preguntas balanceadas por tema, si una pregunta pertenece a una casuística, el repositorio consulta de inmediato todas sus preguntas hermanas del mismo `case_id`, las ordena por `case_order ASC` y las agrupa contiguamente dentro del lote, impidiendo que el caso sea fragmentado.
+3. **Renderizado en Examen (`quiz.js`, `quiz.html`)**:
+   - La tarjeta `#caseScenarioContainer` muestra la situación común, gráfico/tabla y badge `# de caso` por encima del reactivo.
+   - Si la pregunta no tiene casuística (`case_id === null`), el contenedor se oculta limpiamente.
+4. **Tutor IA Contextual (`chatController.js`, `quiz-tutor.js`)**:
+   - El Tutor IA en examen recibe `caseDescription`, `caseTitle` y `caseOrder` dentro de `context`, integrando la situación común en su prompt para dar explicaciones 100% certeras.
+5. **Gestión Masiva en Panel Admin y Excel**:
+   - Pestaña dedicada **Casuísticas / Casos** (`tab-cases`) en el Panel de Administración con filtrado por dominio, búsqueda en vivo y contador dinámico.
+   - En la modal de agregar o editar preguntas (`openGenericModal('question')`), se integra un fieldset reactivo para seleccionar la casuística padre y definir el orden (#1, #2, #3...) con auto-filtrado según dominio/target y botón de creación rápida.
+   - Herramienta de **Encadenamiento Masivo** (`link-case`): permite seleccionar 2 o más preguntas sueltas mediante checkboxes con soporte `Shift + Clic` y unirlas a una casuística común en un solo paso mediante la barra flotante de acciones.
+   - La plantilla de importación Excel soporta `CODIGO_CASO`, `ENUNCIADO_CASO` y `ORDEN_CASO`, auto-resolviendo la creación y vinculación en bloque.
+
+

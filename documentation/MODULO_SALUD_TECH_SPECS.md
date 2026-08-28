@@ -163,14 +163,35 @@ Para profundizar en el estudio de diagnósticos, tratamientos y normas técnicas
 
 ---
 
-## 13. Paginación Reactiva por Lotes y Propagación de Sesión Segura (Agosto 2026)
+## 13. Paginación Reactiva por Lotes de 10 y Propagación de Sesión Segura (Agosto 2026)
 Con el objetivo de garantizar una navegación continua y sin interrupciones en simulacros de 10, 20 o 100 preguntas:
-1. **Prefetch Proactivo de Lotes**:
-   - El cliente (`quiz.js`) solicita preguntas en bloques de 5 en 5 (`/start` y `/next-batch`).
-   - Al encontrarse a 2 preguntas de agotar el bloque en memoria (`questions.length - currentQuestionIndex <= 2`), el cliente dispara automáticamente en segundo plano la carga del siguiente lote (`fetchNextBatch()`).
-   - Si el usuario avanza antes de que culmine la carga, el sistema muestra el overlay de carga estilizado de forma no disruptiva y reanuda en cuanto el bloque arriba.
+1. **Lotes de 10 Reactivos (`quiz.js`)**:
+   - El cliente (`quiz.js`) solicita preguntas en bloques de 10 en 10 (`/start` y `/next-batch`).
+   - Los simulacros estándar de 10 preguntas se cargan en 1 sola consulta inicial rápida.
+   - En simulacros de 20 o más preguntas, al encontrarse a 3 preguntas de agotar el bloque en memoria (`questions.length - currentQuestionIndex <= 3`), el cliente dispara en segundo plano la carga del siguiente lote de 10 enviando `seenIds`.
 2. **Propagación Integral de `quizSessionId`**:
    - Se sincronizó el identificador de sesión seguro `quizSessionId` generado por el backend en `/start` a través del estado de sesión (`state.quizSessionId`), la persistencia en `localStorage`, las peticiones secundarias `/next-batch` y el envío final `/submit`.
-   - Esto previene rechazos `400 Bad Request` en entornos con `SECURE_QUIZ_SESSIONS_ENABLED` y evita truncamientos prematuros en la pregunta 5.
-3. **Preservación de Estado de Interacción**:
-   - La finalización de lotes en segundo plano preserva la interacción en pantalla del usuario sin reinicios de formulario ni borrado de opciones seleccionadas.
+   - Esto previene rechazos `400 Bad Request` en entornos con `SECURE_QUIZ_SESSIONS_ENABLED`.
+
+---
+
+## 14. Casuísticas Agrupadas y Viñetas Clínicas Compartidas (Agosto 2026)
+
+Para emular los casos clínicos complejos y seriados de los exámenes ENAM, SERUMS y Residentado Médico donde una viñeta clínica (historia clínica, paciente con trauma, laboratorio, ECG o tomografía) sirve de base para 2 o más preguntas consecutivas:
+
+1. **Entidad `case_scenarios` (Seguridad RLS)**:
+   - Almacena el caso clínico común (`code`, `title`, `description_text`, `image_url` y `table_html`).
+   - Las preguntas clínicas en `question_bank` se enlazan con `case_id` (FK) y su número de secuencia `case_order` (1, 2, 3...).
+2. **Algoritmo de Clustering Contiguo en Medicina (`medicoRepository.js`)**:
+   - Si la consulta de preguntas balanceadas selecciona una pregunta vinculada a un `case_id`, el repositorio recupera inmediatamente todas sus preguntas hermanas del caso, las ordena por `case_order ASC` y las agrupa de manera contigua dentro del lote de examen.
+3. **Renderizado en el Simulador (`quiz.js`, `quiz.html`)**:
+   - Muestra la tarjeta interactiva de casuística con los hallazgos clínicos, imagen y el badge `# de caso`.
+4. **Tutor IA Contextual para Casos Clínicos (`chatController.js`, `quiz-tutor.js`)**:
+   - El Tutor IA recibe la viñeta clínica completa para justificar las decisiones de diagnóstico diferencial y terapéutica con exactitud.
+5. **Ingesta y Gestión Masiva (Admin y Excel)**:
+   - Pestaña especializada **Casuísticas / Casos** (`tab-cases`) en el panel de administración con selector de dominio (Salud Profesional), tarjetas de visualización con badges y contador de reactivos asociados.
+   - En la modal de preguntas (`openGenericModal('question')`), selector de caso clínico padre y campo de orden en la viñeta con sincronización reactiva.
+   - Modal de **Encadenamiento Masivo** (`link-case`): permite encadenar casos clínicos seriados directamente desde la selección masiva de preguntas con reordenamiento intuitivo.
+   - Soporta columnas `CODIGO_CASO`, `ENUNCIADO_CASO` y `ORDEN_CASO` en la importación masiva por Excel.
+
+

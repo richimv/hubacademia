@@ -17,40 +17,6 @@ body {
     padding-top: var(--trial-bar-height) !important;
 }
 
-.career-card {
-    background: var(--surface-alt);
-    border-radius: 12px;
-    margin-bottom: var(--spacing-lg);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-}
-
-.career-card-details {
-    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
-    border-top: 1px solid var(--border);
-    display: none;
-}
-
-.career-card.expanded .career-card-details {
-    display: block;
-}
-
-.career-card .career-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-md) var(--spacing-lg);
-}
-
-.career-card .toggle-arrow {
-    transition: transform 0.3s ease;
-    font-size: 1.5rem;
-}
-
-.career-card.expanded .toggle-arrow {
-    transform: rotate(90deg);
-}
-
 .admin-tabs {
     display: flex;
     flex-wrap: nowrap;
@@ -232,21 +198,26 @@ body {
     border-color: var(--primary);
 }
 
-.tab-content:not(.active) {
+.tab-content {
     display: none;
+    width: 100%;
 }
 
-/* --- Grid Layout Redesign --- */
-/* --- Compact Row Layout (Professional & Space Efficient) --- */
-#tab-careers.active,
-#tab-courses.active,
-#tab-students.active,
-#tab-topics.active,
-#tab-books.active {
+.tab-content.active {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1.25rem;
+    width: 100%;
     margin-top: 1.5rem;
+}
+
+#questions-list-container,
+#cases-list-container,
+.items-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    width: 100%;
 }
 
 .item-card {
@@ -254,21 +225,33 @@ body {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    background: var(--bg-tertiary);
-    padding: 1.2rem 1.5rem;
+    background: var(--card-bg);
+    padding: 1rem 1.25rem;
     border-radius: 12px;
     border: 1px solid var(--border-color);
     border-left: 4px solid var(--primary);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
     min-height: auto;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
 }
+
+/* Colores de Borde Izquierdo Temáticos por Tipo de Entidad */
+.item-card[data-resource-type="career"] { border-left-color: #818cf8; }
+.item-card[data-resource-type="course"] { border-left-color: #10b981; }
+.item-card[data-resource-type="student"] { border-left-color: #f59e0b; }
+.item-card[data-resource-type="topic"] { border-left-color: #06b6d4; }
+.item-card[data-resource-type="book"] { border-left-color: #a855f7; }
+.item-card[data-resource-type="question"] { border-left-color: #3b82f6; }
+.item-card[data-resource-type="case"] { border-left-color: #6366f1; }
 
 .item-card:hover {
     transform: translateX(4px);
-    background: var(--surface);
-    border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: var(--surface-hover);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
 }
 
 /* Card Content Typography - Horizontal Layout */
@@ -277,9 +260,7 @@ body {
     flex-direction: column;
     gap: 0.25rem;
     flex: 1;
-    /* Hace que use solo el espacio disponible */
     min-width: 0;
-    /* Para que el texto se encoja si es necesario y respete el contenedor */
 }
 
 .item-card h3 {
@@ -287,9 +268,8 @@ body {
     font-weight: 600;
     color: var(--text-main);
     margin: 0;
-    line-height: 1.2;
+    line-height: 1.3;
     overflow-wrap: anywhere;
-    /* Para que el texto se rompa si es necesario */
 }
 
 .item-subtitle {
@@ -302,18 +282,127 @@ body {
     align-self: flex-start;
 }
 
+/* ==========================================================================
+   🏷️ ADMIN BADGES SYSTEM (High-Contrast Dual-Theme Support)
+   ========================================================================== */
+.admin-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.4;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+/* Badge Azul (Educación / Exámenes / General) */
+.admin-badge-blue {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #1d4ed8;
+}
+[data-theme="dark"] .admin-badge-blue {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.35);
+    color: #60a5fa;
+}
+
+/* Badge Verde (Salud / Códigos / Activo) */
+.admin-badge-green {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #047857;
+}
+[data-theme="dark"] .admin-badge-green {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.35);
+    color: #34d399;
+}
+
+/* Badge Índigo (Carreras / Casuísticas / Vinculación) */
+.admin-badge-indigo {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #4338ca;
+}
+[data-theme="dark"] .admin-badge-indigo {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+}
+
+/* Badge Púrpura (Planes Avanzados / Recursos) */
+.admin-badge-purple {
+    background: rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    color: #6d28d9;
+}
+[data-theme="dark"] .admin-badge-purple {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.35);
+    color: #c084fc;
+}
+
+/* Badge Cian (Temas / Módulos) */
+.admin-badge-cyan {
+    background: rgba(6, 182, 212, 0.12);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    color: #0e7490;
+}
+[data-theme="dark"] .admin-badge-cyan {
+    background: rgba(6, 182, 212, 0.15);
+    border-color: rgba(6, 182, 212, 0.35);
+    color: #67e8f9;
+}
+
+/* Badge Neutral (Subtítulos / Muted) */
+.admin-badge-muted {
+    background: var(--surface-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Badge Peligro / Inactivo (Expirado) */
+.admin-badge-danger {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #b91c1c;
+}
+[data-theme="dark"] .admin-badge-danger {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #f87171;
+}
+
+/* Badge Warning (Pendiente / Especial) */
+.admin-badge-warning {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #b45309;
+}
+[data-theme="dark"] .admin-badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.35);
+    color: #fbbf24;
+}
+
 /* Actions Bar - Compact & Aligned Right */
 .item-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     width: auto;
     margin-top: 0;
     padding-top: 0;
     border-top: none;
     gap: 0.5rem;
+    flex-shrink: 0;
 }
 
-/* ✅ SOLUCIÓN: Estilos para el ícono de la malla curricular en la lista de carreras */
+/* Ícono de malla curricular en lista de carreras */
 .curriculum-link-icon {
     text-decoration: none;
     color: var(--accent);
@@ -325,64 +414,42 @@ body {
     transform: scale(1.2);
 }
 
-.item-card-full {
-    background: var(--surface-alt);
-    border-radius: 12px;
-    margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--accent);
-}
-
-.item-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-md);
-    border-bottom: 1px solid var(--border);
-}
-
-.item-card-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-}
-
-.item-card-body {
-    padding: var(--spacing-md);
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    display: grid;
-    gap: var(--spacing-sm);
-}
-
-.item-actions {
-    display: flex;
-    gap: var(--spacing-sm);
-}
-
 .edit-btn-small,
 .delete-btn-small,
 .reset-pass-btn-small {
-    background: none;
-    border: none;
-    color: var(--text-main, #ffffff);
+    background: var(--surface-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-muted);
     cursor: pointer;
-    font-size: 1rem;
-    padding: 0.25rem;
-    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .edit-btn-small:hover {
-    color: var(--warning);
-    transform: scale(1.15);
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+    transform: translateY(-1px);
 }
 
 .delete-btn-small:hover {
-    color: var(--danger);
-    transform: scale(1.15);
+    background: rgba(248, 113, 113, 0.12);
+    border-color: rgba(248, 113, 113, 0.3);
+    color: #f87171;
+    transform: translateY(-1px);
 }
 
 .reset-pass-btn-small:hover {
-    color: var(--accent);
-    transform: scale(1.15);
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.3);
+    color: #fbbf24;
+    transform: translateY(-1px);
 }
 
 .loading-state,
@@ -1096,3 +1163,152 @@ body {
     background: linear-gradient(135deg, #9333ea 0%, #4f46e5 100%);
     box-shadow: 0 6px 16px rgba(168, 85, 247, 0.35);
 }
+
+/* ==========================================================================
+   🔗 CASE SCENARIO BADGES & LINKING UI (ADMIN)
+   ========================================================================== */
+.case-badge-admin {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #818cf8;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 6px;
+    cursor: default;
+}
+
+.case-badge-admin i {
+    font-size: 0.7rem;
+}
+
+.case-order-pill {
+    background: rgba(99, 102, 241, 0.25);
+    color: #c7d2fe;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.case-link-modal-list {
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    padding: 8px;
+    margin-top: 10px;
+    background: var(--bg-secondary, rgba(0, 0, 0, 0.2));
+}
+
+.case-link-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg-primary, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+
+.case-link-item:last-child {
+    margin-bottom: 0;
+}
+
+.case-link-item-order {
+    width: 60px;
+    flex-shrink: 0;
+}
+
+.case-link-item-text {
+    flex: 1;
+    font-size: 0.82rem;
+    color: var(--text-main, #e2e8f0);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- Estilos para Casuísticas y Tarjetas de Casos --- */
+.case-item-card {
+    border-left: 4px solid #6366f1 !important;
+    background: var(--surface, #18181b);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.case-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.case-code-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+.case-count-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+}
+
+.case-asset-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+}
+
+.topic-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    background: var(--bg-tertiary, #27272a);
+    color: var(--text-muted, #a1a1aa);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+/* Botón flotante para Encadenar en Caso */
+#bulk-link-case-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transition: all 0.2s ease;
+}
+
+#bulk-link-case-btn:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+    transform: translateY(-1px);
+}
+
+

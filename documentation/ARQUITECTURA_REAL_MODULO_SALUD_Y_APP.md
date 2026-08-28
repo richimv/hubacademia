@@ -39,9 +39,31 @@ CAPA                   WEB (hubacademia)                                  APP (H
 
 ## 2. 🗄️ Esquema de Base de Datos Real (Supabase / PostgreSQL)
 
-Las aplicaciones móviles de salud interactúan con las mismas tablas existentes en la base de datos sin alterar ni crear tablas ficticias:
+Las aplicaciones móviles de salud e interfaces web interactúan con las mismas tablas existentes en la base de datos sin alterar ni crear tablas ficticias:
 
-### 2.1 Tabla `question_bank` (Banco Maestro Clínico)
+### 2.0 Tabla `case_scenarios` (Viñetas Clínicas / Casos Complejos Compartidos con RLS)
+```sql
+CREATE TABLE public.case_scenarios (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code VARCHAR(50) NOT NULL UNIQUE,          -- 'CASO-MED-2026-01'
+    title VARCHAR(255),                        -- 'Paciente Politraumatizado en Shock'
+    description_text TEXT NOT NULL,            -- Historia clínica, anamnesis y examen físico común
+    image_url TEXT,                            -- EKG, Radiografía, TAC, Frotis (GCS/Supabase)
+    table_html TEXT,                           -- Laboratorio o analítica en tabla HTML
+    domain VARCHAR(50) NOT NULL DEFAULT 'medicine', -- 'medicine' | 'education'
+    target VARCHAR(50),                        -- 'ENAM', 'SERUMS', 'RESIDENTADO'
+    topic VARCHAR(100),                        -- Especialidad médica
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- RLS
+ALTER TABLE public.case_scenarios ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to case_scenarios" ON public.case_scenarios FOR SELECT USING (true);
+CREATE POLICY "Allow admin manage case_scenarios" ON public.case_scenarios FOR ALL TO authenticated USING (auth.jwt() ->> 'role' = 'service_role' OR auth.jwt() ->> 'email' IN (SELECT email FROM public.users WHERE role = 'admin')) WITH CHECK (auth.jwt() ->> 'role' = 'service_role' OR auth.jwt() ->> 'email' IN (SELECT email FROM public.users WHERE role = 'admin'));
+```
+
+### 2.1 Tabla `question_bank` (Banco Maestro Clínico & Encadenamiento de Viñetas)
 ```sql
 CREATE TABLE public.question_bank (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,12 +73,15 @@ CREATE TABLE public.question_bank (
     topic VARCHAR(100) NOT NULL,              -- 'Cardiología', 'Salud Pública', 'Pediatría'
     subtopic VARCHAR(255),                    -- 'Manejo del síndrome coronario agudo'
     difficulty VARCHAR(50) DEFAULT 'Intermedio',
-    question_text TEXT NOT NULL,              -- Caso clínico estructurado
-    options JSONB NOT NULL,                   -- ["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"]
+    question_text TEXT NOT NULL,              -- Pregunta clínica específica
+    options JSONB NOT NULL,                   -- ["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D", "Alternativa E"]
     correct_option_index INTEGER NOT NULL,    -- 0, 1, 2, 3 (o 4 en Residentado)
     explanation TEXT,                         -- Justificación clínica oficial basada en NTS / GPC / MINSA
     image_url TEXT,
     explanation_image_url TEXT,
+    visual_support_recommendation TEXT,
+    case_id UUID REFERENCES public.case_scenarios(id) ON DELETE SET NULL, -- Vínculo a la viñeta clínica común
+    case_order INTEGER DEFAULT 1,             -- Orden secuencial de la pregunta en el caso (1, 2, 3...)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 ```

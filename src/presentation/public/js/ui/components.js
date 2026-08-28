@@ -463,41 +463,73 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         displayName = item.title || (item.code ? `Caso: ${item.code}` : '') || (cleanCaseText ? (cleanCaseText.length > 80 ? cleanCaseText.substring(0, 80) + '...' : cleanCaseText) : 'Casuística sin título');
     } else if (type === 'question') {
         const cleanText = item.question_text ? item.question_text.replace(/<[^>]*>/g, '') : '';
-        displayName = cleanText ? (cleanText.substring(0, 80) + '...') : 'Pregunta sin texto';
+        displayName = cleanText ? (cleanText.length > 110 ? cleanText.substring(0, 107) + '...' : cleanText) : 'Pregunta sin texto';
     }
 
     const resetPasswordButton = showResetPassword ? `<button class="reset-pass-btn-small" data-id="${item.id}" title="Restablecer Contraseña"><i class="fas fa-key"></i></button>` : '';
 
-    // NUEVO: Mostrar badge de área para carreras de forma más limpia
+    // =========================================================================
+    // 🏷️ BADGES SYSTEM (Refinado, alto contraste y consistente con Dual-Theme)
+    // =========================================================================
     let areaBadge = '';
     if (type === 'career' && item.area) {
-        areaBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; color: var(--text-muted); display:inline-block; margin-top:0.25rem;">${item.area}</span>`;
+        areaBadge = `
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">
+                <span class="admin-badge admin-badge-indigo">
+                    ${item.area}
+                </span>
+            </div>
+        `;
+    } else if (type === 'course') {
+        const codeBadge = item.code ? `<span class="admin-badge admin-badge-green">${item.code}</span>` : '';
+        const careerBadge = item.career_name ? `<span class="admin-badge admin-badge-muted">${item.career_name}</span>` : '';
+        if (codeBadge || careerBadge) {
+            areaBadge = `
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">
+                    ${codeBadge}
+                    ${careerBadge}
+                </div>
+            `;
+        }
+    } else if (type === 'topic') {
+        const courseBadge = item.course_name ? `<span class="admin-badge admin-badge-cyan">${item.course_name}</span>` : '';
+        if (courseBadge) {
+            areaBadge = `<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">${courseBadge}</div>`;
+        }
     } else if (type === 'question') {
-        const domainText = item.domain?.toUpperCase() || '';
-        const targetText = item.target || 'General';
-        const topicText = item.topic ? ` | ${item.topic}` : '';
-        const baseBadge = `<span class="area-badge" style="font-size: 0.7rem; background: var(--primary-light, rgba(59, 130, 246, 0.15)); padding: 2px 8px; border-radius: 4px; color: var(--text-dark, #60a5fa); display:inline-block;">${domainText} | ${targetText}${topicText}</span>`;
+        const isMedicine = item.domain === 'medicine';
+        const isEducation = item.domain === 'education';
+        const domainClass = isMedicine ? 'admin-badge-green' : 'admin-badge-blue';
+        const domainLabel = isMedicine ? 'SALUD' : isEducation ? 'EDUCACIÓN' : (item.domain?.toUpperCase() || 'GENERAL');
+
+        const baseBadge = `<span class="admin-badge ${domainClass}">${domainLabel} • ${item.target || 'General'}</span>`;
         
+        let topicBadge = '';
+        if (item.topic) {
+            topicBadge = `<span class="admin-badge admin-badge-muted">${item.topic}</span>`;
+        }
+
         let caseBadge = '';
         if (item.case_id) {
             const caseCode = item.case_code || 'CASO';
             const caseOrder = item.case_order ? `Preg. #${item.case_order}` : '';
             const caseTitle = item.case_title ? ` - ${item.case_title}` : '';
-            caseBadge = `<span class="area-badge case-linked-badge" style="font-size: 0.7rem; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); padding: 2px 8px; border-radius: 4px; color: #a5b4fc; font-weight: 700; display:inline-block;" title="Vinculada al Caso: ${caseCode}${caseTitle}"><i class="fas fa-layer-group"></i> ${caseCode} ${caseOrder ? `• ${caseOrder}` : ''}</span>`;
+            caseBadge = `<span class="admin-badge admin-badge-indigo case-linked-badge" title="Vinculada al Caso: ${caseCode}${caseTitle}">${caseCode} ${caseOrder ? `• ${caseOrder}` : ''}</span>`;
         }
 
         areaBadge = `
             <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">
                 ${baseBadge}
+                ${topicBadge}
                 ${caseBadge}
             </div>
         `;
     } else if (type === 'case') {
-        const codeBadge = item.code ? `<span class="area-badge" style="font-size: 0.7rem; background: rgba(99, 102, 241, 0.15); padding: 2px 8px; border-radius: 4px; color: #818cf8; font-weight: 700; display:inline-block; border: 1px solid rgba(99, 102, 241, 0.3);">${item.code}</span>` : '';
+        const codeBadge = item.code ? `<span class="admin-badge admin-badge-indigo">${item.code}</span>` : '';
         const domainText = item.domain === 'medicine' ? 'Salud Profesional' : item.domain === 'education' ? 'Educación Docente' : (item.domain ? item.domain.toUpperCase() : 'General');
-        const domainBadge = `<span class="area-badge" style="font-size: 0.7rem; background: rgba(59, 130, 246, 0.15); padding: 2px 8px; border-radius: 4px; color: #60a5fa; display:inline-block;">${domainText}</span>`;
+        const domainBadge = `<span class="admin-badge admin-badge-blue">${domainText}</span>`;
         const qCount = parseInt(item.questions_count, 10) || 0;
-        const questionsBadge = `<span class="area-badge" style="font-size: 0.7rem; background: rgba(16, 185, 129, 0.15); padding: 2px 8px; border-radius: 4px; color: #34d399; display:inline-block;"><i class="fas fa-link"></i> ${qCount} ${qCount === 1 ? 'pregunta vinculada' : 'preguntas vinculadas'}</span>`;
+        const questionsBadge = `<span class="admin-badge admin-badge-green">${qCount} ${qCount === 1 ? 'pregunta vinculada' : 'preguntas vinculadas'}</span>`;
         
         areaBadge = `
             <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">
@@ -511,25 +543,8 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         const status = (item.subscriptionStatus || item.subscription_status || 'inactive').toUpperCase();
         const expiresAt = item.subscriptionExpiresAt || item.subscription_expires_at;
 
-        let tierColor = 'var(--text-muted)';
-        let tierBg = 'var(--bg-secondary)';
-        if (tier === 'BASIC') {
-            tierColor = '#3b82f6';
-            tierBg = 'rgba(59, 130, 246, 0.15)';
-        } else if (tier === 'ADVANCED') {
-            tierColor = '#a78bfa';
-            tierBg = 'rgba(139, 92, 246, 0.15)';
-        }
-
-        let statusColor = '#94a3b8';
-        let statusBg = 'rgba(148, 163, 184, 0.1)';
-        if (status === 'ACTIVE') {
-            statusColor = '#10b981';
-            statusBg = 'rgba(16, 185, 129, 0.15)';
-        } else if (status === 'EXPIRED') {
-            statusColor = '#ef4444';
-            statusBg = 'rgba(239, 68, 68, 0.15)';
-        }
+        const tierClass = tier === 'BASIC' ? 'admin-badge-blue' : tier === 'ADVANCED' ? 'admin-badge-purple' : 'admin-badge-muted';
+        const statusClass = status === 'ACTIVE' ? 'admin-badge-green' : status === 'EXPIRED' ? 'admin-badge-danger' : 'admin-badge-muted';
 
         let dateStr = '';
         if (expiresAt) {
@@ -543,14 +558,14 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
 
         areaBadge = `
             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.35rem; align-items: center;">
-                <span class="subscription-tier-badge" style="font-size: 0.7rem; font-weight: 700; background: ${tierBg}; padding: 2px 8px; border-radius: 4px; color: ${tierColor}; display:inline-block; border: 1px solid rgba(${tier === 'ADVANCED' ? '139, 92, 246' : tier === 'BASIC' ? '59, 130, 246' : '148, 163, 184'}, 0.25);">${tier}</span>
-                <span class="subscription-status-badge" style="font-size: 0.7rem; font-weight: 700; background: ${statusBg}; padding: 2px 8px; border-radius: 4px; color: ${statusColor}; display:inline-block; border: 1px solid rgba(${status === 'ACTIVE' ? '16, 185, 129' : '239, 68, 68'}, 0.25);">${status}</span>
-                ${dateStr ? `<span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">${dateStr}</span>` : ''}
+                <span class="admin-badge ${tierClass}">${tier}</span>
+                <span class="admin-badge ${statusClass}">${status}</span>
+                ${dateStr ? `<span class="admin-badge admin-badge-muted">${dateStr}</span>` : ''}
             </div>
         `;
     }
 
-    // Subtitulo formateado
+    // Subtítulo formateado
     if (type === 'case' && !subtitle && item.description_text) {
         const cleanDesc = item.description_text.replace(/<[^>]*>/g, '').trim();
         if (cleanDesc && cleanDesc !== displayName) {
@@ -559,7 +574,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     } else if (type === 'question' && !subtitle && item.case_title) {
         subtitle = `<span style="color: #94a3b8; font-size: 0.8rem;"><i class="fas fa-layer-group" style="color:#818cf8; margin-right: 4px;"></i>Caso: <strong>${item.case_title}</strong></span>`;
     }
-    const subtitleHTML = subtitle ? `<div class="item-subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">${subtitle}</div>` : '';
+    const subtitleHTML = subtitle ? `<div class="item-subtitle" style="font-size: 0.82rem; color: #94a3b8; margin-top: 0.25rem;">${subtitle}</div>` : '';
 
     const resourceTypeAttr = type === 'book' ? `data-resource-type="${item.resource_type || item.type || 'other'}"` : `data-resource-type="${type}"`;
 
@@ -594,7 +609,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
                 ${thumbnailHTML}
                 
                 <div class="item-card-content">
-                    <h3 style="font-size: 1rem; margin-bottom: 4px;">${displayName}</h3>
+                    <h3 style="font-size: 0.95rem; font-weight: 600; margin: 0 0 2px 0;">${displayName}</h3>
                     ${areaBadge}
                     ${subtitleHTML}
                 </div>
@@ -629,7 +644,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
                 <input type="checkbox" class="admin-item-checkbox" data-type="${type}" data-id="${item.id}" title="Seleccionar para acción masiva">
             </div>
             <div class="item-card-content">
-                <h3 style="font-size: 1rem; margin-bottom: 4px;">${displayName}</h3>
+                <h3 style="font-size: 0.95rem; font-weight: 600; margin: 0 0 2px 0; line-height: 1.4;">${displayName}</h3>
                 ${areaBadge}
                 ${subtitleHTML}
             </div>

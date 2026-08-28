@@ -220,7 +220,10 @@ class QuizTutor {
                     examContext: this.questionContext?.examContext || window.__quizState?.context || 'MEDICINA',
                     difficulty: this.questionContext?.difficulty || window.__quizState?.difficulty || '',
                     areas: this.questionContext?.areas || window.__quizState?.areas || [],
-                    mode: this.questionContext?.mode || window.__quizState?.mode || ''
+                    mode: this.questionContext?.mode || window.__quizState?.mode || '',
+                    caseDescription: this.questionContext?.caseDescription || '',
+                    caseTitle: this.questionContext?.caseTitle || '',
+                    caseOrder: this.questionContext?.caseOrder || null
                 }
             };
 

@@ -120,7 +120,18 @@ Durante la auditoría técnica de la capa de presentación:
 * **Cobertura de Pruebas Unitarias:** Integración de la suite `tests/unit/app.test.js` garantizando la estabilidad de las funciones modulares del orquestador global.
 
 ---
+
+## 9. Inicialización Resiliente de Singleton Supabase y Desbloqueo de Eventos (v2.3)
+
+Durante la auditoría de estabilidad de inicio de sesión en entornos locales y productivos:
+* **Singleton Factory `window.getSupabaseClient()`**: Debido a que `config.js` se carga en el `<head>` mientras que la librería `@supabase/supabase-js` se carga al final del `<body>`, se implementó la función global `window.getSupabaseClient()` en `config.js`, `sessionManager.js`, `authApiService.js` y `app.js`. Esto garantiza que `window.supabaseClient` se inicialice perezosamente y nunca quede como `undefined` cuando se instancian los manejadores de sesión.
+* **Filtro de Throttling Reactivo**: Se separó el throttling pasivo (ráfagas de `INITIAL_SESSION`) del inicio de sesión explícito del usuario (`SIGNED_IN`), evitando que clics o selecciones de Google One Tap en los primeros segundos de carga fueran descartados por colisión de marca de tiempo.
+* **Exención de Rate Limiting en Localhost**: Se configuró `authLimiter` y `globalApiLimiter` con la regla de exclusión (`skip`) para `localhost`, `127.0.0.1` y `::1`, permitiendo iteraciones de prueba y desarrollo continuo sin bloqueos 429.
+* **Independencia Total de Aplicaciones Móviles**: Las aplicaciones móviles (`HubDocenteApp` y `HubSaludApp`) operan directamente con Supabase Auth SDK y consumen la API REST mediante JWTs Bearer verificados, por lo que no sufrieron ninguna afectación.
+
+---
 **Elaborado por**: Antigravity AI - Expert Senior Team.  
-**Versión**: 2.2 - Depuración de Código Huérfano y Optimización Modular de app.js.
+**Versión**: 2.3 - Inicialización Resiliente de Supabase Singleton y Blindaje Multiplataforma.
+
 
 

@@ -3,12 +3,11 @@ class AdminManager {
         // Almacenes de datos
         this.allCareers = [];
         this.allCourses = []; // Cursos base (de courses.json)
-
-        this.allStudents = []; // NUEVO: Almacén para alumnos
-        this.allTopics = []; // Nuevo almacén para temas
-        this.allBooks = []; // Nuevo almacén para libros
-        this.allQuestions = []; // NUEVO: Almacén para preguntas
-
+        this.allStudents = []; // Almacén para alumnos
+        this.allTopics = []; // Almacén para temas
+        this.allBooks = []; // Almacén para libros
+        this.allQuestions = []; // Almacén para preguntas
+        this.allCases = []; // Almacén para casuísticas
 
         // Estado de ordenamiento por pestaña
         this.tabSortState = {
@@ -18,7 +17,7 @@ class AdminManager {
             'tab-topics': 'date-desc',
             'tab-books': 'date-desc',
             'tab-questions': 'date-desc',
-
+            'tab-cases': 'date-desc'
         };
         this.previewTimer = null; // Debounce para previsualización
 
@@ -30,21 +29,25 @@ class AdminManager {
             'tab-topics': { search: '', filter: 'all' },
             'tab-books': { search: '', filter: 'all' },
             'tab-questions': { search: '', filter: 'all' },
-
+            'tab-cases': { search: '', filter: 'all' }
         };
         this.selectedIds = [];
         this.selectedType = '';
         this.lastCheckedCheckbox = null;
 
-        // Estado de Preguntas (NUEVO)
+        // Estado de Preguntas y Casuísticas
         this.currentQuestionDomain = 'all';
         this.currentQuestionSearch = '';
         this.searchTimeout = null;
 
+        this.currentCaseDomain = 'all';
+        this.currentCaseSearch = '';
+        this.caseSearchTimeout = null;
+
         // Elementos del DOM
         this.genericModal = document.getElementById('generic-modal');
         this.genericForm = document.getElementById('generic-form');
-        this.sectionsContainer = document.getElementById('admin-main-container'); // O el contenedor donde quieras mostrar errores críticos
+        this.sectionsContainer = document.getElementById('admin-main-container');
 
 
         // SOLUCIÓN: Bindeo explícito para el nuevo manejador de eventos.
@@ -362,16 +365,16 @@ class AdminManager {
         const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
         if (activeBtn) activeBtn.classList.add('active');
 
-        // 2. Gestionar visibilidad de contenedores (Forzar display para evitar errores CSS)
+        // 2. Gestionar visibilidad de contenedores usando clases CSS
         document.querySelectorAll('.tab-content').forEach(c => {
             c.classList.remove('active');
-            c.style.display = 'none'; // ✅ FORZAR OCULTO
+            c.style.display = ''; // Limpiar inline styles
         });
 
         const activeContainer = document.getElementById(tabId);
         if (activeContainer) {
             activeContainer.classList.add('active');
-            activeContainer.style.display = 'block'; // ✅ FORZAR VISIBLE
+            activeContainer.style.display = ''; // Dejar que CSS .tab-content.active maneje display: flex
         }
 
         // 3. Renderizar bajo demanda la pestaña activa
@@ -388,6 +391,7 @@ class AdminManager {
         else if (activeTab === 'tab-books') this.displayBooks();
         else if (activeTab === 'tab-careers') this.displayCareers();
         else if (activeTab === 'tab-questions') this.displayQuestions();
+        else if (activeTab === 'tab-cases') this.displayCases();
     }
 
     // ELIMINADO: _getAuthHeaders ahora es manejado automáticamente por NetworkService
@@ -442,16 +446,23 @@ class AdminManager {
                 questionsUrl.searchParams.append('search', this.currentQuestionSearch);
             }
 
-            const [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes] = await Promise.all([
+            const casesUrl = new URL(`${window.AppConfig.API_URL}/api/admin/cases`);
+            casesUrl.searchParams.append('domain', this.currentCaseDomain || 'all');
+            if (this.currentCaseSearch) {
+                casesUrl.searchParams.append('search', this.currentCaseSearch);
+            }
+
+            const [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes, casesRes] = await Promise.all([
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/careers`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/students`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/topics`),
                 window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?includeHidden=true`),
-                window.NetworkService.fetch(questionsUrl.toString())
+                window.NetworkService.fetch(questionsUrl.toString()),
+                window.NetworkService.fetch(casesUrl.toString())
             ]);
 
-            for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes]) {
+            for (const res of [careersRes, coursesRes, studentsRes, topicsRes, booksRes, questionsRes, casesRes]) {
                 if (!res.ok) throw new Error(`Failed to fetch ${res.url}: ${res.statusText}`);
             }
 
@@ -461,13 +472,16 @@ class AdminManager {
             this.allTopics = await topicsRes.json();
             this.allBooks = await booksRes.json();
             this.allQuestions = await questionsRes.json();
+            this.allCases = await casesRes.json();
 
             // ✅ OPTIMIZACIÓN: Renderizar de forma reactiva y limpia solo la pestaña activa
             this.renderCurrentTab();
 
         } catch (error) {
             console.error('❌ Error cargando datos iniciales:', error);
-            this.sectionsContainer.innerHTML = `<p class="error-state">Error al cargar los datos del panel. Asegúrate de que el servidor esté funcionando y las rutas API estén correctas.</p>`;
+            if (this.sectionsContainer) {
+                this.sectionsContainer.innerHTML = `<p class="error-state">Error al cargar los datos del panel. Asegúrate de que el servidor esté funcionando y las rutas API estén correctas.</p>`;
+            }
         }
     }
 
@@ -499,58 +513,49 @@ class AdminManager {
 
     displayCareers() {
         const container = document.getElementById('tab-careers');
-        // APLICAR ORDENAMIENTO
         const sortedCareers = this.sortData(this.allCareers, 'career', 'tab-careers');
         const itemsHTML = sortedCareers.map(career => createAdminItemCardHTML(career, 'career')).join('');
         const content = this._createTabHeaderHTML('career', 'Añadir Carrera', 'tab-careers') +
-            (itemsHTML || '<p class="empty-state">No hay carreras.</p>');
+            `<div class="items-list-container">${itemsHTML || '<p class="empty-state">No hay carreras.</p>'}</div>`;
         container.innerHTML = content;
         this.applySearchFilterForTab('tab-careers');
     }
 
     displayBaseCourses() {
         const container = document.getElementById('tab-courses');
-        // APLICAR ORDENAMIENTO
         const sortedCourses = this.sortData(this.allCourses, 'course', 'tab-courses');
         const itemsHTML = sortedCourses.map(course => createAdminItemCardHTML(course, 'course', course.code ? `(${course.code})` : '')).join('');
         const content = this._createTabHeaderHTML('course', 'Añadir Curso', 'tab-courses') +
-            (itemsHTML || '<p class="empty-state">No hay cursos base.</p>');
+            `<div class="items-list-container">${itemsHTML || '<p class="empty-state">No hay cursos base.</p>'}</div>`;
         container.innerHTML = content;
         this.applySearchFilterForTab('tab-courses');
     }
 
-
-
-    // NUEVO: Método para mostrar alumnos
     displayStudents() {
         const container = document.getElementById('tab-students');
-        // APLICAR ORDENAMIENTO
         const sortedStudents = this.sortData(this.allStudents, 'student', 'tab-students');
         const itemsHTML = sortedStudents.map(student => createAdminItemCardHTML(student, 'student', `(${student.email})`, true)).join('');
         const content = this._createTabHeaderHTML('student', 'Añadir Alumno', 'tab-students') +
-            (itemsHTML || '<p class="empty-state">No hay alumnos.</p>');
+            `<div class="items-list-container">${itemsHTML || '<p class="empty-state">No hay alumnos.</p>'}</div>`;
         container.innerHTML = content;
         this.applySearchFilterForTab('tab-students');
     }
 
     displayTopics() {
         const container = document.getElementById('tab-topics');
-        // APLICAR ORDENAMIENTO
         const sortedTopics = this.sortData(this.allTopics, 'topic', 'tab-topics');
         const itemsHTML = sortedTopics.map(topic => createAdminItemCardHTML(topic, 'topic')).join('');
         const content = this._createTabHeaderHTML('topic', 'Añadir Tema', 'tab-topics') +
-            (itemsHTML || '<p class="empty-state">No hay temas.</p>');
+            `<div class="items-list-container">${itemsHTML || '<p class="empty-state">No hay temas.</p>'}</div>`;
         container.innerHTML = content;
         this.applySearchFilterForTab('tab-topics');
     }
 
     displayBooks() {
         const container = document.getElementById('tab-books');
-        // APLICAR ORDENAMIENTO
         const sortedBooks = this.sortData(this.allBooks, 'book', 'tab-books');
         const itemsHTML = sortedBooks.map(book => createAdminItemCardHTML(book, 'book', `by ${book.author}`)).join('');
 
-        // CUSTOM HEADER with Drive Sync Button
         const headerHTML = `
             <div class="tab-header-controls">
                 <div class="search-sort-wrapper">
@@ -584,23 +589,21 @@ class AdminManager {
             </div>
         `;
 
-        container.innerHTML = headerHTML + (itemsHTML || '<p class="empty-state">No hay recursos.</p>');
+        container.innerHTML = headerHTML + `<div class="items-list-container">${itemsHTML || '<p class="empty-state">No hay recursos.</p>'}</div>`;
         this.applySearchFilterForTab('tab-books');
     }
 
     displayQuestions() {
         const container = document.getElementById('tab-questions');
-        // APLICAR ORDENAMIENTO (Local sobre lo que ya tenemos cargado)
         const sortedQuestions = this.sortData(this.allQuestions, 'question', 'tab-questions');
         const itemsHTML = sortedQuestions.map(q => createAdminItemCardHTML(q, 'question')).join('');
 
         const domains = [
             { id: 'all', name: 'Todos los Dominios' },
-            { id: 'medicine', name: 'Medicina' },
-            { id: 'education', name: 'Educación' }
+            { id: 'medicine', name: 'Medicina / Salud' },
+            { id: 'education', name: 'Educación Docente' }
         ];
 
-        // Custom header with Bulk Import button and DOMAIN SELECTOR
         const content = `
             <div class="tab-header-controls">
                 <div class="search-sort-wrapper">
@@ -612,7 +615,7 @@ class AdminManager {
                             oninput="window.adminManager.handleDynamicSearch(this.value)">
                     </div>
 
-                    <select class="form-input" style="width: auto; min-width: 180px;" 
+                    <select class="admin-type-filter" 
                         onchange="window.adminManager.handleDomainChange(this.value)">
                         ${domains.map(d => `<option value="${d.id}" ${this.currentQuestionDomain === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
                     </select>
@@ -630,39 +633,30 @@ class AdminManager {
                         <i class="fas fa-robot"></i> <span class="hide-mobile">Generar IA</span>
                     </button>
                     <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')">
-                        <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva</span>
+                        <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva Pregunta</span>
                     </button>
                 </div>
             </div>
-            <div id="questions-list-container">
+            <div id="questions-list-container" class="items-list-container">
                 ${itemsHTML || '<p class="empty-state">No hay preguntas que coincidan con los filtros.</p>'}
             </div>
         `;
         container.innerHTML = content;
     }
 
-    /**
-     * NUEVO: Manejador de cambio de dominio
-     */
     handleDomainChange(domain) {
         this.currentQuestionDomain = domain;
         this.refreshQuestions();
     }
 
-    /**
-     * NUEVO: Manejador de búsqueda dinámica con Debounce
-     */
     handleDynamicSearch(val) {
         this.currentQuestionSearch = val;
         clearTimeout(this.searchTimeout);
         this.searchTimeout = setTimeout(() => {
             this.refreshQuestions();
-        }, 500); // 500ms de espera
+        }, 400);
     }
 
-    /**
-     * NUEVO: Refresca el listado de preguntas desde el servidor con filtros aplicados.
-     */
     async refreshQuestions() {
         const listContainer = document.getElementById('questions-list-container');
         const counter = document.getElementById('questions-counter');
@@ -681,7 +675,6 @@ class AdminManager {
 
             this.allQuestions = await res.json();
 
-            // Volver a renderizar solo la lista y el contador para evitar perder el foco del input
             const sortedQuestions = this.sortData(this.allQuestions, 'question', 'tab-questions');
             const itemsHTML = sortedQuestions.map(q => createAdminItemCardHTML(q, 'question')).join('');
 
@@ -695,6 +688,106 @@ class AdminManager {
 
         } catch (error) {
             console.error('❌ Error refrescando preguntas:', error);
+            if (listContainer) listContainer.style.opacity = '1';
+        }
+    }
+
+    // =========================================================================
+    // 🔗 CASUÍSTICAS / CASOS CLÍNICOS (TAB-CASES)
+    // =========================================================================
+    displayCases() {
+        const container = document.getElementById('tab-cases');
+        if (!container) return;
+
+        const sortedCases = this.sortData(this.allCases, 'case', 'tab-cases');
+        const itemsHTML = sortedCases.map(c => createAdminItemCardHTML(c, 'case')).join('');
+
+        const domains = [
+            { id: 'all', name: 'Todos los Dominios' },
+            { id: 'medicine', name: 'Salud Profesional' },
+            { id: 'education', name: 'Educación Docente' }
+        ];
+
+        const content = `
+            <div class="tab-header-controls">
+                <div class="search-sort-wrapper">
+                    <div class="search-bar-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="admin-search-input-dynamic" 
+                            placeholder="Buscar casuísticas por código, título o texto..." 
+                            value="${this.escapeHtml(this.currentCaseSearch)}"
+                            oninput="window.adminManager.handleDynamicCaseSearch(this.value)">
+                    </div>
+
+                    <select class="admin-type-filter" 
+                        onchange="window.adminManager.handleCaseDomainChange(this.value)">
+                        ${domains.map(d => `<option value="${d.id}" ${this.currentCaseDomain === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
+                    </select>
+
+                    <div id="cases-counter" style="font-size: 0.85rem; color: var(--text-muted); margin-left: 10px;">
+                        Mostrando ${this.allCases.length} casuísticas
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('case')">
+                        <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva Casuística</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="cases-list-container" class="items-list-container">
+                ${itemsHTML || '<p class="empty-state">No hay casuísticas registradas que coincidan con los filtros.</p>'}
+            </div>
+        `;
+        container.innerHTML = content;
+    }
+
+    handleCaseDomainChange(domain) {
+        this.currentCaseDomain = domain;
+        this.refreshCases();
+    }
+
+    handleDynamicCaseSearch(val) {
+        this.currentCaseSearch = val;
+        clearTimeout(this.caseSearchTimeout);
+        this.caseSearchTimeout = setTimeout(() => {
+            this.refreshCases();
+        }, 400);
+    }
+
+    async refreshCases() {
+        const listContainer = document.getElementById('cases-list-container');
+        const counter = document.getElementById('cases-counter');
+
+        if (listContainer) listContainer.style.opacity = '0.5';
+
+        try {
+            const url = new URL(`${window.AppConfig.API_URL}/api/admin/cases`);
+            url.searchParams.append('domain', this.currentCaseDomain || 'all');
+            if (this.currentCaseSearch) {
+                url.searchParams.append('search', this.currentCaseSearch);
+            }
+
+            const res = await window.NetworkService.fetch(url.toString());
+            if (!res.ok) throw new Error('Failed to fetch cases');
+
+            this.allCases = await res.json();
+
+            const sortedCases = this.sortData(this.allCases, 'case', 'tab-cases');
+            const itemsHTML = sortedCases.map(c => createAdminItemCardHTML(c, 'case')).join('');
+
+            if (listContainer) {
+                listContainer.innerHTML = itemsHTML || '<p class="empty-state">No hay casuísticas registradas que coincidan con los filtros.</p>';
+                listContainer.style.opacity = '1';
+            }
+            if (counter) {
+                counter.innerText = `Mostrando ${this.allCases.length} casuísticas`;
+            }
+
+        } catch (error) {
+            console.error('❌ Error refrescando casuísticas:', error);
+            if (listContainer) listContainer.style.opacity = '1';
         }
     }
 
@@ -759,7 +852,34 @@ class AdminManager {
                     { id: 'education', name: 'Educación' }
                 ];
 
+                const initialDomain = this.currentItem?.domain || 'medicine';
+                const initialFilteredCases = (this.allCases || []).filter(c => c.domain === initialDomain);
+
                 fieldsHTML = `
+                    <!-- Casuística Agrupada / Caso Clínico (Opcional) -->
+                    <fieldset style="border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <legend style="color: var(--text-secondary); font-size: 0.9em; padding: 0 5px;">
+                            Casuística Agrupada / Caso Clínico (Opcional)
+                        </legend>
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                            <div>
+                                <label class="form-label" for="generic-case-id">Vincular a Casuística Padre</label>
+                                <select id="generic-case-id" class="form-input">
+                                    <option value="">-- Pregunta Independiente (Sin caso) --</option>
+                                    ${initialFilteredCases.map(c => `
+                                        <option value="${c.id}" ${String(this.currentItem?.case_id) === String(c.id) ? 'selected' : ''}>
+                                            [${c.code}] ${this.escapeHtml(c.title || (c.description_text ? c.description_text.replace(/<[^>]*>/g, '').substring(0, 45) + '...' : c.code))}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label" for="generic-case-order">Orden en el Caso</label>
+                                <input type="number" id="generic-case-order" class="form-input" min="1" max="50" value="${this.currentItem?.case_order || 1}">
+                            </div>
+                        </div>
+                    </fieldset>
+
                     ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', this.formatPlainTextToHtml(this.currentItem?.question_text || ''), true)}
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         ${this.createSelect('generic-domain', 'Dominio (*)', domains, this.currentItem?.domain || 'medicine', false)}
@@ -884,7 +1004,50 @@ class AdminManager {
                 break;
             }
 
+            case 'case': {
+                title.textContent = id ? 'Editar Casuística / Caso Clínico' : 'Nueva Casuística / Caso Clínico';
+                if (id) this.currentItem = this.allCases.find(c => String(c.id) === String(id));
 
+                const domains = [
+                    { id: 'education', name: 'Educación Docente' },
+                    { id: 'medicine', name: 'Salud Profesional' }
+                ];
+
+                fieldsHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px;">
+                        ${this.createFormGroup('text', 'generic-code', 'Código Único (*)', this.currentItem?.code || '', true)}
+                        ${this.createFormGroup('text', 'generic-title', 'Título de la Casuística (Opcional)', this.currentItem?.title || '', false)}
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                        ${this.createSelect('generic-domain', 'Dominio (*)', domains, this.currentItem?.domain || 'education', false)}
+                        ${this.createFormGroup('text', 'generic-target', 'Examen / Target (Opcional)', this.currentItem?.target || '', false)}
+                    </div>
+                    <div style="margin-top: 10px;">
+                        ${this.createFormGroup('textarea', 'generic-description', 'Enunciado Común / Situación / Caso Clínico (*)', this.formatPlainTextToHtml(this.currentItem?.description_text || ''), false)}
+                    </div>
+                    <div style="margin-top: 10px;">
+                        ${this.createImageUploadGroup('generic-image', 'Imagen Adjunta (Opcional)', this.currentItem?.image_url || '')}
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    if (window.tinymce && window.tinymce.get('generic-description')) {
+                        window.tinymce.get('generic-description').remove();
+                    }
+                    if (window.tinymce) {
+                        window.tinymce.init({
+                            selector: '#generic-description',
+                            height: 240,
+                            menubar: false,
+                            plugins: 'lists link table code',
+                            toolbar: 'undo redo | bold italic underline | bullist numlist | table | code',
+                            skin: 'oxide-dark',
+                            content_css: 'dark'
+                        });
+                    }
+                }, 50);
+                break;
+            }
 
             case 'bulk-question':
                 title.textContent = '📦 Importación Inteligente de Preguntas';
@@ -2252,7 +2415,8 @@ class AdminManager {
 
         if (type === 'question') {
             url = id ? `${window.AppConfig.API_URL}/api/admin/question/${id}` : `${window.AppConfig.API_URL}/api/admin/question`;
-
+        } else if (type === 'case') {
+            url = id ? `${window.AppConfig.API_URL}/api/admin/cases/${id}` : `${window.AppConfig.API_URL}/api/admin/cases`;
         }
 
         let body = {};
@@ -2413,6 +2577,8 @@ class AdminManager {
                 case 'question':
                     const qTarget = document.getElementById('generic-target').value;
                     const qCareerEl = document.getElementById('generic-career');
+                    const caseIdVal = document.getElementById('generic-case-id')?.value || null;
+                    const caseOrderVal = document.getElementById('generic-case-order')?.value ? parseInt(document.getElementById('generic-case-order').value, 10) : null;
                     const qData = {
                         question_text: document.getElementById('generic-question-text').value,
                         domain: document.getElementById('generic-domain').value,
@@ -2422,6 +2588,8 @@ class AdminManager {
                         career: (qTarget !== 'N/A') ? (document.getElementById('generic-career')?.value || null) : null,
                         topic: document.getElementById('generic-topic').value,
                         subtopic: document.getElementById('generic-subtopic')?.value || null,
+                        case_id: caseIdVal || null,
+                        case_order: caseIdVal ? (caseOrderVal || 1) : null,
                         difficulty: this.currentItem?.difficulty || 'Senior',
                         options: (qTarget === 'RESIDENTADO')
                             ? [
@@ -2708,6 +2876,40 @@ class AdminManager {
                 
 
 
+                case 'case': {
+                    const descVal = window.tinymce && window.tinymce.get('generic-description')
+                        ? window.tinymce.get('generic-description').getContent()
+                        : (document.getElementById('generic-description')?.value || '');
+
+                    const rawTitle = document.getElementById('generic-title')?.value?.trim() || '';
+                    const caseCode = document.getElementById('generic-code')?.value?.trim() || '';
+                    const cleanDesc = descVal.replace(/<[^>]*>/g, '').trim();
+                    const caseTitle = rawTitle && rawTitle !== '' ? rawTitle : (cleanDesc.length > 50 ? cleanDesc.substring(0, 47) + '...' : cleanDesc || caseCode);
+
+                    const caseFormData = new FormData();
+                    caseFormData.append('code', caseCode);
+                    caseFormData.append('title', caseTitle);
+                    caseFormData.append('domain', document.getElementById('generic-domain')?.value || 'education');
+                    caseFormData.append('target', document.getElementById('generic-target')?.value || '');
+                    caseFormData.append('description_text', descVal);
+
+                    const fileInput = document.getElementById('generic-image-file');
+                    const urlInput = document.getElementById('generic-image-url');
+                    const deleteImgFlag = document.getElementById('generic-image-delete-flag');
+
+                    if (fileInput && fileInput.files[0]) {
+                        caseFormData.append('caseImage', fileInput.files[0]);
+                    } else if (urlInput && urlInput.value.trim()) {
+                        caseFormData.append('image_url', urlInput.value.trim());
+                    } else if (method === 'PUT' && deleteImgFlag && deleteImgFlag.value === 'true') {
+                        caseFormData.append('deleteImage', 'true');
+                        caseFormData.append('image_url', '');
+                    }
+
+                    body = caseFormData;
+                    break;
+                }
+
                 default:
                     throw new Error(`Tipo de entidad no manejado: ${type}`);
             }
@@ -2762,7 +2964,8 @@ class AdminManager {
             let url = `${window.AppConfig.API_URL}/api/${type}s/${id}`;
             if (type === 'question') {
                 url = `${window.AppConfig.API_URL}/api/admin/question/${id}`;
-
+            } else if (type === 'case') {
+                url = `${window.AppConfig.API_URL}/api/admin/cases/${id}`;
             }
 
             const response = await window.NetworkService.fetch(url, {
@@ -2853,7 +3056,7 @@ class AdminManager {
         const showSort = tabId !== 'tab-sections';
 
         const sortSelectHTML = showSort ? `
-                        <select class="tab-sort-select" data-tab="${tabId}" style="padding: 0 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; height: 40px; font-size: 0.9rem;">
+                        <select class="tab-sort-select" data-tab="${tabId}">
                             <option value="date-desc" ${currentSort === 'date-desc' ? 'selected' : ''}>📅 Más Recientes</option>
                             <option value="date-asc" ${currentSort === 'date-asc' ? 'selected' : ''}>📅 Más Antiguos</option>
                             <option value="alpha-asc" ${currentSort === 'alpha-asc' ? 'selected' : ''}>🔤 A-Z</option>
@@ -3162,6 +3365,20 @@ class AdminManager {
         } else {
             this.handleQuestionTargetChange('N/A');
         }
+
+        const caseSelect = document.getElementById('generic-case-id');
+        if (caseSelect) {
+            const currentCaseId = caseSelect.value || this.currentItem?.case_id || '';
+            const filteredCases = (this.allCases || []).filter(c => !domain || domain === 'all' || c.domain === domain);
+            caseSelect.innerHTML = `
+                <option value="">-- Pregunta Independiente (Sin caso) --</option>
+                ${filteredCases.map(c => `
+                    <option value="${c.id}" ${String(currentCaseId) === String(c.id) ? 'selected' : ''}>
+                        [${c.code}] ${this.escapeHtml(c.title || (c.description_text ? c.description_text.replace(/<[^>]*>/g, '').substring(0, 45) + '...' : c.code))}
+                    </option>
+                `).join('')}
+            `;
+        }
     }
 
     handleQuestionTargetChange(target) {
@@ -3291,7 +3508,7 @@ class AdminManager {
         }
 
         // Apply visual display filters
-        const items = tabContent.querySelectorAll('.admin-item-card, .career-card');
+        const items = tabContent.querySelectorAll('.admin-item-card, .item-card');
         items.forEach(item => {
             const textContent = item.textContent.toLowerCase();
             const matchesText = textContent.includes(state.search.toLowerCase());

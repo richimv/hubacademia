@@ -70,7 +70,7 @@ describe('Quiz Batch Loading Flow (Contract & Integrity)', () => {
                     configType: 'custom'
                 }),
                 'usr-123',
-                5,
+                10,
                 'advanced',
                 ['q1', 'q2', 'q3', 'q4', 'q5']
             );
@@ -106,7 +106,7 @@ describe('Quiz Batch Loading Flow (Contract & Integrity)', () => {
                     configType: 'custom'
                 }),
                 'usr-123',
-                5,
+                10,
                 'advanced',
                 ['q1', 'q2', 'q3', 'q4', 'q5']
             );

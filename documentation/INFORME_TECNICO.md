@@ -4,6 +4,36 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 
 ---
 
+### 🟢 [2026-08-27] - Optimización de Casuísticas Anidadas, Limpieza Visual de Quiz y Unificación en Web y Apps Móviles
+
+- **🏷️ Depuración y Limpieza del Renderizado de Casuísticas Anidadas ([quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js) & [quiz.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/quiz.html)):**
+  - Se eliminaron los títulos y códigos redundantes de grupo (ej: `CASO-INICIAL-03`) que sobrecargaban la cabecera del reactivo.
+  - Se estandarizó el distintivo superior a **"Casuística Anidada"** (Educación) y **"Viñeta Clínica Compartida"** (Salud / Medicina) con el indicador secuencial correlativo (`Pregunta #1`).
+  - Se condicionó el contenedor superior para que solo se despliegue si existe contenido enriquecido real (`description_text`, imágenes o tablas). Si las preguntas están asociadas solo para ordenamiento correlativo, se oculta el contenedor vacío.
+
+- **🔍 Corrección de Fuga de Interfaz en Revisión de Examen ([components.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/components.js) & [quiz.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/quiz.css)):**
+  - Se corrigió el error por el cual el contenedor flotante superior del quiz persistía visible en la pantalla de revisión (`showExamReview`).
+  - Se integró la casuística anidada / viñeta clínica directamente dentro de cada tarjeta de corrección individual (`createReviewCardHTML`), permitiendo al alumno revisar el enunciado del caso, su imagen o tabla de apoyo, la pregunta y el sustento explicativo de forma autónoma y cohesionada.
+
+- **📱 Sincronización Total con Apps Móviles ([HubDocenteApp](file:///c:/Users/ricar/Downloads/PROYECTOS/HubDocenteApp) & [HubSaludApp](file:///c:/Users/ricar/Downloads/PROYECTOS/HubSaludApp)):**
+  - En `QuestionCard.tsx` (Docente) y `ClinicalQuestionCard.tsx` (Salud), se implementó la misma simplificación visual: distintivo limpio (`Casuística Anidada` / `Viñeta Clínica Compartida`), eliminación de títulos redundantes y renderizado condicional.
+  - En `results.tsx` de ambas aplicaciones, se integró el bloque `.reviewCaseBox` para una visualización fluida de casuísticas y viñetas en la corrección detallada.
+
+- **⏮️ Navegación Bidireccional Segura y Re-visualización de Preguntas Respondidas ([quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js), [quiz.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/quiz.html) & [quiz.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/quiz.css)):**
+  - Se implementó el botón **"Anterior"** (`btn-prev-premium`) en la web, permitiendo al alumno retroceder en cualquier momento a revisar preguntas ya contestadas en todas las modalidades (10q, 20q y 100q).
+  - Al regresar a una pregunta anterior, la interfaz se reanima con el estado exacto marcado (bloqueando clics para evitar re-marcado o trampas), mostrando el sustento explicativo y permitiendo volver a avanzar con "Siguiente".
+  - Se definieron de forma limpia y modular los controladores `handlePreviousQuestion()` y `handleNextQuestion()`, garantizando la transición fluida y la correcta culminación del simulacro.
+  - Se corrigió la visibilidad del botón **"Consultar Tutor IA"** en Modo Estudio (20qs), asegurando la remoción de la clase `.hidden` al responder.
+  - Se estructuró un footer de acciones armónico y 100% responsivo: `[⬅️ Anterior]` a la izquierda, `[🤖 Tutor IA]` al centro y `[Siguiente ➡️ / Finalizar 🏁]` a la derecha, garantizando persistencia segura sin alterar KPIs ni estadísticas.
+  - Cobertura de pruebas unitarias agregada en `tests/unit/quizNavigation.test.js` (**191/191 tests exitosos**).
+
+- **📊 Corrección y Precisión en KPIs de Evolución Cronológica y Distribución por Áreas ([simulator-dashboard.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/simulator-dashboard.html), [simulator-dash.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js), [docenteController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/docenteController.js), [medicoController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/medicoController.js), [docenteRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/docenteRepository.js) y [medicoRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/medicoRepository.js)):**
+  - **Evolución Cronológica de Puntajes:** Se corrigió la segregación de series en `scores10`, `scores20` y `scoresReal`. Anteriormente, la condición `total_questions !== 10 && total_questions !== 20` catalogaba exámenes de 12 reactivos (o intentos parciales) erróneamente como "Simulacros Reales", generando puntos amarillos fantasmas. Se actualizaron los filtros a rangos estrictos (`<= 15` para Rápido, `16..49` para Estudio y `>= 50` exclusivamente para Simulacros Reales).
+  - **Distribución por Áreas (Gráfico Circular Donut):** Se renombró el KPI de *"Distribución por Bloques"* a **"Distribución por Áreas"** para unificar el vocabulario entre la web y las aplicaciones móviles. El gráfico circular ahora lee y renderiza directamente los `topics` (áreas temáticas) reales almacenados en la base de datos a partir de `radar_data`, asegurando coherencia al 100% con el gráfico inferior de *Dominio por Áreas*.
+  - **Pruebas Unitarias Agregadas:** Suite `tests/unit/kpiEvolutionAndDoughnut.test.js` (**30/30 suites Jest PASSED, 202/202 tests exitosos**).
+
+---
+
 ### 🟢 [2026-08-26] - Corrección de GoTrueClient Singleton y Eliminación de Scripts Duplicados en Frontend
 
 - **🔐 Supabase GoTrueClient Singleton Estricto ([config.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/config.js#L85-L92)):**

@@ -48,6 +48,16 @@ router.get('/admin/questions', auth, adminOnly, adminController.getAllQuestions)
 router.post('/admin/question', auth, adminOnly, upload.fields([{ name: 'questionImage', maxCount: 1 }, { name: 'explanationImage', maxCount: 1 }]), adminController.addSingleQuestion);
 router.put('/admin/question/:id', auth, adminOnly, upload.fields([{ name: 'questionImage', maxCount: 1 }, { name: 'explanationImage', maxCount: 1 }]), adminController.updateSingleQuestion);
 router.delete('/admin/question/:id', auth, adminOnly, adminController.deleteSingleQuestion);
+
+// ✅ NUEVO: Gestión de Casuísticas Agrupadas (Case Scenarios)
+router.get('/admin/cases', auth, adminOnly, adminController.getAllCases);
+router.get('/admin/cases/:id', auth, adminOnly, adminController.getCaseById);
+router.post('/admin/cases', auth, adminOnly, upload.single('coverImage'), adminController.createCase);
+router.put('/admin/cases/:id', auth, adminOnly, upload.single('coverImage'), adminController.updateCase);
+router.delete('/admin/cases/:id', auth, adminOnly, adminController.deleteCase);
+router.post('/admin/cases/link', auth, adminOnly, adminController.linkQuestionsToCase);
+router.delete('/admin/cases/unlink/:questionId', auth, adminOnly, adminController.unlinkQuestionFromCase);
+
 router.post('/admin/drive/sync-folder', auth, adminOnly, adminController.syncDriveFolder); // ✅ NUEVO: Scanner de Drive
 router.post('/admin/upload-editor', auth, adminOnly, upload.single('file'), adminController.uploadEditorImage); // ✅ NUEVO: Carga para TinyMCE
 router.delete('/admin/bulk-delete', auth, adminOnly, adminController.bulkDelete); // ✅ NUEVO: Borrado Masivo

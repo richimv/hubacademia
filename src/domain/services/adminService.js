@@ -235,8 +235,8 @@ class AdminService {
         };
     }
 
-    async getAllQuestions(domain, search) {
-        return await adminRepository.getAllQuestions(domain, search);
+    async getAllQuestions(domain, search, page = 1, limit = 100, caseFilter = 'all') {
+        return await adminRepository.getAllQuestions(domain, search, page, limit, caseFilter);
     }
 
     async addSingleQuestion(data) {
@@ -332,6 +332,34 @@ class AdminService {
 
     async saveBulkQuestionBankAdmin(questionsArray) {
         return await adminRepository.saveBulkQuestionBankAdmin(questionsArray);
+    }
+
+    async getAllCases(domain, search, page, limit) {
+        return await adminRepository.getAllCases(domain, search, page, limit);
+    }
+
+    async getCaseById(id) {
+        return await adminRepository.getCaseById(id);
+    }
+
+    async createCase(data) {
+        return await adminRepository.createCase(data);
+    }
+
+    async updateCase(id, data) {
+        return await adminRepository.updateCase(id, data);
+    }
+
+    async deleteCase(id) {
+        return await adminRepository.deleteCase(id);
+    }
+
+    async linkQuestionsToCase(caseId, questionIdsWithOrder) {
+        return await adminRepository.linkQuestionsToCase(caseId, questionIdsWithOrder);
+    }
+
+    async unlinkQuestionFromCase(questionId) {
+        return await adminRepository.unlinkQuestionFromCase(questionId);
     }
 }
 

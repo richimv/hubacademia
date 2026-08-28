@@ -78,6 +78,20 @@ El panel detecta el contexto y ajusta los formularios automáticamente:
 *   **Paginación Eficiente:** `getAllQuestions` soporta los parámetros `page` y `limit` para evitar transferencias innecesarias de payloads pesados.
 *   **Índices Compuestos:** Búsquedas optimizadas mediante `idx_question_bank_created_at`, `idx_question_bank_domain_topic_sub` y `idx_question_bank_career`.
 
+### 3.4 Gestión de Casuísticas Agrupadas y Encadenamiento de Preguntas (Agosto 2026)
+*   **Concepto de Casuística (Case Scenario):** Permite agrupar reactivos del examen oficial MINEDU / MINSA donde varias preguntas se presentan de forma consecutiva o comparten un contexto común.
+*   **Enunciado y Título 100% Opcionales:** Si el docente desea colocar el enunciado dentro de cada pregunta individual o simplemente necesita encadenar y ordenar preguntas correlativas en el examen sin mostrar una tarjeta de enunciado superior, los campos `Texto de la Situación` y `Título` son completamente **opcionales** tanto en frontend como en backend.
+*   **Integración Completa con TinyMCE 6:** El campo de situación del caso cuenta con el editor profesional **TinyMCE** en modo oscuro, permitiendo:
+    1.  **Tablas Visuales:** Creación de tablas complejas y pegado directo desde Microsoft Word o Excel (`Ctrl+V`), eliminando la necesidad de textareas HTML manuales.
+    2.  **Imágenes y Gráficos:** Carga automática y pegado de imágenes en el cuerpo del texto con almacenamiento seguro en Google Cloud Storage (GCS).
+*   **Tabla `case_scenarios` (Seguridad RLS):** Almacena `id`, `code` (único autogenerado si no se ingresa), `title`, `description_text` (opcional), `image_url`, `table_html`, `domain`, `target`, `topic`.
+*   **Encadenamiento Visual desde el Panel:**
+    1.  El administrador selecciona 2 o más preguntas desde los checkboxes de la pestaña *Preguntas*.
+    2.  Aparece el botón flotante **"🔗 Encadenar en Caso (# seleccionadas)"**.
+    3.  Se abre el modal `link-case` donde se puede asignar o crear un caso y definir el orden relativo de cada pregunta (`case_order`: 1, 2, 3...).
+    4.  Al guardar, las preguntas quedan vinculadas a `case_id` de forma atómica en una transacción PostgreSQL.
+*   **Clustering Contiguo en Simulacros:** Los simulacros solicitan preguntas en lotes de 10. Si una pregunta pertenece a una casuística, el repositorio agrupa y trae todas sus preguntas hermanas juntas de manera contigua y ordenada, respetando la secuencia del caso.
+
 ---
 
 ## 4. 🎓 Módulo de Carreras y Cursos
@@ -154,6 +168,13 @@ Para acelerar la curaduría y administración de recursos, se incorporaron contr
     *   El buscador y los filtros de tipo y ordenamiento se almacenan en el estado global (`this.searchState` y `this.tabSortState`).
     *   Al guardar cambios tras editar, añadir nuevos ítems o refrescar la base de datos, el buscador ya no se borra. La vista se vuelve a filtrar de forma automática conservando las consultas de búsqueda y las selecciones de tipo/ordenamiento que el administrador tenía configuradas previamente.
 
+## 9. 🎨 Sistema Visual Dual-Theme y Badges Semánticos de Alto Contraste (Agosto 2026)
+Para asegurar legibilidad óptima tanto en **Modo Oscuro (Dark Matte)** como en **Modo Claro (Light Slate)**:
+*   **Contraste y Nitidez en Modo Claro:** Se rediseñó el sistema de etiquetas (*pills*) `.admin-badge`, reemplazando colores pastel pálidos por tokens de contraste estricto (azul cobalto `#1d4ed8`, esmeralda `#047857`, índigo profundo `#4338ca`, violeta `#6d28d9`, cian `#0e7490` y carmesí `#b91c1c` en fondo claro; y sus variantes luminosas `#60a5fa`, `#34d399`, `#a5b4fc`, `#c084fc`, `#67e8f9` y `#f87171` en fondo oscuro).
+*   **Diseño Tipográfico Limpio (Sin Sobrecarga de Iconos):** Siguiendo `DESIGN_SYSTEM.md`, se eliminaron iconos innecesarios dentro de cada badge para reducir la fatiga visual.
+*   **Interruptor de Tema Global:** Integración de `#theme-toggle-btn` en el encabezado del panel de administración para alternar entre ambos modos al instante.
+*   **Jerarquía en el Modal de Preguntas:** El bloque de asignación de **Casuística Agrupada / Caso Clínico (Opcional)** se ubica en la parte superior del formulario antes del cuerpo de la pregunta, permitiendo definir primero el contexto padre y el orden del ítem (`case_order`) de manera lógica y natural.
+
 ---
 > [!IMPORTANT]
-> Esta guía ha sido verificada contra el código fuente al 25 de junio de 2026. Cualquier cambio en la lógica de `MLService.js` o `admin.js` debe ser reflejado aquí.
+> Esta guía ha sido verificada contra el código fuente al 27 de agosto de 2026. Toda la arquitectura se mantiene desacoplada y validada en la suite de 29 tests unitarios (194 tests pasando).

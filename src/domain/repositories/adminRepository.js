@@ -73,22 +73,33 @@ class AdminRepository {
         };
     }
 
-    async getAllQuestions(domain, search, page = 1, limit = 100) {
+    async getAllQuestions(domain, search, page = 1, limit = 100, caseFilter = 'all') {
         let query = `
-            SELECT id, question_text, domain, target, career, topic, subtopic, difficulty, created_at, options, correct_option_index as correct_answer, explanation, explanation_image_url, image_url, visual_support_recommendation
-            FROM question_bank 
+            SELECT qb.id, qb.question_text, qb.domain, qb.target, qb.career, qb.topic, qb.subtopic, 
+                   qb.difficulty, qb.created_at, qb.options, qb.correct_option_index as correct_answer, 
+                   qb.explanation, qb.explanation_image_url, qb.image_url, qb.visual_support_recommendation,
+                   qb.case_id, qb.case_order,
+                   cs.code as case_code, cs.title as case_title, cs.description_text as case_description
+            FROM question_bank qb
+            LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
         `;
         const params = [];
         const conditions = [];
 
         if (domain && domain !== 'all') {
             params.push(domain);
-            conditions.push(`domain = $${params.length}`);
+            conditions.push(`qb.domain = $${params.length}`);
         }
 
         if (search) {
             params.push(`%${search}%`);
-            conditions.push(`(question_text ILIKE $${params.length} OR topic ILIKE $${params.length} OR subtopic ILIKE $${params.length})`);
+            conditions.push(`(qb.question_text ILIKE $${params.length} OR qb.topic ILIKE $${params.length} OR qb.subtopic ILIKE $${params.length} OR cs.code ILIKE $${params.length} OR cs.title ILIKE $${params.length})`);
+        }
+
+        if (caseFilter === 'linked') {
+            conditions.push(`qb.case_id IS NOT NULL`);
+        } else if (caseFilter === 'unlinked') {
+            conditions.push(`qb.case_id IS NULL`);
         }
 
         if (conditions.length > 0) {
@@ -99,23 +110,201 @@ class AdminRepository {
         const safeOffset = Math.max((parseInt(page, 10) - 1) * safeLimit, 0);
 
         params.push(safeLimit, safeOffset);
-        query += ` ORDER BY created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`;
+        query += ` ORDER BY qb.created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`;
 
         const result = await db.query(query, params);
         return result.rows;
     }
 
-    async addQuestion({ question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation }) {
+    async getAllCases(domain = 'all', search = '', page = 1, limit = 100) {
+        let query = `
+            SELECT cs.id, cs.code, cs.title, cs.description_text, cs.image_url, cs.table_html,
+                   cs.domain, cs.target, cs.topic, cs.created_at, cs.updated_at,
+                   COUNT(qb.id)::int as questions_count
+            FROM case_scenarios cs
+            LEFT JOIN question_bank qb ON cs.id = qb.case_id
+        `;
+        const params = [];
+        const conditions = [];
+
+        if (domain && domain !== 'all') {
+            params.push(domain);
+            conditions.push(`cs.domain = $${params.length}`);
+        }
+
+        if (search) {
+            params.push(`%${search}%`);
+            conditions.push(`(cs.code ILIKE $${params.length} OR cs.title ILIKE $${params.length} OR cs.description_text ILIKE $${params.length} OR cs.topic ILIKE $${params.length})`);
+        }
+
+        if (conditions.length > 0) {
+            query += ` WHERE ` + conditions.join(' AND ');
+        }
+
+        query += ` GROUP BY cs.id `;
+
+        const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 1000);
+        const safeOffset = Math.max((parseInt(page, 10) - 1) * safeLimit, 0);
+
+        params.push(safeLimit, safeOffset);
+        query += ` ORDER BY cs.created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`;
+
+        const result = await db.query(query, params);
+        return result.rows;
+    }
+
+    async getCaseById(id) {
+        const caseQuery = `SELECT * FROM case_scenarios WHERE id = $1`;
+        const caseRes = await db.query(caseQuery, [id]);
+        if (caseRes.rows.length === 0) return null;
+
+        const caseData = caseRes.rows[0];
+        const questionsQuery = `
+            SELECT id, question_text, options, correct_option_index as correct_answer, 
+                   explanation, explanation_image_url, image_url, topic, subtopic, difficulty, 
+                   case_order, created_at
+            FROM question_bank 
+            WHERE case_id = $1
+            ORDER BY case_order ASC, created_at ASC
+        `;
+        const questionsRes = await db.query(questionsQuery, [id]);
+        caseData.questions = questionsRes.rows;
+        return caseData;
+    }
+
+    async createCase({ code, title, description_text = '', image_url = null, table_html = null, domain = 'education', target = 'N/A', topic = 'General' }) {
+        const query = `
+            INSERT INTO case_scenarios (code, title, description_text, image_url, table_html, domain, target, topic, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+            RETURNING *;
+        `;
+        const values = [
+            code ? String(code).trim() : null,
+            title ? decodeHtmlEntities(String(title).trim()) : '',
+            description_text ? decodeHtmlEntities(formatPlainTextToHtml(description_text)) : '',
+            image_url,
+            table_html,
+            domain || 'education',
+            target || 'N/A',
+            topic || 'General'
+        ];
+        const result = await db.query(query, values);
+        return result.rows[0];
+    }
+
+    async updateCase(id, data = {}) {
+        const fields = [];
+        const values = [];
+        let idx = 1;
+
+        if (data.code !== undefined) {
+            fields.push(`code = $${idx++}`);
+            values.push(data.code ? String(data.code).trim() : null);
+        }
+        if (data.title !== undefined) {
+            fields.push(`title = $${idx++}`);
+            values.push(data.title ? decodeHtmlEntities(String(data.title).trim()) : null);
+        }
+        if (data.description_text !== undefined) {
+            fields.push(`description_text = $${idx++}`);
+            values.push(data.description_text ? decodeHtmlEntities(formatPlainTextToHtml(data.description_text)) : '');
+        }
+        if (data.image_url !== undefined) {
+            fields.push(`image_url = $${idx++}`);
+            values.push(data.image_url);
+        }
+        if (data.table_html !== undefined) {
+            fields.push(`table_html = $${idx++}`);
+            values.push(data.table_html);
+        }
+        if (data.domain !== undefined) {
+            fields.push(`domain = $${idx++}`);
+            values.push(data.domain || 'education');
+        }
+        if (data.target !== undefined) {
+            fields.push(`target = $${idx++}`);
+            values.push(data.target || 'N/A');
+        }
+        if (data.topic !== undefined) {
+            fields.push(`topic = $${idx++}`);
+            values.push(data.topic || 'General');
+        }
+
+        if (fields.length === 0) {
+            const current = await this.getCaseById(id);
+            return current;
+        }
+
+        fields.push(`updated_at = NOW()`);
+        values.push(id);
+
+        const query = `
+            UPDATE case_scenarios 
+            SET ${fields.join(', ')}
+            WHERE id = $${idx}
+            RETURNING *;
+        `;
+        const result = await db.query(query, values);
+        return result.rows[0];
+    }
+
+    async deleteCase(id) {
+        // Questions will automatically have case_id set to NULL due to ON DELETE SET NULL
+        const result = await db.query('DELETE FROM case_scenarios WHERE id = $1 RETURNING id', [id]);
+        return result.rowCount > 0;
+    }
+
+    async linkQuestionsToCase(caseId, questionIdsWithOrder) {
+        if (!Array.isArray(questionIdsWithOrder) || questionIdsWithOrder.length === 0) {
+            return { success: false, updated: 0 };
+        }
+
+        const client = await db.pool().connect();
+        try {
+            await client.query('BEGIN');
+            let count = 0;
+            for (let i = 0; i < questionIdsWithOrder.length; i++) {
+                const item = questionIdsWithOrder[i];
+                const qId = typeof item === 'object' ? item.id : item;
+                const order = (typeof item === 'object' && item.order !== undefined) ? parseInt(item.order, 10) : (i + 1);
+                
+                await client.query(
+                    `UPDATE question_bank SET case_id = $1, case_order = $2 WHERE id = $3`,
+                    [caseId, order, qId]
+                );
+                count++;
+            }
+            await client.query('COMMIT');
+            return { success: true, updated: count };
+        } catch (e) {
+            await client.query('ROLLBACK');
+            throw e;
+        } finally {
+            client.release();
+        }
+    }
+
+    async unlinkQuestionFromCase(questionId) {
+        const result = await db.query(
+            `UPDATE question_bank SET case_id = NULL, case_order = 1 WHERE id = $1 RETURNING id`,
+            [questionId]
+        );
+        return result.rowCount > 0;
+    }
+
+    async addQuestion({ question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation, case_id = null, case_order = 1 }) {
         const insertQuery = `
             INSERT INTO question_bank (
                 question_text, options, correct_option_index, explanation, explanation_image_url, 
-                domain, target, career, topic, subtopic, difficulty, image_url, question_hash, visual_support_recommendation
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                domain, target, career, topic, subtopic, difficulty, image_url, question_hash, visual_support_recommendation,
+                case_id, case_order
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             RETURNING id;
         `;
         const values = [
             decodeHtmlEntities(question_text), JSON.stringify(options), correct_answer, decodeHtmlEntities(explanation), explanation_image_url,
-            domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation
+            domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation,
+            case_id || null, parseInt(case_order, 10) || 1
         ];
 
         const result = await db.query(insertQuery, values);
@@ -133,18 +322,20 @@ class AdminRepository {
         return rows[0] ? rows[0].count : 0;
     }
 
-    async updateQuestion(id, { question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation }) {
+    async updateQuestion(id, { question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation, case_id = null, case_order = 1 }) {
         const updateQuery = `
             UPDATE question_bank 
             SET question_text = $1, options = $2, correct_option_index = $3, 
                 explanation = $4, explanation_image_url = $5, domain = $6, 
-                target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13, visual_support_recommendation = $14
-            WHERE id = $15
+                target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13, visual_support_recommendation = $14,
+                case_id = $15, case_order = $16
+            WHERE id = $17
             RETURNING id;
         `;
         const values = [
             decodeHtmlEntities(question_text), JSON.stringify(options), correct_answer, decodeHtmlEntities(explanation), explanation_image_url,
-            domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation, id
+            domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation,
+            case_id || null, parseInt(case_order, 10) || 1, id
         ];
 
         const result = await db.query(updateQuery, values);
@@ -210,6 +401,39 @@ class AdminRepository {
                 return allowed.includes(v) ? v : 'medicine';
             };
 
+            // Pre-process case scenarios for questions that have case code/description
+            const caseCodeToIdMap = new Map();
+            const caseOrderCounters = new Map();
+
+            for (const q of questionsArray) {
+                const rawCaseCode = q.codigo_caso || q.case_code || q.code_caso || q.CODIGO_CASO || q.caso_codigo;
+                if (rawCaseCode && String(rawCaseCode).trim()) {
+                    const code = String(rawCaseCode).trim();
+                    if (!caseCodeToIdMap.has(code)) {
+                        const existingCaseRes = await client.query('SELECT id FROM case_scenarios WHERE code = $1', [code]);
+                        if (existingCaseRes.rows.length > 0) {
+                            caseCodeToIdMap.set(code, existingCaseRes.rows[0].id);
+                        } else {
+                            const desc = decodeHtmlEntities(formatPlainTextToHtml(String(q.enunciado_caso || q.case_description || q.descripcion_caso || q.ENUNCIADO_CASO || q.caso_enunciado || q.caso_descripcion || 'Situación del caso')));
+                            const title = q.titulo_caso || q.case_title || q.TITULO_CASO || code;
+                            const img = q.imagen_caso || q.case_image_url || q.IMAGEN_CASO || null;
+                            const table = q.tabla_caso || q.case_table_html || q.TABLA_CASO || null;
+                            const domain = canonicalDomain(q.domain);
+                            const target = q.target || 'N/A';
+                            const topic = q.topic || 'General';
+
+                            const insertCaseRes = await client.query(
+                                `INSERT INTO case_scenarios (code, title, description_text, image_url, table_html, domain, target, topic, created_at, updated_at)
+                                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+                                 RETURNING id`,
+                                [code, title, desc, img, table, domain, target, topic]
+                            );
+                            caseCodeToIdMap.set(code, insertCaseRes.rows[0].id);
+                        }
+                    }
+                }
+            }
+
             const BATCH_SIZE = 50;
             for (let i = 0; i < questionsArray.length; i += BATCH_SIZE) {
                 const batch = questionsArray.slice(i, i + BATCH_SIZE);
@@ -246,19 +470,38 @@ class AdminRepository {
                     const image_url = q.image_url || null;
                     const career = q.career || null;
 
+                    // Resolve case_id and case_order
+                    const rawCaseCode = q.codigo_caso || q.case_code || q.code_caso || q.CODIGO_CASO || q.caso_codigo;
+                    let case_id = q.case_id || null;
+                    if (rawCaseCode && caseCodeToIdMap.has(String(rawCaseCode).trim())) {
+                        case_id = caseCodeToIdMap.get(String(rawCaseCode).trim());
+                    }
+
+                    let case_order = 1;
+                    if (case_id) {
+                        const explicitOrder = q.orden_caso || q.case_order || q.ORDEN_CASO || q.caso_orden;
+                        if (explicitOrder !== undefined && !isNaN(parseInt(explicitOrder, 10))) {
+                            case_order = parseInt(explicitOrder, 10);
+                        } else {
+                            const currentCount = caseOrderCounters.get(case_id) || 0;
+                            case_order = currentCount + 1;
+                            caseOrderCounters.set(case_id, case_order);
+                        }
+                    }
+
                     const normTopic = String(exactTopic || 'General').toLowerCase().trim();
                     const normText = String(question_text || '').toLowerCase().trim();
-                    const rawStringForHash = `${normTopic}-${normText}-${optionsStr}`;
+                    const rawStringForHash = `${normTopic}-${normText}-${optionsStr}-${case_id || ''}-${case_order}`;
                     const hash = crypto.createHash('md5').update(rawStringForHash).digest('hex');
 
-                    const offset = idx * 14;
-                    valuePlaceholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14})`);
+                    const offset = idx * 16;
+                    valuePlaceholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15}, $${offset + 16})`);
 
-                    values.push(domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr, correct_option_index, explanation, explanation_image_url, image_url, hash, career, q.visual_support_recommendation || null);
+                    values.push(domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr, correct_option_index, explanation, explanation_image_url, image_url, hash, career, q.visual_support_recommendation || null, case_id, case_order);
                 });
 
                 const batchQuery = `
-                    INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career, visual_support_recommendation)
+                    INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career, visual_support_recommendation, case_id, case_order)
                     VALUES ${valuePlaceholders.join(', ')}
                     ON CONFLICT (question_hash) DO UPDATE SET 
                         target = EXCLUDED.target,
@@ -268,7 +511,9 @@ class AdminRepository {
                         options = EXCLUDED.options,
                         career = EXCLUDED.career,
                         subtopic = EXCLUDED.subtopic,
-                        visual_support_recommendation = EXCLUDED.visual_support_recommendation;
+                        visual_support_recommendation = EXCLUDED.visual_support_recommendation,
+                        case_id = EXCLUDED.case_id,
+                        case_order = EXCLUDED.case_order;
                 `;
 
                 await client.query(batchQuery, values);

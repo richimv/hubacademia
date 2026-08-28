@@ -39,9 +39,31 @@ CAPA                   WEB (hubacademia)                                  APP (H
 
 ## 2. 🗄️ Esquema de Base de Datos Real (Supabase / PostgreSQL)
 
-Las aplicaciones móviles interactúan con las mismas tablas existentes en la base de datos sin alterar ni crear tablas ficticias:
+Las aplicaciones móviles e interfaces web interactúan con las mismas tablas existentes en la base de datos sin alterar ni crear tablas ficticias:
 
-### 2.1 Tabla `question_bank` (Banco Maestro de Reactivos)
+### 2.0 Tabla `case_scenarios` (Situaciones / Casuísticas Compartidas con RLS)
+```sql
+CREATE TABLE public.case_scenarios (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code VARCHAR(50) NOT NULL UNIQUE,          -- 'CASO-PED-2026-01'
+    title VARCHAR(255),                        -- 'Situación Pedagógica: Evaluación Formativa'
+    description_text TEXT NOT NULL,            -- Enunciado común, texto de lectura o caso compartido
+    image_url TEXT,                            -- Imagen/gráfico común (GCS o Supabase Storage)
+    table_html TEXT,                           -- Cuadro comparativo o tabla en HTML estructurado
+    domain VARCHAR(50) NOT NULL DEFAULT 'education', -- 'education' | 'medicine'
+    target VARCHAR(50),                        -- 'ASCENSO', 'NOMBRAMIENTO', etc.
+    topic VARCHAR(100),                        -- Área de estudio común
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- RLS
+ALTER TABLE public.case_scenarios ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to case_scenarios" ON public.case_scenarios FOR SELECT USING (true);
+CREATE POLICY "Allow admin manage case_scenarios" ON public.case_scenarios FOR ALL TO authenticated USING (auth.jwt() ->> 'role' = 'service_role' OR auth.jwt() ->> 'email' IN (SELECT email FROM public.users WHERE role = 'admin')) WITH CHECK (auth.jwt() ->> 'role' = 'service_role' OR auth.jwt() ->> 'email' IN (SELECT email FROM public.users WHERE role = 'admin'));
+```
+
+### 2.1 Tabla `question_bank` (Banco Maestro de Reactivos & Encadenamiento de Casos)
 ```sql
 CREATE TABLE public.question_bank (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,12 +73,15 @@ CREATE TABLE public.question_bank (
     topic VARCHAR(100) NOT NULL,              -- 'Evaluación formativa y retroalimentación'
     subtopic VARCHAR(255),                    -- 'Niveles de retroalimentación reflexiva'
     difficulty VARCHAR(50) DEFAULT 'Senior',
-    question_text TEXT NOT NULL,              -- Enunciado de la casuística pedagógica
+    question_text TEXT NOT NULL,              -- Enunciado específico del reactivo
     options JSONB NOT NULL,                   -- ["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"]
     correct_option_index INTEGER NOT NULL,    -- 0, 1, 2 o 3
     explanation TEXT,                         -- Justificación pedagógica oficial CNEB / MINEDU
     image_url TEXT,
     explanation_image_url TEXT,
+    visual_support_recommendation TEXT,
+    case_id UUID REFERENCES public.case_scenarios(id) ON DELETE SET NULL, -- Vínculo al caso compartido
+    case_order INTEGER DEFAULT 1,             -- Orden secuencial dentro de la casuística (1, 2, 3...)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 ```

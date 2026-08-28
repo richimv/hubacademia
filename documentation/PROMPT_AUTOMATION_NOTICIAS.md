@@ -1,66 +1,168 @@
-# 📰 Configuración de Scheduled Task en Antigravity 2.0: Ingesta Diaria de Noticias (MINEDU & MINSA)
+# 📰 Configuración de Scheduled Tasks en Antigravity 2.0: Curaduría Diaria de Noticias y Normas (MINEDU & MINSA)
 
-## 📌 ¿Qué es esta tarea programada?
-En **Antigravity 2.0**, las **Scheduled Tasks** permiten programar un agente autónomo en segundo plano utilizando expresiones **Cron**. 
+## 📌 ¿Qué son estas tareas programadas?
+En **Antigravity 2.0**, las **Scheduled Tasks** permiten programar agentes autónomos especializados en segundo plano mediante expresiones **Cron**.
 
-Cada día a las **8:00 PM**, Antigravity 2.0 despierta al agente, el cual lee los portales de noticias oficiales de MINEDU y MINSA, extrae únicamente las noticias publicadas durante ese día, las verifica en tiempo real y ejecuta la ingesta en la base de datos de Hub Academia con `resource_type: "noticia"`.
+El sistema cuenta con **dos tareas programadas independientes y especializadas**:
+1. **Sector Salud (MINSA):** Monitorea noticias y normas legales sobre **SERUMS**, **ENAM** y **Residentado Médico**.
+2. **Sector Educación (MINEDU):** Monitorea noticias y normas legales sobre **Nombramiento**, **Ascenso Docente** y **Acceso a Cargos Directivos**.
+
+Ambas tareas aplican filtros temáticos estrictos, verificación de enlaces HTTP y política de cero inserciones forzadas (si no hay publicaciones del día sobre los temas clave, finalizan limpiamente sin alterar la base de datos).
 
 ---
 
-## ⚙️ Parámetros de Configuración en Antigravity 2.0
+## 🏥 TAREA 1: Sector Salud (MINSA - Noticias y Normas)
 
+### ⚙️ Parámetros de Configuración en Antigravity
 | Campo | Valor |
 | :--- | :--- |
-| **Nombre de la Tarea** | `Ingesta Diaria de Noticias Oficiales (MINEDU & MINSA)` |
-| **Cron Expression** | `0 20 * * *` *(Todos los días a las 8:00 PM)* |
-| **IsDaemon** | `true` *(Tarea independiente recurrente)* |
+| **Nombre de la Tarea** | `Curaduría Diaria de Noticias y Normas - Salud (MINSA)` |
+| **Cron Expression** | `0 20 * * *` *(Diario a las 8:00 PM)* |
+| **IsDaemon** | `true` |
 | **Herramientas requeridas** | `read_url_content`, `run_command` |
 
----
-
-## 🤖 Prompt Oficial para la Scheduled Task (Copiar en Antigravity 2.0)
-
+### 🤖 Prompt para Antigravity (Salud)
 ```text
-Actúa como un Curador Oficial de Noticias Gubernamentales para Hub Academia. Tu objetivo es descubrir e inyectar las NOTICIAS OFICIALES RECIENTES publicadas por el Ministerio de Educación (MINEDU) y el Ministerio de Salud (MINSA) durante el día de HOY.
+Actúa como un Curador Oficial de Noticias y Normas Legales de Salud para Hub Academia. Tu objetivo es descubrir, verificar e inyectar exclusivamente las NOTICIAS y NORMAS LEGALES publicadas por el Ministerio de Salud (MINSA) durante el día de HOY relacionadas estrictamente a: SERUMS, ENAM o RESIDENTADO.
 
 PASO 1: FUENTES OFICIALES Y NAVEGACIÓN
-Utiliza tu herramienta read_url_content para navegar en tiempo real a los siguientes portales de noticias:
-- Sector Educación (domain: "education"):
-  https://www.gob.pe/institucion/minedu/noticias
-- Sector Salud (domain: "medicine"):
-  https://www.gob.pe/institucion/minsa/noticias
+Utiliza tu herramienta read_url_content para navegar en tiempo real a las siguientes secciones oficiales del MINSA:
+1. Portal de Noticias:
+   https://www.gob.pe/institucion/minsa/noticias
+2. Normas y Documentos Legales:
+   https://www.gob.pe/institucion/minsa/normas-legales
 
-PASO 2: FILTRADO POR FECHA Y PREVENCIÓN DE ALUCINACIONES / DUPLICADOS
-- Extrae únicamente noticias publicadas en la fecha del día de hoy.
-- Si no hay noticias publicadas el día de hoy o si las URLs extraídas ya fueron procesadas en días anteriores, NO inventes ni forces ingestas. Detén el flujo respondiendo: "✅ Noticias al día para la fecha actual. No hay nuevas publicaciones para inyectar hoy."
-- Ingresa con read_url_content a cada enlace de noticia individual para confirmar que cargue el artículo completo (desecha 404 o Soft-404).
+PASO 2: FILTRADO ESTRICTO POR FECHA (HOY) Y TEMÁTICA OBLIGATORIA
+Aplica un doble filtro excluyente para cada publicación detectada:
+1. Filtro de Fecha: La noticia o norma legal debe haber sido publicada en la fecha de HOY.
+2. Filtro Temático Específico: La publicación (su título, descripción/sumilla o cuerpo principal) DEBE mencionar explícita y directamente al menos uno de los siguientes temas:
+   - SERUMS (Servicio Rural y Urbano Marginal de Salud / Evaluación Serums).
+   - ENAM (Examen Nacional de Medicina / ASPEFAM).
+   - RESIDENTADO (Residentado Médico / Conareme / Residentado en Salud).
+3. Regla de Descarte y Cero Ingesta Forzada:
+   - Si una noticia o norma NO trata sobre SERUMS, ENAM o Residentado, DESCÁRTALA de inmediato.
+   - Si para la fecha de hoy NO existe ninguna noticia ni norma que cumpla estos criterios, NO inventes datos, NO fuerces ingestas y finaliza la tarea respondiendo:
+     "✅ Monitoreo de Salud al día. No se registraron nuevas noticias ni normas sobre SERUMS, ENAM o Residentado para la fecha actual."
 
-PASO 3: CONSTRUCCIÓN DEL JSON DE INGESTA
-Para cada noticia real comprobada del día, genera el siguiente objeto JSON:
+PASO 3: VERIFICACIÓN DE URLS REALES
+- Para cada elemento filtrado que califique positivamente, ingresa con read_url_content a su enlace individual en gob.pe para confirmar que cargue el contenido completo y no sea un error 404 ni Soft-404.
+
+PASO 4: CONSTRUCCIÓN DEL ARRAY JSON DE INGESTA
+Para cada recurso válido del día, genera el siguiente objeto JSON con el tipo de recurso correspondiente:
+
+Para Noticias:
 {
   "title": "[Título exacto de la noticia oficial]",
-  "author": "MINEDU Perú" | "MINSA Perú",
-  "url": "[URL pública real comprobada]",
+  "author": "MINSA Perú",
+  "url": "[URL pública verificada de la noticia en gob.pe]",
   "resource_type": "noticia",
-  "domain": "education" | "medicine",
+  "domain": "medicine",
   "visible": true,
   "open_directly": true,
   "is_premium": false,
   "content_html": "<p>[Primer párrafo o resumen factual de 2 a 3 líneas del comunicado oficial.]</p>"
 }
 
-PASO 4: EJECUCIÓN DEL SCRIPT DE INGESTA EN BACKEND
-Ejecuta mediante run_command en el proyecto:
+Para Normas Legales (Resoluciones / Decretos / Directivas):
+{
+  "title": "[Título exacto de la norma, ej: Resolución Ministerial N.° ... / Resolución Directoral N.° ...]",
+  "author": "MINSA Perú",
+  "url": "[URL pública de la norma en gob.pe o enlace de descarga oficial]",
+  "resource_type": "norma",
+  "domain": "medicine",
+  "visible": true,
+  "open_directly": true,
+  "is_premium": false,
+  "content_html": "<p>[Sumilla o descripción exacta de la resolución/norma legal oficial.]</p>"
+}
+
+PASO 5: EJECUCIÓN DEL SCRIPT DE INGESTA EN BACKEND
+Si se encontraron recursos válidos del día, ejecuta mediante run_command en el directorio del proyecto:
 
 node scripts/autoIngestResources.js --data='[...ARRAY_JSON_ESCAPADO...]'
 
-El backend validará la URL y los campos, guardándolos en la tabla "resources" de PostgreSQL con resource_type = 'noticia' para destacarse automáticamente en el Widget de Novedades.
+El backend validará duplicados y guardará los registros en PostgreSQL destacándolos de inmediato en Hub Academia.
+```
+
+---
+
+## 🎓 TAREA 2: Sector Educación (MINEDU - Noticias y Normas)
+
+### ⚙️ Parámetros de Configuración en Antigravity
+| Campo | Valor |
+| :--- | :--- |
+| **Nombre de la Tarea** | `Curaduría Diaria de Noticias y Normas - Educación (MINEDU)` |
+| **Cron Expression** | `0 20 * * *` *(Diario a las 8:00 PM)* |
+| **IsDaemon** | `true` |
+| **Herramientas requeridas** | `read_url_content`, `run_command` |
+
+### 🤖 Prompt para Antigravity (Educación)
+```text
+Actúa como un Curador Oficial de Noticias y Normas Legales de Educación para Hub Academia. Tu objetivo es descubrir, verificar e inyectar exclusivamente las NOTICIAS y NORMAS LEGALES publicadas por el Ministerio de Educación (MINEDU) durante el día de HOY relacionadas estrictamente a: NOMBRAMIENTO, ASCENSO DOCENTE o ACCESO A CARGOS DIRECTIVOS.
+
+PASO 1: FUENTES OFICIALES Y NAVEGACIÓN
+Utiliza tu herramienta read_url_content para navegar en tiempo real a las siguientes secciones oficiales del MINEDU:
+1. Portal de Noticias:
+   https://www.gob.pe/institucion/minedu/noticias
+2. Normas y Documentos Legales:
+   https://www.gob.pe/institucion/minedu/normas-legales
+
+PASO 2: FILTRADO ESTRICTO POR FECHA (HOY) Y TEMÁTICA OBLIGATORIA
+Aplica un doble filtro excluyente para cada publicación detectada:
+1. Filtro de Fecha: La noticia o norma legal debe haber sido publicada en la fecha de HOY.
+2. Filtro Temático Específico: La publicación (su título, descripción/sumilla o cuerpo principal) DEBE mencionar explícita y directamente al menos uno de los siguientes temas magisteriales:
+   - NOMBRAMIENTO (Concurso de Nombramiento Docente / Ingreso a la Carrera Pública Magisterial).
+   - ASCENSO (Concurso de Ascenso Docente / Ascenso de Escala Magisterial).
+   - ACCESO A CARGOS DIRECTIVOS (Acceso a Cargos Directivos y de Especialistas / Directores de IIEE, UGEL o DRE).
+3. Regla de Descarte y Cero Ingesta Forzada:
+   - Si una noticia o norma NO trata sobre Nombramiento, Ascenso o Acceso a Cargos Directivos, DESCÁRTALA de inmediato.
+   - Si para la fecha de hoy NO existe ninguna noticia ni norma que cumpla estos criterios, NO inventes datos, NO fuerces ingestas y finaliza la tarea respondiendo:
+     "✅ Monitoreo de Educación al día. No se registraron nuevas noticias ni normas sobre Nombramiento, Ascenso o Cargos Directivos para la fecha actual."
+
+PASO 3: VERIFICACIÓN DE URLS REALES
+- Para cada elemento filtrado que califique positivamente, ingresa con read_url_content a su enlace individual en gob.pe para confirmar que cargue el contenido completo y no sea un error 404 ni Soft-404.
+
+PASO 4: CONSTRUCCIÓN DEL ARRAY JSON DE INGESTA
+Para cada recurso válido del día, genera el siguiente objeto JSON con el tipo de recurso correspondiente:
+
+Para Noticias:
+{
+  "title": "[Título exacto de la noticia oficial]",
+  "author": "MINEDU Perú",
+  "url": "[URL pública verificada de la noticia en gob.pe]",
+  "resource_type": "noticia",
+  "domain": "education",
+  "visible": true,
+  "open_directly": true,
+  "is_premium": false,
+  "content_html": "<p>[Primer párrafo o resumen factual de 2 a 3 líneas del comunicado oficial.]</p>"
+}
+
+Para Normas Legales (Resoluciones / Decretos / Directivas):
+{
+  "title": "[Título exacto de la norma, ej: Resolución Viceministerial N.° ... / Resolución Ministerial N.° ...]",
+  "author": "MINEDU Perú",
+  "url": "[URL pública de la norma en gob.pe o enlace de descarga oficial]",
+  "resource_type": "norma",
+  "domain": "education",
+  "visible": true,
+  "open_directly": true,
+  "is_premium": false,
+  "content_html": "<p>[Sumilla o descripción exacta de la resolución/norma legal oficial.]</p>"
+}
+
+PASO 5: EJECUCIÓN DEL SCRIPT DE INGESTA EN BACKEND
+Si se encontraron recursos válidos del día, ejecuta mediante run_command en el directorio del proyecto:
+
+node scripts/autoIngestResources.js --data='[...ARRAY_JSON_ESCAPADO...]'
+
+El backend validará duplicados y guardará los registros en PostgreSQL destacándolos de inmediato en Hub Academia.
 ```
 
 ---
 
 ## 🛠️ Notas de Base de Datos y Compatibilidad
-- Se ha aplicado la migración `src/infrastructure/database/migrations/add_noticia_resource_type.sql` para actualizar la restricción CHECK `check_resource_type` en la tabla `resources`, permitiendo el valor `'noticia'`.
+- Se soporta `resource_type: "noticia"` y `resource_type: "norma"` con validación automática de duplicados por URL en la tabla `resources`.
 
 ---
 

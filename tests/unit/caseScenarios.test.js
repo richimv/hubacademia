@@ -387,11 +387,73 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
 
             const html = createAdminItemCardHTML(questionItem, 'question');
             expect(html).not.toContain('undefined');
-            expect(html).toContain('EDUCATION | ASCENSO | Pedagogía');
+            expect(html).toContain('EDUCACIÓN • ASCENSO');
+            expect(html).toContain('Pedagogía');
             expect(html).toContain('CASO-EBR-01');
             expect(html).toContain('Preg. #1');
             expect(html).toContain('Caso: <strong>Situación de Aprendizaje al Aire Libre</strong>');
         });
     });
+
+    describe('Quiz Client Case Scenario Detection Logic', () => {
+        const isCaseQuestion = (q) => {
+            return Boolean(
+                (q.case_id && typeof q.case_id === 'string' && q.case_id.trim() !== '') ||
+                (q.case_code && typeof q.case_code === 'string' && q.case_code.trim() !== '') ||
+                (q.case_description && typeof q.case_description === 'string' && q.case_description.trim() !== '') ||
+                (q.case_image_url && typeof q.case_image_url === 'string' && q.case_image_url.trim() !== '') ||
+                (q.case_table_html && typeof q.case_table_html === 'string' && q.case_table_html.trim() !== '')
+            );
+        };
+
+        it('returns false for independent questions with no case_id or case attributes', () => {
+            const independentQuestion = {
+                id: 'q-independent-1',
+                question_text: '¿Cuál es la dosis recomendada de paracetamol?',
+                case_id: null,
+                case_order: null,
+                case_code: null,
+                case_title: null,
+                case_description: null,
+                case_image_url: null,
+                case_table_html: null
+            };
+
+            expect(isCaseQuestion(independentQuestion)).toBe(false);
+        });
+
+        it('returns true for questions belonging to a case even when case_description is null/empty', () => {
+            const linkedQuestionNoDesc = {
+                id: 'q-linked-1',
+                question_text: 'En relación a la paciente anterior, ¿cuál es la conducta inicial?',
+                case_id: 'case-uuid-777',
+                case_order: 2,
+                case_code: 'CASO-OBST-01',
+                case_title: null,
+                case_description: null,
+                case_image_url: null,
+                case_table_html: null
+            };
+
+            expect(isCaseQuestion(linkedQuestionNoDesc)).toBe(true);
+        });
+
+        it('returns true for questions with case_description present', () => {
+            const linkedQuestionWithDesc = {
+                id: 'q-linked-2',
+                question_text: '¿Qué principio pedagógico se evidencia?',
+                case_id: 'case-uuid-888',
+                case_order: 1,
+                case_code: 'CASO-CNEB-05',
+                case_title: 'Situación Significativa',
+                case_description: 'Rosa de 5 años durante el refrigerio...',
+                case_image_url: null,
+                case_table_html: null
+            };
+
+            expect(isCaseQuestion(linkedQuestionWithDesc)).toBe(true);
+        });
+    });
 });
+
 

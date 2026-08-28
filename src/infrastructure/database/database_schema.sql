@@ -192,6 +192,22 @@ CREATE TABLE IF NOT EXISTS public.payment_events (
     CONSTRAINT payment_events_status_check CHECK (status = ANY (ARRAY['processing'::text, 'processed'::text, 'failed'::text]))
 );
 
+-- Table: public.case_scenarios
+CREATE TABLE IF NOT EXISTS public.case_scenarios (
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    code VARCHAR(100) UNIQUE,
+    title VARCHAR(255),
+    description_text TEXT DEFAULT ''::text,
+    image_url TEXT,
+    table_html TEXT,
+    domain VARCHAR(50) DEFAULT 'education'::character varying,
+    target VARCHAR(100),
+    topic VARCHAR(100),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT case_scenarios_pkey PRIMARY KEY (id)
+);
+
 -- Table: public.question_bank
 CREATE TABLE IF NOT EXISTS public.question_bank (
     id UUID DEFAULT gen_random_uuid() NOT NULL,
@@ -212,6 +228,8 @@ CREATE TABLE IF NOT EXISTS public.question_bank (
     explanation_image_url TEXT,
     visual_support_recommendation TEXT,
     audio_text TEXT,
+    case_id UUID REFERENCES public.case_scenarios(id) ON DELETE SET NULL,
+    case_order INTEGER DEFAULT 1,
     CONSTRAINT question_bank_pkey PRIMARY KEY (id)
 );
 
@@ -585,6 +603,7 @@ END $$;
 -- 5. ROW LEVEL SECURITY (RLS) POLICIES
 -- ------------------------------------------------------------------------------
 ALTER TABLE public.careers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.case_scenarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.course_books ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.course_careers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.course_topics ENABLE ROW LEVEL SECURITY;
@@ -1067,6 +1086,8 @@ CREATE UNIQUE INDEX careers_career_id_key ON public.careers USING btree (career_
 CREATE INDEX idx_course_books_course ON public.course_books USING btree (course_id);
 CREATE INDEX idx_course_books_resource ON public.course_books USING btree (resource_id);
 CREATE UNIQUE INDEX courses_course_id_key ON public.courses USING btree (course_id);
+CREATE INDEX idx_case_scenarios_domain_target_topic ON public.case_scenarios USING btree (domain, target, topic);
+CREATE UNIQUE INDEX case_scenarios_code_key ON public.case_scenarios USING btree (code);
 CREATE INDEX idx_courses_name_trgm ON public.courses USING gin (f_unaccent((name)::text) gin_trgm_ops);
 CREATE INDEX idx_decks_public_category ON public.decks USING btree (is_public, category) WHERE (is_public = true);
 CREATE INDEX idx_decks_user_parent ON public.decks USING btree (user_id, parent_id, type);
@@ -1075,6 +1096,8 @@ CREATE INDEX idx_payment_events_user_id ON public.payment_events USING btree (us
 CREATE INDEX idx_qbank_domain ON public.question_bank USING btree (domain);
 CREATE INDEX idx_qbank_topic ON public.question_bank USING btree (topic);
 CREATE INDEX idx_question_bank_career ON public.question_bank USING btree (career);
+CREATE INDEX idx_question_bank_case_id ON public.question_bank USING btree (case_id);
+CREATE INDEX idx_question_bank_case_id_order ON public.question_bank USING btree (case_id, case_order ASC);
 CREATE INDEX idx_question_bank_created_at ON public.question_bank USING btree (created_at DESC);
 CREATE INDEX idx_question_bank_domain_topic_sub ON public.question_bank USING btree (domain, topic, subtopic);
 CREATE UNIQUE INDEX question_bank_question_hash_key ON public.question_bank USING btree (question_hash);

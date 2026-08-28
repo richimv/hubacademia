@@ -29,10 +29,11 @@ const SimulatorDash = (() => {
                 { value: 'RESIDENTADO', label: 'RESIDENTADO', disabled: true, subtitle: '(Beta / Trabajando)' }
             ],
             areas: [
-                { label: 'Ciencias Básicas', areas: ['Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308' },
-                { label: 'Las 4 Grandes', areas: ['Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6' },
-                { label: 'Especialidades Clínicas', areas: ['Cardiología', 'Gastroenterología', 'Neurología', 'Nefrología', 'Neumología', 'Endocrinología', 'Infectología', 'Reumatología', 'Traumatología'], bg: 'rgba(99, 102, 241, 0.7)', border: '#6366f1' },
-                { label: 'Bloque Temático Oficial', areas: ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981' }
+                { label: 'Bloque Temático Oficial', areas: ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981', conditionalTarget: 'SERUMS' },
+                { label: 'Grandes Especialidades Médicas', areas: ['Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6', conditionalTarget: 'ENAM' },
+                { label: 'Salud Pública y Ciencias Básicas', areas: ['Salud Pública y Gestión', 'Farmacología Clínica y Fisiopatología', 'Ética Médica y Deontología'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981', conditionalTarget: 'ENAM' },
+                { label: 'Medicina de Alta Complejidad', areas: ['Medicina Interna y Subespecialidades', 'Pediatría y Cuidados Intensivos', 'Cirugía General y Especializada', 'Gineco-Obstetricia de Alto Riesgo'], bg: 'rgba(245, 158, 11, 0.7)', border: '#f59e0b', conditionalTarget: 'RESIDENTADO' },
+                { label: 'Epidemiología y Bioestadística', areas: ['Epidemiología Clínica y MBE', 'Gestión Sanitaria y Auditoría Médica'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981', conditionalTarget: 'RESIDENTADO' }
             ]
         },
         'EDUCACION': {
@@ -222,9 +223,9 @@ const SimulatorDash = (() => {
 
         let colors = [];
         if (currentContext === 'MEDICINA') {
-            colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899'];
+            colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#14b8a6'];
         } else {
-            colors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981'];
+            colors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#ec4899', '#06b6d4', '#eab308'];
         }
 
         legend.innerHTML = '';
@@ -840,6 +841,8 @@ const SimulatorDash = (() => {
 
         if (!modal || !btnOpen || !areasGrid) return; // Guard for non-dashboard pages
 
+        const areasContainer = document.getElementById('areas-config-container');
+
         const updateConfigModeUI = () => {
             const selectedMode = document.querySelector('input[name="configMode"]:checked')?.value || 'default';
             
@@ -853,6 +856,16 @@ const SimulatorDash = (() => {
                     opt.classList.remove('active');
                 }
             });
+
+            // Control de visualización armónico (Oculto en examen oficial, desplegado en personalizada)
+            if (areasContainer) {
+                if (selectedMode === 'default') {
+                    areasContainer.style.display = 'none';
+                } else {
+                    areasContainer.style.display = 'block';
+                    areasContainer.style.animation = 'fadeInSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+                }
+            }
 
             const checkboxes = areasGrid.querySelectorAll('input[type="checkbox"]');
             if (selectedMode === 'default') {
@@ -883,6 +896,28 @@ const SimulatorDash = (() => {
             }
         };
 
+        const modeOptionLabels = document.querySelectorAll('.mode-toggle-option');
+        modeOptionLabels.forEach(label => {
+            label.addEventListener('click', (e) => {
+                const radio = label.querySelector('input[name="configMode"]');
+                if (radio) {
+                    const token = localStorage.getItem('authToken');
+                    if (!token && radio.value === 'custom') {
+                        e.preventDefault();
+                        const defaultRadio = document.querySelector('input[name="configMode"][value="default"]');
+                        if (defaultRadio) defaultRadio.checked = true;
+                        updateConfigModeUI();
+                        if (window.uiManager) {
+                            window.uiManager.showAuthPromptModal();
+                        }
+                        return;
+                    }
+                    radio.checked = true;
+                    updateConfigModeUI();
+                }
+            });
+        });
+
         const modeRadioButtons = document.getElementsByName('configMode');
         if (modeRadioButtons.length > 0) {
             modeRadioButtons.forEach(radio => {
@@ -911,22 +946,16 @@ const SimulatorDash = (() => {
             areasGrid.style.flexDirection = 'column';
             areasGrid.style.gap = '1rem';
 
-            // Filter groups: SERUMS shows only its group for non-MD careers, conditional groups depend on target
+            // Filter groups: conditional groups depend on target
             let groupsToRender = examAreasGrouped.filter(g => {
                 if (g.conditionalTarget && g.conditionalTarget !== target) return false;
-
-                // 🛡️ REGLA SERUMS: Solo se muestra el Bloque Temático Oficial para TODOS.
-                if (currentContext === 'MEDICINA' && target === 'SERUMS') {
-                    if (!g.label.includes('Bloque Temático') && !g.label.includes('Salud Pública')) return false;
-                }
-
                 return true;
             });
 
             groupsToRender.forEach(group => {
                 // Group header with a styled check/uncheck checkbox
                 const header = document.createElement('div');
-                const accentColor = currentContext === 'EDUCACION' ? '#f97316' : '#60a5fa';
+                const accentColor = currentContext === 'EDUCACION' ? '#3b82f6' : '#14b8a6';
                 header.style.cssText = `display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:${accentColor}; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; margin-top:0.25rem; padding-bottom:0.3rem; border-bottom:1px solid ${accentColor}26;`;
 
                 const headerLabel = document.createElement('label');
@@ -1595,28 +1624,16 @@ const SimulatorDash = (() => {
                 renderBarChart({}); // Empty state handler
             }
 
-            // --- Render Doughnut Chart (Topics/Groups KPI) ---
+            // --- Render Doughnut Chart (Distribución por Áreas / Topics Reales) ---
             const doughnutData = {};
-            if (currentContext === 'MEDICINA') {
-                const groupDTopics = ['Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'];
-                groupDTopics.forEach(t => doughnutData[t] = 0);
-                kpis.radar_data?.forEach(d => {
-                    let cleanSubject = d.subject || 'General';
-                    if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
-                    if (groupDTopics.includes(cleanSubject)) {
-                        doughnutData[cleanSubject] += parseInt(d.total || 0, 10);
-                    }
-                });            } else if (currentContext === 'EDUCACION') {
-                const eduTopics = ['Enfoques y Principios del CNEB', 'Teorías y Procesos del Aprendizaje', 'Planificación y Evaluación', 'Clima Escolar e Inclusión'];
-                eduTopics.forEach(t => doughnutData[t] = 0);
-                kpis.radar_data?.forEach(d => {
-                    let cleanSubject = d.subject || 'General';
-                    if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
-                    if (eduTopics.includes(cleanSubject)) {
-                        doughnutData[cleanSubject] += parseInt(d.total || 0, 10);
-                    }
-                });
-            }
+            kpis.radar_data?.forEach(d => {
+                let cleanSubject = d.subject || 'General';
+                if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
+                const totalCount = parseInt(d.total || 0, 10);
+                if (totalCount > 0) {
+                    doughnutData[cleanSubject] = (doughnutData[cleanSubject] || 0) + totalCount;
+                }
+            });
             renderDoughnutChart(doughnutData);
 
             // --- AI Diagnostic Strengths / Weaknesses ---

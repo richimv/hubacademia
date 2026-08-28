@@ -213,9 +213,9 @@ class MedicoController {
             const data = await medicoRepository.getQuizEvolution(userId, target, limit, timeFilter, areaList, career);
             const chartData = {
                 labels: data.map(d => d.date_label),
-                scores10: data.map(d => d.total_questions === 10 ? parseFloat(d.score_20).toFixed(1) : null),
-                scores20: data.map(d => d.total_questions === 20 ? parseFloat(d.score_20).toFixed(1) : null),
-                scoresReal: data.map(d => (d.total_questions !== 10 && d.total_questions !== 20) ? parseFloat(d.score_20).toFixed(1) : null),
+                scores10: data.map(d => (d.total_questions <= 15) ? parseFloat(d.score_20).toFixed(1) : null),
+                scores20: data.map(d => (d.total_questions > 15 && d.total_questions < 50) ? parseFloat(d.score_20).toFixed(1) : null),
+                scoresReal: data.map(d => (d.total_questions >= 50) ? parseFloat(d.score_20).toFixed(1) : null),
                 scores: data.map(d => parseFloat(d.score_20).toFixed(1))
             };
 
@@ -253,10 +253,11 @@ class MedicoController {
                 return res.status(400).json({ error: 'Configuración de áreas no encontrada.' });
             }
 
+            const batchLimit = parseInt(req.body.limit, 10) || 10;
             const result = await medicoService.generateQuiz(
                 { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode, configType: req.body.configType },
                 userId,
-                5,
+                batchLimit,
                 req.user.subscriptionTier,
                 seenIds || []
             );

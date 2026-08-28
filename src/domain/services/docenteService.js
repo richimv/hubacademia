@@ -126,7 +126,7 @@ class DocenteService {
         return question;
     }
 
-    async generateQuiz(categoryOptions, userId, limit = 5, subscriptionTier = 'free', seenIds = []) {
+    async generateQuiz(categoryOptions, userId, limit = 10, subscriptionTier = 'free', seenIds = []) {
         const target = categoryOptions.target || 'ASCENSO';
         const career = categoryOptions.career || 'EBR - Primaria';
         const difficulty = categoryOptions.difficulty || null;
@@ -171,9 +171,9 @@ class DocenteService {
         const isDefault = categoryOptions.configType === 'default' || !categoryOptions.configType;
         const queryAreas = isDefault ? ['*'] : normalizedAllAreas;
 
-        console.log(`📡 [DocenteService] Target: ${target} | Career: ${career} | Config: ${categoryOptions.configType || 'default'} | QueryAreas: ${queryAreas.join(', ')}`);
+        console.log(`📡 [DocenteService] Target: ${target} | Career: ${career} | Config: ${categoryOptions.configType || 'default'} | QueryAreas: ${queryAreas.join(', ')} | Limit: ${limit}`);
 
-        const rawBankQuestions = await docenteRepository.findQuestionsInBankBatch(target, queryAreas, 50, userId, career, difficulty, seenIds);
+        const rawBankQuestions = await docenteRepository.findQuestionsInBankBatch(target, queryAreas, Math.max(50, limit * 3), userId, career, difficulty, seenIds);
 
         const questionsByArea = {};
         const returnedTopics = new Set();
@@ -201,9 +201,22 @@ class DocenteService {
         }
 
         let balancedBatch = [];
+        const processedCaseIds = new Set();
+
+        const addCandidate = (candidate) => {
+            if (!candidate) return;
+            if (!candidate.case_id) {
+                balancedBatch.push(candidate);
+            } else if (!processedCaseIds.has(candidate.case_id)) {
+                processedCaseIds.add(candidate.case_id);
+                const siblings = rawBankQuestions.filter(rq => rq.case_id === candidate.case_id).sort((a, b) => (a.case_order || 1) - (b.case_order || 1));
+                balancedBatch.push(...(siblings.length > 0 ? siblings : [candidate]));
+            }
+        };
+
         for (const area of bankSampledAreas) {
             if (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
-                balancedBatch.push(questionsByArea[area].shift());
+                addCandidate(questionsByArea[area].shift());
             }
         }
 
@@ -211,13 +224,13 @@ class DocenteService {
             const searchOrder = [...areasWithStock, ...activeAreas];
             for (const area of searchOrder) {
                 while (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
-                    balancedBatch.push(questionsByArea[area].shift());
+                    addCandidate(questionsByArea[area].shift());
                 }
             }
         }
 
         const bankCount = balancedBatch.length;
-        let batchIsHealthy = bankCount === limit;
+        let batchIsHealthy = bankCount >= limit;
 
         if (!isDefault && normalizedAllAreas.length >= 5 && areasWithStock.length < 5) {
             batchIsHealthy = false;
@@ -226,6 +239,7 @@ class DocenteService {
         let sampledAreas = bankSampledAreas.map(a => areaMap.get(a) || a);
 
         if (!batchIsHealthy) {
+            const neededCount = Math.max(1, limit - bankCount);
             const rawSampled = normalizedAllAreas.length >= 5
                 ? normalizedAllAreas.sort(() => 0.5 - Math.random()).slice(0, 5)
                 : normalizedAllAreas;
@@ -233,8 +247,8 @@ class DocenteService {
             sampledAreas = rawSampled.map(a => areaMap.get(a) || a);
             const areaPrompt = sampledAreas.join(', ');
 
-            console.log(`🤖 [Docente-IA] Lote insuficiente (${bankCount}/${limit}). Activando RAG para ${sampledAreas.length} áreas...`);
-            source = 'AI_REPOSITION';
+            console.log(`🤖 [Docente-IA] Lote insuficiente (${bankCount}/${limit}). Activando RAG para ${sampledAreas.length} áreas (generando ${neededCount} items faltantes)...`);
+            source = bankCount > 0 ? 'HYBRID' : 'AI_REPOSITION';
 
             if (limit >= 100) {
                 if (bankCount < 10) {
@@ -244,17 +258,16 @@ class DocenteService {
             }
 
             try {
-                let aiQuestions = await adminAiService.generateRAGQuestions(target, areaPrompt, career, limit, true, difficulty);
+                let aiQuestions = await adminAiService.generateRAGQuestions(target, areaPrompt, career, neededCount, true, difficulty);
 
                 if (aiQuestions && aiQuestions.length > 0) {
-                    source = 'HYBRID';
                     aiQuestions = aiQuestions.map(q => this.shuffleOptions(q));
                     const newIds = await docenteRepository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], target, career);
                     if (newIds && newIds.length > 0) {
                         aiQuestions.forEach((q, idx) => { if (newIds[idx]) q.id = newIds[idx]; });
                     }
-                    balancedBatch = aiQuestions.slice(0, limit);
-                } else {
+                    balancedBatch = [...balancedBatch, ...aiQuestions].slice(0, limit);
+                } else if (bankCount === 0) {
                     throw new Error("AI_GENERATION_EMPTY");
                 }
             } catch (aiErr) {
@@ -366,8 +379,12 @@ class DocenteService {
         }
 
         if (limit) {
-            if (limit === 'real') {
+            if (limit === 'real' || limit === '100' || limit === '60') {
                 topicFilter += ` AND total_questions >= 50`;
+            } else if (parseInt(limit, 10) === 10 || limit === 'arcade') {
+                topicFilter += ` AND total_questions <= 15`;
+            } else if (parseInt(limit, 10) === 20 || limit === 'study') {
+                topicFilter += ` AND total_questions > 15 AND total_questions < 50`;
             } else {
                 params.push(parseInt(limit, 10));
                 topicFilter += ` AND total_questions = $${params.length}`;

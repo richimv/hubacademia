@@ -139,7 +139,10 @@ CONFIGURACIÓN DE EXAMEN Y CONTEXTO DEL ALUMNO:
 - NIVEL / ESPECIALIDAD (CAREER): ${career}
 - DIFICULTAD CONFIGURADA: ${difficulty}
 - ÁREAS SELECCIONADAS EN LA PRUEBA: ${areas}
-
+${context.caseDescription ? `
+CASUÍSTICA / SITUACIÓN COMPARTIDA:
+${context.caseTitle ? `Título: ${context.caseTitle}\n` : ''}${context.caseDescription}
+` : ''}
 DETALLES DE LA PREGUNTA DEL SIMULADOR:
 - PREGUNTA: ${context.questionText}
 - OPCIONES DE RESPUESTA:
