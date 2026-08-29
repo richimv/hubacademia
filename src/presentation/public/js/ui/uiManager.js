@@ -162,6 +162,9 @@ class UIManager {
      * Registra el modal en la historia para cerrarlo con botón Atrás.
      */
     pushModalState(modalId) {
+        if (window.tooltipManager && typeof window.tooltipManager.hideTooltip === 'function') {
+            window.tooltipManager.hideTooltip();
+        }
         this.openModals.add(modalId);
         document.body.classList.add('modal-open');
         window.history.pushState({ modalOpen: true, modalId }, '');

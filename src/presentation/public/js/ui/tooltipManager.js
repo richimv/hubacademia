@@ -62,8 +62,8 @@ class TooltipManager {
                 }
             }
 
-            // B. Cerrar tooltip pasivo al hacer clic fuera
-            if (this.activeTooltip && !e.target.closest('.hub-tooltip') && !e.target.closest('[data-tooltip]')) {
+            // B. Cerrar tooltip pasivo al hacer clic
+            if (this.activeTooltip) {
                 this.hideTooltip();
             }
 

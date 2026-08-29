@@ -969,7 +969,7 @@ class RepasoManager {
                             </button>
 
                             ${this.token && deck.type !== 'SYSTEM' ? `
-                            <button type="button" class="btn-premium btn-premium-secondary btn-fh-guide" data-tooltip="Abrir cuaderno de notas y resúmenes del mazo">
+                            <button type="button" class="btn-premium btn-premium-secondary btn-fh-guide">
                                 <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
                             </button>
                             ` : ''}
