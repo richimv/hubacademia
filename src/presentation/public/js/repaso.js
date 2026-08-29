@@ -1301,7 +1301,8 @@ class RepasoManager {
                 if (btn) {
                     e.stopPropagation();
                     if (btn.classList.contains('btn-act-play')) {
-                        this.startStudy(deck.id, deck.name, deck.total_cards || 0);
+                        const count = Number(deck.total_cards ?? deck.cards_count ?? deck.total ?? 0);
+                        this.startStudy(deck.id, deck.name, count);
                     } else if (btn.classList.contains('btn-act-demo')) {
                         this.startStudyDemo(deck.id);
                     } else if (btn.classList.contains('btn-act-edit')) {
@@ -1971,30 +1972,47 @@ class RepasoManager {
 
     /**
      * Inicia el modo de estudio real para un mazo específico.
-     * Solo para usuarios registrados con tarjetas.
+     * Orden de verificación estricto:
+     * 1. Vidas del usuario (Paywall Modal si 0 vidas).
+     * 2. Tarjetas del mazo (Alerta de advertencia si 0 tarjetas).
      */
     async startStudy(deckId, deckNameParam = null, cardCount = null) {
-        // Validation Guard
-        if (cardCount !== null && cardCount === 0) {
-            const msg = 'Este mazo no tiene tarjetas. ¡Crea o genera algunas primero!';
-            if (window.uiManager && window.uiManager.showToast) window.uiManager.showToast(msg, 'warning');
-            else window.uiManager.showToast(msg);
-            return;
-        }
-
-        const deckName = deckNameParam || this.currentDeck?.name || 'Mazo';
-        const deckCategory = this.currentDeck?.category || (this.userDecks && this.userDecks.find(d => d.id === deckId)?.category) || 'General';
-
-        // ✅ ARQUITECTURA PROFESIONAL: Validación Proactiva (Zero Latency)
+        // 1️⃣ VERIFICACIÓN 1: Vidas del Usuario (Zero Latency Paywall Guard)
         if (window.uiManager && typeof window.uiManager.isResourceLocked === 'function') {
             if (window.uiManager.isResourceLocked(true)) {
-                console.warn('[RepasoManager] Acceso bloqueado: Sin vidas.');
+                console.warn('[RepasoManager] Acceso a estudio bloqueado: 0 vidas disponibles.');
                 window.uiManager.showPaywallModal(null, 'flashcards');
-                return; // Bloquear redirección al instante
+                return; // Bloquea la navegación a flashcards al instante
             }
         }
 
-        // Navigation: Transfer to flashcards.html with context
+        // 2️⃣ VERIFICACIÓN 2: Conteo de Tarjetas del Mazo
+        let totalCards = (cardCount !== null && cardCount !== undefined) ? Number(cardCount) : null;
+
+        if (totalCards === null || isNaN(totalCards)) {
+            let deckToVerify = this.currentDeck;
+            if (!deckToVerify || String(deckToVerify.id) !== String(deckId)) {
+                deckToVerify = this.userDecks?.find(d => String(d.id) === String(deckId));
+            }
+            if (deckToVerify) {
+                totalCards = Number(deckToVerify.total_cards ?? deckToVerify.cards_count ?? deckToVerify.total ?? 0);
+            }
+        }
+
+        if (totalCards !== null && totalCards === 0) {
+            const msg = 'Este mazo no tiene tarjetas para repasar. ¡Crea o agrega tarjetas primero!';
+            if (window.uiManager && typeof window.uiManager.showToast === 'function') {
+                window.uiManager.showToast(msg, 'warning');
+            } else {
+                alert(msg);
+            }
+            return; // Bloquea la navegación porque el mazo está vacío
+        }
+
+        const deckName = deckNameParam || this.currentDeck?.name || 'Mazo';
+        const deckCategory = this.currentDeck?.category || (this.userDecks && this.userDecks.find(d => String(d.id) === String(deckId))?.category) || 'General';
+
+        // 3️⃣ NAVEGACIÓN: Transferir a flashcards.html con metadatos completos
         const studyUrl = `flashcards?deckId=${deckId}&deckName=${encodeURIComponent(deckName)}&category=${encodeURIComponent(deckCategory)}`;
         window.location.href = studyUrl;
     }

@@ -180,6 +180,16 @@ const FlashcardManager = (() => {
             endpoint = `${window.AppConfig.API_URL}/api/decks/${currentDeckId || 'all'}/cards/${cardId}/study`;
         }
 
+        // ✅ PRIMERA LÍNEA DE DEFENSA: Validación Proactiva de Vidas (Zero Latency)
+        if (!isDemo && window.uiManager && typeof window.uiManager.isResourceLocked === 'function') {
+            if (window.uiManager.isResourceLocked(true)) {
+                console.warn('[FlashcardManager] Acceso denegado a /flashcards: 0 vidas disponibles.');
+                setView('empty');
+                if (window.uiManager.showPaywallModal) window.uiManager.showPaywallModal(null, 'flashcards');
+                setTimeout(() => window.location.href = '/repaso', 2200);
+                return;
+            }
+        }
 
         // ✅ NUEVO: Carga resiliente con NetworkService
         const res = await window.NetworkService.fetch(endpoint);
