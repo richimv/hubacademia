@@ -166,4 +166,25 @@ Las aplicaciones móviles (`HubDocenteApp` y `HubSaludApp`) integran todas las d
 3.  **Mecanismo de Eliminación de Cuenta en la App**: Accesible directamente desde `profile.tsx` para permitir que cualquier usuario ejerza su derecho de supresión de datos en cualquier momento.
 
 ---
-*Última actualización de la documentación consolidada: Agosto 2026 (Paridad total Web-Móvil, Pricing, Seguridad y Cumplimiento Play Store)*
+
+## 🛡️ 8. Arquitectura Unificada de Paywall y Control por Tier (`uiManager.js`)
+
+Se ha consolidado el control de accesos y modales Paywall mediante `uiManager.js` para evitar duplicación de código y garantizar mensajes dinámicos acordes al plan activo del usuario:
+
+* **Usuarios con Plan Básico (`subscription_tier === 'basic'`)**:
+  * **Tutor IA (Chat)**: No utilizan el sistema de vidas. Disponen de **50 mensajes/día** (`daily_ai_usage`).
+  * **Al Alcanzar Límite**: `uiManager.showPaywallModal(null, 'chat_standard')` despliega el modal interactivo proponiendo la mejora al **Plan Avanzado** (*"Mejorar a Avanzado"*), destacando el acceso a 100 mensajes diarios y RAG semántico.
+  * **Flashcards Multimedia**: Intentos de usar síntesis de voz TTS o subida de imágenes despliegan el Paywall proponiendo upgrade a Avanzado sin interrumpir la sesión activa.
+
+* **Usuarios con Plan Avanzado (`subscription_tier === 'advanced'`)**:
+  * **Tutor IA (Chat)**: Disponen de **100 mensajes/día** con hasta **25 consultas RAG/día** (con fallback generativo experto automático tras 25 RAGs).
+  * **Al Alcanzar Límite (100/100)**: Se muestra el modal de reconocimiento (*"¡Meta Diaria Alcanzada! 🏆"*), invitando a continuar al día siguiente sin mensajes confusos de renovar suscripción.
+  * **Flashcards IA (30/mes)**: Al agotar la cuota mensual de 30 pedidos con Gemini, se informa amigablemente el reinicio de la cuota para el próximo mes.
+
+* **Usuarios Plan Gratuito / Pending (`subscription_tier === 'free'`)**:
+  * **Pool de Vidas**: Operan con **10 vidas de prueba** (`usage_count`).
+  * **Estudio y Chat**: Si consumen su última vida mientras chatean con el Tutor IA dentro de una tarjeta de repaso, reciben el modal Paywall de aviso y **mantienen el acceso para terminar de repasar su sesión actual de flashcards**.
+  * **Bloqueo Proactivo**: Al tener 0 vidas, se impide el inicio de nuevas sesiones de estudio o simulacros desplegando el modal Paywall de suscripción.
+
+---
+*Última actualización de la documentación consolidada: 29 de Agosto de 2026 (Consolidación de Paywall por Tier en Tutor IA y Módulo Repaso)*

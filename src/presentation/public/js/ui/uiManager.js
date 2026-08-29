@@ -1162,13 +1162,25 @@ class UIManager {
         if (type === 'simulator') {
             const limits = user.limits || {};
             const limit = limits.simulator !== undefined ? limits.simulator : (userTier === 'basic' ? 15 : 50);
-            if (dailySimUsage >= limit) {
+            if (userTier !== 'admin' && dailySimUsage >= limit) {
                 if (event) {
                     event.preventDefault();
                     event.stopPropagation();
                 }
                 // Disparar modal con contexto simulator para que use los textos correctos
                 this.showPaywallModal(null, 'simulator');
+                return false;
+            }
+        } else if (type === 'chat_standard' || type === 'chat' || type === 'flashcard_tutor') {
+            const dailyAiUsage = user.dailyAiUsage !== undefined ? user.dailyAiUsage : (user.daily_ai_usage || 0);
+            const limits = user.limits || {};
+            const limit = limits.chat_standard !== undefined ? limits.chat_standard : (userTier === 'basic' ? 50 : 100);
+            if (userTier !== 'admin' && dailyAiUsage >= limit) {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                this.showPaywallModal(null, 'chat_standard');
                 return false;
             }
         }
@@ -1197,7 +1209,7 @@ class UIManager {
         };
 
         // BIFURCACIÓN POR CONTEXTO Y TIER
-        if (context === 'chat_standard' || context === 'chat') {
+        if (context === 'chat_standard' || context === 'chat' || context === 'flashcard_tutor') {
             config.icon = 'fa-comments';
             if (userTier === 'basic') {
                 config.title = '¡Límite de Mensajes Alcanzado! 🚀';
@@ -1242,11 +1254,25 @@ class UIManager {
                 config.icon = 'fa-crown';
             }
         } else if (context === 'flashcards' || context === 'monthly_flashcards' || context === 'study') {
-            config.title = '¡Desbloquea el Acceso Premium! 💎';
-            config.message = customMsg || 'Has alcanzado el límite de tu prueba gratuita. Suscríbete hoy para repasar tus flashcards sin límites.';
-            config.btnText = 'Ver Planes Premium';
-            config.btnUrl = '/pricing';
-            config.icon = 'fa-crown';
+            if (userTier === 'basic') {
+                config.title = '¡Función Exclusiva Plan Avanzado! 🚀';
+                config.message = customMsg || 'La generación con IA, audios TTS e imágenes en flashcards son exclusivas del Plan Avanzado. ¡Mejora tu plan para activarlas!';
+                config.btnText = 'Mejorar a Avanzado';
+                config.btnUrl = '/pricing';
+                config.icon = 'fa-rocket';
+            } else if (userTier === 'advanced' || userTier === 'admin') {
+                config.title = '¡Cuota Mensual Completada! 🏆';
+                config.message = customMsg || 'Has alcanzado tu límite mensual de generación de flashcards con IA. Tu cuota se renovará automáticamente el próximo mes.';
+                config.btnText = 'Entendido';
+                config.btnUrl = '/repaso';
+                config.icon = 'fa-medal';
+            } else {
+                config.title = '¡Desbloquea el Acceso Premium! 💎';
+                config.message = customMsg || 'Has consumido tus vidas de prueba gratuitas. Suscríbete hoy a un plan premium para repasar tus flashcards sin interrupciones.';
+                config.btnText = 'Ver Planes Premium';
+                config.btnUrl = '/pricing';
+                config.icon = 'fa-crown';
+            }
         } else {
             // Contexto Autoevaluación / Default
             if (userTier === 'basic') {
