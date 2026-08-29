@@ -1151,7 +1151,7 @@ class UIManager {
         // 1. Lógica para Usuarios FREE (Vidas Globales)
         if (userTier === 'free') {
             if (usageCount >= maxFreeLimit) {
-                if (event) {
+                if (event && typeof event.preventDefault === 'function') {
                     event.preventDefault();
                     event.stopPropagation();
                 }
@@ -1162,28 +1162,28 @@ class UIManager {
         }
 
         // 2. Lógica para Usuarios PREMIUM (Límites Diarios)
-        if (type === 'simulator') {
+        if (type === 'simulator' || type === 'diagnostic') {
             const limits = user.limits || {};
             const limit = limits.simulator !== undefined ? limits.simulator : (userTier === 'basic' ? 15 : 50);
             if (userTier !== 'admin' && dailySimUsage >= limit) {
-                if (event) {
+                if (event && typeof event.preventDefault === 'function') {
                     event.preventDefault();
                     event.stopPropagation();
                 }
-                // Disparar modal con contexto simulator para que use los textos correctos
-                this.showPaywallModal(null, 'simulator');
+                // Disparar modal con contexto simulator/diagnostic para que use los textos correctos
+                this.showPaywallModal(null, type);
                 return false;
             }
-        } else if (type === 'chat_standard' || type === 'chat' || type === 'flashcard_tutor') {
+        } else if (type === 'chat_standard' || type === 'chat' || type === 'flashcard_tutor' || type === 'quiz_tutor') {
             const dailyAiUsage = user.dailyAiUsage !== undefined ? user.dailyAiUsage : (user.daily_ai_usage || 0);
             const limits = user.limits || {};
             const limit = limits.chat_standard !== undefined ? limits.chat_standard : (userTier === 'basic' ? 50 : 100);
             if (userTier !== 'admin' && dailyAiUsage >= limit) {
-                if (event) {
+                if (event && typeof event.preventDefault === 'function') {
                     event.preventDefault();
                     event.stopPropagation();
                 }
-                this.showPaywallModal(null, 'chat_standard');
+                this.showPaywallModal(null, 'quiz_tutor');
                 return false;
             }
         }
@@ -1205,53 +1205,53 @@ class UIManager {
         // CONFIGURACIÓN POR DEFECTO (Free / Global)
         let config = {
             title: '¡Desbloquea el Acceso Premium! 💎',
-            message: customMsg || 'Suscríbete hoy por s/ 9.90 y accede a todos los beneficios y herramientas ilimitadas.',
-            btnText: 'Suscríbete ahora',
+            message: customMsg || 'Suscríbete hoy y accede a todos los beneficios y herramientas ilimitadas de Hub Academia.',
+            btnText: 'Ver Planes Premium',
             btnUrl: '/pricing',
             icon: 'fa-crown'
         };
 
         // BIFURCACIÓN POR CONTEXTO Y TIER
-        if (context === 'chat_standard' || context === 'chat' || context === 'flashcard_tutor') {
+        if (context === 'chat_standard' || context === 'chat' || context === 'flashcard_tutor' || context === 'quiz_tutor') {
             config.icon = 'fa-comments';
             if (userTier === 'basic') {
-                config.title = '¡Límite de Mensajes Alcanzado! 🚀';
-                config.message = customMsg || 'Has alcanzado tu límite de mensajes diarios para el Plan Básico (50 mensajes). Mejora tu plan a Avanzado para obtener 100 mensajes diarios y acceder al Tutor IA RAG.';
+                config.title = '¡Límite de Consultas Alcanzado! 🚀';
+                config.message = customMsg || 'Has alcanzado tu límite de consultas diarias al Tutor IA para el Plan Básico (50 consultas/día). Mejora tu plan a Avanzado para obtener 100 consultas diarias y soporte pedagógico/médico profundo.';
                 config.btnText = 'Mejorar a Avanzado';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
             } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Meta Diaria Alcanzada! 🏆';
-                config.message = customMsg || 'Has completado tus mensajes diarios para el Plan Avanzado (100 mensajes). ¡Mañana volvemos con más tutorías!';
+                config.message = customMsg || 'Has completado tus consultas diarias al Tutor IA para el Plan Avanzado (100 consultas/día). ¡Mañana se renovará automáticamente tu cuota!';
                 config.btnText = 'Volver al Inicio';
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';
             } else {
                 // Tier FREE o EXPIRED
                 config.title = '¡Prueba Gratuita Finalizada! 💎';
-                config.message = customMsg || 'Has consumido tus 10 vidas de prueba gratuitas. Activa un plan premium para continuar practicando sin interrupciones.';
+                config.message = customMsg || 'Has consumido tus 10 vidas de prueba gratuitas. Activa un plan premium para continuar practicando con el Tutor IA sin interrupciones.';
                 config.btnText = 'Ver Planes Premium';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-crown';
             }
-        } else if (context === 'simulator') {
-            config.icon = 'fa-stethoscope';
+        } else if (context === 'simulator' || context === 'diagnostic') {
+            config.icon = 'fa-chart-pie';
             if (userTier === 'basic') {
                 config.title = '¡Límite Diario Alcanzado! 🚀';
-                config.message = customMsg || 'Has alcanzado tu límite de simulacros diarios. Mejora tu plan para seguir practicando sin límites.';
-                config.btnText = 'Mejorar Plan';
+                config.message = customMsg || 'Has alcanzado tu límite diario para este recurso. Mejora tu plan a Avanzado para acceder a diagnósticos IA en tiempo real y mayor capacidad.';
+                config.btnText = 'Mejorar a Avanzado';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
             } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Meta Diaria Alcanzada! 🏆';
-                config.message = customMsg || 'Has completado tus simulacros de hoy. ¡Mañana volvemos con más desafíos!';
+                config.message = customMsg || 'Has completado tus diagnósticos y simulacros de hoy. ¡Mañana se renovará automáticamente tu cuota!';
                 config.btnText = 'Volver al Inicio';
                 config.btnUrl = '/';
                 config.icon = 'fa-medal';
             } else {
                 // Tier FREE o EXPIRED
                 config.title = '¡Desbloquea el Acceso Premium! 💎';
-                config.message = customMsg || 'Has alcanzado el límite de tu prueba gratuita. Suscríbete hoy para acceder a simulacros ilimitados.';
+                config.message = customMsg || 'Has consumido tus 10 vidas de prueba gratuitas. Suscríbete hoy para acceder a diagnósticos inteligentes con IA y simulacros ilimitados.';
                 config.btnText = 'Ver Planes Premium';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-crown';
@@ -1714,9 +1714,14 @@ class UIManager {
         icon.className = `fas ${iconClass}`;
         iconWrapper.appendChild(icon);
 
+        // Sanitizar emojis iniciales redundantes para evitar doble icono visual
+        const cleanMsg = String(message || '')
+            .replace(/^([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{FE00}-\u{FE0F}\u{200D}]+\s*)+/u, '')
+            .trim();
+
         const messageWrapper = document.createElement('span');
         messageWrapper.className = 'hub-toast-msg';
-        messageWrapper.textContent = String(message || '');
+        messageWrapper.textContent = cleanMsg;
 
         toast.append(iconWrapper, messageWrapper);
 
@@ -1751,7 +1756,7 @@ class UIManager {
      */
     showLifeDecrementToast(remaining, limit = 10) {
         if (remaining <= 0) {
-            this.showToast('🔒 Has agotado tus vidas de prueba semanal.', 'error', 4000);
+            this.showToast('Has agotado tus vidas de prueba semanal.', 'error', 4000);
             setTimeout(() => {
                 this.showPaywallModal();
             }, 800);
@@ -1759,9 +1764,9 @@ class UIManager {
         }
 
         if (remaining === 1 || remaining === 2) {
-            this.showToast(`⚠️ ¡Atención! Te quedan solo ${remaining}/${limit} vidas de prueba.`, 'warning', 3500);
+            this.showToast(`¡Atención! Te quedan solo ${remaining}/${limit} vidas de prueba.`, 'warning', 3500);
         } else {
-            this.showToast(`⚡ 1 crédito utilizado. Te quedan ${remaining}/${limit} vidas de prueba.`, 'life', 2800);
+            this.showToast(`1 crédito utilizado. Te quedan ${remaining}/${limit} vidas de prueba.`, 'life', 2800);
         }
     }
 

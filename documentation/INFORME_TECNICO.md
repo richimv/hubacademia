@@ -4,6 +4,34 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 
 ---
 
+### 🟢 [2026-08-29] - Normalización Integral del Contexto de Preguntas y Opciones para el Tutor IA
+
+- **🧠 Normalización y Sanitización de Opciones en Backend ([chatController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/chatController.js)):**
+  - Se corrigió el problema por el cual el Tutor IA informaba que no había recibido las opciones en el prompt.
+  - Se implementó un normalizador robusto que convierte cadenas JSON, objetos asociativos o arreglos en una lista limpia de alternativas `[A] ...`, `[B] ...`, `[C] ...`, `[D] ...`.
+  - Se inyectan de forma explícita la clave oficial, la respuesta seleccionada por el estudiante (evaluando `userOptionIndex = 0` correctamente sin errores por valores falsy), la explicación pedagógica/médica, las tablas de datos (`caseTableHtml`), las imágenes (`imageUrl` / `caseImageUrl`) y el enunciado completo.
+  - Se añadieron directrices explícitas en el prompt prohibiendo a la IA declarar falta de acceso a opciones o preguntas del simulacro.
+
+- **🧩 Helper Centralizado y Eliminación de Código Duplicado ([quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js) & [quiz-tutor.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz-tutor.js)):**
+  - Se creó la función unificada `buildQuestionTutorContext(qIndex)`, erradicando la lógica dispersa y desactualizada que existía entre `openTutorForReviewQuestion`, `elements.consultTutorBtn.onclick` y `openQuizTutorForReview`.
+  - En `quiz-tutor.js`, el método `toggle(forceState, questionContext)` actualiza de manera reactiva el contexto a la última versión disponible, garantizando que si el usuario consulta después de responder, el tutor reciba su opción marcada.
+
+- **📱 Paridad en Aplicaciones Móviles ([HubDocenteApp](file:///c:/Users/ricar/Downloads/PROYECTOS/HubDocenteApp) & [HubSaludApp](file:///c:/Users/ricar/Downloads/PROYECTOS/HubSaludApp)):**
+  - En `TutorModal.tsx` y `ClinicalTutorModal.tsx`, se incluyó la propagación de `imageUrl`, `caseImageUrl` y `caseTableHtml` dentro del payload de contexto para el Tutor IA.
+
+- **🧪 Cobertura de Pruebas Unitarias:**
+  - Creada suite `tests/unit/quizTutorContext.test.js` (**32/32 suites Jest PASSED, 218/218 tests exitosos**).
+  - TypeScript typecheck (`tsc --noEmit`) con **0 errores** en ambas apps móviles.
+
+- **🛡️ Unificación y Limpieza de Modales Paywall ([uiManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js), [simulator-dash.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js) & [quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js)):**
+  - Se eliminó el uso indebido de `confirmationModal.showAlert` (modal genérico de confirmación) al agotar vidas o límites en el botón **"Extraer Insights"**.
+  - Se integró el modal premium oficial `uiManager.showPaywallModal(message, context)` con bifurcación inteligente según plan (`free`: 10 vidas agotadas, `basic`: límite diario de 50 consultas o 15 simulacros, `advanced`: meta diaria completada de 100 consultas).
+  - Se blindó el botón **"Consultar Tutor IA"** tanto durante el examen como en la pantalla de revisión (`showExamReview`) para validar previamente los límites mediante `validateFreemiumAction('quiz_tutor')`, abriendo la modal paywall correcta inmediatamente sin ejecuciones fantasma.
+  - Se erradicó código duplicado aliando `window.openQuizTutorForReview = window.openTutorForReviewQuestion`.
+  - Nueva suite unitaria `tests/unit/uiPaywallLogic.test.js` (**33/33 suites Jest PASSED, 223/223 tests exitosos**).
+
+---
+
 ### 🟢 [2026-08-27] - Optimización de Casuísticas Anidadas, Limpieza Visual de Quiz y Unificación en Web y Apps Móviles
 
 - **🏷️ Depuración y Limpieza del Renderizado de Casuísticas Anidadas ([quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js) & [quiz.html](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/quiz.html)):**

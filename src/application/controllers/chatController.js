@@ -127,7 +127,7 @@ ${message}`;
                 const examDomain = String(context.examDomain || context.examContext || (finalSpecialization === 'education' ? 'EDUCACION' : 'MEDICINA')).toUpperCase();
                 const target = context.target || targetExam || (examDomain === 'EDUCACION' ? 'ASCENSO' : 'SERUMS');
                 const career = context.career || 'No especificada';
-                const difficulty = context.difficulty || 'Estándar';
+                const difficulty = context.difficulty || 'Senior';
                 const topic = context.topic || context.area || 'General';
                 const areas = (context.areas && Array.isArray(context.areas) && context.areas.length > 0) 
                     ? context.areas.join(', ') 

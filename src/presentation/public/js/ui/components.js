@@ -948,10 +948,10 @@ window.UIComponents.createReviewCardHTML = function (config) {
 
         if (optIdx === question.correct_option_index) {
             className += ' r-correct';
-            badgeHTML = `<span class="review-opt-status-badge correct"><i class="fas fa-check-circle"></i> Correcta</span>`;
+            badgeHTML = `<span class="review-opt-status-badge correct" title="Opción Correcta"><i class="fas fa-check-circle"></i><span class="badge-text"> Correcta</span></span>`;
         } else if (answer && optIdx === answer.userAnswer) {
             className += ' r-wrong';
-            badgeHTML = `<span class="review-opt-status-badge wrong"><i class="fas fa-times-circle"></i> Tu respuesta</span>`;
+            badgeHTML = `<span class="review-opt-status-badge wrong" title="Tu respuesta"><i class="fas fa-times-circle"></i><span class="badge-text"> Tu respuesta</span></span>`;
         }
 
         optionsHTML += `

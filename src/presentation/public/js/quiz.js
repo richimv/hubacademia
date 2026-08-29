@@ -290,9 +290,79 @@ window.showExamReview = async function () {
 };
 
 /**
+ * Construye de forma unificada y segura el contexto completo de una pregunta para el Tutor IA
+ * @param {number} qIndex - Índice de la pregunta en state.questions
+ * @returns {Object|null} Contexto estructurado para el Tutor IA
+ */
+function buildQuestionTutorContext(qIndex) {
+    if (!state.questions || !state.questions[qIndex]) return null;
+    const q = state.questions[qIndex];
+    const ans = state.answers ? state.answers[qIndex] : null;
+
+    // Normalización de opciones a array de strings
+    let rawOptions = q.options || [];
+    if (typeof rawOptions === 'string') {
+        try { rawOptions = JSON.parse(rawOptions); } catch (e) { rawOptions = [rawOptions]; }
+    }
+    const safeOptions = Array.isArray(rawOptions) 
+        ? rawOptions.map(opt => typeof opt === 'string' ? opt : (opt?.text || opt?.option || String(opt))) 
+        : [];
+
+    const correctIdx = (q.correct_option_index !== null && q.correct_option_index !== undefined && !isNaN(Number(q.correct_option_index))) 
+        ? Number(q.correct_option_index) 
+        : null;
+
+    const userIdx = (ans && ans.userAnswer !== null && ans.userAnswer !== undefined && !isNaN(Number(ans.userAnswer))) 
+        ? Number(ans.userAnswer) 
+        : null;
+
+    const correctText = (correctIdx !== null && safeOptions[correctIdx] !== undefined) 
+        ? String(safeOptions[correctIdx]) 
+        : '';
+
+    const userText = (userIdx !== null && safeOptions[userIdx] !== undefined) 
+        ? String(safeOptions[userIdx]) 
+        : '';
+
+    const isUserCorrect = ans ? Boolean(ans.isCorrect) : (userIdx !== null && correctIdx !== null ? userIdx === correctIdx : false);
+
+    const examDomain = (state.context && state.context.toUpperCase() === 'EDUCACION') ? 'EDUCACION' : 'MEDICINA';
+    const targetExam = q.target || state.targetExam || (examDomain === 'EDUCACION' ? 'ASCENSO' : 'SERUMS');
+
+    return {
+        id: q.id || `q-${qIndex}`,
+        questionText: q.question_text || q.question || '',
+        options: safeOptions,
+        correctOptionIndex: correctIdx,
+        correctOptionText: correctText,
+        userOptionIndex: userIdx,
+        userOptionText: userText,
+        isUserCorrect: isUserCorrect,
+        explanation: q.explanation || '',
+        topic: q.topic || q.area || state.topic || 'General',
+        target: targetExam,
+        career: q.career || state.career || '',
+        examContext: examDomain,
+        difficulty: state.difficulty || 'Senior',
+        areas: state.areas || [],
+        mode: state.mode || '',
+        imageUrl: q.image_url || null,
+        explanationImageUrl: q.explanation_image_url || null,
+        audioText: q.audio_text || null,
+        caseId: q.case_id || null,
+        caseCode: q.case_code || null,
+        caseTitle: q.case_title || null,
+        caseDescription: q.case_description || null,
+        caseImageUrl: q.case_image_url || null,
+        caseTableHtml: q.case_table_html || null,
+        caseOrder: q.case_order || null
+    };
+}
+
+/**
  * Abre el Tutor IA con el contexto específico de una pregunta durante la revisión post-examen
  */
-window.openTutorForReviewQuestion = function (qIndex) {
+window.openTutorForReviewQuestion = function (qIndex, event) {
     const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || 
                     (window.sessionManager ? !window.sessionManager.isLoggedIn() : !localStorage.getItem('authToken'));
     if (isGuest) {
@@ -302,30 +372,14 @@ window.openTutorForReviewQuestion = function (qIndex) {
         }
     }
 
-    const q = state.questions[qIndex];
-    if (!q) return;
-    const ans = state.answers[qIndex];
+    if (window.uiManager && typeof window.uiManager.validateFreemiumAction === 'function') {
+        if (!window.uiManager.validateFreemiumAction(event, 'quiz_tutor')) {
+            return;
+        }
+    }
 
-    const qContext = {
-        id: q.id || `q-rev-${qIndex}`,
-        questionText: q.question_text,
-        options: q.options || [],
-        correctOptionIndex: q.correct_option_index,
-        correctOptionText: (q.options && q.correct_option_index !== undefined) ? (q.options[q.correct_option_index] || '') : '',
-        userOptionIndex: ans ? ans.userAnswer : null,
-        userOptionText: (ans && q.options && ans.userAnswer !== null && ans.userAnswer !== undefined) ? (q.options[ans.userAnswer] || '') : '',
-        isUserCorrect: ans ? ans.isCorrect : false,
-        explanation: q.explanation || '',
-        topic: q.topic || q.area || state.topic || 'General',
-        target: q.target || state.targetExam || (state.context.toUpperCase() === 'EDUCACION' ? 'ASCENSO' : 'SERUMS'),
-        career: q.career || state.career || '',
-        examContext: state.context.toUpperCase() === 'EDUCACION' ? 'EDUCACION' : 'MEDICINA',
-        difficulty: state.difficulty || 'Senior',
-        areas: state.areas || [],
-        caseDescription: q.case_description || null,
-        caseTitle: q.case_title || null,
-        caseOrder: q.case_order || null
-    };
+    const qContext = buildQuestionTutorContext(qIndex);
+    if (!qContext) return;
 
     if (window.quizTutor) {
         window.quizTutor.toggle(true, qContext);
@@ -1382,7 +1436,7 @@ function handleAnswer(selectedIndex, btnElement, isReplaying = false) {
         } else {
             tutorBtn.classList.remove('hidden');
             tutorBtn.style.display = 'inline-flex';
-            tutorBtn.onclick = () => {
+            tutorBtn.onclick = (e) => {
                 const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || 
                                 (window.sessionManager ? !window.sessionManager.isLoggedIn() : !localStorage.getItem('authToken'));
                 if (isGuest) {
@@ -1392,26 +1446,14 @@ function handleAnswer(selectedIndex, btnElement, isReplaying = false) {
                     }
                 }
 
-                const currentQ = state.questions[state.currentQuestionIndex];
-                const currentAns = state.answers[state.currentQuestionIndex];
-                const qContext = {
-                    id: currentQ.id || `q-${state.currentQuestionIndex}`,
-                    text: currentQ.question_text || currentQ.question || '',
-                    options: currentQ.options || [],
-                    userAnswer: currentAns ? currentAns.userAnswer : null,
-                    correctOptionIndex: currentQ.correct_option_index,
-                    userOptionText: currentAns ? currentQ.options[currentAns.userAnswer] : '',
-                    isUserCorrect: currentAns ? currentAns.isCorrect : false,
-                    explanation: currentQ.explanation || '',
-                    topic: currentQ.topic || state.topic || 'General',
-                    target: currentQ.target || state.targetExam || '',
-                    career: currentQ.career || state.career || '',
-                    examContext: state.context || 'MEDICINA',
-                    difficulty: state.difficulty || 'Senior',
-                    areas: state.areas || [],
-                    mode: state.mode || ''
-                };
-                if (window.quizTutor) {
+                if (window.uiManager && typeof window.uiManager.validateFreemiumAction === 'function') {
+                    if (!window.uiManager.validateFreemiumAction(e, 'quiz_tutor')) {
+                        return;
+                    }
+                }
+
+                const qContext = buildQuestionTutorContext(state.currentQuestionIndex);
+                if (qContext && window.quizTutor) {
                     window.quizTutor.toggle(true, qContext);
                 }
             };
@@ -1936,13 +1978,20 @@ function initLightbox() {
     const reviewFeed = document.getElementById('reviewFeed');
     if (reviewFeed) {
         reviewFeed.addEventListener('click', (e) => {
-            // Si hacen click directo en cualquier elemento de imagen
-            if (e.target.tagName === 'IMG' && e.target.src) {
-                window.openLightbox(e.target.src);
+            // Ignorar clicks en botones, controles interactivos o avatares de acción (Tutor IA, audio, etc.)
+            if (e.target.closest('button, .btn-review-tutor-trigger, .quiz-audio-btn, a, .no-lightbox')) {
                 return;
             }
+
+            // Si hacen click directo en una imagen de la pregunta o explicación
+            if (e.target.tagName === 'IMG' && e.target.src) {
+                if (e.target.closest('.review-q-image-container, .review-explanation-image-container, .review-q-text, .review-explanation-body')) {
+                    window.openLightbox(e.target.src);
+                    return;
+                }
+            }
             
-            // Fallback para clicks en el contenedor
+            // Fallback para clicks en el contenedor de imagen
             const container = e.target.closest('.review-q-image-container, .review-explanation-image-container');
             if (container) {
                 const img = container.querySelector('img');
@@ -2024,38 +2073,4 @@ function smoothScrollTo(element, duration = 2200) {
 
 console.log("💎 Module quiz.js loaded successfully. showExamReview is ready with Zoom Lightbox.");
 
-window.openQuizTutorForReview = function (index) {
-    const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || 
-                    (window.sessionManager ? !window.sessionManager.isLoggedIn() : !localStorage.getItem('authToken'));
-    if (isGuest) {
-        if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
-            window.uiManager.showAuthPromptModal();
-            return;
-        }
-    }
-
-    const q = state.questions[index];
-    if (!q) return;
-    const ans = state.answers[index];
-    
-    const questionContext = {
-        id: q.id || `q-${index}`,
-        questionText: q.question_text,
-        options: q.options,
-        correctOptionIndex: q.correct_option_index,
-        correctOptionText: q.options[q.correct_option_index] || '',
-        userOptionIndex: ans ? ans.userAnswer : null,
-        userOptionText: ans ? q.options[ans.userAnswer] : '',
-        isUserCorrect: ans ? ans.isCorrect : false,
-        explanation: q.explanation || '',
-        topic: q.topic || state.topic || 'General',
-        target: q.target || state.targetExam || '',
-        caseDescription: q.case_description || null,
-        caseTitle: q.case_title || null,
-        caseOrder: q.case_order || null
-    };
-    
-    if (window.quizTutor) {
-        window.quizTutor.toggle(true, questionContext);
-    }
-};
+window.openQuizTutorForReview = window.openTutorForReviewQuestion;

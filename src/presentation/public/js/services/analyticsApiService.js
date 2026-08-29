@@ -145,7 +145,11 @@
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Error al procesar el diagnóstico con IA');
+                const err = new Error(errorData.error || 'Error al procesar el diagnóstico con IA');
+                err.status = response.status;
+                err.paywall = Boolean(errorData.paywall || response.status === 403);
+                err.reason = errorData.reason;
+                throw err;
             }
             return response.json();
         }

@@ -411,11 +411,11 @@ La pantalla de revisión post-examen (`.review-container`) ofrece un análisis d
    - Cuerpo en tipografía `0.95rem` con interlineado `1.65` y color `var(--text-secondary)`.
 4. **Disparador del Tutor IA en Revisión (`.btn-review-tutor-trigger`):**
    - Botón en forma de píldora con el gradiente de marca Manta Pill (`linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%)`).
-   - Icono oficial de Hubi (`/assets/hubifrente.png`) de 18x18px.
-   - Sombra con resplandor cian/azul `box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35)`.
+   - Icono oficial de Hubi (`/assets/hubifrente.png`) de 16x16px con `pointer-events: none;` para garantizar que los clics abran directamente el Tutor IA y no interfieran con el visor Lightbox.
+   - Sombra con resplandor cian/azul `box-shadow: 0 3px 12px rgba(59, 130, 246, 0.35)`.
 5. **Responsividad Móvil (<= 768px):**
    - Contenedor al 100% de ancho con padding adaptativo `1.25rem 0.85rem`.
-   - Reducción armoniosa de fuentes (enunciado `1.05rem`, opciones `0.9rem`).
+   - Opciones con `align-items: flex-start` y `.badge-text { display: none; }`, exhibiendo únicamente el icono compacto (`fa-check-circle` o `fa-times-circle`) para brindar el 100% del ancho horizontal a la lectura fluida del enunciado. En desktop se preserva la píldora completa.
 
 ---
 
@@ -431,11 +431,12 @@ Para erradicar popups nativos y bloqueantes (`alert()` y `confirm()`), la plataf
    - Contenedor flotante en z-index máximo (`2147483647`).
    - Glassmorphism con bordes y sombra dual-theme `border-radius: 9999px`.
    - Tipos semánticos: `'success'`, `'error'`, `'warning'`, `'info'`, `'life'`.
+   - **Autoridad Visual Única:** Sanitiza automáticamente cualquier emoji inicial en el mensaje para garantizar que el icono semántico (`hub-toast-icon`) sea la única representación gráfica limpia, eliminando redundancias visuales.
 3. **Notificación de Vidas en Tiempo Real (`window.uiManager.showLifeDecrementToast`):**
    - Cada consumo de crédito en cuentas Free dispara instantáneamente un toast con rayo dorado:  
-     `⚡ 1 crédito utilizado. Te quedan X/20 vidas de prueba.`
-   - Si quedan 1 o 2 vidas: `⚠️ ¡Atención! Te quedan solo X/20 vidas de prueba.` (Toast de advertencia).
-   - Al agotarse las vidas (`remaining <= 0`): `🔒 Has agotado tus vidas de prueba semanal.` y apertura automática del `PaywallModal`.
+     `1 crédito utilizado. Te quedan X/10 vidas de prueba.`
+   - Si quedan 1 o 2 vidas: `¡Atención! Te quedan solo X/10 vidas de prueba.` (Toast de advertencia).
+   - Al agotarse las vidas (`remaining <= 0`): `Has agotado tus vidas de prueba semanal.` y apertura automática del `PaywallModal`.
 
 ---
 

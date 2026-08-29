@@ -164,7 +164,10 @@ class ConfirmationModal {
 
     _setMessage(message) {
         if (!this.messageElement) return;
-        this.messageElement.textContent = String(message || '');
+        const cleanMsg = String(message || '')
+            .replace(/^([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{FE00}-\u{FE0F}\u{200D}]+\s*)+/u, '')
+            .trim();
+        this.messageElement.textContent = cleanMsg;
         this.messageElement.style.whiteSpace = 'pre-line';
     }
 

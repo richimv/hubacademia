@@ -1504,6 +1504,10 @@ body.module-educacion .review-opt-status-badge.correct {
     height: 16px;
     object-fit: contain;
     flex-shrink: 0;
+    pointer-events: none;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }
 
 /* Audio Player in Review */
@@ -1647,8 +1651,41 @@ body.module-educacion .review-opt-status-badge.correct {
     }
 
     .review-opt {
-        font-size: 0.9rem !important;
-        padding: 0.65rem 0.85rem !important;
+        font-size: 0.88rem !important;
+        padding: 0.65rem 0.75rem !important;
+        gap: 0.65rem !important;
+        align-items: flex-start !important;
+    }
+
+    .review-opt-letter {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 0.78rem !important;
+        margin-top: 1px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .review-opt-text {
+        flex: 1 !important;
+        min-width: 0 !important;
+        font-size: 0.88rem !important;
+        line-height: 1.45 !important;
+    }
+
+    /* En móviles, ocultar el texto de la píldora para dar 100% de amplitud al texto y mostrar solo el icono */
+    .review-opt-status-badge {
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        font-size: 1.05rem !important;
+        margin-top: 2px !important;
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+    }
+
+    .review-opt-status-badge .badge-text {
+        display: none !important;
     }
 
     .review-explanation {

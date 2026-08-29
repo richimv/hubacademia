@@ -280,7 +280,7 @@ Para guiar al usuario e invitarlo a interactuar con el Tutor IA de manera amigab
 - **Flujo de Acceso e Interfaz de Examen**:
   - **Durante el Examen (Modos 10q y 20q)**: Se habilita únicamente una vez que el usuario ha respondido la pregunta activa (tras hacer clic en una opción y desplegarse el botón Siguiente).
   - **En Simulacros Reales (100 preguntas)**: Se deshabilita durante la ejecución para preservar las condiciones de evaluación oficial.
-  - **En Culminación y Revisión de Examen (`showExamReview`)**: El botón de Tutor IA se **remueve/oculta por completo** de las tarjetas de corrección de preguntas y de la interfaz final. Cada pregunta en la fase de revisión ya exhibe su explicación técnica y sustento oficial directamente, evitando redundancia.
+  - **En Culminación y Revisión de Examen (`showExamReview`)**: Cada tarjeta de pregunta integra el botón disparador del Tutor IA (`.btn-review-tutor-trigger` / `window.openTutorForReviewQuestion`) para profundizar en casuísticas individuales, con aislamiento de eventos para evitar interferencias con el visor Lightbox.
 - **Modo Pantalla Completa en Escritorio (PC)**:
   - Integra la clase `.tutor-chat-panel.chat-fullscreen` accionada por el botón `#quiz-tutor-expand`, permitiendo expandir la ventana a `100vw x 100vh` en PC para la lectura cómoda de tablas comparativas y esquemas técnicos.
 - **Contexto RAG de Alta Fidelidad:**

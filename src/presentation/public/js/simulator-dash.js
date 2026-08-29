@@ -2308,6 +2308,14 @@ const SimulatorDash = (() => {
                     sprint: guestSprint
                 }, false);
             } else {
+                if (window.uiManager && typeof window.uiManager.validateFreemiumAction === 'function') {
+                    if (!window.uiManager.validateFreemiumAction(null, 'diagnostic')) {
+                        if (loadingState) loadingState.style.display = 'none';
+                        if (initialState) initialState.style.display = 'flex';
+                        return;
+                    }
+                }
+
                 const currentUser = window.sessionManager.getUser();
                 const tier = String(currentUser?.subscriptionTier || currentUser?.subscription_tier || 'free').toLowerCase();
                 const status = String(currentUser?.subscriptionStatus || currentUser?.subscription_status || 'pending').toLowerCase();
@@ -2345,6 +2353,19 @@ const SimulatorDash = (() => {
             console.error("Error al extraer diagnóstico IA:", error);
             if (loadingState) loadingState.style.display = 'none';
             if (initialState) initialState.style.display = 'flex';
+
+            const isPaywallError = error.paywall || error.status === 403 || (error.message && (
+                error.message.includes('vidas') || 
+                error.message.includes('plan') || 
+                error.message.includes('límite') ||
+                error.message.includes('agotado') ||
+                error.message.includes('cuota')
+            ));
+
+            if (isPaywallError && window.uiManager && typeof window.uiManager.showPaywallModal === 'function') {
+                window.uiManager.showPaywallModal(error.message, 'diagnostic');
+                return;
+            }
 
             if (window.confirmationModal && typeof window.confirmationModal.showAlert === 'function') {
                 window.confirmationModal.showAlert(

@@ -146,18 +146,22 @@ class QuizTutor {
 
         if (!this.dom.panel) return;
 
-        const previousOpen = this.isOpen;
         this.isOpen = forceState !== undefined ? forceState : !this.isOpen;
         this.dom.panel.classList.toggle('active', this.isOpen);
 
         if (this.isOpen) {
-            // Si el contexto de la pregunta es nuevo o diferente, reiniciar el chat
-            if (questionContext && (!this.questionContext || this.questionContext.id !== questionContext.id)) {
-                this.clearChat();
+            // Actualizar siempre el contexto si se provee uno nuevo
+            if (questionContext) {
+                const isDifferentQuestion = !this.questionContext || this.questionContext.id !== questionContext.id;
                 this.questionContext = questionContext;
-                this._addWelcomeMessage();
+                if (isDifferentQuestion) {
+                    this.clearChat();
+                    this._addWelcomeMessage();
+                }
             }
-            setTimeout(() => this.dom.input.focus(), 300);
+            setTimeout(() => {
+                if (this.dom.input) this.dom.input.focus();
+            }, 300);
         }
     }
 
@@ -199,6 +203,14 @@ class QuizTutor {
         try {
             const spec = this.getSpecialization();
             const targetExam = this.questionContext?.target || window.__quizState?.targetExam || (spec === 'education' ? 'ASCENSO' : 'SERUMS');
+            
+            // Garantizar array de opciones limpio
+            let rawOptions = this.questionContext?.options || [];
+            if (typeof rawOptions === 'string') {
+                try { rawOptions = JSON.parse(rawOptions); } catch (e) { rawOptions = [rawOptions]; }
+            }
+            const safeOptions = Array.isArray(rawOptions) ? rawOptions : [];
+
             const payload = {
                 message: text,
                 specialization: spec,
@@ -207,23 +219,31 @@ class QuizTutor {
                 ephemeral: true,
                 context: {
                     type: 'quiz_tutor',
-                    questionText: this.questionContext?.questionText || '',
-                    options: this.questionContext?.options || [],
+                    id: this.questionContext?.id,
+                    questionText: this.questionContext?.questionText || this.questionContext?.question || '',
+                    options: safeOptions,
                     correctOptionIndex: this.questionContext?.correctOptionIndex !== undefined ? this.questionContext.correctOptionIndex : null,
                     correctOptionText: this.questionContext?.correctOptionText || '',
                     userOptionIndex: this.questionContext?.userOptionIndex !== undefined ? this.questionContext.userOptionIndex : null,
                     userOptionText: this.questionContext?.userOptionText || '',
-                    isUserCorrect: this.questionContext?.isUserCorrect || false,
+                    isUserCorrect: Boolean(this.questionContext?.isUserCorrect),
                     explanation: this.questionContext?.explanation || '',
                     topic: this.questionContext?.topic || 'General',
                     target: targetExam,
                     career: this.questionContext?.career || window.__quizState?.career || '',
                     examContext: this.questionContext?.examContext || window.__quizState?.context || 'MEDICINA',
-                    difficulty: this.questionContext?.difficulty || window.__quizState?.difficulty || '',
+                    difficulty: this.questionContext?.difficulty || window.__quizState?.difficulty || 'Senior',
                     areas: this.questionContext?.areas || window.__quizState?.areas || [],
                     mode: this.questionContext?.mode || window.__quizState?.mode || '',
-                    caseDescription: this.questionContext?.caseDescription || '',
+                    imageUrl: this.questionContext?.imageUrl || null,
+                    explanationImageUrl: this.questionContext?.explanationImageUrl || null,
+                    audioText: this.questionContext?.audioText || null,
+                    caseId: this.questionContext?.caseId || null,
+                    caseCode: this.questionContext?.caseCode || null,
                     caseTitle: this.questionContext?.caseTitle || '',
+                    caseDescription: this.questionContext?.caseDescription || '',
+                    caseImageUrl: this.questionContext?.caseImageUrl || null,
+                    caseTableHtml: this.questionContext?.caseTableHtml || null,
                     caseOrder: this.questionContext?.caseOrder || null
                 }
             };
@@ -238,7 +258,7 @@ class QuizTutor {
             if (!response.ok) {
                 if (response.status === 403) {
                     if (window.uiManager) {
-                        window.uiManager.showPaywallModal(data.error || null, 'chat_standard');
+                        window.uiManager.showPaywallModal(data.error || null, 'quiz_tutor');
                     }
                     this._addMessage(`⚠️ ${data.error || 'Límite de consultas diarias alcanzado.'}`, 'bot');
                     return;
