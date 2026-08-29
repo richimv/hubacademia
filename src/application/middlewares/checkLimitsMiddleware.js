@@ -163,16 +163,35 @@ const checkAILimits = (type) => {
                 const urlStr = req.originalUrl || '';
                 const isDiagnostic = pathStr.includes('/diagnostic') || urlStr.includes('/diagnostic');
                 if (isDiagnostic) {
-                    if (!isActiveAccount) {
-                        req.usageType = null;
-                        req.fallbackToStatic = true;
-                    } else {
-                        if ((user.daily_ai_usage || 0) >= userLimits.chat_standard) {
+                    if (isActiveAccount) {
+                        if (tier === 'basic') {
+                            // 📘 Plan Básico Activo: Diagnóstico Heurístico Estático (0 tokens diarios de IA, 0 vidas)
                             req.usageType = null;
+                            req.cost = 0;
                             req.fallbackToStatic = true;
                         } else {
-                            req.usageType = 'daily_ai_usage';
+                            // 🚀 Plan Avanzado / Admin Activo: Diagnóstico Dinámico Gemini (1 token daily_ai_usage si hay saldo)
+                            if ((user.daily_ai_usage || 0) >= userLimits.chat_standard) {
+                                req.usageType = null;
+                                req.cost = 0;
+                                req.fallbackToStatic = true;
+                            } else {
+                                req.usageType = 'daily_ai_usage';
+                                req.cost = 1;
+                            }
                         }
+                    } else {
+                        // 🪙 Cuenta Gratuita / Pending / Expired: Consume 1 vida de prueba semanal (10 max)
+                        if ((user.usage_count || 0) >= (user.max_free_limit || 10)) {
+                            return res.status(403).json({
+                                error: 'Se han agotado tus 10 vidas de prueba semanal. Mejora tu plan a Basic o Advanced para continuar usando los diagnósticos con IA.',
+                                reason: 'FREE_LIVES_EXHAUSTED',
+                                paywall: true
+                            });
+                        }
+                        req.usageType = 'usage_count';
+                        req.cost = 1;
+                        req.fallbackToStatic = true;
                     }
                 } else {
                     const context = req.body && req.body.context;

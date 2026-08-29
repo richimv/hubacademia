@@ -876,6 +876,17 @@
     transform: none;
 }
 
+.chatbot-disclaimer-text {
+    font-size: 0.72rem;
+    color: var(--chat-text-muted);
+    text-align: center;
+    margin: 0.5rem 0 0;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    user-select: none;
+    opacity: 0.85;
+}
+
 /* Suggestions */
 .chatbot-suggestions {
     display: flex;

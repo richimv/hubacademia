@@ -12,23 +12,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('user-name').textContent = user.name || 'Usuario';
     const emailEl = document.getElementById('user-email');
     emailEl.textContent = user.email || '';
-    const verifiedIcon = document.createElement('i');
-    verifiedIcon.className = 'fas fa-check-circle';
-    verifiedIcon.style.cssText = 'color: var(--success); font-size: 0.85rem; margin-left: 5px;';
-    verifiedIcon.title = 'Verificado vía Google';
-    emailEl.appendChild(verifiedIcon);
 
     const avatarBadge = document.getElementById('user-avatar-badge');
     if (avatarBadge) {
-        const photoUrl = user.picture || user.avatar_url || user.avatarUrl;
-        const safePhotoUrl = getSafeProfileImageUrl(photoUrl);
-        if (safePhotoUrl) {
-            const image = document.createElement('img');
-            image.src = safePhotoUrl;
-            image.alt = user.name || 'Usuario';
-            image.className = 'profile-avatar-img';
-            avatarBadge.replaceChildren(image);
+        const displayName = user.name || 'Usuario';
+        const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`;
+        const rawPhoto = user.picture || user.avatar_url || user.avatarUrl;
+        let safePhotoUrl = fallbackAvatar;
+        if (rawPhoto && typeof rawPhoto === 'string') {
+            const trimmed = rawPhoto.trim();
+            if (trimmed !== '' && trimmed !== 'null' && trimmed !== 'undefined') {
+                safePhotoUrl = getSafeProfileImageUrl(trimmed) || fallbackAvatar;
+            }
         }
+
+        const image = document.createElement('img');
+        image.src = safePhotoUrl;
+        image.alt = displayName;
+        image.className = 'profile-avatar-img';
+        image.referrerPolicy = 'no-referrer';
+        image.onerror = () => {
+            image.onerror = null;
+            image.src = fallbackAvatar;
+        };
+        avatarBadge.replaceChildren(image);
     }
 
     const badgeContainer = document.getElementById('plan-badge-container');
@@ -41,15 +48,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (tier === 'basic') {
         badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-star"></i> Plan Basic</span>';
     } else {
-        badgeContainer.innerHTML = '<span class="badge-free"><i class="fas fa-seedling"></i> Plan Gratuito (10 Vidas)</span>';
+        badgeContainer.innerHTML = '<span class="badge-free">Plan Gratuito</span>';
     }
 
     // Update Security & Role Info
     const roleValEl = document.getElementById('user-role-val');
     if (roleValEl) {
         if (user.role === 'admin') roleValEl.textContent = 'Administrador Global';
-        else if (user.role === 'teacher') roleValEl.textContent = 'Docente / Facilitador';
-        else roleValEl.textContent = 'Estudiante / Usuario Registrado';
+        else if (user.role === 'teacher') roleValEl.textContent = 'Docente';
+        else roleValEl.textContent = 'Estudiante';
     }
 
     renderSubscriptionDetails(user);
@@ -57,9 +64,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function getSafeProfileImageUrl(value) {
-    if (!value) return null;
+    if (!value || typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (trimmed === '' || trimmed === 'null' || trimmed === 'undefined') return null;
     try {
-        const url = new URL(value, window.location.origin);
+        const url = new URL(trimmed, window.location.origin);
         return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
     } catch (error) {
         return null;
@@ -114,11 +123,11 @@ function renderSubscriptionDetails(user) {
         container.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">ROL ADMINISTRADOR <i class="fas fa-shield-alt" style="color: var(--primary);"></i></span>
+                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">ROL ADMINISTRADOR</span>
                     <span style="background: var(--primary-glow); color: var(--primary); border: 1px solid var(--border-hover); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">ILIMITADO</span>
                 </div>
                 <div style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">
-                    <i class="fas fa-check-circle" style="color: var(--success); margin-right: 6px;"></i> Posees acceso total y sin restricciones a todos los servicios de IA y administración de la plataforma.
+                    Posees acceso total y sin restricciones a todos los servicios de IA y administración de la plataforma.
                 </div>
             </div>
         `;
@@ -132,18 +141,18 @@ function renderSubscriptionDetails(user) {
         if (tier === 'basic') {
             planPerks = `
                 <div style="display: flex; flex-direction: column; gap: 0.45rem; margin: 0.25rem 0; font-size: 0.85rem; color: var(--text-secondary);">
-                    <div><i class="fas fa-check-circle" style="color: var(--success); margin-right: 8px;"></i> 50 Consultas diarias al Tutor IA Estándar</div>
-                    <div><i class="fas fa-check-circle" style="color: var(--success); margin-right: 8px;"></i> 15 Simulacros completos por día</div>
-                    <div><i class="fas fa-check-circle" style="color: var(--success); margin-right: 8px;"></i> Flashcards Manuales Ilimitadas</div>
+                    <div>• 50 Consultas diarias al Tutor IA</div>
+                    <div>• 15 Simulacros completos por día</div>
+                    <div>• Flashcards Manuales Ilimitadas</div>
                 </div>
             `;
         } else {
             planPerks = `
                 <div style="display: flex; flex-direction: column; gap: 0.45rem; margin: 0.25rem 0; font-size: 0.85rem; color: var(--text-secondary);">
-                    <div><i class="fas fa-check-circle" style="color: var(--warning); margin-right: 8px;"></i> 100 Consultas diarias al Tutor IA Estándar</div>
-                    <div><i class="fas fa-check-circle" style="color: var(--warning); margin-right: 8px;"></i> 25 Consultas diarias de Especialidad (RAG)</div>
-                    <div><i class="fas fa-check-circle" style="color: var(--warning); margin-right: 8px;"></i> 50 Simulacros completos por día</div>
-                    <div><i class="fas fa-check-circle" style="color: var(--warning); margin-right: 8px;"></i> 30 Generaciones de Flashcards con IA al mes</div>
+                    <div>• 100 Consultas diarias al Tutor IA</div>
+                    <div>• 25 Consultas diarias de Especialidad (RAG)</div>
+                    <div>• 50 Simulacros completos por día</div>
+                    <div>• 30 Generaciones de Flashcards con IA al mes</div>
                 </div>
             `;
         }
@@ -151,7 +160,7 @@ function renderSubscriptionDetails(user) {
         container.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">PLAN ${tier.toUpperCase()} <i class="fas fa-check-circle" style="color: var(--success); margin-left: 4px;"></i></span>
+                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">PLAN ${tier.toUpperCase()}</span>
                     <span style="background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">ACTIVO</span>
                 </div>
 
@@ -161,8 +170,8 @@ function renderSubscriptionDetails(user) {
                     <i class="far fa-calendar-alt" style="color: var(--primary);"></i> Vence el: <strong style="color: var(--text-main);">${dateStr}</strong>
                 </div>
 
-                <a href="/pricing" class="btn-action btn-secondary" style="align-self: flex-start; margin-top: 0.25rem;">
-                    <i class="fas fa-cog"></i> Administrar Suscripción
+                <a href="/pricing" class="btn-action btn-secondary" style="align-self: flex-start; margin-top: 0.25rem; text-decoration: none;">
+                    Administrar Suscripción
                 </a>
             </div>
         `;
@@ -177,8 +186,8 @@ function renderSubscriptionDetails(user) {
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem; color: var(--text-secondary);">
-                    <div><i class="fas fa-bolt" style="color: var(--warning); margin-right: 8px;"></i> <strong>10 Créditos semanales</strong> de acceso para simuladores y tutorías</div>
-                    <div><i class="fas fa-redo-alt" style="color: var(--primary); margin-right: 8px;"></i> <strong>Recarga automática</strong> cada 7 días</div>
+                    <div>• <strong>10 Créditos semanales</strong> para simuladores y tutorías</div>
+                    <div>• <strong>Recarga automática</strong> cada 7 días</div>
                 </div>
 
                 <div class="renewal-banner">
@@ -188,8 +197,8 @@ function renderSubscriptionDetails(user) {
                     </div>
                 </div>
 
-                <a href="/pricing" class="btn-action btn-primary" style="width: 100%; margin-top: 0.25rem;">
-                    💎 Activar Plan Basic o Advanced
+                <a href="/pricing" class="btn-action btn-primary" style="width: 100%; margin-top: 0.25rem; text-align: center; text-decoration: none;">
+                    Activar Plan Basic o Advanced
                 </a>
             </div>
         `;
@@ -301,16 +310,11 @@ async function submitNameChange() {
 }
 
 /**
- * Genera el HTML de una tarjeta de consumo
- */
-function createUsageCardHTML({ title, icon, colorHex, colorBg, badge, countVal, percentage, labelLeft, labelRight }) {
+ * Genfunction createUsageCardHTML({ title, colorHex, badge, countVal, percentage, labelLeft, labelRight }) {
     return `
         <div class="usage-item">
             <div class="usage-item-header">
                 <div class="usage-title-group">
-                    <div class="usage-icon-pill" style="background: ${colorBg}; color: ${colorHex};">
-                        <i class="${icon}"></i>
-                    </div>
                     <div class="usage-title-text-wrap">
                         <div class="usage-title">${title}</div>
                         <span class="usage-badge-tag">${badge}</span>
@@ -323,7 +327,7 @@ function createUsageCardHTML({ title, icon, colorHex, colorBg, badge, countVal, 
             </div>
             <div class="usage-footer">
                 <span class="usage-footer-left">${labelLeft}</span>
-                <span class="usage-footer-right" style="color: ${colorHex};">${labelRight}</span>
+                <span class="usage-footer-right" style="color: ${colorHex}; font-weight: 600;">${labelRight}</span>
             </div>
         </div>
     `;
@@ -362,7 +366,6 @@ function renderUsageDetails(user) {
 
         container.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: var(--bg-tertiary); border: 1px dashed var(--border-color); border-radius: 14px;">
-                <i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
                 <h4 style="color: var(--text-main); margin: 0 0 0.4rem 0; font-weight: 700; font-size: 1.05rem;">Acceso Ilimitado de Administrador</h4>
                 <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0 auto; max-width: 540px; line-height: 1.5;">Tu cuenta posee permisos globales y acceso sin restricciones ni límites de cuota en todas las funciones de IA.</p>
             </div>
@@ -386,9 +389,7 @@ function renderUsageDetails(user) {
 
         cardsHTML += createUsageCardHTML({
             title: 'Tutor de IA Estándar',
-            icon: 'fas fa-comments',
             colorHex: 'var(--primary)',
-            colorBg: 'var(--info-bg)',
             badge: 'Diario',
             countVal: `${aiUsed} / ${aiLimit}`,
             percentage: aiPct,
@@ -405,9 +406,7 @@ function renderUsageDetails(user) {
 
             cardsHTML += createUsageCardHTML({
                 title: 'Consultas RAG Especializadas',
-                icon: 'fas fa-brain',
                 colorHex: 'var(--accent-teal)',
-                colorBg: 'rgba(20, 184, 166, 0.12)',
                 badge: 'Diario (Advanced)',
                 countVal: `${ragUsed} / ${ragLimit}`,
                 percentage: ragPct,
@@ -424,9 +423,7 @@ function renderUsageDetails(user) {
 
         cardsHTML += createUsageCardHTML({
             title: 'Simulacros y Exámenes',
-            icon: 'fas fa-stethoscope',
             colorHex: 'var(--accent-purple)',
-            colorBg: 'rgba(139, 92, 246, 0.12)',
             badge: 'Diario',
             countVal: `${simUsed} / ${simLimit}`,
             percentage: simPct,
@@ -443,9 +440,7 @@ function renderUsageDetails(user) {
 
             cardsHTML += createUsageCardHTML({
                 title: 'Generador de Flashcards',
-                icon: 'fas fa-clone',
                 colorHex: 'var(--warning)',
-                colorBg: 'var(--warning-bg)',
                 badge: 'Mensual (Advanced)',
                 countVal: `${fcUsed} / ${fcLimit}`,
                 percentage: fcPct,
@@ -464,43 +459,31 @@ function renderUsageDetails(user) {
         const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
         const remaining = Math.max(0, maxFreeLimit - usageCount);
         const pct = Math.min(100, (remaining / maxFreeLimit) * 100);
-
-        const renewalInfo = getNextFreeRenewalInfo(user);
         
         let colorHex = 'var(--success)';
-        let colorBg = 'var(--success-bg)';
         if (remaining <= 2 && remaining > 0) {
             colorHex = 'var(--warning)';
-            colorBg = 'var(--warning-bg)';
         } else if (remaining === 0) {
             colorHex = 'var(--danger)';
-            colorBg = 'var(--danger-bg)';
         }
 
         container.innerHTML = `
             <div class="usage-item" style="grid-column: 1 / -1;">
                 <div class="usage-item-header">
                     <div class="usage-title-group">
-                        <div class="usage-icon-pill" style="background: ${colorBg}; color: ${colorHex};">
-                            <i class="fas fa-bolt"></i>
-                        </div>
                         <div class="usage-title-text-wrap">
                             <div class="usage-title">Créditos de Exploración Disponibles</div>
                             <span class="usage-badge-tag">Recarga Semanal (10 Vidas)</span>
                         </div>
                     </div>
-                    <div class="usage-count-val" style="color: ${colorHex};">${remaining} / ${maxFreeLimit}</div>
+                    <div class="usage-count-val" style="color: ${colorHex}; font-size: 1.25rem; font-weight: 800;">${remaining} / ${maxFreeLimit}</div>
                 </div>
                 <div class="usage-progress-bg">
                     <div class="usage-progress-bar" style="width: ${pct}%; background: ${colorHex};"></div>
                 </div>
                 <div class="usage-footer">
-                    <span class="usage-footer-left">Consumidos en esta semana: ${usageCount}</span>
-                    <span class="usage-footer-right" style="color: ${colorHex};">Disponibles: ${remaining} vidas</span>
-                </div>
-                <div style="margin-top: 0.4rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); font-size: 0.825rem; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                    <span><i class="fas fa-clock" style="margin-right: 6px; color: var(--primary);"></i>Próxima recarga semanal:</span>
-                    <span style="color: var(--text-main); font-weight: 700;">${renewalInfo.formattedDate}</span>
+                    <span class="usage-footer-left">Consumidos esta semana: ${usageCount}</span>
+                    <span class="usage-footer-right" style="color: ${colorHex}; font-weight: 600;">Disponibles: ${remaining} vidas</span>
                 </div>
             </div>
         `;

@@ -167,6 +167,10 @@ El backend validará duplicados y guardará los registros en PostgreSQL destacá
 ---
 
 ## 📋 Registro de Ejecución y Noticias Ingestadas (Logs)
+- **Fecha:** 28 de agosto de 2026
+- **MINEDU (education):** Sin nuevas noticias ni normas sobre Nombramiento, Ascenso Docente o Cargos Directivos publicadas durante el día de hoy (1 noticia oficial descartada por temática no docente: *Minedu refuerza prevención en 44 universidades públicas ante posibles efectos del fenómeno El Niño*).
+- **Estado de Ingesta:** ✅ Monitoreo de Educación al día. 0 recursos ingestados por política de cero inserciones forzadas.
+
 - **Fecha:** 25 de agosto de 2026
 - **Recursos Ingestados:**
   1. **MINEDU (education):** [Minedu impulsará titulación de colegios de Ica para mejorar su infraestructura](https://www.gob.pe/institucion/minedu/noticias/1434484-minedu-impulsara-titulacion-de-colegios-de-ica-para-mejorar-su-infraestructura)

@@ -27,7 +27,8 @@ class UserRepository {
             row.monthly_flashcards_usage,
             row.daily_import_usage,
             row.last_free_renewal,
-            row.daily_rag_usage
+            row.daily_rag_usage,
+            row.avatar_url
         );
     }
 
@@ -58,9 +59,9 @@ class UserRepository {
             WHERE id = $1
               AND (subscription_tier = 'free' OR subscription_status IN ('pending', 'expired'))
               AND (
-                  last_free_renewal IS NULL
-                  OR (last_free_renewal AT TIME ZONE 'America/Lima')::date
-                     <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '7 days')::date
+                   last_free_renewal IS NULL
+                   OR (last_free_renewal AT TIME ZONE 'America/Lima')::date
+                      <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '7 days')::date
               )
         `, [userId]);
 
@@ -109,7 +110,7 @@ class UserRepository {
     }
 
     async create(userData) {
-        const { email, name, role = 'student', id: externalId = null } = userData;
+        const { email, name, role = 'student', id: externalId = null, avatar_url = null } = userData;
         
         const placeholderPassword = crypto.randomBytes(32).toString('hex');
         const salt = await bcrypt.genSalt(10);
@@ -121,8 +122,8 @@ class UserRepository {
 
         try {
             // Intentar usar el Procedimiento Almacenado (Optimizado y Atómico)
-            const queryText = 'SELECT * FROM sp_register_user($1, $2, $3, $4, $5)';
-            const values = [id, name, email.toLowerCase(), passwordHash, role];
+            const queryText = 'SELECT * FROM sp_register_user($1, $2, $3, $4, $5, $6)';
+            const values = [id, name, email.toLowerCase(), passwordHash, role, avatar_url];
             const res = await db.query(queryText, values);
             
             if (res.rows.length > 0) return this._mapRowToUser(res.rows[0]);
@@ -133,29 +134,28 @@ class UserRepository {
                 
                 // Estrategia: Intentar insertar por ID, pero si el EMAIL ya existe, actualizar el registro existente.
                 const manualQuery = `
-                    INSERT INTO public.users (id, name, email, password_hash, role, subscription_status, subscription_tier, usage_count, max_free_limit, last_usage_reset, last_free_renewal, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, 'pending', 'free', 0, 20, CURRENT_DATE, NOW(), NOW())
+                    INSERT INTO public.users (id, name, email, password_hash, role, avatar_url, subscription_status, subscription_tier, usage_count, max_free_limit, last_usage_reset, last_free_renewal, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'free', 0, 10, CURRENT_DATE, NOW(), NOW())
                     ON CONFLICT (email) 
                     DO UPDATE SET 
                         id = EXCLUDED.id,
+                        avatar_url = COALESCE(EXCLUDED.avatar_url, public.users.avatar_url),
                         updated_at = NOW()
                     RETURNING *;
                 `;
-                const manualRes = await db.query(manualQuery, [id, name, email.toLowerCase(), passwordHash, role]);
+                const manualRes = await db.query(manualQuery, [id, name, email.toLowerCase(), passwordHash, role, avatar_url]);
                 return this._mapRowToUser(manualRes.rows[0]);
             }
             
             // Si el error es específicamente de duplicado de email (23505) y no usamos el fallback arriba
              if (dbError.code === '23505') {
-                  // console.log(`✨ [Identity] Sincronización exitosa: Perfil vinculado para ${email.toLowerCase()}`);
                   const updateQuery = `
                     UPDATE public.users 
-                    SET id = $1, updated_at = NOW() 
+                    SET id = $1, avatar_url = COALESCE($3, avatar_url), updated_at = NOW() 
                     WHERE lower(email) = $2
                     RETURNING *;
                   `;
-                  // Pasamos solo ID y Email (el nombre ya no se toca si hay conflicto)
-                  const updateRes = await db.query(updateQuery, [id, email.toLowerCase()]);
+                  const updateRes = await db.query(updateQuery, [id, email.toLowerCase(), avatar_url]);
                   return this._mapRowToUser(updateRes.rows[0]);
              }
 

@@ -125,6 +125,25 @@ CREATE TABLE public.user_simulator_preferences (
 );
 ```
 
+### 2.5 Tabla `users` (Gestión de Identidad, Avatar Oficial y Vidas)
+```sql
+CREATE TABLE public.users (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash TEXT,
+    role VARCHAR(50) DEFAULT 'student',
+    avatar_url TEXT,                               -- Foto oficial sincronizada desde Google CDN
+    subscription_status VARCHAR(50) DEFAULT 'pending', -- 'pending' | 'active' | 'expired'
+    subscription_tier VARCHAR(50) DEFAULT 'free',      -- 'free' | 'basic' | 'advanced'
+    usage_count INTEGER DEFAULT 0,                 -- Vidas consumidas
+    max_free_limit INTEGER DEFAULT 10,             -- Límite de vidas gratuitas (10)
+    last_free_renewal TIMESTAMP WITH TIME ZONE DEFAULT now(), -- Renovación semanal de 10 vidas
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+```
+
 ---
 
 ## 3. 🎯 Entidades Reales y Modelos de Datos (Dominio Salud)
@@ -334,23 +353,22 @@ CREATE TABLE public.user_simulator_preferences (
 
 ---
 
-### 4.17 🩺 Estándar Canónico de Áreas SERUMS, Persistencia en Base de Datos y Consolidación de Analíticas
-- **5 Áreas Oficiales SERUMS (Bloque Temático Oficial)**:
-  - En SERUMS, la evaluación y las estadísticas se estructuran estrictamente en 5 áreas oficiales con tipografía canónica:
-    1. `Salud Pública`
-    2. `Cuidado Integral de Salud` (con 'de' minúscula)
-    3. `Ética e Interculturalidad` (con 'e' minúscula)
-    4. `Investigación`
-    5. `Gestión de Servicios de Salud` (con 'de' minúscula)
-  - Se erradicaron nombres ficticios y desactualizados (`"Salud Pública y Epidemiología"`, `"Gestión en Establecimientos de Salud I-1 a I-4"`, `"Atención Integral de Salud MAIS-BFC"`, `"Bioética y Medicina Intercultural"`) y se unificaron bajo el grupo `'Bloque Temático Oficial'`.
-- **Esquema de Persistencia Riguroso en `quiz_history` (Backend y Apps)**:
-  - `topic`: Si el simulacro cuenta con 2 o más áreas seleccionadas/aplicadas, se guarda obligatoriamente como `"Multi-Área"`. Si es de un área única, se guarda el nombre canónico de dicha área.
-  - `difficulty`: Se almacena como `"Senior"` (se erradicaron valores inválidos como `"MIXTO"`).
-  - `score`: Se guarda como entero (`int4`), representando el conteo exacto de respuestas correctas (ej. `4`, `8`, `20`).
-  - `weak_points`: Si el puntaje es menor al total de preguntas, se guarda como `["Multi-Área"]` (o `[topic]` en simulacro unitemático).
-  - `area_stats`: Objeto JSON con claves canónicas normalizadas mapeando `{ total, correct }`.
-- **Consolidación Automática de Analíticas y Gráficos Radar**:
-  - Tanto `medicoService.getUserQuizStats` como el componente móvil `ClinicalBarChart.tsx` integran un normalizador canónico que consolida registros históricos con ligeras variantes ortográficas o de mayúsculas (ej. `"Cuidado Integral De Salud"` vs `"Cuidado Integral de Salud"`), sumando aciertos y totales para prevenir filas duplicadas en el dashboard de analíticas.
+### 4.18 🧠 Diagnóstico Inteligente Multi-Tier & Principio de Sobriedad Visual (`AIDiagnosisCard.tsx` & `/api/analytics/diagnostic`)
+- **Integración de Diagnóstico en App Móvil (`AIDiagnosisCard.tsx`)**:
+  - Ubicado en `app/(tabs)/home.tsx`, permite al postulante médico extraer un informe estructurado de rendimiento clínico basado en sus simulacros reales.
+  - **Índice de Preparación Oficial (`Readiness Index %`)**: Visualiza un score ponderado de efectividad correlacionado con la escala vigesimal y badge de competencia (`Sobresaliente`, `Competente`, `En Desarrollo`, `Inicial`).
+  - **Fortalezas y Oportunidades de Mejora**: Tarjetas analíticas con conteo de reactivos correctos/fallados y sustento normativo oficial MINSA/ASPEFAM renderizadas mediante `RichMarkdown.tsx`.
+  - **Píldora High-Yield Oficial (Exclusiva Plan Avanzado)**: Perla clínica o concepto clave de alta recurrencia en el examen nacional con acento ámbar.
+  - **Sprint Táctico en 3 Pasos**: Ruta accionable estructurada (Refuerzo Conceptual, Modo Estudio 20q y Velocidad en 10q).
+- **Gestión de Cuotas y Vidas en Móvil**:
+  - **Cuentas Free**: Consume 1 vida semanal al generar el diagnóstico, dispara el toast flotante `LifeToast` (`⚡ 1 vida utilizada en diagnóstico. Te quedan X vidas.`) y sincroniza el perfil con `refreshProfile()`. Si las vidas llegan a 0, despliega la alerta con acceso a `/pricing`.
+  - **Plan Básico**: Diagnóstico heurístico estático ilimitado (0 tokens de IA).
+  - **Plan Avanzado / Admin**: Auditoría cognitiva profunda con **Motor de IA Avanzado (Google Cloud Vertex AI)** (consumiendo 1 token diario).
+- **Iconografía Sobria y Minimalista (Sin Icon Clutter)**:
+  - En cumplimiento de `DESIGN_SYSTEM.md`, la interfaz móvil evita el exceso de iconos decorativos, dando protagonismo a la tipografía clara (`Inter`), espaciados limpios y jerarquía visual esbelta.
+- **Diferenciación Móvil**: En la app móvil no existe modo demo ni el gráfico de dona "Distribución por Áreas", conservando una experiencia nativa directa y enfocada.
+
+---
 
 
 

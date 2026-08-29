@@ -75,4 +75,15 @@ describe('GuestSessionManager Engine', () => {
         expect(global.localStorage.getItem('guest_demo_stats_educacion')).toBeNull();
         expect(GuestSessionManager.getGuestStats('MEDICINA')).toBeNull();
     });
+
+    it('should correctly determine guest daily trial availability for 10qs mode card', () => {
+        // Visitante nuevo o en nuevo día
+        expect(GuestSessionManager.canTakeDailyDemo()).toBe(true);
+
+        // Simulamos que el visitante rinde el simulacro
+        GuestSessionManager.recordDemoAttempt();
+
+        // Ya no tiene intento disponible hoy
+        expect(GuestSessionManager.canTakeDailyDemo()).toBe(false);
+    });
 });

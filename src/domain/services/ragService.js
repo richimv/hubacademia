@@ -32,7 +32,7 @@ class RagService {
                     location: process.env.GOOGLE_CLOUD_LOCATION
                 });
                 this._rewriterModel = vertexAI.getGenerativeModel({
-                    model: 'gemini-3.1-flash-lite',
+                    model: 'gemini-2.5-flash-lite',
                     generationConfig: {
                         temperature: 0.1,
                         maxOutputTokens: 512,

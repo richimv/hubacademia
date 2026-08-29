@@ -40,20 +40,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/base.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/header.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/footer.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/dashboard.css?v=28e9f50a33f3">
+    <link rel="stylesheet" href="/css/theme.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/base.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/header.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/footer.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/dashboard.css?v=880624f0850c">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/modal.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/sidebar.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/components.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=28e9f50a33f3"> <!-- ✅ Formato unificado de Markdown IA -->
-    <link rel="stylesheet" href="/css/quiz.css?v=28e9f50a33f3">
-    <script src="/js/config.js?v=28e9f50a33f3"></script>
-    <script src="/js/utils/themeManager.js?v=28e9f50a33f3"></script>
+    <link rel="stylesheet" href="/css/modal.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/sidebar.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/components.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=880624f0850c"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="/css/quiz.css?v=880624f0850c">
+    <script src="/js/config.js?v=880624f0850c"></script>
+    <script src="/js/utils/themeManager.js?v=880624f0850c"></script>
 
     <!-- ✅ Schema.org / JSON-LD -->
     <script type="application/ld+json">
@@ -439,6 +439,32 @@
 
                             <!-- Results State -->
                             <div id="ai-results-state" class="ai-state-box ai-state-box--results" style="display:none;">
+                                <!-- Readiness Index Banner -->
+                                <div id="ai-readiness-banner" class="ai-readiness-banner">
+                                    <div class="ai-readiness-left">
+                                        <div class="ai-readiness-score-ring">
+                                            <span id="ai-readiness-number" class="ai-readiness-number">--%</span>
+                                        </div>
+                                        <div class="ai-readiness-info">
+                                            <span class="ai-readiness-tag" id="ai-readiness-level">Nivel en Desarrollo</span>
+                                            <h5 class="ai-readiness-title" id="ai-readiness-title">Índice de Preparación para la Prueba Oficial</h5>
+                                            <p class="ai-readiness-desc" id="ai-readiness-desc">Basado en la correlación de tus aciertos con el peso ponderado del temario.</p>
+                                        </div>
+                                    </div>
+                                    <div class="ai-readiness-badge-tier" id="ai-tier-indicator">
+                                        <span class="ai-tier-badge"><i class="fas fa-microchip"></i> <span id="ai-tier-text">Diagnóstico Estático</span></span>
+                                    </div>
+                                </div>
+
+                                <!-- High-Yield Tip Banner (Advanced) -->
+                                <div id="ai-highyield-box" class="ai-highyield-box" style="display:none;">
+                                    <div class="ai-highyield-header">
+                                        <i class="fas fa-fire-flame-curved"></i>
+                                        <span>Píldora High-Yield (Examen Oficial)</span>
+                                    </div>
+                                    <p id="ai-highyield-text" class="ai-highyield-text">--</p>
+                                </div>
+
                                 <div class="ai-insights-grid">
                                     <!-- Dominio Consolidado -->
                                     <div class="ai-insight-panel ai-insight-panel--strengths">
@@ -459,13 +485,24 @@
                                     </div>
                                 </div>
 
+                                <!-- Sprint Táctico en 3 Pasos -->
+                                <div class="ai-sprint-section">
+                                    <div class="ai-sprint-header">
+                                        <i class="fas fa-route"></i>
+                                        <span>Sprint Táctico Recomendado (3 Pasos de Alto Impacto)</span>
+                                    </div>
+                                    <div id="ai-sprint-grid" class="ai-sprint-grid">
+                                        <!-- Inyectado vía JS -->
+                                    </div>
+                                </div>
+
                                 <div class="ai-strategy-box">
                                     <div class="ai-strategy-header">
                                         <div class="ai-strategy-title">
                                             <i class="fas fa-lightbulb"></i>
-                                            <span>Estrategia de Estudio Recomendada por IA</span>
+                                            <span>Estrategia de Estudio y Recomendación de Mentoría</span>
                                         </div>
-                                        <span class="ai-strategy-badge">Deep Learning</span>
+                                        <span class="ai-strategy-badge" id="ai-strategy-badge">Recomendación Estratégica</span>
                                     </div>
                                     <p class="ai-strategy-text" id="ai-strategy-text">
                                         Concéntrate en resolver simulacros en los temas prioritarios para balancear tu dominio y maximizar tu nota en el examen oficial.
@@ -611,22 +648,22 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=28e9f50a33f3"></script>
+    <script src="/js/services/networkService.js?v=880624f0850c"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=28e9f50a33f3"></script>
-    <script src="/js/services/authApiService.js?v=28e9f50a33f3"></script>
-    <script src="/js/services/analyticsApiService.js?v=28e9f50a33f3"></script>
-    <script src="/js/sessionManager.js?v=28e9f50a33f3"></script>
-    <script src="/js/ui/uiManager.js?v=28e9f50a33f3"></script>
-    <script src="/js/ui/tooltipManager.js?v=28e9f50a33f3"></script>
-    <script src="/js/ui/components.js?v=28e9f50a33f3"></script>
-    <script src="/js/ui/sidebar.js?v=28e9f50a33f3"></script>
-    <script src="/js/app.js?v=28e9f50a33f3"></script>
+    <script src="/js/utils/markdown-renderer.js?v=880624f0850c"></script>
+    <script src="/js/services/authApiService.js?v=880624f0850c"></script>
+    <script src="/js/services/analyticsApiService.js?v=880624f0850c"></script>
+    <script src="/js/sessionManager.js?v=880624f0850c"></script>
+    <script src="/js/ui/uiManager.js?v=880624f0850c"></script>
+    <script src="/js/ui/tooltipManager.js?v=880624f0850c"></script>
+    <script src="/js/ui/components.js?v=880624f0850c"></script>
+    <script src="/js/ui/sidebar.js?v=880624f0850c"></script>
+    <script src="/js/app.js?v=880624f0850c"></script>
 
     <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 
-    <script src="/js/simulator-dash.js?v=28e9f50a33f3"></script>
+    <script src="/js/simulator-dash.js?v=880624f0850c"></script>
 </body>
 
 </html>

@@ -21,7 +21,7 @@ class TutorAiService {
         this.bookRepository = new BookRepository();
 
         this.model = this.vertex_ai.getGenerativeModel({
-            model: 'gemini-3.1-flash-lite',
+            model: 'gemini-2.5-flash-lite',
             generationConfig: {
                 maxOutputTokens: 8192,
                 temperature: 0.8,
@@ -29,7 +29,7 @@ class TutorAiService {
                 responseMimeType: "application/json"
             }
         });
-        console.log("✅ TutorAiService: Motor de Tutoría (gemini-3.1-flash-lite) inicializado.");
+        console.log("✅ TutorAiService: Motor de Tutoría (gemini-3.5-flash-lite / gemini-2.5-flash-lite) inicializado.");
     }
 
     /**
@@ -125,7 +125,7 @@ class TutorAiService {
     }
 
     /**
-     * Ejecuta una llamada resiliente con reintentos hacia gemini-3.1-flash-lite
+     * Ejecuta una llamada resiliente con reintentos hacia Gemini (REST / Vertex)
      */
     async _callModelResilient(contents, systemPrompt) {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -133,69 +133,13 @@ class TutorAiService {
         let delayMs = 1000;
         let lastError = null;
 
-        const candidateModels = [
-            'gemini-3.1-flash-lite',
-            'gemini-2.5-flash',
+        // 1. Canal Primario Principal: Google Cloud Vertex AI (Gemini Enterprise Agent Platform)
+        const vertexCandidateModels = [
             'gemini-2.5-flash-lite',
-            'gemini-1.5-flash'
+            'gemini-2.5-flash'
         ];
-
-        // 1. Intentar con la API REST de Google AI Studio probando la lista de modelos de forma resiliente
-        if (apiKey) {
-            for (const modelName of candidateModels) {
-                for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                    try {
-                        const axios = require('axios');
-                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-                        
-                        const payload = {
-                            contents: contents,
-                            systemInstruction: {
-                                parts: [{ text: systemPrompt }]
-                            },
-                            generationConfig: {
-                                responseMimeType: "application/json",
-                                temperature: 0.8,
-                                maxOutputTokens: 8192,
-                                topP: 0.9
-                            }
-                        };
-
-                        console.log(`📡 [REST Tutor] Llamando a ${modelName} vía Google AI Studio (Intento ${attempt}/${maxRetries})...`);
-                        const res = await axios.post(url, payload, { timeout: 25000 });
-                        
-                        if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
-                            const text = res.data.candidates[0].content.parts[0].text;
-                            console.log(`✅ [REST Tutor Éxito] Respuesta generada con modelo: ${modelName}`);
-                            return text;
-                        }
-                        throw new Error("Respuesta inválida del servidor REST");
-                    } catch (err) {
-                        lastError = err;
-                        const status = err.response ? err.response.status : null;
-                        console.warn(`⚠️ [REST Tutor Fallo - ${modelName}] Intento ${attempt} falló:`, err.message);
-                        
-                        if (status === 404 || status === 400) {
-                            console.warn(`⚠️ [Modelo Inexistente/Incompatible] Salteando ${modelName}...`);
-                            break;
-                        }
-
-                        if (status === 403) {
-                            break;
-                        }
-
-                        if (attempt < maxRetries) {
-                            await new Promise(resolve => setTimeout(resolve, delayMs));
-                            delayMs *= 2;
-                        }
-                    }
-                }
-            }
-        }
-
-        // 2. Canal Secundario: Vertex AI SDK
-        console.log(`📡 [VertexAI Tutor] Iniciando canal Vertex AI de contingencia...`);
-        for (const modelName of candidateModels) {
+        console.log(`📡 [VertexAI Tutor] Conectando a Vertex AI (GCP Enterprise)...`);
+        for (const modelName of vertexCandidateModels) {
             try {
                 const vertexModel = this.vertex_ai.getGenerativeModel({
                     model: modelName,
@@ -214,6 +158,70 @@ class TutorAiService {
             } catch (err) {
                 lastError = err;
                 console.warn(`⚠️ [VertexAI Tutor Fallo - ${modelName}]:`, err.message);
+            }
+        }
+
+        // 2. Canal Secundario de Contingencia: Google AI Studio REST
+        if (apiKey) {
+            const restCandidateModels = [
+                'gemini-3.5-flash-lite',
+                'gemini-3.1-flash-lite',
+                'gemini-2.5-flash-lite'
+            ];
+            for (const modelName of restCandidateModels) {
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        const axios = require('axios');
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                        
+                        // Sanitizar contents para asegurar partes no vacías
+                        const sanitizedContents = (contents || []).map(c => ({
+                            role: c.role === 'model' ? 'model' : 'user',
+                            parts: (c.parts || []).map(p => {
+                                if (p.inlineData) {
+                                    return { inline_data: { mime_type: p.inlineData.mimeType, data: p.inlineData.data } };
+                                }
+                                return p;
+                            }).filter(p => p.text || p.inline_data)
+                        })).filter(c => c.parts.length > 0);
+
+                        const payload = {
+                            contents: sanitizedContents.length > 0 ? sanitizedContents : [{ role: 'user', parts: [{ text: 'Hola' }] }],
+                            systemInstruction: {
+                                parts: [{ text: systemPrompt }]
+                            },
+                            generationConfig: {
+                                responseMimeType: "application/json",
+                                temperature: 0.8,
+                                maxOutputTokens: 8192,
+                                topP: 0.9
+                            }
+                        };
+
+                        console.log(`📡 [REST Tutor Contingencia] Llamando a ${modelName} vía Google AI Studio...`);
+                        const res = await axios.post(url, payload, { timeout: 25000 });
+                        
+                        if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
+                            const text = res.data.candidates[0].content.parts[0].text;
+                            console.log(`✅ [REST Tutor Éxito] Respuesta generada con modelo: ${modelName}`);
+                            return text;
+                        }
+                        throw new Error("Respuesta inválida del servidor REST");
+                    } catch (err) {
+                        lastError = err;
+                        const status = err.response ? err.response.status : null;
+                        console.warn(`⚠️ [REST Tutor Fallo - ${modelName}]:`, err.message);
+                        
+                        if (status === 404 || status === 400 || status === 403) {
+                            break;
+                        }
+
+                        if (attempt < maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, delayMs));
+                            delayMs *= 2;
+                        }
+                    }
+                }
             }
         }
 

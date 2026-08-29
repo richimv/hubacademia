@@ -71,6 +71,22 @@ class SessionManager {
                         window._isGlobalSyncing = true;
                         window._isAuthenticating = true; 
 
+                        // ⚡ RENDERIZADO OPTIMISTA INMEDIATO (0 ms):
+                        // Mostrar avatar y nombre al instante con los metadatos de Supabase mientras se sincroniza con el backend
+                        if (!this.currentUser) {
+                            const meta = session.user?.user_metadata || {};
+                            this.currentUser = {
+                                id: session.user.id,
+                                email: session.user.email,
+                                name: meta.full_name || meta.name || session.user.email.split('@')[0],
+                                avatar_url: meta.avatar_url || meta.picture || null,
+                                subscriptionTier: 'free',
+                                subscriptionStatus: 'active',
+                                role: 'student'
+                            };
+                            this.notifyStateChange();
+                        }
+
                         // El token recibido en este mismo evento es la fuente de verdad.
                         const syncResponse = await window.AuthApiService.syncGoogleUser(
                             session.user,
@@ -82,7 +98,7 @@ class SessionManager {
                             this.lastSyncTime = Date.now();
                             localStorage.setItem('authToken', session.access_token);
                             
-                            // Notificar UI
+                            // Notificar UI con el perfil completo desde base de datos
                             this.notifyStateChange();
                             
                             // ✅ LIMPIEZA SEGURA: Solo borramos el hash DESPUÉS de una sincronización exitosa

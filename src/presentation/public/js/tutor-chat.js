@@ -41,10 +41,11 @@ class FlashcardTutor {
             </div>
             <div class="tutor-input-area">
                 <textarea id="tutor-input" class="tutor-input-field" placeholder="Escribe tu duda aquí..." rows="1"></textarea>
-                <button id="tutor-send" class="tutor-send-btn">
+                <button id="tutor-send" class="tutor-send-btn" aria-label="Enviar mensaje">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
+            <div class="tutor-disclaimer-text">El Tutor IA puede cometer errores. Verifica información importante.</div>
         `;
         document.body.appendChild(panel);
 

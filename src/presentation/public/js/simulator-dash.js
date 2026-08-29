@@ -622,7 +622,10 @@ const SimulatorDash = (() => {
             renderGuestDemoData();
         }
 
-        // 5. Guía de Onboarding interactiva para visitantes y nuevos usuarios
+        // 5. Diagnóstico Inteligente por IA (Extraer Insights)
+        setupAIDiagnostic();
+
+        // 6. Guía de Onboarding interactiva para visitantes y nuevos usuarios
         setupOnboardingGuide();
 
         // 6. Ocultar Loading & Mostrar Dashboard
@@ -714,6 +717,80 @@ const SimulatorDash = (() => {
         if (btnReal) {
             const separator = baseParams.includes('?') ? '&' : '?';
             btnReal.href = `quiz${baseParams}${separator}limit=100&mode=real`;
+        }
+
+        updateGuestTrialHighlight();
+    }
+
+    /**
+     * Actualiza el estado visual de las tarjetas de modo de examen:
+     * - Visitante:
+     *   * 10qs: parpadeo amarillo si está disponible; 'Prueba completada' con candado si ya se usó.
+     *   * 20qs y Real: icono de candado para indicar que están bloqueados.
+     * - Autenticado:
+     *   * Restaura iconos y textos estándar.
+     */
+    function updateGuestTrialHighlight() {
+        const btnArcade = document.getElementById('btn-mode-arcade');
+        const btnStudy = document.getElementById('btn-mode-study');
+        const btnReal = document.getElementById('btn-mode-real');
+
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            const canTake = window.GuestSessionManager
+                ? window.GuestSessionManager.canTakeDailyDemo()
+                : parseInt(localStorage.getItem('demo_sessions_count') || '0', 10) < 1;
+
+            if (btnArcade) {
+                const ctaEl = btnArcade.querySelector('.mode-cta');
+                if (canTake) {
+                    btnArcade.classList.add('mode-card--trial-pulse');
+                    if (ctaEl) {
+                        ctaEl.innerHTML = `<span>Iniciar simulacro</span> <i class="fas fa-arrow-right"></i>`;
+                    }
+                } else {
+                    btnArcade.classList.remove('mode-card--trial-pulse');
+                    if (ctaEl) {
+                        ctaEl.innerHTML = `<span>Prueba completada</span> <i class="fas fa-lock"></i>`;
+                    }
+                }
+            }
+
+            if (btnStudy) {
+                const ctaEl = btnStudy.querySelector('.mode-cta');
+                if (ctaEl) {
+                    ctaEl.innerHTML = `<span>Iniciar modo estudio</span> <i class="fas fa-lock"></i>`;
+                }
+            }
+
+            if (btnReal) {
+                const ctaEl = btnReal.querySelector('.mode-cta');
+                if (ctaEl) {
+                    ctaEl.innerHTML = `<span>Muy pronto</span> <i class="fas fa-lock"></i>`;
+                }
+            }
+        } else {
+            if (btnArcade) {
+                btnArcade.classList.remove('mode-card--trial-pulse');
+                const ctaEl = btnArcade.querySelector('.mode-cta');
+                if (ctaEl) {
+                    ctaEl.innerHTML = `<span>Iniciar simulacro</span> <i class="fas fa-arrow-right"></i>`;
+                }
+            }
+
+            if (btnStudy) {
+                const ctaEl = btnStudy.querySelector('.mode-cta');
+                if (ctaEl) {
+                    ctaEl.innerHTML = `<span>Iniciar modo estudio</span> <i class="fas fa-arrow-right"></i>`;
+                }
+            }
+
+            if (btnReal) {
+                const ctaEl = btnReal.querySelector('.mode-cta');
+                if (ctaEl) {
+                    ctaEl.innerHTML = `<span>Muy pronto</span> <i class="fas fa-clock"></i>`;
+                }
+            }
         }
     }
 
@@ -1966,6 +2043,325 @@ const SimulatorDash = (() => {
         const content = document.getElementById('dashboard-content');
         if (loading) loading.style.display = 'none';
         if (content) content.style.display = 'block';
+    }
+
+    /**
+     * Configura los listeners para el botón de extracción de Diagnóstico Inteligente por IA.
+     */
+    function setupAIDiagnostic() {
+        const btnAnalyze = document.getElementById('btn-analyze-ai');
+        const btnAgain = document.getElementById('btn-analyze-again');
+
+        if (btnAnalyze && !btnAnalyze.dataset.bound) {
+            btnAnalyze.dataset.bound = 'true';
+            btnAnalyze.addEventListener('click', (e) => {
+                e.preventDefault();
+                runAIDiagnosis();
+            });
+        }
+
+        if (btnAgain && !btnAgain.dataset.bound) {
+            btnAgain.dataset.bound = 'true';
+            btnAgain.addEventListener('click', (e) => {
+                e.preventDefault();
+                runAIDiagnosis();
+            });
+        }
+    }
+
+    /**
+     * Ejecuta el análisis de diagnóstico con IA:
+     * - Visitante: Muestra análisis demostrativo contextual con simulación de escaneo.
+     * - Free / Basic: Genera diagnóstico estructurado y aviso de activación para Plan Avanzado.
+     * - Advanced / Admin: Obtiene análisis personalizado en tiempo real mediante Gemini con sus métricas.
+     */
+    async function runAIDiagnosis() {
+        const initialState = document.getElementById('ai-initial-state');
+        const loadingState = document.getElementById('ai-loading-state');
+        const resultsState = document.getElementById('ai-results-state');
+        const strengthsEl = document.getElementById('ai-strengths');
+        const weaknessesEl = document.getElementById('ai-weaknesses');
+        const strategyTextEl = document.getElementById('ai-strategy-text');
+        const readinessNumEl = document.getElementById('ai-readiness-number');
+        const readinessLevelEl = document.getElementById('ai-readiness-level');
+        const tierTextEl = document.getElementById('ai-tier-text');
+        const tierIndicatorEl = document.getElementById('ai-tier-indicator');
+        const strategyBadgeEl = document.getElementById('ai-strategy-badge');
+        const highYieldBoxEl = document.getElementById('ai-highyield-box');
+        const highYieldTextEl = document.getElementById('ai-highyield-text');
+        const sprintGridEl = document.getElementById('ai-sprint-grid');
+
+        const renderDiagnosisUI = (data, isAdvanced) => {
+            if (strengthsEl && data.strengths) strengthsEl.innerHTML = data.strengths;
+            if (weaknessesEl && data.weaknesses) weaknessesEl.innerHTML = data.weaknesses;
+            if (strategyTextEl && data.strategy) strategyTextEl.textContent = data.strategy;
+
+            if (readinessNumEl) readinessNumEl.textContent = (data.readinessIndex || 60) + '%';
+            if (readinessLevelEl) readinessLevelEl.textContent = data.readinessLevel || 'Nivel Competente';
+
+            if (tierTextEl) {
+                tierTextEl.textContent = isAdvanced ? '👑 Diagnóstico con IA' : 'Diagnóstico Estático';
+            }
+            if (tierIndicatorEl) {
+                if (isAdvanced) {
+                    tierIndicatorEl.classList.add('badge-advanced');
+                } else {
+                    tierIndicatorEl.classList.remove('badge-advanced');
+                }
+            }
+            if (strategyBadgeEl) {
+                strategyBadgeEl.textContent = isAdvanced ? 'Auditoría Cognitiva IA' : 'Motor Heurístico Multi-Área';
+            }
+
+            if (highYieldBoxEl && highYieldTextEl) {
+                if (data.highYieldTip) {
+                    highYieldBoxEl.style.display = 'block';
+                    highYieldTextEl.textContent = data.highYieldTip;
+                } else {
+                    highYieldBoxEl.style.display = 'none';
+                }
+            }
+
+            if (sprintGridEl) {
+                const sprintSteps = Array.isArray(data.sprint) && data.sprint.length > 0 ? data.sprint : [
+                    { step: 1, title: "Refuerzo Conceptual", desc: "Repasa los fundamentos del área con mayor margen de error." },
+                    { step: 2, title: "Modo Estudio (20q)", desc: "Entrena con justificaciones completas para fijar el aprendizaje." },
+                    { step: 3, title: "Simulacro Rápido (10q)", desc: "Evalúa tu retención y velocidad antes de la prueba final." }
+                ];
+                sprintGridEl.innerHTML = sprintSteps.map((s, idx) => `
+                    <div class="ai-step-card">
+                        <span class="ai-step-badge">Paso ${s.step || idx + 1}</span>
+                        <h6 class="ai-step-title">${s.title || 'Acción de Refuerzo'}</h6>
+                        <p class="ai-step-desc">${s.desc || ''}</p>
+                    </div>
+                `).join('');
+            }
+        };
+
+        if (initialState) initialState.style.display = 'none';
+        if (resultsState) resultsState.style.display = 'none';
+        if (loadingState) loadingState.style.display = 'flex';
+
+        const token = localStorage.getItem('authToken');
+
+        try {
+            if (!token) {
+                // Modo Visitante: Simulación de escaneo con datos demo o historial local
+                await new Promise(r => setTimeout(r, 800));
+
+                const guestStats = (window.GuestSessionManager && typeof window.GuestSessionManager.getGuestStats === 'function') 
+                    ? window.GuestSessionManager.getGuestStats(currentContext) 
+                    : null;
+                const isEducacion = currentContext === 'EDUCACION';
+                let guestStrengths = '';
+                let guestWeaknesses = '';
+                let guestStrategy = '';
+                let guestSprint = [];
+                let guestIndex = 50;
+                let guestLevel = 'Nivel Inicial / Prueba';
+
+                if (guestStats && guestStats.areaStats && Object.keys(guestStats.areaStats).length > 0) {
+                    const guestRadar = Object.entries(guestStats.areaStats).map(([subject, data]) => ({
+                        subject,
+                        accuracy: data.total > 0 ? Math.round((data.correct / data.total) * 100) : 0,
+                        correct: data.correct,
+                        total: data.total
+                    }));
+
+                    guestRadar.sort((a, b) => b.accuracy - a.accuracy);
+                    const best1 = guestRadar[0];
+                    const worst1 = guestRadar[guestRadar.length - 1];
+
+                    guestIndex = Math.min(Math.max(Math.round(best1.accuracy * 0.7 + (parseFloat(guestStats.avgScore || 0) / 20 * 100) * 0.3), 35), 90);
+                    guestLevel = guestIndex >= 70 ? 'Nivel Competente' : 'Nivel en Desarrollo';
+
+                    if (isEducacion) {
+                        guestStrengths = `
+                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                                <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">MODO PRUEBA DEMO</span>
+                            </div>
+                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Has demostrado criterio pedagógico en tu simulacro de prueba:</p>
+                            <ul style="margin:0; padding:0; list-style:none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <span>Dominio en <strong>${best1.subject}</strong> con <strong>${best1.accuracy}%</strong> de aciertos (${best1.correct}/${best1.total} correctas).</span>
+                                </li>
+                            </ul>
+                        `;
+                        guestWeaknesses = `
+                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                                <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25);">FOCO DE MEJORA</span>
+                            </div>
+                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Oportunidad de refuerzo detectada en tu evaluación:</p>
+                            <ul style="margin:0; padding:0; list-style:none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                                    <span>Precisión del <strong>${worst1.accuracy}%</strong> en <strong>${worst1.subject}</strong> (${worst1.total - worst1.correct} fallas). Conviene repasar criterios del CNEB.</span>
+                                </li>
+                            </ul>
+                        `;
+                        guestStrategy = `Te sugerimos registrarte gratis para guardar tu progreso y seguir reforzando ${worst1.subject}.`;
+                        guestSprint = [
+                            { step: 1, title: "Registro Gratuito", desc: "Crea tu cuenta gratis para desbloquear 10 vidas semanales de práctica." },
+                            { step: 2, title: `Refuerzo en ${worst1.subject}`, desc: "Practica simulacros comentados para afianzar tus respuestas." },
+                            { step: 3, title: "Consolidación", desc: "Evalúa tu avance diario antes de la prueba oficial de la Carrera Pública." }
+                        ];
+                    } else {
+                        guestStrengths = `
+                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                                <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">MODO PRUEBA DEMO</span>
+                            </div>
+                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Tu perfil de prueba muestra buen razonamiento clínico inicial:</p>
+                            <ul style="margin:0; padding:0; list-style:none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <span>Buen acierto en <strong>${best1.subject}</strong> con <strong>${best1.accuracy}%</strong> de precisión (${best1.correct}/${best1.total} correctas).</span>
+                                </li>
+                            </ul>
+                        `;
+                        guestWeaknesses = `
+                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                                <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25);">FOCO CLÍNICO</span>
+                            </div>
+                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Área prioritaria de mejora según tu sesión de prueba:</p>
+                            <ul style="margin:0; padding:0; list-style:none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                                    <span>Efectividad del <strong>${worst1.accuracy}%</strong> en <strong>${worst1.subject}</strong> (${worst1.total - worst1.correct} errores). Conviene repasar protocolos clínicos.</span>
+                                </li>
+                            </ul>
+                        `;
+                        guestStrategy = `Regístrate para continuar practicando y desbloquear análisis avanzados en ${worst1.subject}.`;
+                        guestSprint = [
+                            { step: 1, title: "Registro Gratuito", desc: "Guarda tu historial de aciertos y accede a 10 vidas semanales." },
+                            { step: 2, title: `Clínica de ${worst1.subject}`, desc: "Revisa normas técnicas y algoritmos diagnósticos oficiales." },
+                            { step: 3, title: "Simulacros Oficiales", desc: "Mide tu puntaje en simulacros reales de medicina (SERUMS/ENAM)." }
+                        ];
+                    }
+                } else {
+                    if (isEducacion) {
+                        guestStrengths = `
+                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">El marco oficial de la Carrera Pública Magisterial evalúa competencias clave:</p>
+                            <ul style="margin:0; padding:0; list-style:none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <span>Fundamentos de <strong>Planificación Curricular</strong> y diseño de sesiones.</span>
+                                </li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <span>Principios del CNEB para <strong>Convivencia Democrática</strong> y clima de aula.</span>
+                                </li>
+                            </ul>
+                        `;
+                        guestWeaknesses = `
+                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Completa tu simulacro diario para diagnosticar tus áreas de mayor riesgo:</p>
+                            <ul style="margin:0; padding:0; list-style:none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                                    <span>Evaluación de casuísticas complejas en <strong>Rúbricas de Evaluación Formativa</strong>.</span>
+                                </li>
+                            </ul>
+                        `;
+                        guestStrategy = "Inicia con tu prueba diaria de 10 preguntas para calibrar tu nivel inicial.";
+                    } else {
+                        guestStrengths = `
+                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Las pruebas oficiales médicas ponderan con alta carga las siguientes especialidades:</p>
+                            <ul style="margin:0; padding:0; list-style:none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <span>Diagnóstico diferencial y terapéutica en <strong>Medicina Interna</strong> y <strong>Pediatría</strong>.</span>
+                                </li>
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                                    <span>Algoritmos de urgencia y guías clínicas basadas en evidencia.</span>
+                                </li>
+                            </ul>
+                        `;
+                        guestWeaknesses = `
+                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Realiza tu prueba gratuita para medir tu tasa de acierto por especialidad:</p>
+                            <ul style="margin:0; padding:0; list-style:none;">
+                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                                    <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                                    <span>Toma de decisiones rápidas en <strong>Salud Pública, Epidemiología y Ginecología</strong>.</span>
+                                </li>
+                            </ul>
+                        `;
+                        guestStrategy = "Realiza tu prueba diaria gratuita de 10 preguntas para activar tu diagnóstico inicial.";
+                    }
+                }
+
+                const guestUpgradeCallout = `
+                    <div style="margin-top:1.25rem; padding:1.1rem; background:rgba(139,92,246,0.06); border:1px dashed rgba(139,92,246,0.3); border-radius:12px;">
+                        <span style="font-weight:800; color:#c4b5fd; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;">Acceso Avanzado con IA</span>
+                        <p style="color:var(--text-secondary); margin:0 0 0.75rem 0; font-size:0.83rem; line-height:1.5;">Regístrate de forma gratuita para guardar tu historial o activa el <strong>Plan Avanzado</strong> para desbloquear diagnósticos en tiempo real generados por IA basados en tus propios simulacros.</p>
+                        <a href="/login" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.75rem; font-weight:700; color:#8b5cf6; text-decoration:none;">Crear Cuenta Gratis <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                `;
+                guestWeaknesses += guestUpgradeCallout;
+
+                renderDiagnosisUI({
+                    strengths: guestStrengths,
+                    weaknesses: guestWeaknesses,
+                    strategy: guestStrategy,
+                    readinessIndex: guestIndex,
+                    readinessLevel: guestLevel,
+                    sprint: guestSprint
+                }, false);
+            } else {
+                const currentUser = window.sessionManager.getUser();
+                const tier = String(currentUser?.subscriptionTier || currentUser?.subscription_tier || 'free').toLowerCase();
+                const status = String(currentUser?.subscriptionStatus || currentUser?.subscription_status || 'pending').toLowerCase();
+                const isAdvanced = (tier === 'advanced' || currentUser?.role === 'admin') && (status === 'active' || currentUser?.role === 'admin');
+
+                const scoreText = document.getElementById('stat-score')?.textContent || '0';
+                const accuracyText = document.getElementById('stat-accuracy')?.textContent || '0';
+                const masteryText = document.getElementById('stat-mastery')?.textContent || '0';
+
+                const statsPayload = cachedStats ? { ...cachedStats } : {
+                    avg_score: scoreText,
+                    accuracy: parseInt(accuracyText, 10) || 0,
+                    mastered_cards: parseInt(masteryText, 10) || 0,
+                    radar_data: []
+                };
+
+                if (!statsPayload.radar_data) {
+                    statsPayload.radar_data = [];
+                }
+
+                const result = await window.AnalyticsApiService.getAIDiagnostic(statsPayload, currentContext);
+                if (result && result.success) {
+                    renderDiagnosisUI(result, isAdvanced);
+                    if (window.sessionManager && typeof window.sessionManager.refreshUser === 'function') {
+                        window.sessionManager.refreshUser().catch(() => {});
+                    }
+                } else {
+                    throw new Error(result?.error || "Respuesta inválida del servicio de analítica");
+                }
+            }
+
+            if (loadingState) loadingState.style.display = 'none';
+            if (resultsState) resultsState.style.display = 'block';
+        } catch (error) {
+            console.error("Error al extraer diagnóstico IA:", error);
+            if (loadingState) loadingState.style.display = 'none';
+            if (initialState) initialState.style.display = 'flex';
+
+            if (window.confirmationModal && typeof window.confirmationModal.showAlert === 'function') {
+                window.confirmationModal.showAlert(
+                    error.message || "No se pudo generar el diagnóstico con IA. Inténtalo de nuevo.",
+                    "Diagnóstico IA",
+                    "Entendido"
+                );
+            } else if (window.Swal) {
+                window.Swal.fire({
+                    icon: 'warning',
+                    title: 'Diagnóstico IA',
+                    text: error.message || 'No se pudo generar el diagnóstico. Inténtalo nuevamente.'
+                });
+            } else {
+                alert(error.message || "No se pudo generar el diagnóstico IA.");
+            }
+        }
     }
 
     return { init };

@@ -336,9 +336,17 @@ Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente
 
 ---
 
-## 7. 🎨 Iconografía (Font Awesome 6.4.0)
+## 7. 🎨 Iconografía (Font Awesome 6.4.0) & Principio de Sobriedad Visual
 
 * **Biblioteca Estándar:** Font Awesome v6.4.0 mediante CDN (`https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css`).
+
+### 7.1. 🚫 Prohibición de Abuso e Icon Clutter (Diseño Esbelto y Profesional)
+Para conservar una estética de producto digital premium, moderna y no saturada (Cyber-Minimalist / Studio Clean), se establecen las siguientes directrices obligatorias:
+
+1. **Uso Moderado e Intencional:** Los iconos deben utilizarse exclusivamente cuando aporten valor semántico real a la navegación, estado o acción primaria. Queda prohibido adornar cada párrafo, lista o encabezado con iconos superfluos.
+2. **Jerarquía Tipográfica sobre Iconos:** La claridad y estructura de la información debe descansar principalmente en una tipografía limpia (`Inter`), buenos pesos visuales, espaciados generosos (`gap`, `padding`, `margin`) y contrastes calibrados, no en la proliferación de símbolos gráficos.
+3. **Evitar Sobrecarga en Tarjetas y Contenedores:** En subtarjetas, sprints tácticos, badges o listas explicativas, priorizar texto claro con viñetas sutiles o números de paso limpios (ej. `Paso 1`, `Paso 2`, `Paso 3`) antes que saturar con múltiples iconos coloridos de diferentes familias.
+4. **Armonía y Escala:** Cuando se empleen iconos (ej. en botones primarios o avisos críticos), su tamaño no debe competir con el texto principal (`font-size: 0.85rem a 1rem` en iconos en línea, o badges cuadrados contenidos de `36px` a `42px`). Mantener siempre una paleta monocromática o tonalidades atenuadas (`var(--text-secondary)`, `var(--text-muted)` o acentos semánticos controlados).
 
 ---
 

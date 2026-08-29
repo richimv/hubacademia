@@ -10,15 +10,15 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/base.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/auth.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/header.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/footer.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/modal.css?v=28e9f50a33f3">
-    <link rel="stylesheet" href="/css/sidebar.css?v=28e9f50a33f3">
-    <script src="/js/config.js?v=28e9f50a33f3"></script>
-    <script src="/js/utils/themeManager.js?v=28e9f50a33f3"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/base.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/auth.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/header.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/footer.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/modal.css?v=880624f0850c">
+    <link rel="stylesheet" href="/css/sidebar.css?v=880624f0850c">
+    <script src="/js/config.js?v=880624f0850c"></script>
+    <script src="/js/utils/themeManager.js?v=880624f0850c"></script>
     <style>
         /* Stylized & Professional Design System for User Profile - Dual Theme */
         body {
@@ -307,59 +307,40 @@
         .security-content-body {
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.65rem;
         }
 
-        .security-item {
+        .security-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 0.75rem 1rem;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             transition: border-color 0.2s ease, background 0.2s ease;
         }
 
-        .security-item:hover {
+        .security-row:hover {
             border-color: var(--border-hover);
             background: var(--surface-hover);
         }
 
-        .security-item-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: var(--info-bg);
-            color: var(--info);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.05rem;
-            flex-shrink: 0;
-        }
-
-        .security-item-details {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .security-item-label {
-            font-size: 0.7rem;
+        .security-row-label {
+            font-size: 0.78rem;
             color: var(--text-muted);
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.5px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
         }
 
-        .security-item-val {
-            font-size: 0.875rem;
+        .security-row-val {
+            font-size: 0.85rem;
             font-weight: 600;
             color: var(--text-main);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            text-align: right;
         }
 
         /* Usage Grid & Cards */
@@ -687,10 +668,10 @@
                             <i class="fas fa-pen"></i> <span>Editar</span>
                         </button>
                     </div>
-                    <p class="profile-email-row"><i class="fas fa-envelope"></i> <span id="user-email">usuario@ejemplo.com</span></p>
+                    <p class="profile-email-row"><span id="user-email">usuario@ejemplo.com</span></p>
                     <div class="profile-badges-row">
                         <div id="plan-badge-container">
-                            <span class="badge-free"><i class="fas fa-seedling"></i> Plan Gratuito (10 Vidas)</span>
+                            <span class="badge-free">Plan Gratuito</span>
                         </div>
                         <span class="badge-status-active"><i class="fas fa-check-circle"></i> Cuenta Verificada</span>
                     </div>
@@ -703,7 +684,6 @@
                 <div class="settings-card subscription-card">
                     <div class="card-header-row">
                         <div class="card-header-title">
-                            <i class="fas fa-crown" style="color: var(--warning);"></i>
                             <span>Mi Suscripción</span>
                         </div>
                     </div>
@@ -716,31 +696,21 @@
                 <div class="settings-card security-card">
                     <div class="card-header-row">
                         <div class="card-header-title">
-                            <i class="fas fa-user-shield" style="color: var(--primary);"></i>
                             <span>Seguridad y Cuenta</span>
                         </div>
                     </div>
                     <div class="security-content-body">
-                        <div class="security-item">
-                            <div class="security-item-icon"><i class="fab fa-google"></i></div>
-                            <div class="security-item-details">
-                                <span class="security-item-label">Método de Acceso</span>
-                                <span class="security-item-val">Google OAuth 2.0 Seguro</span>
-                            </div>
+                        <div class="security-row">
+                            <span class="security-row-label">Método de Acceso</span>
+                            <span class="security-row-val"><i class="fab fa-google" style="color: #ea4335; margin-right: 6px;"></i> Google OAuth 2.0</span>
                         </div>
-                        <div class="security-item">
-                            <div class="security-item-icon" style="background: var(--success-bg); color: var(--success);"><i class="fas fa-check-circle"></i></div>
-                            <div class="security-item-details">
-                                <span class="security-item-label">Estado de Identidad</span>
-                                <span class="security-item-val">Correo Verificado y Activo</span>
-                            </div>
+                        <div class="security-row">
+                            <span class="security-row-label">Estado de Identidad</span>
+                            <span class="security-row-val text-success" style="color: var(--success);"><i class="fas fa-check-circle" style="margin-right: 6px;"></i> Activa y Verificada</span>
                         </div>
-                        <div class="security-item">
-                            <div class="security-item-icon"><i class="fas fa-id-badge"></i></div>
-                            <div class="security-item-details">
-                                <span class="security-item-label">Rol en Plataforma</span>
-                                <span id="user-role-val" class="security-item-val">Estudiante / Usuario Registrado</span>
-                            </div>
+                        <div class="security-row">
+                            <span class="security-row-label">Rol en Plataforma</span>
+                            <span id="user-role-val" class="security-row-val">Estudiante</span>
                         </div>
                     </div>
                 </div>
@@ -841,12 +811,12 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=28e9f50a33f3"></script>
-    <script src="/js/services/authApiService.js?v=28e9f50a33f3"></script>
-    <script src="/js/sessionManager.js?v=28e9f50a33f3"></script>
-    <script src="/js/app.js?v=28e9f50a33f3"></script>
-    <script src="/js/ui/sidebar.js?v=28e9f50a33f3"></script>
-    <script src="/js/profile.js?v=28e9f50a33f3"></script>
+    <script src="/js/services/networkService.js?v=880624f0850c"></script>
+    <script src="/js/services/authApiService.js?v=880624f0850c"></script>
+    <script src="/js/sessionManager.js?v=880624f0850c"></script>
+    <script src="/js/app.js?v=880624f0850c"></script>
+    <script src="/js/ui/sidebar.js?v=880624f0850c"></script>
+    <script src="/js/profile.js?v=880624f0850c"></script>
 
 </body>
 

@@ -464,6 +464,278 @@ class AnalyticsService {
 
         return heatmap;
     }
+
+    /**
+     * Genera un diagnóstico heurístico inteligente basado en los datos reales del usuario
+     * para usuarios gratuitos (Free), básicos (Basic), invitados (Guest) y fallback de IA.
+     * 
+     * @param {object} stats - Estadísticas de rendimiento (radar_data, avg_score, accuracy, etc.)
+     * @param {string} context - 'MEDICINA' o 'EDUCACION'
+     * @returns {object} { strengths, weaknesses, strategy, readinessIndex, readinessLevel, sprint }
+     */
+    generateHeuristicDiagnostic(stats, context = 'MEDICINA') {
+        const isEducacion = context === 'EDUCACION';
+        const accuracy = Number(stats?.accuracy) || 0;
+        const avgScore = Number(stats?.avg_score) || 0;
+
+        // 1. Cálculo de Nivel de Competencia y Readiness Index
+        let readinessLevel = 'Nivel Inicial';
+        let readinessColor = '#f43f5e';
+        let readinessIndex = 45;
+
+        if (accuracy >= 80 || avgScore >= 16) {
+            readinessLevel = 'Nivel Sobresaliente';
+            readinessColor = '#10b981';
+            readinessIndex = Math.min(Math.round(accuracy * 0.6 + (avgScore / 20 * 100) * 0.4), 98);
+        } else if (accuracy >= 65 || avgScore >= 13) {
+            readinessLevel = 'Nivel Competente';
+            readinessColor = '#3b82f6';
+            readinessIndex = Math.min(Math.round(accuracy * 0.6 + (avgScore / 20 * 100) * 0.4), 84);
+        } else if (accuracy >= 45 || avgScore >= 9) {
+            readinessLevel = 'Nivel en Desarrollo';
+            readinessColor = '#f59e0b';
+            readinessIndex = Math.max(Math.round(accuracy * 0.6 + (avgScore / 20 * 100) * 0.4), 45);
+        } else {
+            readinessLevel = 'Nivel Inicial';
+            readinessColor = '#f43f5e';
+            readinessIndex = Math.max(Math.round(accuracy * 0.6 + (avgScore / 20 * 100) * 0.4), 25);
+        }
+
+        let topics = [];
+        if (Array.isArray(stats?.radar_data)) {
+            topics = stats.radar_data.filter(t => t && t.subject);
+        } else if (stats?.radar_data && typeof stats.radar_data === 'object') {
+            topics = Object.entries(stats.radar_data).map(([subject, acc]) => ({
+                subject,
+                accuracy: Number(acc) || 0,
+                correct: 0,
+                total: 0
+            }));
+        }
+
+        // Ordenar por precisión descendente
+        topics.sort((a, b) => b.accuracy - a.accuracy);
+
+        let strengths = '';
+        let weaknesses = '';
+        let strategy = '';
+        let sprint = [];
+
+        if (topics.length === 0) {
+            // Usuario sin historial de simulacros aún
+            if (isEducacion) {
+                strengths = `
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.12); color:#3b82f6; border:1px solid rgba(59,130,246,0.25);">ESTÁNDAR OFICIAL CNEB</span>
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">El temario oficial de la Carrera Pública Magisterial evalúa competencias fundamentales para la prueba nacional:</p>
+                    <ul style="margin:0; padding:0; list-style:none;">
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <span>Fundamentos de <strong>Planificación Curricular</strong>, diseño de situaciones significativas y mediación pedagógica.</span>
+                        </li>
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <span>Principios del CNEB para <strong>Convivencia Democrática</strong>, inclusión y clima de aula.</span>
+                        </li>
+                    </ul>
+                `;
+                weaknesses = `
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.25);">CALIBRACIÓN PENDIENTE</span>
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Es fundamental establecer tu línea base de rendimiento mediante una primera evaluación:</p>
+                    <ul style="margin:0; padding:0; list-style:none;">
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <span>Sin calibración en <strong>Evaluación Formativa y Rúbricas</strong> (retroalimentación descriptiva vs reflexiva).</span>
+                        </li>
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <span>Casuísticas complejas de <strong>Teorías y Procesos del Aprendizaje</strong> (Piaget, Vygotsky, Bruner).</span>
+                        </li>
+                    </ul>
+                `;
+                strategy = "Inicia con un simulacro rápido de 10 preguntas para calibrar tu matriz de competencias y activar tu diagnóstico adaptativo con métricas.";
+                sprint = [
+                    { step: 1, title: "Prueba Diagnóstica", desc: "Resuelve un Simulacro Rápido (10q) para calibrar tus notas iniciales." },
+                    { step: 2, title: "Revisión de Casuísticas", desc: "Usa el Modo Estudio (20q) para analizar el sustento técnico de cada reactivo." },
+                    { step: 3, title: "Consolidación de Criterios", desc: "Repasa los procesos didácticos oficiales del CNEB antes del examen oficial." }
+                ];
+            } else {
+                strengths = `
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.12); color:#3b82f6; border:1px solid rgba(59,130,246,0.25);">ESTÁNDAR OFICIAL MINSA / ASPEFAM</span>
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Las pruebas oficiales médicas (SERUMS/ENAM) ponderan con alta carga las siguientes especialidades troncales:</p>
+                    <ul style="margin:0; padding:0; list-style:none;">
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <span>Diagnóstico y terapéutica en <strong>Medicina Interna</strong> y <strong>Pediatría</strong> basada en guías clínicas.</span>
+                        </li>
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <span>Manejo de algoritmos de shock, soporte vital y emergencias en el primer nivel de atención.</span>
+                        </li>
+                    </ul>
+                `;
+                weaknesses = `
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.25);">CALIBRACIÓN PENDIENTE</span>
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Es necesario medir tu nivel inicial para identificar qué áreas requieren mayor refuerzo:</p>
+                    <ul style="margin:0; padding:0; list-style:none;">
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <span>Sin calibración en <strong>Salud Pública, Epidemiología y Gestión</strong> (Grupo D del SERUMS).</span>
+                        </li>
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <span>Casos de alto riesgo materno-perinatal en <strong>Ginecología y Obstetricia</strong>.</span>
+                        </li>
+                    </ul>
+                `;
+                strategy = "Resuelve tu primer simulacro de 10 preguntas para diagnosticar tus áreas fuertes y focos de refuerzo.";
+                sprint = [
+                    { step: 1, title: "Calibración Inicial", desc: "Completa un Simulacro Rápido (10q) para obtener tu primera radiografía de aciertos." },
+                    { step: 2, title: "Estudio Guiado", desc: "Realiza simulacros de 20 preguntas leyendo los sustentos de cada caso clínico." },
+                    { step: 3, title: "Repaso de Salud Pública", desc: "Refuerza la Norma Técnica MINSA y Cuidado Integral de Salud para el SERUMS." }
+                ];
+            }
+        } else {
+            // Usuario con datos reales de temas practicados
+            const best1 = topics[0];
+            const best2 = topics.length > 1 ? topics[1] : null;
+
+            // Peores temas (orden inverso)
+            const reversed = [...topics].reverse();
+            const worst1 = reversed[0];
+            const worst2 = (reversed.length > 1 && reversed[1].subject !== worst1.subject) ? reversed[1] : null;
+
+            if (isEducacion) {
+                const bestTotalStr1 = best1.total ? ` (${best1.correct}/${best1.total} aciertos)` : '';
+                const bestTotalStr2 = (best2 && best2.total) ? ` (${best2.correct}/${best2.total} aciertos)` : '';
+                const worstFailStr1 = worst1.total ? ` (${worst1.total - worst1.correct} errores en ${worst1.total} reactivos)` : '';
+                const worstFailStr2 = (worst2 && worst2.total) ? ` (${worst2.total - worst2.correct} errores en ${worst2.total} reactivos)` : '';
+
+                strengths = `
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">${readinessLevel.toUpperCase()}</span>
+                        <span style="font-size:0.75rem; color:var(--text-secondary);">${accuracy}% Precisión Global</span>
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Has consolidado un sólido criterio pedagógico en tus áreas con mayor efectividad:</p>
+                    <ul style="margin:0; padding:0; list-style:none;">
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <span>Dominio consolidado en <strong>${best1.subject}</strong> con <strong>${best1.accuracy}%</strong> de efectividad${bestTotalStr1}. Evidencias buen manejo de procesos didácticos y mediación del aprendizaje.</span>
+                        </li>
+                        ${best2 ? `
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <span>Rendimiento favorable en <strong>${best2.subject}</strong> con <strong>${best2.accuracy}%</strong> de precisión${bestTotalStr2}, reflejando criterio formativo consistente.</span>
+                        </li>` : ''}
+                    </ul>
+                `;
+
+                weaknesses = `
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25);">FOCO CRÍTICO PRIORITARIO</span>
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Se identificaron áreas de alta incidencia en la prueba que presentan oportunidades de mejora inmediata:</p>
+                    <ul style="margin:0; padding:0; list-style:none;">
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <span>Brecha detectada en <strong>${worst1.subject}</strong> con <strong>${worst1.accuracy}%</strong> de precisión${worstFailStr1}. Conviene repasar criterios de retroalimentación formativa y rúbricas.</span>
+                        </li>
+                        ${worst2 ? `
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <span>Vulnerabilidad en <strong>${worst2.subject}</strong> (${worst2.accuracy}% de efectividad${worstFailStr2}), donde los distractores teóricos reducen tu puntaje.</span>
+                        </li>` : ''}
+                    </ul>
+                `;
+
+                strategy = `Prioriza la resolución de simulacros focalizados en ${worst1.subject} para afianzar casuísticas del CNEB y maximizar tu nota en la prueba de Ascenso o Nombramiento.`;
+                sprint = [
+                    { step: 1, title: `Refuerzo en ${worst1.subject}`, desc: `Repasa las definiciones doctrinales y normativas del CNEB específicas de ${worst1.subject}.` },
+                    { step: 2, title: "Modo Estudio (20 Preguntas)", desc: "Entrena con justificaciones completas para aprender a descartar distractores típicos." },
+                    { step: 3, title: `Mantenimiento en ${best1.subject}`, desc: `Consolida tu ventaja en ${best1.subject} mediante simulacros rápidos de 10 preguntas.` }
+                ];
+            } else {
+                const bestTotalStr1 = best1.total ? ` (${best1.correct}/${best1.total} aciertos)` : '';
+                const bestTotalStr2 = (best2 && best2.total) ? ` (${best2.correct}/${best2.total} aciertos)` : '';
+                const worstFailStr1 = worst1.total ? ` (${worst1.total - worst1.correct} fallas en ${worst1.total} reactivos)` : '';
+                const worstFailStr2 = (worst2 && worst2.total) ? ` (${worst2.total - worst2.correct} fallas en ${worst2.total} reactivos)` : '';
+
+                strengths = `
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">${readinessLevel.toUpperCase()}</span>
+                        <span style="font-size:0.75rem; color:var(--text-secondary);">${accuracy}% Precisión Global</span>
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Tu perfil de respuestas refleja solvencia diagnóstica y criterio clínico en tus áreas top:</p>
+                    <ul style="margin:0; padding:0; list-style:none;">
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <span>Excelente precisión clínica en <strong>${best1.subject}</strong> con un <strong>${best1.accuracy}%</strong> de aciertos${bestTotalStr1}. Evidencias buen manejo de algoritmos diagnósticos y tratamiento.</span>
+                        </li>
+                        ${best2 ? `
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-check-circle" style="color:#34d399; margin-top:2px;"></i>
+                            <span>Buen criterio clínico en <strong>${best2.subject}</strong> (${best2.accuracy}% de efectividad${bestTotalStr2}), manteniendo una base terapéutica sólida.</span>
+                        </li>` : ''}
+                    </ul>
+                `;
+
+                weaknesses = `
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                        <span style="font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:12px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25);">FOCO CLÍNICO PRIORITARIO</span>
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Se detectaron áreas clínicas críticas con margen de error que deben reforzarse:</p>
+                    <ul style="margin:0; padding:0; list-style:none;">
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <span>Foco de refuerzo inmediato en <strong>${worst1.subject}</strong> con <strong>${worst1.accuracy}%</strong> de precisión${worstFailStr1}. Requiere repaso de normas técnicas y manejo de casos complejos.</span>
+                        </li>
+                        ${worst2 ? `
+                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fbbf24; margin-top:2px;"></i>
+                            <span>Inestabilidad en <strong>${worst2.subject}</strong> (${worst2.accuracy}% de aciertos${worstFailStr2}), donde los distractores farmacológicos aumentan la tasa de fallo.</span>
+                        </li>` : ''}
+                    </ul>
+                `;
+
+                strategy = `Enfócate en resolver simulacros en ${worst1.subject} para dominar el diagnóstico diferencial y guías clínicas clave antes de la prueba oficial.`;
+                sprint = [
+                    { step: 1, title: `Protocolos de ${worst1.subject}`, desc: `Revisa guías de práctica clínica y algoritmos de manejo para ${worst1.subject}.` },
+                    { step: 2, title: "Simulacros Modo Estudio", desc: "Entrena con reactivos comentados para afianzar el diagnóstico diferencial y tratamiento." },
+                    { step: 3, title: `Retención en ${best1.subject}`, desc: `Mantén la memoria activa en ${best1.subject} con repasos ágiles de 10 preguntas.` }
+                ];
+            }
+        }
+
+        // Llamado a Suscripción Avanzada
+        const upgradeCallout = `
+            <div style="margin-top:1.25rem; padding:1.1rem; background:rgba(139,92,246,0.06); border:1px dashed rgba(139,92,246,0.3); border-radius:12px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
+                    <span style="font-weight:800; color:#c4b5fd; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em;">👑 Auditoría Cognitiva IA (Plan Avanzado)</span>
+                    <span style="font-size:0.7rem; background:rgba(139,92,246,0.2); color:#ddd6fe; padding:2px 6px; border-radius:6px; font-weight:700;">Deep Reasoning</span>
+                </div>
+                <p style="color:var(--text-secondary); margin:0 0 0.75rem 0; font-size:0.83rem; line-height:1.5;">Desbloquea análisis en tiempo real generados por Gemini con <strong>detección de sesgos de razonamiento</strong>, <strong>píldoras High-Yield</strong> y <strong>auditoría de preguntas trampa</strong>.</p>
+                <a href="/pricing" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.75rem; font-weight:700; color:#8b5cf6; text-decoration:none;">Activar Plan Avanzado <i class="fas fa-arrow-right"></i></a>
+            </div>
+        `;
+
+        weaknesses += upgradeCallout;
+
+        return {
+            strengths,
+            weaknesses,
+            strategy,
+            readinessIndex,
+            readinessLevel,
+            sprint
+        };
+    }
 }
 
 module.exports = AnalyticsService;

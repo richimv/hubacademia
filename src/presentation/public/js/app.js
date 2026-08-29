@@ -192,6 +192,26 @@ function setupDirectLoginListener() {
 }
 
 /**
+ * Retorna una URL segura y validada para el avatar del usuario con fallback a UI-Avatars.
+ * @param {Object|null} user - Datos del usuario.
+ * @returns {string} URL segura para el avatar.
+ */
+function getSafeAvatarUrl(user) {
+    if (!user) return `https://ui-avatars.com/api/?name=Estudiante&background=random&color=fff`;
+    const displayName = user.name || 'Estudiante';
+    const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`;
+    
+    const candidate = user.avatar_url || user.avatarUrl || user.picture;
+    if (!candidate || typeof candidate !== 'string') return fallbackAvatar;
+    const trimmed = candidate.trim();
+    if (trimmed === '' || trimmed === 'null' || trimmed === 'undefined') return fallbackAvatar;
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('/')) {
+        return fallbackAvatar;
+    }
+    return trimmed;
+}
+
+/**
  * Actualiza la UI de la cabecera (Header) según el estado de la sesión.
  * @param {Object|null} user - Datos del usuario autenticado o null.
  */
@@ -203,14 +223,49 @@ function updateHeaderUI(user) {
     if (user) {
         console.log(`👤 Sesión Activa: ${user.email} | Rango: ${user.subscriptionTier} | Status: ${user.subscriptionStatus}`);
 
-        const avatarUrl = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff`;
         const displayName = user.name || 'Estudiante';
+        const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`;
+        const avatarUrl = getSafeAvatarUrl(user);
         const { tierLabel, tierClass } = getTierBadgeConfig(user);
+
+        const existingMenu = typeof container.querySelector === 'function' ? container.querySelector('.user-menu-container') : null;
+        if (existingMenu) {
+            // Actualización granular reactiva (elimina parpadeos y preserva listeners)
+            const img = container.querySelector('.user-avatar');
+            if (img) {
+                img.referrerPolicy = 'no-referrer';
+                img.onerror = () => {
+                    img.onerror = null;
+                    img.src = fallbackAvatar;
+                };
+                if (img.getAttribute('src') !== avatarUrl) {
+                    img.setAttribute('src', avatarUrl);
+                }
+            }
+            const nameEl = container.querySelector('.user-header-name');
+            if (nameEl && nameEl.textContent !== displayName) nameEl.textContent = displayName;
+
+            const tierEl = container.querySelector('.user-header-tier');
+            if (tierEl) {
+                tierEl.className = `user-header-tier ${tierClass}`;
+                tierEl.textContent = tierLabel;
+            }
+
+            const menuName = container.querySelector('.user-menu-name');
+            if (menuName) {
+                menuName.innerHTML = `${displayName} <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>`;
+            }
+
+            const menuEmail = container.querySelector('.user-menu-email');
+            if (menuEmail) menuEmail.textContent = user.email || '';
+
+            return;
+        }
 
         container.innerHTML = `
             <div class="user-menu-container">
                 <button id="user-menu-toggle" class="user-menu-toggle" title="${displayName} (${tierLabel})">
-                    <img src="${avatarUrl}" class="user-avatar" alt="Avatar">
+                    <img src="${avatarUrl}" class="user-avatar" alt="Avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${fallbackAvatar}';">
                     <div class="user-header-meta">
                         <span class="user-header-name">${displayName}</span>
                         <span class="user-header-tier ${tierClass}">${tierLabel}</span>
@@ -223,7 +278,7 @@ function updateHeaderUI(user) {
                             ${displayName}
                             <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>
                         </span>
-                        <span class="user-menu-email">${user.email}</span>
+                        <span class="user-menu-email">${user.email || ''}</span>
                     </div>
                     
                     <div class="user-menu-group">

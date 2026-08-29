@@ -29,6 +29,8 @@ class AuthService {
                 const { data: { user: sbUser }, error } = await supabaseAdmin.auth.admin.getUserById(userId);
                 if (!error && sbUser) {
                     user.emailVerified = !!sbUser.email_confirmed_at;
+                    user.avatar_url = user.avatar_url || sbUser.user_metadata?.avatar_url || sbUser.user_metadata?.picture || null;
+                    user.avatarUrl = user.avatar_url;
                 } else {
                     user.emailVerified = false;
                 }
@@ -56,8 +58,7 @@ class AuthService {
                 ? name.trim().slice(0, 120)
                 : (verifiedIdentity.user_metadata?.full_name || verifiedIdentity.user_metadata?.name || normalizedEmail.split('@')[0]);
 
-            // Log nivel INFO - No es error, es éxito de vinculación si ya existe
-            // console.log(`📡 [AuthSync] Procesando sesión Google para: ${email.toLowerCase()}`);
+            const avatarUrl = verifiedIdentity.user_metadata?.avatar_url || verifiedIdentity.user_metadata?.picture || null;
 
             // 🎯 CONFIGURACIÓN: Lista de correos con privilegios automáticos (Admin)
             const adminEmails = [
@@ -72,7 +73,8 @@ class AuthService {
                 id: verifiedIdentity.id,
                 email: normalizedEmail,
                 name: safeName,
-                role: isAutoAdmin ? 'admin' : 'student'
+                role: isAutoAdmin ? 'admin' : 'student',
+                avatar_url: avatarUrl
             };
 
             let user = await this.userRepository.create(userData);

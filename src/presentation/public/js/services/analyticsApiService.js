@@ -130,6 +130,25 @@
                 console.warn('Advertencia: No se pudo registrar la vista de página.', error);
             }
         }
+
+        /**
+         * ✅ NUEVO: Solicita el diagnóstico inteligente con IA (patrones de error y recomendaciones).
+         * @param {object} stats - Estadísticas de rendimiento (radar_data, avg_score, accuracy, etc.)
+         * @param {string} context - 'MEDICINA' o 'EDUCACION'
+         * @returns {Promise<object>}
+         */
+        static async getAIDiagnostic(stats, context = 'MEDICINA') {
+            const response = await window.NetworkService.fetch(`${API_URL}/api/analytics/diagnostic`, {
+                method: 'POST',
+                body: JSON.stringify({ stats, context })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Error al procesar el diagnóstico con IA');
+            }
+            return response.json();
+        }
     }
 
     // ✅ EXPORTAR GLOBALMENTE

@@ -58,7 +58,7 @@ El proyecto sigue estrictamente el patrón de arquitectura limpia desacoplada en
 │                           4. INFRASTRUCTURE LAYER                           │
 │  - Base de Datos Relacional: Supabase PostgreSQL con Row Level Security     │
 │  - Base de Datos Vectorial: Pinecone Serverless (Namespaces: education/med) │
-│  - Modelos de IA: Google Vertex AI (Gemini 3.1 Flash Lite, Text-Embedding)  │
+│  - Modelos de IA: Vertex AI (Gemini Enterprise Agent Platform: 2.5 Flash Lite)│
 │  - Almacenamiento & Multimedia: Google Cloud Storage + Sharp (WebP 1000px)  │
 │  - Servicios Externos: Mercado Pago (Webhooks), Google Cloud TTS, Resend    │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -102,7 +102,7 @@ El sistema de chat en Hub Academia no es un chatbot monolítico, sino una suite 
 
 2. **📝 Modalidad 2: Quiz Tutor (Tutor en Simuladores de Examen - `quiz_tutor`):**
    - **Frontend:** `quiz.html` / `quiz-tutor.js` (Panel lateral interactivo con modo pantalla completa).
-   - **Backend:** `chatController.js` ↔ `tutorAiService.js` (Modelo: `gemini-3.1-flash-lite`).
+   - **Backend:** `chatController.js` ↔ `tutorAiService.js` (Modelo Primario: `gemini-2.5-flash-lite` vía Vertex AI SDK / Gemini Enterprise Agent Platform).
    - **Inyección de Contexto en Vivo:** Recibe los datos completos de la casuística: Dominio (`MEDICINA` o `EDUCACION`), Examen (`SERUMS`, `ASCENSO`, etc.), Carrera/Especialidad, Pregunta, Alternativas A-D, Respuesta correcta, Respuesta marcada por el alumno y Justificación oficial.
    - **Especializaciones y RAG:**
      - *Tutor Clínico (`medicine`):* Consulta el namespace `medicine` en Pinecone (NTS MINSA, GPC, tratados clínicos) e inserta proactivamente hasta 3 infografías/esquemas del catálogo visual.
@@ -114,7 +114,7 @@ El sistema de chat en Hub Academia no es un chatbot monolítico, sino una suite 
 
 3. **🧠 Modalidad 3: Flashcard Tutor (Tutor en Módulo de Repaso - `flashcard_tutor`):**
    - **Frontend:** `flashcards.html` / `tutor-chat.js` (Activación al girar la tarjeta en la sesión SM-2).
-   - **Backend:** `chatController.js` ↔ `tutorAiService.js` (Modelo: `gemini-3.1-flash-lite`).
+   - **Backend:** `chatController.js` ↔ `tutorAiService.js` (Modelo Primario: `gemini-2.5-flash-lite` vía Vertex AI SDK).
    - **Inyección de Contexto de Tarjeta:** Recibe la disciplina (`deckCategory`), nombre del mazo (`deckName`), tema (`topic`), anverso (`front`), reverso (`back`) e imágenes adjuntas.
    - **Especialización Multidisciplinaria Pura:** Adapta automáticamente su rigor y marco analítico a la materia de la tarjeta (**Derecho**, **Medicina**, **Educación**, **Tecnología / Programación**, **Matemáticas**, **Historia**, **Ciencias**, **General**).
    - **Aislamiento Temático Estricto (CERO CONTAMINACIÓN):**
@@ -231,8 +231,10 @@ A continuación se detalla la totalidad de las tecnologías, frameworks, librer�
 ### 7.3 Inteligencia Artificial, LLMs & Computación Cognitiva
 | Modelo / Servicio | Proveedor / SDK | Propósito y Función en el Sistema |
 | :--- | :--- | :--- |
-| **Gemini 3.1 Flash Lite** | `@google-cloud/vertexai` (`^1.10.0`) | Inferencia de ultra-baja latencia para el Tutor IA (Salud/Educación), generadores Sniper-RAG y creación de flashcards. |
-| **text-multilingual-embedding-002** | Google Vertex AI | Modelo multilingüe estándar de 768 dimensiones para vectorización semántica de documentos y consultas RAG. |
+| **Gemini 2.5 Flash Lite** | `@google-cloud/vertexai` (`^1.10.0`) | **Canal Primario de Producción:** Inferencia enterprise de ultra-baja latencia y cero costo de tokens de pensamiento para el Tutor IA, generadores Sniper-RAG, Diagnóstico IA y Flashcards. |
+| **Gemini 2.5 Flash / Pro** | `@google-cloud/vertexai` | Respaldo enterprise para razonamiento analítico profundo en evaluaciones complejas. |
+| **Gemini 3.5 / 3.1 Flash Lite** | Google AI Studio REST (API Key) | Canal secundario de contingencia para pruebas rápidas de laboratorio y experimentación. |
+| **text-multilingual-embedding-002** | Google Vertex AI (`aiplatform`) | Vectorización semántica multilingüe estándar de 768 dimensiones para chunks y consultas en Pinecone. |
 | **Google Cloud Text-to-Speech (TTS)** | `@google-cloud/text-to-speech` (`^6.4.0`) | Síntesis vocal neuronal WaveNet/Neural2 en 5 idiomas (`es-ES`, `en-US`, `fr-FR`, `it-IT`, `de-DE`) para Flashcards. |
 
 ---
@@ -292,3 +294,62 @@ A continuación se detalla la totalidad de las tecnologías, frameworks, librer�
 | **PyMuPDF (fitz)** | Python OCR/PDF | Extracción rápida de texto y metadatos de documentos PDF académicos. |
 | **Pdf2image + Pytesseract** | Tesseract OCR | Extracción óptica de caracteres en documentos escaneados antiguos. |
 | **Psycopg2** | Python DB | Conexión directa a PostgreSQL para persistencia de datos vectoriales y chunks RAG. |
+
+---
+
+## 8. 🧠 Estrategia de IA: Google Cloud Vertex AI (Gemini Enterprise Agent Platform) vs. Google AI Studio & Gobernanza de Modelos
+
+### 8.1 Contexto de la Evolución de Google Cloud (2026)
+Google Cloud Platform (GCP) unificó y expandió su infraestructura de inteligencia artificial bajo el ecosistema **Gemini Enterprise Agent Platform** (documentado en `cloud.google.com/gemini-enterprise-agent-platform`).
+
+Esta evolución establece una frontera técnica y comercial definitiva entre dos plataformas de Google:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      DOS ECOSISTEMAS DE IA EN GOOGLE                        │
+├──────────────────────────────────────┬──────────────────────────────────────┤
+│ ☁️ GOOGLE CLOUD VERTEX AI (ENTERPRISE) │ 🌐 GOOGLE AI STUDIO (DEV PORTAL)     │
+│ (Gemini Enterprise Agent Platform)   │ (ai.google.dev)                      │
+├──────────────────────────────────────┼──────────────────────────────────────┤
+│ • Producción Industrial con SLA      │ • Prototipado y experimentación      │
+│ • Autenticación IAM / Service Account│ • Autenticación por GEMINI_API_KEY   │
+│ • Facturación mensual postpago GCP   │ • Exige esquema prepago de créditos  │
+│ • Catálogo de modelos certificados   │ • Sandbox de Developer Previews      │
+│ • Proyecto: gen-lang-client-...      │ • Deprecación rápida de versiones    │
+└──────────────────────────────────────┴──────────────────────────────────────┘
+```
+
+### 8.2 Matriz de Disponibilidad y Benchmarks Empíricos (Región `us-central1`)
+A partir de los escaneos automatizados en vivo ejecutados en el servidor (`scan_vertex.js` y `test_models.js`), se determinó la matriz oficial de compatibilidad técnica:
+
+| Identificador de Modelo | Estado en Vertex AI (GCP) | Estado en AI Studio (REST) | Razón de Término / Comportamiento | Rol en Hub Academia |
+| :--- | :--- | :--- | :--- | :--- |
+| **`gemini-2.5-flash-lite`** | 🟢 **100% OPERATIVO** | 🟢 **100% OPERATIVO** | `STOP` (Ultra-rápido, sin overhead de thinking) | **Canal Primario Universal** en todos los servicios |
+| **`gemini-2.5-flash`** | 🟢 **100% OPERATIVO** | 🛑 Retirado en Studio | `STOP` (Con modo thinking interno integrado) | Respaldo secundario en Vertex AI |
+| **`gemini-2.5-pro`** | 🟢 **100% OPERATIVO** | 🛑 Retirado en Studio | `STOP` (Alta profundidad analítica) | Auditorías y análisis cognitivo complejo |
+| **`gemini-3.5-flash-lite`** | ⏳ 404 (Developer Preview) | 🟢 **100% OPERATIVO** | `STOP` (Exclusivo en sandbox AI Studio) | Contingencia en canal REST |
+| **`gemini-3.1-flash-lite`** | ⏳ 404 (Developer Preview) | 🟢 **100% OPERATIVO** | `STOP` (Exclusivo en sandbox AI Studio) | Contingencia en canal REST |
+| **`gemini-1.5-flash / 2.0`** | 🛑 Descontinuado (404) | 🛑 Descontinuado (404) | Error 404 permanente | Retirados del código base |
+
+### 8.3 Arquitectura Multi-Canal Resiliente de Invocación
+Para garantizar **cero interrupciones de cara al estudiante** y erradicar cualquier dependencia financiera de claves prepago de AI Studio, todo servicio generativo del backend implementa una cascada de tres niveles:
+
+1. **Canal 1 (Primario - Google Cloud Vertex AI):**
+   - Invocación vía `@google-cloud/vertexai` autenticada con credenciales nativas de GCP.
+   - Modelo: `gemini-2.5-flash-lite` (y `gemini-2.5-flash` como respaldo de inferencia).
+   - Ventaja: Facturación postpago automática en Google Cloud, cuotas empresariales escalables y latencia de sub-segundo.
+
+2. **Canal 2 (Secundario - Google AI Studio REST):**
+   - Invocación HTTP directa mediante `axios` hacia `https://generativelanguage.googleapis.com/v1beta/models/...`.
+   - Modelos: `gemini-3.5-flash-lite` ➡️ `gemini-3.1-flash-lite` ➡️ `gemini-2.5-flash-lite`.
+   - Actúa únicamente como respaldo en caso de micro-cortes transitorios en los endpoints regionales de GCP.
+
+3. **Canal 3 (Terciario - Motor Heurístico / Estático Enriquecido):**
+   - En rutas críticas como Diagnóstico IA (`/api/analytics/diagnostic`), si fallan ambos proveedores externos, conmuta de forma silenciosa e instantánea al generador heurístico (`AnalyticsService.generateHeuristicDiagnostic`), entregando el desglose de competencias y el sprint táctico sin arrojar jamás un error 500 al cliente.
+
+### 8.4 Protocolo de Mantenimiento y Actualización de Modelos
+Cuando Google libere nuevas versiones de la serie **Gemini 3.x** al catálogo general de Vertex AI:
+1. **Ejecutar Escáner de Verificación:** Correr `node scratch/scan_vertex.js` para comprobar la respuesta 200 en la región `us-central1`.
+2. **Promover en Cascada:** Modificar la constante `vertexCandidateModels` en `tutorAiService.js`, `analyticsController.js`, `adminAiService.js`, `flashcardService.js` y `ragService.js`.
+3. **Validar Suite de Pruebas:** Ejecutar `npm test` asegurando que las 31 suites unitarias pasen al 100%.
+4. **Actualizar Documentación:** Registrar la fecha de promoción y métricas de latencia en este documento maestro.

@@ -3,6 +3,7 @@ const quizSessionService = require('../../domain/services/quizSessionService');
 const { secureQuizSessionsEnabled, sendQuizSessionError } = require('./quizSessionControllerSupport');
 const UsageService = require('../../domain/services/usageService');
 const usageService = new UsageService();
+const { LIMITS } = require('../../infrastructure/config/limits');
 
 class DocenteController {
 
@@ -31,6 +32,19 @@ class DocenteController {
                         limitReached: true,
                         usage: usageCheck.usage,
                         limit: usageCheck.limit
+                    });
+                }
+            }
+
+            if (isPremium && user.role !== 'admin' && round === 1) {
+                const userLimits = LIMITS[tier] || LIMITS.basic;
+                const simCap = userLimits.simulator || 15;
+                const dailySimUsage = user.dailySimulatorUsage || user.daily_simulator_usage || 0;
+                if (dailySimUsage >= simCap) {
+                    return res.status(403).json({
+                        error: `Has alcanzado tu límite diario de simulacros (${simCap}/día). Vuelve mañana o mejora tu plan para continuar practicando.`,
+                        limitReached: true,
+                        paywall: tier === 'basic'
                     });
                 }
             }

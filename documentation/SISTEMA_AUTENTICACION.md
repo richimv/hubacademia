@@ -134,35 +134,37 @@ CREATE OR REPLACE FUNCTION public.sp_register_user(
     p_name TEXT,
     p_email TEXT,
     p_password_hash TEXT,
-    p_role TEXT DEFAULT 'student'
+    p_role TEXT DEFAULT 'student',
+    p_avatar_url TEXT DEFAULT NULL
 )
 RETURNS SETOF public.users AS $$
 BEGIN
     -- UPSERT Atómico y Seguro:
-    -- 1. Si el correo ya existe, sincroniza el ID de Supabase Auth y actualiza updated_at.
+    -- 1. Si el correo ya existe, sincroniza el ID de Supabase Auth, avatar y actualiza updated_at.
     -- 2. Si es un usuario nuevo, inserta con tier 'free' y 10 vidas iniciales.
     RETURN QUERY
     INSERT INTO public.users (
-        id, name, email, password_hash, role, 
+        id, name, email, password_hash, role, avatar_url,
         subscription_status, subscription_tier, 
         usage_count, max_free_limit, last_usage_reset, 
         last_free_renewal, created_at, updated_at
     ) 
     VALUES (
-        p_id, p_name, lower(p_email), p_password_hash, p_role, 
+        p_id, p_name, lower(p_email), p_password_hash, p_role, p_avatar_url,
         'pending', 'free', 0, 10, CURRENT_DATE, NOW(), NOW(), NOW()
     )
     ON CONFLICT (email) 
     DO UPDATE SET
         id = EXCLUDED.id,
         name = EXCLUDED.name,
+        avatar_url = COALESCE(EXCLUDED.avatar_url, public.users.avatar_url),
         updated_at = NOW()
     RETURNING *;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Revocación de privilegios públicos (Solo backend con credenciales de base de datos)
-REVOKE EXECUTE ON FUNCTION public.sp_register_user(uuid, text, text, text, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.sp_register_user(uuid, text, text, text, text, text) FROM PUBLIC, anon, authenticated;
 ```
 
 ### Garantías de este diseño:

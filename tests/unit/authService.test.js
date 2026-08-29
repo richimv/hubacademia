@@ -74,7 +74,8 @@ describe('AuthService', () => {
                 id: googleUser.id,
                 email: googleUser.email,
                 name: googleUser.name,
-                role: 'student'
+                role: 'student',
+                avatar_url: null
             });
         });
 
@@ -101,7 +102,8 @@ describe('AuthService', () => {
                 id: adminUser.id,
                 email: adminUser.email,
                 name: adminUser.name,
-                role: 'admin'
+                role: 'admin',
+                avatar_url: null
             });
         });
     });

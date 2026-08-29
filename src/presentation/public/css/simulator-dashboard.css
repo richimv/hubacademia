@@ -381,6 +381,65 @@
     box-shadow: 0 12px 30px rgba(var(--accent-rgb), 0.12), var(--shadow-md);
 }
 
+/* ==========================================================================
+   🌟 GUEST DAILY TRIAL PULSING HIGHLIGHT (10qs Mode Card)
+   ========================================================================== */
+.mode-card--trial-pulse {
+    position: relative;
+    border-color: #f59e0b !important;
+    animation: trialYellowPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+.mode-card--trial-pulse .mode-icon-badge {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #f59e0b !important;
+    border-color: rgba(245, 158, 11, 0.5) !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.mode-card--trial-pulse .mode-q-badge {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+    border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.mode-card--trial-pulse .mode-cta {
+    color: #fbbf24 !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+    font-weight: 700;
+}
+
+@keyframes trialYellowPulse {
+    0%, 100% {
+        border-color: rgba(245, 158, 11, 0.45);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45), 0 4px 14px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.22), 0 0 25px rgba(245, 158, 11, 0.4);
+    }
+}
+
+/* Light mode support for trial pulse */
+[data-theme="light"] .mode-card--trial-pulse {
+    border-color: #d97706 !important;
+}
+[data-theme="light"] .mode-card--trial-pulse .mode-q-badge {
+    color: #b45309 !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+[data-theme="light"] .mode-card--trial-pulse .mode-cta {
+    color: #b45309 !important;
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+}
+[data-theme="light"] .mode-card--trial-pulse:hover .mode-cta {
+    background: #d97706 !important;
+    color: #ffffff !important;
+}
+
 .mode-card-top {
     display: flex;
     justify-content: space-between;
@@ -1204,6 +1263,195 @@
     background: var(--surface-hover);
     border-color: var(--border-hover);
     transform: translateY(-1px);
+}
+
+/* ── AI Readiness Banner & Multi-Tier Analytics ───────────── */
+.ai-readiness-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%);
+    border: 1px solid rgba(99,102,241,0.22);
+    margin-bottom: 1.25rem;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+[data-theme="light"] .ai-readiness-banner {
+    background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(243,244,246,0.8) 100%);
+    border-color: rgba(99,102,241,0.25);
+}
+
+.ai-readiness-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.ai-readiness-score-ring {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+    flex-shrink: 0;
+}
+
+.ai-readiness-number {
+    color: #ffffff;
+    font-size: 1.15rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+.ai-readiness-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.ai-readiness-tag {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-purple, #a855f7);
+}
+
+.ai-readiness-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.ai-readiness-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.ai-tier-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ai-tier-badge.badge-advanced {
+    background: rgba(139,92,246,0.15);
+    border-color: rgba(139,92,246,0.35);
+    color: var(--accent-purple, #a855f7);
+}
+
+/* High-Yield Tip Box */
+.ai-highyield-box {
+    padding: 1.1rem 1.25rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(245,158,11,0.09) 0%, rgba(239,68,68,0.05) 100%);
+    border: 1px solid rgba(245,158,11,0.3);
+    margin-bottom: 1.25rem;
+}
+
+.ai-highyield-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #f59e0b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.45rem;
+}
+
+.ai-highyield-text {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--text-main);
+    margin: 0;
+}
+
+/* Tactical Sprint 3-Step Section */
+.ai-sprint-section {
+    margin-bottom: 1.25rem;
+}
+
+.ai-sprint-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-main);
+    margin-bottom: 0.75rem;
+}
+
+.ai-sprint-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .ai-sprint-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ai-step-card {
+    padding: 1rem 1.15rem;
+    border-radius: 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    transition: var(--transition);
+}
+
+.ai-step-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+}
+
+.ai-step-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 8px;
+    background: rgba(99,102,241,0.12);
+    color: #6366f1;
+    display: inline-block;
+    align-self: flex-start;
+}
+
+.ai-step-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.ai-step-desc {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    margin: 0;
 }
 
 /* ── HTML Bar Chart ─────────────────────────────────────── */

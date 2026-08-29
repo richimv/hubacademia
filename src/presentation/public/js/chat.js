@@ -86,10 +86,11 @@ class ChatComponent {
                         </div>
                         <div class="chatbot-input">
                             <textarea id="chatbot-input" placeholder="Ingrese su consulta..." maxlength="5000" rows="1"></textarea>
-                            <button id="chatbot-send" class="chatbot-send">
+                            <button id="chatbot-send" class="chatbot-send" aria-label="Enviar consulta">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </div>
+                        <div class="chatbot-disclaimer-text">El Asistente IA puede cometer errores. Verifica información importante.</div>
                     </div>
                 </div>
             </div>

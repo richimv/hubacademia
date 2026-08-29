@@ -56,6 +56,10 @@ Dado que el simulador guarda el progreso en `localStorage` para permitir recarga
 - **Filtrado en Motor Demo**:
   - Los endpoints `/api/medico/demo` y `/api/docente/demo` reciben parámetros de consulta opcionales (`target`, `career`, `difficulty`, `areas`) del cliente.
   - Si existen, el motor demo filtra dinámicamente las preguntas del banco real para adaptar el simulacro al examen configurado.
+- **Indicador Visual de Prueba y Bloqueos en Modo Visitante**:
+  - Cuando el visitante tiene disponible su intento gratuito diario (`GuestSessionManager.canTakeDailyDemo() === true`), la tarjeta del **Simulacro Rápido (10 Preguntas)** (`#btn-mode-arcade`) parpadea dinámicamente con una animación de brillo dorado/amarillo (`.mode-card--trial-pulse`) y mantiene el botón *"Iniciar simulacro →"*.
+  - Una vez rendido el simulacro, la animación se apaga y el botón pasa al estado *"Prueba completada 🔒"*, bloqueando intentos adicionales hasta el siguiente día calendario (`America/Lima`) y solicitando el registro de cuenta.
+  - En las tarjetas de **Modo Estudio (20 Preguntas)** y **Simulacro Real (Oficial)**, sus botones muestran el icono de candado (`🔒`) para indicar de forma intuitiva que requieren registro o suscripción.
 - **Mapeo de Dominios**: El frontend mapea automáticamente `MEDICINA -> medicine` y `EDUCACION -> education` para compatibilidad con el esquema de la DB.
 
 ### 🚀 Control de Versiones (Cache Busting)

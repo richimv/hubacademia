@@ -59,17 +59,39 @@ function validateDiagnosticStats(stats) {
         throw new Error('INVALID_STATS_NUMBERS');
     }
     
-    // Validar y sanitizar radar_data
-    const cleanRadarData = {};
-    if (stats.radar_data && typeof stats.radar_data === 'object') {
+    // Validar y sanitizar radar_data (Soporta Array de objetos o Mapa de pares clave-valor)
+    let cleanRadarData;
+    if (Array.isArray(stats.radar_data)) {
+        cleanRadarData = stats.radar_data
+            .map(item => {
+                if (!item || typeof item !== 'object') return null;
+                const subject = typeof item.subject === 'string'
+                    ? item.subject.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').replace(/<[^>]*>/gi, '').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_,]/g, '').replace(/\s+/g, ' ').substring(0, 70).trim()
+                    : '';
+                const itemAcc = parseFloat(item.accuracy || 0);
+                const itemTotal = parseInt(item.total || 0, 10);
+                const itemCorrect = parseInt(item.correct || 0, 10);
+                if (!subject) return null;
+                return {
+                    subject,
+                    accuracy: isNaN(itemAcc) ? 0 : Math.min(Math.max(itemAcc, 0), 100),
+                    correct: isNaN(itemCorrect) ? 0 : Math.max(itemCorrect, 0),
+                    total: isNaN(itemTotal) ? 0 : Math.max(itemTotal, 0)
+                };
+            })
+            .filter(Boolean);
+    } else if (stats.radar_data && typeof stats.radar_data === 'object') {
+        cleanRadarData = {};
         for (const [key, val] of Object.entries(stats.radar_data)) {
-            // Clave: solo letras y espacios, máx 50 carac
-            const cleanKey = key.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').replace(/\s+/g, ' ').substring(0, 50).trim();
+            // Clave: solo letras, números, acentos y espacios, máx 60 carac
+            const cleanKey = key.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').replace(/<[^>]*>/gi, '').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_,]/g, '').replace(/\s+/g, ' ').substring(0, 60).trim();
             const cleanVal = parseFloat(val);
             if (cleanKey && !isNaN(cleanVal)) {
-                cleanRadarData[cleanKey] = cleanVal;
+                cleanRadarData[cleanKey] = Math.min(Math.max(cleanVal, 0), 100);
             }
         }
+    } else {
+        cleanRadarData = [];
     }
     
     return {

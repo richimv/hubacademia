@@ -16,9 +16,9 @@ class AdminAiService {
         const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
         this.vertex_ai = new VertexAI({ project, location });
         
-        // Modelo único Gemini 3.1 Flash-Lite
+        // Modelo oficial Gemini en Vertex AI
         this.model = this.vertex_ai.getGenerativeModel({
-            model: 'gemini-3.1-flash-lite',
+            model: 'gemini-2.5-flash-lite',
             generationConfig: {
                 maxOutputTokens: 16384,
                 temperature: 0.4,
@@ -34,7 +34,7 @@ class AdminAiService {
 
     /**
      * 🧠 LLAMADOR DE MODELO DUAL Y RESILIENTE (AI CHANNELER)
-     * Ejecuta la llamada a gemini-3.1-flash-lite utilizando la API REST de Google AI Studio (si hay GEMINI_API_KEY)
+     * Ejecuta la llamada a Gemini utilizando la API REST de Google AI Studio (si hay GEMINI_API_KEY)
      * o mediante Vertex AI.
      */
     async _callModel(prompt) {
@@ -42,43 +42,43 @@ class AdminAiService {
         let restError = null;
 
         if (apiKey) {
-            try {
-                const axios = require('axios');
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
-                const payload = {
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        temperature: 0.4
-                    }
-                };
-                console.log("📡 [REST] Llamando a gemini-3.1-flash-lite a través de Google AI Studio...");
-                const res = await axios.post(url, payload, { timeout: 15000 });
-                if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
-                    const text = res.data.candidates[0].content.parts[0].text;
-                    return {
-                        response: {
-                            candidates: [{
-                                content: { parts: [{ text }] }
-                            }]
+            const candidateModels = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
+            const axios = require('axios');
+            for (const modelName of candidateModels) {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                    const payload = {
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            temperature: 0.4
                         }
                     };
-                }
-            } catch (err) {
-                restError = err;
-                console.warn("⚠️ [REST Fallo] Error al llamar a gemini-3.1-flash-lite vía REST:", err.message);
-                if (err.response && err.response.data) {
-                    console.warn("❌ [REST Detalles]:", JSON.stringify(err.response.data));
+                    console.log(`📡 [REST] Llamando a ${modelName} a través de Google AI Studio...`);
+                    const res = await axios.post(url, payload, { timeout: 15000 });
+                    if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
+                        const text = res.data.candidates[0].content.parts[0].text;
+                        return {
+                            response: {
+                                candidates: [{
+                                    content: { parts: [{ text }] }
+                                }]
+                            }
+                        };
+                    }
+                } catch (err) {
+                    restError = err;
+                    console.warn(`⚠️ [REST Fallo - ${modelName}]:`, err.message);
                 }
             }
         }
 
         // Intento por Vertex AI
         try {
-            console.log("📡 [VertexAI] Llamando a gemini-3.1-flash-lite...");
+            console.log("📡 [VertexAI] Llamando a gemini-2.5-flash-lite...");
             return await this.model.generateContent(prompt);
         } catch (err) {
-            console.error("❌ [VertexAI Fallo] Error con gemini-3.1-flash-lite en Vertex AI:", err.message);
+            console.error("❌ [VertexAI Fallo] Error con gemini-2.5-flash-lite en Vertex AI:", err.message);
             if (restError) throw restError;
             throw err;
         }

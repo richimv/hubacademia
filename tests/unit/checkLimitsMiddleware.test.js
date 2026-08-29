@@ -179,4 +179,79 @@ describe('Check Limits Middleware', () => {
         expect(mockRes.status).toHaveBeenCalledWith(403);
         expect(mockNext).not.toHaveBeenCalled();
     });
+
+    describe('AI Diagnostic Routing & Quotas (/api/analytics/diagnostic)', () => {
+        it('should charge 1 life (usage_count) for Free users with remaining lives requesting diagnostic', async () => {
+            mockReq.path = '/api/analytics/diagnostic';
+            dbUser.subscription_tier = 'free';
+            dbUser.subscription_status = 'pending';
+            dbUser.usage_count = 5;
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockReq.usageType).toBe('usage_count');
+            expect(mockReq.cost).toBe(1);
+            expect(mockReq.fallbackToStatic).toBe(true);
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should block Free users requesting diagnostic when all 10 lives are exhausted', async () => {
+            mockReq.path = '/api/analytics/diagnostic';
+            dbUser.subscription_tier = 'free';
+            dbUser.subscription_status = 'pending';
+            dbUser.usage_count = 10;
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockRes.status).toHaveBeenCalledWith(403);
+            expect(mockNext).not.toHaveBeenCalled();
+        });
+
+        it('should NOT charge tokens for Basic active users requesting diagnostic (heuristic static fallback)', async () => {
+            mockReq.path = '/api/analytics/diagnostic';
+            dbUser.subscription_tier = 'basic';
+            dbUser.subscription_status = 'active';
+            dbUser.daily_ai_usage = 10;
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockReq.usageType).toBeNull();
+            expect(mockReq.cost).toBe(0);
+            expect(mockReq.fallbackToStatic).toBe(true);
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should charge 1 daily_ai_usage for Advanced active users requesting diagnostic with Gemini', async () => {
+            mockReq.path = '/api/analytics/diagnostic';
+            dbUser.subscription_tier = 'advanced';
+            dbUser.subscription_status = 'active';
+            dbUser.daily_ai_usage = 10;
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockReq.usageType).toBe('daily_ai_usage');
+            expect(mockReq.cost).toBe(1);
+            expect(mockReq.fallbackToStatic).toBeUndefined();
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should fallback to static heuristic without error for Advanced users when daily_ai_usage is exhausted (100)', async () => {
+            mockReq.path = '/api/analytics/diagnostic';
+            dbUser.subscription_tier = 'advanced';
+            dbUser.subscription_status = 'active';
+            dbUser.daily_ai_usage = 100;
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockReq.usageType).toBeNull();
+            expect(mockReq.cost).toBe(0);
+            expect(mockReq.fallbackToStatic).toBe(true);
+            expect(mockNext).toHaveBeenCalled();
+        });
+    });
 });

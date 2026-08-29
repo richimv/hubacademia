@@ -8,18 +8,6 @@ const project = process.env.GOOGLE_CLOUD_PROJECT;
 const location = process.env.GOOGLE_CLOUD_LOCATION;
 const vertex_ai = new VertexAI({ project: project, location: location });
 
-// Instancia Unificada LITE (Análisis Pro)
-const modelLite = vertex_ai.getGenerativeModel({
-    model: 'gemini-3.1-flash-lite',
-    generationConfig: {
-        maxOutputTokens: 2048,
-        temperature: 0.3,
-        responseMimeType: 'application/json'
-    },
-});
-
-const modelPro = modelLite; // ✅ UNIFICADO A LITE (Costo $0.00)
-
 class AnalyticsController {
     constructor(analyticsService, userRepository) { // 2. Recibir el repositorio en el constructor.
         this.analyticsService = analyticsService;
@@ -231,6 +219,71 @@ class AnalyticsController {
         }
     }
 
+    async _callGeminiDiagnostic(prompt) {
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        // 1. Canal Primario: Google Cloud Vertex AI (GCP Enterprise)
+        const vertexCandidateModels = [
+            'gemini-2.5-flash-lite',
+            'gemini-2.5-flash'
+        ];
+        console.log(`📡 [VertexAI Analytics] Conectando a Vertex AI SDK (GCP Enterprise)...`);
+        for (const modelName of vertexCandidateModels) {
+            try {
+                const vertexModel = vertex_ai.getGenerativeModel({
+                    model: modelName,
+                    generationConfig: {
+                        maxOutputTokens: 2048,
+                        temperature: 0.4,
+                        responseMimeType: 'application/json'
+                    }
+                });
+                const result = await vertexModel.generateContent(prompt);
+                if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].content) {
+                    const rawText = result.response.candidates[0].content.parts[0].text;
+                    console.log(`✅ [VertexAI Analytics Éxito] Diagnóstico generado con modelo: ${modelName}`);
+                    return rawText;
+                }
+            } catch (err) {
+                console.warn(`⚠️ [VertexAI Analytics Fallo - ${modelName}]:`, err.message);
+            }
+        }
+
+        // 2. Canal Secundario de Contingencia: Google AI Studio REST API
+        if (apiKey) {
+            const candidateModels = [
+                'gemini-3.5-flash-lite',
+                'gemini-3.1-flash-lite',
+                'gemini-2.5-flash-lite'
+            ];
+            const axios = require('axios');
+            for (const modelName of candidateModels) {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                    const payload = {
+                        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            responseMimeType: 'application/json',
+                            temperature: 0.4,
+                            maxOutputTokens: 2048
+                        }
+                    };
+                    console.log(`📡 [REST Analytics Contingencia] Llamando a ${modelName} vía Google AI Studio...`);
+                    const res = await axios.post(url, payload, { timeout: 20000 });
+                    if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
+                        const rawText = res.data.candidates[0].content.parts[0].text;
+                        console.log(`✅ [REST Analytics Éxito] Diagnóstico generado con modelo: ${modelName}`);
+                        return rawText;
+                    }
+                } catch (err) {
+                    console.warn(`⚠️ [REST Analytics Fallo - ${modelName}]:`, err.message);
+                }
+            }
+        }
+
+        throw new Error('No se pudo conectar con los proveedores de IA (Vertex y REST).');
+    }
+
     async getAIDiagnostic(req, res) {
         try {
             const userId = req.user.id;
@@ -254,103 +307,55 @@ class AnalyticsController {
                 return res.status(400).json({ error: 'Datos estadísticos inválidos o corruptos.' });
             }
 
-            // Retornar Diagnóstico Estático para cuentas no Premium (free, pending, etc.) o si se forzó el fallback
-            if ((tier !== 'advanced' && tier !== 'admin') || req.fallbackToStatic) {
-                let strengths = "";
-                let weaknesses = "";
-
-                if (context === 'EDUCACION') {
-                    strengths = `
-                        <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Has demostrado destreza en los fundamentos pedagógicos del Currículo Nacional. Tu progreso muestra un inicio prometedor:</p>
-                        <ul style='margin:0; padding:0; list-style:none;'>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-check-circle' style='color:#34d399; margin-top:2px;'></i>
-                                <span>Comprensión inicial de la <strong>Planificación Curricular</strong> y el diseño de sesiones.</span>
-                            </li>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-check-circle' style='color:#34d399; margin-top:2px;'></i>
-                                <span>Reconocimiento de principios básicos de <strong>Convivencia Democrática</strong> y clima de aula.</span>
-                            </li>
-                        </ul>
-                    `;
-                    weaknesses = `
-                        <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Es imperativo consolidar áreas críticas de evaluación formativa y casuística de especialidad:</p>
-                        <ul style='margin:0; padding:0; list-style:none;'>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-exclamation-triangle' style='color:#fbbf24; margin-top:2px;'></i>
-                                <span>Dificultad en la aplicación práctica de <strong>Rúbricas de Evaluación</strong> en situaciones complejas de aula.</span>
-                            </li>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-exclamation-triangle' style='color:#fbbf24; margin-top:2px;'></i>
-                                <span>Riesgo de confusión en la resolución de casuísticas de <strong>Retroalimentación Descriptiva vs Reflexiva</strong>.</span>
-                            </li>
-                        </ul>
-                        <div style='margin-top:1.25rem; padding:1rem; background:rgba(139,92,246,0.06); border:1px dashed rgba(139,92,246,0.3); border-radius:10px;'>
-                            <span style='font-weight:700; color:#c4b5fd; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;'>Estrategia de Intervención (Suscripción Avanzada)</span>
-                            <p style='color:#cbd5e1; margin:0; font-size:0.85rem; line-height:1.5;'>Para desbloquear diagnósticos detallados en tiempo real generados por IA y analizar tus patrones de error específicos por competencia, adquiere una cuenta <strong>Premium Avanzada</strong>.</p>
-                        </div>
-                    `;
-                } else { // MEDICINA (Default)
-                    strengths = `
-                        <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Tu perfil de rendimiento muestra fortalezas iniciales en áreas clave de la práctica médica:</p>
-                        <ul style='margin:0; padding:0; list-style:none;'>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-check-circle' style='color:#34d399; margin-top:2px;'></i>
-                                <span>Destreza en el diagnóstico diferencial inicial en <strong>Medicina Interna</strong>.</span>
-                            </li>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-check-circle' style='color:#34d399; margin-top:2px;'></i>
-                                <span>Reconocimiento rápido de guías de manejo clínico en <strong>Pediatría</strong>.</span>
-                            </li>
-                        </ul>
-                    `;
-                    weaknesses = `
-                        <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'>Se requiere un refuerzo inmediato en áreas de alta carga de morbimortalidad y de salud pública:</p>
-                        <ul style='margin:0; padding:0; list-style:none;'>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-exclamation-triangle' style='color:#fbbf24; margin-top:2px;'></i>
-                                <span>Falta de precisión en la priorización de intervenciones preventivas en <strong>Salud Pública y Gestión</strong>.</span>
-                            </li>
-                            <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>
-                                <i class='fas fa-exclamation-triangle' style='color:#fbbf24; margin-top:2px;'></i>
-                                <span>Riesgo en la toma de decisiones críticas inmediatas en <strong>Ginecología y Obstetricia</strong>.</span>
-                            </li>
-                        </ul>
-                        <div style='margin-top:1.25rem; padding:1rem; background:rgba(139,92,246,0.06); border:1px dashed rgba(139,92,246,0.3); border-radius:10px;'>
-                            <span style='font-weight:700; color:#c4b5fd; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;'>Estrategia de Intervención (Suscripción Avanzada)</span>
-                            <p style='color:#cbd5e1; margin:0; font-size:0.85rem; line-height:1.5;'>Para desbloquear diagnósticos detallados en tiempo real generados por IA y analizar tus patrones de error específicos por área clínica, adquiere una cuenta <strong>Premium Avanzada</strong>.</p>
-                        </div>
-                    `;
+            // 💸 DESCONTAR CUOTA / VIDAS según el tipo definido por el middleware (usage_count para Free, daily_ai_usage para Advanced)
+            if (req.usageType && tier !== 'admin') {
+                try {
+                    const db = require('../../infrastructure/database/db');
+                    await db.query(
+                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                        [userId]
+                    );
+                    console.log(`📉 Cuota de ${req.usageType} incrementada para usuario ${userId} en Diagnóstico.`);
+                } catch (limitErr) {
+                    console.error("⚠️ No se pudo actualizar el límite en base de datos. Continuando...", limitErr);
                 }
-
-                return res.json({ success: true, strengths, weaknesses });
             }
 
-            console.log(`🧠 [IA MULTI-MÓDULO] Generando diagnóstico con IA para el usuario ${userId} en contexto ${context}...`);
+            // Retornar Diagnóstico Heurístico Inteligente para cuentas no Premium (free, basic, pending, etc.) o si se forzó el fallback
+            if ((tier !== 'advanced' && tier !== 'admin') || req.fallbackToStatic) {
+                const diagnostic = this.analyticsService.generateHeuristicDiagnostic(stats, context);
+                return res.json({ success: true, ...diagnostic });
+            }
+
+            console.log(`🧠 [IA MULTI-MÓDULO] Generando diagnóstico cognitivo profundo con IA para el usuario ${userId} en contexto ${context}...`);
 
             // Adaptar dinámicamente el prompt según el contexto
-            let tutorRole = "Tutor Médico experto (Jefe de Residentes)";
-            let examType = "estudiante de medicina preparando sus exámenes de titulación (ENAM, Residentado)";
-            let areaLabel = "RENDIMIENTO POR ÁREAS CLÍNICAS";
-            let strengthTextPrompt = "El análisis debe centrarse en el dominio clínico, razonamiento diagnóstico y precisión fisiopatológica. Las áreas van en <strong style='color:#f8fafc;'>.";
-            let weaknessTextPrompt = "Centra el análisis en la urgencia y riesgo de ignorar estas áreas en la práctica clínica real.";
-            let strategyTitle = "Estrategia de Intervención Recomendada";
-            let strategyDescPrompt = "Tu consejo directo paramédico para subir los puntajes antes del examen final";
+            let tutorRole = "Tutor Médico experto y evaluador del Examen Nacional de Medicina (ENAM / SERUMS / Residentado)";
+            let examType = "médico cirujano en preparación intensiva para sus exámenes oficiales nacionales";
+            let areaLabel = "RENDIMIENTO Y MATRIZ POR ÁREAS CLÍNICAS";
+            let strengthTextPrompt = "El análisis debe centrarse en el dominio clínico, razonamiento diagnóstico, correlación fisiopatológica y precisión terapéutica. Destaca sus áreas más sólidas con porcentajes reales de acierto.";
+            let weaknessTextPrompt = "Identifica patrones de error sistemático, sesgos diagnósticos (ej. sesgo de anclaje, confusión en dosis críticas o no reconocer signos de alarma) y el riesgo real en el puntaje de la prueba oficial.";
+            let highYieldPrompt = "Una 'Píldora Clínica High-Yield' de alto impacto que suelen preguntar en los exámenes oficiales sobre una de sus áreas débiles.";
+            let step1Title = "Refuerzo Clínico y Guías Oficiales";
+            let step2Title = "Entrenamiento en Descarte Rápido";
+            let step3Title = "Simulacros de Alta Exigencia";
 
             if (context === 'EDUCACION') {
-                tutorRole = "Asesor Pedagógico y Especialista en Currículo Nacional";
-                examType = "docente preparando su examen de Nombramiento o Ascenso de Escala Magisterial";
+                tutorRole = "Asesor Pedagógico Especialista en Evaluación y Currículo Nacional (CNEB / Minedu)";
+                examType = "docente en preparación para la Prueba Nacional de Nombramiento o Ascenso de Escala Magisterial";
                 areaLabel = "RENDIMIENTO POR COMPETENCIAS PEDAGÓGICAS";
-                strengthTextPrompt = "El análisis debe centrarse en la práctica pedagógica, teorías de aprendizaje, didáctica y resolución de casos en el aula. Las áreas van en <strong style='color:#f8fafc;'>.";
-                weaknessTextPrompt = "Centra el análisis en la urgencia de dominar los procesos didácticos y normativas de evaluación formativa.";
-                strategyTitle = "Estrategia Pedagógica Recomendada";
-                strategyDescPrompt = "Tu consejo directo para mejorar la resolución de casos de casuística y rúbricas antes de la prueba nacional";
+                strengthTextPrompt = "El análisis debe centrarse en la mediación pedagógica, resolución de casuísticas de aula, criterios de retroalimentación reflexiva y didáctica específica.";
+                weaknessTextPrompt = "Identifica patrones de confusión en casuísticas (ej. confundir retroalimentación descriptiva con reflexiva, o confundir conflicto cognitivo con disonancia) y el impacto en la matriz de rúbricas oficiales.";
+                highYieldPrompt = "Una 'Píldora Pedagógica High-Yield' sobre un principio doctrinal clave del CNEB de alta recurrencia en la prueba nacional.";
+                step1Title = "Refuerzo Doctrinal del CNEB";
+                step2Title = "Casuísticas de Retroalimentación";
+                step3Title = "Simulacros de Gestión y Rúbricas";
             }
 
-            // Prompt analítico adaptado
+            // Prompt analítico adaptado para Plan Avanzado (Deep Reasoning)
             const prompt = `
             Actúa como un ${tutorRole}.
-            Analiza el siguiente historial reciente de un ${examType}:
+            Analiza el historial de rendimiento de un ${examType}:
             
             Nota Promedio: ${stats.avg_score} / 20
             Precisión Global: ${stats.accuracy}%
@@ -360,53 +365,44 @@ class AnalyticsController {
             ${JSON.stringify(stats.radar_data, null, 2)}
             
             TAREA:
-            Genera un diagnóstico y análisis extremadamente detallado, analítico y profesional. Evalúa el conocimiento y destrezas demostradas. Usa un tono de mentor experimentado: alentador, estrictamente analítico, pero accionable. No hagas introducciones genéricas. Debes mencionar porcentajes reales y su impacto.
+            Genera una auditoría diagnóstica cognitiva profunda de alto nivel profesional y analítico. Detecta sesgos de razonamiento, patrones de error frente a distractores y oportunidades críticas de mejora antes de la prueba oficial. Usa un tono de mentor de élite: analítico, riguroso, pero altamente motivador y accionable.
             
             JSON ESTRICTO:
             {
-                "strengths": "HTML Premium sin Markdown. Usa <p style='color:#94a3b8; font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'> para un resumen inicial de sus virtudes. Luego usa <ul style='margin:0; padding:0; list-style:none;'> con items <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:#cbd5e1; font-size:0.85rem; line-height:1.4;'>. Empieza cada <li...> con un div o span con el icono: <i class='fas fa-check-circle' style='color:#34d399; margin-top:2px;'></i> seguido de un span que envuelva el contenido. ${strengthTextPrompt} Menciona su precisión específica si existe.",
-                "weaknesses": "Mismo formato HTML sin Markdown (Párrafo + Lista ul/li). El icono de la lista debe ser: <i class='fas fa-exclamation-triangle' style='color:#fbbf24; margin-top:2px;'></i>. ${weaknessTextPrompt} Al final de la lista de áreas, incluye OBLIGATORIAMENTE un bloque visual extra de acción así: <div style='margin-top:1.25rem; padding:1rem; background:rgba(245,158,11,0.06); border:1px dashed rgba(245,158,11,0.3); border-radius:10px;'><span style='font-weight:700; color:#fbbf24; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:0.4rem;'>${strategyTitle}</span><p style='color:#cbd5e1; margin:0; font-size:0.85rem; line-height:1.5;'>[${strategyDescPrompt}].</p></div>"
+                "readinessIndex": 82,
+                "readinessLevel": "Nivel Competente Avanzado",
+                "strengths": "HTML sin etiquetas <html> o <body>. Usa <p style='color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'> para un resumen inicial. Luego usa <ul style='margin:0; padding:0; list-style:none;'> con items <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;'><i class='fas fa-check-circle' style='color:#34d399; margin-top:2px;'></i><span>...</span></li>. ${strengthTextPrompt} Menciona su precisión específica.",
+                "weaknesses": "Mismo formato HTML (Párrafo + Lista ul/li). El icono de la lista debe ser: <i class='fas fa-exclamation-triangle' style='color:#fbbf24; margin-top:2px;'></i>. ${weaknessTextPrompt}",
+                "strategy": "Texto conciso de 1 o 2 oraciones con la recomendación de estudio más importante para su próxima sesión.",
+                "highYieldTip": "${highYieldPrompt}",
+                "sprint": [
+                    { "step": 1, "title": "${step1Title}", "desc": "Acción concreta de estudio y revisión teórica recomendada." },
+                    { "step": 2, "title": "${step2Title}", "desc": "Acción de práctica focalizada en simuladores comentados." },
+                    { "step": 3, "title": "${step3Title}", "desc": "Acción de consolidación y prueba de velocidad para la prueba oficial." }
+                ]
             }
             `;
 
-            const activeModel = (tier === 'admin') ? modelPro : modelLite;
-            console.log(`🧠 [IA MULTI-MÓDULO] Usando modelo ${ tier === 'admin' ? 'Pro/Estándar' : 'Lite' } para Tier: ${ tier } `);
-
-            const result = await activeModel.generateContent(prompt);
-            const text = result.response.candidates[0].content.parts[0].text;
-
             let diagnostic;
             try {
-                diagnostic = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
-
-                // 💸 DESCONTAR LÍMITE (Chat Standard Diario)
-                try {
-                    const db = require('../../infrastructure/database/db');
-                    if (req.usageType) {
-                        await db.query(
-                            `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
-                            [userId]
-                        );
-                        console.log(`📉 Límite de ${req.usageType} incrementado para usuario ${userId}. (DIAGNÓSTICO EXITOSO)`);
-                    }
-                } catch (limitErr) {
-                    console.error("⚠️ No se pudo actualizar el límite. Continuando...", limitErr);
-                }
-
+                const rawText = await this._callGeminiDiagnostic(prompt);
+                diagnostic = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
             } catch(err) {
-                console.error("❌ Fallo parseando el JSON del Diagnóstico", err);
-                diagnostic = {
-                    strengths: "Tus datos base son sólidos, sigue practicando.",
-                    weaknesses: "Hubo un pequeño error procesando tus áreas débiles, intenta más tarde. (No se consumió cuota)"
-                };
+                console.warn("⚠️ [Diagnóstico IA Fallback] Usando motor heurístico enriquecido por:", err.message);
+                diagnostic = this.analyticsService.generateHeuristicDiagnostic(stats, context);
             }
 
-            res.json({ success: true, ...diagnostic });
+            return res.json({ success: true, ...diagnostic });
 
-} catch (error) {
-    console.error('❌ Error en getAIDiagnostic:', error);
-    res.status(500).json({ error: 'Hubo un problema generando tu diagnóstico con IA.' });
-}
+        } catch (error) {
+            console.error('❌ Error en getAIDiagnostic:', error);
+            try {
+                const fallback = this.analyticsService.generateHeuristicDiagnostic(req.body.stats || {}, req.body.context || 'MEDICINA');
+                return res.json({ success: true, ...fallback });
+            } catch (fallbackErr) {
+                res.status(500).json({ error: 'Hubo un problema generando tu diagnóstico con IA.' });
+            }
+        }
     }
 
     // ==========================================

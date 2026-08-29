@@ -139,6 +139,28 @@ El gráfico lineal de evolución (`evolutionChart`) ha sido repotenciado para tr
 3.  **Línea Ámbar (`scoresReal`):** Representa los **Simulacros Reales** (evaluaciones completas de 50 o más preguntas según target).
 *   **Filtros de Toggles:** Integrados en la cabecera mediante la botonera de Modos ("Todos", "Rápido", "Estudio", "Simulacros") que controlan la visibilidad de los datasets del gráfico dinámicamente en el cliente mediante `chart.setDatasetVisibility()`.
 
+Los diagnósticos se adaptan dinámicamente al contexto activo del estudiante:
+*   **MEDICINA (Default):** Evalúa áreas clínicas clave como Ginecología, Pediatría, Medicina Interna, etc.
+*   **EDUCACION:** Evalúa competencias pedagógicas y de escala magisterial (Comprensión Lectora, Razonamiento Lógico, Convivencia Escolar, etc.).
+
+### B. Flujo de Control de Cuotas y Fallback
+Para evitar el consumo desmedido de cuotas de LLM y prevenir errores 403 blocks visibles al usuario:
+1.  **Detección de Endpoint:** La ruta `/api/analytics/diagnostic` es interceptada por el `checkLimitsMiddleware`.
+2.  **Omisión de Bloqueo 403:** Si el usuario pertenece a un plan no Premium (`free`, `pending`, `demo`) o ha alcanzado su límite diario de IA, en lugar de recibir un error 403:
+    - Se establece `req.usageType = null` (no se descuentan créditos ni se incrementa su uso).
+    - Se establece `req.fallbackToStatic = true` en la petición.
+3.  **Generación de Fallback Estático:** El `analyticsController` detecta la bandera `req.fallbackToStatic` o el tier del usuario y retorna un diagnóstico clínico/pedagógico/lingüístico en formato HTML/CSS limpio directamente desde el backend.
+4.  **Clientes Invitados (Guest):** El dashboard (`simulator-dash.js`) maneja a los usuarios sin sesión de forma local en el cliente, adaptando sus KPIs y gráficos de evolución demo según el módulo activo.
+
+## 8. Gráficos Analíticos Avanzados (Nuevas Integraciones v3.0)
+
+### A. Gráfico de Tendencia Histórica Multi-Línea
+El gráfico lineal de evolución (`evolutionChart`) ha sido repotenciado para trazar hasta tres series cronológicas de forma paralela usando `spanGaps: true`:
+1.  **Línea Verde (`scores10`):** Representa los simulacros rápidos de 10 preguntas.
+2.  **Línea Azul (`scores20`):** Representa los simulacros de estudio de 20 preguntas.
+3.  **Línea Ámbar (`scoresReal`):** Representa los **Simulacros Reales** (evaluaciones completas de 50 o más preguntas según target).
+*   **Filtros de Toggles:** Integrados en la cabecera mediante la botonera de Modos ("Todos", "Rápido", "Estudio", "Simulacros") que controlan la visibilidad de los datasets del gráfico dinámicamente en el cliente mediante `chart.setDatasetVisibility()`.
+
 ### B. Gráfico de Dona de Distribución por Temas
 Ubicado de manera responsiva a la derecha del gráfico lineal, el nuevo gráfico circular (`topicDoughnutChart`) muestra la distribución volumétrica de preguntas respondidas por el alumno:
 *   **MEDICINA (SERUMS):** Agrupa y muestra exclusivamente los 5 subtemas del **Grupo D (Salud Pública y Gestión)**: *Salud Pública*, *Cuidado Integral de Salud*, *Ética e Interculturalidad*, *Investigación* y *Gestión de Servicios de Salud*.
@@ -150,3 +172,33 @@ Ubicado de manera responsiva a la derecha del gráfico lineal, el nuevo gráfico
 *   **Propagación de Áreas en Backend:** Los controladores devuelven en la respuesta de inicio (`start`) y lote (`next-batch`) el set completo de áreas evaluadas. Esto evita que el cliente mande un set recortado al guardar el examen.
 *   **Cola Offline (`simulator_pending_submissions`):** Si falla el envío final del examen debido a una caída de conexión a internet, se encolan los resultados localmente y se liberan recursos de inmediato. El despachador asíncrono `syncPendingSubmissions()` los procesará y subirá en cuanto regrese la conectividad.
 
+### D. Diagnóstico Inteligente por IA (Patrones de Error) — "Extraer Insights IA"
+Integrado en la tarjeta `#ai-diagnosis-card` del panel de simuladores, este módulo detecta brechas cognitivas, sesgos de razonamiento y recomendaciones personalizadas segmentadas por nivel de suscripción:
+
+1. **Visitantes (Modo Prueba / Guest):**
+   - Procesa los resultados en memoria de su prueba demo (`GuestSessionManager`).
+   - Calcula el *Índice de Preparación Inicial* (Readiness Index) y clasifica su nivel de competencia.
+   - Genera un diagnóstico con fortalezas, áreas de intervención, un *Sprint Táctico en 3 Pasos* orientado al registro y un llamado a desbloquear el **Plan Avanzado**.
+
+2. **Usuarios Gratuitos (Free) y Básicos (Basic) — Diagnóstico Heurístico Enriquecido:**
+   - En el backend (`/api/analytics/diagnostic`), `AnalyticsService.generateHeuristicDiagnostic(stats, context)` procesa la matriz real de especialidades (`radar_data`), notas promedio y precisión global.
+   - **Índice de Preparación Oficial (`readinessIndex` & `readinessLevel`):** Pondera la nota (0-20) y efectividad global para emitir un badge de competencia (`Nivel Sobresaliente`, `Nivel Competente`, `Nivel en Desarrollo`, `Nivel Inicial`).
+   - **Auditoría de Fortalezas & Focos Críticos:** Tarjetas con conteo exacto de reactivos correctos/fallados, porcentajes reales y directivas de normas oficiales (MINSA/ASPEFAM o CNEB/Minedu).
+   - **Sprint Táctico en 3 Pasos:** Pasos estructurados de acción inmediata (Refuerzo Conceptual, Práctica Focalizada en Modo Estudio 20q, y Consolidación de Velocidad).
+   - **Cuotas:** Consume 1 vida de prueba en Free (`usage_count`) y 0 tokens diarios en Basic (`req.usageType = null`, estático).
+
+3. **Usuarios Avanzados (Advanced) y Administradores (Admin) — Deep Reasoning Cognitivo:**
+   - Invoca al motor de IA mediante canal dual resiliente `_callGeminiDiagnostic()`:
+     - **Canal Primario (Google Cloud Vertex AI SDK - Gemini Enterprise Agent Platform):** Ejecución directa en GCP (`us-central1`) con `gemini-2.5-flash-lite` (y `gemini-2.5-flash`), con facturación enterprise integrada y sin dependencia de saldos prepago de AI Studio.
+     - **Canal Secundario de Contingencia (Google AI Studio REST):** Soporte opcional con modelos Flash Lite (`gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite`).
+   - **Detección de Sesgos Diagnósticos:** Identifica patrones de confusión sistemática frente a distractores (ej. sesgo de anclaje, no reconocimiento de signos de alarma, confusión entre retroalimentación formativa y descriptiva).
+   - **Píldora High-Yield Oficial:** Provee un concepto clave de alta recurrencia en las pruebas oficiales de medicina (ENAM/SERUMS/Residentado) o docencia (Nombramiento/Ascenso).
+   - **Sprint Táctico IA:** 3 acciones tácticas de estudio personalizadas a la medida del usuario.
+   - **Cuotas:** Consume 1 token de su cuota diaria (`daily_ai_usage`) de 100 mensajes/día.
+
+4. **Resiliencia y Fallback Silencioso:**
+   - Si la llamada a los proveedores externos excede el tiempo o genera un error de red, conmuta silenciosa y automáticamente al motor heurístico enriquecido sin arrojar errores 404/500 ni interrumpir la experiencia del usuario.
+
+---
+> [!IMPORTANT]
+> Esta arquitectura ha sido verificada y respaldada con 31 suites de tests unitarios (214 tests pasando) al 28 de agosto de 2026.
