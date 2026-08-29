@@ -169,8 +169,10 @@ const FlashcardManager = (() => {
     // --- Logic ---
     async function loadCards(token) {
         const urlParams = new URLSearchParams(window.location.search);
-        // 2. Build URL based on context (Deck vs Global vs Single Card)
         const cardId = urlParams.get('cardId');
+        const isDemo = urlParams.get('demo') === 'true';
+
+        // 2. Build URL based on context (Deck vs Global vs Single Card)
         let endpoint = `${API_URL}/due`; // Default Legacy Global
         if (currentDeckId) {
             endpoint = `${window.AppConfig.API_URL}/api/decks/${currentDeckId}/cards/due`;
