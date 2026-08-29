@@ -335,6 +335,16 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Se actualizó `_uploadFileToGCS` en `repaso.js` y `deck-explorer.js` para extraer el mensaje explicativo del servidor (`data.error`) y mostrar el modal oficial de pago `showPaywallModal(errMsg, 'flashcards')`.
     - Se evitó la emisión de notificaciones redundantes o erróneas de "Créditos agotados" o "Error de red" al presentar la oferta de membresía.
 
+- **Auditoría de Transmisión del Contexto al Tutor IA y Extensión a 12k Caracteres (V42)**:
+  - **Soporte de Contexto Completo y Ampliación de Longitud**:
+    - Se actualizó `LIMITS.CONTEXT_TEXT = 12000` en `securityUtils.js` y `tutorAiService.js` para evitar truncamientos en la inyección de prompts de tarjetas de repaso.
+    - Se añadieron metadatos multimedia (`audioUrlFront`, `audioUrlBack`, `hideTextFront`, `hideTextBack`) en `flashcards.js`, `tutor-chat.js` y `chatController.js`.
+  - **Preservación de Categoría en Estudio Individual**:
+    - Se actualizó `repaso.js` para transmitir `deckName` y `category` codificados al iniciar estudio directo de una tarjeta individual (`/flashcards?deckId=...&cardId=...`), asegurando que el Tutor IA opere en la disciplina exacta del mazo.
+  - **Limpieza de Código y Confiabilidad (Code Health)**:
+    - Se eliminaron las dependencias muertas `CourseRepository`, `CareerRepository` y `BookRepository` en `chatController.js` y `tutorAiService.js`.
+    - Suite de pruebas unitarias pasando al 100% (31 suites, 214 pruebas).
+
 ---
 
-**Documentación Técnica Actualizada - 25 de Agosto, 2026.**
+**Documentación Técnica Actualizada - 29 de Agosto, 2026.**

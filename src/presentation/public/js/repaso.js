@@ -1500,8 +1500,11 @@ class RepasoManager {
                     return;
                 }
 
-                if (this.token) window.location.href = `/flashcards?deckId=${card.deck_id}&cardId=${card.id}`;
-                else window.uiManager.showAuthPromptModal();
+                if (this.token) {
+                    const deckName = this.currentDeck?.name ? encodeURIComponent(this.currentDeck.name) : '';
+                    const category = this.currentDeck?.category ? encodeURIComponent(this.currentDeck.category) : '';
+                    window.location.href = `/flashcards?deckId=${card.deck_id}&cardId=${card.id}&deckName=${deckName}&category=${category}`;
+                } else window.uiManager.showAuthPromptModal();
             } else if (action === 'edit') {
                 this.onEditCardClick(card.id, card.front_content, card.back_content, card.image_url, card.explanation_image_url, card.audio_url_frente, card.audio_url_dorso, card.tts_lang_frente, card.tts_lang_dorso, card.hide_text_frente, card.hide_text_dorso);
             } else if (action === 'delete') {

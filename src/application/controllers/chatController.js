@@ -1,8 +1,4 @@
-const AnalyticsService = require('../../domain/services/analyticsService');
 const KnowledgeBaseRepository = require('../../domain/repositories/knowledgeBaseRepository');
-const CourseRepository = require('../../domain/repositories/courseRepository');
-const CareerRepository = require('../../domain/repositories/careerRepository');
-const BookRepository = require('../../domain/repositories/bookRepository');
 // ✅ FASE II: Importar el nuevo servicio de chat para manejar el historial.
 const ChatService = require('../../domain/services/chatService');
 const TutorAiService = require('../../domain/services/tutorAiService');
@@ -89,6 +85,8 @@ class ChatController {
                 const front = context.front || 'Sin texto';
                 const back = context.back || 'Sin texto';
                 const hasImages = (context.imageUrl || context.explanationImageUrl) ? 'Sí (imágenes disponibles en la tarjeta)' : 'No';
+                const hasAudio = (context.audioUrlFront || context.audioUrlBack) ? 'Sí (audio disponible en la tarjeta)' : 'No';
+                const isListeningMode = (context.hideTextFront || context.hideTextBack) ? 'Sí (modo de ocultación de texto activo)' : 'No';
 
                 const tutorInstruction = `[MODO: TUTOR ACADÉMICO MULTIDISCIPLINARIO DE FLASHCARDS]
 Eres un tutor y mentor de élite en Hub Academia, experto en la disciplina de **${deckCategory}**.
@@ -103,6 +101,8 @@ ${front}
 - REVERSO DE LA TARJETA (Respuesta / Fundamento Doctrinal / Explicación):
 ${back}
 - RECURSOS VISUALES: ${hasImages}
+- RECURSOS DE AUDIO: ${hasAudio}
+- MODO ESCUCHA/OCULTACIÓN: ${isListeningMode}
 
 DIRECTRICES DE RESPUESTA:
 1. Adopta de inmediato la mentalidad, terminología y rigor técnico de la disciplina correspondiente (${deckCategory}). Por ejemplo:
@@ -124,39 +124,114 @@ ${message}`;
 
             // ✅ INYECCIÓN DE CONTEXTO PARA TUTOR DE SIMULADOR DE EXAMEN (Quiz Tutor)
             if (context && context.type === 'quiz_tutor') {
-                const examDomain = context.examContext || (finalSpecialization === 'education' ? 'EDUCACION' : 'MEDICINA');
-                const target = context.target || targetExam;
+                const examDomain = String(context.examDomain || context.examContext || (finalSpecialization === 'education' ? 'EDUCACION' : 'MEDICINA')).toUpperCase();
+                const target = context.target || targetExam || (examDomain === 'EDUCACION' ? 'ASCENSO' : 'SERUMS');
                 const career = context.career || 'No especificada';
                 const difficulty = context.difficulty || 'Estándar';
-                const areas = (context.areas && Array.isArray(context.areas) && context.areas.length > 0) ? context.areas.join(', ') : (context.topic || 'General');
+                const topic = context.topic || context.area || 'General';
+                const areas = (context.areas && Array.isArray(context.areas) && context.areas.length > 0) 
+                    ? context.areas.join(', ') 
+                    : topic;
+
+                // 1. Normalización segura de opciones de respuesta
+                let rawOptions = context.options || [];
+                if (typeof rawOptions === 'string') {
+                    try {
+                        const parsed = JSON.parse(rawOptions);
+                        if (Array.isArray(parsed)) rawOptions = parsed;
+                    } catch (e) {
+                        rawOptions = [rawOptions];
+                    }
+                }
+                let safeOptions = [];
+                if (Array.isArray(rawOptions)) {
+                    safeOptions = rawOptions.map(opt => typeof opt === 'string' ? opt : (opt?.text || opt?.option || JSON.stringify(opt)));
+                } else if (typeof rawOptions === 'object' && rawOptions !== null) {
+                    safeOptions = Object.values(rawOptions).map(opt => typeof opt === 'string' ? opt : (opt?.text || opt?.option || JSON.stringify(opt)));
+                }
+
+                // 2. Normalización de pregunta
+                const questionText = (context.questionText || context.question_text || context.question || '').trim();
+
+                // 3. Normalización de clave oficial e intento del estudiante
+                const correctIdx = (context.correctOptionIndex !== null && context.correctOptionIndex !== undefined && !isNaN(Number(context.correctOptionIndex)))
+                    ? Number(context.correctOptionIndex)
+                    : null;
+                
+                const userIdx = (context.userOptionIndex !== null && context.userOptionIndex !== undefined && !isNaN(Number(context.userOptionIndex)))
+                    ? Number(context.userOptionIndex)
+                    : (context.userAnswer !== null && context.userAnswer !== undefined && !isNaN(Number(context.userAnswer)))
+                        ? Number(context.userAnswer)
+                        : null;
+
+                const correctLetter = correctIdx !== null ? String.fromCharCode(65 + correctIdx) : 'N/A';
+                const correctText = (correctIdx !== null && safeOptions[correctIdx]) ? safeOptions[correctIdx] : (context.correctOptionText || 'No especificada');
+
+                const userLetter = userIdx !== null ? String.fromCharCode(65 + userIdx) : null;
+                const userText = (userIdx !== null && safeOptions[userIdx]) ? safeOptions[userIdx] : (context.userOptionText || null);
+                const isUserCorrect = Boolean(context.isUserCorrect || (userIdx !== null && correctIdx !== null && userIdx === correctIdx));
+
+                // 4. Formatear opciones para el prompt
+                let optionsFormatted = '';
+                if (safeOptions.length > 0) {
+                    optionsFormatted = safeOptions.map((opt, i) => `  [${String.fromCharCode(65 + i)}] ${opt}`).join('\n');
+                } else {
+                    optionsFormatted = '  (No se proporcionaron opciones cerradas para este reactivo)';
+                }
+
+                // 5. Casuística / Situación compartida / Apoyo visual
+                let caseSection = '';
+                if (context.caseDescription || context.caseTitle || context.caseTableHtml || context.caseImageUrl) {
+                    caseSection = `\nCASUÍSTICA / SITUACIÓN COMPARTIDA:
+${context.caseTitle ? `Título: ${context.caseTitle}\n` : ''}${context.caseDescription || ''}${context.caseTableHtml ? `\nTabla / Datos de Apoyo:\n${context.caseTableHtml}\n` : ''}${context.caseImageUrl ? `\nImagen de Casuística: ${context.caseImageUrl}\n` : ''}`;
+                }
+
+                let visualSupportSection = '';
+                if (context.imageUrl) {
+                    visualSupportSection = `\nIMAGEN DE APOYO EN LA PREGUNTA: ${context.imageUrl}`;
+                }
+
+                // 6. Información de respuesta del estudiante
+                let studentSelectionInfo = '- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: El estudiante aún no ha marcado una alternativa (o está consultando antes de responder).';
+                if (userLetter !== null) {
+                    studentSelectionInfo = `- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [${userLetter}] (${userText || ''}) -> ${isUserCorrect ? '✅ Correcta' : '❌ Incorrecta'}`;
+                }
 
                 const tutorInstruction = `[MODO: TUTOR DE SIMULADOR DE EXAMEN]
-Eres un tutor de élite de Hub Academia. El estudiante está resolviendo un simulacro interactivo y tiene una duda sobre esta pregunta. Tu objetivo es explicar el fundamento técnico/pedagógico con claridad, resolver sus inquietudes y profundizar en el tema.
+Eres un tutor de élite de Hub Academia especializado en ${examDomain === 'EDUCACION' ? 'Currículo Nacional, Didáctica y Casuística Pedagógica (MINEDU / CNEB)' : 'Medicina Peruana, Normas Técnicas MINSA, GPC y Diagnóstico Clínico'}.
+El estudiante está interactuando con este reactivo en un simulacro interactivo y tiene una duda sobre su resolución, la clave o el sustento.
 
 CONFIGURACIÓN DE EXAMEN Y CONTEXTO DEL ALUMNO:
 - DOMINIO ACADÉMICO: ${examDomain}
 - EXAMEN OBJETIVO (TARGET): ${target}
 - NIVEL / ESPECIALIDAD (CAREER): ${career}
 - DIFICULTAD CONFIGURADA: ${difficulty}
-- ÁREAS SELECCIONADAS EN LA PRUEBA: ${areas}
-${context.caseDescription ? `
-CASUÍSTICA / SITUACIÓN COMPARTIDA:
-${context.caseTitle ? `Título: ${context.caseTitle}\n` : ''}${context.caseDescription}
-` : ''}
-DETALLES DE LA PREGUNTA DEL SIMULADOR:
-- PREGUNTA: ${context.questionText}
+- ÁREA O TEMA: ${topic}
+- ÁREAS SELECCIONADAS EN LA PRUEBA: ${areas}${caseSection}
+
+DETALLES COMPLETOS DEL REACTIVO DEL SIMULADOR:
+- ENUNCIADO DE LA PREGUNTA:
+${questionText || 'Pregunta del simulacro'}${visualSupportSection}
+
 - OPCIONES DE RESPUESTA:
-${(context.options || []).map((opt, i) => `  [${String.fromCharCode(65 + i)}] ${opt}`).join('\n')}
-- RESPUESTA CORRECTA: Opción [${context.correctOptionIndex !== null && context.correctOptionIndex !== undefined ? String.fromCharCode(65 + context.correctOptionIndex) : 'N/A'}] (${context.correctOptionText || ''})
-- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [${context.userOptionIndex !== null && context.userOptionIndex !== undefined ? String.fromCharCode(65 + context.userOptionIndex) : 'N/A'}] (${context.userOptionText || ''}) -> ${context.isUserCorrect ? 'Correcta' : 'Incorrecta'}
-- EXPLICACIÓN / SUSTENTO OFICIAL: ${context.explanation || 'No especificada'}
-- TEMA ESPECÍFICO: ${context.topic || 'General'}
+${optionsFormatted}
+
+- CLAVE CORRECTA OFICIAL: Opción [${correctLetter}] (${correctText})
+${studentSelectionInfo}
+- EXPLICACIÓN / SUSTENTO OFICIAL DE LA CLAVE:
+${context.explanation || 'No especificada en el banco'}
+
+DIRECTRICES CLAVE PARA EL TUTOR:
+1. Explica con claridad, rigor pedagógico y didáctica por qué la clave correcta [${correctLetter}] es la opción acertada.
+2. Analiza las alternativas cuando sea pertinente para despejar dudas y reforzar el aprendizaje del alumno.
+3. 🚨 TIENES ACCESO COMPLETO AL REACTIVO Y A SUS OPCIONES. NUNCA digas que no te proporcionaron las opciones ni la pregunta.
+
 ---
 PREGUNTA O DUDA DEL ESTUDIANTE:
 ${message}`;
 
                 processedMessage = tutorInstruction;
-                console.log(`🧠 Quiz Tutor Context Injected | Exam: ${target} (${career}) | Domain: ${examDomain}`);
+                console.log(`🧠 Quiz Tutor Context Injected | Exam: ${target} (${career}) | Domain: ${examDomain} | Options: ${safeOptions.length}`);
             }
 
             // --- ✅ FASE III: PROCESAMIENTO IA (V6 - TutorAiService) ---

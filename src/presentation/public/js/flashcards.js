@@ -400,7 +400,11 @@ const FlashcardManager = (() => {
                             deckName: currentDeckName || currentCard.topic || ui.topic.textContent || 'Mazo de Estudio',
                             deckCategory: currentDeckCategory || 'General',
                             imageUrl: currentCard.image_url || null,
-                            explanationImageUrl: currentCard.explanation_image_url || null
+                            explanationImageUrl: currentCard.explanation_image_url || null,
+                            audioUrlFront: currentCard.audio_url_frente || null,
+                            audioUrlBack: currentCard.audio_url_dorso || null,
+                            hideTextFront: !!currentCard.hide_text_frente,
+                            hideTextBack: !!currentCard.hide_text_dorso
                         });
                     }
                 };

@@ -1,7 +1,6 @@
 const { VertexAI } = require('@google-cloud/vertexai');
 const RagService = require('./ragService');
 const chatPrompts = require('../prompts/chatPrompts');
-const BookRepository = require('../repositories/bookRepository');
 const db = require('../../infrastructure/database/db'); // Mover al inicio
 const securityUtils = require('../utils/securityUtils');
 
@@ -18,7 +17,6 @@ class TutorAiService {
         const project = process.env.GOOGLE_CLOUD_PROJECT;
         const location = process.env.GOOGLE_CLOUD_LOCATION;
         this.vertex_ai = new VertexAI({ project, location });
-        this.bookRepository = new BookRepository();
 
         this.model = this.vertex_ai.getGenerativeModel({
             model: 'gemini-2.5-flash-lite',
@@ -239,8 +237,8 @@ class TutorAiService {
         // 1. Extraer imágenes base64 del mensaje original (antes de sanitizar/recortar para no truncar la data)
         const { cleanedText: preCleanedMessage, parts: imageParts } = this._extractMultimodalParts(userMessage);
 
-        // 2. Sanitizar el mensaje limpio (que ahora es muy corto y no será truncado)
-        const message = securityUtils.sanitizeInputForAI(preCleanedMessage, securityUtils.LIMITS.LONG_TEXT);
+        // 2. Sanitizar el mensaje limpio (soporta payloads de contexto de tarjetas/simulacro)
+        const message = securityUtils.sanitizeInputForAI(preCleanedMessage, securityUtils.LIMITS.CONTEXT_TEXT);
         const conversationId = filters.conversationId || 'default';
 
         const target = (filters.target || "ENAM").toUpperCase();

@@ -182,7 +182,11 @@ class FlashcardTutor {
                     deckName: this.cardContext?.deckName || 'Mazo de Estudio',
                     deckCategory: this.cardContext?.deckCategory || 'General',
                     imageUrl: this.cardContext?.imageUrl || null,
-                    explanationImageUrl: this.cardContext?.explanationImageUrl || null
+                    explanationImageUrl: this.cardContext?.explanationImageUrl || null,
+                    audioUrlFront: this.cardContext?.audioUrlFront || null,
+                    audioUrlBack: this.cardContext?.audioUrlBack || null,
+                    hideTextFront: !!this.cardContext?.hideTextFront,
+                    hideTextBack: !!this.cardContext?.hideTextBack
                 }
             };
 

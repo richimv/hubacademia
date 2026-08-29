@@ -590,4 +590,21 @@ Servicio en la capa de dominio (`src/domain/services/asistenteGuiaKnowledge.js`)
 - **Backend Ultra-Resiliente (`TutorAiService`)**: Si el modelo Gemini responde con texto previo o posterior al bloque JSON, una extracción por expresiones regulares y búsqueda de delimitadores `{` / `}` recupera el objeto válido y formatea la respuesta de forma consistente.
 
 ---
-*Última actualización: 10 de agosto de 2026 (Normalización y extracción limpia de Markdown y JSON en Tutor IA y Módulo Repaso)*
+
+## 21. Optimización del Tutor IA de Flashcards y Extensión de Contexto (Agosto 2026)
+
+### 21.1 Ampliación del Límite de Contexto (`LIMITS.CONTEXT_TEXT = 12000`)
+- **Prevención de Truncamiento**: Se extendió la longitud máxima permitida en `securityUtils.js` de 2,000 a 12,000 caracteres (`CONTEXT_TEXT`). Esto garantiza que prompts extensos que incluyen anverso (`front_content`), reverso (`back_content`), metadatos del mazo, área temática y preguntas complejas del estudiante lleguen completos al modelo Gemini sin truncar las instrucciones ni la duda del usuario.
+
+### 21.2 Integración Multimedia Completa (Audio y Modo Escucha)
+- **Metadatos Enriquecidos**: El frontend (`flashcards.js`, `tutor-chat.js`) y backend (`chatController.js`) transmiten de forma transparente:
+  - Indicadores de recursos de audio (`audioUrlFront`, `audioUrlBack`).
+  - Estado del modo escucha / ocultación de texto (`hideTextFront`, `hideTextBack`).
+  - Nombre del mazo (`deckName`) y categoría exacta (`deckCategory`).
+- **Persistencia de Contexto en Estudio Individual**: En `repaso.js`, al iniciar el estudio directo de una tarjeta individual (`/flashcards?deckId=...&cardId=...`), los parámetros `deckName` y `category` se incluyen en la URL para evitar que el Tutor de caiga en la categoría por defecto ('General').
+
+### 21.3 Limpieza de Código y Confiabilidad (Code Health)
+- **Eliminación de Código Muerto**: Se erradicaron dependencias no utilizadas (`BookRepository`, `CourseRepository`, `CareerRepository`) en `chatController.js` y `tutorAiService.js`, reduciendo instanciaciones innecesarias en memoria.
+
+---
+*Última actualización: 29 de agosto de 2026 (Auditoría de arquitectura del Tutor IA de Flashcards, expansión de contexto a 12,000 caracteres y limpieza de código)*

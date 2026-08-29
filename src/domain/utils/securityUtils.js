@@ -8,14 +8,15 @@ const LIMITS = {
     WORD: 80,
     TOPIC: 150,
     SHORT_TEXT: 500,
-    LONG_TEXT: 2000
+    LONG_TEXT: 2000,
+    CONTEXT_TEXT: 12000
 };
 
 /**
  * Sanitiza una cadena de texto para enviarla de forma segura a los modelos de IA.
  * Remueve caracteres de control, limita longitud y mitiga directivas de jailbreak/inyección.
  */
-function sanitizeInputForAI(text, maxLength = LIMITS.LONG_TEXT) {
+function sanitizeInputForAI(text, maxLength = LIMITS.CONTEXT_TEXT) {
     if (!text || typeof text !== 'string') return '';
     
     // Limitar longitud
