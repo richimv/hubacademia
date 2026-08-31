@@ -712,11 +712,12 @@ const SimulatorDash = (() => {
             btnStudy.href = `quiz${baseParams}${separator}limit=20${demoFlag}`;
         }
 
-        // 3. Real Mock (100 questions - STRICTLY DB ONLY)
+        // 3. Real Mock (60 or 100 questions - STRICTLY DB ONLY)
         const btnReal = document.getElementById('btn-mode-real');
         if (btnReal) {
             const separator = baseParams.includes('?') ? '&' : '?';
-            btnReal.href = `quiz${baseParams}${separator}limit=100&mode=real`;
+            const realLimit = ctxConfig.realQuestions || 100;
+            btnReal.href = `quiz${baseParams}${separator}limit=${realLimit}&mode=real`;
         }
 
         updateGuestTrialHighlight();

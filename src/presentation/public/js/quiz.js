@@ -546,7 +546,7 @@ async function init() {
                 }
 
                 renderQuestion();
-                if (state.maxQuestions === 100) startMockTimer();
+                if (state.maxQuestions >= 50 || state.mode === 'real') startMockTimer();
             } else if (resume === false) {
                 console.log("🆕 Descartando sesión anterior por elección del usuario.");
                 clearSession();
@@ -570,7 +570,7 @@ async function init() {
         if (state.questions && Array.isArray(state.questions) && state.questions.length > 0) {
             console.warn("⚠️ Continuando ejecución del quiz en memoria a pesar del error de inicialización.");
             renderQuestion();
-            if (state.maxQuestions === 100) startMockTimer();
+            if (state.maxQuestions >= 50 || state.mode === 'real') startMockTimer();
         } else {
             clearSession();
             if (window.confirmationModal) {
@@ -697,8 +697,8 @@ function loadSession() {
             return null;
         }
 
-        // Si es un Simulacro Real (100qs) y tiene tiempo restante guardado, descontar tiempo real transcurrido
-        if (data.maxQuestions === 100 && data.timeLeft !== undefined && data.timeLeft !== null) {
+        // Si es un Simulacro Real (>= 50qs o mode=real) y tiene tiempo restante guardado, descontar tiempo real transcurrido
+        if ((data.maxQuestions >= 50 || data.mode === 'real') && data.timeLeft !== undefined && data.timeLeft !== null) {
             const elapsedSeconds = Math.floor(ageInMs / 1000);
             data.timeLeft = Math.max(0, data.timeLeft - elapsedSeconds);
             console.log(`⏱️ Persistencia del cronómetro: se descontaron ${elapsedSeconds}s de inactividad. Tiempo restante: ${data.timeLeft}s.`);
@@ -715,7 +715,8 @@ function loadSession() {
         // Regla 2: Límite de preguntas debe coincidir (Evita cargar 10qs cuando se pide 20qs)
         const limitParam = parseInt(urlParams.get('limit'));
         const expectedLimit = (!isNaN(limitParam) && limitParam > 0) ? limitParam : 20;
-        if (data.maxQuestions && data.maxQuestions !== expectedLimit) {
+        const isRealMismatch = (expectedLimit >= 50 && data.maxQuestions < 50) || (expectedLimit < 50 && Math.abs((data.maxQuestions || 0) - expectedLimit) > 5);
+        if (data.maxQuestions && isRealMismatch) {
             console.log("♻️ Sesión descartada por desajuste de modalidad (límite distinto).");
             clearSession();
             return null;
@@ -1009,6 +1010,9 @@ async function startQuiz() {
     }
 
     state.questions = data.questions;
+    if (data.questions && Array.isArray(data.questions)) {
+        state.maxQuestions = Math.max(state.maxQuestions, data.questions.length);
+    }
     state.quizSessionId = data.quizSessionId || null;
     // 💡 ACTUALIZACIÓN DE TEMA: Si el backend rotó el tema (ej: Medicina -> Cardiología), actualizamos el estado.
     if (data.topic) {
@@ -1028,7 +1032,7 @@ async function startQuiz() {
     renderQuestion();
 
     // Iniciar temporizador maestro si es Simulacro Real
-    if (state.maxQuestions === 100) {
+    if (state.maxQuestions >= 50 || state.mode === 'real') {
         startMockTimer();
     }
 }
@@ -1111,6 +1115,9 @@ async function fetchNextBatch() {
 
         if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
             state.questions.push(...data.questions);
+            if (state.questions.length > state.maxQuestions) {
+                state.maxQuestions = state.questions.length;
+            }
             console.log(`✅ Lote cargado exitosamente. Total acumulado: ${state.questions.length}/${state.maxQuestions}`);
 
             // 🔄 Refrescar áreas por si el backend rotó algo (opcional pero robusto)
@@ -1809,7 +1816,7 @@ async function finishQuiz() {
         return;
     }
 
-    const totalCount = state.maxQuestions || state.questions.length;
+    const totalCount = state.questions.length;
     const actualScore = (state.answers || []).filter(a => a && a.isCorrect).length;
     state.score = actualScore;
 
@@ -1823,9 +1830,10 @@ async function finishQuiz() {
         score: actualScore,
         total_questions: totalCount,
         totalQuestions: totalCount,
-        questions: state.questions.slice(0, totalCount).map((q, idx) => ({
+        questions: state.questions.map((q, idx) => ({
             id: q.id,
-            userAnswer: state.answers[idx]?.userAnswer !== undefined ? state.answers[idx].userAnswer : 0,
+            sessionQuestionId: q.sessionQuestionId || undefined,
+            userAnswer: state.answers[idx]?.userAnswer !== undefined ? state.answers[idx].userAnswer : null,
             correct_option_index: q.correct_option_index,
             isCorrect: !!state.answers[idx]?.isCorrect,
             topic: q.topic || state.topic || 'General'

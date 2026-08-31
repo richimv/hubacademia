@@ -78,7 +78,7 @@ class MedicoRepository {
         const caseIdsInBatch = [...new Set(questions.filter(q => q.case_id).map(q => q.case_id))];
         if (caseIdsInBatch.length > 0) {
             try {
-                const siblingRes = await db.query(`
+                let siblingQuery = `
                     SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
                            qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.audio_text,
                            qb.case_id, qb.case_order,
@@ -87,8 +87,15 @@ class MedicoRepository {
                     FROM question_bank qb
                     JOIN case_scenarios cs ON qb.case_id = cs.id
                     WHERE qb.case_id = ANY($1::uuid[])
-                    ORDER BY qb.case_id, qb.case_order ASC, qb.created_at ASC
-                `, [caseIdsInBatch]);
+                `;
+                const siblingParams = [caseIdsInBatch];
+                if (filterTopics) {
+                    siblingParams.push(topics);
+                    siblingQuery += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($2::text[]))))`;
+                }
+                siblingQuery += ` ORDER BY qb.case_id, qb.case_order ASC, qb.created_at ASC`;
+
+                const siblingRes = await db.query(siblingQuery, siblingParams);
 
                 const siblingMap = new Map();
                 siblingRes.rows.forEach(sq => {

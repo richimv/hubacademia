@@ -4,6 +4,18 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 
 ---
 
+### 🟢 [2026-08-31] - Calificación Resiliente de Exámenes (10qs, 20qs, 60qs), Casuísticas Anidadas y Corrección de KPIs de Evolución
+
+- **🎯 Calificación y Persistencia Fidedigna de Resultados ([quizSessionService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/quizSessionService.js), [quizSessionRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/quizSessionRepository.js), [docenteController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/docenteController.js) & [medicoController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/medicoController.js)):**
+  - **Corrección de Causa Raíz en `gradeForSubmission`:** Se detectó que el backend retornaba `score: 0` al finalizar un simulacro cuando el cliente no llamaba a `/answer` por cada reactivo individual. Se implementó calificación segura contrastando `clientAnswers` con las claves maestras de `answer_payload`, permitiendo que puntajes reales (ej. 3/10 y 7/10) se almacenen con exactitud matemática tanto si el examen se dio de corrido como si se retomó una sesión guardada.
+  - **Proyección Vigesimal de Evolución Cronológica:** El cálculo de `score_20 = (score / total_questions) * 20` ahora grafica con precisión las notas reales (ej. `6.0`, `14.0` sobre 20) en lugar de trazar líneas de cero.
+  - **Cálculo Robusto de `areaStats`:** Se blindó el desglose de aciertos por tema `{ correct, total }` para alimentar adecuadamente el radar de competencias, el gráfico de rosquilla y las métricas de fortalezas/debilidades.
+- **📚 Tratamiento Universal de Casuísticas / Casos Anidados ([quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js) & [simulator-dash.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/simulator-dash.js)):**
+  - Se configuró la expansión dinámica de `state.maxQuestions` cuando se clusterizan preguntas hermanas asociadas a una misma viñeta pedagógica o clínica, impidiendo que el examen se corte a la mitad de una casuística.
+  - Se vinculó el Simulacro Real con la cantidad oficial de preguntas según contexto (`limit=60` para Educación y `limit=100` para Medicina).
+
+---
+
 ### 🟢 [2026-08-30] - Renderizado Universal de Fórmulas Matemáticas y Científicas (KaTeX) y Blindaje Tipográfico
 
 - **📐 Motor Universal de Renderizado Tipográfico KaTeX ([markdown-renderer.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/utils/markdown-renderer.js) & [markdown-content.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/markdown-content.css)):**

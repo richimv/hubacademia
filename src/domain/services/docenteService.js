@@ -205,7 +205,7 @@ class DocenteService {
 
         const addCandidate = (candidate) => {
             if (!candidate) return;
-            if (!candidate.case_id) {
+            if (!candidate.case_id || !isDefault) {
                 balancedBatch.push(candidate);
             } else if (!processedCaseIds.has(candidate.case_id)) {
                 processedCaseIds.add(candidate.case_id);
@@ -312,7 +312,7 @@ class DocenteService {
         if (quizData.questions && Array.isArray(quizData.questions)) {
             quizData.questions.forEach(q => {
                 let rawTopic = q.topic || q.area || quizData.topic || 'Conocimientos Pedagógicos';
-                const isCorrect = q.userAnswer === q.correct_option_index || q.isCorrect === true;
+                const isCorrect = q.isCorrect === true || (q.userAnswer !== undefined && q.correct_option_index !== undefined && Number(q.userAnswer) === Number(q.correct_option_index));
 
                 const isGeneric = !rawTopic || rawTopic === 'General' || rawTopic === 'EDUCACION' || rawTopic.startsWith('Simulacro');
 
@@ -338,9 +338,15 @@ class DocenteService {
                     areaStats[topic].correct += 1;
                 }
                 q.topic = topic;
+                q.isCorrect = isCorrect;
             });
         }
 
+        const calculatedScore = quizData.questions && quizData.questions.length > 0
+            ? quizData.questions.filter(q => q.isCorrect === true).length
+            : (Number(quizData.score) || 0);
+
+        quizData.score = calculatedScore;
         quizData.areaStats = areaStats;
 
         const savedAttempt = await docenteRepository.saveQuizHistory(userId, quizData);

@@ -28,6 +28,21 @@ describe('KPI Evolution & Doughnut Chart Aggregation', () => {
             const scoresReal = mockRawEvolutionData.map(d => (d.total_questions >= 50) ? parseFloat(d.score_20).toFixed(1) : null);
             expect(scoresReal).toEqual([null, null, null, null, '17.0', '18.0']);
         });
+
+        it('should correctly calculate vigesimal scores (0-20) for 3/10, 7/10, and 45/60', () => {
+            const rawAttempts = [
+                { score: 3, total_questions: 10 },
+                { score: 7, total_questions: 10 },
+                { score: 45, total_questions: 60 }
+            ];
+
+            const computedScores = rawAttempts.map(a => {
+                const score20 = (a.score / a.total_questions) * 20;
+                return score20.toFixed(1);
+            });
+
+            expect(computedScores).toEqual(['6.0', '14.0', '15.0']);
+        });
     });
 
     describe('Doughnut Chart Distribution by Practiced Areas/Topics', () => {

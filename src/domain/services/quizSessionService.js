@@ -50,20 +50,37 @@ class QuizSessionService {
         };
     }
 
-    async gradeForSubmission({ sessionId, userId, domain }) {
+    async gradeForSubmission({ sessionId, userId, domain, clientAnswers = [] }) {
         this._assertSessionId(sessionId);
         this._assertDomain(domain);
-        const session = await quizSessionRepository.getGradedSession({ sessionId, userId, domain });
-        const questions = session.questions.map(row => {
+        const session = await quizSessionRepository.getGradedSession({ sessionId, userId, domain, clientAnswers });
+        const questions = session.questions.map((row, idx) => {
             const publicPayload = row.public_payload || {};
             const answerPayload = row.answer_payload || {};
+            const clientAns = Array.isArray(clientAnswers) ? clientAnswers[idx] : null;
+
+            let selectedOptionIndex = row.selected_option_index;
+            if (selectedOptionIndex === null && clientAns && clientAns.userAnswer !== undefined) {
+                selectedOptionIndex = Number(clientAns.userAnswer);
+            }
+
+            const correctOptionIndex = Number(
+                answerPayload.correct_option_index !== undefined
+                    ? answerPayload.correct_option_index
+                    : (publicPayload.correct_option_index !== undefined ? publicPayload.correct_option_index : clientAns?.correct_option_index)
+            );
+
+            const isCorrect = (selectedOptionIndex !== null && !isNaN(selectedOptionIndex) && !isNaN(correctOptionIndex))
+                ? Number(selectedOptionIndex) === correctOptionIndex
+                : (row.is_correct === true || clientAns?.isCorrect === true);
+
             return {
-                id: row.bank_question_id || publicPayload.id || null,
+                id: row.bank_question_id || publicPayload.id || clientAns?.id || null,
                 sessionQuestionId: row.id,
-                userAnswer: row.selected_option_index,
-                correct_option_index: Number(answerPayload.correct_option_index),
-                isCorrect: row.is_correct === true,
-                topic: publicPayload.topic || publicPayload.area || 'General'
+                userAnswer: selectedOptionIndex,
+                correct_option_index: correctOptionIndex,
+                isCorrect: isCorrect,
+                topic: publicPayload.topic || publicPayload.area || clientAns?.topic || 'General'
             };
         });
         return {

@@ -110,7 +110,7 @@ class QuizSessionRepository {
         }
     }
 
-    async getGradedSession({ sessionId, userId, domain }) {
+    async getGradedSession({ sessionId, userId, domain, clientAnswers = [] }) {
         const client = await db.pool().connect();
         try {
             await client.query('BEGIN');
@@ -125,6 +125,49 @@ class QuizSessionRepository {
                  ORDER BY position ASC`,
                 [sessionId]
             );
+
+            // Si hay respuestas enviadas en lote por el cliente, sincronizarlas de forma segura
+            if (Array.isArray(clientAnswers) && clientAnswers.length > 0) {
+                const clientMap = new Map();
+                clientAnswers.forEach((ans, idx) => {
+                    if (ans.sessionQuestionId) clientMap.set(ans.sessionQuestionId, ans);
+                    if (ans.id) clientMap.set(ans.id, ans);
+                });
+
+                for (let i = 0; i < questionsResult.rows.length; i++) {
+                    const row = questionsResult.rows[i];
+                    if (row.selected_option_index === null) {
+                        const publicPayload = row.public_payload || {};
+                        const clientAns = clientMap.get(row.id)
+                            || clientMap.get(row.bank_question_id)
+                            || clientMap.get(publicPayload.id)
+                            || clientAnswers[i];
+
+                        if (clientAns && clientAns.userAnswer !== undefined && clientAns.userAnswer !== null) {
+                            const selectedOptionIndex = Number(clientAns.userAnswer);
+                            const options = Array.isArray(publicPayload.options) ? publicPayload.options : [];
+                            
+                            if (Number.isInteger(selectedOptionIndex) && selectedOptionIndex >= 0 && (options.length === 0 || selectedOptionIndex < options.length)) {
+                                const correctOptionIndex = Number(row.answer_payload?.correct_option_index);
+                                const isCorrect = selectedOptionIndex === correctOptionIndex;
+
+                                await client.query(
+                                    `UPDATE quiz_session_questions
+                                     SET selected_option_index = $1,
+                                         is_correct = $2,
+                                         answered_at = NOW()
+                                     WHERE id = $3`,
+                                    [selectedOptionIndex, isCorrect, row.id]
+                                );
+
+                                row.selected_option_index = selectedOptionIndex;
+                                row.is_correct = isCorrect;
+                                row.answered_at = new Date();
+                            }
+                        }
+                    }
+                }
+            }
 
             if (session.status === 'active') {
                 await client.query(

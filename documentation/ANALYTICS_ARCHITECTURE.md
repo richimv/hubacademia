@@ -199,6 +199,10 @@ Integrado en la tarjeta `#ai-diagnosis-card` del panel de simuladores, este mód
 4. **Resiliencia y Fallback Silencioso:**
    - Si la llamada a los proveedores externos excede el tiempo o genera un error de red, conmuta silenciosa y automáticamente al motor heurístico enriquecido sin arrojar errores 404/500 ni interrumpir la experiencia del usuario.
 
+### E. Calificación y Registro Resiliente de Exámenes (Offline-First y Casuísticas)
+*   **Calificación Híbrida de Respuestas (`gradeForSubmission`):** El backend sincroniza de forma segura las respuestas enviadas en lote (`clientAnswers`) contra las claves maestras (`answer_payload.correct_option_index`) almacenadas en base de datos. Si el cliente respondió de forma local/offline, se evalúa y persiste el estado `is_correct` en `quiz_session_questions`, garantizando que puntajes legítimos (ej. 3/10 o 7/10) se almacenen con exactitud matemática y se proyecten en el KPI de evolución vigesimal (`6.0` y `14.0` sobre 20).
+*   **Preservación de Casuísticas / Casos Anidados:** Al agrupar preguntas encadenadas a una misma viñeta clínica o situación pedagógica (`case_id`), el sistema incluye todas las preguntas hermanas consecutivamente y ajusta dinámicamente el límite del examen (`state.maxQuestions`) para que ninguna pregunta del caso sea omitida ni cortada intempestivamente.
+
 ---
 > [!IMPORTANT]
-> Esta arquitectura ha sido verificada y respaldada con 31 suites de tests unitarios (214 tests pasando) al 28 de agosto de 2026.
+> Esta arquitectura ha sido verificada y respaldada con 38 suites de tests unitarios (248 tests pasando) al 31 de agosto de 2026.

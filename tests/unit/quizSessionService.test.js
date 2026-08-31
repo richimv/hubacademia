@@ -123,4 +123,81 @@ describe('QuizSessionService', () => {
         expect(result.totalQuestions).toBe(2);
         expect(result.questions[0]).toEqual(expect.objectContaining({ isCorrect: true, userAnswer: 1 }));
     });
+
+    it('correctly grades batch client answers when questions were answered offline-first (e.g. 3/10 and 7/10)', async () => {
+        // Mock a 10-question session with null selected_option_index in DB
+        const tenQuestions = Array.from({ length: 10 }, (_, i) => ({
+            id: `session-q-${i}`,
+            bank_question_id: `bank-q-${i}`,
+            public_payload: { id: `bank-q-${i}`, topic: 'Pedagogía' },
+            answer_payload: { correct_option_index: 0 }, // All correct answers are 0 (A)
+            selected_option_index: null,
+            is_correct: null
+        }));
+
+        quizSessionRepository.getGradedSession.mockImplementation(async ({ clientAnswers }) => {
+            // Simulate repository grading clientAnswers
+            const graded = tenQuestions.map((q, idx) => {
+                const ans = clientAnswers && clientAnswers[idx];
+                const selected = ans ? ans.userAnswer : null;
+                const correct = q.answer_payload.correct_option_index;
+                return {
+                    ...q,
+                    selected_option_index: selected,
+                    is_correct: selected !== null ? selected === correct : false
+                };
+            });
+            return { id: SESSION_ID, questions: graded };
+        });
+
+        // 1. Test student with 3 correct answers (3/10)
+        const clientAnswers3 = [
+            { id: 'bank-q-0', userAnswer: 0 }, // Correct
+            { id: 'bank-q-1', userAnswer: 0 }, // Correct
+            { id: 'bank-q-2', userAnswer: 0 }, // Correct
+            { id: 'bank-q-3', userAnswer: 1 }, // Wrong
+            { id: 'bank-q-4', userAnswer: 2 }, // Wrong
+            { id: 'bank-q-5', userAnswer: 1 }, // Wrong
+            { id: 'bank-q-6', userAnswer: 2 }, // Wrong
+            { id: 'bank-q-7', userAnswer: 3 }, // Wrong
+            { id: 'bank-q-8', userAnswer: 1 }, // Wrong
+            { id: 'bank-q-9', userAnswer: 2 }  // Wrong
+        ];
+
+        const result3 = await quizSessionService.gradeForSubmission({
+            sessionId: SESSION_ID,
+            userId: '44444444-4444-4444-8444-444444444444',
+            domain: 'education',
+            clientAnswers: clientAnswers3
+        });
+
+        expect(result3.score).toBe(3);
+        expect(result3.totalQuestions).toBe(10);
+        expect(result3.questions.filter(q => q.isCorrect).length).toBe(3);
+
+        // 2. Test student with 7 correct answers (7/10)
+        const clientAnswers7 = [
+            { id: 'bank-q-0', userAnswer: 0 }, // Correct
+            { id: 'bank-q-1', userAnswer: 0 }, // Correct
+            { id: 'bank-q-2', userAnswer: 0 }, // Correct
+            { id: 'bank-q-3', userAnswer: 0 }, // Correct
+            { id: 'bank-q-4', userAnswer: 0 }, // Correct
+            { id: 'bank-q-5', userAnswer: 0 }, // Correct
+            { id: 'bank-q-6', userAnswer: 0 }, // Correct
+            { id: 'bank-q-7', userAnswer: 1 }, // Wrong
+            { id: 'bank-q-8', userAnswer: 2 }, // Wrong
+            { id: 'bank-q-9', userAnswer: 1 }  // Wrong
+        ];
+
+        const result7 = await quizSessionService.gradeForSubmission({
+            sessionId: SESSION_ID,
+            userId: '44444444-4444-4444-8444-444444444444',
+            domain: 'education',
+            clientAnswers: clientAnswers7
+        });
+
+        expect(result7.score).toBe(7);
+        expect(result7.totalQuestions).toBe(10);
+        expect(result7.questions.filter(q => q.isCorrect).length).toBe(7);
+    });
 });

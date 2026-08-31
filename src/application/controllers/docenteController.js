@@ -121,8 +121,18 @@ class DocenteController {
             }
 
             const grading = quizSessionId
-                ? await quizSessionService.gradeForSubmission({ sessionId: quizSessionId, userId, domain: 'education' })
+                ? await quizSessionService.gradeForSubmission({ sessionId: quizSessionId, userId, domain: 'education', clientAnswers: questions })
                 : null;
+
+            const finalQuestions = (grading && grading.questions && grading.questions.length > 0)
+                ? grading.questions
+                : (questions || []);
+
+            const finalScore = grading?.score !== undefined
+                ? grading.score
+                : (score !== undefined ? score : finalQuestions.filter(q => q.isCorrect === true || (q.userAnswer !== undefined && q.correct_option_index !== undefined && Number(q.userAnswer) === Number(q.correct_option_index))).length);
+
+            const finalTotal = grading?.totalQuestions || total_questions || finalQuestions.length || 10;
 
             const result = await docenteService.submitQuizResult(userId, {
                 topic,
@@ -130,9 +140,9 @@ class DocenteController {
                 target,
                 career,
                 difficulty,
-                score: grading?.score ?? score,
-                totalQuestions: grading?.totalQuestions ?? total_questions ?? 10,
-                questions: grading?.questions || questions || [],
+                score: finalScore,
+                totalQuestions: finalTotal,
+                questions: finalQuestions,
                 sourceSessionId: grading?.sessionId || null
             });
 
@@ -157,8 +167,8 @@ class DocenteController {
                 message: 'Puntaje registrado exitosamente.',
                 attemptId: result.attemptId,
                 flashcardsCreated: result.flashcardsCreated,
-                score: grading?.score ?? score,
-                totalQuestions: grading?.totalQuestions ?? total_questions
+                score: finalScore,
+                totalQuestions: finalTotal
             });
 
         } catch (error) {
