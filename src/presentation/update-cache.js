@@ -21,7 +21,8 @@ const assetFiles = assetRoots
 const hash = crypto.createHash('sha256');
 assetFiles.forEach((filePath) => {
     hash.update(path.relative(d, filePath).replace(/\\/g, '/'));
-    hash.update(fs.readFileSync(filePath));
+    const content = fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
+    hash.update(content, 'utf8');
 });
 const version = hash.digest('hex').slice(0, 12);
 let updatedFiles = 0;
