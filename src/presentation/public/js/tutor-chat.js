@@ -248,7 +248,7 @@ class FlashcardTutor {
         msgContainer.className = `tutor-message-wrapper ${role}`;
 
         const msg = document.createElement('div');
-        msg.className = `tutor-message tutor-message-${role} markdown-content markdown-compact`;
+        msg.className = `tutor-message tutor-message-${role} markdown-content`;
         
         // ✅ SAFETY NET: Extraer respuesta pura y desescapar si el texto contiene JSON crudo o bloques de código
         let cleanText = text;
@@ -271,7 +271,7 @@ class FlashcardTutor {
             const saveBtn = document.createElement('button');
             saveBtn.className = 'tutor-save-note-btn';
             saveBtn.innerHTML = '<i class="far fa-bookmark"></i> Guardar nota';
-            saveBtn.title = 'Guardar como nota';
+            saveBtn.title = 'Guardar como nota de estudio';
             saveBtn.onclick = () => this.saveAsNote(cleanText, saveBtn);
 
             const copyBtn = document.createElement('button');
@@ -304,7 +304,6 @@ class FlashcardTutor {
     async copyToClipboard(text, btn) {
         try {
             await navigator.clipboard.writeText(text);
-            const icon = btn.querySelector('i');
             const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
             setTimeout(() => {
@@ -316,11 +315,12 @@ class FlashcardTutor {
     }
 
     async saveAsNote(content, btn) {
-        const icon = btn.querySelector('i');
-        const originalClass = icon.className;
+        if (btn.classList.contains('saved') || btn.disabled) return;
+        const originalHTML = btn.innerHTML;
         
         try {
-            icon.className = 'fas fa-spinner fa-spin';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
             
             const title = `Nota de Repaso: ${this.cardContext?.topic || 'Flashcard'}`;
             
@@ -333,19 +333,26 @@ class FlashcardTutor {
                 })
             });
 
-            if (!response.ok) throw new Error("Error al guardar");
+            if (!response.ok) throw new Error("Error al guardar nota");
 
-            // Feedback visual exitoso
-            icon.className = 'fas fa-bookmark';
-            btn.style.color = '#f59e0b'; // Dorado
+            // Feedback visual exitoso con animación y estado "Nota Guardada"
+            btn.innerHTML = '<i class="fas fa-check"></i> Nota Guardada';
+            btn.style.color = '#f59e0b'; // Amarillo dorado
             btn.classList.add('saved');
             
-            if (window.libraryService) window.libraryService.loadFullLibrary();
+            if (window.libraryService && typeof window.libraryService.loadFullLibrary === 'function') {
+                window.libraryService.loadFullLibrary();
+            }
             
         } catch (error) {
             console.error("Error saving tutor note:", error);
-            icon.className = 'fas fa-exclamation-triangle';
-            setTimeout(() => icon.className = originalClass, 2000);
+            btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error al guardar';
+            btn.style.color = '#ef4444';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                btn.style.color = '';
+            }, 2500);
         }
     }
 

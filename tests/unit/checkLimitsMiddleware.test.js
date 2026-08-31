@@ -135,8 +135,8 @@ describe('Check Limits Middleware', () => {
         expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it('should allow Advanced active user in Quiz/Repaso tutor with RAG when under 25 daily_rag_usage', async () => {
-        mockReq.body = { context: { type: 'flashcard_tutor' } };
+    it('should allow Advanced active user in Quiz tutor with RAG when under 25 daily_rag_usage', async () => {
+        mockReq.body = { context: { type: 'quiz_tutor' } };
         dbUser.subscription_tier = 'advanced';
         dbUser.subscription_status = 'active';
         dbUser.daily_ai_usage = 10;
@@ -151,7 +151,23 @@ describe('Check Limits Middleware', () => {
         expect(mockNext).toHaveBeenCalled();
     });
 
-    it('should fallback Advanced user to non-RAG when daily_rag_usage reaches 25', async () => {
+    it('should allow Advanced user in Flashcard tutor without consuming daily_rag_usage', async () => {
+        mockReq.body = { context: { type: 'flashcard_tutor' } };
+        dbUser.subscription_tier = 'advanced';
+        dbUser.subscription_status = 'active';
+        dbUser.daily_ai_usage = 10;
+        dbUser.daily_rag_usage = 5;
+
+        const middleware = checkAILimits('chat_standard');
+        await middleware(mockReq, mockRes, mockNext);
+
+        expect(mockReq.usageType).toBe('daily_ai_usage');
+        expect(mockReq.useRag).toBe(false);
+        expect(mockReq.incrementRag).toBe(false);
+        expect(mockNext).toHaveBeenCalled();
+    });
+
+    it('should fallback Advanced user to non-RAG in Quiz tutor when daily_rag_usage reaches 25', async () => {
         mockReq.body = { context: { type: 'quiz_tutor' } };
         dbUser.subscription_tier = 'advanced';
         dbUser.subscription_status = 'active';

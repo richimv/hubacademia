@@ -4,6 +4,97 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 
 ---
 
+### 🟢 [2026-08-30] - Renderizado Universal de Fórmulas Matemáticas y Científicas (KaTeX) y Blindaje Tipográfico
+
+- **📐 Motor Universal de Renderizado Tipográfico KaTeX ([markdown-renderer.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/utils/markdown-renderer.js) & [markdown-content.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/markdown-content.css)):**
+  - **Corrección Crítica de Causa Raíz en Sanitizador DOM:** Se identificó que `_sanitizeDom` eliminaba el atributo `style` de todos los elementos HTML, despojando a los `<span>` de KaTeX de sus coordenadas espaciales (`style="top:-3.63em"`, `style="height:2.7em"`), lo que provocaba que exponentes y denominadores colapsaran en la línea base del texto. Se reordenó el flujo para ejecutar la sanitización XSS antes de la restauración matemática y se exentó explícitamente a KaTeX de la purga de estilos geométricos.
+  - **Alineación Milimétrica de la Línea de Fracción:** Se ajustó la regla de `.katex .frac-line` eliminando márgenes artificiales (`margin: 0 !important; border-bottom: 0.04em solid currentColor !important; min-height: 1px !important;`), permitiendo que el cálculo matemático de KaTeX sitúe la barra divisoria con total exactitud equidistante entre numerador y denominador sin solaparse con el denominador.
+  - **Normalización Inteligente de Saltos `\n`:** Se configuró el parseo de saltos de línea para convertir secuencias `\n` al inicio de párrafos (`\nLa imagen...`, `\nEl siguiente...`) preservando exclusivamente comandos LaTeX legítimos que inician con 'n' (`\neq`, `\nabla`, `\nu`, `\neg`, `\notin`, etc.).
+  - **Aislamiento Estricto de `line-height` y `box-sizing`:** Se blindaron todas las clases de KaTeX (`.katex`, `.vlist-t`, `.vlist-r`, `.vlist`, `.pstrut`, `.mfrac`, `.frac-line`) con `box-sizing: content-box !important`, impidiendo que el `line-height: 1.7` del chat distorsione los cálculos matemáticos relativos.
+  - **Salida Pura HTML:** Se configuró KaTeX con `output: 'html'`, eliminando las discrepancias de renderizado dual de MathML.
+  - Pre-extracción y protección estricta de expresiones matemáticas (`_extractMath` / `_restoreMath`) para fórmulas inline `$x^2$`, integrales `$\int f(x) dx$`, fracciones `$\frac{a}{b}$` y fórmulas químicas `$\mathrm{H_2O + CO_2 \rightarrow H_2CO_3}$`, decodificando entidades HTML y evitando que `marked.js` destruya subíndices (`_`) o asteriscos (`*`).
+  - Inclusión de los assets de KaTeX en todas las interfaces de la plataforma (`quiz.html`, `flashcards.html`, `repaso.html`, `resource.html`, `course.html`, `index.html`, `simulator-dashboard.html`, `admin.html`).
+- **✨ Mejora de UX en Botón Guardar Nota ([quiz-tutor.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz-tutor.js) & [tutor-chat.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/tutor-chat.js)):**
+  - Se unificó la experiencia visual del botón de guardado en los chats de Quiz y Flashcards: animación con spinner `<i class="fas fa-spinner fa-spin"></i> Guardando...` durante la llamada a la API y transición a `<i class="fas fa-check"></i> Nota Guardada` en color esmeralda (#10b981) al completarse exitosamente.
+  - Se retiró la clase `markdown-compact` de los mensajes del chat para dotar a las fórmulas en los paneles laterales del mismo espacio tipográfico, nitidez y holgura que en el modal de notas de la biblioteca.
+
+---
+
+### 🟢 [2026-08-30] - Visión Multimodal Universal para Tutor IA en Simuladores (Quiz) y Repaso (Flashcards)
+
+- **👁️ Motor de Visión Multimodal en Tiempo Real ([tutorAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/tutorAiService.js) & [chatController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/chatController.js)):**
+  - Se implementó la resolución y descarga asíncrona de buffers desde Google Cloud Storage (`_extractMultimodalParts`) para todas las imágenes presentes en el contexto de preguntas, casuísticas pedagógicas y flashcards mnemotécnicas.
+  - La IA (`gemini-2.5-flash-lite` / Vertex AI) recibe directamente las imágenes como `inlineData` estructurado junto al prompt textual, permitiéndole leer textos manuscritos/escaneados (OCR), transcribir diálogos de obras teatrales, analizar trazados radiográficos, gráficos estadísticos y detalles artísticos con precisión milimétrica.
+  - Se diseñó con un límite de seguridad de máximo 4 imágenes por consulta, deduplicación de fuentes y resiliencia ante archivos faltantes sin degradar el tiempo de respuesta (~30ms).
+- **🧪 Cobertura de Pruebas Automatizadas ([tutorMultimodalVision.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/tutorMultimodalVision.test.js)):**
+  - Se añadieron 7 pruebas unitarias dedicadas que validan la extracción de imágenes en Quiz Tutor, Flashcard Tutor, HTML incrustado (`<img>`), deduplicación, límites y tolerancia a fallos. Total de la suite: **37/37 suites PASSED (237/237 tests exitosos)**.
+
+---
+
+### 🟢 [2026-08-30] - Corrección de Renderizado de Imágenes en TinyMCE para Casuísticas ([admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js))
+
+- **🖼️ Rehidratación Explícita de HTML e Imágenes en Casuísticas:**
+  - Se corrigió el desfase por el cual al abrir el modal de una casuística existente, TinyMCE se instanciaba prematuramente dentro del bloque `switch(type)` antes de que `fieldsContainer.innerHTML = fieldsHTML` renderizara el DOM final, provocando que no cargara el HTML enriquecido ni mostrara las imágenes.
+  - Se unificó el ciclo de vida de inicialización en el bloque posterior al renderizado del modal, inyectando el callback `editor.on('init', () => editor.setContent(this.currentItem.description_text))`.
+  - Se agregó recuperación defensiva por ID (`GET /api/admin/cases/:id` y `GET /api/admin/questions/:id`) cuando un elemento se abre directamente sin depender del estado en caché.
+
+---
+
+### 🟢 [2026-08-30] - Arquitectura de Subida Diferida a GCS ("Commit-on-Save") para TinyMCE
+
+- **🛡️ Cero Subidas Fantasma en Edición / Borrador ([admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js)):**
+  - Se desacopló la subida de red inmediata (`images_upload_handler`) de TinyMCE. Ahora las imágenes pegadas (`Ctrl+V`) o insertadas mediante el selector de archivos (`file_picker_callback` con `FileReader`) se mantienen en memoria del navegador como Data URIs locales durante todo el proceso de redacción o edición.
+  - Si el usuario cierra el modal, cancela la edición, recarga la pestaña o borra y cambia de imagen, **no se realiza ninguna petición de red ni se sube ningún archivo a Google Cloud Storage**.
+- **☁️ Subida Centralizada y Sanitización Exclusiva al "Guardar" ([adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js) & [coursesController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/coursesController.js)):**
+  - Únicamente al pulsar el botón **Guardar** / **Crear** / **Guardar Cambios**, el backend intercepta el HTML final a través de `_sanitizeHtmlImages()`, sube **únicamente las imágenes definitivas confirmadas** a sus respectivos directorios en GCS (`cases/`, `questions/`, `explanations/`, `recursos/`) y las sustituye por URLs limpias.
+  - Al editar una entidad existente, el backend compara las imágenes previas (`oldPaths`) con las nuevas (`newPaths`), y purga automáticamente de GCS los archivos que hayan sido eliminados del editor.
+
+---
+
+### 🟢 [2026-08-30] - Rediseño Esbelto de Casuísticas, Soporte Lightbox Zoom y Adaptación Móvil
+
+- **🎨 Rediseño Esbelto y Estético de Contenedores de Casuística ([quiz.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/quiz.css)):**
+  - Se eliminó el borde grueso izquierdo rígido (`border-left: 4px...` y `border-left: 3px...`) en `.case-scenario-card` y `.review-case-box`, reemplazándolo por una tarjeta refinada y esbelta con bordes perimetrales sutiles y radio de `14px`, alineado estrictamente a las directrices de [`DESIGN_SYSTEM.md`](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/documentation/DESIGN_SYSTEM.md) v3.5.
+  - Se implementó la diferenciación cromática adaptativa por módulo y tema:
+    - **Salud (Médico):** Píldoras e insignias en **Teal / Verde Cian** (`#2dd4bf` en Dark, `#0d9488` en Light).
+    - **Educación (Docente):** Píldoras e insignias en **Azul Confianza** (`#60a5fa` en Dark, `#2563eb` en Light).
+  - Fondo dinámico que responde a `data-theme="dark"` (`var(--bg-secondary, #0a0a0a)`) y `data-theme="light"` (`var(--card-bg, #ffffff)`).
+
+- **🔍 Integración Universal del Visor Lightbox (Zoom & Pan) para Casuísticas ([quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js) & [quiz.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/quiz.css)):**
+  - Se habilitó la apertura interactiva del Lightbox con zoom y arrastre táctil para todas las imágenes de casuísticas:
+    1. Imágenes inline embebidas en el texto de la casuística (`.case-description-body img`, `.review-case-body img`).
+    2. Imágenes de apoyo independientes del caso (`#caseImage`, `.review-case-image-wrap img`).
+  - Se añadieron microinteracciones visuales: icono flotante de zoom (`\f00e`), cursor `zoom-in` y elevación suave al pasar el cursor.
+
+- **📱 Optimización Responsiva en Pantallas Móviles (`@media (max-width: 768px)`):**
+  - Se corrigió el desbordamiento y recorte lateral de imágenes en dispositivos celulares asegurando `max-width: 100% !important`, `height: auto !important` y contención con `box-sizing: border-box`.
+  - Tablas con desplazamiento horizontal táctil suave (`-webkit-overflow-scrolling: touch; overflow-x: auto; max-width: 100%`).
+  - Ajuste de paddings y tipografía compacta (`0.88rem`, line-height `1.55`) para maximizar el área visible de lectura en pantallas pequeñas.
+
+- **♻️ Garbage Collector Automático de GCS para Edición y Borrado ([adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js) & [adminRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/adminRepository.js)):**
+  - Al editar una casuística o pregunta, el backend detecta automáticamente las imágenes que fueron retiradas del editor TinyMCE (`oldPaths.filter(p => !newPaths.includes(p))`) y las elimina de inmediato de Google Cloud Storage para evitar almacenamiento residual.
+  - En borrado individual y masivo (`deleteCase`, `deleteSingleQuestion`, `bulkDelete`), se purgan tanto las portadas como todas las imágenes internas embebidas en el HTML.
+
+---
+
+### 🟢 [2026-08-30] - Estandarización Universal de TinyMCE con Subida a GCS y Sanitizador Defensivo Backend Anti-Base64
+
+- **🖼️ Estandarización Universal de TinyMCE en Panel Admin ([admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js)):**
+  - Se identificó que la pestaña **Casuística** (`#generic-description`) y la pestaña **Preguntas** (`#generic-question-text`, `#generic-explanation`) carecían del manejador `images_upload_handler` y la propiedad `paste_data_images: true`. Al pegar texto con imágenes desde Microsoft Word o el portapapeles, TinyMCE incrustaba las imágenes como cadenas pesadas en Base64 (`data:image/...;base64,...`).
+  - Se unificó toda la configuración de TinyMCE mediante `getStandardTinyMCEConfig()`, integrando el manejador `images_upload_handler` que sube de forma asíncrona y segura cualquier imagen pegada o insertada a Google Cloud Storage (`/api/admin/upload-editor`), transformándola inmediatamente en una URL limpia (`/api/media/gcs?file=...`).
+  - Se habilitaron todas las herramientas avanzadas en la barra de edición: tablas, imágenes, alineación, enlaces, bloques de formato y visualizador de código fuente (`code`).
+
+- **🛡️ Sanitizador Defensivo Backend Anti-Base64 ([adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js) & [mediaController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/mediaController.js)):**
+  - Se implementó el método `_sanitizeHtmlImages(html, folder)` en `AdminController`, actuando como una barrera defensiva en `createCase`, `updateCase`, `addSingleQuestion`, `updateSingleQuestion` y `bulkInjectQuestions`.
+  - Si un usuario, API externa o archivo masivo envía HTML con imágenes Base64 o etiquetas VML/MSO de Word, el backend las intercepta, extrae el buffer binario, lo sube automáticamente a GCS (o almacenamiento estático de respaldo en offline) y reemplaza la cadena en el HTML antes de insertarlo en PostgreSQL.
+  - Se agregó `'cases'` a `ALLOWED_MEDIA_PREFIXES` en `mediaController.js` para permitir la carga y gestión segura de casuísticas en la nube.
+
+- **🧪 Cobertura de Pruebas y Validación Integral:**
+  - Nueva suite unitaria `tests/unit/adminEditorSanitizer.test.js` (**36/36 suites Jest PASSED, 230/230 tests exitosos**).
+  - Verificación estricta de TypeScript (`tsc --noEmit`) en `HubDocenteApp` y `HubSaludApp` con **0 errores**.
+
+---
+
 ### 🟢 [2026-08-29] - Normalización Integral del Contexto de Preguntas y Opciones para el Tutor IA
 
 - **🧠 Normalización y Sanitización de Opciones en Backend ([chatController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/chatController.js)):**
@@ -29,6 +120,13 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
   - Se blindó el botón **"Consultar Tutor IA"** tanto durante el examen como en la pantalla de revisión (`showExamReview`) para validar previamente los límites mediante `validateFreemiumAction('quiz_tutor')`, abriendo la modal paywall correcta inmediatamente sin ejecuciones fantasma.
   - Se erradicó código duplicado aliando `window.openQuizTutorForReview = window.openTutorForReviewQuestion`.
   - Nueva suite unitaria `tests/unit/uiPaywallLogic.test.js` (**33/33 suites Jest PASSED, 223/223 tests exitosos**).
+
+- **⚡ Erradicación de QuotaExceededError y Optimización de Imágenes Base64 ([quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js) & Base de Datos):**
+  - **Diagnóstico y Causa Raíz:** Se detectaron 3 casuísticas anidadas (`Caso-Secundaria-Arte10`, `Arte13`, `Arte08`) y 16 preguntas que contenían cadenas de imagen en Base64 de hasta 1 MB incrustadas directamente en el HTML. Al multiplicarse por 7 preguntas anidadas, el JSON del examen superaba los 6-10 MB, desbordando el límite de 5 MB de `localStorage` (`QuotaExceededError`) y haciendo que el bloque `init()` mostrase erróneamente el mensaje de "Examen dañado en memoria".
+  - **Extracción de Medios a Archivos Estáticos:** Se extrajeron todas las imágenes Base64 de la base de datos hacia `src/presentation/public/assets/cases/` y `src/presentation/public/assets/questions/`, reemplazando el texto crudo por URLs relativas (`/assets/cases/...`). El peso del banco de Arte y Cultura se redujo en un **99%** (de 9.07 MB a 90.5 KB).
+  - **Deduplicación en Serialización (`serializeSessionState`):** Se implementó un mapa `_casesMap` que almacena la descripción del caso una sola vez en lugar de repetirla en cada una de las 7 preguntas hijas, rehidratándola transparentemente en `loadSession()`.
+  - **Persistencia Multi-Tier Resiliente:** `saveSession()` ahora cuenta con manejo seguro de `QuotaExceededError`, purgando sesiones antiguas, respaldando en `sessionStorage` y manteniendo la ejecución fluida en memoria sin interrumpir nunca el examen.
+  - **Nueva Suite de Pruebas:** `tests/unit/quizSessionPersistence.test.js` (**35/35 suites Jest PASSED, 227/227 tests exitosos**).
 
 ---
 

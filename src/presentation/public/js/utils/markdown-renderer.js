@@ -14,13 +14,16 @@ window.MarkdownRenderer = {
         // 1. JSON Safety Net & Normalización: Extraer la respuesta real si viene en JSON o con bloques de código
         let cleanText = this._extractCleanResponse(text);
 
+        // 2. Extraer y proteger expresiones matemáticas LaTeX ($$...$$, \[...\], $...$, \(...\))
+        const { processedText, mathExpressions } = this._extractMath(cleanText);
+
         let html = '';
         
         // Determinar si el contenido ya es HTML (generado por TinyMCE u otro origen)
-        const isHtml = typeof cleanText === 'string' && cleanText.trimStart().startsWith('<');
+        const isHtml = typeof processedText === 'string' && processedText.trimStart().startsWith('<');
 
         if (isHtml) {
-            html = cleanText;
+            html = processedText;
         } else if (window.marked && typeof window.marked.parse === 'function') {
             window.marked.setOptions({
                 gfm: true,
@@ -29,19 +32,19 @@ window.MarkdownRenderer = {
                 mangle: false
             });
             try {
-                html = window.marked.parse(cleanText);
+                html = window.marked.parse(processedText);
             } catch (err) {
                 console.error('❌ [MarkdownRenderer] Error con marked:', err);
-                html = this._basicRender(cleanText);
+                html = this._basicRender(processedText);
             }
         } else {
-            html = this._basicRender(cleanText);
+            html = this._basicRender(processedText);
         }
 
         // Pre-procesar tablas markdown contenidas en el HTML (TinyMCE/IA mix)
         html = this.renderMarkdownTables(html);
 
-        // 3. Post-procesamiento via DOM (Tablas responsivas y Resolución de Imágenes)
+        // 3. Post-procesamiento y Sanitización DOM (Tablas responsivas y Resolución de Imágenes)
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         this._sanitizeDom(tempDiv);
@@ -102,7 +105,8 @@ window.MarkdownRenderer = {
             img.loading = 'lazy';
         });
 
-        return tempDiv.innerHTML;
+        // 4. Restaurar y renderizar fórmulas matemáticas con KaTeX (Preserva íntegramente las coordenadas style="top:...")
+        return this._restoreMath(tempDiv.innerHTML, mathExpressions);
     },
 
     /**
@@ -306,8 +310,24 @@ window.MarkdownRenderer = {
                 const name = attr.name.toLowerCase();
                 const value = attr.value || '';
 
-                if (name.startsWith('on') || name === 'srcdoc' || name === 'style') {
+                if (name.startsWith('on') || name === 'srcdoc') {
                     el.removeAttribute(attr.name);
+                    return;
+                }
+
+                if (name === 'style') {
+                    // Permitir estilos inline legítimos en elementos matemáticos de KaTeX
+                    const isKaTeX = (el.classList && (
+                        el.classList.contains('katex') || 
+                        el.classList.contains('pstrut') || 
+                        el.classList.contains('vlist') || 
+                        el.classList.contains('sizing') ||
+                        el.classList.contains('mfrac')
+                    )) || (typeof el.closest === 'function' && el.closest('.katex'));
+
+                    if (!isKaTeX) {
+                        el.removeAttribute(attr.name);
+                    }
                     return;
                 }
 
@@ -399,9 +419,11 @@ window.MarkdownRenderer = {
         let normalized = text;
         
         // Convertir secuencias literales '\\n' que llegaron como texto a saltos de línea reales '\n'
-        if (normalized.includes('\\n') && !normalized.includes('\n')) {
-            normalized = normalized.replace(/\\n/g, '\n');
-        }
+        // preservando comandos LaTeX que inician con 'n' (\neq, \nabla, \nu, \neg, etc.)
+        const latexNCommands = 'neq|nabla|neg|nu|notin|ni|null|nexists|nrightarrow|nleftarrow|nsubseteq|nsupseteq|nless|ngtr|nleq|ngeq|nsim|ncong|nmid|natural';
+        const latexNRegex = new RegExp(`\\\\n(?!(?:${latexNCommands})\\b)`, 'g');
+        normalized = normalized.replace(latexNRegex, '\n');
+
         if (normalized.includes('\\"')) {
             normalized = normalized.replace(/\\"/g, '"');
         }
@@ -410,5 +432,174 @@ window.MarkdownRenderer = {
         normalized = normalized.replace(/^[ \t]*[•·⁃◦][ \t]+/gm, '- ');
 
         return normalized.trim();
+    },
+
+    /**
+     * Extrae y protege expresiones matemáticas LaTeX para evitar que Markdown las altere.
+     */
+    _extractMath(text) {
+        if (!text || typeof text !== 'string') return { processedText: '', mathExpressions: [] };
+
+        const mathExpressions = [];
+
+        // 1. Proteger bloques display math ($$...$$ o \[...\])
+        let processedText = text
+            .replace(/\$\$([\s\S]+?)\$\$/g, (match, expr) => {
+                const id = `%%MATH_DISPLAY_${mathExpressions.length}%%`;
+                mathExpressions.push({ id, expr: expr.trim(), display: true });
+                return id;
+            })
+            .replace(/\\\[([\s\S]+?)\\\]/g, (match, expr) => {
+                const id = `%%MATH_DISPLAY_${mathExpressions.length}%%`;
+                mathExpressions.push({ id, expr: expr.trim(), display: true });
+                return id;
+            });
+
+        // 2. Proteger inline math: \(...\) o $...$ (sin espacios iniciales/finales y excluyendo precios)
+        processedText = processedText
+            .replace(/\\\(([\s\S]+?)\\\)/g, (match, expr) => {
+                const id = `%%MATH_INLINE_${mathExpressions.length}%%`;
+                mathExpressions.push({ id, expr: expr.trim(), display: false });
+                return id;
+            })
+            .replace(/(^|[^\\])\$([^\$\s\n](?:[^\$\n]*?[^\$\s\n])?)\$/g, (match, prefix, expr) => {
+                // Ignorar números puros con símbolos de moneda como $100 o $50.00
+                if (/^\d+([.,]\d+)?$/.test(expr.trim())) {
+                    return match;
+                }
+                const id = `%%MATH_INLINE_${mathExpressions.length}%%`;
+                mathExpressions.push({ id, expr: expr.trim(), display: false });
+                return prefix + id;
+            });
+
+        return { processedText, mathExpressions };
+    },
+
+    /**
+     * Sanitiza y normaliza expresiones matemáticas y químicas para asegurar compatibilidad estricta con KaTeX.
+     */
+    _sanitizeMathExpression(expr, display = false) {
+        if (!expr || typeof expr !== 'string') return '';
+        let s = expr.trim();
+
+        // 1. Decodificar entidades HTML si provienen de TinyMCE u otro editor
+        s = s
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&')
+            .replace(/&plusmn;/g, '\\pm')
+            .replace(/&times;/g, '\\times')
+            .replace(/&divide;/g, '\\div')
+            .replace(/&ne;/g, '\\neq')
+            .replace(/&le;/g, '\\le')
+            .replace(/&ge;/g, '\\ge');
+
+        // 2. Normalizar barras dobles accidentales de serialización JSON (ej: \\frac -> \frac)
+        s = s.replace(/\\\\([a-zA-Z]+)/g, '\\$1');
+
+        // 3. Manejo de saltos de línea \\ en modo display:
+        // Si contiene saltos \\ sin estar dentro de un entorno multilínea (aligned, matrix, cases, etc.)
+        if (display && s.includes('\\\\') && !/\\begin\{(aligned|matrix|bmatrix|pmatrix|vmatrix|cases|gather|split)\}/i.test(s)) {
+            s = `\\begin{aligned} ${s} \\end{aligned}`;
+        }
+
+        return s;
+    },
+
+    /**
+     * Restaura las expresiones matemáticas protegidas renderizándolas con KaTeX (o fallback HTML).
+     */
+    _restoreMath(html, mathExpressions) {
+        if (!html || !mathExpressions || mathExpressions.length === 0) return html;
+
+        let restored = html;
+
+        mathExpressions.forEach(item => {
+            let renderedMath = '';
+
+            if (typeof window !== 'undefined' && window.katex && typeof window.katex.renderToString === 'function') {
+                try {
+                    const cleanExpr = this._sanitizeMathExpression(item.expr, item.display);
+                    renderedMath = window.katex.renderToString(cleanExpr, {
+                        displayMode: item.display,
+                        throwOnError: false,
+                        strict: 'ignore',
+                        output: 'html'
+                    });
+                } catch (err) {
+                    console.warn('⚠️ [MarkdownRenderer] Error renderizando con KaTeX:', err.message);
+                    renderedMath = `<span class="katex-math" data-math="${encodeURIComponent(item.expr)}" data-display="${item.display}">$${item.expr}$</span>`;
+                }
+            } else {
+                // Fallback defensivo si KaTeX aún no cargó en el DOM
+                renderedMath = `<span class="katex-math" data-math="${encodeURIComponent(item.expr)}" data-display="${item.display}">$${item.expr}$</span>`;
+                this._ensureKaTeXLoaded();
+            }
+
+            if (item.display) {
+                renderedMath = `<div class="katex-display-wrapper">${renderedMath}</div>`;
+            }
+
+            restored = restored.replace(item.id, () => renderedMath);
+        });
+
+        return restored;
+    },
+
+    /**
+     * Renderiza cualquier ecuación pendiente en un contenedor DOM una vez cargado KaTeX.
+     */
+    renderMathInElement(container) {
+        if (!container || typeof window === 'undefined' || !window.katex) return;
+
+        const mathElements = container.querySelectorAll('.katex-math');
+        mathElements.forEach(el => {
+            const raw = decodeURIComponent(el.getAttribute('data-math') || '');
+            const isDisplay = el.getAttribute('data-display') === 'true';
+            if (raw) {
+                try {
+                    const cleanExpr = this._sanitizeMathExpression(raw, isDisplay);
+                    const rendered = window.katex.renderToString(cleanExpr, {
+                        displayMode: isDisplay,
+                        throwOnError: false,
+                        strict: 'ignore',
+                        output: 'html'
+                    });
+                    el.outerHTML = isDisplay 
+                        ? `<div class="katex-display-wrapper">${rendered}</div>`
+                        : rendered;
+                } catch (e) {
+                    console.warn('⚠️ [MarkdownRenderer] Error en renderMathInElement:', e);
+                }
+            }
+        });
+    },
+
+    /**
+     * Inyecta de forma asíncrona los assets de KaTeX si no están en el documento.
+     */
+    _ensureKaTeXLoaded() {
+        if (typeof document === 'undefined' || typeof document.getElementById !== 'function' || !document.head) return;
+        if (this._katexLoading || (typeof window !== 'undefined' && window.katex)) return;
+        this._katexLoading = true;
+
+        if (!document.getElementById('katex-css')) {
+            const link = document.createElement('link');
+            link.id = 'katex-css';
+            link.rel = 'stylesheet';
+            link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+            document.head.appendChild(link);
+        }
+
+        if (!document.getElementById('katex-js')) {
+            const script = document.createElement('script');
+            script.id = 'katex-js';
+            script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
+            script.onload = () => {
+                this._katexLoading = false;
+                this.renderMathInElement(document.body);
+            };
+            document.head.appendChild(script);
+        }
     }
 };

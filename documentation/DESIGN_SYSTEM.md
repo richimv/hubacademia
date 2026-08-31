@@ -456,4 +456,28 @@ La plataforma cuenta con un gestor universal de tooltips declarativos y guías i
 3. **Tooltips Explicativos de KPIs (`.kpi-info-container` / `.kpi-tooltip-content`):**
    - Tarjetas informativas de gráficos accesibles tanto mediante `:hover` en PC como mediante `click`/`tap` en celulares.
 
+---
 
+## 12. 📐 Motor Universal de Tipografía Matemática, Científica y Notación Química (KaTeX + MarkdownRenderer)
+
+La plataforma cuenta con un canal de renderizado matemático y científico unificado de alta fidelidad, gobernado centralmente por `MarkdownRenderer` y la biblioteca KaTeX:
+
+### 12.1. Delimitadores Estándar y Soporte Notacional
+* **Fórmulas Inline ($...$ o \(...\)):** Para variables, potencias y expresiones dentro del flujo del texto (ej. `$x^2$`, `$\int f(x) dx$`, `$\frac{a}{b}$`, `$n = 2$`).
+* **Ecuaciones en Bloque Display ($$...$$ o \[...\]):** Para deducciones, fórmulas complejas y pasos de cálculo centrados horizontalmente (ej. `$$\int x^n dx = \frac{x^{n+1}}{n+1} + C \quad (n \neq -1)$$`).
+* **Notación Química:** Soporte para fórmulas y reacciones estricto con `$\mathrm{H_2O + CO_2 \rightarrow H_2CO_3}$`.
+* **Alfabeto Griego y Operadores:** Soporte completo para $\alpha, \beta, \gamma, \delta, \theta, \pi, \sigma, \omega, \infty, \pm, \neq, \le, \ge, \rightarrow$.
+
+### 12.2. Arquitectura de Ciclo de Vida y Seguridad (XSS vs KaTeX)
+1. **Pre-extracción y Aislamiento:** `_extractMath()` aísla los bloques matemáticos antes de que `marked.js` los procese, evitando que los guiones bajos (`_` de subíndices) o asteriscos (`*` de multiplicación) sean mutilados como cursivas o negritas.
+2. **Sanitización DOM XSS:** `_sanitizeDom()` purga código malicioso del cuerpo Markdown plano antes de inyectar las ecuaciones, protegiendo las coordenadas geométricas espaciales (`style="top:..."`) que KaTeX requiere para el posicionamiento exacto de numeradores y denominadores.
+3. **Salida Pura HTML:** KaTeX se compila con `output: 'html'`, garantizando renderizado instantáneo sin discrepancias de MathML.
+4. **Contenedor Responsivo (`.katex-display-wrapper`):** Envuelve las ecuaciones en bloque con desplazamiento horizontal táctil (`-webkit-overflow-scrolling: touch`), evitando cualquier desbordamiento visual en teléfonos móviles.
+
+### 12.3. Consistencia Unificada en Todas las Vistas
+El mismo canal de renderizado rige de manera homogénea en:
+* **Tutor IA en Simulador (`quiz-tutor.js`)** y **Tutor IA en Flashcards (`tutor-chat.js`)**.
+* **Modal de Notas de Mi Biblioteca (`libraryUI.js`)**.
+* **Tarjetas de Flashcards y Mazos de Repaso (`flashcards.js`, `repaso.js`)**.
+* **Visualizador de Recursos Educativos (`resource.js`)**.
+* **Panel de Administración y Previsualización (`admin.js`)**.

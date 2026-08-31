@@ -122,6 +122,16 @@ class AdminController {
 
             console.log(`📥 Administrador subiendo lote de ${questions.length} preguntas masivas...`);
 
+            // Sanitizar Base64 en lote antes de insertar
+            for (let i = 0; i < questions.length; i++) {
+                if (questions[i].question_text) {
+                    questions[i].question_text = await this._sanitizeHtmlImages(questions[i].question_text, 'questions');
+                }
+                if (questions[i].explanation) {
+                    questions[i].explanation = await this._sanitizeHtmlImages(questions[i].explanation, 'explanations');
+                }
+            }
+
             const result = await adminService.saveBulkQuestionBankAdmin(questions);
 
             if (result.success) {
@@ -214,7 +224,7 @@ class AdminController {
             let image_url = body.image_url && body.image_url.trim() !== '' ? body.image_url.trim() : null;
             if (req.file) {
                 try {
-                    image_url = await mediaController.uploadFile(req.file, 'cases');
+                    image_url = await mediaController.uploadFile(req.file, 'thumbnails');
                 } catch (imgErr) {
                     console.error('Error uploading case image:', imgErr);
                 }
@@ -225,10 +235,12 @@ class AdminController {
             const target = body.target || 'N/A';
             const topic = body.topic || 'General';
 
+            const sanitizedDescription = await this._sanitizeHtmlImages(description_text, 'editor-content');
+
             const created = await adminService.createCase({
                 code: rawCode,
                 title: rawTitle,
-                description_text: description_text,
+                description_text: sanitizedDescription,
                 image_url,
                 table_html,
                 domain,
@@ -246,30 +258,45 @@ class AdminController {
         try {
             const { id } = req.params;
             const body = req.body || {};
-            
+            let oldCase = null;
+            try {
+                oldCase = await adminService.getCaseById(id);
+            } catch (e) {}
+
             let image_url = body.image_url !== undefined ? (body.image_url.trim() || null) : undefined;
             if (req.file) {
                 try {
-                    const oldCase = await adminService.getCaseById(id);
                     if (oldCase && oldCase.image_url) {
                         await mediaController.deleteFile(oldCase.image_url);
                     }
-                    image_url = await mediaController.uploadFile(req.file, 'cases');
+                    image_url = await mediaController.uploadFile(req.file, 'thumbnails');
                 } catch (imgErr) {
                     console.error('Error uploading case image:', imgErr);
                 }
             } else if (body.deleteImage === 'true') {
-                const oldCase = await adminService.getCaseById(id);
                 if (oldCase && oldCase.image_url) {
                     try { await mediaController.deleteFile(oldCase.image_url); } catch (e) {}
                 }
                 image_url = null;
             }
 
+            const rawDescription = body.description_text !== undefined ? body.description_text.trim() : undefined;
+            const sanitizedDescription = rawDescription ? await this._sanitizeHtmlImages(rawDescription, 'editor-content') : rawDescription;
+
+            // ✅ Eliminar del bucket imágenes que hayan sido quitadas del editor TinyMCE
+            if (oldCase && sanitizedDescription !== undefined) {
+                const oldPaths = this._extractGcsPaths(oldCase.description_text);
+                const newPaths = this._extractGcsPaths(sanitizedDescription);
+                const removedPaths = oldPaths.filter(p => !newPaths.includes(p));
+                for (const path of removedPaths) {
+                    try { await mediaController.deleteFile(path); } catch (e) { console.error('Error deleting removed case editor image:', e); }
+                }
+            }
+
             const payload = {
                 code: body.code !== undefined ? body.code.trim() : undefined,
                 title: body.title !== undefined ? body.title.trim() : undefined,
-                description_text: body.description_text !== undefined ? body.description_text.trim() : undefined,
+                description_text: sanitizedDescription,
                 image_url: image_url,
                 table_html: body.table_html !== undefined ? (body.table_html.trim() || null) : undefined,
                 domain: body.domain || undefined,
@@ -359,6 +386,11 @@ class AdminController {
                 return res.status(400).json({ error: 'Faltan campos obligatorios' });
             }
 
+            q.question_text = await this._sanitizeHtmlImages(q.question_text, 'questions');
+            if (q.explanation) {
+                q.explanation = await this._sanitizeHtmlImages(q.explanation, 'explanations');
+            }
+
             if (req.files) {
                 if (req.files['questionImage'] && req.files['questionImage'][0]) {
                     try { q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions'); }
@@ -404,14 +436,39 @@ class AdminController {
                 return res.status(400).json({ error: 'Faltan campos obligatorios para actualizar' });
             }
 
+            q.question_text = await this._sanitizeHtmlImages(q.question_text, 'questions');
+            if (q.explanation) {
+                q.explanation = await this._sanitizeHtmlImages(q.explanation, 'explanations');
+            }
+
             const shouldDeleteQ = q.deleteQuestionImage === 'true' || q.image_url === '';
             const shouldDeleteE = q.deleteExplanationImage === 'true' || q.explanation_image_url === '';
 
-            if (req.files || shouldDeleteQ || shouldDeleteE) {
-                const oldData = await adminService.getQuestionImages(id);
-                const currentQuestionImg = oldData?.image_url;
-                const currentExplanationImg = oldData?.explanation_image_url;
+            const oldData = await adminService.getQuestionImages(id);
+            const currentQuestionImg = oldData?.image_url;
+            const currentExplanationImg = oldData?.explanation_image_url;
 
+            // ✅ Eliminar del bucket imágenes que hayan sido quitadas del editor TinyMCE
+            if (oldData) {
+                if (q.question_text) {
+                    const oldQPaths = this._extractGcsPaths(oldData.question_text);
+                    const newQPaths = this._extractGcsPaths(q.question_text);
+                    const removedQPaths = oldQPaths.filter(p => !newQPaths.includes(p));
+                    for (const path of removedQPaths) {
+                        try { await mediaController.deleteFile(path); } catch (e) {}
+                    }
+                }
+                if (q.explanation) {
+                    const oldExpPaths = this._extractGcsPaths(oldData.explanation);
+                    const newExpPaths = this._extractGcsPaths(q.explanation);
+                    const removedExpPaths = oldExpPaths.filter(p => !newExpPaths.includes(p));
+                    for (const path of removedExpPaths) {
+                        try { await mediaController.deleteFile(path); } catch (e) {}
+                    }
+                }
+            }
+
+            if (req.files || shouldDeleteQ || shouldDeleteE) {
                 if (req.files && req.files['questionImage'] && req.files['questionImage'][0]) {
                     try {
                         if (currentQuestionImg) await mediaController.deleteFile(currentQuestionImg);
@@ -449,9 +506,18 @@ class AdminController {
 
             const qData = await adminService.getQuestionImages(id);
             if (qData) {
-                const { image_url, explanation_image_url, audio_text, career } = qData;
+                const { image_url, explanation_image_url, audio_text, career, question_text, explanation } = qData;
                 if (image_url) await mediaController.deleteFile(image_url);
                 if (explanation_image_url) await mediaController.deleteFile(explanation_image_url);
+                
+                // ✅ Borrar imágenes embebidas en el texto de la pregunta o explicación
+                const embeddedPaths = [
+                    ...this._extractGcsPaths(question_text),
+                    ...this._extractGcsPaths(explanation)
+                ];
+                for (const gcsPath of embeddedPaths) {
+                    try { await mediaController.deleteFile(gcsPath); } catch (e) { console.error('Error deleting question embedded image:', e); }
+                }
                 
                 if (audio_text && audio_text.trim() !== '' && career) {
                     try {
@@ -604,6 +670,66 @@ class AdminController {
         }
     }
 
+    /**
+     * ✅ Sanitiza HTML extrayendo cualquier Base64 incrustado y subiéndolo automáticamente a GCS
+     */
+    async _sanitizeHtmlImages(html, folder = 'editor-content') {
+        if (!html || typeof html !== 'string' || !html.includes('data:image/')) {
+            return html;
+        }
+
+        const backendDomain = process.env.API_URL || 'https://tutor-ia-backend.onrender.com';
+        let sanitized = html;
+
+        // Limpiar etiquetas MSO/VML de Word
+        sanitized = sanitized.replace(/<!--\s*\[if\s+gte\s+vml\s+1\][\s\S]*?<!\[endif\]-->/gi, '');
+        sanitized = sanitized.replace(/<!--\s*\[if\s+!vml\]\s*-->/gi, '');
+        sanitized = sanitized.replace(/<!--\s*\[endif\]\s*-->/gi, '');
+
+        const base64Regex = /src=["'](data:image\/([a-zA-Z0-9+]+);base64,([^"']+))["']/g;
+        let match;
+        const matches = [];
+        while ((match = base64Regex.exec(sanitized)) !== null) {
+            matches.push({
+                fullMatch: match[0],
+                dataUri: match[1],
+                format: match[2],
+                base64Data: match[3]
+            });
+        }
+
+        for (let i = 0; i < matches.length; i++) {
+            const item = matches[i];
+            try {
+                const buffer = Buffer.from(item.base64Data, 'base64');
+                const ext = item.format === 'jpeg' ? 'jpg' : item.format;
+                const originalname = `editor_img_${Date.now()}_${i}.${ext}`;
+                const mimetype = `image/${item.format === 'jpg' ? 'jpeg' : item.format}`;
+
+                let location = '';
+                try {
+                    const gcsPath = await mediaController.uploadFile({ buffer, originalname, mimetype }, folder);
+                    location = `${backendDomain}/api/media/gcs?file=${gcsPath}`;
+                } catch (gcsErr) {
+                    console.warn('⚠️ Subida a GCS falló en sanitizador, usando guardado local de respaldo:', gcsErr.message);
+                    const localSubdir = folder === 'cases' ? 'cases' : 'questions';
+                    const localDir = path.join(ROOT_DIR, 'src/presentation/public/assets', localSubdir);
+                    if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
+                    const localFileName = `${Date.now()}_${originalname}`;
+                    fs.writeFileSync(path.join(localDir, localFileName), buffer);
+                    location = `/assets/${localSubdir}/${localFileName}`;
+                }
+
+                sanitized = sanitized.replace(item.dataUri, location);
+                console.log(`🖼️ [Sanitizador Backend] Imagen Base64 convertida automáticamente a URL: ${location}`);
+            } catch (err) {
+                console.error('❌ Error sanitizando imagen Base64 en backend:', err);
+            }
+        }
+
+        return sanitized;
+    }
+
     _extractGcsPaths(html) {
         if (!html || typeof html !== 'string') return [];
         const paths = [];
@@ -632,9 +758,16 @@ class AdminController {
                     if (type === 'question') {
                         const qData = await adminService.getQuestionImages(id);
                         if (qData) {
-                            const { image_url, explanation_image_url } = qData;
+                            const { image_url, explanation_image_url, question_text, explanation } = qData;
                             if (image_url) await mediaController.deleteFile(image_url);
                             if (explanation_image_url) await mediaController.deleteFile(explanation_image_url);
+                            const embeddedPaths = [
+                                ...this._extractGcsPaths(question_text),
+                                ...this._extractGcsPaths(explanation)
+                            ];
+                            for (const gcsPath of embeddedPaths) {
+                                try { await mediaController.deleteFile(gcsPath); } catch (e) {}
+                            }
                         }
                         const isDeleted = await adminService.deleteSingleQuestion(id);
                         if (isDeleted) successCount++;
@@ -716,5 +849,6 @@ module.exports = {
     updateCase: controller.updateCase.bind(controller),
     deleteCase: controller.deleteCase.bind(controller),
     linkQuestionsToCase: controller.linkQuestionsToCase.bind(controller),
-    unlinkQuestionFromCase: controller.unlinkQuestionFromCase.bind(controller)
+    unlinkQuestionFromCase: controller.unlinkQuestionFromCase.bind(controller),
+    _sanitizeHtmlImages: controller._sanitizeHtmlImages.bind(controller)
 };

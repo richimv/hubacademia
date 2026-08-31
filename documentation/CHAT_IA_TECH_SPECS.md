@@ -58,11 +58,25 @@ El ecosistema de chat de Hub Academia se divide en 3 modalidades con arquitectur
 ## 4. Capacidades Multimedia e Inteligencia Visual
 El sistema gestiona una arquitectura de apoyo visual proactivo y especializado:
 
+### 4.1 Multimodal Vision en Quiz y Flashcard
+- **Visión Multimodal Nativa en Tiempo Real (Simulador y Repaso):**
+  - Orquestado en `tutorAiService.js` (`_extractMultimodalParts`) y `chatController.js`.
+  - Cuando una pregunta de examen, casuística o tarjeta mnemotécnica contiene imágenes (vía `imageUrl`, `caseImageUrl`, `explanationImageUrl` o etiquetas `<img src="...">`), el backend resuelve y descarga internamente el buffer desde Google Cloud Storage (GCS) en ~30ms y lo inyecta como `inlineData` directamente en la llamada multimodal a Gemini (`gemini-2.5-flash-lite` / Vertex AI).
+  - Permite al Tutor IA leer textos en imágenes (OCR), interpretar cuadros sinópticos, analizar guiones teatrales, curvas estadísticas, esquemas anatómicos o cerámicas artísticas con fidelidad milimétrica.
+  - **Límite de Seguridad:** Hasta **4 imágenes de entrada por consulta** con deduplicación automática y tolerancia a fallos.
 - **Catálogo Visual Dinámico:** Integración con Postgres para buscar recursos tipo `other` (infografías, esquemas) en tiempo real.
 - **Proactividad Visual:** La IA decide autónomamente cuándo insertar una imagen del catálogo. No requiere que el usuario la pida explícitamente si el tema es complejo.
-- **Límite de Recursos:** Hasta **3 imágenes por respuesta** si la complejidad del tema lo amerita (exclusivo para Medicina y Educación).
+- **Límite de Recursos Salientes:** Hasta **3 imágenes por respuesta** si la complejidad del tema lo amerita (exclusivo para Medicina y Educación).
 - **Tablas Proactivas:** Capacidad universal (todos los dominios) para generar tablas comparativas y cuadros sinópticos en Markdown para estructurar información técnica.
 - **Renderizado Premium:** Procesador DOM en `markdown-renderer.js` que envuelve tablas en wrappers responsivos y resuelve URLs de GCS mediante el proxy `/api/media/gcs`.
+
+### 4.2 Motor Universal de Renderizado Matemático y Científico (KaTeX LaTeX)
+- **Parseo y Aislamiento Tipográfico:**
+  - En `src/presentation/public/js/utils/markdown-renderer.js`, se implementó una fase de pre-extracción de fórmulas LaTeX (`_extractMath`) que aísla expresiones inline (`$...$`, `\(...\)`) y display en bloque (`$$...$$`, `\[...\]`), protegiendo subíndices (`_`), asteriscos (`*`) y backslashes de ser alterados por el analizador Markdown (`marked.js`).
+  - Distinción inteligente de sintaxis monetaria (ej. `$100 ni $50`) para evitar falsos positivos de renderizado en textos financieros o comerciales.
+- **Renderizado KaTeX Nativo:**
+  - Las ecuaciones matemáticas (ej. $\int x^2 dx$, $\frac{x^{n+1}}{n+1} + C$) y fórmulas químicas (ej. $\mathrm{H_2O + CO_2 \rightarrow H_2CO_3}$) se compilan a HTML/MathML de alta fidelidad tipográfica mediante `window.katex.renderToString`.
+  - Mecanismo de **carga perezosa y fallback defensivo** (`_ensureKaTeXLoaded` y `renderMathInElement`) para garantizar que las ecuaciones se rendericen fluidamente en todas las vistas (`quiz.html`, `flashcards.html`, `repaso.html`, `resource.html`, `course.html`, `index.html`, `admin.html`).
 
 ## 4. Flujo de Procesamiento RAG
 1. **Routing:** El controlador detecta la especialidad enviada desde la UI.

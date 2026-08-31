@@ -332,3 +332,33 @@
     margin-bottom: 0.15em;
     font-size: 0.84rem;
 }
+
+/* ─── KATEX FORMULAS (Math & Chemistry - Universal Engine) ─── */
+.katex-display-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: 1rem 0;
+    text-align: center;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Safety net for MathML hiding across all browsers */
+.katex .katex-mathml {
+    clip: rect(1px, 1px, 1px, 1px) !important;
+    border: 0 !important;
+    height: 1px !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    position: absolute !important;
+    width: 1px !important;
+}
+
+/* Ensure display equations are centered and responsive */
+.katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 0;
+    margin: 0.8em 0 !important;
+}

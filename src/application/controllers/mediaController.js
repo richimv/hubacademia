@@ -5,6 +5,7 @@ const sharp = require('sharp');
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 
 const ALLOWED_MEDIA_PREFIXES = new Set([
+    'cases',
     'questions',
     'explanations',
     'thumbnails',

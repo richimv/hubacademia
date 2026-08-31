@@ -88,6 +88,14 @@ class ChatController {
                 const hasAudio = (context.audioUrlFront || context.audioUrlBack) ? 'Sí (audio disponible en la tarjeta)' : 'No';
                 const isListeningMode = (context.hideTextFront || context.hideTextBack) ? 'Sí (modo de ocultación de texto activo)' : 'No';
 
+                let visualSection = '';
+                if (context.imageUrl) {
+                    visualSection += `\n- IMAGEN DEL ANVERSO / CONCEPTO: ${context.imageUrl}`;
+                }
+                if (context.explanationImageUrl) {
+                    visualSection += `\n- IMAGEN DEL REVERSO / EXPLICACIÓN: ${context.explanationImageUrl}`;
+                }
+
                 const tutorInstruction = `[MODO: TUTOR ACADÉMICO MULTIDISCIPLINARIO DE FLASHCARDS]
 Eres un tutor y mentor de élite en Hub Academia, experto en la disciplina de **${deckCategory}**.
 El estudiante está repasando sus tarjetas mnemotécnicas y tiene una duda específica.
@@ -100,7 +108,7 @@ ESTRUCTURA DEL MAZO Y CONTEXTO DE LA TARJETA:
 ${front}
 - REVERSO DE LA TARJETA (Respuesta / Fundamento Doctrinal / Explicación):
 ${back}
-- RECURSOS VISUALES: ${hasImages}
+- RECURSOS VISUALES: ${hasImages}${visualSection}
 - RECURSOS DE AUDIO: ${hasAudio}
 - MODO ESCUCHA/OCULTACIÓN: ${isListeningMode}
 
@@ -113,7 +121,6 @@ DIRECTRICES DE RESPUESTA:
    - Si es otra materia (**Matemáticas, Historia, Ciencias**): Utiliza el marco teórico y analítico exacto de la materia.
 2. Explica con claridad pedagógica y expande el concepto para consolidar el aprendizaje significativo.
 3. 🚨 PROHIBICIÓN ESTRICTA: NO hagas referencias a "consultas médicas", "normas de salud", "cursos de la plataforma" o temas no relacionados a menos que la tarjeta sea explícitamente de esa materia.
-4. Genera sugerencias clicables en el JSON que permitan al alumno profundizar específicamente en el tema de esta tarjeta (${topic} / ${deckCategory}).
 
 PREGUNTA DEL ESTUDIANTE:
 ${message}`;
@@ -247,6 +254,7 @@ ${message}`;
                     userTier: req.userTier,
                     namespace: (finalSpecialization === 'medicine' || finalSpecialization === 'education') ? finalSpecialization : 'general',
                     resourceContext: resourceContext, // ✅ Pasar el contexto del recurso cargado al servicio IA
+                    context: context, // ✅ Pasar el contexto estructurado de reactivo o flashcard para resolución multimodal
                     useRag: hasRAGAccess
                 });
 

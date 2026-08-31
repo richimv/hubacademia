@@ -312,7 +312,7 @@ class AdminRepository {
     }
 
     async getQuestionImages(id) {
-        const result = await db.query('SELECT image_url, explanation_image_url, audio_text, career FROM question_bank WHERE id = $1', [id]);
+        const result = await db.query('SELECT image_url, explanation_image_url, audio_text, career, question_text, explanation FROM question_bank WHERE id = $1', [id]);
         return result.rows[0];
     }
 

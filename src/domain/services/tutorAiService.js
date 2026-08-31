@@ -1,8 +1,11 @@
 const { VertexAI } = require('@google-cloud/vertexai');
+const path = require('path');
+const fs = require('fs');
 const RagService = require('./ragService');
 const chatPrompts = require('../prompts/chatPrompts');
 const db = require('../../infrastructure/database/db'); // Mover al inicio
 const securityUtils = require('../utils/securityUtils');
+const mediaController = require('../../application/controllers/mediaController');
 
 /**
  * 🎓 TUTOR AI SERVICE V6.2: El Cerebro del Chat y Tutoría.
@@ -92,33 +95,165 @@ class TutorAiService {
     }
 
     /**
-     * Extrae imágenes en base64 de un texto y retorna el texto limpio
-     * con placeholders e inlineData para la API de Gemini.
+     * Extrae imágenes en base64 de un texto y resuelve imágenes de GCS / locales
+     * a partir del texto y del objeto context (Quiz y Flashcards) para la API de Gemini.
      */
-    _extractMultimodalParts(text) {
+    async _extractMultimodalParts(text, context = null) {
         const parts = [];
-        if (!text) return { cleanedText: '', parts };
+        if (!text && !context) return { cleanedText: '', parts };
 
-        // Expresión regular lineal y robusta para evitar backtracking con base64 gigantescos
-        const base64Regex = /data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/gi;
-        
-        let match;
-        
-        // Buscar todas las ocurrencias de base64
-        while ((match = base64Regex.exec(text)) !== null) {
-            const mimeType = match[1];
-            const base64Data = match[2].replace(/\s/g, ''); // Remover saltos de línea/espacios del base64
-            parts.push({
-                inlineData: {
-                    mimeType: mimeType,
-                    data: base64Data
+        const visitedSources = new Set();
+
+        // 1. Extraer imágenes Base64 inline en el texto
+        if (text) {
+            const base64Regex = /data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/gi;
+            let match;
+            while ((match = base64Regex.exec(text)) !== null) {
+                const mimeType = match[1];
+                const base64Data = match[2].replace(/\s/g, '');
+                if (base64Data && !visitedSources.has(base64Data.substring(0, 40))) {
+                    visitedSources.add(base64Data.substring(0, 40));
+                    parts.push({
+                        inlineData: {
+                            mimeType: mimeType,
+                            data: base64Data
+                        }
+                    });
+                }
+            }
+        }
+
+        // 2. Extraer candidatos de URLs / GCS del texto y de context
+        const rawCandidates = [];
+
+        // De etiquetas <img src="..."> en el texto
+        if (text) {
+            const imgSrcRegex = /<img[^>]+src=["']([^"']+)["']/gi;
+            let match;
+            while ((match = imgSrcRegex.exec(text)) !== null) {
+                rawCandidates.push(match[1]);
+            }
+        }
+
+        // Del objeto context estructurado
+        if (context) {
+            if (context.caseImageUrl) rawCandidates.push(context.caseImageUrl);
+            if (context.imageUrl) rawCandidates.push(context.imageUrl);
+            if (context.explanationImageUrl) rawCandidates.push(context.explanationImageUrl);
+
+            const extraTextFields = [
+                context.caseDescription,
+                context.case_description,
+                context.front,
+                context.questionText,
+                context.question_text,
+                context.question,
+                context.back,
+                context.explanation
+            ];
+
+            extraTextFields.forEach(field => {
+                if (typeof field === 'string') {
+                    const imgRegex = /<img[^>]+src=["']([^"']+)["']/gi;
+                    let m;
+                    while ((m = imgRegex.exec(field)) !== null) {
+                        rawCandidates.push(m[1]);
+                    }
                 }
             });
         }
-        
+
+        // 3. Resolver candidatos de GCS / Local a buffers inlineData
+        for (const candidate of rawCandidates) {
+            if (!candidate || typeof candidate !== 'string') continue;
+            if (parts.length >= 4) break; // Límite de seguridad: máx 4 imágenes por request
+
+            if (candidate.startsWith('data:image/')) {
+                const b64Match = candidate.match(/data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/i);
+                if (b64Match) {
+                    const key = b64Match[2].substring(0, 40);
+                    if (!visitedSources.has(key)) {
+                        visitedSources.add(key);
+                        parts.push({
+                            inlineData: {
+                                mimeType: b64Match[1],
+                                data: b64Match[2].replace(/\s/g, '')
+                            }
+                        });
+                    }
+                }
+                continue;
+            }
+
+            // Normalizar y extraer ruta GCS
+            let gcsPath = null;
+            if (candidate.includes('?file=')) {
+                gcsPath = candidate.split('?file=')[1].split('&')[0];
+            } else if (candidate.includes('?path=')) {
+                gcsPath = candidate.split('?path=')[1].split('&')[0];
+            } else if (!candidate.startsWith('http://') && !candidate.startsWith('https://') && !candidate.startsWith('/') && !candidate.startsWith('assets/')) {
+                gcsPath = candidate;
+            }
+
+            if (gcsPath) {
+                try {
+                    gcsPath = decodeURIComponent(gcsPath).replace(/\\/g, '/');
+                    if (visitedSources.has(gcsPath)) continue;
+                    visitedSources.add(gcsPath);
+
+                    const ext = path.extname(gcsPath).toLowerCase();
+                    const mimeType = ext === '.png' ? 'image/png' : (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg' : 'image/webp';
+
+                    const bucket = mediaController.storage.bucket(mediaController.bucketName);
+                    const file = bucket.file(gcsPath);
+                    const [exists] = await file.exists();
+                    if (exists) {
+                        const [buffer] = await file.download();
+                        if (buffer && buffer.length > 0) {
+                            parts.push({
+                                inlineData: {
+                                    mimeType,
+                                    data: buffer.toString('base64')
+                                }
+                            });
+                            console.log(`🖼️ [TutorAiService] Imagen GCS resuelta como inlineData: ${gcsPath} (${buffer.length} bytes)`);
+                        }
+                    }
+                } catch (gcsErr) {
+                    console.warn(`⚠️ [TutorAiService] No se pudo descargar imagen de GCS (${gcsPath}):`, gcsErr.message);
+                }
+                continue;
+            }
+
+            // Si es un asset local relativo (/assets/... o assets/...)
+            if (candidate.startsWith('/assets/') || candidate.startsWith('assets/')) {
+                try {
+                    const cleanPath = candidate.replace(/^\/+/, '');
+                    if (visitedSources.has(cleanPath)) continue;
+                    visitedSources.add(cleanPath);
+
+                    const localFullPath = path.join(__dirname, '../../presentation/public', cleanPath);
+                    if (fs.existsSync(localFullPath)) {
+                        const buffer = fs.readFileSync(localFullPath);
+                        const ext = path.extname(cleanPath).toLowerCase();
+                        const mimeType = ext === '.png' ? 'image/png' : (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg' : 'image/webp';
+                        parts.push({
+                            inlineData: {
+                                mimeType,
+                                data: buffer.toString('base64')
+                            }
+                        });
+                        console.log(`🖼️ [TutorAiService] Imagen local resuelta como inlineData: ${cleanPath}`);
+                    }
+                } catch (localErr) {
+                    console.warn(`⚠️ [TutorAiService] Error leyendo asset local (${candidate}):`, localErr.message);
+                }
+            }
+        }
+
         // Reemplazar la data URI base64 en el texto por un placeholder indexado
-        const cleanedText = text.replace(/data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/gi, '[Imagen Adjunta]');
-        
+        const cleanedText = (text || '').replace(/data:(image\/[a-z0-9-+.]+);base64,([^"'\s)>]+)/gi, '[Imagen Adjunta]');
+
         return { cleanedText, parts };
     }
 
@@ -234,8 +369,8 @@ class TutorAiService {
      * @param {Object} filters - { target, specialization, namespace, userTier }
      */
     async handleChat(userMessage, history = [], filters = {}) {
-        // 1. Extraer imágenes base64 del mensaje original (antes de sanitizar/recortar para no truncar la data)
-        const { cleanedText: preCleanedMessage, parts: imageParts } = this._extractMultimodalParts(userMessage);
+        // 1. Extraer imágenes base64 y resolver imágenes GCS/locales del mensaje y del contexto (Quiz y Flashcards)
+        const { cleanedText: preCleanedMessage, parts: imageParts } = await this._extractMultimodalParts(userMessage, filters.context);
 
         // 2. Sanitizar el mensaje limpio (soporta payloads de contexto de tarjetas/simulacro)
         const message = securityUtils.sanitizeInputForAI(preCleanedMessage, securityUtils.LIMITS.CONTEXT_TEXT);
@@ -251,16 +386,19 @@ class TutorAiService {
             // Inicializar caché si no existe (Persistencia de temas por conversación)
             if (!this._topicCache) this._topicCache = new Map();
 
-            // 1. EXTRAER TEMAS INTELIGENTES
-            let smartTopics = await RagService.extractSmartTerms(message, specialization, target);
-            
-            // LÓGICA DE PERSISTENCIA: Si no hay temas nuevos pero hay historial, recuperar últimos temas
-            if ((!smartTopics || smartTopics.length === 0 || smartTopics[0].toLowerCase() === 'ninguno') && this._topicCache.has(conversationId)) {
-                smartTopics = this._topicCache.get(conversationId);
-                console.log(`♻️ [TutorAiService] Reutilizando temas del cache para ${conversationId}: ${smartTopics.join(', ')}`);
-            } else if (smartTopics && smartTopics.length > 0 && smartTopics[0].toLowerCase() !== 'ninguno') {
-                // Guardar nuevos temas técnicos en el caché
-                this._topicCache.set(conversationId, smartTopics);
+            // 1. EXTRAER TEMAS INTELIGENTES (Solo para medicina y educación con RAG, no para flashcards multidisciplinarias)
+            let smartTopics = [];
+            if (specialization !== 'flashcard_tutor') {
+                smartTopics = await RagService.extractSmartTerms(message, specialization, target);
+                
+                // LÓGICA DE PERSISTENCIA: Si no hay temas nuevos pero hay historial, recuperar últimos temas
+                if ((!smartTopics || smartTopics.length === 0 || smartTopics[0].toLowerCase() === 'ninguno') && this._topicCache.has(conversationId)) {
+                    smartTopics = this._topicCache.get(conversationId);
+                    console.log(`♻️ [TutorAiService] Reutilizando temas del cache para ${conversationId}: ${smartTopics.join(', ')}`);
+                } else if (smartTopics && smartTopics.length > 0 && smartTopics[0].toLowerCase() !== 'ninguno') {
+                    // Guardar nuevos temas técnicos en el caché
+                    this._topicCache.set(conversationId, smartTopics);
+                }
             }
 
             const mainSearchQuery = (smartTopics && smartTopics.length > 0) ? smartTopics.join(' ') : message;
@@ -456,12 +594,16 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             }
         }
 
-        // 3. Normalizar saltos de línea y comillas escapadas
+        // 3. Normalizar saltos de línea y comillas escapadas sin destruir comandos LaTeX (\neq, \nabla, \nu, \times, \theta, etc.)
         cleaned = cleaned
             .replace(/\\r\\n/g, '\n')
-            .replace(/\\n/g, '\n')
-            .replace(/\\t/g, ' ')
+            .replace(/\r\n/g, '\n')
             .replace(/\\"/g, '"');
+
+        // Convertir secuencias \n literales a saltos reales preservando solo comandos LaTeX específicos que inician con 'n'
+        const latexNCommands = 'neq|nabla|neg|nu|notin|ni|null|nexists|nrightarrow|nleftarrow|nsubseteq|nsupseteq|nless|ngtr|nleq|ngeq|nsim|ncong|nmid|natural';
+        const latexNRegex = new RegExp(`\\\\n(?!(?:${latexNCommands})\\b)`, 'g');
+        cleaned = cleaned.replace(latexNRegex, '\n');
 
         // 4. Limpiar fragmentos residuales de JSON al inicio o final
         cleaned = cleaned

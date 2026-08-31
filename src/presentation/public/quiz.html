@@ -13,14 +13,15 @@
     <!-- CSS Moderno (Glassmorphism) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Centralized Design System Tokens -->
-    <link rel="stylesheet" href="/css/theme.css?v=22d31f264d9d">
-    <link rel="stylesheet" href="/css/quiz.css?v=22d31f264d9d">
-    <link rel="stylesheet" href="/css/modal.css?v=22d31f264d9d">
-    <link rel="stylesheet" href="/css/components.css?v=22d31f264d9d">
-    <link rel="stylesheet" href="/css/tutor.css?v=22d31f264d9d">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=22d31f264d9d">
-    <script src="/js/config.js?v=22d31f264d9d"></script>
-    <script src="/js/utils/themeManager.js?v=22d31f264d9d"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=e8e88b625a16">
+    <link rel="stylesheet" href="/css/quiz.css?v=e8e88b625a16">
+    <link rel="stylesheet" href="/css/modal.css?v=e8e88b625a16">
+    <link rel="stylesheet" href="/css/components.css?v=e8e88b625a16">
+    <link rel="stylesheet" href="/css/tutor.css?v=e8e88b625a16">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=e8e88b625a16">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="/js/config.js?v=e8e88b625a16"></script>
+    <script src="/js/utils/themeManager.js?v=e8e88b625a16"></script>
 
     <!-- Critical Loading Screen CSS (Inmune a problemas de caché del navegador) -->
     <style>
@@ -282,13 +283,15 @@
         <!-- 📖 Contenedor de Casuística / Situación Compartida -->
         <div id="caseScenarioContainer" class="case-scenario-card" style="display: none;">
             <div class="case-badge">
-                <i class="fas fa-layer-group"></i>
-                <span id="caseBadgeText">Casuística Anidada</span>
+                <span class="case-badge-title">
+                    <i class="fas fa-layer-group"></i>
+                    <span id="caseBadgeText">Casuística Anidada</span>
+                </span>
                 <span id="caseOrderBadge" class="case-order-tag">Pregunta 1</span>
             </div>
             <div id="caseDescriptionText" class="case-description-body"></div>
             <div id="caseImageContainer" class="case-image-wrap" style="display: none;">
-                <img id="caseImage" src="" alt="Material de apoyo del caso" loading="lazy">
+                <img id="caseImage" class="case-media-img" src="" alt="Material de apoyo del caso" loading="lazy">
             </div>
             <div id="caseTableContainer" class="case-table-wrap" style="display: none;"></div>
         </div>
@@ -393,17 +396,18 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=22d31f264d9d"></script>
-    <script src="/js/services/networkService.js?v=22d31f264d9d"></script>
-    <script src="/js/services/authApiService.js?v=22d31f264d9d"></script>
-    <script src="/js/services/analyticsApiService.js?v=22d31f264d9d"></script>
-    <script src="/js/sessionManager.js?v=22d31f264d9d"></script>
-    <script src="/js/ui/components.js?v=22d31f264d9d"></script>
-    <script src="/js/ui/confirmationModal.js?v=22d31f264d9d"></script>
-    <script src="/js/ui/uiManager.js?v=22d31f264d9d"></script>
-    <script src="/js/app.js?v=22d31f264d9d"></script>
-    <script src="/js/quiz-tutor.js?v=22d31f264d9d"></script>
-    <script type="module" src="/js/quiz.js?v=22d31f264d9d"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="/js/utils/markdown-renderer.js?v=e8e88b625a16"></script>
+    <script src="/js/services/networkService.js?v=e8e88b625a16"></script>
+    <script src="/js/services/authApiService.js?v=e8e88b625a16"></script>
+    <script src="/js/services/analyticsApiService.js?v=e8e88b625a16"></script>
+    <script src="/js/sessionManager.js?v=e8e88b625a16"></script>
+    <script src="/js/ui/components.js?v=e8e88b625a16"></script>
+    <script src="/js/ui/confirmationModal.js?v=e8e88b625a16"></script>
+    <script src="/js/ui/uiManager.js?v=e8e88b625a16"></script>
+    <script src="/js/app.js?v=e8e88b625a16"></script>
+    <script src="/js/quiz-tutor.js?v=e8e88b625a16"></script>
+    <script type="module" src="/js/quiz.js?v=e8e88b625a16"></script>
 </body>
 
 </html>

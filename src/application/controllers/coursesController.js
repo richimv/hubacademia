@@ -315,6 +315,63 @@ class CoursesController {
             console.error('⚠️ Error en limpieza de imágenes de editor:', error);
         }
     }
+
+    /**
+     * ✅ Sanitizador Defensivo Backend:
+     * Extrae imágenes en Base64 pegadas en TinyMCE y las sube a GCS exclusivamente al momento de Guardar.
+     */
+    async _sanitizeHtmlImages(html, folder = 'recursos') {
+        if (!html || typeof html !== 'string') return html;
+
+        const base64ImgRegex = /<img[^>]+src=["'](data:image\/([a-zA-Z0-9+]+);base64,([^"']+))["'][^>]*>/gi;
+        let match;
+        const matches = [];
+        const backendDomain = (process.env.BACKEND_PUBLIC_URL || 'https://tutor-ia-backend.onrender.com').replace(/\/+$/, '');
+
+        while ((match = base64ImgRegex.exec(html)) !== null) {
+            matches.push({
+                fullTag: match[0],
+                dataUri: match[1],
+                format: (match[2] || 'png').toLowerCase(),
+                base64Data: match[3]
+            });
+        }
+
+        if (matches.length === 0) return html;
+
+        console.log(`🖼️ [Sanitizador Backend Recursos] Detectadas ${matches.length} imágenes Base64 en HTML. Convirtiendo a GCS (${folder})...`);
+        let sanitized = html;
+
+        for (let i = 0; i < matches.length; i++) {
+            const item = matches[i];
+            try {
+                const buffer = Buffer.from(item.base64Data, 'base64');
+                const ext = item.format === 'jpeg' ? 'jpg' : item.format;
+                const originalname = `editor_img_${Date.now()}_${i}.${ext}`;
+                const mimetype = `image/${item.format === 'jpg' ? 'jpeg' : item.format}`;
+
+                let location = '';
+                try {
+                    const gcsPath = await mediaController.uploadFile({ buffer, originalname, mimetype }, folder);
+                    location = `${backendDomain}/api/media/gcs?file=${gcsPath}`;
+                } catch (gcsErr) {
+                    console.warn('⚠️ Subida a GCS falló en sanitizador de recursos:', gcsErr.message);
+                    const localDir = path.join(__dirname, '../../presentation/public/assets/recursos');
+                    if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
+                    const localFileName = `${Date.now()}_${originalname}`;
+                    fs.writeFileSync(path.join(localDir, localFileName), buffer);
+                    location = `/assets/recursos/${localFileName}`;
+                }
+
+                sanitized = sanitized.replace(item.dataUri, location);
+                console.log(`🖼️ [Sanitizador Backend Recursos] Imagen convertida a URL: ${location}`);
+            } catch (err) {
+                console.error('❌ Error sanitizando imagen Base64 en recursos:', err);
+            }
+        }
+
+        return sanitized;
+    }
  
     // --- Métodos CRUD Genéricos para el Panel de Administración ---
 
@@ -386,12 +443,11 @@ class CoursesController {
                 }
             }
  
-            // ✅ NUEVO: EXTRACCIÓN AUTOMÁTICA DE MINIATURA (Drive)
-            if (entityType === 'book' && req.body.url) {
-                const driveThumb = await this._handleDriveThumbnail(req.body.url, req.body.image_url);
-                if (driveThumb) req.body.image_url = driveThumb;
+            // ✅ Sanitizar imágenes Base64 pegadas en TinyMCE -> subir a GCS exclusivamente al momento de guardar
+            if (req.body.content_html) {
+                req.body.content_html = await this._sanitizeHtmlImages(req.body.content_html, 'recursos');
             }
- 
+
             const newItem = await this.adminService.create(entityType, req.body);
             res.status(201).json(newItem);
         } catch (error) {
@@ -531,6 +587,11 @@ class CoursesController {
             if (entityType === 'book' || entityType === 'course') {
                 const oldItem = await this.adminService.getById(entityType, entityId);
                 const oldContent = oldItem?.content_html || '';
+
+                // ✅ Sanitizar imágenes Base64 pegadas en TinyMCE -> subir a GCS exclusivamente al momento de guardar
+                if (req.body.content_html) {
+                    req.body.content_html = await this._sanitizeHtmlImages(req.body.content_html, 'recursos');
+                }
                 const newContent = req.body.content_html || '';
 
                 if (oldContent !== newContent) {

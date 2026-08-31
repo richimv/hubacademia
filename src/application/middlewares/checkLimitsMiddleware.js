@@ -215,8 +215,10 @@ const checkAILimits = (type) => {
                             const isAdvancedTier = (tier === 'advanced' || tier === 'admin');
                             const ragLimit = userLimits.daily_rag_limit || 25;
                             const currentRagUsage = user.daily_rag_usage || 0;
+                            const isFlashcardTutor = (context && context.type === 'flashcard_tutor') || spec === 'flashcard_tutor';
 
-                            if (isAdvancedTier && currentRagUsage < ragLimit) {
+                            // Flashcard Tutor es multidisciplinario (cero Pinecone RAG); no consume cuota diaria de RAG
+                            if (isAdvancedTier && !isFlashcardTutor && currentRagUsage < ragLimit) {
                                 req.useRag = true;
                                 req.incrementRag = true;
                             } else {

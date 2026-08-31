@@ -838,7 +838,17 @@ class AdminManager {
             }
             case 'question': {
                 title.textContent = id ? 'Editar Pregunta' : 'Añadir Pregunta';
-                if (id) this.currentItem = this.allQuestions.find(q => String(q.id) === String(id));
+                if (id) {
+                    this.currentItem = (this.allQuestions || []).find(q => String(q.id) === String(id));
+                    if (!this.currentItem) {
+                        try {
+                            const qRes = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/questions/${id}`);
+                            if (qRes.ok) this.currentItem = await qRes.json();
+                        } catch (err) {
+                            console.warn('⚠️ No se pudo cargar pregunta individual:', err);
+                        }
+                    }
+                }
 
                 let optA = this.currentItem?.options?.[0] || '';
                 let optB = this.currentItem?.options?.[1] || '';
@@ -1006,7 +1016,17 @@ class AdminManager {
 
             case 'case': {
                 title.textContent = id ? 'Editar Casuística / Caso Clínico' : 'Nueva Casuística / Caso Clínico';
-                if (id) this.currentItem = this.allCases.find(c => String(c.id) === String(id));
+                if (id) {
+                    this.currentItem = (this.allCases || []).find(c => String(c.id) === String(id));
+                    if (!this.currentItem) {
+                        try {
+                            const caseRes = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/cases/${id}`);
+                            if (caseRes.ok) this.currentItem = await caseRes.json();
+                        } catch (err) {
+                            console.warn('⚠️ No se pudo cargar casuística individual:', err);
+                        }
+                    }
+                }
 
                 const domains = [
                     { id: 'education', name: 'Educación Docente' },
@@ -1029,23 +1049,6 @@ class AdminManager {
                         ${this.createImageUploadGroup('generic-image', 'Imagen Adjunta (Opcional)', this.currentItem?.image_url || '')}
                     </div>
                 `;
-
-                setTimeout(() => {
-                    if (window.tinymce && window.tinymce.get('generic-description')) {
-                        window.tinymce.get('generic-description').remove();
-                    }
-                    if (window.tinymce) {
-                        window.tinymce.init({
-                            selector: '#generic-description',
-                            height: 240,
-                            menubar: false,
-                            plugins: 'lists link table code',
-                            toolbar: 'undo redo | bold italic underline | bullist numlist | table | code',
-                            skin: 'oxide-dark',
-                            content_css: 'dark'
-                        });
-                    }
-                }, 50);
                 break;
             }
 
@@ -1627,126 +1630,90 @@ class AdminManager {
             }
         }
 
-        // NUEVO: Inicializar TinyMCE 6 si es un recurso de tipo 'book'
+        // ✅ Inicializar TinyMCE 6 si es un recurso de tipo 'book'
         if (type === 'book') {
             setTimeout(() => {
-                // Eliminar instancia previa si existe para evitar duplicados
-                if (tinymce.get('generic-content-html')) {
-                    tinymce.get('generic-content-html').remove();
+                if (window.tinymce && window.tinymce.get('generic-content-html')) {
+                    window.tinymce.get('generic-content-html').remove();
                 }
 
-                tinymce.init({
-                    entity_encoding: 'raw',
-                    toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | table image media | removeformat | help',
-                    selector: '#generic-content-html',
-                    height: 400,
-                    menubar: 'edit insert view format table tools help',
-                    plugins: [
-                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                        'insertdatetime', 'media', 'table', 'help', 'wordcount'
-                    ],
-                    skin: 'oxide-dark',
-                    content_css: 'dark',
-                    branding: false,
-                    promotion: false,
-                    
-                    // ✅ NUEVA CONFIGURACIÓN: Carga Segura con Token de Administración
-                    images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
-                        const blob = blobInfo.blob();
-                        const fileName = blobInfo.filename();
-                        console.log(`🚀 Iniciando subida de imagen de editor: ${fileName} (${blob.size} bytes)`);
+                if (window.tinymce) {
+                    window.tinymce.init(this.getStandardTinyMCEConfig('#generic-content-html', {
+                        height: 400,
+                        placeholder: 'Escribe el resumen enriquecido aquí (puedes añadir imágenes, tablas de Excel, colores y más)...',
+                        setup: (editor) => {
+                            editor.on('init', () => {
+                                if (this.currentItem?.content_html) {
+                                    editor.setContent(this.resolveHtmlImageUrls(this.currentItem.content_html));
+                                }
+                            });
+                            editor.on('change KeyUp', () => {
+                                const hidden = document.getElementById('hidden-content-html');
+                                if (hidden) hidden.value = editor.getContent();
+                            });
+                        }
+                    }));
+                }
 
-                        const formData = new FormData();
-                        formData.append('file', blob, fileName);
-
-                        window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/upload-editor`, {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(async response => {
-                            console.log(`📡 Respuesta de servidor recibida. Status: ${response.status}`);
-                            if (!response.ok) {
-                                const errText = await response.text();
-                                throw new Error(`Servidor retorno ${response.status}: ${errText}`);
-                            }
-                            return response.json();
-                        })
-                        .then(json => {
-                            if (json && json.location) {
-                                console.log('✅ Imagen subida con éxito:', json.location);
-                                resolve(json.location);
-                            } else {
-                                console.error('❌ Respuesta inválida de servidor:', json);
-                                reject('Respuesta de servidor inválida');
-                            }
-                        })
-                        .catch(err => {
-                            console.error('❌ Error crítico en subida de TinyMCE:', err);
-                            reject(`Fallo en la subida: ${err.message}`);
-                        });
-                    }),
-                    automatic_uploads: true,
-                    images_reuse_filename: true,
-                    paste_data_images: true, // ✅ NUEVO: Permitir pegar imágenes directamente (Ctrl+V)
-                    relative_urls: false,    // ✅ NUEVO: Forzar URLs absolutas para evitar que GCS se rompa
-                    remove_script_host: false,
-                    convert_urls: false,     // ✅ NUEVO: Evitar que TinyMCE modifique nuestras URLs de Render
-                    file_picker_types: 'image',
-                    placeholder: 'Escribe el resumen enriquecido aquí (puedes añadir imágenes, tablas de Excel, colores y más)...',
-                    content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: #f8fafc; padding: 10px; } ' +
-                        'table { border-collapse: collapse; width: 100%; margin-bottom: 10px; } ' +
-                        'table th, table td { border: 1px solid #475569; padding: 8px; } ' +
-                        'table th { background-color: #334155; }',
-                    setup: (editor) => {
-                        editor.on('init', () => {
-                            if (this.currentItem?.content_html) {
-                                editor.setContent(this.currentItem.content_html);
-                            }
-                        });
-                        editor.on('change', () => {
-                            document.getElementById('hidden-content-html').value = editor.getContent();
-                        });
-                        editor.on('KeyUp', () => {
-                            document.getElementById('hidden-content-html').value = editor.getContent();
-                        });
-                    }
-                });
-
-                document.getElementById('hidden-content-html').value = this.currentItem?.content_html || '';
+                const hidden = document.getElementById('hidden-content-html');
+                if (hidden) hidden.value = this.currentItem?.content_html || '';
             }, 0);
         }
 
-        // NUEVO: Inicializar TinyMCE para Preguntas y Explicaciones
-        if (type === 'question') {
+        // ✅ Inicializar TinyMCE para Casuísticas
+        if (type === 'case') {
             setTimeout(() => {
-                const richFields = ['generic-question-text', 'generic-explanation'];
-                richFields.forEach(fieldId => {
-                    if (tinymce.get(fieldId)) {
-                        tinymce.get(fieldId).remove();
-                    }
+                if (window.tinymce && window.tinymce.get('generic-description')) {
+                    window.tinymce.get('generic-description').remove();
+                }
 
-                    tinymce.init({
-                        entity_encoding: 'raw',
-                        selector: `#${fieldId}`,
-                        height: 250,
-                        menubar: false,
-                        plugins: [
-                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                            'insertdatetime', 'media', 'table', 'help', 'wordcount'
-                        ],
-                        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | table link | removeformat | help',
-                        skin: 'oxide-dark',
-                        content_css: 'dark',
-                        branding: false,
-                        promotion: false,
+                if (window.tinymce) {
+                    window.tinymce.init(this.getStandardTinyMCEConfig('#generic-description', {
+                        height: 320,
+                        placeholder: 'Escribe o pega el enunciado de la casuística (puedes pegar imágenes de Word/Portapapeles, tablas, etc.)...',
                         setup: (editor) => {
+                            editor.on('init', () => {
+                                if (this.currentItem?.description_text) {
+                                    editor.setContent(this.resolveHtmlImageUrls(this.currentItem.description_text));
+                                }
+                            });
                             editor.on('change KeyUp', () => {
-                                editor.save(); // Sincroniza con el textarea original
+                                editor.save();
                             });
                         }
-                    });
+                    }));
+                }
+            }, 0);
+        }
+
+        // ✅ Inicializar TinyMCE para Preguntas y Explicaciones
+        if (type === 'question') {
+            setTimeout(() => {
+                const richFields = [
+                    { id: 'generic-question-text', placeholder: 'Enunciado de la pregunta (puedes pegar imágenes de Word/Portapapeles, tablas, etc.)...', val: this.currentItem?.question_text },
+                    { id: 'generic-explanation', placeholder: 'Explicación pedagógica / médica detallada (puedes añadir imágenes, tablas)...', val: this.currentItem?.explanation }
+                ];
+                richFields.forEach(field => {
+                    if (window.tinymce && window.tinymce.get(field.id)) {
+                        window.tinymce.get(field.id).remove();
+                    }
+
+                    if (window.tinymce) {
+                        window.tinymce.init(this.getStandardTinyMCEConfig(`#${field.id}`, {
+                            height: 250,
+                            placeholder: field.placeholder,
+                            setup: (editor) => {
+                                editor.on('init', () => {
+                                    if (field.val) {
+                                        editor.setContent(this.resolveHtmlImageUrls(field.val));
+                                    }
+                                });
+                                editor.on('change KeyUp', () => {
+                                    editor.save();
+                                });
+                            }
+                        }));
+                    }
                 });
             }, 0);
         }
@@ -1905,6 +1872,27 @@ class AdminManager {
         });
     }
 
+    resolveHtmlImageUrls(html) {
+        if (!html || typeof html !== 'string') return '';
+        const apiUrl = (window.AppConfig && window.AppConfig.API_URL) ? window.AppConfig.API_URL.replace(/\/+$/, '') : '';
+        if (!apiUrl) return html;
+
+        return html.replace(/<img([^>]+)src=["']([^"']+)["']([^>]*)>/gi, (match, before, src, after) => {
+            let finalSrc = src;
+            if (src.startsWith('data:') || src.startsWith('blob:') || src.startsWith('http://') || src.startsWith('https://')) {
+                finalSrc = src;
+            } else if (src.startsWith('/assets/') || src.startsWith('assets/')) {
+                const cleanPath = src.startsWith('/') ? src : `/${src}`;
+                finalSrc = `${apiUrl}${cleanPath}`;
+            } else if (src.startsWith('/api/')) {
+                finalSrc = `${apiUrl}${src}`;
+            } else {
+                finalSrc = `${apiUrl}/api/media/gcs?file=${encodeURIComponent(src)}`;
+            }
+            return `<img${before}src="${finalSrc}"${after}>`;
+        });
+    }
+
     formatPlainTextToHtml(text) {
         if (!text) return '';
         if (typeof text === 'string' && text.trimStart().startsWith('<')) {
@@ -1936,6 +1924,74 @@ class AdminManager {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    /**
+     * Configuración unificada de TinyMCE con renderizado local en memoria (0 peticiones a GCS en edición/borrador).
+     * La subida y persistencia a GCS se difiere exclusivamente al momento de enviar el formulario ("Guardar").
+     */
+    getStandardTinyMCEConfig(selector, options = {}) {
+        const height = options.height || 260;
+        const placeholder = options.placeholder || 'Escribe aquí (puedes pegar imágenes de Word o Portapapeles, tablas, etc.)...';
+
+        return {
+            entity_encoding: 'raw',
+            selector: selector,
+            height: height,
+            menubar: options.menubar !== undefined ? options.menubar : 'edit insert view format table tools help',
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar: options.toolbar || 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | table image link | removeformat | code help',
+            skin: 'oxide-dark',
+            content_css: 'dark',
+            branding: false,
+            promotion: false,
+
+            // ✅ ARQUITECTURA DIFERIDA (COMMIT ON SAVE):
+            // Durante la redacción o edición, las imágenes pegadas/insertadas se conservan localmente en memoria del navegador
+            // como datos Base64/Data URI. NO se realiza ninguna subida a la red ni a GCS mientras el usuario esté editando,
+            // cancelando o descartando cambios.
+            automatic_uploads: false,
+            paste_data_images: true, // ✅ Permite pegar imágenes directamente (Ctrl+V) en el canvas local
+            file_picker_types: 'image',
+            file_picker_callback: (callback, value, meta) => {
+                if (meta.filetype === 'image') {
+                    const input = document.createElement('input');
+                    input.setAttribute('type', 'file');
+                    input.setAttribute('accept', 'image/*');
+                    input.onchange = function() {
+                        const file = this.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function() {
+                                callback(reader.result, { alt: file.name });
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    };
+                    input.click();
+                }
+            },
+            relative_urls: false,    // ✅ Mantiene la URL absoluta hacia el backend/GCS
+            remove_script_host: false,
+            convert_urls: false,     // ✅ Evita alteraciones de URLs de Render/CDN
+            placeholder: placeholder,
+            content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: #f8fafc; padding: 10px; } ' +
+                'table { border-collapse: collapse; width: 100%; margin-bottom: 10px; } ' +
+                'table th, table td { border: 1px solid #475569; padding: 8px; } ' +
+                'table th { background-color: #334155; }',
+            setup: (editor) => {
+                if (typeof options.setup === 'function') {
+                    options.setup(editor);
+                }
+                editor.on('change KeyUp', () => {
+                    editor.save();
+                });
+            }
+        };
     }
 
     createImageUploadGroup(id, label, value = '') {

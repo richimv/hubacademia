@@ -41,23 +41,29 @@
 
     /**
      * Resolutor Universal de URLs de Imagen (GCS / Externo)
-     * Detecta si una URL es una ruta relativa de GCS y la redirige al proxy del backend.
+     * Detecta si una URL es una ruta relativa de GCS o assets y la redirige al proxy del backend.
      */
     window.resolveImageUrl = function (url, resourceType = 'other') {
         if (!url || url.trim() === '') {
-            // ✅ MEJORA SENIOR: Si no hay imagen, usar el Sistema de Portadas por Defecto
             return window.getDefaultResourceImage(resourceType);
         }
 
-        // Si ya es una URL absoluta o relativa local conocida, no tocar
-        if (url.startsWith('http') || url.startsWith('/') || url.startsWith('data:') || url.startsWith('assets/')) {
+        if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
             return url;
         }
 
-        // Caso GCS: Es una ruta como "test.png" o "folders/image.jpg"
-        // Los tokens nunca viajan en query string: se filtran en logs, historial,
-        // Referer y cachés. Las peticiones fetch autenticadas usan Authorization.
-        return `${window.AppConfig.API_URL}/api/media/gcs?file=${encodeURIComponent(url)}`;
+        const apiUrl = (window.AppConfig && window.AppConfig.API_URL) ? window.AppConfig.API_URL.replace(/\/+$/, '') : '';
+
+        if (url.startsWith('/assets/') || url.startsWith('assets/')) {
+            const cleanPath = url.startsWith('/') ? url : `/${url}`;
+            return apiUrl ? `${apiUrl}${cleanPath}` : cleanPath;
+        }
+
+        if (url.startsWith('/api/')) {
+            return apiUrl ? `${apiUrl}${url}` : url;
+        }
+
+        return apiUrl ? `${apiUrl}/api/media/gcs?file=${encodeURIComponent(url)}` : `/api/media/gcs?file=${encodeURIComponent(url)}`;
     };
 
     /**

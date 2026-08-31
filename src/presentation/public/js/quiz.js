@@ -565,34 +565,120 @@ async function init() {
         }
     } catch (error) {
         console.error('Error iniciando quiz:', error);
-        localStorage.removeItem(getStorageKey());
-        if (window.confirmationModal) {
-            await window.confirmationModal.showAlert('Se detectó un examen dañado en memoria. Hemos limpiado el caché de seguridad de tu navegador. Por favor, intenta iniciar el simulacro nuevamente.', 'Aviso de Recuperación');
+        hideLoadingOverlay();
+        // Si ya tenemos preguntas en memoria y fue una advertencia no fatal, renderizar y continuar
+        if (state.questions && Array.isArray(state.questions) && state.questions.length > 0) {
+            console.warn("⚠️ Continuando ejecución del quiz en memoria a pesar del error de inicialización.");
+            renderQuestion();
+            if (state.maxQuestions === 100) startMockTimer();
+        } else {
+            clearSession();
+            if (window.confirmationModal) {
+                await window.confirmationModal.showAlert(
+                    error.message || 'No se pudo cargar el simulacro. Por favor, verifica tu conexión a internet o intenta nuevamente.',
+                    'Error al Iniciar Examen'
+                );
+            }
+            window.location.href = '/';
         }
-        window.location.href = '/';
     }
     initLightbox();
 }
 
 /**
- * Persistencia Local (Resiliencia ante recargas)
+ * Serializa el estado del examen deduplicando casos anidados para minimizar uso de almacenamiento.
+ */
+function serializeSessionState() {
+    const casesMap = {};
+    const optimizedQuestions = (state.questions || []).map(q => {
+        if (q.case_id) {
+            if (!casesMap[q.case_id]) {
+                casesMap[q.case_id] = {
+                    case_title: q.case_title || null,
+                    case_description: q.case_description || null,
+                    case_table_html: q.case_table_html || null,
+                    case_image_url: q.case_image_url || null,
+                    case_order: q.case_order || null,
+                    case_code: q.case_code || null
+                };
+            }
+            // Retornar pregunta sin duplicar los campos pesados del caso
+            const { case_title, case_description, case_table_html, case_image_url, case_order, case_code, ...rest } = q;
+            return rest;
+        }
+        return q;
+    });
+
+    return {
+        ...state,
+        questions: optimizedQuestions,
+        _casesMap: Object.keys(casesMap).length > 0 ? casesMap : undefined,
+        savedAt: Date.now(),
+        quizId: state.quizId,
+        quizSessionId: state.quizSessionId,
+        timeLeft: state.timeLeft,
+        isFinished: false
+    };
+}
+
+/**
+ * Persistencia Local Resiliente (Multi-tier: localStorage -> sessionStorage -> memoria)
  */
 function saveSession() {
     if (new URLSearchParams(window.location.search).get('demo') === 'true') return;
     if (state.isFinished) return; // ✅ NUNCA guardar si el examen ya se culminó
-    localStorage.setItem(getStorageKey(), JSON.stringify({
-        ...state,
-        savedAt: Date.now(), // ✅ Expiración tracker
-        quizId: state.quizId,
-        quizSessionId: state.quizSessionId,
-        timeLeft: state.timeLeft, // ✅ Persistencia del cronómetro
-        isFinished: false
-    }));
+
+    try {
+        const payload = serializeSessionState();
+        const serialized = JSON.stringify(payload);
+        const storageKey = getStorageKey();
+
+        try {
+            localStorage.setItem(storageKey, serialized);
+        } catch (quotaError) {
+            console.warn("⚠️ QuotaExceeded en localStorage. Intentando optimizar y respaldar...");
+            // 1. Limpieza de claves obsoletas de otros exámenes
+            try {
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith('simulator_active_session_') && k !== storageKey) {
+                        localStorage.removeItem(k);
+                    }
+                }
+                localStorage.setItem(storageKey, serialized);
+                return;
+            } catch (e2) {
+                // 2. Si aún excede localStorage, respaldar en sessionStorage
+                try {
+                    sessionStorage.setItem(storageKey, serialized);
+                    console.log("💾 Sesión guardada con éxito en sessionStorage como respaldo.");
+                    return;
+                } catch (e3) {
+                    console.warn("⚠️ No se pudo persistir en storage por límite de cuota del navegador. El examen continuará fluidamente en memoria viva.");
+                }
+            }
+        }
+    } catch (err) {
+        console.warn("⚠️ Error no fatal al serializar sesión:", err);
+    }
 }
 
 function loadSession() {
     try {
-        const stored = localStorage.getItem(getStorageKey());
+        const storageKey = getStorageKey();
+        let stored = null;
+        try {
+            stored = localStorage.getItem(storageKey);
+        } catch (e) {
+            console.warn("Fallo leyendo localStorage:", e);
+        }
+        if (!stored) {
+            try {
+                stored = sessionStorage.getItem(storageKey);
+            } catch (e) {
+                console.warn("Fallo leyendo sessionStorage:", e);
+            }
+        }
         if (!stored) return null;
         const data = JSON.parse(stored);
 
@@ -644,6 +730,20 @@ function loadSession() {
             return null;
         }
 
+        // Rehidratar casos anidados desde el mapa deduplicado si existe
+        if (data._casesMap && Array.isArray(data.questions)) {
+            data.questions = data.questions.map(q => {
+                if (q.case_id && data._casesMap[q.case_id]) {
+                    return {
+                        ...q,
+                        ...data._casesMap[q.case_id]
+                    };
+                }
+                return q;
+            });
+            delete data._casesMap;
+        }
+
         // Sincronizar configuraciones guardadas de forma segura si existen en la sesión
         if (data.targetExam) state.targetExam = data.targetExam;
         if (data.career) state.career = data.career;
@@ -666,10 +766,18 @@ function loadSession() {
 function clearSession() {
     const user = window.sessionManager ? window.sessionManager.getUser() : null;
     const userId = user?.id || 'guest';
+    const storageKey = `simulator_active_session_${userId}`;
 
-    // 1. Limpieza explícita por claves directas
-    localStorage.removeItem(`simulator_active_session_${userId}`);
-    localStorage.removeItem(`simulator_active_session_guest`);
+    // 1. Limpieza explícita por claves directas en localStorage y sessionStorage
+    try {
+        localStorage.removeItem(storageKey);
+        localStorage.removeItem(`simulator_active_session_guest`);
+    } catch (e) {}
+
+    try {
+        sessionStorage.removeItem(storageKey);
+        sessionStorage.removeItem(`simulator_active_session_guest`);
+    } catch (e) {}
 
     // 2. Barrido exhaustivo de cualquier clave residual simulator_active_session_*
     try {
@@ -683,6 +791,19 @@ function clearSession() {
         keysToRemove.forEach(k => localStorage.removeItem(k));
     } catch (e) {
         console.warn("Fallo limpiando sesiones de localStorage:", e);
+    }
+
+    try {
+        const sessionKeysToRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key && key.startsWith('simulator_active_session_')) {
+                sessionKeysToRemove.push(key);
+            }
+        }
+        sessionKeysToRemove.forEach(k => sessionStorage.removeItem(k));
+    } catch (e) {
+        console.warn("Fallo limpiando sesiones de sessionStorage:", e);
     }
 }
 
@@ -1954,11 +2075,21 @@ function initLightbox() {
 
     bindImageClick('questionImage');
     bindImageClick('explanationImage');
+    bindImageClick('caseImage');
 
-    // Delegación para imágenes inline en enunciados y explicaciones
+    // Delegación para imágenes inline en enunciados, casuísticas y explicaciones
     const qText = document.getElementById('questionText');
     if (qText) {
         qText.addEventListener('click', (e) => {
+            if (e.target.tagName === 'IMG' && e.target.src) {
+                window.openLightbox(e.target.src);
+            }
+        });
+    }
+
+    const caseContainer = document.getElementById('caseScenarioContainer');
+    if (caseContainer) {
+        caseContainer.addEventListener('click', (e) => {
             if (e.target.tagName === 'IMG' && e.target.src) {
                 window.openLightbox(e.target.src);
             }
@@ -1983,16 +2114,16 @@ function initLightbox() {
                 return;
             }
 
-            // Si hacen click directo en una imagen de la pregunta o explicación
+            // Si hacen click directo en una imagen de la pregunta, casuística o explicación
             if (e.target.tagName === 'IMG' && e.target.src) {
-                if (e.target.closest('.review-q-image-container, .review-explanation-image-container, .review-q-text, .review-explanation-body')) {
+                if (e.target.closest('.review-q-image-container, .review-explanation-image-container, .review-q-text, .review-explanation-body, .review-case-box, .review-case-body, .review-case-image-wrap')) {
                     window.openLightbox(e.target.src);
                     return;
                 }
             }
             
             // Fallback para clicks en el contenedor de imagen
-            const container = e.target.closest('.review-q-image-container, .review-explanation-image-container');
+            const container = e.target.closest('.review-q-image-container, .review-explanation-image-container, .review-case-image-wrap');
             if (container) {
                 const img = container.querySelector('img');
                 if (img && img.src) {

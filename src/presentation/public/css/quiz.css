@@ -556,7 +556,9 @@ body.quiz-body {
 .q-image-container-premium::before,
 .q-explanation-image-container-premium::before,
 .review-q-image-container::before,
-.review-explanation-image-container::before {
+.review-explanation-image-container::before,
+.case-image-wrap::before,
+.review-case-image-wrap::before {
     content: '\f00e';
     font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free';
     font-weight: 900;
@@ -585,7 +587,9 @@ body.quiz-body {
 .q-image-container-premium:hover::before,
 .q-explanation-image-container-premium:hover::before,
 .review-q-image-container:hover::before,
-.review-explanation-image-container:hover::before {
+.review-explanation-image-container:hover::before,
+.case-image-wrap:hover::before,
+.review-case-image-wrap:hover::before {
     opacity: 1;
     transform: scale(1);
 }
@@ -593,7 +597,9 @@ body.quiz-body {
 .q-image-container-premium img:hover,
 .q-explanation-image-container-premium img:hover,
 .review-q-image-container img:hover,
-.review-explanation-image-container img:hover {
+.review-explanation-image-container img:hover,
+.case-image-wrap img:hover,
+.review-case-image-wrap img:hover {
     transform: scale(1.01);
 }
 
@@ -1981,59 +1987,75 @@ body.module-educacion .review-opt-status-badge.correct {
 
 /* ==========================================================================
    📖 CASO / SITUACIÓN COMPARTIDA (CASE-SCENARIO CLUSTERING)
+   Diseño esbelto, limpio y adaptativo acorde a DESIGN_SYSTEM.md
    ========================================================================== */
 .case-scenario-card {
-    background: var(--bg-card, rgba(30, 41, 59, 0.7));
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
-    border-left: 4px solid var(--primary, #3b82f6);
-    border-radius: 12px;
-    padding: 1.25rem 1.4rem;
+    background: var(--bg-secondary, #0a0a0a);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 14px;
+    padding: 1.15rem 1.35rem;
     margin-bottom: 1.25rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.5));
     transition: all 0.3s ease;
+    box-sizing: border-box;
 }
 
 [data-theme="light"] .case-scenario-card {
-    background: #ffffff;
-    border-color: #e2e8f0;
-    border-left-color: var(--primary, #2563eb);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    background: var(--card-bg, #ffffff);
+    border-color: var(--border-color, rgba(0, 0, 0, 0.09));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .case-badge {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--primary-light, #60a5fa);
     margin-bottom: 0.75rem;
 }
 
-[data-theme="light"] .case-badge {
-    color: var(--primary-dark, #1d4ed8);
+.case-badge-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.22rem 0.65rem;
+    border-radius: 20px;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.28);
+    color: #60a5fa;
+}
+
+[data-theme="light"] .case-badge-title {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.2);
+    color: #2563eb;
 }
 
 .case-badge i {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .case-order-tag {
-    background: var(--primary-glow-sm, rgba(59, 130, 246, 0.15));
-    border: 1px solid var(--primary-glow, rgba(59, 130, 246, 0.3));
-    padding: 0.15rem 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.6rem;
     border-radius: 20px;
     font-size: 0.72rem;
-    color: var(--primary-light, #93c5fd);
+    font-weight: 600;
+    color: var(--text-muted, #94a3b8);
+    letter-spacing: 0.02em;
 }
 
 [data-theme="light"] .case-order-tag {
-    background: rgba(37, 99, 235, 0.08);
-    border-color: rgba(37, 99, 235, 0.2);
-    color: var(--primary-dark, #1d4ed8);
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: var(--text-muted, #64748b);
 }
 
 .case-title {
@@ -2046,8 +2068,9 @@ body.module-educacion .review-opt-status-badge.correct {
 
 .case-description-body {
     color: var(--text-secondary, #cbd5e1);
-    font-size: 0.95rem;
-    line-height: 1.65;
+    font-size: 1.08rem;
+    line-height: 1.7;
+    font-weight: 450;
     word-break: break-word;
 }
 
@@ -2056,33 +2079,106 @@ body.module-educacion .review-opt-status-badge.correct {
 }
 
 .case-description-body p {
-    margin: 0 0 0.6rem 0;
+    margin: 0 0 0.55rem 0;
 }
 
 .case-description-body p:last-child {
     margin-bottom: 0;
 }
 
+/* 🖼️ Imágenes embebidas en Casuísticas (Inline / TinyMCE) */
+.case-description-body img,
+.review-case-body img {
+    max-width: 100% !important;
+    height: auto !important;
+    border-radius: 10px;
+    object-fit: contain;
+    cursor: zoom-in;
+    display: block;
+    margin: 0.85rem auto;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box;
+}
+
+.case-description-body img:hover,
+.review-case-body img:hover {
+    transform: scale(1.015);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+}
+
+/* 📊 Tablas embebidas en Casuísticas */
+.case-description-body table,
+.review-case-body table {
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    margin: 0.85rem 0;
+    font-size: 0.88rem;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.case-description-body .table-wrapper,
+.review-case-body .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    margin: 0.85rem 0;
+    border-radius: 8px;
+}
+
+.case-description-body th, .case-description-body td,
+.review-case-body th, .review-case-body td {
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.case-description-body th,
+.review-case-body th {
+    background: rgba(59, 130, 246, 0.12);
+    font-weight: 700;
+}
+
+[data-theme="light"] .case-description-body th,
+[data-theme="light"] .review-case-body th {
+    background: rgba(59, 130, 246, 0.08);
+    color: #1e3a8a;
+}
+
 .case-image-wrap {
     margin-top: 1rem;
     text-align: center;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
     padding: 0.5rem;
+    cursor: zoom-in;
+    position: relative;
+    box-sizing: border-box;
 }
 
 .case-media-img {
     max-width: 100%;
-    max-height: 350px;
-    border-radius: 6px;
+    max-height: 380px;
+    height: auto;
+    border-radius: 8px;
     object-fit: contain;
+    cursor: zoom-in;
+    transition: transform 0.3s ease;
+}
+
+.case-image-wrap:hover .case-media-img {
+    transform: scale(1.01);
 }
 
 .case-table-wrap {
     margin-top: 1rem;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border-radius: 8px;
     border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
@@ -2108,57 +2204,111 @@ body.module-educacion .review-opt-status-badge.correct {
    🔍 REVISIÓN DE EXAMEN - CASUÍSTICA ANIDADA / VIÑETA CLÍNICA
    ========================================================================== */
 .review-case-box {
-    background: rgba(30, 41, 59, 0.45);
-    border: 1px solid rgba(99, 102, 241, 0.25);
-    border-left: 3px solid #6366f1;
-    border-radius: 10px;
-    padding: 0.95rem 1.15rem;
-    margin-bottom: 1.15rem;
-    backdrop-filter: blur(6px);
+    background: var(--bg-secondary, #0a0a0a);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 14px;
+    padding: 1.15rem 1.35rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.5));
+    transition: all 0.3s ease;
+    box-sizing: border-box;
 }
 
 [data-theme="light"] .review-case-box {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    border-left-color: #4f46e5;
+    background: var(--card-bg, #ffffff);
+    border-color: var(--border-color, rgba(0, 0, 0, 0.09));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .review-case-badge-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
-    margin-bottom: 0.65rem;
+    margin-bottom: 0.75rem;
 }
 
 .review-case-pill {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    color: #a5b4fc;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.28);
+    color: #60a5fa;
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    padding: 0.2rem 0.6rem;
+    padding: 0.22rem 0.65rem;
     border-radius: 20px;
 }
 
 [data-theme="light"] .review-case-pill {
-    background: rgba(79, 70, 229, 0.1);
-    border-color: rgba(79, 70, 229, 0.25);
-    color: #4f46e5;
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.2);
+    color: #2563eb;
 }
 
 .review-case-order-pill {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-muted, #94a3b8);
     font-size: 0.72rem;
     font-weight: 600;
-    padding: 0.18rem 0.55rem;
+    padding: 0.2rem 0.6rem;
     border-radius: 20px;
+}
+
+[data-theme="light"] .review-case-order-pill {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: var(--text-muted, #64748b);
+}
+
+/* 🎨 Variantes Temáticas: Salud (Teal) vs Educación (Azul) */
+body.module-salud .case-badge-title,
+body.module-salud .review-case-pill {
+    background: rgba(20, 184, 166, 0.12);
+    border-color: rgba(20, 184, 166, 0.28);
+    color: #2dd4bf;
+}
+
+[data-theme="light"] body.module-salud .case-badge-title,
+[data-theme="light"] body.module-salud .review-case-pill {
+    background: rgba(13, 148, 136, 0.08);
+    border-color: rgba(13, 148, 136, 0.2);
+    color: #0d9488;
+}
+
+body.module-salud .case-description-body th,
+body.module-salud .review-case-body th,
+body.module-salud .case-table-wrap th,
+body.module-salud .review-case-table-wrap th {
+    background: rgba(20, 184, 166, 0.12);
+}
+
+[data-theme="light"] body.module-salud .case-description-body th,
+[data-theme="light"] body.module-salud .review-case-body th,
+[data-theme="light"] body.module-salud .case-table-wrap th,
+[data-theme="light"] body.module-salud .review-case-table-wrap th {
+    background: rgba(13, 148, 136, 0.08);
+    color: #0f766e;
+}
+
+body.module-educacion .case-badge-title,
+body.module-educacion .review-case-pill {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.28);
+    color: #60a5fa;
+}
+
+[data-theme="light"] body.module-educacion .case-badge-title,
+[data-theme="light"] body.module-educacion .review-case-pill {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.2);
+    color: #2563eb;
 }
 
 .review-case-body {
@@ -2183,23 +2333,34 @@ body.module-educacion .review-opt-status-badge.correct {
 .review-case-image-wrap {
     margin-top: 0.75rem;
     text-align: center;
-    border-radius: 6px;
+    border-radius: 10px;
     overflow: hidden;
     background: rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.06);
     padding: 0.4rem;
+    cursor: zoom-in;
+    position: relative;
+    box-sizing: border-box;
 }
 
 .review-case-image-wrap img {
     max-width: 100%;
-    max-height: 280px;
-    border-radius: 4px;
+    max-height: 320px;
+    height: auto;
+    border-radius: 6px;
     object-fit: contain;
+    cursor: zoom-in;
+    transition: transform 0.3s ease;
+}
+
+.review-case-image-wrap:hover img {
+    transform: scale(1.01);
 }
 
 .review-case-table-wrap {
     margin-top: 0.75rem;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -2217,11 +2378,61 @@ body.module-educacion .review-opt-status-badge.correct {
 }
 
 .review-case-table-wrap th {
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(59, 130, 246, 0.1);
     font-weight: 700;
 }
 
 .review-case-minimal-pill-row {
     margin-bottom: 0.75rem;
+}
+
+/* 📱 Adaptación Responsiva para Celulares / Pantallas Móviles */
+@media (max-width: 768px) {
+    .case-scenario-card,
+    .review-case-box {
+        padding: 0.85rem 1rem;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+    }
+
+    .case-description-body {
+        font-size: 1rem;
+        line-height: 1.62;
+    }
+
+    .review-case-body {
+        font-size: 0.88rem;
+        line-height: 1.55;
+    }
+
+    .case-description-body img,
+    .review-case-body img {
+        max-width: 100% !important;
+        height: auto !important;
+        margin: 0.6rem auto;
+        border-radius: 8px;
+    }
+
+    .case-media-img,
+    .review-case-image-wrap img {
+        max-height: 280px;
+    }
+
+    .case-badge,
+    .review-case-badge-row {
+        margin-bottom: 0.6rem;
+    }
+
+    .case-badge-title,
+    .review-case-pill {
+        font-size: 0.72rem;
+        padding: 0.18rem 0.55rem;
+    }
+
+    .case-order-tag,
+    .review-case-order-pill {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.5rem;
+    }
 }
 

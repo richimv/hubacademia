@@ -294,13 +294,24 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
                 json: jest.fn()
             };
 
-            db.query.mockResolvedValueOnce({
-                rows: [{
-                    id: 'c667897f-9746-4372-b14a-feb10f4b364c',
-                    title: 'Nuevo Título de Caso',
-                    description_text: 'Nuevo enunciado editado'
-                }]
-            });
+            db.query
+                .mockResolvedValueOnce({
+                    rows: [{
+                        id: 'c667897f-9746-4372-b14a-feb10f4b364c',
+                        title: 'Título Anterior',
+                        description_text: 'Enunciado anterior'
+                    }]
+                })
+                .mockResolvedValueOnce({
+                    rows: []
+                })
+                .mockResolvedValueOnce({
+                    rows: [{
+                        id: 'c667897f-9746-4372-b14a-feb10f4b364c',
+                        title: 'Nuevo Título de Caso',
+                        description_text: 'Nuevo enunciado editado'
+                    }]
+                });
 
             await adminController.updateCase(req, res);
             expect(res.json).toHaveBeenCalledWith(

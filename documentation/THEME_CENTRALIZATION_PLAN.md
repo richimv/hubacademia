@@ -188,4 +188,17 @@ Para mantener el código limpio, optimizado y libre de variables hardcoded:
 1. **Uso Obligatorio de Tokens**: Está estrictamente prohibido usar colores hexadecimales (`#050505`) o RGBA planos en hojas de estilo específicas para elementos de fondo, texto o bordes. Use siempre las variables centralizadas `var(--bg-main)`, `var(--text-main)`, etc.
 2. **Importaciones**: Cualquier hoja de estilo global que se cree debe registrar sus variables principales en `theme.css`.
 3. **Resets Universales**: El selector universal `*` no debe ser redefinido con resets pesados en hojas locales. El reset táctil de móviles ya reside de forma exclusiva e indisputable en `theme.css`.
-4. **Evitar Referencias Circulares**: No defina variables en `:root` que se asignen a sí mismas (ej: `--text-main: var(--text-main);` o `--border-color: var(--border-color);`). Esto genera ciclos recursivos inválidos en el motor CSS del navegador, haciendo que los valores se restablezcan a `initial` (comúnmente color negro) y perdiendo la visibilidad. Para heredar, simplemente use el token global sin declararlo localmente.
+4. **Evitar Referencias Circulares**: No defina variables en `:root` que se asignen a sí mismas (ej: `--text-main: var(--text-main);` o `--border-color: var(--border-color);`). Esto genera ciclos recursivos inválidos en el motor CSS del navegador.
+
+---
+
+## 6. Motor Universal de Renderizado Markdown y Tipografía Científica (KaTeX)
+
+Como parte de la centralización del sistema de diseño, se unificó el procesamiento y la presentación de contenidos generados por IA, notas del usuario, explicaciones pedagógicas y recursos en todas las interfaces:
+
+1. **Hoja de Estilos Centralizada ([markdown-content.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/markdown-content.css)):**
+   - Rige la tipografía, encabezados, listas, tablas enriquecidas (`.premium-table`) y contenedores de desplazamiento (`.table-wrapper`, `.katex-display-wrapper`).
+   - Se eliminaron las reglas invasivas con `!important` que distorsionaban las alturas relativas de KaTeX, permitiendo que el motor matemático posicione con exactitud milimétrica las fracciones, superíndices e integrales.
+2. **Renderizador Frontend Unificado ([markdown-renderer.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/utils/markdown-renderer.js)):**
+   - Pipeline de 3 fases: Pre-extracción matemática $\rightarrow$ Parseo Markdown / Tablas / Sanitización DOM XSS $\rightarrow$ Inyección matemática KaTeX.
+   - Consistente en: Chat de Tutor IA (Quiz y Flashcards), Modal de Notas de Biblioteca, Tarjetas de Repaso, Detalle de Recursos y Previsualización de Administración.

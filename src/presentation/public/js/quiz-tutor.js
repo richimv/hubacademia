@@ -193,10 +193,6 @@ class QuizTutor {
             this.dom.input.style.height = 'auto';
         }
 
-        // Quitar sugerencias previas antes de enviar
-        const oldSuggestions = this.dom.messages.querySelector('.tutor-suggestions-container');
-        if (oldSuggestions) oldSuggestions.remove();
-
         this._addMessage(text, 'user');
         this._setTyping(true);
 
@@ -267,7 +263,7 @@ class QuizTutor {
             }
 
             if (data.respuesta) {
-                this._addMessage(data.respuesta, 'bot', data.sugerencias);
+                this._addMessage(data.respuesta, 'bot');
                 
                 // Agregar al historial de la sesión
                 this.history.push({ sender: 'user', content: text });
@@ -293,7 +289,7 @@ class QuizTutor {
         msgWrapper.className = `tutor-message-wrapper ${role}`;
 
         const msg = document.createElement('div');
-        msg.className = `tutor-message tutor-message-${role} markdown-content markdown-compact`;
+        msg.className = `tutor-message tutor-message-${role} markdown-content`;
 
         // JSON Safety Net
         if (typeof text === 'string' && text.trimStart().startsWith('{')) {
@@ -328,20 +324,6 @@ class QuizTutor {
             actions.appendChild(saveBtn);
             actions.appendChild(copyBtn);
             msgWrapper.appendChild(actions);
-
-            // Inyectar sugerencias si existen
-            if (suggestions && Array.isArray(suggestions) && suggestions.length > 0) {
-                const sugContainer = document.createElement('div');
-                sugContainer.className = 'tutor-suggestions-container';
-                suggestions.forEach(sug => {
-                    const pill = document.createElement('button');
-                    pill.className = 'tutor-suggestion-btn';
-                    pill.textContent = sug;
-                    pill.onclick = () => this.sendMessage(sug);
-                    sugContainer.appendChild(pill);
-                });
-                msgWrapper.appendChild(sugContainer);
-            }
         } else if (role === 'user') {
             const actions = document.createElement('div');
             actions.className = 'tutor-message-actions user-actions';
@@ -371,11 +353,12 @@ class QuizTutor {
     }
 
     async saveAsNote(content, btn) {
-        const icon = btn.querySelector('i');
-        const originalClass = icon.className;
+        if (btn.classList.contains('saved') || btn.disabled) return;
+        const originalHTML = btn.innerHTML;
 
         try {
-            icon.className = 'fas fa-spinner fa-spin';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
             const title = `Nota del Simulador: ${this.questionContext?.topic || 'General'}`;
 
@@ -390,8 +373,9 @@ class QuizTutor {
 
             if (!response.ok) throw new Error("Error al guardar nota");
 
-            icon.className = 'fas fa-bookmark';
-            btn.style.color = '#f59e0b';
+            // Feedback visual exitoso con animación y estado "Nota Guardada"
+            btn.innerHTML = '<i class="fas fa-check"></i> Nota Guardada';
+            btn.style.color = '#f59e0b'; // Amarillo dorado
             btn.classList.add('saved');
 
             if (window.libraryService && typeof window.libraryService.loadFullLibrary === 'function') {
@@ -399,8 +383,13 @@ class QuizTutor {
             }
         } catch (error) {
             console.error("Error saving note:", error);
-            icon.className = 'fas fa-exclamation-triangle';
-            setTimeout(() => { icon.className = originalClass; }, 2000);
+            btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error al guardar';
+            btn.style.color = '#ef4444';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                btn.style.color = '';
+            }, 2500);
         }
     }
 

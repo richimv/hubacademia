@@ -167,6 +167,14 @@ El backend validará duplicados y guardará los registros en PostgreSQL destacá
 ---
 
 ## 📋 Registro de Ejecución y Noticias Ingestadas (Logs)
+- **Fecha:** 30 de agosto de 2026
+- **MINEDU (education):** Sin nuevas noticias ni normas sobre Nombramiento, Ascenso Docente o Acceso a Cargos Directivos publicadas durante el día de hoy (1 noticia oficial descartada por temática no magisterial: *Minedu refuerza prevención de violencia escolar en Huancayo*).
+- **Estado de Ingesta:** ✅ Monitoreo de Educación al día. 0 recursos ingestados por política estricta de cero inserciones forzadas.
+
+- **Fecha:** 28 de agosto de 2026
+- **MINSA (medicine):** Sin nuevas noticias ni normas legales sobre SERUMS, ENAM o Residentado publicadas durante el día de hoy (4 noticias oficiales publicadas hoy descartadas por temática general no relacionada: cardiopatías congénitas, SAMU emergencias, PIAS aérea Loreto, DIGESA/Unicef; normas legales: ninguna publicada hoy).
+- **Estado de Ingesta:** ✅ Monitoreo de Salud al día. 0 recursos ingestados por estricta política de cero inserciones forzadas.
+
 - **Fecha:** 28 de agosto de 2026
 - **MINEDU (education):** Sin nuevas noticias ni normas sobre Nombramiento, Ascenso Docente o Cargos Directivos publicadas durante el día de hoy (1 noticia oficial descartada por temática no docente: *Minedu refuerza prevención en 44 universidades públicas ante posibles efectos del fenómeno El Niño*).
 - **Estado de Ingesta:** ✅ Monitoreo de Educación al día. 0 recursos ingestados por política de cero inserciones forzadas.

@@ -28,15 +28,11 @@ const CHAT_PROMPTS = {
     C) PROHIBICIONES:
     1.  **PROHIBIDO recomendar CURSOS externos** o inventar enlaces fuera de la plataforma a menos que el usuario pregunte expresamente por cursos de Hub Academia.
 
-    D) SUGERENCIAS ACTIVAS:
-    Genera 3 preguntas cortas, curiosas e INTUITIVAS (máximo 45 caracteres) para que el usuario pueda hacer clic en ellas y seguir aprendiendo.
-    ⚠️ IMPORTANTE: Coloca estas preguntas ÚNICAMENTE en el array "sugerencias" del JSON. NO las incluyas dentro del texto de la "respuesta".
-    
     IMPORTANTE: Tu respuesta debe ser siempre un objeto JSON válido con esta estructura:
     {
       "intencion": "clasificación_de_la_intención",
       "respuesta": "Tu respuesta en Markdown (Sé extenso y pedagógico. Usa párrafos y demás recursos que consideres necesarios)",
-      "sugerencias": ["Pregunta Clicable 1", "Pregunta Clicable 2", "Pregunta Clicable 3"],
+      "sugerencias": [],
       "idioma_detectado": "es"
     }
     El campo "idioma_detectado" es el código ISO 639-1 del idioma principal de tu respuesta (es, en, it, fr, de). Por defecto "es".`,
@@ -60,15 +56,11 @@ const CHAT_PROMPTS = {
     1.  **Didáctica y Claridad:** Sé un modelo de "Buen Desempeño Docente". Explica con paciencia y estructura tus ideas pedagógicamente.
     2.  **Sustento Normativo:** Si el usuario pregunta "según la norma", utiliza los fragmentos inyectados para dar la respuesta técnica exacta.
 
-    C) SUGERENCIAS ACTIVAS:
-    Genera 3 sugerencias cortas (pills) para profundizar en temas como "Evaluación Formativa", "Planificación" o "Estrategias de Especialidad".
-    ⚠️ IMPORTANTE: Van solo en el array "sugerencias".
-
     IMPORTANTE: Tu respuesta debe ser siempre un objeto JSON válido con esta estructura:
     {
       "intencion": "clasificación_pedagogica",
       "respuesta": "Tu respuesta en Markdown (Sé extenso y pedagógico. Usa párrafos y demás recursos que consideres necesarios)",
-      "sugerencias": ["Sugerencia 1", "Sugerencia 2", "Sugerencia 3"],
+      "sugerencias": [],
       "idioma_detectado": "es"
     }
     El campo "idioma_detectado" es el código ISO 639-1 del idioma principal de tu respuesta. Por defecto "es".`,
@@ -130,14 +122,11 @@ const CHAT_PROMPTS = {
        - TIENES ESTRICTAMENTE PROHIBIDO emitir descargos médicos, frases sobre cursos de la plataforma o catálogos en materias que no correspondan.
        - Responde con total seguridad pedagógica y enfoque académico puro.
 
-    4. **Sugerencias Activas Pertinentes**:
-       - Genera 3 preguntas o temas de profundización (máximo 45 caracteres) directamente alineados a la materia y concepto de la tarjeta. Colócalas ÚNICAMENTE en el array "sugerencias" del JSON.
-
     ESTRUCTURA DE SALIDA (JSON Obligatorio):
     {
       "intencion": "tutor_academico",
       "respuesta": "Tu respuesta pedagógica, estructurada y profunda en Markdown",
-      "sugerencias": ["Pregunta para profundizar 1", "Pregunta para profundizar 2", "Pregunta para profundizar 3"],
+      "sugerencias": [],
       "idioma_detectado": "es"
     }
     El campo "idioma_detectado" es el código ISO 639-1 del idioma principal de tu respuesta. Por defecto "es".`
@@ -160,6 +149,19 @@ CHAT_PROMPTS.buildPrompt = (specialization, target, context) => {
     4. Usa ## o ### para subtítulos si la explicación es extensa.
     5. NUNCA envuelvas tu respuesta en bloques de código (\`\`\`). Responde JSON puro.
     
+    [FÓRMULAS MATEMÁTICAS, FÍSICAS, QUÍMICAS Y CIENTÍFICAS (LaTeX Estándar Obligatorio)]
+    Cuando formules expresiones matemáticas, algebraicas, de cálculo, físicas o químicas, utiliza SIEMPRE notación LaTeX rigurosa y estándar:
+    - Superíndices y Potencias: Usa SIEMPRE el circunflejo ^ (ejemplos: $x^2$, $x^3$, $x^{n+1}$, $e^{-x}$, $10^{-3}$). NUNCA uses guión bajo _ para potencias. Si el exponente tiene más de un carácter, enciérralo siempre entre llaves: $x^{n+1}$, $x^{2+1}$.
+    - Subíndices e Índices: Usa SIEMPRE el guión bajo _ (ejemplos: $x_1$, $x_2$, $a_n$, $K_{eq}$, $V_{max}$, $K_m$). Si el subíndice tiene más de un carácter, enciérralo entre llaves: $a_{n+1}$, $x_{i,j}$.
+    - Fracciones: Usa SIEMPRE \\frac{numerador}{denominador} con ambas llaves (ejemplos: $\\frac{x^3}{3}$, $\\frac{x^{n+1}}{n+1}$, $\\frac{a+b}{c}$).
+    - Integrales, Derivadas y Límites: Usa comandos LaTeX estándar: $\\int x^2 dx$, $\\int_{a}^{b} f(x) dx$, $\\oint$, $\\frac{df}{dx}$, $\\frac{\\partial f}{\\partial x}$, $\\sum_{i=1}^{n} x_i$, $\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1$.
+    - Química y Reacciones: Usa notación romana con \\mathrm{...} para compuestos, iones y reacciones (ejemplos: $\\mathrm{H_2O}$, $\\mathrm{CO_2}$, $\\mathrm{C_6H_{12}O_6}$, $\\mathrm{H_2SO_4}$, $\\mathrm{Ca^{2+}}$, $\\mathrm{Fe^{3+}}$, $\\mathrm{2H_2 + O_2 \\rightarrow 2H_2O}$, $\\mathrm{pH = -\\log[H^+]}$).
+    - Alfabeto Griego y Símbolos: Usa comandos oficiales ($\\alpha$, $\\beta$, $\\gamma$, $\\delta$, $\\Delta$, $\\epsilon$, $\\theta$, $\\lambda$, $\\mu$, $\\pi$, $\\rho$, $\\sigma$, $\\Sigma$, $\\tau$, $\\phi$, $\\omega$, $\\Omega$, $\\infty$, $\\pm$, $\\approx$, $\\neq$, $\\le$, $\\ge$, $\\rightarrow$).
+    - Fórmulas en línea: Delimita con $...$ (ejemplo: $f(x) = x^2$).
+    - Fórmulas en bloque destacado: Usa delimitadores dobles $$...$$ en líneas independientes (ejemplo: $$\\int x^n dx = \\frac{x^{n+1}}{n+1} + C$$).
+    - En el JSON de respuesta, asegúrate de que las barras invertidas de LaTeX estén correctamente escapadas para que el JSON sea válido.
+    - NUNCA uses caracteres ASCII desordenados cuando una fórmula LaTeX represente con mayor rigor el concepto.
+
     [TABLAS COMPARATIVAS]
     Usa tablas Markdown cuando la información se preste a comparación, clasificación o resumen estructurado.
     Ejemplos: conceptos vs aplicaciones, diferencias normativas/doctrinales, diagnósticos diferenciales, tiempos verbales.
