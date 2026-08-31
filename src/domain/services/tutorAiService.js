@@ -7,6 +7,8 @@ const db = require('../../infrastructure/database/db'); // Mover al inicio
 const securityUtils = require('../utils/securityUtils');
 const mediaController = require('../../application/controllers/mediaController');
 
+const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
+
 /**
  * 🎓 TUTOR AI SERVICE V6.2: El Cerebro del Chat y Tutoría.
  * - Routing inteligente por especialización (medicine, education, neutral, flashcard_tutor).
@@ -17,20 +19,27 @@ const mediaController = require('../../application/controllers/mediaController')
  */
 class TutorAiService {
     constructor() {
-        const project = process.env.GOOGLE_CLOUD_PROJECT;
-        const location = process.env.GOOGLE_CLOUD_LOCATION;
-        this.vertex_ai = new VertexAI({ project, location });
+        resolveGoogleAuthOptions('TutorAiService');
+        const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
+        const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
 
-        this.model = this.vertex_ai.getGenerativeModel({
-            model: 'gemini-2.5-flash-lite',
-            generationConfig: {
-                maxOutputTokens: 8192,
-                temperature: 0.8,
-                topP: 0.9,
-                responseMimeType: "application/json"
-            }
-        });
-        console.log("✅ TutorAiService: Motor de Tutoría (gemini-3.5-flash-lite / gemini-2.5-flash-lite) inicializado.");
+        try {
+            this.vertex_ai = new VertexAI({ project, location });
+            this.model = this.vertex_ai.getGenerativeModel({
+                model: 'gemini-2.5-flash-lite',
+                generationConfig: {
+                    maxOutputTokens: 8192,
+                    temperature: 0.8,
+                    topP: 0.9,
+                    responseMimeType: "application/json"
+                }
+            });
+            console.log("✅ TutorAiService: Motor de Tutoría inicializado.");
+        } catch (err) {
+            console.warn("⚠️ TutorAiService: VertexAI no inicializado (Modo test o credenciales incompletas):", err.message);
+            this.vertex_ai = null;
+            this.model = null;
+        }
     }
 
     /**
@@ -267,30 +276,32 @@ class TutorAiService {
         let lastError = null;
 
         // 1. Canal Primario Principal: Google Cloud Vertex AI (Gemini Enterprise Agent Platform)
-        const vertexCandidateModels = [
-            'gemini-2.5-flash-lite',
-            'gemini-2.5-flash'
-        ];
-        console.log(`📡 [VertexAI Tutor] Conectando a Vertex AI (GCP Enterprise)...`);
-        for (const modelName of vertexCandidateModels) {
-            try {
-                const vertexModel = this.vertex_ai.getGenerativeModel({
-                    model: modelName,
-                    generationConfig: { maxOutputTokens: 8192, temperature: 0.8, topP: 0.9, responseMimeType: "application/json" }
-                });
+        if (this.vertex_ai) {
+            const vertexCandidateModels = [
+                'gemini-2.5-flash-lite',
+                'gemini-2.5-flash'
+            ];
+            console.log(`📡 [VertexAI Tutor] Conectando a Vertex AI (GCP Enterprise)...`);
+            for (const modelName of vertexCandidateModels) {
+                try {
+                    const vertexModel = this.vertex_ai.getGenerativeModel({
+                        model: modelName,
+                        generationConfig: { maxOutputTokens: 8192, temperature: 0.8, topP: 0.9, responseMimeType: "application/json" }
+                    });
 
-                const result = await vertexModel.generateContent({
-                    contents,
-                    systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] }
-                });
-                
-                if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].content) {
-                    console.log(`✅ [VertexAI Tutor Éxito] Respuesta generada con modelo: ${modelName}`);
-                    return result.response.candidates[0].content.parts[0].text;
+                    const result = await vertexModel.generateContent({
+                        contents,
+                        systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] }
+                    });
+                    
+                    if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].content) {
+                        console.log(`✅ [VertexAI Tutor Éxito] Respuesta generada con modelo: ${modelName}`);
+                        return result.response.candidates[0].content.parts[0].text;
+                    }
+                } catch (err) {
+                    lastError = err;
+                    console.warn(`⚠️ [VertexAI Tutor Fallo - ${modelName}]:`, err.message);
                 }
-            } catch (err) {
-                lastError = err;
-                console.warn(`⚠️ [VertexAI Tutor Fallo - ${modelName}]:`, err.message);
             }
         }
 

@@ -3,19 +3,25 @@ const trainingRepository = require('../repositories/flashcardRepository');
 const securityUtils = require('../utils/securityUtils');
 
 // CONFIGURACIÓN VERTEX AI
-const project = process.env.GOOGLE_CLOUD_PROJECT;
-const location = process.env.GOOGLE_CLOUD_LOCATION;
-const vertex_ai = new VertexAI({ project: project, location: location });
+const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
+const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+let vertex_ai = null;
+let modelCreativeLite = null;
 
-const modelCreativeLite = vertex_ai.getGenerativeModel({
-    model: 'gemini-2.5-flash-lite',
-    generationConfig: {
-        maxOutputTokens: 8192,
-        temperature: 0.9,
-        topP: 0.95,
-        responseMimeType: 'application/json'
-    },
-});
+try {
+    vertex_ai = new VertexAI({ project: project, location: location });
+    modelCreativeLite = vertex_ai.getGenerativeModel({
+        model: 'gemini-2.5-flash-lite',
+        generationConfig: {
+            maxOutputTokens: 8192,
+            temperature: 0.9,
+            topP: 0.95,
+            responseMimeType: 'application/json'
+        },
+    });
+} catch (e) {
+    console.warn('⚠️ FlashcardService: VertexAI no inicializado (Modo test o sin credenciales).');
+}
 
 class FlashcardService {
 

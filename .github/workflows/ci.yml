@@ -12,6 +12,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      NODE_ENV: test
+      GOOGLE_CLOUD_PROJECT: mock-gcp-project
+      GOOGLE_CLOUD_LOCATION: us-central1
+      SUPABASE_URL: https://mock-supabase.supabase.co
+      SUPABASE_ANON_KEY: mock-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: mock-service-role-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

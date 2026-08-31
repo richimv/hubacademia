@@ -4,9 +4,14 @@ const { VertexAI } = require('@google-cloud/vertexai'); // ✅ NUEVO: Importar V
 const securityUtils = require('../../domain/utils/securityUtils');
 
 // CONFIGURACIÓN VERTEX AI
-const project = process.env.GOOGLE_CLOUD_PROJECT;
-const location = process.env.GOOGLE_CLOUD_LOCATION;
-const vertex_ai = new VertexAI({ project: project, location: location });
+const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
+const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+let vertex_ai = null;
+try {
+    vertex_ai = new VertexAI({ project: project, location: location });
+} catch (e) {
+    console.warn('⚠️ AnalyticsController: VertexAI no inicializado (Modo test o sin credenciales).');
+}
 
 class AnalyticsController {
     constructor(analyticsService, userRepository) { // 2. Recibir el repositorio en el constructor.

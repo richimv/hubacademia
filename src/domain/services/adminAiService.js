@@ -12,21 +12,29 @@ class AdminAiService {
     constructor() {
         resolveGoogleAuthOptions('VertexAuth');
 
-        const project = process.env.GOOGLE_CLOUD_PROJECT;
+        const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
         const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
-        this.vertex_ai = new VertexAI({ project, location });
         
-        // Modelo oficial Gemini en Vertex AI
-        this.model = this.vertex_ai.getGenerativeModel({
-            model: 'gemini-2.5-flash-lite',
-            generationConfig: {
-                maxOutputTokens: 16384,
-                temperature: 0.4,
-                responseMimeType: "application/json"
-            }
-        });
+        try {
+            this.vertex_ai = new VertexAI({ project, location });
+            
+            // Modelo oficial Gemini en Vertex AI
+            this.model = this.vertex_ai.getGenerativeModel({
+                model: 'gemini-2.5-flash-lite',
+                generationConfig: {
+                    maxOutputTokens: 16384,
+                    temperature: 0.4,
+                    responseMimeType: "application/json"
+                }
+            });
 
-        this.fallbackModel = this.model;
+            this.fallbackModel = this.model;
+        } catch (err) {
+            console.warn('⚠️ AdminAiService: VertexAI no inicializado (Modo test o sin credenciales):', err.message);
+            this.vertex_ai = null;
+            this.model = null;
+            this.fallbackModel = null;
+        }
 
         // Asignar el servicio RAG
         this.ragService = QuestionRagService;
