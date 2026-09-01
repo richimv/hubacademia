@@ -334,6 +334,10 @@ class AdminService {
         return await adminRepository.saveBulkQuestionBankAdmin(questionsArray);
     }
 
+    async saveBulkCasesAdmin(casesArray) {
+        return await adminRepository.saveBulkCasesAdmin(casesArray);
+    }
+
     async getAllCases(domain, search, page, limit) {
         return await adminRepository.getAllCases(domain, search, page, limit);
     }

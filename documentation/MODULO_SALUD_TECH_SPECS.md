@@ -180,7 +180,7 @@ Con el objetivo de garantizar una navegación continua y sin interrupciones en s
 Para emular los casos clínicos complejos y seriados de los exámenes ENAM, SERUMS y Residentado Médico donde una viñeta clínica (historia clínica, paciente con trauma, laboratorio, ECG o tomografía) sirve de base para 2 o más preguntas consecutivas:
 
 1. **Entidad `case_scenarios` (Seguridad RLS)**:
-   - Almacena el caso clínico común (`code`, `title`, `description_text`, `image_url` y `table_html`).
+   - Almacena el caso clínico común (`code`, `title`, `description_text` con soporte TinyMCE e `image_url`).
    - Las preguntas clínicas en `question_bank` se enlazan con `case_id` (FK) y su número de secuencia `case_order` (1, 2, 3...).
 2. **Algoritmo de Clustering Contiguo en Medicina (`medicoRepository.js`)**:
    - Si la consulta de preguntas balanceadas selecciona una pregunta vinculada a un `case_id`, el repositorio recupera inmediatamente todas sus preguntas hermanas del caso, las ordena por `case_order ASC` y las agrupa de manera contigua dentro del lote de examen.

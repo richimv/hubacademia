@@ -84,7 +84,7 @@ El panel detecta el contexto y ajusta los formularios automáticamente:
 *   **Integración Completa con TinyMCE 6:** El campo de situación del caso cuenta con el editor profesional **TinyMCE** en modo oscuro, permitiendo:
     1.  **Tablas Visuales:** Creación de tablas complejas y pegado directo desde Microsoft Word o Excel (`Ctrl+V`), eliminando la necesidad de textareas HTML manuales.
     2.  **Imágenes y Gráficos:** Carga automática y pegado de imágenes en el cuerpo del texto con almacenamiento seguro en Google Cloud Storage (GCS).
-*   **Tabla `case_scenarios` (Seguridad RLS):** Almacena `id`, `code` (único autogenerado si no se ingresa), `title`, `description_text` (opcional), `image_url`, `table_html`, `domain`, `target`, `topic`.
+*   **Tabla `case_scenarios` (Seguridad RLS):** Almacena `id`, `code` (único autogenerado si no se ingresa), `title`, `description_text` (opcional con soporte TinyMCE para tablas e imágenes), `image_url`, `domain`, `target`, `topic`.
 *   **Encadenamiento Visual desde el Panel:**
     1.  El administrador selecciona 2 o más preguntas desde los checkboxes de la pestaña *Preguntas*.
     2.  Aparece el botón flotante **"🔗 Encadenar en Caso (# seleccionadas)"**.

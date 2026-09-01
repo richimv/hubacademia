@@ -167,6 +167,14 @@ El backend validará duplicados y guardará los registros en PostgreSQL destacá
 ---
 
 ## 📋 Registro de Ejecución y Noticias Ingestadas (Logs)
+- **Fecha:** 31 de agosto de 2026
+- **MINSA (medicine):** Sin nuevas noticias ni normas legales sobre SERUMS, ENAM o Residentado publicadas durante el día de hoy (6 noticias oficiales descartadas por temática general/asistencial: *Hospital Lima Este atención digital, trasplante renal asistido por robot en Hospital Dos de Mayo, farmacovigilancia DIGEMID, primeros auxilios psicológicos Fenómeno El Niño, campaña 10 minutos contra el dengue, equipamiento tecnológico Diris Lima Norte*; 9 normas legales descartadas: Resoluciones Ministeriales N.° 754, 753, 742, 741-2026 y Resoluciones Directorales N.° 308, 307, 305, 304, 303-2026-OGA sobre trámites administrativos, presupuestos y afectaciones en uso).
+- **Estado de Ingesta:** ✅ Monitoreo de Salud al día. 0 recursos ingestados por estricta política de cero inserciones forzadas.
+
+- **Fecha:** 31 de agosto de 2026
+- **MINEDU (education):** Sin nuevas noticias ni normas sobre Nombramiento, Ascenso Docente o Acceso a Cargos Directivos publicadas durante el día de hoy (1 noticia oficial descartada por temática no docente: *Minedu envía más domos para colegios afectados por sismo en Ayacucho*; 7 normas legales descartadas por tratarse de renuncias administrativas, infraestructura, cese de IES, resoluciones presupuestales o felicitaciones a asesores de concursos escolares).
+- **Estado de Ingesta:** ✅ Monitoreo de Educación al día. 0 recursos ingestados por política estricta de cero inserciones forzadas.
+
 - **Fecha:** 30 de agosto de 2026
 - **MINEDU (education):** Sin nuevas noticias ni normas sobre Nombramiento, Ascenso Docente o Acceso a Cargos Directivos publicadas durante el día de hoy (1 noticia oficial descartada por temática no magisterial: *Minedu refuerza prevención de violencia escolar en Huancayo*).
 - **Estado de Ingesta:** ✅ Monitoreo de Educación al día. 0 recursos ingestados por política estricta de cero inserciones forzadas.

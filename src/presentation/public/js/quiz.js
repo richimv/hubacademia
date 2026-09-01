@@ -354,7 +354,6 @@ function buildQuestionTutorContext(qIndex) {
         caseTitle: q.case_title || null,
         caseDescription: q.case_description || null,
         caseImageUrl: q.case_image_url || null,
-        caseTableHtml: q.case_table_html || null,
         caseOrder: q.case_order || null
     };
 }
@@ -596,14 +595,13 @@ function serializeSessionState() {
                 casesMap[q.case_id] = {
                     case_title: q.case_title || null,
                     case_description: q.case_description || null,
-                    case_table_html: q.case_table_html || null,
                     case_image_url: q.case_image_url || null,
                     case_order: q.case_order || null,
                     case_code: q.case_code || null
                 };
             }
             // Retornar pregunta sin duplicar los campos pesados del caso
-            const { case_title, case_description, case_table_html, case_image_url, case_order, case_code, ...rest } = q;
+            const { case_title, case_description, case_image_url, case_order, case_code, ...rest } = q;
             return rest;
         }
         return q;
@@ -1225,8 +1223,7 @@ function renderQuestion() {
             (q.case_id && typeof q.case_id === 'string' && q.case_id.trim() !== '') ||
             (q.case_code && typeof q.case_code === 'string' && q.case_code.trim() !== '') ||
             (q.case_description && typeof q.case_description === 'string' && q.case_description.trim() !== '') ||
-            (q.case_image_url && typeof q.case_image_url === 'string' && q.case_image_url.trim() !== '') ||
-            (q.case_table_html && typeof q.case_table_html === 'string' && q.case_table_html.trim() !== '')
+            (q.case_image_url && typeof q.case_image_url === 'string' && q.case_image_url.trim() !== '')
         );
 
         if (hasCase) {
@@ -1236,7 +1233,6 @@ function renderQuestion() {
             const caseDesc = document.getElementById('caseDescriptionText');
             const caseImgContainer = document.getElementById('caseImageContainer');
             const caseImg = document.getElementById('caseImage');
-            const caseTableContainer = document.getElementById('caseTableContainer');
 
             const isEducation = (state.context || '').toUpperCase() === 'EDUCACION';
             const caseLabel = isEducation ? 'Casuística Anidada' : 'Viñeta Clínica Compartida';
@@ -1272,16 +1268,6 @@ function renderQuestion() {
                 } else {
                     caseImgContainer.style.display = 'none';
                     caseImg.removeAttribute('src');
-                }
-            }
-
-            if (caseTableContainer) {
-                if (q.case_table_html && typeof q.case_table_html === 'string' && q.case_table_html.trim()) {
-                    caseTableContainer.innerHTML = q.case_table_html;
-                    caseTableContainer.style.display = 'block';
-                } else {
-                    caseTableContainer.innerHTML = '';
-                    caseTableContainer.style.display = 'none';
                 }
             }
 

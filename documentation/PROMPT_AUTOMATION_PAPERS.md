@@ -83,6 +83,21 @@ El backend de Hub Academia validará la URL y los campos, guardándolos en la ta
 
 ## 📊 Historial de Ingestas Recientes
 
+### 🗓️ Ingesta: 31 de Agosto de 2026
+- **Estado**: ✅ Ingesta exitosa (10 nuevos papers procesados).
+- **Proporción de Papers**: 100% (10/10).
+- **Resumen de Recursos Ingeridos**:
+  1. `[MEDICINE]` *Seguridad y eficacia del protocolo de 0/1 hora para infarto de miocardio en el servicio de urgencias: ensayo pragmático, escalonado por grupos y controlado aleatorizado internacional* (The Lancet - PMID 42667934)
+  2. `[MEDICINE]` *Suspensión de betabloqueantes en pacientes estables con infarto de miocardio previo, fracción de eyección ventricular izquierda preservada y sin insuficiencia cardíaca: metanálisis de datos individuales* (The Lancet - PMID 42669300)
+  3. `[MEDICINE]` *Ablación por catéter para fibrilación auricular sintomática (PVI-SHAM-AF): ensayo multicéntrico, aleatorizado, doble ciego y controlado con procedimiento simulado* (The Lancet - PMID 42669307)
+  4. `[MEDICINE]` *Preeclampsia: fisiopatología, diagnóstico temprano, estratificación de riesgo y manejo clínico contemporáneo* (The Lancet - PMID 42660153)
+  5. `[MEDICINE]` *Etiología, manejo clínico y desenlaces de la insuficiencia cardíaca aguda en 17 países africanos (THESUS-HF II): estudio prospectivo, multicéntrico y observacional de cohorte* (The Lancet - PMID 42669305)
+  6. `[MEDICINE]` *Manejo del déficit de testosterona en atención primaria: consenso internacional de expertos* (The Aging Male - PMID 42647144)
+  7. `[EDUCATION]` *Relaciones del desarrollo entre la ansiedad matemática y la fluidez aritmética en estudiantes de educación primaria a lo largo de seis puntos temporales* (Developmental Psychology / APA - PMID 42671820)
+  8. `[EDUCATION]` *Relaciones longitudinales entre la teoría de la mente representacional y avanzada y el razonamiento científico de los 4 a los 7 años* (Developmental Science - PMID 42640009)
+  9. `[EDUCATION]` *Método multisensorial de enseñanza de lenguas en aula para la documentación y evaluación observacional de habilidades lingüísticas receptivas y productivas* (MethodsX / Elsevier - PMID 42662464)
+  10. `[EDUCATION]` *Violencia escolar y políticas de convivencia escolar en el contexto postpandemia: análisis de marcos institucionales y dinámicas de aula* (Humanities and Social Sciences Communications / Nature Portfolio - DOI 10.1057/s41599-026-08794-5)
+
 ### 🗓️ Ingesta: 17 de Agosto de 2026
 - **Estado**: ✅ Ingesta exitosa (10 nuevos papers procesados).
 - **Proporción de Papers**: 100% (10/10).

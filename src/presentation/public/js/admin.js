@@ -729,7 +729,10 @@ class AdminManager {
                     </div>
                 </div>
 
-                <div class="action-buttons">
+                <div class="action-buttons" style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-case')">
+                        <i class="fas fa-file-excel"></i> <span class="hide-mobile">Subida Masiva</span>
+                    </button>
                     <button class="btn-primary" onclick="window.adminManager.openGenericModal('case')">
                         <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva Casuística</span>
                     </button>
@@ -979,15 +982,6 @@ class AdminManager {
                         </div>
                     </fieldset>
                     ${this.createFormGroup('textarea', 'generic-explanation', 'Explicación (Opcional)', this.formatPlainTextToHtml(this.currentItem?.explanation || ''), false)}
-                    
-                    <!-- ✅ NUEVO: Recomendación Visual de la IA (Solo Informativo) -->
-                    <div id="visual-recommendation-wrapper" style="display: ${this.currentItem?.visual_support_recommendation ? 'block' : 'none'}; margin-bottom: 20px; padding: 12px; border-radius: 12px; background: rgba(168, 85, 247, 0.1); border: 1px dashed #a855f7;">
-                        <label style="display: block; color: #a855f7; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">
-                            <i class="fas fa-magic"></i> Sugerencia de la IA para Imagen:
-                        </label>
-                        <p id="visual-recommendation-text" style="margin: 0; font-size: 0.9rem; color: var(--text-primary);">${this.currentItem?.visual_support_recommendation || ''}</p>
-                        <input type="hidden" id="generic-visual-recommendation" value="${this.currentItem?.visual_support_recommendation || ''}">
-                    </div>
 
                     ${this.createImageUploadGroup('generic-image', 'Imagen de ENUNCIADO (Opcional)', this.currentItem?.image_url || '')}
                     <div id="generic-explanation-image-upload-group" style="display: block;">
@@ -1072,7 +1066,7 @@ class AdminManager {
                                 <div class="import-icon-box excel-icon"><i class="fas fa-file-excel"></i></div>
                                 <span class="import-method-title">Subida Masiva Excel / CSV</span>
                             </div>
-                            <p class="import-method-desc">Sube tu archivo oficial respetando las 17 columnas del formato actualizado (Incluye Imágenes y Recomendaciones).</p>
+                            <p class="import-method-desc">Sube tu archivo oficial en formato Excel o CSV. Soporta preguntas individuales y preguntas vinculadas a Casuísticas con detección automática.</p>
                             
                             <div style="display: flex; gap: 10px; margin-top: 10px;">
                                 <button type="button" class="btn-secondary" style="flex:1; font-size: 0.85rem;" onclick="window.adminManager.downloadExcelTemplate()">
@@ -1092,6 +1086,49 @@ class AdminManager {
                 setTimeout(() => {
                     const btn = document.getElementById('generic-save-btn');
                     if (btn) btn.innerHTML = '<i class="fas fa-rocket"></i> Procesar Lote';
+                }, 0);
+                break;
+            case 'bulk-case':
+                title.textContent = '📦 Importación Masiva de Casuísticas / Casos Clínicos';
+                fieldsHTML = `
+                    <div class="import-method-container">
+                        <!-- Card 1: JSON Editor -->
+                        <div class="import-method-card">
+                            <div class="import-method-header">
+                                <div class="import-icon-box json-icon"><i class="fas fa-code"></i></div>
+                                <span class="import-method-title">Editor JSON Directo</span>
+                            </div>
+                            <p class="import-method-desc">Copia y pega un array JSON de casuísticas/casos clínicos para inyección directa.</p>
+                            <textarea id="generic-bulk-case-json" class="form-input" placeholder='[{"code": "CASO-01", "title": "...", "description_text": "...", "domain": "education", "target": "ASCENSO", "topic": "Pedagogía"}]' style="min-height: 120px; font-family: monospace; font-size: 0.85rem; background: var(--bg-secondary); border: 1px solid var(--border-color);"></textarea>
+                        </div>
+
+                        <!-- Card 2: Excel Upload -->
+                        <div class="import-method-card">
+                            <div class="import-method-header">
+                                <div class="import-icon-box excel-icon"><i class="fas fa-file-excel"></i></div>
+                                <span class="import-method-title">Subida Masiva Excel / CSV</span>
+                            </div>
+                            <p class="import-method-desc">Sube tu archivo oficial con las situaciones/viñetas clínicas o pedagógicas.</p>
+                            
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button type="button" class="btn-secondary" style="flex:1; font-size: 0.85rem;" onclick="window.adminManager.downloadCaseExcelTemplate()">
+                                    <i class="fas fa-download"></i> Plantilla
+                                </button>
+                                <div style="flex: 2; position: relative;">
+                                    <input type="file" id="generic-bulk-case-file" accept=".xlsx, .xls, .csv" style="display:none;">
+                                    <button type="button" class="btn-primary" style="width:100%; font-size: 0.85rem; background: #22c55e; border:none;" onclick="document.getElementById('generic-bulk-case-file').click()">
+                                        <i class="fas fa-upload"></i> Seleccionar Archivo
+                                    </button>
+                                </div>
+                            </div>
+                            <small id="generic-bulk-case-file-info" style="display: block; margin-top: 10px; text-align: center; color: var(--text-muted); font-style: italic;"></small>
+                        </div>
+                    </div>
+                `;
+                setTimeout(() => {
+                    const btn = document.getElementById('generic-save-btn');
+                    if (btn) btn.innerHTML = '<i class="fas fa-rocket"></i> Procesar Lote de Casos';
+                    this.setupFileInputFeedback('generic-bulk-case-file', 'generic-bulk-case-file-info');
                 }, 0);
                 break;
             case 'ai-question':
@@ -2668,8 +2705,7 @@ class AdminManager {
                                 document.getElementById('generic-opt3').value
                             ],
                         correct_answer: parseInt(document.getElementById('generic-correct-ans').value, 10),
-                        explanation: document.getElementById('generic-explanation').value,
-                        visual_support_recommendation: document.getElementById('generic-visual-recommendation')?.value || null
+                        explanation: document.getElementById('generic-explanation').value
                     };
 
                     const questionFormData = new FormData();
@@ -2843,7 +2879,11 @@ class AdminManager {
                                             image_url: cols[13] ? String(cols[13]).trim() : null,
                                             subtopic: cols[14] ? String(cols[14]).trim() : null,
                                             explanation_image_url: cols[15] ? String(cols[15]).trim() : null,
-                                            visual_support_recommendation: cols[16] ? String(cols[16]).trim() : null
+                                            codigo_caso: cols[16] ? String(cols[16]).trim() : null,
+                                            titulo_caso: cols[17] ? String(cols[17]).trim() : null,
+                                            enunciado_caso: cols[18] ? String(cols[18]).trim() : null,
+                                            imagen_caso: cols[19] ? String(cols[19]).trim() : null,
+                                            orden_caso: cols[20] && !isNaN(parseInt(cols[20], 10)) ? parseInt(cols[20], 10) : null
                                         };
                                     }).filter(Boolean);
 
@@ -2873,6 +2913,73 @@ class AdminManager {
                     this.closeGenericModal();
                     await this.loadAllData();
                     return; // Retorno anticipado
+                }
+
+                case 'bulk-case': {
+                    const jsonInput = document.getElementById('generic-bulk-case-json');
+                    const fileInput = document.getElementById('generic-bulk-case-file');
+
+                    if (jsonInput && jsonInput.value.trim()) {
+                        try {
+                            body = JSON.parse(jsonInput.value.trim());
+                            if (!Array.isArray(body)) throw new Error("El JSON debe ser un array de objetos.");
+                        } catch (err) {
+                            throw new Error("Error en formato JSON: " + err.message);
+                        }
+                    } else if (fileInput && fileInput.files.length) {
+                        const file = fileInput.files[0];
+                        body = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                try {
+                                    const data = new Uint8Array(e.target.result);
+                                    if (typeof window.XLSX === 'undefined') throw new Error("La librería procesadora de Excel no ha cargado completamente. Intenta recargar la página.");
+
+                                    const workbook = window.XLSX.read(data, { type: 'array' });
+                                    const sheetName = workbook.SheetNames[0];
+                                    const sheet = workbook.Sheets[sheetName];
+                                    const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                                    if (rows.length < 2) throw new Error("El archivo está vacío o solo contiene la fila de encabezados.");
+
+                                    const parsed = rows.slice(1).filter(row => row.length > 0 && row[0]).map((cols) => {
+                                        if (!cols[0]) return null;
+                                        return {
+                                            code: String(cols[0] || '').trim(),
+                                            title: cols[1] ? String(cols[1]).trim() : String(cols[0] || '').trim(),
+                                            description_text: cols[2] ? String(cols[2]).trim() : '',
+                                            domain: cols[3] ? String(cols[3]).trim().toLowerCase() : 'education',
+                                            target: cols[4] ? String(cols[4]).trim() : 'N/A',
+                                            topic: cols[5] ? String(cols[5]).trim() : 'General',
+                                            image_url: cols[6] ? String(cols[6]).trim() : null
+                                        };
+                                    }).filter(Boolean);
+
+                                    if (parsed.length === 0) throw new Error("No se encontraron casuísticas válidas en el documento.");
+                                    resolve(parsed);
+                                } catch (err) {
+                                    reject(new Error("Error parseando archivo: " + err.message));
+                                }
+                            };
+                            reader.onerror = () => reject(new Error("Error leyendo el archivo desde el disco."));
+                            reader.readAsArrayBuffer(file);
+                        });
+                    } else {
+                        throw new Error('Por favor pega el JSON o selecciona un archivo Excel/CSV.');
+                    }
+
+                    const _url = `${window.AppConfig.API_URL}/api/admin/cases/bulk`;
+                    const _response = await window.NetworkService.fetch(_url, {
+                        method: 'POST',
+                        body: JSON.stringify(body)
+                    });
+                    const _responseData = await _response.json();
+                    if (!_response.ok) throw new Error(_responseData.error || 'Error al inyectar lote de casuísticas.');
+
+                    await window.confirmationModal.showAlert(`¡Éxito! ${_responseData.message}`, 'Casuísticas Inyectadas');
+                    this.closeGenericModal();
+                    await this.refreshCases();
+                    return;
                 }
 
                 case 'drive-sync': {
@@ -3159,8 +3266,12 @@ class AdminManager {
                     'EXPLICACION', 
                     'URL_IMAGEN_ENUNCIADO', 
                     'SUBTEMA (OPCIONAL)', 
-                    'URL_IMAGEN_EXPLICACION', 
-                    'RECOMENDACION_APOYO_VISUAL'
+                    'URL_IMAGEN_EXPLICACION',
+                    'CODIGO_CASO (Opcional - Ej: CASO-01)',
+                    'TITULO_CASO (Opcional)',
+                    'ENUNCIADO_CASO (Opcional - Contexto / Viñeta)',
+                    'IMAGEN_CASO (Opcional)',
+                    'ORDEN_CASO (Opcional - 1, 2, 3...)'
                 ],
                 [
                     '¿Fármaco de elección en tormenta tiroidea?', 
@@ -3178,46 +3289,54 @@ class AdminManager {
                     'Bloquea la conversión periférica de T4 a T3 urgentemente.', 
                     '', 
                     'Emergencias Endocrinas', 
-                    '', 
-                    'Esquema de síntesis de hormonas tiroideas'
+                    '',
+                    '', '', '', '', ''
                 ],
                 [
-                    '¿Qué vacuna se aplica a la gestante según calendario PAI SERUMS?', 
+                    '¿Cuál es la presunción diagnóstica inicial más probable?', 
                     'medicine', 
-                    'SERUMS', 
-                    'Enfermería', 
-                    'Inmunizaciones', 
+                    'ENAM', 
+                    'Medicina Humana', 
+                    'Pediatría', 
                     'Senior', 
-                    'Hepatitis B', 
-                    'dTpa', 
-                    'Rotavirus', 
-                    'VPH', 
+                    'Laringitis aguda (Crup)', 
+                    'Epiglotitis aguda', 
+                    'Aspiración de cuerpo extraño', 
+                    'Traqueítis bacteriana', 
                     '', 
-                    '1', 
-                    'La dTpa se aplica entre la semana 27 y 36 de gestación.', 
+                    '0', 
+                    'El cuadro de estridor inspiratorio y tos perruna tras cuadro catarral es típico de Crup.', 
                     '', 
-                    'PAI', 
-                    '', 
-                    'Imagen de técnica de aplicación IM'
+                    'Infecciones Respiratorias', 
+                    '',
+                    'CASO-PED-01',
+                    'Lactante con estridor laríngeo',
+                    'Lactante de 18 meses es traído a emergencia por presentar fiebre, disfonía, estridor inspiratorio y tos perruna de 2 días de evolución que empeora por las noches.',
+                    '',
+                    '1'
                 ],
                 [
-                    '¿Causa más frecuente de absceso hepático piógeno?', 
+                    'Respecto al paciente del caso, ¿cuál es el tratamiento farmacológico de primera línea?', 
                     'medicine', 
-                    'RESIDENTADO', 
-                    '', 
-                    'Gastroenterología', 
+                    'ENAM', 
+                    'Medicina Humana', 
+                    'Pediatría', 
                     'Senior', 
-                    'E. Coli', 
-                    'K. pneumoniae', 
-                    'Bacteroides fragilis', 
-                    'Streptococcus milleri', 
-                    'Entamoeba histolytica', 
-                    '1', 
-                    'Klebsiella pneumoniae es actualmente el principal agente causal, especialmente en diabéticos (Harrison).', 
+                    'Dexametasona oral en dosis única', 
+                    'Amoxicilina oral por 7 días', 
+                    'Salbutamol nebulizado', 
+                    'Antihistamínicos orales', 
                     '', 
-                    'Cirugía Hepatobiliar', 
+                    '0', 
+                    'La dexametasona (0.15 a 0.6 mg/kg) es el pilar terapéutico en todo nivel de gravedad de Crup.', 
                     '', 
-                    'Ecografía de absceso en lóbulo derecho'
+                    'Terapéutica Pediátrica', 
+                    '',
+                    'CASO-PED-01',
+                    'Lactante con estridor laríngeo',
+                    'Lactante de 18 meses es traído a emergencia por presentar fiebre, disfonía, estridor inspiratorio y tos perruna de 2 días de evolución que empeora por las noches.',
+                    '',
+                    '2'
                 ],
                 [
                     'Un docente desea que sus estudiantes de Primaria construyan activamente el concepto de fuerza. ¿Cuál de las siguientes acciones es más pertinente para iniciar este proceso?', 
@@ -3235,8 +3354,12 @@ class AdminManager {
                     'El constructivismo implica que los estudiantes experimenten directamente para construir el conocimiento a partir de sus saberes previos.', 
                     '', 
                     'Principios Constructivistas', 
-                    '', 
-                    'Esquema del ciclo del aprendizaje vivencial'
+                    '',
+                    'CASO-EBR-01',
+                    'Situación de aprendizaje en el aula',
+                    'En una sesión de aprendizaje de 4to de primaria, los estudiantes presentan dificultades para interpretar datos en un gráfico de barras.',
+                    '',
+                    '1'
                 ]
             ];
             const ws = window.XLSX.utils.aoa_to_sheet(ws_data);
@@ -3259,12 +3382,73 @@ class AdminManager {
                 { wch: 25 }, // URL_IMAGEN_ENUNCIADO
                 { wch: 20 }, // SUBTEMA
                 { wch: 25 }, // URL_IMAGEN_EXPLICACION
-                { wch: 30 }  // RECOMENDACION_APOYO_VISUAL
+                { wch: 20 }, // CODIGO_CASO
+                { wch: 30 }, // TITULO_CASO
+                { wch: 50 }, // ENUNCIADO_CASO
+                { wch: 25 }, // IMAGEN_CASO
+                { wch: 15 }  // ORDEN_CASO
             ];
 
             const wb = window.XLSX.utils.book_new();
             window.XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Preguntas");
             window.XLSX.writeFile(wb, "HubAcademia_Plantilla_Banco_Preguntas.xlsx");
+        } else {
+            console.error('SheetJS no detectado');
+            if (window.confirmationModal) {
+                window.confirmationModal.showAlert("No se cargaron los recursos para descargar el excel. Refresca la página.", "Descarga de Plantilla");
+            } else {
+                alert("No se cargaron los recursos para descargar el excel. Refresca la página.");
+            }
+        }
+    }
+
+    // NUEVO: Generador dinámico de Plantilla Excel exclusiva para Casuísticas / Casos Clínicos
+    downloadCaseExcelTemplate() {
+        if (typeof window.XLSX !== 'undefined') {
+            const ws_data = [
+                [
+                    'CODIGO_CASO (*)', 
+                    'TITULO_CASO (*)', 
+                    'ENUNCIADO_CASO / SITUACION (*)', 
+                    'DOMINIO (medicine/education)', 
+                    'TARGET (ENAM/SERUMS/RESIDENTADO/ASCENSO/NOMBRAMIENTO)', 
+                    'AREA_ESTUDIO / EJE TEMATICO (*)', 
+                    'URL_IMAGEN_CASO (Opcional)'
+                ],
+                [
+                    'CASO-PED-01', 
+                    'Lactante con estridor laríngeo', 
+                    'Lactante de 18 meses es traído a emergencia por presentar fiebre, disfonía, estridor inspiratorio y tos perruna de 2 días de evolución que empeora por las noches.', 
+                    'medicine', 
+                    'ENAM', 
+                    'Pediatría', 
+                    ''
+                ],
+                [
+                    'CASO-EBR-01', 
+                    'Situación de aprendizaje en el aula', 
+                    'En una sesión de aprendizaje de 4to de primaria, los estudiantes presentan dificultades para interpretar datos en un gráfico de barras.', 
+                    'education', 
+                    'ASCENSO', 
+                    'Evaluación Formativa y Retroalimentación', 
+                    ''
+                ]
+            ];
+            const ws = window.XLSX.utils.aoa_to_sheet(ws_data);
+            
+            ws['!cols'] = [
+                { wch: 20 }, // CODIGO_CASO
+                { wch: 35 }, // TITULO_CASO
+                { wch: 60 }, // ENUNCIADO_CASO
+                { wch: 15 }, // DOMINIO
+                { wch: 15 }, // TARGET
+                { wch: 25 }, // AREA_ESTUDIO
+                { wch: 25 }  // URL_IMAGEN_CASO
+            ];
+
+            const wb = window.XLSX.utils.book_new();
+            window.XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Casuisticas");
+            window.XLSX.writeFile(wb, "HubAcademia_Plantilla_Casuisticas.xlsx");
         } else {
             console.error('SheetJS no detectado');
             if (window.confirmationModal) {

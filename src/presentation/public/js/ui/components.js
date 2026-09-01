@@ -993,8 +993,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
     let caseScenarioHTML = '';
     const hasCaseContent = Boolean(
         (question.case_description && String(question.case_description).trim()) ||
-        (question.case_image_url && typeof question.case_image_url === 'string' && question.case_image_url.trim()) ||
-        (question.case_table_html && typeof question.case_table_html === 'string' && question.case_table_html.trim())
+        (question.case_image_url && typeof question.case_image_url === 'string' && question.case_image_url.trim())
     );
 
     const isEducation = (window.location.search.includes('context=EDUCACION') || (career && !career.includes('Medicina') && !career.includes('Enfermería')));
@@ -1014,11 +1013,6 @@ window.UIComponents.createReviewCardHTML = function (config) {
             </div>`;
         }
 
-        let caseTableHTML = '';
-        if (question.case_table_html) {
-            caseTableHTML = `<div class="review-case-table-wrap">${question.case_table_html}</div>`;
-        }
-
         caseScenarioHTML = `
         <div class="review-case-box">
             <div class="review-case-badge-row">
@@ -1029,7 +1023,6 @@ window.UIComponents.createReviewCardHTML = function (config) {
             </div>
             ${rawCaseDesc.trim() ? `<div class="review-case-body">${caseDescHTML}</div>` : ''}
             ${caseImgHTML}
-            ${caseTableHTML}
         </div>`;
     } else if (question.case_id) {
         caseScenarioHTML = `

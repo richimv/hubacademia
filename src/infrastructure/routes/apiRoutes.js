@@ -53,6 +53,7 @@ router.delete('/admin/question/:id', auth, adminOnly, adminController.deleteSing
 router.get('/admin/cases', auth, adminOnly, adminController.getAllCases);
 router.get('/admin/cases/:id', auth, adminOnly, adminController.getCaseById);
 router.post('/admin/cases', auth, adminOnly, upload.single('coverImage'), adminController.createCase);
+router.post('/admin/cases/bulk', auth, adminOnly, adminController.bulkInjectCases); // ✅ Inyección Masiva de Casuísticas
 router.put('/admin/cases/:id', auth, adminOnly, upload.single('coverImage'), adminController.updateCase);
 router.delete('/admin/cases/:id', auth, adminOnly, adminController.deleteCase);
 router.post('/admin/cases/link', auth, adminOnly, adminController.linkQuestionsToCase);

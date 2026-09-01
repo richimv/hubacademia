@@ -13,13 +13,12 @@ describe('Quiz Session Storage & Persistence Resilience', () => {
                     casesMap[q.case_id] = {
                         case_title: q.case_title || null,
                         case_description: q.case_description || null,
-                        case_table_html: q.case_table_html || null,
                         case_image_url: q.case_image_url || null,
                         case_order: q.case_order || null,
                         case_code: q.case_code || null
                     };
                 }
-                const { case_title, case_description, case_table_html, case_image_url, case_order, case_code, ...rest } = q;
+                const { case_title, case_description, case_image_url, case_order, case_code, ...rest } = q;
                 return rest;
             }
             return q;

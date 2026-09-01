@@ -77,7 +77,7 @@ class AdminRepository {
         let query = `
             SELECT qb.id, qb.question_text, qb.domain, qb.target, qb.career, qb.topic, qb.subtopic, 
                    qb.difficulty, qb.created_at, qb.options, qb.correct_option_index as correct_answer, 
-                   qb.explanation, qb.explanation_image_url, qb.image_url, qb.visual_support_recommendation,
+                   qb.explanation, qb.explanation_image_url, qb.image_url,
                    qb.case_id, qb.case_order,
                    cs.code as case_code, cs.title as case_title, cs.description_text as case_description
             FROM question_bank qb
@@ -118,7 +118,7 @@ class AdminRepository {
 
     async getAllCases(domain = 'all', search = '', page = 1, limit = 100) {
         let query = `
-            SELECT cs.id, cs.code, cs.title, cs.description_text, cs.image_url, cs.table_html,
+            SELECT cs.id, cs.code, cs.title, cs.description_text, cs.image_url,
                    cs.domain, cs.target, cs.topic, cs.created_at, cs.updated_at,
                    COUNT(qb.id)::int as questions_count
             FROM case_scenarios cs
@@ -172,10 +172,10 @@ class AdminRepository {
         return caseData;
     }
 
-    async createCase({ code, title, description_text = '', image_url = null, table_html = null, domain = 'education', target = 'N/A', topic = 'General' }) {
+    async createCase({ code, title, description_text = '', image_url = null, domain = 'education', target = 'N/A', topic = 'General' }) {
         const query = `
-            INSERT INTO case_scenarios (code, title, description_text, image_url, table_html, domain, target, topic, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+            INSERT INTO case_scenarios (code, title, description_text, image_url, domain, target, topic, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
             RETURNING *;
         `;
         const values = [
@@ -183,7 +183,6 @@ class AdminRepository {
             title ? decodeHtmlEntities(String(title).trim()) : '',
             description_text ? decodeHtmlEntities(formatPlainTextToHtml(description_text)) : '',
             image_url,
-            table_html,
             domain || 'education',
             target || 'N/A',
             topic || 'General'
@@ -212,10 +211,6 @@ class AdminRepository {
         if (data.image_url !== undefined) {
             fields.push(`image_url = $${idx++}`);
             values.push(data.image_url);
-        }
-        if (data.table_html !== undefined) {
-            fields.push(`table_html = $${idx++}`);
-            values.push(data.table_html);
         }
         if (data.domain !== undefined) {
             fields.push(`domain = $${idx++}`);
@@ -246,6 +241,66 @@ class AdminRepository {
         `;
         const result = await db.query(query, values);
         return result.rows[0];
+    }
+
+    async saveBulkCasesAdmin(casesArray) {
+        if (!casesArray || !Array.isArray(casesArray) || casesArray.length === 0) {
+            return { success: false, inserted: 0 };
+        }
+
+        const client = await db.pool().connect();
+        try {
+            await client.query('BEGIN');
+            let insertedCount = 0;
+
+            const canonicalDomain = (val) => {
+                const allowed = ['medicine', 'education'];
+                const v = String(val || '').toLowerCase().trim().replace(/\s+/g, '_');
+                return allowed.includes(v) ? v : 'education';
+            };
+
+            for (const c of casesArray) {
+                const code = c.code || c.codigo_caso || c.CODIGO_CASO || c.caso_codigo;
+                if (!code || !String(code).trim()) continue;
+
+                const cleanCode = String(code).trim();
+                const title = decodeHtmlEntities(String(c.title || c.titulo_caso || c.TITULO_CASO || cleanCode).trim());
+                const desc = decodeHtmlEntities(formatPlainTextToHtml(String(c.description_text || c.enunciado_caso || c.ENUNCIADO_CASO || c.descripcion_caso || '')));
+                const image_url = c.image_url || c.imagen_caso || c.IMAGEN_CASO || null;
+                const domain = canonicalDomain(c.domain || c.dominio);
+                const target = c.target || c.examen_objetivo || 'N/A';
+                const topic = c.topic || c.area_estudio || c.area || 'General';
+
+                const existingRes = await client.query('SELECT id FROM case_scenarios WHERE code = $1', [cleanCode]);
+                if (existingRes && existingRes.rows && existingRes.rows.length > 0) {
+                    await client.query(
+                        `UPDATE case_scenarios 
+                         SET title = COALESCE($1, title),
+                             description_text = CASE WHEN $2 <> '' THEN $2 ELSE description_text END,
+                             image_url = COALESCE($3, image_url),
+                             domain = $4, target = $5, topic = $6, updated_at = NOW()
+                         WHERE id = $7`,
+                        [title, desc, image_url, domain, target, topic, existingRes.rows[0].id]
+                    );
+                } else {
+                    await client.query(
+                        `INSERT INTO case_scenarios (code, title, description_text, image_url, domain, target, topic, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+                        [cleanCode, title, desc, image_url, domain, target, topic]
+                    );
+                }
+                insertedCount++;
+            }
+
+            await client.query('COMMIT');
+            return { success: true, inserted: insertedCount };
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('Error insertando bulk cases:', error);
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 
     async deleteCase(id) {
@@ -292,18 +347,18 @@ class AdminRepository {
         return result.rowCount > 0;
     }
 
-    async addQuestion({ question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation, case_id = null, case_order = 1 }) {
+    async addQuestion({ question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, case_id = null, case_order = 1 }) {
         const insertQuery = `
             INSERT INTO question_bank (
                 question_text, options, correct_option_index, explanation, explanation_image_url, 
-                domain, target, career, topic, subtopic, difficulty, image_url, question_hash, visual_support_recommendation,
+                domain, target, career, topic, subtopic, difficulty, image_url, question_hash,
                 case_id, case_order
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             RETURNING id;
         `;
         const values = [
             decodeHtmlEntities(question_text), JSON.stringify(options), correct_answer, decodeHtmlEntities(explanation), explanation_image_url,
-            domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation,
+            domain, target, career, topic, subtopic, difficulty, image_url, hash,
             case_id || null, parseInt(case_order, 10) || 1
         ];
 
@@ -322,19 +377,19 @@ class AdminRepository {
         return rows[0] ? rows[0].count : 0;
     }
 
-    async updateQuestion(id, { question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation, case_id = null, case_order = 1 }) {
+    async updateQuestion(id, { question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, case_id = null, case_order = 1 }) {
         const updateQuery = `
             UPDATE question_bank 
             SET question_text = $1, options = $2, correct_option_index = $3, 
                 explanation = $4, explanation_image_url = $5, domain = $6, 
-                target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13, visual_support_recommendation = $14,
-                case_id = $15, case_order = $16
-            WHERE id = $17
+                target = $7, career = $8, topic = $9, subtopic = $10, difficulty = $11, image_url = $12, question_hash = $13,
+                case_id = $14, case_order = $15
+            WHERE id = $16
             RETURNING id;
         `;
         const values = [
             decodeHtmlEntities(question_text), JSON.stringify(options), correct_answer, decodeHtmlEntities(explanation), explanation_image_url,
-            domain, target, career, topic, subtopic, difficulty, image_url, hash, visual_support_recommendation,
+            domain, target, career, topic, subtopic, difficulty, image_url, hash,
             case_id || null, parseInt(case_order, 10) || 1, id
         ];
 
@@ -405,32 +460,68 @@ class AdminRepository {
             const caseCodeToIdMap = new Map();
             const caseOrderCounters = new Map();
 
+            // 1. Recolectar y consolidar la información más completa de cada código de caso
+            const caseDefinitions = new Map();
             for (const q of questionsArray) {
                 const rawCaseCode = q.codigo_caso || q.case_code || q.code_caso || q.CODIGO_CASO || q.caso_codigo;
                 if (rawCaseCode && String(rawCaseCode).trim()) {
-                    const code = String(rawCaseCode).trim();
-                    if (!caseCodeToIdMap.has(code)) {
-                        const existingCaseRes = await client.query('SELECT id FROM case_scenarios WHERE code = $1', [code]);
-                        if (existingCaseRes.rows.length > 0) {
-                            caseCodeToIdMap.set(code, existingCaseRes.rows[0].id);
-                        } else {
-                            const desc = decodeHtmlEntities(formatPlainTextToHtml(String(q.enunciado_caso || q.case_description || q.descripcion_caso || q.ENUNCIADO_CASO || q.caso_enunciado || q.caso_descripcion || 'Situación del caso')));
-                            const title = q.titulo_caso || q.case_title || q.TITULO_CASO || code;
-                            const img = q.imagen_caso || q.case_image_url || q.IMAGEN_CASO || null;
-                            const table = q.tabla_caso || q.case_table_html || q.TABLA_CASO || null;
-                            const domain = canonicalDomain(q.domain);
-                            const target = q.target || 'N/A';
-                            const topic = q.topic || 'General';
+                    const cleanCode = String(rawCaseCode).trim();
+                    const normKey = cleanCode.toUpperCase();
+                    const desc = String(q.enunciado_caso || q.case_description || q.descripcion_caso || q.ENUNCIADO_CASO || q.caso_enunciado || q.caso_descripcion || '').trim();
+                    const title = String(q.titulo_caso || q.case_title || q.TITULO_CASO || '').trim();
+                    const img = q.imagen_caso || q.case_image_url || q.IMAGEN_CASO || null;
 
-                            const insertCaseRes = await client.query(
-                                `INSERT INTO case_scenarios (code, title, description_text, image_url, table_html, domain, target, topic, created_at, updated_at)
-                                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-                                 RETURNING id`,
-                                [code, title, desc, img, table, domain, target, topic]
-                            );
-                            caseCodeToIdMap.set(code, insertCaseRes.rows[0].id);
+                    if (!caseDefinitions.has(normKey)) {
+                        caseDefinitions.set(normKey, {
+                            code: cleanCode,
+                            title: title || cleanCode,
+                            desc: desc,
+                            img: img,
+                            domain: q.domain,
+                            target: q.target,
+                            topic: q.topic
+                        });
+                    } else {
+                        const def = caseDefinitions.get(normKey);
+                        // Si una fila subsiguiente trae un enunciado más largo/completo, priorizarlo
+                        if (desc && desc.length > (def.desc || '').length) {
+                            def.desc = desc;
+                        }
+                        if (title && (!def.title || def.title === def.code)) {
+                            def.title = title;
+                        }
+                        if (img && !def.img) {
+                            def.img = img;
                         }
                     }
+                }
+            }
+
+            // 2. Crear o resolver en DB cada casuística única consolidada
+            for (const [normKey, def] of caseDefinitions.entries()) {
+                const existingCaseRes = await client.query('SELECT id, description_text FROM case_scenarios WHERE UPPER(code) = $1', [normKey]);
+                if (existingCaseRes.rows.length > 0) {
+                    const existingId = existingCaseRes.rows[0].id;
+                    caseCodeToIdMap.set(normKey, existingId);
+                    // Si el caso existente en DB no tenía enunciado y el Excel sí lo provee, enriquecerlo
+                    if ((!existingCaseRes.rows[0].description_text || existingCaseRes.rows[0].description_text.trim() === '') && def.desc) {
+                        const formattedDesc = decodeHtmlEntities(formatPlainTextToHtml(def.desc));
+                        await client.query('UPDATE case_scenarios SET description_text = $1, updated_at = NOW() WHERE id = $2', [formattedDesc, existingId]);
+                    }
+                } else {
+                    const formattedDesc = decodeHtmlEntities(formatPlainTextToHtml(def.desc || 'Situación del caso'));
+                    const title = def.title || def.code;
+                    const domain = canonicalDomain(def.domain);
+                    const target = def.target || 'N/A';
+                    const topic = def.topic || 'General';
+
+                    const insertCaseRes = await client.query(
+                        `INSERT INTO case_scenarios (code, title, description_text, image_url, domain, target, topic, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                         RETURNING id`,
+                        [def.code, title, formattedDesc, def.img, domain, target, topic]
+                    );
+                    caseCodeToIdMap.set(normKey, insertCaseRes.rows[0].id);
                 }
             }
 
@@ -473,8 +564,8 @@ class AdminRepository {
                     // Resolve case_id and case_order
                     const rawCaseCode = q.codigo_caso || q.case_code || q.code_caso || q.CODIGO_CASO || q.caso_codigo;
                     let case_id = q.case_id || null;
-                    if (rawCaseCode && caseCodeToIdMap.has(String(rawCaseCode).trim())) {
-                        case_id = caseCodeToIdMap.get(String(rawCaseCode).trim());
+                    if (rawCaseCode && caseCodeToIdMap.has(String(rawCaseCode).trim().toUpperCase())) {
+                        case_id = caseCodeToIdMap.get(String(rawCaseCode).trim().toUpperCase());
                     }
 
                     let case_order = 1;
@@ -494,14 +585,14 @@ class AdminRepository {
                     const rawStringForHash = `${normTopic}-${normText}-${optionsStr}-${case_id || ''}-${case_order}`;
                     const hash = crypto.createHash('md5').update(rawStringForHash).digest('hex');
 
-                    const offset = idx * 16;
-                    valuePlaceholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15}, $${offset + 16})`);
+                    const offset = idx * 15;
+                    valuePlaceholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15})`);
 
-                    values.push(domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr, correct_option_index, explanation, explanation_image_url, image_url, hash, career, q.visual_support_recommendation || null, case_id, case_order);
+                    values.push(domain, target, exactTopic, exactSubtopic, difficulty, question_text, optionsStr, correct_option_index, explanation, explanation_image_url, image_url, hash, career, case_id, case_order);
                 });
 
                 const batchQuery = `
-                    INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career, visual_support_recommendation, case_id, case_order)
+                    INSERT INTO question_bank (domain, target, topic, subtopic, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, career, case_id, case_order)
                     VALUES ${valuePlaceholders.join(', ')}
                     ON CONFLICT (question_hash) DO UPDATE SET 
                         target = EXCLUDED.target,
@@ -511,7 +602,6 @@ class AdminRepository {
                         options = EXCLUDED.options,
                         career = EXCLUDED.career,
                         subtopic = EXCLUDED.subtopic,
-                        visual_support_recommendation = EXCLUDED.visual_support_recommendation,
                         case_id = EXCLUDED.case_id,
                         case_order = EXCLUDED.case_order;
                 `;

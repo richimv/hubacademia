@@ -10,6 +10,7 @@ jest.mock('@google-cloud/vertexai', () => ({
 
 const adminRepository = require('../../src/domain/repositories/adminRepository');
 const adminService = require('../../src/domain/services/adminService');
+const adminController = require('../../src/application/controllers/adminController');
 const docenteRepository = require('../../src/domain/repositories/docenteRepository');
 const medicoRepository = require('../../src/domain/repositories/medicoRepository');
 const db = require('../../src/infrastructure/database/db');
@@ -57,7 +58,6 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
                 title: 'Estrategias en el Aula',
                 description_text: 'En una sesión de 3er grado...',
                 image_url: null,
-                table_html: null,
                 domain: 'education',
                 target: 'ASCENSO',
                 topic: 'Pedagogía'
@@ -155,6 +155,72 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
                 expect.arrayContaining(['auto-case-uuid', 2])
             );
             expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+        });
+
+        it('saveBulkCasesAdmin inserts or updates bulk case scenarios in transaction', async () => {
+            const cases = [
+                {
+                    code: 'CASO-PED-01',
+                    title: 'Lactante con estridor',
+                    description_text: 'Lactante de 18 meses...',
+                    domain: 'medicine',
+                    target: 'ENAM',
+                    topic: 'Pediatría'
+                },
+                {
+                    code: 'CASO-PED-02',
+                    title: 'Neumonía adquirida',
+                    description_text: 'Preescolar de 3 años...',
+                    domain: 'medicine',
+                    target: 'ENAM',
+                    topic: 'Pediatría'
+                }
+            ];
+
+            mockClient.query.mockResolvedValueOnce({ rows: [] }); // BEGIN
+            mockClient.query.mockResolvedValueOnce({ rows: [] }); // check case 1
+            mockClient.query.mockResolvedValueOnce({ rows: [{ id: 'case-1' }] }); // insert case 1
+            mockClient.query.mockResolvedValueOnce({ rows: [{ id: 'case-2' }] }); // check case 2 (exists)
+            mockClient.query.mockResolvedValueOnce({ rowCount: 1, rows: [] }); // update case 2
+            mockClient.query.mockResolvedValueOnce({ rows: [] }); // COMMIT
+
+            const res = await adminRepository.saveBulkCasesAdmin(cases);
+            expect(res.success).toBe(true);
+            expect(res.inserted).toBe(2);
+            expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
+            expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+        });
+
+        it('adminController.bulkInjectCases processes bulk case payload and sanitizes HTML', async () => {
+            const req = {
+                body: [
+                    {
+                        code: 'CASO-MED-10',
+                        title: 'Insuficiencia Cardíaca',
+                        description_text: '<p>Paciente con disnea de esfuerzo</p>',
+                        domain: 'medicine',
+                        target: 'ENAM',
+                        topic: 'Cardiología'
+                    }
+                ]
+            };
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            };
+
+            mockClient.query.mockResolvedValueOnce({ rows: [] }); // BEGIN
+            mockClient.query.mockResolvedValueOnce({ rows: [] }); // check case
+            mockClient.query.mockResolvedValueOnce({ rows: [{ id: 'case-10' }] }); // insert case
+            mockClient.query.mockResolvedValueOnce({ rows: [] }); // COMMIT
+
+            await adminController.bulkInjectCases(req, res);
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: true,
+                    count: 1
+                })
+            );
         });
     });
 
@@ -412,8 +478,7 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
                 (q.case_id && typeof q.case_id === 'string' && q.case_id.trim() !== '') ||
                 (q.case_code && typeof q.case_code === 'string' && q.case_code.trim() !== '') ||
                 (q.case_description && typeof q.case_description === 'string' && q.case_description.trim() !== '') ||
-                (q.case_image_url && typeof q.case_image_url === 'string' && q.case_image_url.trim() !== '') ||
-                (q.case_table_html && typeof q.case_table_html === 'string' && q.case_table_html.trim() !== '')
+                (q.case_image_url && typeof q.case_image_url === 'string' && q.case_image_url.trim() !== '')
             );
         };
 
@@ -426,8 +491,7 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
                 case_code: null,
                 case_title: null,
                 case_description: null,
-                case_image_url: null,
-                case_table_html: null
+                case_image_url: null
             };
 
             expect(isCaseQuestion(independentQuestion)).toBe(false);
@@ -442,8 +506,7 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
                 case_code: 'CASO-OBST-01',
                 case_title: null,
                 case_description: null,
-                case_image_url: null,
-                case_table_html: null
+                case_image_url: null
             };
 
             expect(isCaseQuestion(linkedQuestionNoDesc)).toBe(true);
@@ -458,8 +521,7 @@ describe('Case Scenarios & Question Clustering (Casuísticas Agrupadas)', () => 
                 case_code: 'CASO-CNEB-05',
                 case_title: 'Situación Significativa',
                 case_description: 'Rosa de 5 años durante el refrigerio...',
-                case_image_url: null,
-                case_table_html: null
+                case_image_url: null
             };
 
             expect(isCaseQuestion(linkedQuestionWithDesc)).toBe(true);

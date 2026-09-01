@@ -51,7 +51,7 @@ class DocenteRepository {
                        qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.audio_text,
                        qb.case_id, qb.case_order,
                        cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
-                       cs.image_url as case_image_url, cs.table_html as case_table_html,
+                       cs.image_url as case_image_url,
                        ROW_NUMBER() OVER(PARTITION BY qb.topic ORDER BY RANDOM()) as rn
                 FROM question_bank qb
                 LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
@@ -59,7 +59,7 @@ class DocenteRepository {
             )
             SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, 
                    image_url, domain, topic, audio_text, case_id, case_order,
-                   case_code, case_title, case_description, case_image_url, case_table_html
+                   case_code, case_title, case_description, case_image_url
             FROM BalancedPool 
             WHERE rn <= CASE 
                 WHEN array_length($1::text[], 1) >= 5 THEN 2 
@@ -83,7 +83,7 @@ class DocenteRepository {
                            qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.audio_text,
                            qb.case_id, qb.case_order,
                            cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
-                           cs.image_url as case_image_url, cs.table_html as case_table_html
+                           cs.image_url as case_image_url
                     FROM question_bank qb
                     JOIN case_scenarios cs ON qb.case_id = cs.id
                     WHERE qb.case_id = ANY($1::uuid[])
@@ -136,8 +136,7 @@ class DocenteRepository {
             case_code: row.case_code || null,
             case_title: row.case_title || null,
             case_description: row.case_description || null,
-            case_image_url: row.case_image_url || null,
-            case_table_html: row.case_table_html || null
+            case_image_url: row.case_image_url || null
         }));
     }
 
@@ -152,7 +151,7 @@ class DocenteRepository {
                    qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.target,
                    qb.case_id, qb.case_order,
                    cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
-                   cs.image_url as case_image_url, cs.table_html as case_table_html
+                   cs.image_url as case_image_url
             FROM question_bank qb
             LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
             WHERE qb.domain = 'education'
@@ -209,7 +208,7 @@ class DocenteRepository {
                            qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.target,
                            qb.case_id, qb.case_order,
                            cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
-                           cs.image_url as case_image_url, cs.table_html as case_table_html
+                           cs.image_url as case_image_url
                     FROM question_bank qb
                     JOIN case_scenarios cs ON qb.case_id = cs.id
                     WHERE qb.case_id = ANY($1::uuid[])
@@ -255,8 +254,7 @@ class DocenteRepository {
             case_code: row.case_code || null,
             case_title: row.case_title || null,
             case_description: row.case_description || null,
-            case_image_url: row.case_image_url || null,
-            case_table_html: row.case_table_html || null
+            case_image_url: row.case_image_url || null
         }));
     }
 
@@ -264,14 +262,13 @@ class DocenteRepository {
         if (!questions || questions.length === 0) return [];
 
         const query = `
-            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, times_used, career, visual_support_recommendation, audio_text)
-            VALUES ($1, 'education', $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11, $12, $13)
+            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, times_used, career, audio_text)
+            VALUES ($1, 'education', $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11, $12)
             ON CONFLICT (question_hash) DO UPDATE SET 
                 times_used = question_bank.times_used + 1,
                 career = EXCLUDED.career,
                 explanation_image_url = EXCLUDED.explanation_image_url,
                 image_url = EXCLUDED.image_url,
-                visual_support_recommendation = EXCLUDED.visual_support_recommendation,
                 audio_text = EXCLUDED.audio_text
             RETURNING id;
         `;
@@ -301,7 +298,6 @@ class DocenteRepository {
                     q.image_url || null,
                     hash,
                     exactCareer,
-                    q.visual_support_recommendation || null,
                     q.audio_text || null
                 ]);
                 if (res.rows.length > 0) {

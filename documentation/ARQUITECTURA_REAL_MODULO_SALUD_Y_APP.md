@@ -49,7 +49,6 @@ CREATE TABLE public.case_scenarios (
     title VARCHAR(255),                        -- 'Paciente Politraumatizado en Shock'
     description_text TEXT NOT NULL,            -- Historia clínica, anamnesis y examen físico común
     image_url TEXT,                            -- EKG, Radiografía, TAC, Frotis (GCS/Supabase)
-    table_html TEXT,                           -- Laboratorio o analítica en tabla HTML
     domain VARCHAR(50) NOT NULL DEFAULT 'medicine', -- 'medicine' | 'education'
     target VARCHAR(50),                        -- 'ENAM', 'SERUMS', 'RESIDENTADO'
     topic VARCHAR(100),                        -- Especialidad médica
@@ -79,7 +78,6 @@ CREATE TABLE public.question_bank (
     explanation TEXT,                         -- Justificación clínica oficial basada en NTS / GPC / MINSA
     image_url TEXT,
     explanation_image_url TEXT,
-    visual_support_recommendation TEXT,
     case_id UUID REFERENCES public.case_scenarios(id) ON DELETE SET NULL, -- Vínculo a la viñeta clínica común
     case_order INTEGER DEFAULT 1,             -- Orden secuencial de la pregunta en el caso (1, 2, 3...)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()

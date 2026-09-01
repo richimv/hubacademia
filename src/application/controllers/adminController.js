@@ -146,6 +146,38 @@ class AdminController {
         }
     }
 
+    async bulkInjectCases(req, res) {
+        try {
+            const cases = req.body;
+            if (!Array.isArray(cases)) {
+                return res.status(400).json({ error: 'El cuerpo debe ser un array JSON.' });
+            }
+
+            console.log(`📥 Administrador subiendo lote de ${cases.length} casuísticas masivas...`);
+
+            // Sanitizar Base64 en lote antes de insertar
+            for (let i = 0; i < cases.length; i++) {
+                if (cases[i].description_text) {
+                    cases[i].description_text = await this._sanitizeHtmlImages(cases[i].description_text, 'cases');
+                } else if (cases[i].enunciado_caso) {
+                    cases[i].enunciado_caso = await this._sanitizeHtmlImages(cases[i].enunciado_caso, 'cases');
+                }
+            }
+
+            const result = await adminService.saveBulkCasesAdmin(cases);
+
+            if (result.success) {
+                res.json({ success: true, message: `Lote de casuísticas inyectado con éxito: ${result.inserted} casos`, count: result.inserted });
+            } else {
+                res.status(500).json({ error: 'Fallo al inyectar el lote de casuísticas.' });
+            }
+
+        } catch (error) {
+            console.error('❌ Error en inyección masiva de casuísticas:', error);
+            res.status(500).json({ error: 'Error del servidor procesando el lote de casuísticas.' });
+        }
+    }
+
     async generateAiQuestions(req, res) {
         try {
             const { target, domain, studyAreas, career, difficulty } = req.body;
@@ -230,7 +262,6 @@ class AdminController {
                 }
             }
 
-            const table_html = body.table_html && body.table_html.trim() !== '' ? body.table_html.trim() : null;
             const domain = body.domain || 'education';
             const target = body.target || 'N/A';
             const topic = body.topic || 'General';
@@ -242,7 +273,6 @@ class AdminController {
                 title: rawTitle,
                 description_text: sanitizedDescription,
                 image_url,
-                table_html,
                 domain,
                 target,
                 topic
@@ -298,7 +328,6 @@ class AdminController {
                 title: body.title !== undefined ? body.title.trim() : undefined,
                 description_text: sanitizedDescription,
                 image_url: image_url,
-                table_html: body.table_html !== undefined ? (body.table_html.trim() || null) : undefined,
                 domain: body.domain || undefined,
                 target: body.target || undefined,
                 topic: body.topic || undefined
@@ -321,10 +350,7 @@ class AdminController {
                 if (oldCase.image_url) {
                     try { await mediaController.deleteFile(oldCase.image_url); } catch (e) { console.error('Error deleting case image:', e); }
                 }
-                const embeddedPaths = [
-                    ...this._extractGcsPaths(oldCase.description_text),
-                    ...this._extractGcsPaths(oldCase.table_html)
-                ];
+                const embeddedPaths = this._extractGcsPaths(oldCase.description_text);
                 for (const gcsPath of embeddedPaths) {
                     try { await mediaController.deleteFile(gcsPath); } catch (e) { console.error('Error deleting case embedded image:', e); }
                 }
@@ -777,10 +803,7 @@ class AdminController {
                             if (oldCase.image_url) {
                                 try { await mediaController.deleteFile(oldCase.image_url); } catch (e) {}
                             }
-                            const embeddedPaths = [
-                                ...this._extractGcsPaths(oldCase.description_text),
-                                ...this._extractGcsPaths(oldCase.table_html)
-                            ];
+                            const embeddedPaths = this._extractGcsPaths(oldCase.description_text);
                             for (const gcsPath of embeddedPaths) {
                                 try { await mediaController.deleteFile(gcsPath); } catch (e) {}
                             }
@@ -846,6 +869,7 @@ module.exports = {
     getAllCases: controller.getAllCases.bind(controller),
     getCaseById: controller.getCaseById.bind(controller),
     createCase: controller.createCase.bind(controller),
+    bulkInjectCases: controller.bulkInjectCases.bind(controller),
     updateCase: controller.updateCase.bind(controller),
     deleteCase: controller.deleteCase.bind(controller),
     linkQuestionsToCase: controller.linkQuestionsToCase.bind(controller),

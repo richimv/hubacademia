@@ -382,7 +382,7 @@ Para asegurar la continuidad en simulacros magisteriales (10q, 20q y Simulacros 
 Para reproducir fielmente la estructura de los exámenes oficiales del MINEDU (Ascenso y Nombramiento) donde una situación o texto compartido sirve de base para 2 o más preguntas consecutivas:
 
 1. **Entidad `case_scenarios`**:
-   - Tabla dedicada protegida con RLS que almacena `code`, `title`, `description_text` (enunciado común), `image_url` y `table_html` (cuadros comparativos).
+   - Tabla dedicada protegida con RLS que almacena `code`, `title`, `description_text` (enunciado común con soporte para tablas TinyMCE e imágenes) y `image_url`.
    - Las preguntas en `question_bank` se asocian mediante `case_id` (FK) y `case_order` (orden 1, 2, 3...).
 2. **Algoritmo de Clustering Contiguo (`docenteRepository.js`)**:
    - Al seleccionar preguntas balanceadas por tema, si una pregunta pertenece a una casuística, el repositorio consulta de inmediato todas sus preguntas hermanas del mismo `case_id`, las ordena por `case_order ASC` y las agrupa contiguamente dentro del lote, impidiendo que el caso sea fragmentado.

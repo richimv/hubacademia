@@ -47,9 +47,8 @@ CREATE TABLE public.case_scenarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(50) NOT NULL UNIQUE,          -- 'CASO-PED-2026-01'
     title VARCHAR(255),                        -- 'Situación Pedagógica: Evaluación Formativa'
-    description_text TEXT NOT NULL,            -- Enunciado común, texto de lectura o caso compartido
+    description_text TEXT NOT NULL,            -- Enunciado común, texto de lectura o caso compartido (incluye tablas HTML de TinyMCE)
     image_url TEXT,                            -- Imagen/gráfico común (GCS o Supabase Storage)
-    table_html TEXT,                           -- Cuadro comparativo o tabla en HTML estructurado
     domain VARCHAR(50) NOT NULL DEFAULT 'education', -- 'education' | 'medicine'
     target VARCHAR(50),                        -- 'ASCENSO', 'NOMBRAMIENTO', etc.
     topic VARCHAR(100),                        -- Área de estudio común
@@ -79,7 +78,6 @@ CREATE TABLE public.question_bank (
     explanation TEXT,                         -- Justificación pedagógica oficial CNEB / MINEDU
     image_url TEXT,
     explanation_image_url TEXT,
-    visual_support_recommendation TEXT,
     case_id UUID REFERENCES public.case_scenarios(id) ON DELETE SET NULL, -- Vínculo al caso compartido
     case_order INTEGER DEFAULT 1,             -- Orden secuencial dentro de la casuística (1, 2, 3...)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()

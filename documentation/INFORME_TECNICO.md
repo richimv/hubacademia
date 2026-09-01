@@ -398,6 +398,19 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 - **🤖 Curaduría e Ingesta Automática de Recursos ([resourceAutoIngestService.js](file:///C:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/resourceAutoIngestService.js)):**
   - Creación del servicio de ingesta automática y script CLI `autoIngestResources.js` para la incorporación de guías clínicas y directivas oficiales.
 
+### 🟢 [2026-08-31] - Carga Masiva Unificada de Preguntas con Casuísticas Anidadas, Importador de Casos y Depuración Total de Columnas Obsoletas
+- **📦 Ingesta Masiva Unificada de Preguntas con Casuísticas ([admin.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/admin.js), [adminRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/adminRepository.js)):**
+  - **Plantilla Oficial Actualizada:** Inclusión de 5 columnas de casuística en el Excel de preguntas (`CODIGO_CASO`, `TITULO_CASO`, `ENUNCIADO_CASO`, `IMAGEN_CASO`, `ORDEN_CASO`).
+  - **Vinculación Atómica y Automática:** Procesamiento en backend con transacciones SQL (`BEGIN...COMMIT`) que detecta códigos de caso compartidos, crea o reutiliza el caso padre en `case_scenarios` y vincula automáticamente todas las preguntas hijas asignando correlativamente `case_id` y `case_order` sin requerir enlace manual.
+  - **Soporte Híbrido:** Admite en un mismo archivo Excel tanto preguntas individuales (`CODIGO_CASO` vacío -> `case_id: null`) como bloques de preguntas anidadas.
+- **📂 Importador Masivo de Casuísticas Puras ([adminController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/adminController.js), [apiRoutes.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/routes/apiRoutes.js)):**
+  - Nuevo endpoint `POST /api/admin/cases/bulk` y modal dedicada `bulk-case` en la pestaña de Casuísticas con editor JSON y carga de Excel de viñetas pedagógicas/clínicas.
+- **🧹 Depuración Total de Columnas Obsoletas (Clean Code & Database Health):**
+  - **`case_scenarios.table_html`:** Eliminada por completo del backend, frontend, plantillas Excel y esquemas SQL. Las tablas y cuadros comparativos ahora se gestionan de forma nativa e integrada dentro del HTML enriquecido del enunciado (`description_text`) vía TinyMCE 6.
+  - **`question_bank.visual_support_recommendation`:** Eliminada por completo de todas las capas (frontend, repositorios, controladores, schemas y migraciones), eliminando el código muerto y optimizando las consultas SQL.
+- **🧪 Cobertura de Pruebas Unitarias:**
+  - Suite de pruebas completa: **38 / 38 suites y 250 / 250 tests en verde (100%)**.
+
 ---
 
 ## 🏛️ Arquitectura General del Sistema
@@ -414,7 +427,7 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 - **Row Level Security (RLS):** Habilitado en todas las tablas de interacción de usuario en Supabase.
 - **Sanitización XSS:** Sanitización estricta en el editor TinyMCE y procesador Markdown.
 - **Firmas Criptográficas:** Verificación HMAC en webhooks de Mercado Pago.
-- **Cobertura de Pruebas:** Suite Jest de 17 archivos de prueba unitarios con **123/123 pruebas en verde**.
+- **Cobertura de Pruebas:** Suite Jest con **250 / 250 pruebas unitarias en verde**.
 
 ---
 
