@@ -678,3 +678,28 @@ Para mantener paridad total de experiencia entre la plataforma Web y las aplicac
 - [x] **Modal de Resultados Armonioso:** Espaciado limpio entre *"Ver Corrección del Examen"* y los botones secundarios.
 - [x] **Avatar Hubi en Revisión:** Botón de Tutor IA en revisión de examen con icono y avatar de Hubi.
 - [x] **Pruebas Unitarias y Tipado:** 19 suites Jest (149/149 tests en verde) y TypeScript sin errores (`0 errors`).
+
+---
+
+## 🚀 7. Sincronización Móvil de Simulacro Real, Método B y Blindaje RAG (Septiembre 2026)
+
+Para consolidar la misma robustez técnica en **Hub Educación App (`HubDocenteApp`)** y **Hub Salud App (`HubSaludApp`)**:
+
+### 1. Carga Total Atómica (Método B) en Mobile
+* `app/quiz/index.tsx` solicita directamente el tamaño total del examen (`limit: totalLimit`: 10, 20 o 60 en Docente; 10, 20 o 100 en Salud) en la llamada inicial a `/api/docente/start`.
+* El backend ejecuta el algoritmo `packExamQuestions`, asegurando que las casuísticas pedagógicas y viñetas clínicas ingresen como unidades atómicas indivisibles, erradicando casos cortados a la mitad.
+* Al recibir el paquete completo, la app almacena todo el examen en memoria local, eliminando llamadas innecesarias en segundo plano y permitiendo realizar la prueba offline o ante intermitencias de red.
+
+### 2. Temporizador Reglamentario Contextual en Mobile
+* Al iniciar un Simulacro Real (`mode === 'real'` o reactivos $\ge 50$):
+  * **Hub Educación:** Cronómetro regresivo oficial de **3 horas (10,800 segundos)** con visualización `HH:MM:SS` (ej. `02:59:45`).
+  * **Hub Salud:** Cronómetro regresivo de **2 horas (7,200 segundos)**.
+* **Persistencia Resiliente:** El tiempo restante se almacena en `AppStorage` y se reanuda de forma exacta ante interrupciones. Si el cronómetro llega a 0, la app finaliza y entrega automáticamente el examen.
+
+### 3. Filtro de Modalidad en Dashboard Móvil
+* En `app/(tabs)/home.tsx`, se añadió la barra horizontal de filtros por modo: `Todos`, `Rápido (10q)`, `Estudio (20q)` y `Simulacro Real`.
+* Al pulsar un filtro, recarga en tiempo real `getStats({ limit: selectedModeFilter })` y `getEvolution({ limit: selectedModeFilter })`, renderizando la serie dorada `scoresReal` en `HistoricalTrendChart.tsx`.
+
+### 4. Blindaje del Motor RAG
+* **En Simulacros Reales:** RAG **100% Desactivado** tanto en Web como en las Apps Móviles. Los reactivos provienen de forma exclusiva del banco verificado en PostgreSQL (`source: 'BANK'`). El Tutor IA permanece bloqueado durante la prueba (modo ciego estricto).
+* **En Exámenes Cortos (10q / 20q):** El RAG opera exclusivamente por déficit ($\text{neededCount} = \text{limit} - \text{bankCount}$) en bloques paralelos de $\le 5$ preguntas, guardando cada reactivo generado en PostgreSQL para auto-abastecer el banco.

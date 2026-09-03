@@ -194,4 +194,31 @@ Para emular los casos clínicos complejos y seriados de los exámenes ENAM, SERU
    - Modal de **Encadenamiento Masivo** (`link-case`): permite encadenar casos clínicos seriados directamente desde la selección masiva de preguntas con reordenamiento intuitivo.
    - Soporta columnas `CODIGO_CASO`, `ENUNCIADO_CASO` y `ORDEN_CASO` en la importación masiva por Excel.
 
+---
+
+## 15. Apertura Oficial de Simulacros Reales en Salud (Septiembre 2026)
+
+Se habilitó formalmente la modalidad de **Simulacro Real (Oficial)** (`mode=real`) para Medicina Humana (SERUMS y ENAM):
+
+1. **Temporizador Oficial Riguroso (2 Horas / 7,200 Segundos)**:
+   - Acorde a los estándares de evaluación ENAM / SERUMS para 100 preguntas.
+   - Formato dinámico `HH:MM:SS` (ej. `02:00:00` -> `01:45:20`).
+   - Visibilidad garantizada en cabecera para exámenes $\ge 50$ preguntas.
+2. **Modo Ciego Estricto (Blind Mode)**:
+   - Neutralización del feedback inmediato (`isStudyMode = false`). El estudiante o médico rinde el examen a ciegas de principio a fin, desplegando la corrección exhaustiva y el Tutor IA únicamente al entregar la prueba.
+3. **Exención de Anti-repetición 24h**:
+   - En simulacros reales no se bloquean los reactivos en `user_question_history`, permitiendo repetición y práctica libre en cualquier momento.
+   - Dentro del mismo examen activo, `sessionSeenIds` garantiza exclusión estricta de duplicados.
+4. **Evasión Forzada de Filtro Personalizado**:
+   - Con `mode=real`, el servicio backend fuerza `isDefault = true` y `queryAreas = ['*']` para consultar todas las especialidades y bloques temáticos oficiales (Salud Pública, Medicina Interna, Pediatría, Cirugía, Ginecología-Obstetricia, etc.).
+5. **Persistencia Resiliente ante Pausas e Interrupciones**:
+   - El tiempo restante guardado en `state.timeLeft` se conserva intacto al reanudar una sesión interrumpida.
+6. **Métricas y Filtros en el Dashboard**:
+   - Habilitación interactiva de la tarjeta `#btn-mode-real`.
+   - Incorporación del botón filtro `Simulacro Real` en el panel de control de analíticas con serie gráfica dorada `scoresReal`.
+7. **Carga Total Atómica (Método B) y Viñetas Clínicas Indivisibles**:
+   - `/start` solicita directamente el total exacto del examen (`limit: state.maxQuestions`: 10, 20 o 100), reduciendo en un 90% las consultas a PostgreSQL y volviendo el simulador 100% inmune a micro-cortes de internet.
+   - Algoritmo `packExamQuestions`: agrupa las viñetas clínicas como bloques atómicos indivisibles ($K$ preguntas seriadas). Solo se ingresan si caben completas en el cupo restante, completando el residuo exacto con preguntas individuales (tamaño 1). Esto garantiza que **ninguna viñeta clínica sea cortada a la mitad**.
+   - En PostgreSQL, la cuota por área escala dinámicamente (`GREATEST(3, CEIL(limit / topicsCount * 1.5))`), garantizando reactivos suficientes de todas las especialidades médicas.
+
 

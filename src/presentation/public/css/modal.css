@@ -60,13 +60,16 @@ body.modal-open {
 }
 
 .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     background: transparent;
     flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .modal-header h2 {

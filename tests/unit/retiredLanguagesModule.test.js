@@ -33,10 +33,11 @@ describe('Retired language-learning module boundaries', () => {
         expect(source).not.toMatch(/Si la tarjeta es de \*\*Idiomas\*\*/i);
     });
 
-    test('obsolete category is normalized while active categories are preserved', () => {
+    test('unknown category is normalized while active categories including Idiomas are preserved', () => {
         const deckController = require('../../src/application/controllers/deckController');
 
-        expect(deckController._normalizeCategory('Idiomas')).toBe('General');
+        expect(deckController._normalizeCategory('Inexistente')).toBe('General');
+        expect(deckController._normalizeCategory('Idiomas')).toBe('Idiomas');
         expect(deckController._normalizeCategory('Educación')).toBe('Educación');
         expect(deckController._normalizeCategory('Tecnología')).toBe('Tecnología');
     });

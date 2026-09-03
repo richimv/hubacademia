@@ -35,6 +35,10 @@ class DeckService {
     }
 
     async addCard(userId, deckId, front, back, imageUrl = null, backImageUrl = null, audioUrlFront = null, audioUrlBack = null, ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
+        const deck = await trainingRepository.getDeckById(userId, deckId);
+        if (!deck) {
+            throw new Error('Mazo no encontrado o acceso denegado');
+        }
         return await trainingRepository.createFlashcard(userId, deckId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
     }
 
@@ -71,6 +75,10 @@ class DeckService {
     }
 
     async addBulkCards(userId, deckId, cards) {
+        const deck = await trainingRepository.getDeckById(userId, deckId);
+        if (!deck) {
+            throw new Error('Mazo no encontrado o acceso denegado');
+        }
         return await trainingRepository.createFlashcardsManualBatch(userId, deckId, cards);
     }
 
@@ -120,7 +128,7 @@ class DeckService {
         }
 
         // 3. Crear el mazo clonado para el usuario
-        const newDeck = await this.createDeck(userId, cloneName, deck.icon, null, deck.description, deck.color);
+        const newDeck = await this.createDeck(userId, cloneName, deck.icon, null, deck.description, deck.color, deck.category || 'General');
 
         // 4. Obtener tarjetas originales
         const cards = await this.getDeckCards(publicDeckId);

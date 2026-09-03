@@ -143,7 +143,8 @@ class DocenteController {
                 score: finalScore,
                 totalQuestions: finalTotal,
                 questions: finalQuestions,
-                sourceSessionId: grading?.sessionId || null
+                sourceSessionId: grading?.sessionId || null,
+                mode: req.body.mode || (finalTotal >= 50 ? 'real' : undefined)
             });
 
             if (grading) {

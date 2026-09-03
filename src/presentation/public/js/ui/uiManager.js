@@ -154,6 +154,7 @@ class UIManager {
                 }
             });
             this.openModals.clear();
+            this._modalHistoryStack = [];
             document.body.classList.remove('modal-open');
         }
     }
@@ -167,11 +168,16 @@ class UIManager {
         }
         this.openModals.add(modalId);
         document.body.classList.add('modal-open');
+        this._modalHistoryStack = this._modalHistoryStack || [];
+        this._modalHistoryStack.push({
+            state: window.history.state || null,
+            href: window.location.href
+        });
         window.history.pushState({ modalOpen: true, modalId }, '');
     }
 
     /**
-     * Quita el modal del Set cuando se cierra manualmente (botón 'x').
+     * Quita el modal del Set cuando se cierra manualmente (botón 'x', cancelar o guardar).
      */
     popModalState(modalId) {
         if (this.openModals.has(modalId)) {
@@ -179,13 +185,14 @@ class UIManager {
             if (this.openModals.size === 0) {
                 document.body.classList.remove('modal-open');
             }
-            // Hacer "atrás" invisible si cerramos manual para no ensuciar el historial extra
-            if (window.history.state && window.history.state.modalOpen) {
-                this.isClosingModalState = true;
-                window.history.back();
-                setTimeout(() => {
-                    this.isClosingModalState = false;
-                }, 150);
+            // Restaurar el estado de navegación silenciosamente SIN disparar evento 'popstate'
+            if (this._modalHistoryStack && this._modalHistoryStack.length > 0) {
+                const prev = this._modalHistoryStack.pop();
+                if (window.history.state && window.history.state.modalOpen) {
+                    window.history.replaceState(prev.state, '', prev.href);
+                }
+            } else if (window.history.state && window.history.state.modalOpen) {
+                window.history.replaceState(null, '', window.location.href);
             }
         }
     }

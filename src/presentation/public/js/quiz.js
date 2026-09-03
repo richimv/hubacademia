@@ -460,9 +460,9 @@ async function init() {
     // Mostrar de inmediato overlay estilizado con contexto resuelto
     showLoadingOverlay();
 
-    // Timer Logic: Only show for Real Mock (100 questions) - Users request
+    // Timer Logic: Only show for Real Mock (>= 50 questions or mode=real)
     const timerBadge = document.querySelector('.timer-badge');
-    if (state.maxQuestions === 100 && timerBadge) {
+    if ((state.maxQuestions >= 50 || state.mode === 'real') && timerBadge) {
         timerBadge.style.display = 'flex';
     } else if (timerBadge) {
         timerBadge.style.display = 'none';
@@ -695,11 +695,9 @@ function loadSession() {
             return null;
         }
 
-        // Si es un Simulacro Real (>= 50qs o mode=real) y tiene tiempo restante guardado, descontar tiempo real transcurrido
+        // Si es un Simulacro Real (>= 50qs o mode=real), mantenemos el tiempo restante guardado intacto para permitir pausas e interrupciones
         if ((data.maxQuestions >= 50 || data.mode === 'real') && data.timeLeft !== undefined && data.timeLeft !== null) {
-            const elapsedSeconds = Math.floor(ageInMs / 1000);
-            data.timeLeft = Math.max(0, data.timeLeft - elapsedSeconds);
-            console.log(`⏱️ Persistencia del cronómetro: se descontaron ${elapsedSeconds}s de inactividad. Tiempo restante: ${data.timeLeft}s.`);
+            console.log(`⏱️ Persistencia del cronómetro: tiempo restante restaurado intacto: ${data.timeLeft}s.`);
         }
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -835,7 +833,7 @@ async function startQuiz() {
             areas: state.areas,
             career: state.career,
             difficulty: state.difficulty,
-            limit: Math.min(10, state.maxQuestions),
+            limit: state.maxQuestions,
             mode: state.mode,
             configType: state.configType
         })
@@ -1487,7 +1485,9 @@ function handleAnswer(selectedIndex, btnElement, isReplaying = false) {
     }
 
     // 🚀 BIFURCACIÓN DE COMPORTAMIENTO PARA FEEDBACK / SIGUIENTE
-    const isStudyMode = Number(state.maxQuestions) === 20 || state.mode === 'study' || (Number(state.maxQuestions) !== 10 && Number(state.maxQuestions) !== 100);
+    // Simulacro Real (>= 50qs o mode=real) y Modo Rápido (10qs o mode=arcade) son Modo Ciego estricto
+    const isRealMock = state.mode === 'real' || Number(state.maxQuestions) >= 50;
+    const isStudyMode = !isRealMock && (Number(state.maxQuestions) === 20 || state.mode === 'study');
 
     if (isStudyMode) {
         // MODO ESTUDIO (20q): Mostrar explicación y el botón siguiente
@@ -1527,7 +1527,7 @@ function handleAnswer(selectedIndex, btnElement, isReplaying = false) {
             }
         }
     } else {
-        // MODO RÁPIDO (10q) o SIMULACRO REAL (100q): Ocultamos explicación/feedback box, mostramos solo botón siguiente
+        // MODO RÁPIDO (10q) o SIMULACRO REAL (60q / 100q): Ocultamos explicación/feedback box, mostramos solo botón siguiente
         if (elements.feedbackBox) {
             elements.feedbackBox.classList.add('hidden');
             elements.feedbackBox.style.display = 'none';
@@ -1540,10 +1540,10 @@ function handleAnswer(selectedIndex, btnElement, isReplaying = false) {
         nextContainer.style.display = 'flex';
     }
 
-    // Configurar y mostrar botón de Tutor IA (No disponible en vivo durante modo rápido de 10q ni simulacro real de 100q)
+    // Configurar y mostrar botón de Tutor IA (No disponible en vivo durante modo rápido ni simulacro real)
     const tutorBtn = document.getElementById('btn-open-quiz-tutor');
     if (tutorBtn) {
-        const isBlindMode = Number(state.maxQuestions) === 100 || Number(state.maxQuestions) === 10 || state.mode === 'arcade' || state.mode === 'real';
+        const isBlindMode = isRealMock || Number(state.maxQuestions) === 10 || state.mode === 'arcade';
         if (isBlindMode) {
             tutorBtn.classList.add('hidden');
             tutorBtn.style.display = 'none';
@@ -1611,14 +1611,26 @@ function handleNextQuestion() {
 let timerInterval;
 function startMockTimer() {
     // 🔄 RECURSO DE PERSISTENCIA: Si hay tiempo guardado en el estado, lo usamos.
-    // De lo contrario, iniciamos en 2 horas (7200s).
-    let timeLeft = (state.timeLeft !== undefined && state.timeLeft !== null) ? state.timeLeft : 7200;
+    // Duración oficial reglamentaria:
+    // - Educación (60 preguntas): 3 horas (10,800s / 180 min) según pruebas oficiales MINEDU.
+    // - Salud / Medicina (100 preguntas): 2 horas (7,200s / 120 min) según pruebas oficiales ENAM/SERUMS.
+    const isEduContext = (state.context || '').toUpperCase() === 'EDUCACION' || state.maxQuestions === 60 || ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam);
+    const defaultDurationSeconds = isEduContext ? 10800 : 7200;
+    let timeLeft = (state.timeLeft !== undefined && state.timeLeft !== null) ? state.timeLeft : defaultDurationSeconds;
 
-    // Función para formatear MM:SS
+    // Función para formatear HH:MM:SS (si >= 1h) o MM:SS (si < 1h)
     const updateDisplay = () => {
-        const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-        const s = (timeLeft % 60).toString().padStart(2, '0');
-        if (elements.timer) elements.timer.textContent = `${m}:${s}`;
+        if (!elements.timer) return;
+        if (timeLeft >= 3600) {
+            const h = Math.floor(timeLeft / 3600).toString().padStart(2, '0');
+            const m = Math.floor((timeLeft % 3600) / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            elements.timer.textContent = `${h}:${m}:${s}`;
+        } else {
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            elements.timer.textContent = `${m}:${s}`;
+        }
     };
 
     updateDisplay(); // Mostrar inicial
@@ -1813,6 +1825,7 @@ async function finishQuiz() {
         target: state.targetExam,
         career: state.career,
         difficulty: state.difficulty,
+        mode: state.mode || (totalCount >= 50 ? 'real' : undefined),
         score: actualScore,
         total_questions: totalCount,
         totalQuestions: totalCount,

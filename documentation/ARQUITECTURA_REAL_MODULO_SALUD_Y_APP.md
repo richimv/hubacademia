@@ -368,9 +368,23 @@ CREATE TABLE public.users (
 
 ---
 
+## 🚀 5. Sincronización Móvil de Simulacro Real, Método B y Blindaje RAG (Septiembre 2026)
 
+Para consolidar los mismos estándares técnicos en **Hub Salud App (`HubSaludApp`)**:
 
+### 1. Carga Total Atómica (Método B) en Mobile
+* `app/quiz/index.tsx` solicita directamente el tamaño total del examen (`limit: totalLimit`: 10, 20 o 100 reactivos) en la llamada inicial a `/api/medico/start`.
+* El backend ejecuta el algoritmo `packExamQuestions`, garantizando que las viñetas clínicas ingresen como unidades atómicas indivisibles con todas sus preguntas hermanas ordenadas por `case_order ASC`, erradicando casos mutilados o incompletos.
+* Al recibir el paquete completo, la app retiene todo el examen en memoria local, eliminando llamadas de red en segundo plano y otorgando 0 ms de latencia al navegar entre preguntas.
 
+### 2. Temporizador Reglamentario Contextual en Mobile (2 Horas / 7,200s)
+* Al iniciar un Simulacro Real (`mode === 'real'` o reactivos $\ge 50$), la app activa un cronómetro regresivo de **2 horas (7,200 segundos)** con visualización `HH:MM:SS` (ej. `01:59:45`).
+* **Persistencia Resiliente:** El tiempo restante se almacena en `AppStorage` y se reanuda de forma exacta ante interrupciones. Si el cronómetro llega a 0, la app finaliza y entrega automáticamente el examen.
 
+### 3. Filtro de Modalidad en Dashboard Móvil
+* En `app/(tabs)/home.tsx`, se añadió la barra horizontal de filtros por modo: `Todos`, `Rápido (10q)`, `Estudio (20q)` y `Simulacro Real`.
+* Al pulsar un filtro, recarga en tiempo real `getStats({ limit: selectedModeFilter })` y `getEvolution({ limit: selectedModeFilter })`, renderizando la serie dorada `scoresReal` en `HistoricalTrendChart.tsx`.
 
-
+### 4. Blindaje del Motor RAG
+* **En Simulacros Reales:** RAG **100% Desactivado** tanto en Web como en la App Móvil. Los reactivos provienen exclusivamente del banco verificado en PostgreSQL (`source: 'BANK'`). El Tutor IA permanece bloqueado durante la prueba (modo ciego estricto).
+* **En Exámenes Cortos (10q / 20q):** El RAG opera exclusivamente por déficit ($\text{neededCount} = \text{limit} - \text{bankCount}$) en bloques paralelos de $\le 5$ preguntas, persistiendo cada reactivo generado en PostgreSQL para auto-abastecer el banco.

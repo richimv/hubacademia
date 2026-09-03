@@ -3,10 +3,15 @@ const crypto = require('crypto');
 
 class MedicoRepository {
 
-    async findQuestionsInBankBatch(target, topics, limit = 10, userId, career = null, difficulty = null, sessionSeenIds = []) {
-        const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
-        const seenRes = await db.query(seenQuery, [userId]);
-        let seenIds = seenRes.rows.map(r => r.question_id);
+    async findQuestionsInBankBatch(target, topics, limit = 10, userId, career = null, difficulty = null, sessionSeenIds = [], mode = null) {
+        let seenIds = [];
+        const isRealMock = mode === 'real' || limit >= 50;
+
+        if (!isRealMock && userId) {
+            const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
+            const seenRes = await db.query(seenQuery, [userId]);
+            seenIds = seenRes.rows.map(r => r.question_id);
+        }
 
         if (sessionSeenIds && Array.isArray(sessionSeenIds) && sessionSeenIds.length > 0) {
             seenIds = [...new Set([...seenIds, ...sessionSeenIds])];
@@ -15,7 +20,7 @@ class MedicoRepository {
         // Sanitize to only valid UUID strings
         seenIds = seenIds.filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
 
-        console.log(`🔎 [MedicoRepo] Usuario ${userId} ha visto ${seenIds.length} preguntas (24h + sesión actual). Solicitando lote de ${limit}.`);
+        console.log(`🔎 [MedicoRepo] Usuario ${userId} solicitando lote de ${limit} (${isRealMock ? 'Simulacro Real: anti-repetición 24h omitido' : seenIds.length + ' vistas excluidas'}).`);
 
         const filterTopics = topics && topics.length > 0 && !topics.includes('*') && !topics.includes('ALL') && !topics.includes('all');
         let whereClauses = `WHERE qb.domain = 'medicine' AND ($2::text IS NULL OR qb.target = $2)`;
@@ -62,9 +67,8 @@ class MedicoRepository {
                    case_code, case_title, case_description, case_image_url
             FROM BalancedPool 
             WHERE rn <= CASE 
-                WHEN array_length($1::text[], 1) >= 5 THEN 2 
-                WHEN array_length($1::text[], 1) >= 2 THEN 5 
-                ELSE $${paramIdx} 
+                WHEN $1::text[] IS NULL OR $1::text[] = ARRAY['*']::text[] THEN $${paramIdx} 
+                ELSE GREATEST(3, CEIL(($${paramIdx}::float / GREATEST(1, array_length($1::text[], 1))) * 1.5)) 
             END
             ORDER BY RANDOM() 
             LIMIT $${paramIdx}
@@ -357,26 +361,32 @@ class MedicoRepository {
         const quizHistoryId = res.rows[0].id;
         const wasCreated = res.rows[0].inserted === true;
 
+        const isRealMock = quizData.mode === 'real' || totalQ >= 50;
+
         if (wasCreated && quizData.questions && Array.isArray(quizData.questions)) {
-            for (const q of quizData.questions) {
-                if (q.id) {
-                    try {
-                        const checkQuery = `SELECT id, times_seen FROM user_question_history WHERE user_id = $1 AND question_id = $2`;
-                        const checkRes = await db.query(checkQuery, [userId, q.id]);
-                        if (checkRes.rows.length > 0) {
-                            const row = checkRes.rows[0];
-                            await db.query(
-                                `UPDATE user_question_history SET seen_at = NOW(), times_seen = $1 WHERE id = $2`,
-                                [row.times_seen + 1, row.id]
-                            );
-                        } else {
-                            await db.query(
-                                `INSERT INTO user_question_history (user_id, question_id, seen_at, times_seen) VALUES ($1, $2, NOW(), 1)`,
-                                [userId, q.id]
-                            );
+            if (isRealMock) {
+                console.log(`ℹ️ [MedicoRepo] Simulacro Real (${totalQ}qs): No se marca bloqueo anti-repetición 24h para permitir práctica libre e ilimitada.`);
+            } else {
+                for (const q of quizData.questions) {
+                    if (q.id) {
+                        try {
+                            const checkQuery = `SELECT id, times_seen FROM user_question_history WHERE user_id = $1 AND question_id = $2`;
+                            const checkRes = await db.query(checkQuery, [userId, q.id]);
+                            if (checkRes.rows.length > 0) {
+                                const row = checkRes.rows[0];
+                                await db.query(
+                                    `UPDATE user_question_history SET seen_at = NOW(), times_seen = $1 WHERE id = $2`,
+                                    [row.times_seen + 1, row.id]
+                                );
+                            } else {
+                                await db.query(
+                                    `INSERT INTO user_question_history (user_id, question_id, seen_at, times_seen) VALUES ($1, $2, NOW(), 1)`,
+                                    [userId, q.id]
+                                );
+                            }
+                        } catch (err) {
+                            console.error("❌ Error actualizando user_question_history en MedicoRepo:", err.message);
                         }
-                    } catch (err) {
-                        console.error("❌ Error actualizando user_question_history en MedicoRepo:", err.message);
                     }
                 }
             }

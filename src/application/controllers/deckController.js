@@ -10,7 +10,7 @@ const SECURITY_LIMITS = {
 
 const DECK_CATEGORIES = new Set([
     'General', 'Medicina', 'Educación', 'Matemáticas',
-    'Historia', 'Derecho', 'Ciencia', 'Tecnología'
+    'Historia', 'Derecho', 'Ciencia', 'Tecnología', 'Idiomas'
 ]);
 
 class DeckController {
@@ -359,6 +359,9 @@ class DeckController {
             res.json({ success: true, card });
         } catch (error) {
             console.error('[addCard] Error:', error);
+            if (error.message === 'Mazo no encontrado o acceso denegado') {
+                return res.status(403).json({ error: error.message });
+            }
             res.status(500).json({ error: 'Error al añadir tarjeta' });
         }
     }
@@ -424,6 +427,9 @@ class DeckController {
             res.json({ success: true, count: result.inserted });
         } catch (error) {
             console.error('[addBulkCards] Error:', error);
+            if (error.message === 'Mazo no encontrado o acceso denegado') {
+                return res.status(403).json({ error: error.message });
+            }
             res.status(500).json({ error: 'Error en la carga masiva.' });
         }
     }
@@ -694,6 +700,12 @@ class DeckController {
             const { userId } = this._getUserContext(req);
 
             if (!topic) return res.status(400).json({ error: 'El tema es obligatorio' });
+
+            // 🛡️ SEGURIDAD IDOR: Validar que el mazo pertenezca al usuario
+            const targetDeck = await DeckService.getDeckById(userId, deckId);
+            if (!targetDeck) {
+                return res.status(403).json({ error: 'Mazo no encontrado o acceso denegado' });
+            }
 
             // LÍMITE DE SEGURIDAD IA
             const requestedAmount = Math.min(Math.max(parseInt(amount) || 5, 1), 20);

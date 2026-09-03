@@ -525,8 +525,13 @@ body {
         justify-content: center;
     }
 
+    .explorer-sidebar.is-collapsed #btn-toggle-explorer {
+        order: -1;
+    }
+
     .explorer-sidebar.is-collapsed .explorer-action-btn#btn-explorer-create {
         display: inline-flex !important;
+        order: 1;
     }
 
     .explorer-sidebar.is-collapsed #deck-tree {
@@ -605,6 +610,15 @@ body {
 
     .explorer-sidebar.is-collapsed #deck-tree {
         display: none !important;
+    }
+
+    /* Flechas verticales para móvil (arriba para plegar/cerrar hacia arriba, abajo para desplegar hacia abajo) */
+    .explorer-toggle-btn .fa-chevron-left::before {
+        content: "\f077" !important; /* fa-chevron-up */
+    }
+    .explorer-sidebar.is-collapsed .explorer-toggle-btn .fa-chevron-right::before,
+    .explorer-sidebar.is-collapsed .explorer-toggle-btn .fa-chevron-down::before {
+        content: "\f078" !important; /* fa-chevron-down */
     }
 
     .decks-grid {
@@ -911,8 +925,8 @@ textarea.form-input {
     }
 
     /* Modal Actions Stacked */
-    .modal-content form>div:last-child,
-    .modal-content>div:last-of-type {
+    .modal-content .modal-footer,
+    .modal-content form>.modal-footer {
         flex-direction: column-reverse;
         gap: 0.8rem !important;
     }

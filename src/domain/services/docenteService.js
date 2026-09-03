@@ -168,12 +168,13 @@ class DocenteService {
         const areaMap = new Map();
         areas.forEach(a => areaMap.set(a.trim().toUpperCase(), a.trim()));
 
-        const isDefault = categoryOptions.configType === 'default' || !categoryOptions.configType;
+        const isRealMock = categoryOptions.mode === 'real' || limit >= 50;
+        const isDefault = isRealMock || categoryOptions.configType === 'default' || !categoryOptions.configType;
         const queryAreas = isDefault ? ['*'] : normalizedAllAreas;
 
-        console.log(`📡 [DocenteService] Target: ${target} | Career: ${career} | Config: ${categoryOptions.configType || 'default'} | QueryAreas: ${queryAreas.join(', ')} | Limit: ${limit}`);
+        console.log(`📡 [DocenteService] Target: ${target} | Career: ${career} | Config: ${categoryOptions.configType || 'default'} | Mode: ${categoryOptions.mode || 'standard'} | QueryAreas: ${queryAreas.join(', ')} | Limit: ${limit}`);
 
-        const rawBankQuestions = await docenteRepository.findQuestionsInBankBatch(target, queryAreas, Math.max(50, limit * 3), userId, career, difficulty, seenIds);
+        const rawBankQuestions = await docenteRepository.findQuestionsInBankBatch(target, queryAreas, Math.max(50, limit * 3), userId, career, difficulty, seenIds, categoryOptions.mode);
 
         const questionsByArea = {};
         const returnedTopics = new Set();
@@ -192,42 +193,13 @@ class DocenteService {
         const areasWithStock = activeAreas.filter(area => questionsByArea[area] && questionsByArea[area].length > 0);
 
         let bankSampledAreas;
-        if (areasWithStock.length >= 5) {
-            bankSampledAreas = areasWithStock.sort(() => 0.5 - Math.random()).slice(0, 5);
-        } else if (areasWithStock.length > 0) {
+        if (limit > 10 || areasWithStock.length <= 5) {
             bankSampledAreas = [...areasWithStock];
         } else {
-            bankSampledAreas = activeAreas.length > 5 ? activeAreas.sort(() => 0.5 - Math.random()).slice(0, 5) : activeAreas;
+            bankSampledAreas = areasWithStock.sort(() => 0.5 - Math.random()).slice(0, 5);
         }
 
-        let balancedBatch = [];
-        const processedCaseIds = new Set();
-
-        const addCandidate = (candidate) => {
-            if (!candidate) return;
-            if (!candidate.case_id || !isDefault) {
-                balancedBatch.push(candidate);
-            } else if (!processedCaseIds.has(candidate.case_id)) {
-                processedCaseIds.add(candidate.case_id);
-                const siblings = rawBankQuestions.filter(rq => rq.case_id === candidate.case_id).sort((a, b) => (a.case_order || 1) - (b.case_order || 1));
-                balancedBatch.push(...(siblings.length > 0 ? siblings : [candidate]));
-            }
-        };
-
-        for (const area of bankSampledAreas) {
-            if (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
-                addCandidate(questionsByArea[area].shift());
-            }
-        }
-
-        if (balancedBatch.length < limit) {
-            const searchOrder = [...areasWithStock, ...activeAreas];
-            for (const area of searchOrder) {
-                while (balancedBatch.length < limit && questionsByArea[area] && questionsByArea[area].length > 0) {
-                    addCandidate(questionsByArea[area].shift());
-                }
-            }
-        }
+        let balancedBatch = this.packExamQuestions(rawBankQuestions, limit, bankSampledAreas, isDefault);
 
         const bankCount = balancedBatch.length;
         let batchIsHealthy = bankCount >= limit;
@@ -250,11 +222,8 @@ class DocenteService {
             console.log(`🤖 [Docente-IA] Lote insuficiente (${bankCount}/${limit}). Activando RAG para ${sampledAreas.length} áreas (generando ${neededCount} items faltantes)...`);
             source = bankCount > 0 ? 'HYBRID' : 'AI_REPOSITION';
 
-            if (limit >= 100) {
-                if (bankCount < 10) {
-                    throw new Error(`No hay suficientes preguntas en el banco para este simulacro. Solo hay ${bankCount} disponibles.`);
-                }
-                return { questions: balancedBatch, source: 'BANK', topic: sampledAreas[0] };
+            if (limit >= 50 || categoryOptions.mode === 'real') {
+                return { questions: balancedBatch, source: 'BANK', topic: sampledAreas[0], areas: areas };
             }
 
             try {
@@ -473,6 +442,109 @@ class DocenteService {
             radar_data: radarData,
             system_deck_id: deckId
         };
+    }
+
+    /**
+     * Empaqueta de forma atómica e indivisible casuísticas (preguntas hermanas) y reactivos individuales
+     * garantizando que ninguna casuística sea cortada a la mitad y alcanzando con exactitud el límite solicitado.
+     */
+    packExamQuestions(rawBankQuestions, limit, activeAreas = [], isDefault = true) {
+        if (!rawBankQuestions || rawBankQuestions.length === 0) return [];
+        if (rawBankQuestions.length <= limit) {
+            return rawBankQuestions;
+        }
+
+        // 1. Mapeo de casos completos
+        const casesMap = new Map();
+        rawBankQuestions.forEach(q => {
+            if (q.case_id) {
+                if (!casesMap.has(q.case_id)) casesMap.set(q.case_id, []);
+                casesMap.get(q.case_id).push(q);
+            }
+        });
+
+        // Ordenar las preguntas dentro de cada casuística por case_order ASC
+        casesMap.forEach(siblings => {
+            siblings.sort((a, b) => (a.case_order || 1) - (b.case_order || 1));
+        });
+
+        // 2. Clasificar en bloques de casos y preguntas sueltas agrupadas por área
+        const caseUnitsByArea = new Map();
+        const soloQuestionsByArea = new Map();
+        const registeredCaseIds = new Set();
+
+        rawBankQuestions.forEach(q => {
+            const topicKey = q.topic ? q.topic.toUpperCase() : 'GENERAL';
+            if (q.case_id && isDefault) {
+                if (!registeredCaseIds.has(q.case_id)) {
+                    registeredCaseIds.add(q.case_id);
+                    const fullCase = casesMap.get(q.case_id);
+                    if (!caseUnitsByArea.has(topicKey)) caseUnitsByArea.set(topicKey, []);
+                    caseUnitsByArea.get(topicKey).push(fullCase);
+                }
+            } else {
+                if (!soloQuestionsByArea.has(topicKey)) soloQuestionsByArea.set(topicKey, []);
+                soloQuestionsByArea.get(topicKey).push(q);
+            }
+        });
+
+        const packedQuestions = [];
+        const areasList = activeAreas.length > 0
+            ? activeAreas
+            : Array.from(new Set([...soloQuestionsByArea.keys(), ...caseUnitsByArea.keys()]));
+
+        // 3. Selección balanceada de casos completos (solo si caben enteros en el cupo restante)
+        let hasCasesToProcess = true;
+        while (hasCasesToProcess && packedQuestions.length < limit) {
+            let addedAnyCaseInRound = false;
+            for (const area of areasList) {
+                const spaceLeft = limit - packedQuestions.length;
+                if (spaceLeft <= 0) break;
+
+                const areaCases = caseUnitsByArea.get(area);
+                if (areaCases && areaCases.length > 0) {
+                    const fittingCaseIdx = areaCases.findIndex(c => c.length <= spaceLeft);
+                    if (fittingCaseIdx !== -1) {
+                        const [fittingCase] = areaCases.splice(fittingCaseIdx, 1);
+                        packedQuestions.push(...fittingCase);
+                        addedAnyCaseInRound = true;
+                    }
+                }
+            }
+            if (!addedAnyCaseInRound) {
+                hasCasesToProcess = false;
+            }
+        }
+
+        // 4. Completar el espacio restante con Preguntas Sueltas (size 1) de forma balanceada
+        let hasSoloToProcess = true;
+        while (hasSoloToProcess && packedQuestions.length < limit) {
+            let addedAnySoloInRound = false;
+            for (const area of areasList) {
+                const spaceLeft = limit - packedQuestions.length;
+                if (spaceLeft <= 0) break;
+
+                const soloList = soloQuestionsByArea.get(area);
+                if (soloList && soloList.length > 0) {
+                    packedQuestions.push(soloList.shift());
+                    addedAnySoloInRound = true;
+                }
+            }
+            if (!addedAnySoloInRound) {
+                hasSoloToProcess = false;
+            }
+        }
+
+        // 5. Salvaguarda: Si aún faltara completar cupo y quedan solos en cualquier área
+        if (packedQuestions.length < limit) {
+            for (const soloList of soloQuestionsByArea.values()) {
+                while (soloList.length > 0 && packedQuestions.length < limit) {
+                    packedQuestions.push(soloList.shift());
+                }
+            }
+        }
+
+        return packedQuestions;
     }
 
     async getLeaderboard() {

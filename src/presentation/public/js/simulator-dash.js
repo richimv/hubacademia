@@ -13,7 +13,7 @@ const SimulatorDash = (() => {
             subtitle: 'Entrenamiento técnico adaptado a especificaciones sanitarias oficiales MINSA & ENCAPS.',
             quizParams: '', // Eliminado el fallback automático. Ahora se fuerza la configuración.
             studyDesc: '20 preguntas con explicación y sustento clínico detallado.',
-            realDesc: '100 preguntas integradas con temporizador oficial estricto.',
+            realDesc: '100 preguntas integradas con temporizador oficial estricto (2 horas).',
             realQuestions: 100,
             sectionIcon: 'fa-stethoscope',
             barChartTitle: 'Dominio por Áreas Clínicas',
@@ -42,7 +42,7 @@ const SimulatorDash = (() => {
             subtitle: 'Evaluación de casuística pedagógica basada en el CNEB y Marco de Buen Desempeño Docente.',
             quizParams: '', // Eliminado el fallback automático.
             studyDesc: '20 preguntas con retroalimentación y sustento pedagógico CNEB.',
-            realDesc: '60 preguntas integradas con temporizador oficial estricto.',
+            realDesc: '60 preguntas integradas con temporizador oficial estricto (3 horas).',
             realQuestions: 60,
             sectionIcon: 'fa-chalkboard-teacher',
             barChartTitle: 'Dominio por Áreas Pedagógicas',
@@ -767,7 +767,7 @@ const SimulatorDash = (() => {
             if (btnReal) {
                 const ctaEl = btnReal.querySelector('.mode-cta');
                 if (ctaEl) {
-                    ctaEl.innerHTML = `<span>Muy pronto</span> <i class="fas fa-lock"></i>`;
+                    ctaEl.innerHTML = `<span>Iniciar simulacro real</span> <i class="fas fa-lock"></i>`;
                 }
             }
         } else {
@@ -789,7 +789,7 @@ const SimulatorDash = (() => {
             if (btnReal) {
                 const ctaEl = btnReal.querySelector('.mode-cta');
                 if (ctaEl) {
-                    ctaEl.innerHTML = `<span>Muy pronto</span> <i class="fas fa-clock"></i>`;
+                    ctaEl.innerHTML = `<span>Iniciar simulacro real</span> <i class="fas fa-arrow-right"></i>`;
                 }
             }
         }

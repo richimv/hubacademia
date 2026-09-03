@@ -154,23 +154,24 @@ class RepasoManager {
         const urlParams = new URLSearchParams(window.location.search);
         const deckId = urlParams.get('deckId');
         const viewParam = urlParams.get('view');
+        const categoryParam = urlParams.get('category');
         const isGuest = !this.token;
 
         if (deckId) {
             this.loadFolder(deckId, false); // Deep link
-        } else if (viewParam === 'community') {
-            this.loadCommunity(false);
+        } else if (viewParam === 'community' || categoryParam) {
+            this.loadCommunity(false, categoryParam);
         } else if (viewParam === 'dashboard') {
             this.loadDashboard(false);
         } else {
             // Visitante sin sesión -> Comunidad primero para explorar mazos públicos.
             // Usuario autenticado -> Mis Mazos por defecto (o su última vista guardada).
             if (isGuest) {
-                this.loadCommunity(false);
+                this.loadCommunity(false, categoryParam);
             } else {
                 const savedView = localStorage.getItem('repaso_active_view');
                 if (savedView === 'community') {
-                    this.loadCommunity(false);
+                    this.loadCommunity(false, categoryParam);
                 } else {
                     this.loadDashboard(false);
                 }
@@ -342,6 +343,7 @@ class RepasoManager {
         const commView = document.getElementById('community-view');
         if (commView) commView.style.display = 'none';
         this.currentDeck = null;
+        this.activeTab = 'mis-mazos';
         this.explorer.setActive('ROOT');
         localStorage.setItem('repaso_active_view', 'dashboard');
 
@@ -365,6 +367,7 @@ class RepasoManager {
         document.getElementById('folder-view').style.display = 'block';
         const commView = document.getElementById('community-view');
         if (commView) commView.style.display = 'none';
+        this.activeTab = 'folder';
         this.explorer.setActive(deckId);
         localStorage.setItem('repaso_active_view', 'folder');
 
@@ -463,17 +466,24 @@ class RepasoManager {
         if (commView) commView.style.display = 'block';
 
         this.currentDeck = null;
+        this.activeTab = 'comunidad';
         this.explorer.setActive('COMMUNITY');
         localStorage.setItem('repaso_active_view', 'community');
+
+        const targetCat = category || this.currentCommunityCategory || localStorage.getItem('repaso_community_category') || 'ALL';
 
         if (pushState && window.history.pushState) {
             const url = new URL(window.location.href);
             url.searchParams.set('view', 'community');
             url.searchParams.delete('deckId');
-            window.history.pushState({ view: 'community' }, 'Comunidad', url.toString());
+            if (targetCat && targetCat !== 'ALL') {
+                url.searchParams.set('category', targetCat);
+            } else {
+                url.searchParams.delete('category');
+            }
+            window.history.pushState({ view: 'community', category: targetCat }, 'Comunidad', url.toString());
         }
 
-        const targetCat = category || this.currentCommunityCategory || localStorage.getItem('repaso_community_category') || 'ALL';
         this.renderCommunityDecks(1, targetCat);
     }
 
@@ -483,33 +493,39 @@ class RepasoManager {
         const container = document.getElementById('dashboard-view');
         if (!container) return;
 
-        container.innerHTML = `
-            <div class="repaso-dashboard-header">
-                <div class="repaso-header-top-row">
-                    <h2 class="repaso-header-title">Centro de Repaso</h2>
-                    <button id="btn-repaso-guide" class="btn-guide-hero" data-tooltip="Ver guía rápida de repaso" aria-label="Guía rápida">
-                        <i class="fas fa-circle-question"></i>
-                        <span>Guía</span>
-                    </button>
-                </div>
-                <p class="repaso-header-subtitle">Gestiona y repasa tus mazos personales de flashcards con repetición espaciada.</p>
-            </div>
-            <div id="root-decks-grid" class="decks-grid">
-                <div class="deck-skeleton-card"></div>
-                <div class="deck-skeleton-card"></div>
-                <div class="deck-skeleton-card"></div>
-            </div>
-        `;
+        const existingGrid = document.getElementById('root-decks-grid');
+        const hasLoadedDecks = existingGrid && existingGrid.children.length > 0 && !existingGrid.querySelector('.deck-skeleton-card');
 
-        const btnGuide = container.querySelector('#btn-repaso-guide');
-        if (btnGuide) {
-            btnGuide.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (window.tooltipManager) {
-                    window.tooltipManager.startRepasoTour(true);
-                }
-            };
+        // Solo inyectar esqueletos si es la primera carga y no hay tarjetas renderizadas
+        if (!hasLoadedDecks) {
+            container.innerHTML = `
+                <div class="repaso-dashboard-header">
+                    <div class="repaso-header-top-row">
+                        <h2 class="repaso-header-title">Centro de Repaso</h2>
+                        <button id="btn-repaso-guide" class="btn-guide-hero" data-tooltip="Ver guía rápida de repaso" aria-label="Guía rápida">
+                            <i class="fas fa-circle-question"></i>
+                            <span>Guía</span>
+                        </button>
+                    </div>
+                    <p class="repaso-header-subtitle">Gestiona y repasa tus mazos personales de flashcards con repetición espaciada.</p>
+                </div>
+                <div id="root-decks-grid" class="decks-grid">
+                    <div class="deck-skeleton-card"></div>
+                    <div class="deck-skeleton-card"></div>
+                    <div class="deck-skeleton-card"></div>
+                </div>
+            `;
+
+            const btnGuide = container.querySelector('#btn-repaso-guide');
+            if (btnGuide) {
+                btnGuide.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (window.tooltipManager) {
+                        window.tooltipManager.startRepasoTour(true);
+                    }
+                };
+            }
         }
 
         if (!this.token) {
@@ -571,6 +587,16 @@ class RepasoManager {
 
         if (this.currentCommunityCategory) {
             localStorage.setItem('repaso_community_category', this.currentCommunityCategory);
+            if (window.history && window.history.replaceState) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('view', 'community');
+                if (this.currentCommunityCategory !== 'ALL') {
+                    url.searchParams.set('category', this.currentCommunityCategory);
+                } else {
+                    url.searchParams.delete('category');
+                }
+                window.history.replaceState({ view: 'community', category: this.currentCommunityCategory }, '', url.toString());
+            }
         }
         const container = document.getElementById('community-view');
         if (!container) return;
@@ -579,6 +605,7 @@ class RepasoManager {
             { id: 'ALL', name: 'Todas', icon: 'fas fa-border-all' },
             { id: 'Medicina', name: 'Medicina', icon: 'fas fa-user-md' },
             { id: 'Educación', name: 'Educación', icon: 'fas fa-graduation-cap' },
+            { id: 'Idiomas', name: 'Idiomas', icon: 'fas fa-language' },
             { id: 'Matemáticas', name: 'Matemáticas', icon: 'fas fa-calculator' },
             { id: 'Historia', name: 'Historia', icon: 'fas fa-landmark' },
             { id: 'Derecho', name: 'Derecho', icon: 'fas fa-balance-scale' },
@@ -914,78 +941,67 @@ class RepasoManager {
 
         container.innerHTML = `
             <div class="deck-header-info">
-                <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                    <div class="deck-icon-large">
-                        ${RepasoManager.renderDeckIconHtml(deck, 'fas fa-layer-group')}
+                <div class="deck-header-top">
+                    <div class="deck-title-group">
+                        <span class="deck-title-icon-badge">
+                            ${RepasoManager.renderDeckIconHtml(deck, 'fas fa-layer-group')}
+                        </span>
+                        <h1 class="deck-title">${escapeHtml(deck?.name || 'Mazo sin nombre')}</h1>
                     </div>
+                    <button id="btn-deck-tour" class="btn-guide-hero btn-guide-deck" data-tooltip="Ver tour interactivo de este mazo" aria-label="Tour del mazo">
+                        <i class="fas fa-circle-question"></i>
+                        <span>Tour</span>
+                    </button>
+                </div>
 
-                    <div style="flex-grow: 1; min-width: 0;">
-                        <div class="deck-title-top-row">
-                            <h1 class="deck-title">${escapeHtml(deck?.name || 'Mazo sin nombre')}</h1>
-                            <button id="btn-deck-tour" class="btn-guide-hero btn-guide-deck" data-tooltip="Ver guía rápida de este mazo" aria-label="Guía del mazo">
-                                <i class="fas fa-circle-question"></i>
-                                <span>Guía</span>
-                            </button>
-                        </div>
-                        
-                        <div class="deck-meta">
-                            <div class="deck-meta-pill">
-                                <i class="fas fa-layer-group" style="color: var(--primary);"></i> <span>${total}</span> <span class="meta-label">tarjetas</span>
-                            </div>
-                            <div class="deck-meta-pill ${pending > 0 ? 'pill-pending' : ''}">
-                                <i class="fas fa-clock" style="color: ${pending > 0 ? '#f87171' : '#94a3b8'};"></i> <span>${pending}</span> <span class="meta-label">pendientes</span>
-                            </div>
-                            <div class="deck-meta-pill pill-mastered">
-                                <i class="fas fa-brain" style="color: #34d399;"></i> <span>${mastered}</span> <span class="meta-label">dominadas</span>
-                            </div>
-                        </div>
+                <div class="deck-meta">
+                    <span class="deck-meta-pill pill-category">${escapeHtml(deck.category || 'General')}</span>
+                    <span class="deck-meta-pill"><strong class="meta-num">${total}</strong> tarjetas</span>
+                    <span class="deck-meta-pill ${pending > 0 ? 'pill-pending' : ''}"><strong class="meta-num">${pending}</strong> pendientes</span>
+                    <span class="deck-meta-pill pill-mastered"><strong class="meta-num">${mastered}</strong> dominadas</span>
+                </div>
 
-                        <div class="action-bar" id="deck-action-bar">
-                            ${total > 0 && localStorage.getItem('authToken') ? `
-                            <button type="button" class="btn-premium btn-premium-primary btn-fh-study">
-                                <i class="fas fa-play"></i> <span class="btn-text">Estudiar Ahora</span>
-                            </button>
-                            ` : ''}
+                <div class="action-bar" id="deck-action-bar">
+                    ${total > 0 && localStorage.getItem('authToken') ? `
+                    <button type="button" class="btn-premium btn-premium-primary btn-fh-study">
+                        <i class="fas fa-play"></i> <span class="btn-text">Estudiar Ahora</span>
+                    </button>
+                    ` : ''}
 
-                            ${!localStorage.getItem('authToken') ? `
-                            <button type="button" class="btn-premium btn-premium-primary btn-fh-demo">
-                                <i class="fas fa-play-circle"></i> <span class="btn-text">¡PROBAR DEMO!</span>
-                            </button>
-                            ` : ''}
+                    ${!localStorage.getItem('authToken') ? `
+                    <button type="button" class="btn-premium btn-premium-primary btn-fh-demo">
+                        <i class="fas fa-play-circle"></i> <span class="btn-text">¡PROBAR DEMO!</span>
+                    </button>
+                    ` : ''}
 
-                            ${localStorage.getItem('authToken') ? `
-                            <button type="button" class="btn-premium btn-premium-secondary btn-fh-add">
-                                <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
-                            </button>
-                            ${isAdvancedOrAdmin ? `
-                            <button type="button" class="btn-premium btn-premium-ia btn-fh-ai">
-                                <i class="fas fa-magic"></i> <span class="btn-text">Crear con IA</span>
-                            </button>
-                            ` : ''}
-                            ` : ''}
-                            
-                            <button type="button" class="btn-premium btn-premium-secondary btn-fh-stats">
-                                <i class="fas fa-chart-pie"></i> <span class="btn-text">Estadísticas</span>
-                            </button>
+                    ${localStorage.getItem('authToken') ? `
+                    <button type="button" class="btn-premium btn-premium-secondary btn-fh-add">
+                        <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
+                    </button>
+                    ${isAdvancedOrAdmin ? `
+                    <button type="button" class="btn-premium btn-premium-ia btn-fh-ai">
+                        <i class="fas fa-magic"></i> <span class="btn-text">Crear con IA</span>
+                    </button>
+                    ` : ''}
+                    ` : ''}
+                    
+                    <button type="button" class="btn-premium btn-premium-secondary btn-fh-stats">
+                        <i class="fas fa-chart-pie"></i> <span class="btn-text">Estadísticas</span>
+                    </button>
 
-                            ${this.token && deck.type !== 'SYSTEM' ? `
-                            <button type="button" class="btn-premium btn-premium-secondary btn-fh-guide">
-                                <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
-                            </button>
-                            ` : ''}
+                    ${this.token && deck.type !== 'SYSTEM' ? `
+                    <button type="button" class="btn-premium btn-premium-secondary btn-fh-guide">
+                        <i class="fas fa-book-open"></i> <span class="btn-text">Guía</span>
+                    </button>
+                    ` : ''}
 
-                            ${this.token && deck.type !== 'SYSTEM' ? `
-                            <button type="button" class="btn-premium ${deck.is_public ? 'btn-premium-primary' : 'btn-premium-secondary'} btn-fh-visibility">
-                                <i class="fas ${deck.is_public ? 'fa-globe' : 'fa-lock'}"></i> <span class="btn-text">${deck.is_public ? 'Hacer Privado' : 'Hacer Público'}</span>
-                            </button>
-                            ` : ''}
-                        </div>
-                    </div>
+                    ${this.token && deck.type !== 'SYSTEM' ? `
+                    <button type="button" class="btn-premium ${deck.is_public ? 'btn-premium-primary' : 'btn-premium-secondary'} btn-fh-visibility">
+                        <i class="fas ${deck.is_public ? 'fa-globe' : 'fa-lock'}"></i> <span class="btn-text">${deck.is_public ? 'Hacer Privado' : 'Hacer Público'}</span>
+                    </button>
+                    ` : ''}
                 </div>
             </div>
-
-            <!-- Espaciador para evitar solapamiento -->
-            <div style="margin-bottom: 2.5rem;"></div>
         `;
 
         // Direct Event Bindings for folder header
@@ -1049,6 +1065,7 @@ class RepasoManager {
                             <option value="Derecho" ${currentCat === 'Derecho' ? 'selected' : ''}>⚖️ Derecho</option>
                             <option value="Ciencia" ${currentCat === 'Ciencia' ? 'selected' : ''}>🔬 Ciencia</option>
                             <option value="Tecnología" ${currentCat === 'Tecnología' ? 'selected' : ''}>💻 Tecnología</option>
+                            <option value="Idiomas" ${currentCat === 'Idiomas' ? 'selected' : ''}>🌐 Idiomas</option>
                         </select>
                     </div>
 
@@ -1416,7 +1433,7 @@ class RepasoManager {
                 </div>
                 <div class="card-row-actions">
                     <button class="deck-action-btn deck-action-btn--play" title="Estudiar" data-action="play">
-                        <i class="fas fa-play" style="color: #60a5fa;"></i>
+                        <i class="fas fa-play" style="color: #f97316;"></i>
                     </button>
                     ${this.token ? `
                     <button class="deck-action-btn" title="Editar" data-action="edit">
@@ -1473,7 +1490,7 @@ class RepasoManager {
                 <div class="card-row-front">${c.image_url ? `<img src="${window.resolveImageUrl(c.image_url)}" style="width:24px; height:24px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;" loading="lazy">` : ''}${escapeHtml(c.front_content)}</div>
                 <div class="card-row-back">${c.explanation_image_url ? '<i class="fas fa-image" style="color:#94a3b8; margin-right:4px;"></i>' : ''}${escapeHtml(c.back_content)}</div>
                 <div class="card-row-actions">
-                    <button class="deck-action-btn deck-action-btn--play" data-action="play"><i class="fas fa-play" style="color:#60a5fa;"></i></button>
+                    <button class="deck-action-btn deck-action-btn--play" data-action="play"><i class="fas fa-play" style="color:#f97316;"></i></button>
                     ${this.token ? `<button class="deck-action-btn" data-action="edit"><i class="fas fa-pen"></i></button><button class="deck-action-btn deck-action-btn--delete" data-action="delete"><i class="fas fa-trash"></i></button>` : ''}
                 </div>
             `;
@@ -1535,7 +1552,7 @@ class RepasoManager {
         row.addEventListener('dragstart', (e) => this.handleDragStart(e, row));
         row.addEventListener('dragover', (e) => this.handleDragOver(e, row));
         row.addEventListener('drop', (e) => this.handleDrop(e, row));
-        row.addEventListener('dragenter', () => row.style.borderTop = '2px solid #3b82f6');
+        row.addEventListener('dragenter', () => row.style.borderTop = '2px solid #f97316');
         row.addEventListener('dragleave', () => row.style.borderTop = '');
         row.addEventListener('dragend', () => {
             row.style.opacity = '1';
@@ -1655,8 +1672,8 @@ class RepasoManager {
      * Interceptor for browser navigation (Back/Forward) and selection mode.
      */
     handlePopState(e) {
-        // 🛡️ Omitir la recarga del dashboard/comunidad si el evento popstate proviene del cierre manual de un modal
-        if (window.uiManager && window.uiManager.isClosingModalState) {
+        // 🛡️ Si hay algún modal abierto o cerrándose en uiManager, omitir recarga para no parpadear
+        if (window.uiManager && ((window.uiManager.openModals && window.uiManager.openModals.size > 0) || window.uiManager.isClosingModalState)) {
             return;
         }
 
@@ -1677,18 +1694,18 @@ class RepasoManager {
             if (!this.currentDeck || String(this.currentDeck.id) !== String(deckId)) {
                 this.loadFolder(deckId, false);
             }
-        } else if (view === 'dashboard' || (!view && this.activeTab === 'mis-mazos')) {
-            const grid = document.getElementById('root-decks-grid');
-            if (grid && grid.children.length > 0 && this.activeTab === 'mis-mazos') {
-                return; // Preservar la grilla cargada sin parpadear
-            }
-            this.loadDashboard(false);
-        } else {
+        } else if (view === 'community' || (!view && this.activeTab === 'comunidad')) {
             const grid = document.getElementById('community-decks-grid');
-            if (grid && grid.children.length > 0 && this.activeTab === 'comunidad') {
+            if (grid && grid.children.length > 0 && this.activeTab === 'comunidad' && !grid.querySelector('.fa-spin')) {
                 return; // Preservar la grilla de comunidad sin parpadear
             }
             this.loadCommunity(false);
+        } else {
+            const grid = document.getElementById('root-decks-grid');
+            if (grid && grid.children.length > 0 && this.activeTab === 'mis-mazos' && !grid.querySelector('.deck-skeleton-card')) {
+                return; // Preservar la grilla cargada sin parpadear
+            }
+            this.loadDashboard(false);
         }
     }
 
@@ -1842,6 +1859,14 @@ class RepasoManager {
         if (preview) preview.style.display = 'none';
         const fileInput = document.getElementById('bulk-flashcard-input');
         if (fileInput) fileInput.value = '';
+        const fileLabel = document.getElementById('bulk-file-label');
+        if (fileLabel) fileLabel.textContent = 'Seleccionar Archivo';
+        const bulkCountText = document.getElementById('bulk-count-text');
+        if (bulkCountText) bulkCountText.textContent = '0 tarjetas detectadas';
+        const bulkTtsFront = document.getElementById('bulk-tts-front');
+        if (bulkTtsFront) bulkTtsFront.checked = false;
+        const bulkTtsBack = document.getElementById('bulk-tts-back');
+        if (bulkTtsBack) bulkTtsBack.checked = false;
 
         // Sincronizar el estado visual de selectores de idioma
         this.syncTtsLanguageSelectors();
@@ -1868,6 +1893,7 @@ class RepasoManager {
     }
 
     closeCardModal() {
+        this._clearCardModal(); // 🧹 Limpieza al cerrar
         document.getElementById('card-modal').classList.remove('active');
         if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
             window.uiManager.popModalState('card-modal');

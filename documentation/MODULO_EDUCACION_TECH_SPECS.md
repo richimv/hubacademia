@@ -397,4 +397,29 @@ Para reproducir fielmente la estructura de los exámenes oficiales del MINEDU (A
    - Herramienta de **Encadenamiento Masivo** (`link-case`): permite seleccionar 2 o más preguntas sueltas mediante checkboxes con soporte `Shift + Clic` y unirlas a una casuística común en un solo paso mediante la barra flotante de acciones.
    - La plantilla de importación Excel soporta `CODIGO_CASO`, `ENUNCIADO_CASO` y `ORDEN_CASO`, auto-resolviendo la creación y vinculación en bloque.
 
+## 18. Apertura Oficial de Simulacros Reales y Resiliencia Temporal (Septiembre 2026)
 
+Se habilitó formalmente la modalidad de **Simulacro Real (Oficial)** (`mode=real`) tanto para Educación como para Salud, con los siguientes estándares de arquitectura:
+
+1. **Temporizador Reglamentario Adaptado**:
+   - **Educación (60 preguntas)**: Temporizador oficial de **3 horas (180 minutos = 10,800 segundos)** acorde a las pruebas de la Carrera Pública Magisterial (CNEB/MINEDU).
+   - **Salud (100 preguntas)**: Temporizador de **2 horas (120 minutos = 7,200 segundos)** según especificaciones ENAM / SERUMS.
+   - Formateo inteligente en la cabecera: `HH:MM:SS` cuando el tiempo restante supera 1 hora (ej. `02:59:45`) y `MM:SS` para tiempos menores.
+   - Visibilidad garantizada para Educación (`maxQuestions >= 50 || mode === 'real'`).
+2. **Modo Ciego Estricto (Blind Mode)**:
+   - Al tratarse de un examen oficial simulado, se neutraliza la retroalimentación y sustentación inmediata (`isStudyMode = false`). El postulante responde de corrido sin conocer el acierto/error de sus elecciones hasta la entrega formal.
+   - La corrección completa, explicaciones detalladas y el Tutor IA se activan de manera unificada en la pantalla de revisión final.
+3. **Exención de Bloqueo Anti-repetición (`user_question_history`)**:
+   - Al finalizar un Simulacro Real, se omite el registro en `user_question_history` para evitar bloquear preguntas por 24 horas.
+   - Permite a los postulantes realizar simulacros reales completos en cualquier momento sin esperar un día ni agotar el banco disponible.
+   - Dentro de la misma sesión activa, la exclusión de `sessionSeenIds` se mantiene rigurosa, garantizando cero reactivos duplicados dentro de la misma prueba.
+4. **Evasión Forzada de Configuración Personalizada**:
+   - En peticiones con `mode=real`, el servicio backend fuerza `isDefault = true` y `queryAreas = ['*']`, garantizando una selección equilibrada de todas las áreas oficiales del examen, sin sesgos por preferencias previas del usuario.
+5. **Persistencia de Cronómetro ante Pausas**:
+   - Al pausar o cerrar temporalmente una sesión de simulacro real, el tiempo restante guardado se preserva íntegro para permitir reanudar el examen con los segundos exactos restantes.
+6. **Filtro de KPIs en Dashboard**:
+   - Se añadió la pestaña `Simulacro Real` (`data-mode="real"`) en la barra de filtros del Panel de Analítica, compatible con la serie gráfica ámbar y cálculo de promedios específicos de exámenes oficiales.
+7. **Carga Total Atómica (Método B) y Empaquetado Indivisible de Casuísticas**:
+   - `/start` solicita directamente el total exacto del examen (`limit: state.maxQuestions`: 10, 20, 60 o 100), reduciendo en un 90% las consultas a PostgreSQL y volviendo el examen 100% inmune a micro-cortes de internet.
+   - Algoritmo `packExamQuestions`: agrupa las casuísticas como bloques atómicos indivisibles ($K$ preguntas). Solo se agregan si caben completas en el cupo restante (`spaceLeft >= K`), completando el residuo exacto con preguntas individuales (tamaño 1). Esto garantiza matemáticamente que **ninguna casuística sea cortada a la mitad** y que el total alcance con precisión quirúrgica el límite del examen.
+   - En PostgreSQL, la cuota por área escala dinámicamente (`GREATEST(3, CEIL(limit / topicsCount * 1.5))`), garantizando abastecimiento amplio de candidatos para cualquier modalidad.

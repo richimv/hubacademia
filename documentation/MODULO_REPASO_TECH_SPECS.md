@@ -342,9 +342,43 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
   - **Preservación de Categoría en Estudio Individual**:
     - Se actualizó `repaso.js` para transmitir `deckName` y `category` codificados al iniciar estudio directo de una tarjeta individual (`/flashcards?deckId=...&cardId=...`), asegurando que el Tutor IA opere en la disciplina exacta del mazo.
   - **Limpieza de Código y Confiabilidad (Code Health)**:
-    - Se eliminaron las dependencias muertas `CourseRepository`, `CareerRepository` y `BookRepository` en `chatController.js` y `tutorAiService.js`.
-    - Suite de pruebas unitarias pasando al 100% (31 suites, 214 pruebas).
+- **Auditoría Integral de Seguridad, Categoría Idiomas Compartible y Modernización Esbelta de Mazos (V43)**:
+  - **Blindaje contra IDOR en Manipulación de Tarjetas**:
+    - Se incorporó la validación obligatoria de propiedad del mazo (`deck.user_id === userId`) en `DeckService.addCard`, `DeckService.addBulkCards` y `deckController.generateCards`.
+    - Respuestas HTTP 403 inmediatas cuando un usuario autenticado intenta inyectar tarjetas individuales, lotes masivos o generaciones IA dentro de mazos ajenos.
+  - **Preservación de Categoría Temática en Clonación**:
+    - Se actualizó `DeckService.cloneDeck` para transmitir `deck.category || 'General'` a `createDeck`, evitando que los mazos clonados desde la comunidad caigan erróneamente en `'General'`.
+  - **Nueva Categoría "Idiomas" y Filtro Compartible en Comunidad**:
+    - Incorporación de `'Idiomas'` en el backend (`DECK_CATEGORIES` en `deckController.js`), selects de creación/edición (`repaso.html`), picker de iconos (`fas fa-language` en `deck-explorer.js`) y modal de publicación (`#publish-deck-category`).
+    - Soporte completo para **Deep Linking**: `repaso.js` lee `?category=...` desde la URL al inicializarse y sincroniza `window.history.replaceState` reactivamente al seleccionar píldoras.
+    - Se añadió el botón minimalista *"Compartir Filtro"* en el banner de comunidad para copiar la URL filtrada directamente al portapapeles con toast de confirmación.
+  - **Rediseño Esbelto y Conforme al Sistema de Diseño (`DESIGN_SYSTEM.md`)**:
+    - **Cabecera de Mazo Fluida y Ergonómica en Móvil y PC**: Eliminación de la columna lateral rígida de 64px (`.deck-icon-large`). Integración de un badge de icono compacto (`.deck-title-icon-badge`, 28-32px) directamente al lado del título `<h1>`, otorgando el 100% del ancho horizontal disponible al título, metadatos y botones de acción.
+    - **Principio de Sobriedad Visual (Sección 7 DESIGN_SYSTEM.md)**: Erradicación de iconos decorativos redundantes en las píldoras de metadatos (`.deck-meta`), permitiendo que la tipografía limpia, los pesos numéricos en negrita y las sutiles tonalidades semánticas guíen la lectura sin ruido gráfico ni desbordamientos en pantallas pequeñas.
+    - **Corrección de Encabezados en Modales (Título Izquierda, X Derecha)**: Se corrigió la regla colateral en `dashboard.css` (`.modal-content>div:last-of-type`) que alteraba el flujo flex en móviles. Se blindó `.modal-header` en `modal.css` y `repaso.css` garantizando `display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: center !important;`.
+    - **Carga Masiva Excel Robusta (Contención de Desbordamiento y Limpieza Atómica)**:
+      - Se implementó `min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;` en `#bulk-file-label` y en el contenedor `<label>`, previniendo que nombres largos de archivos desborden o deformen la modal.
+      - Se extendió `_clearCardModal()` y `closeCardModal()` para resetear completamente `#bulk-file-label` a *"Seleccionar Archivo"*, restablecer contadores de tarjetas y vaciar el input al cerrar o guardar.
+    - **Icono y Jerarquía de Colapso del Explorador Lateral (Móvil y PC)**:
+      - **Doble Comportamiento Responsivo**:
+        - En **PC / Escritorio**: `fas fa-chevron-left` para contraer hacia la izquierda y `fas fa-chevron-right` para desplegar hacia la derecha.
+        - En **Móvil / Celular (`<= 768px`)**: `fas fa-chevron-up` para contraer hacia arriba y `fas fa-chevron-down` para desplegar hacia abajo, adecuándose perfectamente a la naturaleza vertical del acordeón móvil.
+      - En estado colapsado para escritorio (`.explorer-sidebar.is-collapsed`), se asignó `order: -1` a `#btn-toggle-explorer`, posicionándolo de forma ergonómica en la parte superior del botón de nuevo mazo (`#btn-explorer-create`).
+    - **Orden de Categorías en Comunidad y Remoción de Botón Redundante**:
+      - Se reordenó el listado de categorías en `repaso.js` para ubicar la píldora **Idiomas** exactamente entre **Educación** y **Matemáticas** (`Todas` → `Medicina` → `Educación` → `Idiomas` → `Matemáticas`...).
+      - Se eliminó el botón *"Compartir Filtro"* del banner de comunidad para evitar sobrecarga visual en la cabecera, ya que el sistema sincroniza reactivamente la categoría activa directamente en los parámetros de la URL del navegador (`?view=community&category=...`).
+    - **Erradicación del Parpadeo de Recarga al Abrir, Editar o Guardar en Modales**:
+      - **Causa Raíz Identificada**: Al cerrar cualquier modal (o guardar datos en ella), `uiManager.popModalState()` invocaba `window.history.back()`. Esto disparaba un evento global `popstate` que el enrutador de `repaso.js` interpretaba como una navegación hacia atrás del usuario, volviendo a invocar `loadDashboard()` o `loadCommunity()`, lo cual vaciaba el contenedor con esqueletos de carga (`<div class="deck-skeleton-card">`) y volvía a pedir datos al servidor en paralelo con la acción de guardado.
+      - **Solución Arquitectónica Implementada**:
+        1. **Cierre Silencioso de Historial (`replaceState`)**: `uiManager.pushModalState()` almacena el estado previo en una pila interna `_modalHistoryStack`. Al cerrar manual o programáticamente la modal (mediante `popModalState()`), se utiliza `window.history.replaceState(prev.state, '', prev.href)` en lugar de `history.back()`. Esto limpia el historial del navegador sin disparar el evento `popstate`, previniendo recargas espurias.
+        2. **Preservación In-Place de la Grilla de Mazos**: `renderRootDecks()` ahora verifica `hasLoadedDecks`. Si la grilla ya existe y tiene tarjetas renderizadas, no sobreescribe el contenedor con esqueletos, sino que actualiza los mazos de manera suave e in-place.
+        3. **Blindaje de `handlePopState`**: Se incorporó una guarda estricta que aborta la re-ejecución del enrutador si existen modales abiertos en `uiManager` o si la vista activa ya tiene su grilla cargada.
+    - Desambiguación semántica de botones: `#btn-deck-tour` renombrado de "Guía" a "Tour" para distinguirlo claramente del botón de la Guía de Estudio / Cuaderno de notas (`.btn-fh-guide`).
+    - Limpieza de colores azules hardcodeados (`#60a5fa`, `#3b82f6`) en botones de acción rápida de tarjetas y eventos de arrastre, adoptando tokens institucionales (`#f97316` / `var(--primary)`).
+  - **Verificación de Pruebas Unitarias**:
+    - Creada y ampliada la suite `tests/unit/deckIdiomasAndSecurity.test.js` cubriendo normalización de Idiomas, filtrado de comunidad, rechazo IDOR, clonación fiel, integridad de `.modal-header`, no renderizado de `.deck-icon-large`, elipsis de archivo Excel, chevrons adaptativos en sidebar (horizontal en PC y vertical en móvil), orden superior en colapso, posición de Idiomas, reversión silenciosa en `popModalState` y prevención de parpadeo por esqueletos.
+    - 41 suites de prueba pasando (290/290 pruebas al 100%).
 
 ---
 
-**Documentación Técnica Actualizada - 29 de Agosto, 2026.**
+**Documentación Técnica Actualizada - Septiembre 2026.**

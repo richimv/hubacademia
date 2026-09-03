@@ -38,6 +38,13 @@ class DeckExplorer {
             });
         }
         this.restoreCollapseState();
+        if (typeof window !== 'undefined') {
+            window.addEventListener('resize', () => {
+                const sidebar = document.getElementById('explorer-sidebar');
+                const isCollapsed = sidebar ? sidebar.classList.contains('is-collapsed') : false;
+                this.updateToggleIcon(isCollapsed);
+            });
+        }
         await this.loadTree();
     }
 
@@ -58,11 +65,12 @@ class DeckExplorer {
         if (!btn) return;
         const icon = btn.querySelector('i');
         if (icon) {
+            const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
             if (isCollapsed) {
-                icon.className = 'fas fa-bars';
+                icon.className = isMobile ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
                 btn.setAttribute('title', 'Desplegar Explorador');
             } else {
-                icon.className = 'fas fa-columns';
+                icon.className = isMobile ? 'fas fa-chevron-up' : 'fas fa-chevron-left';
                 btn.setAttribute('title', 'Contraer Explorador');
             }
         }
@@ -298,6 +306,7 @@ class DeckExplorer {
         { fa: 'fas fa-dna', color: '#34d399', label: 'Genética' },
         { fa: 'fas fa-star', color: '#fbbf24', label: 'Favorito' },
         { fa: 'fas fa-pen-alt', color: '#fb923c', label: 'Escritura' },
+        { fa: 'fas fa-language', color: '#a78bfa', label: 'Idiomas' }
     ];
 
     static renderIconPicker(selectedIcon = 'fas fa-layer-group') {
