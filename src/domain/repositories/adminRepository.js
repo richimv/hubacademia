@@ -367,14 +367,8 @@ class AdminRepository {
     }
 
     async getQuestionImages(id) {
-        const result = await db.query('SELECT image_url, explanation_image_url, audio_text, career, question_text, explanation FROM question_bank WHERE id = $1', [id]);
+        const result = await db.query('SELECT image_url, explanation_image_url, career, question_text, explanation FROM question_bank WHERE id = $1', [id]);
         return result.rows[0];
-    }
-
-    async countOtherQuestionsWithAudio(audioText, career, excludeId) {
-        const query = `SELECT COUNT(*)::int as count FROM question_bank WHERE audio_text = $1 AND career = $2 AND id <> $3`;
-        const { rows } = await db.query(query, [audioText, career, excludeId]);
-        return rows[0] ? rows[0].count : 0;
     }
 
     async updateQuestion(id, { question_text, options, correct_answer, explanation, explanation_image_url, domain, target, career, topic, subtopic, difficulty, image_url, hash, case_id = null, case_order = 1 }) {

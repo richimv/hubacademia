@@ -18,18 +18,19 @@ class TtsService {
             this.storage = new Storage(googleAuthOptions);
             this.bucketName = process.env.GCS_BUCKET_NAME || 'chatbot-tutor-medical-images';
             
-            // 🎙️ Configuración de Voces Premium (Neural2)
+            // 🎙️ Configuración de Voces Premium de Alta Fidelidad (Google Cloud Studio & Neural2)
             this.voiceMap = {
-                'es-ES': { languageCode: 'es-ES', name: 'es-ES-Neural2-A', ssmlGender: 'FEMALE' },
-                'es-US': { languageCode: 'es-US', name: 'es-US-Neural2-A', ssmlGender: 'FEMALE' },
-                'en-US': { languageCode: 'en-US', name: 'en-US-Neural2-D', ssmlGender: 'MALE' },
-                'en-GB': { languageCode: 'en-GB', name: 'en-GB-Neural2-B', ssmlGender: 'MALE' },
+                'es-ES': { languageCode: 'es-ES', name: 'es-ES-Studio-C', ssmlGender: 'FEMALE' },
+                'es-US': { languageCode: 'es-US', name: 'es-US-Studio-B', ssmlGender: 'MALE' },
+                'en-US': { languageCode: 'en-US', name: 'en-US-Studio-O', ssmlGender: 'FEMALE' },
+                'en-GB': { languageCode: 'en-GB', name: 'en-GB-Studio-C', ssmlGender: 'FEMALE' },
                 'it-IT': { languageCode: 'it-IT', name: 'it-IT-Neural2-A', ssmlGender: 'FEMALE' },
-                'fr-FR': { languageCode: 'fr-FR', name: 'fr-FR-Neural2-A', ssmlGender: 'FEMALE' },
-                'de-DE': { languageCode: 'de-DE', name: 'de-DE-Neural2-A', ssmlGender: 'FEMALE' }
+                'fr-FR': { languageCode: 'fr-FR', name: 'fr-FR-Studio-A', ssmlGender: 'FEMALE' },
+                'de-DE': { languageCode: 'de-DE', name: 'de-DE-Studio-C', ssmlGender: 'FEMALE' },
+                'pt-BR': { languageCode: 'pt-BR', name: 'pt-BR-Neural2-A', ssmlGender: 'FEMALE' }
             };
             
-            console.log('✅ [TtsService] Motor listo con caché GCS (ES, EN, IT, FR, DE).');
+            console.log('✅ [TtsService] Motor listo con voces Studio/Neural2 y caché GCS.');
         } catch (error) {
             console.error('❌ [TtsService] Error al inicializar cliente:', error.message);
         }
@@ -66,24 +67,28 @@ class TtsService {
      * Convierte texto a audio MP3
      * @param {string} text - El texto a sintetizar
      * @param {string} lang - Código de idioma (es-ES, en-GB, etc.)
+     * @param {Object} options - Opciones de síntesis ({ cache: boolean })
      * @returns {Promise<Buffer>} Contenido binario del audio
      */
-    async synthesize(text, lang = 'es-ES') {
+    async synthesize(text, lang = 'es-ES', options = {}) {
+        const useCache = options.cache !== false;
         try {
             const cleanText = text.replace(/[*_#`]/g, '').trim();
             const gcsPath = await this.getCachePath(cleanText, lang);
             const bucket = this.storage.bucket(this.bucketName);
             const file = bucket.file(gcsPath);
 
-            try {
-                const [exists] = await file.exists();
-                if (exists) {
-                    console.log(`🎯 [TtsService] Cache HIT en GCS para: ${gcsPath}`);
-                    const [buffer] = await file.download();
-                    return buffer;
+            if (useCache) {
+                try {
+                    const [exists] = await file.exists();
+                    if (exists) {
+                        console.log(`🎯 [TtsService] Cache HIT en GCS para: ${gcsPath}`);
+                        const [buffer] = await file.download();
+                        return buffer;
+                    }
+                } catch (gcsErr) {
+                    console.warn('⚠️ [TtsService] Error al consultar caché en GCS:', gcsErr.message);
                 }
-            } catch (gcsErr) {
-                console.warn('⚠️ [TtsService] Error al consultar caché en GCS:', gcsErr.message);
             }
 
             const voiceName = await this.resolveVoiceName(lang);
@@ -107,17 +112,19 @@ class TtsService {
             const [response] = await this.client.synthesizeSpeech(request);
             const buffer = response.audioContent;
 
-            // Guardar asíncronamente en el caché de GCS
-            file.save(buffer, {
-                metadata: {
-                    contentType: 'audio/mpeg',
-                    cacheControl: 'public, max-age=31536000' // Caché de 1 año
-                }
-            }).then(() => {
-                console.log(`💾 [TtsService] Guardado en caché GCS: ${gcsPath}`);
-            }).catch(saveErr => {
-                console.error('⚠️ [TtsService] Error guardando caché en GCS:', saveErr.message);
-            });
+            // Guardar asíncronamente en el caché de GCS SOLO si useCache está activo
+            if (useCache) {
+                file.save(buffer, {
+                    metadata: {
+                        contentType: 'audio/mpeg',
+                        cacheControl: 'public, max-age=31536000' // Caché de 1 año
+                    }
+                }).then(() => {
+                    console.log(`💾 [TtsService] Guardado en caché GCS: ${gcsPath}`);
+                }).catch(saveErr => {
+                    console.error('⚠️ [TtsService] Error guardando caché en GCS:', saveErr.message);
+                });
+            }
             
             return buffer;
         } catch (error) {

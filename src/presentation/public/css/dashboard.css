@@ -796,14 +796,15 @@ textarea.form-input {
 }
 
 .btn-secondary-action {
-    background: transparent;
-    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    color: var(--text-main);
     border: 1px solid var(--border-color);
 }
 
 .btn-secondary-action:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: white;
+    background: var(--surface-hover);
+    color: var(--text-main);
+    border-color: var(--border-hover);
 }
 
 @media (max-width: 768px) {

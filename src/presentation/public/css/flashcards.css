@@ -166,8 +166,13 @@ body {
     padding: 1.25rem 1.75rem 0.75rem 1.75rem;
     overflow: hidden;
     transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    touch-action: pan-y;
 }
-.fc-card-face--back { transform: rotateY(180deg); }
+.fc-card-face--back { 
+    transform: rotateY(180deg) translateZ(1px); 
+    -webkit-transform: rotateY(180deg) translateZ(1px);
+    touch-action: pan-y;
+}
 
 /* --- Fila 1: Badge (altura fija, nunca se comprime) --- */
 .fc-badge-container {
@@ -204,6 +209,7 @@ body {
     align-items: center;
     overflow: hidden;    
     width: 100%;
+    touch-action: pan-y;
 }
 
 /* --- Fila 3: Hint (altura fija, nunca se comprime) --- */
@@ -255,26 +261,36 @@ body {
     flex: 1;
     flex-shrink: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     white-space: normal;
     font-weight: 600;
     text-align: center;
     font-size: 1.5rem;
     color: var(--text-main) !important;
     scrollbar-width: thin;
-    scrollbar-color: var(--primary-glow) transparent;
+    scrollbar-color: rgba(249, 115, 22, 0.45) transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 0.5rem 0.8rem;
     transition: font-size 0.2s ease;
     box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain;
+    cursor: grab;
+}
+.content-text:active {
+    cursor: grabbing;
 }
 
-/* Centrado que no rompe el scroll superior */
+/* Centrado que no rompe el scroll superior y no bloquea toques */
 .content-text::before,
 .content-text::after {
     content: '';
     margin: auto;
+    pointer-events: none; /* No intercepta toques ni clics */
+    flex-shrink: 0;
 }
 
 .content-text > div, .content-text > p {
@@ -329,13 +345,19 @@ body {
     font-weight: 700;
 }
 
-/* ✅ Scrollbar visible en Webkit */
+/* ✅ Scrollbar visible y estilizada en Webkit */
 .content-text::-webkit-scrollbar {
-    width: 4px;
+    width: 5px;
+}
+.content-text::-webkit-scrollbar-track {
+    background: transparent;
 }
 .content-text::-webkit-scrollbar-thumb {
     background: rgba(249, 115, 22, 0.35);
     border-radius: 10px;
+}
+.content-text::-webkit-scrollbar-thumb:hover {
+    background: rgba(249, 115, 22, 0.65);
 }
 
 /* ✅ SOLUCIÓN MÓVIL: Si hay imagen y el texto es largo, alineamos arriba para evitar bloqueo de scroll */
@@ -346,8 +368,6 @@ body {
         padding-bottom: 2rem;
     }
 }
-
-.content-text::-webkit-scrollbar { display: none; }
 
 /* ==========================================================================
    MODO: Solo Imagen (sin texto visible)
@@ -573,7 +593,7 @@ body {
 
 .sub-label { font-size: 0.72rem; color: var(--text-muted); opacity: 0.9; font-weight: 600; }
 
-/* ✅ BOTÓN DE AUDIO PREMIUM (Glassmorphism - Flotante Inferior Derecha) */
+/* ✅ BOTÓN DE AUDIO PREMIUM (Flotante Inferior Derecha) */
 .fc-audio-btn {
     position: absolute;
     bottom: 1.5rem; /* ✅ Bajado para evitar solapamientos con texto/imagen */
@@ -581,35 +601,45 @@ body {
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: rgba(59, 130, 246, 0.15); /* Un toque más de color para identificarlo */
+    background: rgba(249, 115, 22, 0.12);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: white;
+    border: 1.5px solid rgba(249, 115, 22, 0.35);
+    color: #ea580c;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.3rem;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 100;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 18px rgba(249, 115, 22, 0.2);
 }
 
 @media (hover: hover) {
     .fc-audio-btn:hover {
-        background: var(--accent-color);
-        transform: scale(1.1) rotate(12deg);
-        box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        color: #ffffff;
+        border-color: transparent;
+        transform: scale(1.1) rotate(6deg);
+        box-shadow: 0 6px 24px rgba(249, 115, 22, 0.45);
     }
 }
 
 .fc-audio-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.92);
 }
 
 .fc-audio-btn i {
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+body.dark-mode .fc-audio-btn,
+[data-theme="dark"] .fc-audio-btn {
+    background: rgba(249, 115, 22, 0.2);
+    border-color: rgba(249, 115, 22, 0.45);
+    color: #fed7aa;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 @media (max-width: 768px) {

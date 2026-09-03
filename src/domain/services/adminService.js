@@ -265,10 +265,6 @@ class AdminService {
         return await adminRepository.getQuestionImages(id);
     }
 
-    async countOtherQuestionsWithAudio(audioText, career, excludeId) {
-        return await adminRepository.countOtherQuestionsWithAudio(audioText, career, excludeId);
-    }
-
     async updateSingleQuestion(id, data) {
         let expectedOptions = 4;
         if (data.target === 'RESIDENTADO') {

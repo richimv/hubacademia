@@ -943,19 +943,16 @@ class RepasoManager {
             <div class="deck-header-info">
                 <div class="deck-header-top">
                     <div class="deck-title-group">
-                        <span class="deck-title-icon-badge">
-                            ${RepasoManager.renderDeckIconHtml(deck, 'fas fa-layer-group')}
-                        </span>
                         <h1 class="deck-title">${escapeHtml(deck?.name || 'Mazo sin nombre')}</h1>
                     </div>
-                    <button id="btn-deck-tour" class="btn-guide-hero btn-guide-deck" data-tooltip="Ver tour interactivo de este mazo" aria-label="Tour del mazo">
+                    <button id="btn-deck-tour" class="btn-guide-hero btn-guide-deck" data-tooltip="Ver guía rápida de este mazo" aria-label="Guía rápida">
                         <i class="fas fa-circle-question"></i>
-                        <span>Tour</span>
+                        <span>Guía</span>
                     </button>
                 </div>
 
                 <div class="deck-meta">
-                    <span class="deck-meta-pill pill-category">${escapeHtml(deck.category || 'General')}</span>
+                    <span class="deck-meta-pill pill-deck-icon" title="Icono del mazo">${RepasoManager.renderDeckIconHtml(deck, 'fas fa-layer-group')}</span>
                     <span class="deck-meta-pill"><strong class="meta-num">${total}</strong> tarjetas</span>
                     <span class="deck-meta-pill ${pending > 0 ? 'pill-pending' : ''}"><strong class="meta-num">${pending}</strong> pendientes</span>
                     <span class="deck-meta-pill pill-mastered"><strong class="meta-num">${mastered}</strong> dominadas</span>
@@ -980,7 +977,7 @@ class RepasoManager {
                     </button>
                     ${isAdvancedOrAdmin ? `
                     <button type="button" class="btn-premium btn-premium-ia btn-fh-ai">
-                        <i class="fas fa-magic"></i> <span class="btn-text">Crear con IA</span>
+                        <svg class="ai-sparkles-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block; vertical-align:-0.2em; flex-shrink:0;"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg><span class="btn-text">Crear con IA</span>
                     </button>
                     ` : ''}
                     ` : ''}
@@ -1057,21 +1054,21 @@ class RepasoManager {
                     <div style="margin-bottom:1.5rem; text-align:left;">
                         <label style="font-size:0.82rem; color:var(--text-secondary); font-weight:600; display:block; margin-bottom:0.45rem;">Categoría / Área Temática</label>
                         <select id="publish-deck-category" class="form-input-premium" style="width:100%; background:var(--input-bg); color:var(--input-text); border:1px solid var(--border-color); padding:0.65rem; border-radius:8px;">
-                            <option value="General" ${currentCat === 'General' ? 'selected' : ''}>📚 General</option>
-                            <option value="Medicina" ${currentCat === 'Medicina' ? 'selected' : ''}>🩺 Medicina</option>
-                            <option value="Educación" ${currentCat === 'Educación' ? 'selected' : ''}>🎓 Educación</option>
-                            <option value="Matemáticas" ${currentCat === 'Matemáticas' ? 'selected' : ''}>📐 Matemáticas</option>
-                            <option value="Historia" ${currentCat === 'Historia' ? 'selected' : ''}>📜 Historia</option>
-                            <option value="Derecho" ${currentCat === 'Derecho' ? 'selected' : ''}>⚖️ Derecho</option>
-                            <option value="Ciencia" ${currentCat === 'Ciencia' ? 'selected' : ''}>🔬 Ciencia</option>
-                            <option value="Tecnología" ${currentCat === 'Tecnología' ? 'selected' : ''}>💻 Tecnología</option>
-                            <option value="Idiomas" ${currentCat === 'Idiomas' ? 'selected' : ''}>🌐 Idiomas</option>
+                            <option value="General" ${currentCat === 'General' ? 'selected' : ''}>General</option>
+                            <option value="Medicina" ${currentCat === 'Medicina' ? 'selected' : ''}>Medicina</option>
+                            <option value="Educación" ${currentCat === 'Educación' ? 'selected' : ''}>Educación</option>
+                            <option value="Matemáticas" ${currentCat === 'Matemáticas' ? 'selected' : ''}>Matemáticas</option>
+                            <option value="Historia" ${currentCat === 'Historia' ? 'selected' : ''}>Historia</option>
+                            <option value="Derecho" ${currentCat === 'Derecho' ? 'selected' : ''}>Derecho</option>
+                            <option value="Ciencia" ${currentCat === 'Ciencia' ? 'selected' : ''}>Ciencia</option>
+                            <option value="Tecnología" ${currentCat === 'Tecnología' ? 'selected' : ''}>Tecnología</option>
+                            <option value="Idiomas" ${currentCat === 'Idiomas' ? 'selected' : ''}>Idiomas</option>
                         </select>
                     </div>
 
-                    <div style="display:flex; gap:0.8rem; justify-content:center;">
+                    <div class="modal-footer" style="display:flex; gap:0.8rem; justify-content:center; padding:0; border-top:none; background:transparent;">
                         <button id="btn-cancel-publish" class="btn-action btn-secondary-action" style="flex:1; justify-content:center; padding:0.7rem; border-radius:12px;">Cancelar</button>
-                        <button id="btn-confirm-publish" class="btn-action" style="flex:1; justify-content:center; padding:0.7rem; background:linear-gradient(135deg, #f97316 0%, #ea580c 100%); color:white; border:none; border-radius:12px; font-weight:700; box-shadow:0 4px 15px rgba(249,115,22,0.3);">Publicar</button>
+                        <button id="btn-confirm-publish" class="btn-action" style="flex:1; justify-content:center; padding:0.7rem; border-radius:12px;">Publicar</button>
                     </div>
                 </div>
             </div>`;
@@ -1239,12 +1236,10 @@ class RepasoManager {
             card.className = 'deck-card';
             card.style.cursor = 'pointer';
 
-            const isSystem = deck.type === 'SYSTEM';
             const mastery = Math.max(0, Math.min(100, Number(deck.mastery_percentage) || 0));
             const iconHtml = RepasoManager.renderDeckIconHtml(deck, 'fas fa-folder-open');
             const hasDue = parseInt(deck.due_cards) > 0;
-            const badgeClass = isSystem ? 'badge-system' : 'badge-user';
-            const badgeText = isSystem ? 'AUTOMÁTICO' : 'PERSONAL';
+            const categoryText = escapeHtml(deck.category || 'General');
 
             // --- Dynamic Actions Logic ---
             let actionBtns = '';
@@ -1254,14 +1249,12 @@ class RepasoManager {
                         <button type="button" class="deck-action-btn btn-act-play" title="Estudiar">
                             <i class="fas fa-play"></i>
                         </button>
-                        ${!isSystem ? `
-                            <button type="button" class="deck-action-btn btn-act-edit" title="Editar mazo">
-                                <i class="fas fa-pen"></i>
-                            </button>
-                            <button type="button" class="deck-action-btn deck-action-btn--delete btn-act-delete" title="Eliminar mazo">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        ` : ''}
+                        <button type="button" class="deck-action-btn btn-act-edit" title="Editar mazo">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button type="button" class="deck-action-btn deck-action-btn--delete btn-act-delete" title="Eliminar mazo">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </div>`;
             } else {
                 // Guest User: Only Demo Play
@@ -1277,7 +1270,7 @@ class RepasoManager {
                 <!-- Desktop layout -->
                 <div class="deck-card-desktop">
                     <div class="deck-card-top-row">
-                        <span class="deck-badge ${badgeClass}">${badgeText}</span>
+                        <span class="deck-badge badge-user" title="Categoría: ${categoryText}">${categoryText}</span>
                         ${actionBtns}
                     </div>
                     <div class="deck-card-icon-center">${iconHtml}</div>
@@ -1307,7 +1300,7 @@ class RepasoManager {
                         </div>
                     </div>
                     <div class="deck-card-mob-side">
-                        <span class="deck-badge ${badgeClass}">${isSystem ? 'AUTO' : 'PERS.'}</span>
+                        <span class="deck-badge badge-user" title="Categoría: ${categoryText}">${categoryText}</span>
                         ${actionBtns}
                     </div>
                 </div>

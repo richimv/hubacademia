@@ -56,6 +56,8 @@ const FlashcardManager = (() => {
         currentDeckName = urlParams.get('deckName') || '';
         currentDeckCategory = urlParams.get('category') || 'General';
         setupNavigationButtons();
+        enableSmoothTextDrag(ui.frontText);
+        enableSmoothTextDrag(ui.backText);
 
         const isDemo = urlParams.get('demo') === 'true';
         isGuest = isDemo || !localStorage.getItem('authToken');
@@ -140,8 +142,8 @@ const FlashcardManager = (() => {
             }
         ];
         updatePendingCount();
-        renderCard(queue[0]);
         setView('card');
+        renderCard(queue[0]);
     }
 
     function setupNavigationButtons() {
@@ -219,10 +221,90 @@ const FlashcardManager = (() => {
         if (data.cards && data.cards.length > 0) {
             queue = data.cards;
             updatePendingCount();
-            renderCard(queue[0]);
             setView('card');
+            renderCard(queue[0]);
         } else {
             setView('empty');
+        }
+    }
+
+    /**
+     * 🟢 FIX: Adjust Font Size to fit container (Maximizar visibilidad y prevenir scroll prematuro)
+     * Calibrado generosamente para PC y con motor dinámico de reducción progresiva (shrink-to-fit)
+     */
+    function adjustFontSize(element, text, hasImage, isBack = false) {
+        if (!element) return;
+        const isMobile = window.innerWidth <= 768;
+        const cleanText = (text || '').replace(/<[^>]*>/g, '').trim();
+        const length = cleanText.length;
+
+        let baseSize = isMobile ? 1.4 : 1.8;
+
+        if (isMobile) {
+            // Escala para Móviles / Celulares
+            if (length <= 35) {
+                baseSize = 2.00;
+            } else if (length <= 80) {
+                baseSize = 1.65;
+            } else if (length <= 160) {
+                baseSize = 1.35;
+            } else if (length <= 260) {
+                baseSize = isBack ? 1.18 : 1.22;
+            } else if (length <= 380) {
+                baseSize = isBack ? 1.05 : 1.10;
+            } else if (length <= 500) {
+                baseSize = isBack ? 0.94 : 1.00;
+            } else {
+                baseSize = 0.85;
+            }
+        } else {
+            // Escala Generosa para PC / Escritorio (tarjetas amplias de hasta 850px)
+            if (length <= 35) {
+                baseSize = 2.60;
+            } else if (length <= 80) {
+                baseSize = 2.25;
+            } else if (length <= 160) {
+                baseSize = 1.95;
+            } else if (length <= 260) {
+                // Tarjeta de ~200 caracteres (ej. IECA de la captura): 1.75rem llena armónicamente la tarjeta
+                baseSize = 1.75;
+            } else if (length <= 380) {
+                baseSize = 1.50;
+            } else if (length <= 500) {
+                baseSize = 1.30;
+            } else {
+                baseSize = 1.15;
+            }
+        }
+
+        // Si tiene imagen, reducimos proporcionalmente para dar prioridad al recurso gráfico
+        if (hasImage) {
+            if (length > 200) baseSize *= 0.80; 
+            else if (length <= 40) baseSize = isMobile ? 1.35 : 1.70;
+            else baseSize *= 0.85; 
+        }
+
+        element.style.fontSize = `${baseSize.toFixed(2)}rem`;
+        element.style.lineHeight = isMobile ? "1.35" : "1.45";
+
+        // 🚀 MOTOR DE AUTO-AJUSTE DINÁMICO (SHRINK-TO-FIT):
+        // Si hay mucho texto y desborda el contenedor visible, disminuimos gradualmente el tamaño
+        // antes de alcanzar el límite de rebasar y activar el desplazamiento.
+        if (element.clientHeight > 0) {
+            const minSize = isMobile ? 0.84 : 1.05;
+            let currentSize = baseSize;
+            let attempts = 0;
+            const maxAttempts = 18;
+
+            while (
+                attempts < maxAttempts && 
+                currentSize > minSize && 
+                element.scrollHeight > element.clientHeight + 2
+            ) {
+                currentSize = Math.max(minSize, +(currentSize - 0.04).toFixed(2));
+                element.style.fontSize = `${currentSize}rem`;
+                attempts++;
+            }
         }
     }
 
@@ -292,32 +374,9 @@ const FlashcardManager = (() => {
             backFace.classList.toggle('fc-only-text', !hasBackImage && hasBackText);
         }
 
-        // 🟢 FIX: Adjust Font Size to fit container (Prevent Overflow)
-        const adjustFontSize = (element, text, hasImage) => {
-            const isMobile = window.innerWidth < 600;
-            let baseSize = isMobile ? 1.7 : 2.0; // Base más pequeña en móvil para evitar desbordamiento extremo
-            const length = text.length;
-
-            if (length > 450) baseSize = isMobile ? 0.95 : 1.1;
-            else if (length > 350) baseSize = isMobile ? 1.1 : 1.25;
-            else if (length > 250) baseSize = isMobile ? 1.25 : 1.4;
-            else if (length > 150) baseSize = isMobile ? 1.4 : 1.6;
-            else if (length > 80) baseSize = isMobile ? 1.6 : 1.8;
-            else if (length > 0 && length <= 30) baseSize = isMobile ? 2.2 : 2.8;
-            else if (length > 30 && length <= 80) baseSize = isMobile ? 1.8 : 2.2;
-            
-            if (hasImage) {
-                if (length > 200) baseSize *= 0.8; 
-                else if (length <= 40) baseSize = isMobile ? 1.5 : 1.8;
-                else baseSize *= 0.85; 
-            }
-
-            element.style.fontSize = `${baseSize}rem`;
-            element.style.lineHeight = isMobile ? "1.3" : "1.4"; 
-        };
-
-        adjustFontSize(ui.frontText, card.front_content || '', hasFrontImage);
-        adjustFontSize(ui.backText, card.back_content || '', hasBackImage);
+        // 🟢 FIX: Adjust Font Size to fit container (Maximizar visibilidad y prevenir scroll prematuro)
+        adjustFontSize(ui.frontText, card.front_content || '', hasFrontImage, false);
+        adjustFontSize(ui.backText, card.back_content || '', hasBackImage, true);
 
         // ✅ NUEVO: Renderizar Botones de Audio Premium
         renderAudioButton(frontFace, card.audio_url_frente, 'front', !!card.hide_text_frente);
@@ -382,6 +441,12 @@ const FlashcardManager = (() => {
         if (isFlipped) {
             ui.card.classList.add('is-flipped');
             ui.controls.classList.add('visible'); // Show controls when answer is revealed
+            
+            // ✅ Re-calibrar tipografía del dorso con la cara activa en primer plano
+            if (currentCard) {
+                const hasBackImage = !!currentCard.explanation_image_url;
+                adjustFontSize(ui.backText, currentCard.back_content || '', hasBackImage, true);
+            }
             
             // ✅ INYECTAR BOTÓN HERMOSO DEL TUTOR
             if (!document.getElementById('flashcard-tutor-trigger')) {
@@ -592,8 +657,138 @@ const FlashcardManager = (() => {
         window.location.href = targetUrl;
     }
 
-    // --- Event Listeners ---
-    ui.card.addEventListener('click', toggleFlip);
+    // --- Event Listeners con Detección Inteligente de Scroll/Arrastre ---
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isTouchDragging = false;
+
+    ui.card.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            isTouchDragging = false;
+        }
+    }, { passive: true });
+
+    ui.card.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) {
+            const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
+            const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
+            if (deltaX > 6 || deltaY > 6) {
+                isTouchDragging = true;
+            }
+        }
+    }, { passive: true });
+
+    ui.card.addEventListener('touchend', () => {
+        if (isTouchDragging) {
+            setTimeout(() => { isTouchDragging = false; }, 180);
+        }
+    }, { passive: true });
+
+    ui.card.addEventListener('click', (e) => {
+        // 1. Si el usuario estaba arrastrando o scrolleando el texto, no voltear
+        if (isTouchDragging) {
+            isTouchDragging = false;
+            return;
+        }
+
+        // 2. Si el toque fue sobre un elemento interactivo (botones de audio, tutor, calificación, enlaces)
+        if (e.target.closest('.fc-audio-btn') || 
+            e.target.closest('.control-btn') || 
+            e.target.closest('#flashcard-tutor-trigger') ||
+            e.target.closest('a') ||
+            e.target.closest('button')) {
+            return;
+        }
+
+        // 3. Si el usuario seleccionó texto intencionalmente, no voltear
+        const selection = window.getSelection ? window.getSelection().toString() : '';
+        if (selection && selection.length > 0) {
+            return;
+        }
+
+        toggleFlip();
+    });
+
+    /**
+     * ✅ UX TÁCTIL: Habilita desplazamiento táctil directo arrastrando el contenedor de texto
+     * Permite al usuario arrastrar arriba y abajo directamente sobre el texto en celulares y tablets.
+     */
+    function enableSmoothTextDrag(element) {
+        if (!element) return;
+
+        let startY = 0;
+        let startScrollTop = 0;
+        let isTouching = false;
+        let hasMoved = false;
+
+        element.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            if (element.scrollHeight > element.clientHeight + 2) {
+                startY = e.touches[0].clientY;
+                startScrollTop = element.scrollTop;
+                isTouching = true;
+                hasMoved = false;
+            }
+        }, { passive: true });
+
+        element.addEventListener('touchmove', (e) => {
+            if (!isTouching || e.touches.length !== 1) return;
+            const currentY = e.touches[0].clientY;
+            const deltaY = startY - currentY;
+            if (Math.abs(deltaY) > 3) {
+                hasMoved = true;
+                isTouchDragging = true;
+            }
+            element.scrollTop = startScrollTop + deltaY;
+        }, { passive: true });
+
+        const endDrag = () => {
+            if (hasMoved) {
+                isTouchDragging = true;
+                setTimeout(() => { isTouchDragging = false; }, 180);
+            }
+            isTouching = false;
+            hasMoved = false;
+        };
+
+        element.addEventListener('touchend', endDrag, { passive: true });
+        element.addEventListener('touchcancel', endDrag, { passive: true });
+
+        // Arrastre con mouse en simuladores de escritorio
+        let isMouseDown = false;
+        let mouseStartY = 0;
+        let mouseStartScrollTop = 0;
+        let mouseMoved = false;
+
+        element.addEventListener('mousedown', (e) => {
+            if (element.scrollHeight <= element.clientHeight + 2) return;
+            isMouseDown = true;
+            mouseStartY = e.clientY;
+            mouseStartScrollTop = element.scrollTop;
+            mouseMoved = false;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            const deltaY = mouseStartY - e.clientY;
+            if (Math.abs(deltaY) > 3) {
+                mouseMoved = true;
+                isTouchDragging = true;
+            }
+            element.scrollTop = mouseStartScrollTop + deltaY;
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isMouseDown) {
+                isMouseDown = false;
+                if (mouseMoved) {
+                    setTimeout(() => { isTouchDragging = false; }, 180);
+                }
+            }
+        });
+    }
 
     /**
      * ✅ EFECTO DE DESCUBRIMIENTO DEL TUTOR
@@ -626,6 +821,20 @@ const FlashcardManager = (() => {
             setTimeout(() => btn.classList.remove('neon-glow-pulse'), 3000);
         }, 2000);
     }
+
+    // --- Window Resize: Re-ajustar tipografía si cambia el tamaño de pantalla u orientación ---
+    let _resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(() => {
+            if (currentCard && views.card && views.card.classList.contains('active')) {
+                const hasFrontImage = !!currentCard.image_url;
+                const hasBackImage = !!currentCard.explanation_image_url;
+                adjustFontSize(ui.frontText, currentCard.front_content || '', hasFrontImage, false);
+                adjustFontSize(ui.backText, currentCard.back_content || '', hasBackImage, true);
+            }
+        }, 120);
+    });
 
     // --- Public API ---
     return {

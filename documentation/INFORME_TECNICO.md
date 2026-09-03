@@ -408,8 +408,17 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
 - **🧹 Depuración Total de Columnas Obsoletas (Clean Code & Database Health):**
   - **`case_scenarios.table_html`:** Eliminada por completo del backend, frontend, plantillas Excel y esquemas SQL. Las tablas y cuadros comparativos ahora se gestionan de forma nativa e integrada dentro del HTML enriquecido del enunciado (`description_text`) vía TinyMCE 6.
   - **`question_bank.visual_support_recommendation`:** Eliminada por completo de todas las capas (frontend, repositorios, controladores, schemas y migraciones), eliminando el código muerto y optimizando las consultas SQL.
+  - **`question_bank.audio_text`:** Eliminada por completo de la base de datos PostgreSQL, esquemas DDL (`database_schema.sql`), repositorios (`medicoRepository`, `docenteRepository`, `adminRepository`), controladores y frontend de simuladores (`quiz.js`, `components.js`, `config.js`). Se erradicó el código muerto de comprensión auditiva residual del antiguo módulo de idiomas, dejando el banco 100% limpio y optimizado.
+- **📱 Ergonomía Táctil y Calibración Tipográfica en Repaso ([flashcards.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/flashcards.js), [flashcards.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/flashcards.css)):**
+  - **Desplazamiento Táctil Directo:** Implementado `enableSmoothTextDrag` con soporte de arrastre gestual deslizando el dedo directamente sobre el texto largo en celulares.
+  - **Prevención de Volteo Accidental:** Detección de umbral de arrastre (`isTouchDragging`) para no voltear la tarjeta al scrollear en pantalla táctil.
+  - **Aislamiento 3D:** Directivas `touch-action: pan-y !important` y `translateZ(1px)` en `.fc-card-face--back` junto a `pointer-events: none` en pseudo-elementos flex para garantizar captura fluida de eventos táctiles.
+  - **Calibración Tipográfica Generosa en PC y Motor Dinámico Shrink-to-Fit:**
+    - Escala generosa para PC (`2.60rem` breves, `1.95rem` medianos, `1.75rem` en ~200 caracteres, `1.50rem` - `1.30rem` extensos) para llenar armónicamente el espacio visual disponible en pantallas de escritorio sin texto empequeñecido ni márgenes vacíos excesivos.
+    - Motor dinámico *Shrink-to-Fit*: Cuando el texto desborda el contenedor visible (`scrollHeight > clientHeight + 2`), reduce gradualmente el tamaño en pasos de `0.04rem` para mostrar la máxima cantidad posible de contenido legible antes de activar la barra de scroll.
+    - Umbral mínimo protegido (`0.84rem` en móvil, `1.05rem` en PC) y sincronización reactiva ante rotación de pantalla (`resize`) y volteo de tarjeta (`toggleFlip`).
 - **🧪 Cobertura de Pruebas Unitarias:**
-  - Suite de pruebas completa: **38 / 38 suites y 250 / 250 tests en verde (100%)**.
+  - Suite de pruebas completa: **42 / 42 suites y 305 / 305 tests en verde (100%)**.
 
 ---
 

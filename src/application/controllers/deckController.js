@@ -50,6 +50,29 @@ class DeckController {
     }
 
     /**
+     * Limpia de forma segura una lista de URLs de GCS si ya no están en uso en el sistema.
+     * @param {Array<string>} urls - URLs de imágenes o audios
+     */
+    _cleanOrphanMedia = async (urls) => {
+        if (!urls || !Array.isArray(urls) || urls.length === 0) return;
+        const mediaController = require('./mediaController');
+        const processed = new Set();
+
+        for (const url of urls) {
+            if (!url || typeof url !== 'string' || processed.has(url)) continue;
+            processed.add(url);
+            try {
+                const inUse = await DeckService.isMediaInUse(url);
+                if (!inUse) {
+                    await mediaController.deleteFile(url);
+                }
+            } catch (err) {
+                console.warn(`[DeckController] Error al verificar/eliminar media ${url}:`, err.message);
+            }
+        }
+    }
+
+    /**
      * ✅ NUEVO: Helper para procesar la síntesis de voz y subir a GCS.
      */
     _processAudioTts = async (text, side = 'front', lang = 'es-ES') => {
@@ -62,10 +85,10 @@ class DeckController {
             const TtsService = require('../../domain/services/ttsService');
             const mediaController = require('./mediaController');
 
-            // 1. Sintetizar
-            const audioBuffer = await TtsService.synthesize(cleanText, lang);
+            // 1. Sintetizar directamente sin duplicar en tts_cache/ (las tarjetas se almacenan exclusivamente en audio-cards/)
+            const audioBuffer = await TtsService.synthesize(cleanText, lang, { cache: false });
 
-            // 2. Subir a GCS
+            // 2. Subir a GCS en la carpeta oficial de tarjetas
             const fileName = `tts_${side}_${Date.now()}.mp3`;
             const gcsPath = await mediaController.uploadRawBuffer(audioBuffer, fileName, 'audio/mpeg', 'audio-cards');
 
@@ -473,22 +496,15 @@ class DeckController {
             // 2. Eliminar tarjetas de la BD
             await DeckService.deleteBulkCards(userId, cardIds);
 
-            // 3. Limpiar GCS (solo si no están en uso)
-            const mediaController = require('./mediaController');
+            // 3. Limpiar GCS de forma unificada (solo si no están en uso)
+            const urlsToDelete = [];
             for (const img of imagesToDelete) {
-                if (img.image_url && !(await DeckService.isMediaInUse(img.image_url))) {
-                    await mediaController.deleteFile(img.image_url);
-                }
-                if (img.explanation_image_url && !(await DeckService.isMediaInUse(img.explanation_image_url))) {
-                    await mediaController.deleteFile(img.explanation_image_url);
-                }
-                if (img.audio_url_frente && !(await DeckService.isMediaInUse(img.audio_url_frente))) {
-                    await mediaController.deleteFile(img.audio_url_frente);
-                }
-                if (img.audio_url_dorso && !(await DeckService.isMediaInUse(img.audio_url_dorso))) {
-                    await mediaController.deleteFile(img.audio_url_dorso);
-                }
+                if (img.image_url) urlsToDelete.push(img.image_url);
+                if (img.explanation_image_url) urlsToDelete.push(img.explanation_image_url);
+                if (img.audio_url_frente) urlsToDelete.push(img.audio_url_frente);
+                if (img.audio_url_dorso) urlsToDelete.push(img.audio_url_dorso);
             }
+            await this._cleanOrphanMedia(urlsToDelete);
 
             res.json({ success: true, deletedCount: cardIds.length });
         } catch (error) {
@@ -540,48 +556,33 @@ class DeckController {
                 return res.status(400).json({ error: `El texto de la tarjeta no puede superar los ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres por cara.` });
             }
 
-            // ✅ NUEVO: Actualización de Audio TTS
+            // ✅ Actualización de Audio TTS
             let audioUrlFront = currentCard.audio_url_frente;
             let audioUrlBack = currentCard.audio_url_dorso;
 
-            // Procesar borrado manual desde la UI
-            if (deleteAudioFront && audioUrlFront) {
-                await require('./mediaController').deleteFile(audioUrlFront);
+            // Procesar borrado manual o regeneración desde la UI
+            if (deleteAudioFront) {
                 audioUrlFront = null;
-            }
-            if (deleteAudioBack && audioUrlBack) {
-                await require('./mediaController').deleteFile(audioUrlBack);
-                audioUrlBack = null;
-            }
-
-            if (generateTtsFront && front) {
-                // Borrar audio viejo si existía y no se borró ya manualmente
-                if (audioUrlFront) await require('./mediaController').deleteFile(audioUrlFront);
+            } else if (generateTtsFront && front) {
                 audioUrlFront = await this._processAudioTts(front, 'front', ttsLangFront || 'es-ES');
             }
-            if (generateTtsBack && back) {
-                // Borrar audio viejo si existía y no se borró ya manualmente
-                if (audioUrlBack) await require('./mediaController').deleteFile(audioUrlBack);
+
+            if (deleteAudioBack) {
+                audioUrlBack = null;
+            } else if (generateTtsBack && back) {
                 audioUrlBack = await this._processAudioTts(back, 'back', ttsLangBack || 'es-ES');
             }
 
             const card = await DeckService.updateCard(userId, cardId, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
             await this._syncUsage(req);
 
-            // 2. Limpieza de GCS (Post-Guardado)
-            // Si la URL cambió y la anterior no era null, borrar el archivo viejo
-            const mediaController = require('./mediaController');
-
-            if (currentCard.image_url && currentCard.image_url !== imageUrl) {
-                if (!(await DeckService.isMediaInUse(currentCard.image_url))) {
-                    await mediaController.deleteFile(currentCard.image_url);
-                }
-            }
-            if (currentCard.explanation_image_url && currentCard.explanation_image_url !== backImageUrl) {
-                if (!(await DeckService.isMediaInUse(currentCard.explanation_image_url))) {
-                    await mediaController.deleteFile(currentCard.explanation_image_url);
-                }
-            }
+            // 2. Limpieza de GCS (Post-Guardado para imágenes y audios)
+            const replacedUrls = [];
+            if (currentCard.image_url && currentCard.image_url !== imageUrl) replacedUrls.push(currentCard.image_url);
+            if (currentCard.explanation_image_url && currentCard.explanation_image_url !== backImageUrl) replacedUrls.push(currentCard.explanation_image_url);
+            if (currentCard.audio_url_frente && currentCard.audio_url_frente !== audioUrlFront) replacedUrls.push(currentCard.audio_url_frente);
+            if (currentCard.audio_url_dorso && currentCard.audio_url_dorso !== audioUrlBack) replacedUrls.push(currentCard.audio_url_dorso);
+            await this._cleanOrphanMedia(replacedUrls);
 
             res.json({ success: true, card });
         } catch (error) {
@@ -604,20 +605,13 @@ class DeckController {
 
             await DeckService.deleteCard(userId, cardId);
 
-            // 2. Limpiar GCS solo si nadie mas usa la imagen/audio
-            const mediaController = require('./mediaController');
-            if (card.image_url && !(await DeckService.isMediaInUse(card.image_url))) {
-                await mediaController.deleteFile(card.image_url);
-            }
-            if (card.explanation_image_url && !(await DeckService.isMediaInUse(card.explanation_image_url))) {
-                await mediaController.deleteFile(card.explanation_image_url);
-            }
-            if (card.audio_url_frente && !(await DeckService.isMediaInUse(card.audio_url_frente))) {
-                await mediaController.deleteFile(card.audio_url_frente);
-            }
-            if (card.audio_url_dorso && !(await DeckService.isMediaInUse(card.audio_url_dorso))) {
-                await mediaController.deleteFile(card.audio_url_dorso);
-            }
+            // 2. Limpiar GCS solo si nadie más usa la imagen/audio
+            await this._cleanOrphanMedia([
+                card.image_url,
+                card.explanation_image_url,
+                card.audio_url_frente,
+                card.audio_url_dorso
+            ]);
 
             res.json({ success: true });
         } catch (error) {
@@ -634,54 +628,24 @@ class DeckController {
             const { deckId } = req.params;
             const { userId } = this._getUserContext(req);
 
-            // 1. Obtener todas las imágenes del árbol de mazos (Tarjetas + Descripciones)
+            // 1. Obtener todas las imágenes y audios del árbol de mazos (Tarjetas + Descripciones)
             const rawImageData = await DeckService.getDeckTreeImages(userId, deckId);
 
             // 2. Eliminar el mazo y sub-mazos de la BD
             await DeckService.deleteDeck(userId, deckId);
 
-            // 3. Limpiar GCS
-            const mediaController = require('./mediaController');
-            const processedUrls = new Set(); // Evitar duplicados
-
+            // 3. Limpiar GCS de forma segura y unificada
+            const urlsToDelete = [];
             for (const row of rawImageData) {
-                if (row.image_url && !processedUrls.has(row.image_url)) {
-                    if (!(await DeckService.isMediaInUse(row.image_url))) {
-                        await mediaController.deleteFile(row.image_url);
-                    }
-                    processedUrls.add(row.image_url);
-                }
-                if (row.explanation_image_url && !processedUrls.has(row.explanation_image_url)) {
-                    if (!(await DeckService.isMediaInUse(row.explanation_image_url))) {
-                        await mediaController.deleteFile(row.explanation_image_url);
-                    }
-                    processedUrls.add(row.explanation_image_url);
-                }
-                if (row.audio_url_frente && !processedUrls.has(row.audio_url_frente)) {
-                    if (!(await DeckService.isMediaInUse(row.audio_url_frente))) {
-                        await mediaController.deleteFile(row.audio_url_frente);
-                    }
-                    processedUrls.add(row.audio_url_frente);
-                }
-                if (row.audio_url_dorso && !processedUrls.has(row.audio_url_dorso)) {
-                    if (!(await DeckService.isMediaInUse(row.audio_url_dorso))) {
-                        await mediaController.deleteFile(row.audio_url_dorso);
-                    }
-                    processedUrls.add(row.audio_url_dorso);
-                }
-                // Extraer imágenes de la descripción del mazo
+                if (row.image_url) urlsToDelete.push(row.image_url);
+                if (row.explanation_image_url) urlsToDelete.push(row.explanation_image_url);
+                if (row.audio_url_frente) urlsToDelete.push(row.audio_url_frente);
+                if (row.audio_url_dorso) urlsToDelete.push(row.audio_url_dorso);
                 if (row.deck_description) {
-                    const descImages = this._extractImageUrls(row.deck_description);
-                    for (const url of descImages) {
-                        if (!processedUrls.has(url)) {
-                            if (!(await DeckService.isMediaInUse(url))) {
-                                await mediaController.deleteFile(url);
-                            }
-                            processedUrls.add(url);
-                        }
-                    }
+                    urlsToDelete.push(...this._extractImageUrls(row.deck_description));
                 }
             }
+            await this._cleanOrphanMedia(urlsToDelete);
 
             res.json({ success: true });
         } catch (error) {

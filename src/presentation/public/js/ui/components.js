@@ -924,9 +924,6 @@ window.UIComponents.createReviewCardHTML = function (config) {
     }
 
     const { question, answer, index, isDemo, isSavedFront, career } = config;
-    const escapedAudioText = question.audio_text
-        ? encodeURIComponent(question.audio_text).replace(/'/g, "%27")
-        : '';
 
     let imageHTML = '';
     if (question.image_url) {
@@ -976,17 +973,6 @@ window.UIComponents.createReviewCardHTML = function (config) {
         expImageHTML = `
         <div class="review-explanation-image-container">
             <img src="${resolvedExpImg}" loading="lazy" alt="Sustento gráfico">
-        </div>`;
-    }
-
-    let audioHTML = '';
-    if (question.audio_text) {
-        audioHTML = `
-        <div class="quiz-audio-player-wrapper">
-            <button class="quiz-audio-btn btn-message-tts" data-audio-text="${escapedAudioText}" data-career="${career || 'en-US'}" onclick="window.playQuestionAudio(this, decodeURIComponent(this.getAttribute('data-audio-text')), this.getAttribute('data-career'))" title="Escuchar pronunciación">
-                <i class="fas fa-play"></i>
-            </button>
-            <span class="quiz-audio-label">Comprensión Auditiva (Escuchar audio)</span>
         </div>`;
     }
 
@@ -1043,7 +1029,6 @@ window.UIComponents.createReviewCardHTML = function (config) {
             </div>
         </div>
         ${imageHTML}
-        ${audioHTML}
         <div class="review-options">
             ${optionsHTML}
         </div>

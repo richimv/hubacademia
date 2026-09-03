@@ -53,7 +53,7 @@ class MedicoRepository {
         const query = `
             WITH BalancedPool AS (
                 SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
-                       qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.audio_text,
+                       qb.explanation_image_url, qb.image_url, qb.domain, qb.topic,
                        qb.case_id, qb.case_order,
                        cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
                        cs.image_url as case_image_url,
@@ -63,7 +63,7 @@ class MedicoRepository {
                 ${whereClauses}
             )
             SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, 
-                   image_url, domain, topic, audio_text, case_id, case_order,
+                   image_url, domain, topic, case_id, case_order,
                    case_code, case_title, case_description, case_image_url
             FROM BalancedPool 
             WHERE rn <= CASE 
@@ -84,7 +84,7 @@ class MedicoRepository {
             try {
                 let siblingQuery = `
                     SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
-                           qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.audio_text,
+                           qb.explanation_image_url, qb.image_url, qb.domain, qb.topic,
                            qb.case_id, qb.case_order,
                            cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
                            cs.image_url as case_image_url
@@ -134,7 +134,6 @@ class MedicoRepository {
             explanation_image_url: row.explanation_image_url,
             image_url: row.image_url,
             topic: row.topic,
-            audio_text: row.audio_text,
             case_id: row.case_id || null,
             case_order: row.case_id ? (parseInt(row.case_order, 10) || 1) : null,
             case_code: row.case_code || null,
@@ -266,14 +265,13 @@ class MedicoRepository {
         if (!questions || questions.length === 0) return [];
 
         const query = `
-            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, times_used, career, audio_text)
-            VALUES ($1, 'medicine', $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11, $12)
+            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, times_used, career)
+            VALUES ($1, 'medicine', $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11)
             ON CONFLICT (question_hash) DO UPDATE SET 
                 times_used = question_bank.times_used + 1,
                 career = EXCLUDED.career,
                 explanation_image_url = EXCLUDED.explanation_image_url,
-                image_url = EXCLUDED.image_url,
-                audio_text = EXCLUDED.audio_text
+                image_url = EXCLUDED.image_url
             RETURNING id;
         `;
 
@@ -301,8 +299,7 @@ class MedicoRepository {
                     q.explanation_image_url || null,
                     q.image_url || null,
                     hash,
-                    exactCareer,
-                    q.audio_text || null
+                    exactCareer
                 ]);
                 if (res.rows.length > 0) {
                     newIds.push(res.rows[0].id);

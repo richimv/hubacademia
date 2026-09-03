@@ -140,10 +140,22 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
         const fs = require('fs');
         const path = require('path');
 
-        it('repaso.js should render compact .deck-title-icon-badge and no longer render .deck-icon-large', () => {
+        it('repaso.js should render .pill-deck-icon in metadata row and no longer render .deck-icon-large or squeeze title', () => {
             const code = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
-            expect(code).toContain('deck-title-icon-badge');
+            expect(code).toContain('pill-deck-icon');
             expect(code).not.toContain('deck-icon-large');
+        });
+
+        it('repaso.js should display deck category instead of PERSONAL and PERS. on deck cards', () => {
+            const code = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
+            expect(code).not.toContain("'PERSONAL'");
+            expect(code).not.toContain("'PERS.'");
+            expect(code).toContain("deck.category || 'General'");
+        });
+
+        it('repaso.js should label deck tour button as Guía', () => {
+            const code = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
+            expect(code).toContain('<span>Guía</span>');
         });
 
         it('repaso.js _clearCardModal should reset bulk-file-label to Seleccionar Archivo', () => {
@@ -209,6 +221,93 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
         it('repaso.js handlePopState should protect against reload when modals are open', () => {
             const code = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
             expect(code).toContain('window.uiManager.openModals.size > 0');
+        });
+
+        it('repaso.html and repaso.js category dropdowns should not contain emoji icons in modal options', () => {
+            const html = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/repaso.html'), 'utf8');
+            const js = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
+            expect(html).toContain('<option value="General">General</option>');
+            expect(html).not.toContain('<option value="General">📚 General</option>');
+            expect(js).toContain('<option value="General" ${currentCat === \'General\' ? \'selected\' : \'\'}>General</option>');
+            expect(js).not.toContain('📚 General');
+        });
+
+        it('repaso.js and repaso.html should render AI sparkles SVG icon instead of wand/pencil', () => {
+            const html = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/repaso.html'), 'utf8');
+            const js = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
+            expect(html).toContain('ai-sparkles-icon');
+            expect(js).toContain('ai-sparkles-icon');
+            expect(js).not.toContain('<i class="fas fa-magic"></i> <span class="btn-text">Crear con IA</span>');
+        });
+
+        it('dashboard.css should prevent white text on hover for .btn-secondary-action in light mode', () => {
+            const css = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/css/dashboard.css'), 'utf8');
+            expect(css).toContain('.btn-secondary-action:hover');
+            expect(css).toContain('color: var(--text-main);');
+            expect(css).not.toMatch(/\.btn-secondary-action:hover\s*\{[^}]*color:\s*white;/);
+        });
+
+        it('flashcards.css should style .fc-audio-btn with high contrast warm primary tone', () => {
+            const css = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/css/flashcards.css'), 'utf8');
+            expect(css).toContain('.fc-audio-btn');
+            expect(css).toContain('color: #ea580c;');
+        });
+
+        it('ttsService.js should configure studio-grade human voices for Spanish and support Italian', async () => {
+            const ttsService = require('../../src/domain/services/ttsService');
+            const voiceES = await ttsService.resolveVoiceName('es-ES');
+            const voiceUS = await ttsService.resolveVoiceName('es-US');
+            const voiceIT = await ttsService.resolveVoiceName('it-IT');
+            expect(voiceES).toBe('es-ES-Studio-C');
+            expect(voiceUS).toBe('es-US-Studio-B');
+            expect(voiceIT).toBe('it-IT-Neural2-A');
+        });
+
+        it('deckController.js should clean orphan media (images and audios) safely via _cleanOrphanMedia', async () => {
+            const DeckController = require('../../src/application/controllers/deckController');
+            const DeckService = require('../../src/domain/services/deckService');
+            const mediaController = require('../../src/application/controllers/mediaController');
+
+            const isMediaInUseSpy = jest.spyOn(DeckService, 'isMediaInUse').mockImplementation(async (url) => {
+                return url === 'shared.webp'; // 'shared.webp' is in use, 'orphan.mp3' is not
+            });
+            const deleteFileSpy = jest.spyOn(mediaController, 'deleteFile').mockResolvedValue(true);
+
+            await DeckController._cleanOrphanMedia(['shared.webp', 'orphan.mp3', 'orphan.mp3', null, '']);
+
+            expect(isMediaInUseSpy).toHaveBeenCalledWith('shared.webp');
+            expect(isMediaInUseSpy).toHaveBeenCalledWith('orphan.mp3');
+            expect(deleteFileSpy).toHaveBeenCalledTimes(1);
+            expect(deleteFileSpy).toHaveBeenCalledWith('orphan.mp3');
+
+            isMediaInUseSpy.mockRestore();
+            deleteFileSpy.mockRestore();
+        });
+
+        it('ttsService.synthesize should respect { cache: false } and not save to tts_cache in GCS', async () => {
+            const ttsService = require('../../src/domain/services/ttsService');
+            const saveSpy = jest.fn().mockResolvedValue(true);
+            const fileMock = {
+                exists: jest.fn().mockResolvedValue([false]),
+                save: saveSpy
+            };
+            const bucketMock = {
+                file: jest.fn().mockReturnValue(fileMock)
+            };
+            const originalBucket = ttsService.storage.bucket;
+            ttsService.storage.bucket = jest.fn().mockReturnValue(bucketMock);
+
+            const synthesizeSpeechSpy = jest.spyOn(ttsService.client, 'synthesizeSpeech').mockResolvedValue([{
+                audioContent: Buffer.from('fake-mp3-data')
+            }]);
+
+            const buffer = await ttsService.synthesize('Test without cache', 'es-ES', { cache: false });
+
+            expect(buffer).toEqual(Buffer.from('fake-mp3-data'));
+            expect(saveSpy).not.toHaveBeenCalled();
+
+            ttsService.storage.bucket = originalBucket;
+            synthesizeSpeechSpy.mockRestore();
         });
     });
 });

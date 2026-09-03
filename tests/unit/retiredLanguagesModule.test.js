@@ -47,4 +47,27 @@ describe('Retired language-learning module boundaries', () => {
 
         expect(source).not.toMatch(/LanguageRepository|languageRepository/);
     });
+
+    test('exam repositories and schema contain no residual audio_text column or queries', () => {
+        const schema = read('src/infrastructure/database/database_schema.sql');
+        const medicoRepo = read('src/domain/repositories/medicoRepository.js');
+        const docenteRepo = read('src/domain/repositories/docenteRepository.js');
+        const adminRepo = read('src/domain/repositories/adminRepository.js');
+
+        expect(schema).not.toMatch(/audio_text/i);
+        expect(medicoRepo).not.toMatch(/audio_text/i);
+        expect(docenteRepo).not.toMatch(/audio_text/i);
+        expect(adminRepo).not.toMatch(/audio_text/i);
+        expect(adminRepo).not.toMatch(/countOtherQuestionsWithAudio/i);
+    });
+
+    test('simulator frontend contains no audio_text or playQuestionAudio dead code', () => {
+        const quizJs = read('src/presentation/public/js/quiz.js');
+        const componentsJs = read('src/presentation/public/js/ui/components.js');
+        const configJs = read('src/presentation/public/js/config.js');
+
+        expect(quizJs).not.toMatch(/audio_text|playQuestionAudio/i);
+        expect(componentsJs).not.toMatch(/audio_text|playQuestionAudio/i);
+        expect(configJs).not.toMatch(/playQuestionAudio/i);
+    });
 });

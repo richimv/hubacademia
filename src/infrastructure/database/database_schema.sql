@@ -225,7 +225,6 @@ CREATE TABLE IF NOT EXISTS public.question_bank (
     career VARCHAR(100),
     subtopic VARCHAR(255),
     explanation_image_url TEXT,
-    audio_text TEXT,
     case_id UUID REFERENCES public.case_scenarios(id) ON DELETE SET NULL,
     case_order INTEGER DEFAULT 1,
     CONSTRAINT question_bank_pkey PRIMARY KEY (id)

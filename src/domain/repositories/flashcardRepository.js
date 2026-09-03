@@ -390,6 +390,7 @@ class FlashcardRepository {
                 UNION ALL
                 SELECT d.id, dt.depth + 1 FROM decks d
                 INNER JOIN deck_tree dt ON d.parent_id = dt.id
+                WHERE d.user_id = $2
             )
             SELECT id FROM deck_tree ORDER BY depth DESC;
         `;
@@ -400,7 +401,7 @@ class FlashcardRepository {
             if (rows.length === 0) return;
 
             for (const row of rows) {
-                await db.query('DELETE FROM decks WHERE id = $1', [row.id]);
+                await db.query('DELETE FROM decks WHERE id = $1 AND user_id = $2', [row.id, userId]);
             }
         } catch (error) {
             console.error("Error deleting deck tree:", error);
@@ -427,6 +428,7 @@ class FlashcardRepository {
                 UNION ALL
                 SELECT d.id, d.description FROM decks d
                 INNER JOIN deck_tree dt ON d.parent_id = dt.id
+                WHERE d.user_id = $2
             )
             SELECT 
                 uf.image_url, 

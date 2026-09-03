@@ -373,11 +373,55 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
         1. **Cierre Silencioso de Historial (`replaceState`)**: `uiManager.pushModalState()` almacena el estado previo en una pila interna `_modalHistoryStack`. Al cerrar manual o programáticamente la modal (mediante `popModalState()`), se utiliza `window.history.replaceState(prev.state, '', prev.href)` en lugar de `history.back()`. Esto limpia el historial del navegador sin disparar el evento `popstate`, previniendo recargas espurias.
         2. **Preservación In-Place de la Grilla de Mazos**: `renderRootDecks()` ahora verifica `hasLoadedDecks`. Si la grilla ya existe y tiene tarjetas renderizadas, no sobreescribe el contenedor con esqueletos, sino que actualiza los mazos de manera suave e in-place.
         3. **Blindaje de `handlePopState`**: Se incorporó una guarda estricta que aborta la re-ejecución del enrutador si existen modales abiertos en `uiManager` o si la vista activa ya tiene su grilla cargada.
-    - Desambiguación semántica de botones: `#btn-deck-tour` renombrado de "Guía" a "Tour" para distinguirlo claramente del botón de la Guía de Estudio / Cuaderno de notas (`.btn-fh-guide`).
+    - **Evolución de Tarjetas de Mazo: Categoría Dinámica en Reemplazo de "PERSONAL" / "PERS."**:
+      - Se eliminaron definitivamente los antiguos badges estáticos `PERSONAL`, `PERS.`, `AUTOMÁTICO` y `AUTO`. En su lugar, tanto en PC como en móvil, las tarjetas de mazo ahora muestran la categoría real seleccionada por el usuario (`deck.category || 'General'`: Medicina, Idiomas, Educación, Derecho, etc.), manteniendo consistencia con la desvinculación total de simulacros automáticos.
+    - **Reubicación Ergonómica del Icono a la Fila de Metadatos y Amplitud del Título**:
+      - Se retiró el badge de icono que se ubicaba al lado del título `<h1>` (`.deck-title-icon-badge`), permitiendo que el nombre del mazo ocupe el 100% del ancho horizontal disponible en la fila superior sin comprimirse ni colisionar con el botón de la derecha.
+      - Se eliminó la etiqueta de texto de categoría en la fila de metadatos (`.deck-meta`) y en su lugar se posicionó el icono propio del mazo (`.deck-meta-pill.pill-deck-icon`) al inicio de dicha fila, alineado elegantemente con los contadores de tarjetas, pendientes y dominadas.
+    - **Botón de Guía Rápida del Mazo**:
+      - El botón `#btn-deck-tour` mantiene su texto y etiqueta oficial como **"Guía"** con el icono `fas fa-circle-question`, conservando coherencia con los demás botones de ayuda rápida del sistema.
+    - **Sobriedad Visual en Selectores de Categoría (Sin Emojis Redundantes)**:
+      - Se eliminaron los emojis de las opciones `<option>` del selector de categorías tanto en la modal de creación/edición de mazo (`#new-deck-category`) como en la modal de publicación a la comunidad (`#publish-deck-category`), dejando nombres limpios y profesionales.
+    - **Corrección de Contraste en Botón "Cancelar" en Modo Claro**:
+      - Se refactorizó `.btn-secondary-action` y su pseudoclase `:hover` en `dashboard.css` para utilizar variables semánticas (`color: var(--text-main); background: var(--surface-hover)`), erradicando el bug donde el texto se volvía blanco sobre fondo claro haciéndose invisible.
+      - La modal de publicación (`#confirm-publish-modal`) ahora estructura sus botones dentro de un contenedor `.modal-footer` semántico.
+    - **Icono Oficial de Estrellitas IA**:
+      - Se reemplazó el icono de varita diagonal (`fas fa-magic`) por el vector SVG oficial de estrellitas IA (`ai-sparkles-icon`) con estilo de 4 puntas en el botón *"Crear con IA"* de la barra de acciones y en la modal generadora de tarjetas.
+    - **Alto Contraste y Ergonomía del Botón de Audio en Modo Claro**:
+      - El botón flotante de audio (`.fc-audio-btn`) en `flashcards.css` fue rediseñado con el color primario cálido (`#ea580c`, borde `1.5px solid rgba(249, 115, 22, 0.35)` y fondo sutil `rgba(249, 115, 22, 0.12)`). En modo claro ofrece contraste nítido y legible (eliminando el anterior ícono blanco sobre fondo pálido) y transiciona a gradiente anaranjado en hover.
+    - **Actualización del Motor TTS y Soporte Multilingüe (Italiano y Otras Lenguas)**:
+      - Se documenta el catálogo de voces en `ttsService.js`:
+        - **Google Cloud Studio** (voces grabadas en estudio por actores humanos profesionales): Español (`es-ES-Studio-C`, `es-US-Studio-B`), Inglés (`en-US-Studio-O`, `en-GB-Studio-C`), Francés (`fr-FR-Studio-A`), Alemán (`de-DE-Studio-C`).
+        - **Google Cloud Neural2 / Chirp-HD**: Italiano (`it-IT-Neural2-A`) y Portugués (`pt-BR-Neural2-A`). Se corroboró directamente con la API de Google que actualmente Google no dispone de modelo `Studio` para el idioma italiano (su disponibilidad se limita a ES, EN, FR y DE), pero las voces `it-IT-Neural2-A`, `it-IT-Neural2-C` y `it-IT-Chirp-HD-F` están 100% activas y verificadas con generación binaria exitosa.
+    - **Arquitectura de Limpieza y Ciclo de Vida de Archivos en GCS (`_cleanOrphanMedia`)**:
+      - **Principio de Integridad y Protección Anti-Huérfanos**:
+        1. **Al editar una tarjeta (`updateCard`)**: Tanto para imágenes (`image_url`, `explanation_image_url`) como para audios (`audio_url_frente`, `audio_url_dorso`), cualquier archivo reemplazado o removido manualmente (`deleteAudioFront`, etc.) se actualiza primero en la BD. Luego, en la fase post-guardado, el sistema invoca `DeckService.isMediaInUse(url)` para verificar si otra tarjeta (ej. en mazos clonados por otros usuarios) utiliza el mismo recurso. Si el conteo es 0, se elimina de GCS de inmediato vía `mediaController.deleteFile(url)`.
+        2. **Al eliminar una tarjeta individual (`deleteCard`)**: Se extraen las 4 URLs de multimedia de la tarjeta, se borra el registro de la BD y se invoca `_cleanOrphanMedia([image_url, explanation_image_url, audio_url_frente, audio_url_dorso])`, purgando los archivos en GCS que ya no tengan referencias en el sistema.
+        3. **Al eliminar un mazo padre con sub-mazos recursivos (`deleteDeck`)**:
+           - El repositorio ejecuta una CTE recursiva (`WITH RECURSIVE deck_tree`) que desciende por todos los niveles de profundidad (mazo → sub-mazo → sub-sub-mazo) aislando por `user_id`.
+           - Se recopilan todas las imágenes de anverso/reverso, todos los audios de anverso/reverso y todas las imágenes incrustadas en las descripciones de los mazos.
+           - Se eliminan los mazos de la BD (con cascada de PostgreSQL sobre `user_flashcards`).
+           - Se invoca `_cleanOrphanMedia` sobre el conjunto consolidado y deduplicado (`Set`), eliminando todos los archivos que ya no estén en uso por ningún otro usuario ni mazo.
+       - **Refactorización Clean Code**: Se centralizó la lógica repetitiva en la función auxiliar `_cleanOrphanMedia`, erradicando duplicidades y blindando la ejecución con bloques `try/catch`.
+      - **Erradicación de Duplicación en `tts_cache/`**:
+        - Se identificó que `ttsService.synthesize()` guardaba automáticamente una copia en `tts_cache/` como efecto secundario, mientras que `deckController._processAudioTts()` guardaba una segunda copia en `audio-cards/`.
+        - Como la BD solo registraba la ruta de `audio-cards/`, al borrar tarjetas se eliminaba el archivo en `audio-cards/` pero la copia en `tts_cache/` quedaba huérfana en el bucket.
+        - **Corrección**: Se implementó el parámetro `{ cache: false }` en `ttsService.synthesize()`, activado por defecto en `_processAudioTts()`. Ahora el audio de las tarjetas se genera y guarda exclusivamente una sola vez en `audio-cards/`, eliminando toda duplicidad y fuga de archivos en el bucket.
+    - **Ergonomía Táctil y Tipografía Adaptativa en Celulares (`flashcards.js`, `flashcards.css`)**:
+      - **Desplazamiento Táctil por Arrastre Directo (`enableSmoothTextDrag`)**:
+        - Se solucionó el bloqueo en dispositivos táctiles donde el usuario solo podía desplazarse tocando la delgada barra de scroll lateral.
+        - Ahora el usuario puede arrastrar con el dedo directamente sobre cualquier parte del contenedor de texto (`.content-text`).
+        - Se implementó discriminación inteligente entre gesto de scroll/arrastre (`touchmove` con delta > 6px) y toque simple (`tap`), asegurando que al arrastrar o soltar el dedo para leer jamás se voltee la tarjeta accidentalmente.
+        - En CSS, se habilitó `touch-action: pan-y !important`, `-webkit-overflow-scrolling: touch`, `overscroll-behavior-y: contain` y `pointer-events: none` en los pseudo-elementos `::before`/`::after` de centrado para evitar que intercepten los eventos táctiles.
+      - **Calibración de Tipografía Dinámica y Motor Shrink-to-Fit (PC y Móvil)**:
+        - **Escala Generosa en PC / Escritorio**: Tarjetas amplias (hasta 850px) ahora aprovechan adecuadamente el espacio visual con tamaños generosos (`2.60rem` en textos cortos, `1.95rem` en medianos, `1.75rem` en textos de ~200 caracteres, y `1.50rem` - `1.30rem` en largos), eliminando la sensación de texto pequeño o islas flotantes con espacio vacío excesivo.
+        - **Motor de Auto-Ajuste Dinámico (*Shrink-to-Fit*)**: Cuando un texto voluminoso desborda el alto visible del contenedor (`scrollHeight > clientHeight + 2`), el algoritmo reduce progresiva y gradualmente el tamaño de fuente en pasos finos (`0.04rem`) hasta que quepa completamente sin activar la barra de desplazamiento.
+        - **Límite Mínimo de Legibilidad**: Se establece un umbral mínimo (`0.84rem` en móvil, `1.05rem` en PC). Solo si el contenido supera dicho umbral tras los intentos de reducción, se activa el desplazamiento táctil suave por arrastre.
+        - **Sincronización en Giro de Tarjeta y Redimensión de Ventana**: En `toggleFlip()`, al mostrar el dorso se re-calibra el texto con las dimensiones activas de primer plano. Asimismo, un listener en `window.onresize` re-ejecuta el auto-ajuste automáticamente ante rotaciones de pantalla móvil o cambio de resolución en escritorio.
     - Limpieza de colores azules hardcodeados (`#60a5fa`, `#3b82f6`) en botones de acción rápida de tarjetas y eventos de arrastre, adoptando tokens institucionales (`#f97316` / `var(--primary)`).
   - **Verificación de Pruebas Unitarias**:
-    - Creada y ampliada la suite `tests/unit/deckIdiomasAndSecurity.test.js` cubriendo normalización de Idiomas, filtrado de comunidad, rechazo IDOR, clonación fiel, integridad de `.modal-header`, no renderizado de `.deck-icon-large`, elipsis de archivo Excel, chevrons adaptativos en sidebar (horizontal en PC y vertical en móvil), orden superior en colapso, posición de Idiomas, reversión silenciosa en `popModalState` y prevención de parpadeo por esqueletos.
-    - 41 suites de prueba pasando (290/290 pruebas al 100%).
+    - Creada y ampliada la suite `tests/unit/deckIdiomasAndSecurity.test.js` y `tests/unit/flashcardScope.test.js` cubriendo normalización de Idiomas, filtrado de comunidad, rechazo IDOR, clonación fiel, integridad de `.modal-header`, presencia de `.pill-deck-icon` en metadatos, categoría dinámica en tarjetas, botón "Guía", selectores sin emojis, icono SVG de estrellitas IA, prevención de texto blanco en hover, alto contraste en botón de audio, resolución de voces Studio/Italiano en TTS, limpieza de archivos huérfanos vía `_cleanOrphanMedia`, prevención de duplicación en `tts_cache` con `{ cache: false }`, escala generosa en PC (`1.75rem`), motor dinámico shrink-to-fit, desplazamiento táctil directo por arrastre en tarjetas, propiedades táctiles en CSS, reversión silenciosa en `popModalState` y prevención de parpadeo por esqueletos.
+    - 42 suites de prueba pasando (305/305 pruebas al 100%).
 
 ---
 

@@ -348,7 +348,6 @@ function buildQuestionTutorContext(qIndex) {
         mode: state.mode || '',
         imageUrl: q.image_url || null,
         explanationImageUrl: q.explanation_image_url || null,
-        audioText: q.audio_text || null,
         caseId: q.case_id || null,
         caseCode: q.case_code || null,
         caseTitle: q.case_title || null,
@@ -1296,33 +1295,6 @@ function renderQuestion() {
 
     // Texto Pregunta
     elements.questionText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.question_text || '') : (q.question_text || '');
-
-    // Inject premium audio player if audio_text is present (for Listening Comprehension)
-    if (q.audio_text) {
-        const audioWrapper = document.createElement('div');
-        audioWrapper.className = 'quiz-audio-player-wrapper';
-        audioWrapper.style.cssText = 'margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 1rem; display: flex; align-items: center; gap: 1rem;';
-        
-        const playBtn = document.createElement('button');
-        playBtn.className = 'quiz-audio-btn btn-message-tts';
-        playBtn.style.cssText = 'width: 45px; height: 45px; border-radius: 50%; border: none; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;';
-        playBtn.innerHTML = '<i class="fas fa-play"></i>';
-        
-        playBtn.onclick = () => {
-            window.playQuestionAudio(playBtn, q.audio_text, state.career || 'en-US');
-        };
-
-        const infoDiv = document.createElement('div');
-        infoDiv.style.flex = '1';
-        infoDiv.innerHTML = `
-            <div style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.25rem;">Comprensión Auditiva</div>
-            <div style="font-size: 0.75rem; color: #64748b;">Escucha el audio para responder la pregunta</div>
-        `;
-        
-        audioWrapper.appendChild(playBtn);
-        audioWrapper.appendChild(infoDiv);
-        elements.questionText.prepend(audioWrapper);
-    }
 
     // Reset UI
     elements.optionsGrid.innerHTML = '';

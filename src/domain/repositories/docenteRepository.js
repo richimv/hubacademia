@@ -53,7 +53,7 @@ class DocenteRepository {
         const query = `
             WITH BalancedPool AS (
                 SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
-                       qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.audio_text,
+                       qb.explanation_image_url, qb.image_url, qb.domain, qb.topic,
                        qb.case_id, qb.case_order,
                        cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
                        cs.image_url as case_image_url,
@@ -63,7 +63,7 @@ class DocenteRepository {
                 ${whereClauses}
             )
             SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, 
-                   image_url, domain, topic, audio_text, case_id, case_order,
+                   image_url, domain, topic, case_id, case_order,
                    case_code, case_title, case_description, case_image_url
             FROM BalancedPool 
             WHERE rn <= CASE 
@@ -84,7 +84,7 @@ class DocenteRepository {
             try {
                 let siblingQuery = `
                     SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
-                           qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.audio_text,
+                           qb.explanation_image_url, qb.image_url, qb.domain, qb.topic,
                            qb.case_id, qb.case_order,
                            cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
                            cs.image_url as case_image_url
@@ -93,35 +93,40 @@ class DocenteRepository {
                     WHERE qb.case_id = ANY($1::uuid[])
                 `;
                 const siblingParams = [caseIdsInBatch];
-                if (filterTopics) {
-                    siblingParams.push(topics);
-                    siblingQuery += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($2::text[]))))`;
+                if (career) {
+                    siblingQuery += ` AND (qb.career = $2 OR qb.career IS NULL)`;
+                    siblingParams.push(career);
                 }
-                siblingQuery += ` ORDER BY qb.case_id, qb.case_order ASC, qb.created_at ASC`;
+                siblingQuery += ` ORDER BY qb.case_id, qb.case_order ASC`;
 
                 const siblingRes = await db.query(siblingQuery, siblingParams);
+                const siblingQuestions = siblingRes.rows;
 
-                const siblingMap = new Map();
-                siblingRes.rows.forEach(sq => {
-                    if (!siblingMap.has(sq.case_id)) siblingMap.set(sq.case_id, []);
-                    siblingMap.get(sq.case_id).push(sq);
+                // Group sibling questions by case_id
+                const caseMap = new Map();
+                siblingQuestions.forEach(q => {
+                    if (!caseMap.has(q.case_id)) caseMap.set(q.case_id, []);
+                    caseMap.get(q.case_id).push(q);
                 });
 
-                const processedCaseIds = new Set();
-                const reassembled = [];
+                // Re-cluster: when a question has case_id, output all sibling questions for that case_id (once)
+                const finalQuestions = [];
+                const visitedCases = new Set();
 
                 for (const q of questions) {
-                    if (!q.case_id) {
-                        reassembled.push(q);
-                    } else if (!processedCaseIds.has(q.case_id)) {
-                        processedCaseIds.add(q.case_id);
-                        const siblings = siblingMap.get(q.case_id) || [q];
-                        reassembled.push(...siblings);
+                    if (q.case_id) {
+                        if (!visitedCases.has(q.case_id)) {
+                            visitedCases.add(q.case_id);
+                            const siblings = caseMap.get(q.case_id) || [q];
+                            finalQuestions.push(...siblings);
+                        }
+                    } else {
+                        finalQuestions.push(q);
                     }
                 }
-                questions = reassembled;
-            } catch (caseErr) {
-                console.error("⚠️ Error clusterizando preguntas de caso en DocenteRepo:", caseErr.message);
+                questions = finalQuestions.slice(0, limit);
+            } catch (siblingErr) {
+                console.warn("⚠️ [docenteRepository] Error al agrupar casos pedagógicos:", siblingErr.message);
             }
         }
 
@@ -134,7 +139,6 @@ class DocenteRepository {
             explanation_image_url: row.explanation_image_url,
             image_url: row.image_url,
             topic: row.topic,
-            audio_text: row.audio_text,
             case_id: row.case_id || null,
             case_order: row.case_id ? (parseInt(row.case_order, 10) || 1) : null,
             case_code: row.case_code || null,
@@ -266,14 +270,13 @@ class DocenteRepository {
         if (!questions || questions.length === 0) return [];
 
         const query = `
-            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, times_used, career, audio_text)
-            VALUES ($1, 'education', $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11, $12)
+            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, times_used, career)
+            VALUES ($1, 'education', $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11)
             ON CONFLICT (question_hash) DO UPDATE SET 
                 times_used = question_bank.times_used + 1,
                 career = EXCLUDED.career,
                 explanation_image_url = EXCLUDED.explanation_image_url,
-                image_url = EXCLUDED.image_url,
-                audio_text = EXCLUDED.audio_text
+                image_url = EXCLUDED.image_url
             RETURNING id;
         `;
 
@@ -301,8 +304,7 @@ class DocenteRepository {
                     q.explanation_image_url || null,
                     q.image_url || null,
                     hash,
-                    exactCareer,
-                    q.audio_text || null
+                    exactCareer
                 ]);
                 if (res.rows.length > 0) {
                     newIds.push(res.rows[0].id);
