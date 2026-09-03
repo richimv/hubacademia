@@ -85,7 +85,7 @@ Se han integrado esquemas validados para rich snippets en Google:
 
 1. **Compresión Gzip/Deflate:** Middleware `compression` activado en el servidor Express para reducir el peso de las transferencias hasta en un 75%.
 2. **Políticas de Caché (Express y Vercel):**
-   * CSS, JS e Imágenes: `public, max-age=31536000, immutable` (apoyado por el sistema de Cache-Busting por hash aleatorio al iniciar el servidor).
+   * CSS, JS e Imágenes: `public, max-age=31536000, immutable` (apoyado por el sistema determinista de Cache-Busting SHA256 generado en build con `src/presentation/update-cache.js`).
    * HTML: `Cache-Control: no-store, no-cache, must-revalidate` para garantizar entrega inmediata de cambios.
    * `sitemap.xml`: `public, max-age=3600, stale-while-revalidate=86400`.
    * `robots.txt`: `public, max-age=86400`.
@@ -96,10 +96,6 @@ Se han integrado esquemas validados para rich snippets en Google:
 
 ## 7. 🧪 Suite de Pruebas Automatizadas
 
-El archivo `tests/unit/seoArchitecture.test.js` ejecuta 21 aserciones automatizadas mediante Jest para validar:
-- Presencia de metaetiquetas clave y canonicals en vistas públicas.
-- Exclusión obligatoria de `noindex` en vistas públicas.
-- Aplicación de `noindex` en vistas privadas y obsoletas.
-- Cumplimiento de directivas en `robots.txt`.
-- Integridad sintáctica y exclusión de páginas draft en `sitemap.xml`.
-- Validación sintáctica de JSON-LD estructurado.
+Los archivos de prueba ejecutan aserciones automatizadas mediante Jest para validar:
+- `tests/unit/seoArchitecture.test.js`: Valida presencia de metaetiquetas clave, canonicals, `robots.txt`, `sitemap.xml` y JSON-LD.
+- `tests/unit/cacheBustIntegrity.test.js`: Valida que los 17 archivos HTML mantengan sincronizado el hash determinista SHA256 de los assets estáticos para garantizar paso limpio en CI de GitHub Actions (`git diff --exit-code -- src/presentation/public`).
