@@ -509,40 +509,11 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             // 5. Generación de respuesta resiliente con reintentos y multicanal
             const rawText = await this._callModelResilient(contents, systemPrompt);
 
-            // 6. Parsear la respuesta JSON de forma ultra-resiliente y purgar contaminación de JSON
-            let parsed;
-            try {
-                parsed = JSON.parse(rawText);
-            } catch (e) {
-                let cleaned = (rawText || '').trim();
-                const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-                if (codeBlockMatch && codeBlockMatch[1]) {
-                    cleaned = codeBlockMatch[1].trim();
-                } else {
-                    cleaned = cleaned.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-                }
+            // 6. Parsear la respuesta JSON de forma ultra-resiliente sin truncamiento por comillas internas
+            const parsed = this._parseAiResponse(rawText);
+            const sanitizedRespuesta = parsed.respuesta;
 
-                try {
-                    parsed = JSON.parse(cleaned);
-                } catch (e2) {
-                    const firstBrace = cleaned.indexOf('{');
-                    const lastBrace = cleaned.lastIndexOf('}');
-                    if (firstBrace !== -1 && lastBrace > firstBrace) {
-                        try {
-                            parsed = JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
-                        } catch (e3) {
-                            parsed = { intencion: 'respuesta_general', respuesta: this._cleanResponseText(rawText), sugerencias: [], idioma_detectado: 'es' };
-                        }
-                    } else {
-                        parsed = { intencion: 'respuesta_general', respuesta: this._cleanResponseText(rawText), sugerencias: [], idioma_detectado: 'es' };
-                    }
-                }
-            }
-
-            // Sanitización profunda: limpiar y formatear la propiedad respuesta
-            const sanitizedRespuesta = this._cleanResponseText(parsed?.respuesta || rawText);
-
-            // 6. Log de la respuesta (Debug Visual)
+            // 7. Log de la respuesta (Debug Visual)
             if (sanitizedRespuesta && sanitizedRespuesta.includes('![')) {
                 console.log('✅ [TutorAiService] IA insertó imagen en la respuesta.');
             } else {
@@ -572,8 +543,98 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
     }
 
     /**
+     * Parsea la respuesta del modelo IA de forma ultra-resiliente.
+     * Si el JSON viene con comillas dobles sin escapar dentro del texto en Markdown (ej. en opciones o citas pedagógicas),
+     * extrae la respuesta completa mediante límites semánticos sin truncar ni cortar nada.
+     */
+    _parseAiResponse(rawText) {
+        if (!rawText || typeof rawText !== 'string') {
+            return { intencion: 'consulta', respuesta: '', sugerencias: [], idioma_detectado: 'es' };
+        }
+
+        let text = rawText.trim();
+
+        // 1. Quitar bloques de código Markdown si envuelven el JSON (```json ... ```)
+        const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+        if (codeBlockMatch && codeBlockMatch[1]) {
+            text = codeBlockMatch[1].trim();
+        }
+
+        // 2. Intento 1: Parseo JSON directo estándar
+        try {
+            const parsed = JSON.parse(text);
+            if (parsed && typeof parsed.respuesta === 'string' && parsed.respuesta.trim()) {
+                return {
+                    intencion: parsed.intencion || 'consulta',
+                    respuesta: this._cleanResponseText(parsed.respuesta),
+                    sugerencias: Array.isArray(parsed.sugerencias) ? parsed.sugerencias : [],
+                    idioma_detectado: parsed.idioma_detectado || 'es'
+                };
+            }
+        } catch (e) {
+            // Continuar a la extracción semántica defensiva
+        }
+
+        // 3. Intento 2: Extracción semántica por límites de clave sin truncamiento por comillas internas
+        const respKeyMatch = text.match(/"respuesta"\s*:\s*"/i);
+        if (respKeyMatch) {
+            const valueStartIndex = respKeyMatch.index + respKeyMatch[0].length;
+            const remainder = text.substring(valueStartIndex);
+
+            // El valor de "respuesta" termina antes de la siguiente clave del esquema o antes de la llave de cierre final
+            const boundaryRegex = /",\s*"(?:sugerencias|idioma_detectado|intencion|confianza|sources|contextUsed)"\s*:|"\s*\}\s*$/i;
+            const boundaryMatch = remainder.match(boundaryRegex);
+
+            let extractedRespuesta = '';
+            if (boundaryMatch) {
+                extractedRespuesta = remainder.substring(0, boundaryMatch.index);
+            } else {
+                const lastBraceIdx = remainder.lastIndexOf('}');
+                if (lastBraceIdx !== -1) {
+                    const quoteBefore = remainder.lastIndexOf('"', lastBraceIdx);
+                    extractedRespuesta = quoteBefore !== -1 ? remainder.substring(0, quoteBefore) : remainder.substring(0, lastBraceIdx);
+                } else {
+                    extractedRespuesta = remainder;
+                }
+            }
+
+            // Extraer sugerencias si existen
+            let sugerencias = [];
+            const sugMatch = text.match(/"sugerencias"\s*:\s*\[([\s\S]*?)\]/i);
+            if (sugMatch && sugMatch[1]) {
+                try {
+                    sugerencias = JSON.parse(`[${sugMatch[1]}]`);
+                } catch (err) {}
+            }
+
+            let intencion = 'consulta';
+            const intMatch = text.match(/"intencion"\s*:\s*"([^"]+)"/i);
+            if (intMatch && intMatch[1]) intencion = intMatch[1];
+
+            let idioma = 'es';
+            const langMatch = text.match(/"idioma_detectado"\s*:\s*"([^"]+)"/i);
+            if (langMatch && langMatch[1]) idioma = langMatch[1];
+
+            return {
+                intencion,
+                respuesta: this._cleanResponseText(extractedRespuesta),
+                sugerencias,
+                idioma_detectado: idioma
+            };
+        }
+
+        // 4. Fallback si no hay estructura JSON identificable: devolver el texto tal cual
+        return {
+            intencion: 'consulta',
+            respuesta: this._cleanResponseText(text),
+            sugerencias: [],
+            idioma_detectado: 'es'
+        };
+    }
+
+    /**
      * Sanitiza el texto de respuesta final para evitar cualquier contaminación de JSON,
-     * llaves/corchetes residuales o escapes literales de saltos de línea.
+     * llaves/corchetes residuales o escapes literales de saltos de línea sin romper LaTeX.
      */
     _cleanResponseText(text) {
         if (!text || typeof text !== 'string') return '';
@@ -582,25 +643,31 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
         // 1. Si el texto viene con bloques de código json
         const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
         if (codeBlockMatch && codeBlockMatch[1]) {
-            try {
-                const parsed = JSON.parse(codeBlockMatch[1]);
-                if (parsed && parsed.respuesta) {
-                    cleaned = parsed.respuesta;
-                }
-            } catch (e) {}
+            cleaned = codeBlockMatch[1].trim();
         }
 
-        // 2. Si el texto sigue siendo un string JSON
+        // 2. Si el texto sigue siendo un string JSON, extraer su valor mediante boundaries seguros
         if (cleaned.startsWith('{') && (cleaned.includes('"respuesta"') || cleaned.includes('"intencion"'))) {
             try {
                 const parsed = JSON.parse(cleaned);
-                if (parsed && parsed.respuesta) {
+                if (parsed && typeof parsed.respuesta === 'string') {
                     cleaned = parsed.respuesta;
                 }
             } catch (e) {
-                const match = cleaned.match(/"respuesta"\s*:\s*"((?:\\.|[^"\\])*)"/);
-                if (match && match[1]) {
-                    cleaned = match[1];
+                const respKeyMatch = cleaned.match(/"respuesta"\s*:\s*"/i);
+                if (respKeyMatch) {
+                    const valStart = respKeyMatch.index + respKeyMatch[0].length;
+                    const remainder = cleaned.substring(valStart);
+                    const boundaryMatch = remainder.match(/",\s*"(?:sugerencias|idioma_detectado|intencion|confianza|sources|contextUsed)"\s*:|"\s*\}\s*$/i);
+                    if (boundaryMatch) {
+                        cleaned = remainder.substring(0, boundaryMatch.index);
+                    } else {
+                        const lastBraceIdx = remainder.lastIndexOf('}');
+                        if (lastBraceIdx !== -1) {
+                            const quoteBefore = remainder.lastIndexOf('"', lastBraceIdx);
+                            cleaned = quoteBefore !== -1 ? remainder.substring(0, quoteBefore) : remainder.substring(0, lastBraceIdx);
+                        }
+                    }
                 }
             }
         }
@@ -611,9 +678,9 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             .replace(/\r\n/g, '\n')
             .replace(/\\"/g, '"');
 
-        // Convertir secuencias \n literales a saltos reales preservando solo comandos LaTeX específicos que inician con 'n'
-        const latexNCommands = 'neq|nabla|neg|nu|notin|ni|null|nexists|nrightarrow|nleftarrow|nsubseteq|nsupseteq|nless|ngtr|nleq|ngeq|nsim|ncong|nmid|natural';
-        const latexNRegex = new RegExp(`\\\\n(?!(?:${latexNCommands})\\b)`, 'g');
+        // Convertir secuencias \n literales a saltos reales preservando comandos LaTeX específicos que inician con 'n' (\neq, \nabla, \nu, etc.)
+        const latexNRemainders = 'eq|abla|eg|u|otin|i|ull|exists|rightarrow|leftarrow|subseteq|supseteq|less|gtr|leq|geq|sim|cong|mid|atural';
+        const latexNRegex = new RegExp(`\\\\n(?!(?:${latexNRemainders})\\b)`, 'g');
         cleaned = cleaned.replace(latexNRegex, '\n');
 
         // 4. Limpiar fragmentos residuales de JSON al inicio o final

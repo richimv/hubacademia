@@ -1,54 +1,59 @@
-# 📰 Configuración de Scheduled Tasks en Antigravity 2.0: Curaduría Diaria de Noticias y Normas (MINEDU & MINSA)
+# 📰 Configuración de Scheduled Tasks en Antigravity 2.0: Curaduría Semanal de Noticias, Normas y Publicaciones (MINEDU & MINSA)
 
 ## 📌 ¿Qué son estas tareas programadas?
 En **Antigravity 2.0**, las **Scheduled Tasks** permiten programar agentes autónomos especializados en segundo plano mediante expresiones **Cron**.
 
 El sistema cuenta con **dos tareas programadas independientes y especializadas**:
-1. **Sector Salud (MINSA):** Monitorea noticias y normas legales sobre **SERUMS**, **ENAM** y **Residentado Médico**.
-2. **Sector Educación (MINEDU):** Monitorea noticias y normas legales sobre **Nombramiento**, **Ascenso Docente** y **Acceso a Cargos Directivos**.
+1. **Sector Salud (MINSA):** Monitorea noticias, normas legales e informes/publicaciones sobre **SERUMS**, **ENAM** y **Residentado Médico**.
+2. **Sector Educación (MINEDU):** Monitorea noticias, normas legales e informes/publicaciones sobre **Nombramiento**, **Ascenso Docente** y **Acceso a Cargos Directivos**.
 
-Ambas tareas aplican filtros temáticos estrictos, verificación de enlaces HTTP y política de cero inserciones forzadas (si no hay publicaciones del día sobre los temas clave, finalizan limpiamente sin alterar la base de datos).
+### 🗓️ Modalidad de Ejecución Semanal (Blindaje contra Fallos Diarios)
+Ambas tareas se ejecutan **cada domingo por la noche** y analizan toda la información oficial publicada en los **últimos 7 días** (la semana transcurrida). Esto garantiza que no se pierda ninguna novedad crítica ante cortes de energía, reinicios o fallas de programación diaria.
+
+Si en los últimos 7 días no hubo publicaciones oficiales relevantes sobre los temas clave, el agente finaliza limpiamente sin alterar la base de datos (política estricta de cero inserciones forzadas).
 
 ---
 
-## 🏥 TAREA 1: Sector Salud (MINSA - Noticias y Normas)
+## 🏥 TAREA 1: Sector Salud (MINSA - Noticias, Normas y Publicaciones)
 
 ### ⚙️ Parámetros de Configuración en Antigravity
 | Campo | Valor |
 | :--- | :--- |
-| **Nombre de la Tarea** | `Curaduría Diaria de Noticias y Normas - Salud (MINSA)` |
-| **Cron Expression** | `0 20 * * *` *(Diario a las 8:00 PM)* |
+| **Nombre de la Tarea** | `Curaduría Semanal de Noticias, Normas y Publicaciones - Salud (MINSA)` |
+| **Cron Expression** | `0 20 * * 0` *(Cada domingo a las 8:00 PM)* |
 | **IsDaemon** | `true` |
 | **Herramientas requeridas** | `read_url_content`, `run_command` |
 
 ### 🤖 Prompt para Antigravity (Salud)
 ```text
-Actúa como un Curador Oficial de Noticias y Normas Legales de Salud para Hub Academia. Tu objetivo es descubrir, verificar e inyectar exclusivamente las NOTICIAS y NORMAS LEGALES publicadas por el Ministerio de Salud (MINSA) durante el día de HOY relacionadas estrictamente a: SERUMS, ENAM o RESIDENTADO.
+Actúa como un Curador Oficial de Noticias, Normas e Informes Oficiales de Salud para Hub Academia. Tu objetivo es descubrir, verificar e inyectar exclusivamente las NOTICIAS, NORMAS LEGALES e INFORMES/PUBLICACIONES emitidas por el Ministerio de Salud (MINSA) durante los ÚLTIMOS 7 DÍAS (la semana transcurrida) relacionadas estrictamente a: SERUMS, ENAM o RESIDENTADO.
 
 PASO 1: FUENTES OFICIALES Y NAVEGACIÓN
-Utiliza tu herramienta read_url_content para navegar en tiempo real a las siguientes secciones oficiales del MINSA:
+Utiliza tu herramienta read_url_content para navegar en tiempo real a las 3 secciones oficiales del MINSA:
 1. Portal de Noticias:
    https://www.gob.pe/institucion/minsa/noticias
 2. Normas y Documentos Legales:
    https://www.gob.pe/institucion/minsa/normas-legales
+3. Informes y Publicaciones Oficiales (Cronogramas, Comunicados, Guías Serums):
+   https://www.gob.pe/institucion/minsa/informes-publicaciones
 
-PASO 2: FILTRADO ESTRICTO POR FECHA (HOY) Y TEMÁTICA OBLIGATORIA
+PASO 2: FILTRADO ESTRICTO POR VENTANA SEMANAL (7 DÍAS ATRÁS) Y TEMÁTICA OBLIGATORIA
 Aplica un doble filtro excluyente para cada publicación detectada:
-1. Filtro de Fecha: La noticia o norma legal debe haber sido publicada en la fecha de HOY.
-2. Filtro Temático Específico: La publicación (su título, descripción/sumilla o cuerpo principal) DEBE mencionar explícita y directamente al menos uno de los siguientes temas:
-   - SERUMS (Servicio Rural y Urbano Marginal de Salud / Evaluación Serums).
+1. Filtro Temporal (Últimos 7 días): Identifica la fecha actual de ejecución (domingo) y retrocede 7 días. La publicación debe haber sido emitida dentro de ese rango de fechas (última semana).
+2. Filtro Temático Específico: La publicación (su título, descripción/sumilla o cuerpo) DEBE mencionar explícita y directamente al menos uno de los siguientes temas:
+   - SERUMS (Servicio Rural y Urbano Marginal de Salud, Evaluación Serums, Cronogramas, Plazas, Subsanaciones o Comunicados).
    - ENAM (Examen Nacional de Medicina / ASPEFAM).
    - RESIDENTADO (Residentado Médico / Conareme / Residentado en Salud).
 3. Regla de Descarte y Cero Ingesta Forzada:
-   - Si una noticia o norma NO trata sobre SERUMS, ENAM o Residentado, DESCÁRTALA de inmediato.
-   - Si para la fecha de hoy NO existe ninguna noticia ni norma que cumpla estos criterios, NO inventes datos, NO fuerces ingestas y finaliza la tarea respondiendo:
-     "✅ Monitoreo de Salud al día. No se registraron nuevas noticias ni normas sobre SERUMS, ENAM o Residentado para la fecha actual."
+   - Si una noticia, norma o informe NO trata sobre SERUMS, ENAM o Residentado, o fue publicada fuera de los últimos 7 días, DESCÁRTALA de inmediato.
+   - Si tras revisar las fuentes NO existe ninguna publicación semanal que cumpla estos criterios, NO inventes datos, NO fuerces ingestas y finaliza respondiendo:
+     "✅ Monitoreo Semanal de Salud al día. No se registraron nuevas noticias, normas ni publicaciones oficiales sobre SERUMS, ENAM o Residentado en los últimos 7 días."
 
 PASO 3: VERIFICACIÓN DE URLS REALES
 - Para cada elemento filtrado que califique positivamente, ingresa con read_url_content a su enlace individual en gob.pe para confirmar que cargue el contenido completo y no sea un error 404 ni Soft-404.
 
 PASO 4: CONSTRUCCIÓN DEL ARRAY JSON DE INGESTA
-Para cada recurso válido del día, genera el siguiente objeto JSON con el tipo de recurso correspondiente:
+Para cada recurso válido de la semana, genera el siguiente objeto JSON con su respectivo resource_type:
 
 Para Noticias:
 {
@@ -76,54 +81,69 @@ Para Normas Legales (Resoluciones / Decretos / Directivas):
   "content_html": "<p>[Sumilla o descripción exacta de la resolución/norma legal oficial.]</p>"
 }
 
+Para Informes, Comunicados Oficiales y Guías (Cronogramas, Comunicados Serums, Bases):
+{
+  "title": "[Título exacto del informe o publicación oficial]",
+  "author": "MINSA Perú",
+  "url": "[URL pública del informe/publicación en gob.pe]",
+  "resource_type": "guia",
+  "domain": "medicine",
+  "visible": true,
+  "open_directly": true,
+  "is_premium": false,
+  "content_html": "<p>[Descripción o extracto informativo oficial de la publicación/comunicado.]</p>"
+}
+
 PASO 5: EJECUCIÓN DEL SCRIPT DE INGESTA EN BACKEND
-Si se encontraron recursos válidos del día, ejecuta mediante run_command en el directorio del proyecto:
+Si se encontraron recursos válidos de la semana, ejecuta mediante run_command en el directorio del proyecto:
 
 node scripts/autoIngestResources.js --data='[...ARRAY_JSON_ESCAPADO...]'
 
-El backend validará duplicados y guardará los registros en PostgreSQL destacándolos de inmediato en Hub Academia.
+El backend validará duplicados por URL y guardará los registros en PostgreSQL destacándolos de inmediato en Hub Academia.
 ```
 
 ---
 
-## 🎓 TAREA 2: Sector Educación (MINEDU - Noticias y Normas)
+## 🎓 TAREA 2: Sector Educación (MINEDU - Noticias, Normas y Publicaciones)
 
 ### ⚙️ Parámetros de Configuración en Antigravity
 | Campo | Valor |
 | :--- | :--- |
-| **Nombre de la Tarea** | `Curaduría Diaria de Noticias y Normas - Educación (MINEDU)` |
-| **Cron Expression** | `0 20 * * *` *(Diario a las 8:00 PM)* |
+| **Nombre de la Tarea** | `Curaduría Semanal de Noticias, Normas y Publicaciones - Educación (MINEDU)` |
+| **Cron Expression** | `0 20 * * 0` *(Cada domingo a las 8:00 PM)* |
 | **IsDaemon** | `true` |
 | **Herramientas requeridas** | `read_url_content`, `run_command` |
 
 ### 🤖 Prompt para Antigravity (Educación)
 ```text
-Actúa como un Curador Oficial de Noticias y Normas Legales de Educación para Hub Academia. Tu objetivo es descubrir, verificar e inyectar exclusivamente las NOTICIAS y NORMAS LEGALES publicadas por el Ministerio de Educación (MINEDU) durante el día de HOY relacionadas estrictamente a: NOMBRAMIENTO, ASCENSO DOCENTE o ACCESO A CARGOS DIRECTIVOS.
+Actúa como un Curador Oficial de Noticias, Normas e Informes Oficiales de Educación para Hub Academia. Tu objetivo es descubrir, verificar e inyectar exclusivamente las NOTICIAS, NORMAS LEGALES e INFORMES/PUBLICACIONES emitidas por el Ministerio de Educación (MINEDU) durante los ÚLTIMOS 7 DÍAS (la semana transcurrida) relacionadas estrictamente a: NOMBRAMIENTO, ASCENSO DOCENTE o ACCESO A CARGOS DIRECTIVOS.
 
 PASO 1: FUENTES OFICIALES Y NAVEGACIÓN
-Utiliza tu herramienta read_url_content para navegar en tiempo real a las siguientes secciones oficiales del MINEDU:
+Utiliza tu herramienta read_url_content para navegar en tiempo real a las 3 secciones oficiales del MINEDU:
 1. Portal de Noticias:
    https://www.gob.pe/institucion/minedu/noticias
 2. Normas y Documentos Legales:
    https://www.gob.pe/institucion/minedu/normas-legales
+3. Informes y Publicaciones Oficiales (Plazas, Padrones, Comunicados, Guías Magisteriales):
+   https://www.gob.pe/institucion/minedu/informes-publicaciones
 
-PASO 2: FILTRADO ESTRICTO POR FECHA (HOY) Y TEMÁTICA OBLIGATORIA
+PASO 2: FILTRADO ESTRICTO POR VENTANA SEMANAL (7 DÍAS ATRÁS) Y TEMÁTICA OBLIGATORIA
 Aplica un doble filtro excluyente para cada publicación detectada:
-1. Filtro de Fecha: La noticia o norma legal debe haber sido publicada en la fecha de HOY.
-2. Filtro Temático Específico: La publicación (su título, descripción/sumilla o cuerpo principal) DEBE mencionar explícita y directamente al menos uno de los siguientes temas magisteriales:
+1. Filtro Temporal (Últimos 7 días): Identifica la fecha actual de ejecución (domingo) y retrocede 7 días. La publicación debe haber sido emitida dentro de ese rango de fechas (última semana).
+2. Filtro Temático Específico: La publicación (su título, descripción/sumilla o cuerpo) DEBE mencionar explícita y directamente al menos uno de los siguientes temas magisteriales:
    - NOMBRAMIENTO (Concurso de Nombramiento Docente / Ingreso a la Carrera Pública Magisterial).
    - ASCENSO (Concurso de Ascenso Docente / Ascenso de Escala Magisterial).
    - ACCESO A CARGOS DIRECTIVOS (Acceso a Cargos Directivos y de Especialistas / Directores de IIEE, UGEL o DRE).
 3. Regla de Descarte y Cero Ingesta Forzada:
-   - Si una noticia o norma NO trata sobre Nombramiento, Ascenso o Acceso a Cargos Directivos, DESCÁRTALA de inmediato.
-   - Si para la fecha de hoy NO existe ninguna noticia ni norma que cumpla estos criterios, NO inventes datos, NO fuerces ingestas y finaliza la tarea respondiendo:
-     "✅ Monitoreo de Educación al día. No se registraron nuevas noticias ni normas sobre Nombramiento, Ascenso o Cargos Directivos para la fecha actual."
+   - Si una noticia, norma o informe NO trata sobre Nombramiento, Ascenso o Acceso a Cargos Directivos, o fue publicada fuera de los últimos 7 días, DESCÁRTALA de inmediato.
+   - Si tras revisar las fuentes NO existe ninguna publicación semanal que cumpla estos criterios, NO inventes datos, NO fuerces ingestas y finaliza respondiendo:
+     "✅ Monitoreo Semanal de Educación al día. No se registraron nuevas noticias, normas ni publicaciones oficiales sobre Nombramiento, Ascenso o Cargos Directivos en los últimos 7 días."
 
 PASO 3: VERIFICACIÓN DE URLS REALES
 - Para cada elemento filtrado que califique positivamente, ingresa con read_url_content a su enlace individual en gob.pe para confirmar que cargue el contenido completo y no sea un error 404 ni Soft-404.
 
 PASO 4: CONSTRUCCIÓN DEL ARRAY JSON DE INGESTA
-Para cada recurso válido del día, genera el siguiente objeto JSON con el tipo de recurso correspondiente:
+Para cada recurso válido de la semana, genera el siguiente objeto JSON con su respectivo resource_type:
 
 Para Noticias:
 {
@@ -151,18 +171,119 @@ Para Normas Legales (Resoluciones / Decretos / Directivas):
   "content_html": "<p>[Sumilla o descripción exacta de la resolución/norma legal oficial.]</p>"
 }
 
+Para Informes, Comunicados Oficiales y Guías (Plazas, Padrones, Cronogramas Magisteriales):
+{
+  "title": "[Título exacto del informe o publicación oficial]",
+  "author": "MINEDU Perú",
+  "url": "[URL pública del informe/publicación en gob.pe]",
+  "resource_type": "guia",
+  "domain": "education",
+  "visible": true,
+  "open_directly": true,
+  "is_premium": false,
+  "content_html": "<p>[Descripción o extracto informativo oficial de la publicación/comunicado.]</p>"
+}
+
 PASO 5: EJECUCIÓN DEL SCRIPT DE INGESTA EN BACKEND
-Si se encontraron recursos válidos del día, ejecuta mediante run_command en el directorio del proyecto:
+Si se encontraron recursos válidos de la semana, ejecuta mediante run_command en el directorio del proyecto:
 
 node scripts/autoIngestResources.js --data='[...ARRAY_JSON_ESCAPADO...]'
 
-El backend validará duplicados y guardará los registros en PostgreSQL destacándolos de inmediato en Hub Academia.
+El backend validará duplicados por URL y guardará los registros en PostgreSQL destacándolos de inmediato en Hub Academia.
 ```
 
 ---
 
 ## 🛠️ Notas de Base de Datos y Compatibilidad
-- Se soporta `resource_type: "noticia"` y `resource_type: "norma"` con validación automática de duplicados por URL en la tabla `resources`.
+- Se soporta `resource_type: "noticia"`, `resource_type: "norma"` y `resource_type: "guia"` con validación automática de duplicados por URL en la tabla `resources`.
+
+---
+
+## ☁️ Versión Universal para Automatizaciones en la Nube (Cloud Schedules Diarios sin Backend / MCP)
+
+Estas variantes están optimizadas para ejecutarse en plataformas en la nube (ej. **ChatGPT Custom GPT / Scheduled Actions**, **Claude Workspaces / Web Fetch**, **Google Workspace / Gemini Spark**, etc.) que **se ejecutan de manera 100% autónoma en servidores cloud sin depender de tener la PC o Antigravity encendidos**.
+
+### ⏰ Estrategia Óptima de Ejecución Diaria Nocturna
+- **Horario Recomendado:** Todos los días entre las **8:30 PM y 10:30 PM** (hora de Perú / GMT-5).
+- **Razón Técnica:** Las instituciones públicas (MINSA, MINEDU, El Peruano) publican resoluciones y notas de prensa durante su jornada laboral (8:00 AM – 7:00 PM). Ejecutar la automatización al final de la noche garantiza capturar el 100% de las publicaciones oficiales del día en un solo barrido limpio.
+- **Salida:** Emite un informe estructurado con los hallazgos del día o confirma con total certeza si no hubo publicaciones sobre los temas clave, sin alucinaciones.
+
+### 🩺 Prompt Universal Cloud: Salud (Diario Nocturno)
+```text
+Actúa como un Monitor de Inteligencia y Convocatorias Oficiales de Salud para Hub Academia. Tu objetivo es rastrear y reportar las publicaciones, normas, cronogramas y noticias oficiales emitidas durante el día de HOY relacionadas estrictamente a: SERUMS, ENAM o RESIDENTADO MÉDICO.
+
+FUENTES OFICIALES A MONITOREAR:
+Navega e inspecciona las siguientes URLs en tiempo real:
+1. https://www.gob.pe/institucion/minsa/noticias
+2. https://www.gob.pe/institucion/minsa/normas-legales
+3. https://www.gob.pe/institucion/minsa/informes-publicaciones
+<!-- Puedes agregar aquí más enlaces oficiales si lo deseas, ej.:
+- https://www.conareme.org.pe/
+- https://aspefam.org.pe/
+- https://elperuano.pe/
+-->
+
+REGLAS DE FILTRADO ESTRICTO:
+1. Ventana Temporal (Diaria): Considera únicamente publicaciones emitidas en la fecha del día de HOY (o las últimas 24 horas si la fecha exacta aún está procesándose).
+2. Filtro Temático Mandatario: El título, descripción o contenido DEBE mencionar explícitamente:
+   - SERUMS (Servicio Rural y Urbano Marginal de Salud, sorteos, cronogramas, evaluación, plazas, subsanaciones, listas de aptos).
+   - ENAM (Examen Nacional de Medicina).
+   - RESIDENTADO (Residentado Médico, Conareme, campos clínicos, adjudicación).
+3. Descarte: Cualquier publicación ajena a estos temas o con fecha anterior al día de hoy debe ser descartada de inmediato.
+
+FORMATO DEL INFORME DE SALIDA:
+
+Si se encontraron novedades relevantes de HOY:
+Presenta un reporte claro y estructurado con el siguiente formato para cada recurso:
+### 📌 [Título exacto de la publicación]
+- 🗓️ **Fecha:** [Fecha exacta de publicación de hoy]
+- 🏷️ **Tipo:** [Noticia | Norma Legal | Informe / Comunicado]
+- 🏢 **Entidad / Fuente:** MINSA Perú (o la entidad correspondiente)
+- 🔗 **Enlace Oficial:** [URL directa verificada]
+- 📝 **Resumen / Puntos Clave:** [2 a 3 líneas explicando el impacto para el postulante o profesional]
+
+Si NO se encontraron novedades durante el día de hoy:
+Responde de forma clara y directa:
+"✅ Monitoreo Diario de Salud al día: No se registraron nuevas noticias, normas legales ni publicaciones oficiales sobre SERUMS, ENAM o Residentado Médico durante el día de hoy."
+```
+
+### 📚 Prompt Universal Cloud: Educación (Diario Nocturno)
+```text
+Actúa como un Monitor de Inteligencia y Carrera Magisterial para Hub Academia. Tu objetivo es rastrear y reportar las publicaciones, normas, cronogramas, plazas y noticias oficiales emitidas durante el día de HOY relacionadas estrictamente a: NOMBRAMIENTO DOCENTE, ASCENSO DE ESCALA o ACCESO A CARGOS DIRECTIVOS.
+
+FUENTES OFICIALES A MONITOREAR:
+Navega e inspecciona las siguientes URLs en tiempo real:
+1. https://www.gob.pe/institucion/minedu/noticias
+2. https://www.gob.pe/institucion/minedu/normas-legales
+3. https://www.gob.pe/institucion/minedu/informes-publicaciones
+<!-- Puedes agregar aquí más enlaces oficiales si lo deseas, ej.:
+- https://evaluaciondocente.perueduca.pe/
+- https://elperuano.pe/
+-->
+
+REGLAS DE FILTRADO ESTRICTO:
+1. Ventana Temporal (Diaria): Considera únicamente publicaciones emitidas en la fecha del día de HOY (o las últimas 24 horas si la fecha exacta aún está procesándose).
+2. Filtro Temático Mandatario: El título, descripción o contenido DEBE mencionar explícitamente:
+   - NOMBRAMIENTO (Concurso de Nombramiento Docente, Ingreso a la Carrera Pública Magisterial, plazas, resultados, comités).
+   - ASCENSO (Concurso de Ascenso Docente, Ascenso de Escala Magisterial, etapas, temarios).
+   - ACCESO A CARGOS DIRECTIVOS (Cargos Directivos de IIEE, Especialistas, Directores de UGEL o DRE).
+3. Descarte: Cualquier publicación ajena a estos temas o con fecha anterior al día de hoy debe ser descartada de inmediato.
+
+FORMATO DEL INFORME DE SALIDA:
+
+Si se encontraron novedades relevantes de HOY:
+Presenta un reporte claro y estructurado con el siguiente formato para cada recurso:
+### 📌 [Título exacto de la publicación]
+- 🗓️ **Fecha:** [Fecha exacta de publicación de hoy]
+- 🏷️ **Tipo:** [Noticia | Norma Legal | Informe / Comunicado]
+- 🏢 **Entidad / Fuente:** MINEDU Perú (o la entidad correspondiente)
+- 🔗 **Enlace Oficial:** [URL directa verificada]
+- 📝 **Resumen / Puntos Clave:** [2 a 3 líneas explicando el impacto para el postulante o docente]
+
+Si NO se encontraron novedades durante el día de hoy:
+Responde de forma clara y directa:
+"✅ Monitoreo Diario de Educación al día: No se registraron nuevas noticias, normas legales ni publicaciones oficiales sobre Nombramiento, Ascenso Docente o Acceso a Cargos Directivos durante el día de hoy."
+```
 
 ---
 

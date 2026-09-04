@@ -265,7 +265,6 @@ body {
     white-space: normal;
     font-weight: 600;
     text-align: center;
-    font-size: 1.5rem;
     color: var(--text-main) !important;
     scrollbar-width: thin;
     scrollbar-color: rgba(249, 115, 22, 0.45) transparent;
@@ -273,7 +272,6 @@ body {
     flex-direction: column;
     align-items: center;
     padding: 0.5rem 0.8rem;
-    transition: font-size 0.2s ease;
     box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y !important;
@@ -317,9 +315,9 @@ body {
     text-align: left !important;
     display: block;
     width: 100%;
-    max-width: 92%;
-    margin: 0.6rem auto;
-    padding-left: 2rem !important;
+    max-width: 100%;
+    margin: 0.4rem 0;
+    padding-left: 1.35rem !important;
     box-sizing: border-box;
     list-style-position: outside !important;
     z-index: 1;
@@ -386,7 +384,7 @@ body {
    MODO: Solo Texto (sin imagen)
    ========================================================================== */
 .fc-card-face.fc-only-text .content-text {
-    font-size: 2.2rem;   /* Texto mas grande si no hay imagen */
+    /* La tipografía es gestionada dinámicamente por adjustFontSize en JS */
 }
 
 /* ==========================================================================
@@ -427,6 +425,27 @@ body {
     /* Tarjeta mas alta en movil */
     .scene { height: 420px; }
 
+    /* Padding lateral optimizado en móvil para aprovechar el ancho útil */
+    .fc-card-face {
+        padding: 1rem 1.1rem 0.6rem 1.1rem;
+    }
+
+    .content-text {
+        padding: 0.25rem 0.35rem;
+    }
+
+    .content-text ol,
+    .content-text ul {
+        padding-left: 1.15rem !important;
+        margin: 0.35rem 0;
+    }
+
+    .content-text li {
+        margin-bottom: 0.45rem;
+        padding-left: 0.15rem;
+        line-height: 1.4;
+    }
+
     /* Imagen + texto en movil: apilar desde arriba (sin espacio vacio)
        justify-content: flex-start elimina el gap entre badge e imagen.
        height: 55% da una referencia definida al container para que
@@ -443,7 +462,6 @@ body {
     }
 
     .fc-card-face.fc-has-image:not(.fc-only-image) .content-text {
-        font-size: 1.1rem;
         flex: 1; /* ✅ Toma todo el espacio restante bajo la imagen */
         justify-content: center; /* Centrado vertical para alejar de imagen */
         padding-bottom: 1rem; /* ✅ Aire al final */

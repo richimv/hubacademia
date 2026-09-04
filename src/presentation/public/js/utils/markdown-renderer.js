@@ -395,16 +395,28 @@ window.MarkdownRenderer = {
             } catch (e) {}
         }
 
-        // 3. Si contiene un objeto JSON con campo "respuesta" en cualquier parte del texto
-        const jsonMatch = clean.match(/\{[\s\S]*?"respuesta"\s*:\s*"([\s\S]*?)"[\s\S]*?\}/);
-        if (jsonMatch) {
-            try {
-                const p = JSON.parse(jsonMatch[0]);
-                if (p && p.respuesta) return this._normalizeText(p.respuesta);
-            } catch (e) {
-                if (jsonMatch[1]) {
-                    return this._normalizeText(jsonMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'));
+        // 3. Extracción resiliente de "respuesta" por delimitación semántica
+        // Evita truncamiento prematuro cuando el texto incluye comillas internas o símbolos especiales
+        const respKeyMatch = clean.match(/"respuesta"\s*:\s*"/i);
+        if (respKeyMatch) {
+            const valStartIndex = respKeyMatch.index + respKeyMatch[0].length;
+            const remainder = clean.substring(valStartIndex);
+            const boundaryRegex = /",\s*"(?:sugerencias|idioma_detectado|intencion|confianza|sources|contextUsed)"\s*:|"\s*\}\s*$/i;
+            const boundaryMatch = remainder.match(boundaryRegex);
+            let extracted = '';
+            if (boundaryMatch) {
+                extracted = remainder.substring(0, boundaryMatch.index);
+            } else {
+                const lastBraceIdx = remainder.lastIndexOf('}');
+                if (lastBraceIdx !== -1) {
+                    const quoteBefore = remainder.lastIndexOf('"', lastBraceIdx);
+                    extracted = quoteBefore !== -1 ? remainder.substring(0, quoteBefore) : remainder.substring(0, lastBraceIdx);
+                } else {
+                    extracted = remainder;
                 }
+            }
+            if (extracted) {
+                return this._normalizeText(extracted);
             }
         }
 
@@ -420,8 +432,8 @@ window.MarkdownRenderer = {
         
         // Convertir secuencias literales '\\n' que llegaron como texto a saltos de línea reales '\n'
         // preservando comandos LaTeX que inician con 'n' (\neq, \nabla, \nu, \neg, etc.)
-        const latexNCommands = 'neq|nabla|neg|nu|notin|ni|null|nexists|nrightarrow|nleftarrow|nsubseteq|nsupseteq|nless|ngtr|nleq|ngeq|nsim|ncong|nmid|natural';
-        const latexNRegex = new RegExp(`\\\\n(?!(?:${latexNCommands})\\b)`, 'g');
+        const latexNRemainders = 'eq|abla|eg|u|otin|i|ull|exists|rightarrow|leftarrow|subseteq|supseteq|less|gtr|leq|geq|sim|cong|mid|atural';
+        const latexNRegex = new RegExp(`\\\\n(?!(?:${latexNRemainders})\\b)`, 'g');
         normalized = normalized.replace(latexNRegex, '\n');
 
         if (normalized.includes('\\"')) {
@@ -603,3 +615,7 @@ window.MarkdownRenderer = {
         }
     }
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = typeof window !== 'undefined' ? window.MarkdownRenderer : null;
+}

@@ -191,14 +191,14 @@ class MedicoController {
                     total_correct: 145,
                     total_incorrect: 55,
                     mastered_cards: 12,
-                    strongest_topic: "Cardiología",
-                    weakest_topic: "Nefrología",
+                    strongest_topic: "Salud Pública",
+                    weakest_topic: "Gestión de Servicios de Salud",
                     radar_data: [
-                        { subject: "Cardiología", accuracy: 85, correct: 40, total: 47 },
-                        { subject: "Pediatría", accuracy: 70, correct: 35, total: 50 },
-                        { subject: "Ginecología", accuracy: 65, correct: 30, total: 46 },
-                        { subject: "Cirugía", accuracy: 60, correct: 25, total: 41 },
-                        { subject: "Nefrología", accuracy: 40, correct: 15, total: 37 }
+                        { subject: "Ética e Interculturalidad", accuracy: 85, correct: 40, total: 47 },
+                        { subject: "Salud Pública", accuracy: 80, correct: 38, total: 47 },
+                        { subject: "Gestión de Servicios de Salud", accuracy: 75, correct: 35, total: 47 },
+                        { subject: "Investigación", accuracy: 68, correct: 32, total: 47 },
+                        { subject: "Cuidado Integral de Salud", accuracy: 60, correct: 28, total: 47 }
                     ],
                     system_deck_id: "example-deck",
                     isGuest: true

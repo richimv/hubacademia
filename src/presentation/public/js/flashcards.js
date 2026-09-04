@@ -230,13 +230,14 @@ const FlashcardManager = (() => {
 
     /**
      * 🟢 FIX: Adjust Font Size to fit container (Maximizar visibilidad y prevenir scroll prematuro)
-     * Calibrado generosamente para PC y con motor dinámico de reducción progresiva (shrink-to-fit)
+     * Calibrado generosamente para PC y con motor dinámico proporcional determinista (Clean Code)
      */
     function adjustFontSize(element, text, hasImage, isBack = false) {
         if (!element) return;
         const isMobile = window.innerWidth <= 768;
         const cleanText = (text || '').replace(/<[^>]*>/g, '').trim();
         const length = cleanText.length;
+        const hasList = /<ul|<ol|<li>|^\s*[-*•]\s|^\s*\d+\.\s/m.test(text || '');
 
         let baseSize = isMobile ? 1.4 : 1.8;
 
@@ -284,26 +285,22 @@ const FlashcardManager = (() => {
             else baseSize *= 0.85; 
         }
 
+        // Si contiene listas o enumeraciones en textos largos, moderar levemente para compensar márgenes de viñetas
+        if (hasList && length > 120) {
+            baseSize *= 0.92;
+        }
+
         element.style.fontSize = `${baseSize.toFixed(2)}rem`;
         element.style.lineHeight = isMobile ? "1.35" : "1.45";
 
-        // 🚀 MOTOR DE AUTO-AJUSTE DINÁMICO (SHRINK-TO-FIT):
-        // Si hay mucho texto y desborda el contenedor visible, disminuimos gradualmente el tamaño
-        // antes de alcanzar el límite de rebasar y activar el desplazamiento.
-        if (element.clientHeight > 0) {
+        // 🚀 MOTOR DETERMINISTA SHRINK-TO-FIT (Clean Code):
+        // Ajuste proporcional seguro en un solo paso matemático si el texto desborda el contenedor visible
+        if (element.clientHeight > 0 && element.scrollHeight > element.clientHeight + 4) {
             const minSize = isMobile ? 0.84 : 1.05;
-            let currentSize = baseSize;
-            let attempts = 0;
-            const maxAttempts = 18;
-
-            while (
-                attempts < maxAttempts && 
-                currentSize > minSize && 
-                element.scrollHeight > element.clientHeight + 2
-            ) {
-                currentSize = Math.max(minSize, +(currentSize - 0.04).toFixed(2));
-                element.style.fontSize = `${currentSize}rem`;
-                attempts++;
+            const ratio = (element.clientHeight - 4) / element.scrollHeight;
+            const adjusted = Math.max(minSize, +(baseSize * Math.max(0.82, ratio)).toFixed(2));
+            if (adjusted < baseSize) {
+                element.style.fontSize = `${adjusted}rem`;
             }
         }
     }
@@ -441,12 +438,6 @@ const FlashcardManager = (() => {
         if (isFlipped) {
             ui.card.classList.add('is-flipped');
             ui.controls.classList.add('visible'); // Show controls when answer is revealed
-            
-            // ✅ Re-calibrar tipografía del dorso con la cara activa en primer plano
-            if (currentCard) {
-                const hasBackImage = !!currentCard.explanation_image_url;
-                adjustFontSize(ui.backText, currentCard.back_content || '', hasBackImage, true);
-            }
             
             // ✅ INYECTAR BOTÓN HERMOSO DEL TUTOR
             if (!document.getElementById('flashcard-tutor-trigger')) {

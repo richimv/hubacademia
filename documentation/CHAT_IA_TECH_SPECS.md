@@ -617,8 +617,30 @@ Servicio en la capa de dominio (`src/domain/services/asistenteGuiaKnowledge.js`)
   - Nombre del mazo (`deckName`) y categoría exacta (`deckCategory`).
 - **Persistencia de Contexto en Estudio Individual**: En `repaso.js`, al iniciar el estudio directo de una tarjeta individual (`/flashcards?deckId=...&cardId=...`), los parámetros `deckName` y `category` se incluyen en la URL para evitar que el Tutor de caiga en la categoría por defecto ('General').
 
-### 21.3 Limpieza de Código y Confiabilidad (Code Health)
-- **Eliminación de Código Muerto**: Se erradicaron dependencias no utilizadas (`BookRepository`, `CourseRepository`, `CareerRepository`) en `chatController.js` y `tutorAiService.js`, reduciendo instanciaciones innecesarias en memoria.
+---
+
+## 22. Blindaje Anti-Truncamiento de Respuestas y Extracción por Límites Semánticos (Septiembre 2026)
+
+### 22.1 Causa Raíz del Truncamiento de Respuestas Extensas
+Durante consultas con explicaciones pedagógicas o clínicas detalladas donde la IA citaba opciones o testimonios utilizando comillas dobles sin escapar (por ejemplo: `proponiendo una posible respuesta ("los animalitos")`), el motor JSON fallaba con `SyntaxError`. En la fase de recuperación de emergencia, expresiones regulares no codiciosas tradicionales (`/"respuesta"\s*:\s*"((?:\\.|[^"\\])*)"/`) detenían la captura en la primera comilla doble no escapada (`"` tras `(`), cortando la explicación a mitad de frase y perdiendo todo el contenido posterior.
+
+### 22.2 Extracción por Delimitación Semántica (`TutorAiService._parseAiResponse`)
+Se rediseñó el flujo de extracción en `src/domain/services/tutorAiService.js` mediante una estrategia en dos tiempos:
+1. **Parseo Estándar Primario**: `JSON.parse` para respuestas con sintaxis JSON estricta y limpia.
+2. **Delimitador de Límites Semánticos (Boundary Regex)**: Si el JSON contiene comillas internas sin escapar, se localiza el inicio del campo `"respuesta": "` y se delimita su cierre no mediante la siguiente comilla arbitraria, sino identificando la clave subsecuente del esquema (`",\s*"(?:sugerencias|idioma_detectado|intencion|confianza|sources|contextUsed)"\s*:|"\s*\}\s*$/i`).
+3. **Preservación Total del Payload**: Garantiza la recuperación íntegra de explicaciones de 500+ palabras, tablas, listas y sugerencias activas.
+
+### 22.3 Blindaje en Origen (`src/domain/prompts/chatPrompts.js`)
+Se añadió la directiva de formato N° 6 en `formatInstructions` instruyendo explícitamente a los modelos de todos los dominios (`medicine`, `education`, `flashcard_tutor`, `neutral`) a emplear preferentemente comillas simples (`'...'`) o angulares (`«...»`) al citar alternativas o texto de los ejercicios, o a escapar con `\"` las comillas dobles, previniendo rupturas de formato desde la generación.
+
+### 22.4 Simetría en el Cliente (`MarkdownRenderer._extractCleanResponse`)
+Se replicó la extracción semántica en `src/presentation/public/js/utils/markdown-renderer.js` para asegurar que el frontend nunca corte respuestas en caso de recibir payloads históricos o sin procesar.
+
+### 22.5 Protección de Comandos LaTeX (`\neq`, `\nabla`, `\nu`, `\neg`)
+Se corrigió la expresión regular en `_cleanResponseText` y `_normalizeText` (`\\\\n(?!(?:eq|abla|eg|u|otin|i|ull|exists|rightarrow|leftarrow|subseteq|supseteq|less|gtr|leq|geq|sim|cong|mid|atural)\b)`). Al consumir `\n`, el lookahead negativo valida el remanente del comando LaTeX, evitando que comandos matemáticos como `\neq` se transformen erróneamente en un salto de línea seguido de `eq`.
+
+### 22.6 Suite de Pruebas Unitarias
+Se integró `tests/unit/tutorAiResponseIntegrity.test.js`, validando contra el caso real reportado, variaciones con citas múltiples, fórmulas científicas complejas y estructuras Markdown.
 
 ---
-*Última actualización: 29 de agosto de 2026 (Auditoría de arquitectura del Tutor IA de Flashcards, expansión de contexto a 12,000 caracteres y limpieza de código)*
+*Última actualización: 4 de septiembre de 2026 (Blindaje anti-truncamiento de respuestas por límites semánticos, protección tipográfica LaTeX y mitigación de comillas en Tutor IA)*

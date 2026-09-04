@@ -1402,9 +1402,13 @@ const SimulatorDash = (() => {
                 const cfgBtn = document.getElementById('btn-start-config');
                 if (cfgBtn) cfgBtn.classList.remove('neon-active');
 
-                // Relanzar fetch a base de datos de inmediato con nuevo target
-                loadStats();
-                loadEvolution();
+                // Relanzar actualización: fetch a backend si está autenticado, o refresh de demo data si es visitante
+                if (token) {
+                    loadStats();
+                    loadEvolution();
+                } else {
+                    renderGuestDemoData();
+                }
 
                 closeModal();
             };
@@ -1940,28 +1944,48 @@ const SimulatorDash = (() => {
             'Convivencia democrática y clima de aula': { correct: 55, total: 100 },
             'Características y desarrollo del estudiante': { correct: 50, total: 100 }
         } : {
-            'Ginecología y Obstetricia': { correct: 90, total: 100 },
-            'Medicina Interna': { correct: 85, total: 100 },
-            'Pediatría': { correct: 75, total: 100 },
-            'Salud Pública': { correct: 65, total: 100 },
-            'Fisiología': { correct: 60, total: 100 },
-            'Cardiología': { correct: 50, total: 100 }
+            'Ética e Interculturalidad': { correct: 85, total: 100 },
+            'Salud Pública': { correct: 80, total: 100 },
+            'Gestión de Servicios de Salud': { correct: 75, total: 100 },
+            'Investigación': { correct: 68, total: 100 },
+            'Cuidado Integral de Salud': { correct: 60, total: 100 }
         };
-        renderBarChart(demoAreasMap);
 
         // 4b. Doughnut Chart Demo
         const demoDoughnutData = currentContext === 'MEDICINA' ? {
-            'Salud Pública': 15,
-            'Cuidado Integral de Salud': 12,
             'Ética e Interculturalidad': 8,
+            'Salud Pública': 15,
+            'Gestión de Servicios de Salud': 9,
             'Investigación': 6,
-            'Gestión de Servicios de Salud': 9 } : {
+            'Cuidado Integral de Salud': 12
+        } : {
             'Enfoques y Principios del CNEB': 14,
             'Teorías y Procesos del Aprendizaje': 22,
             'Planificación y Evaluación': 18,
             'Clima Escolar e Inclusión': 11
         };
-        renderDoughnutChart(demoDoughnutData);
+
+        // Si el usuario configuró áreas específicas, adaptar los gráficos a dicha selección
+        let activeBarData = demoAreasMap;
+        let activeDoughnutData = demoDoughnutData;
+
+        if (activeConfig && Array.isArray(activeConfig.areas) && activeConfig.areas.length > 0) {
+            const filteredBar = {};
+            const filteredDoughnut = {};
+            activeConfig.areas.forEach(area => {
+                if (demoAreasMap[area]) {
+                    filteredBar[area] = demoAreasMap[area];
+                }
+                if (demoDoughnutData[area]) {
+                    filteredDoughnut[area] = demoDoughnutData[area];
+                }
+            });
+            if (Object.keys(filteredBar).length > 0) activeBarData = filteredBar;
+            if (Object.keys(filteredDoughnut).length > 0) activeDoughnutData = filteredDoughnut;
+        }
+
+        renderBarChart(activeBarData);
+        renderDoughnutChart(activeDoughnutData);
 
         // 5. Persistence: Check for local demo stats (Domain-Specific with 1-Day TTL)
         const stats = window.GuestSessionManager

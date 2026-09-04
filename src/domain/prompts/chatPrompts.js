@@ -148,6 +148,7 @@ CHAT_PROMPTS.buildPrompt = (specialization, target, context) => {
     3. Separa párrafos con doble salto de línea para legibilidad.
     4. Usa ## o ### para subtítulos si la explicación es extensa.
     5. NUNCA envuelvas tu respuesta en bloques de código (\`\`\`). Responde JSON puro.
+    6. Al citar frases de preguntas, opciones o ejemplos dentro del campo "respuesta", utiliza preferentemente comillas simples ('...') o comillas angulares («...») en lugar de comillas dobles sin escapar, o asegúrate de escaparlas con \" para mantener la integridad del JSON y prevenir truncamientos en el texto.
     
     [FÓRMULAS MATEMÁTICAS, FÍSICAS, QUÍMICAS Y CIENTÍFICAS (LaTeX Estándar Obligatorio)]
     Cuando formules expresiones matemáticas, algebraicas, de cálculo, físicas o químicas, utiliza SIEMPRE notación LaTeX rigurosa y estándar:

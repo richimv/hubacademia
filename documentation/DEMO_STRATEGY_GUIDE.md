@@ -25,7 +25,11 @@ Para evitar cruces de información entre especialidades:
 
 ### 3. Motor de Analíticas del Dashboard (`simulator-dash.js`)
 - El Tablero detecta si el usuario es invitado y busca los datos en el `localStorage` según el dominio actual.
-- **Fallback de Marketing**: Si el usuario no tiene sesiones previas, se muestran **Datos de Ejemplo (Mock)** contextualmente correctos (temas pedagógicos para educación, temas clínicos para medicina) para demostrar el potencial del sistema.
+- **Fallback de Marketing Contextual**: Si el usuario no tiene sesiones previas o no ha configurado su examen, se muestran **Datos de Ejemplo (Mock)** rigurosamente alineados al concurso oficial activo de cada dominio:
+  - **Salud (SERUMS)**: Muestra exclusivamente los 5 ejes temáticos oficiales: *Ética e Interculturalidad*, *Salud Pública*, *Gestión de Servicios de Salud*, *Investigación* y *Cuidado Integral de Salud*.
+  - **Educación (ASCENSO)**: Muestra los ejes pedagógicos del CNEB: *Enfoques y Principios del CNEB*, *Teorías y Procesos del Aprendizaje*, *Planificación y Evaluación* y *Clima Escolar e Inclusión*.
+- **Comportamiento sin Configuración**: Muestra estado "Configuración Pendiente" con botón en neón parpadeante. Si el usuario intenta iniciar el simulacro de 10 QS, el sistema abre el modal de configuración con efecto shake para forzar la selección de su carrera y examen antes de iniciar.
+- **Comportamiento con Configuración Aplicada**: Los gráficos de barras y de dona filtran y destacan las áreas de la configuración activa (las 5 del SERUMS). Al culminar el simulacro real de 10 preguntas, las analíticas del intento real reemplazan a los mocks.
 
 ### 4. Reinicio Diario y Límites de Sesión (GuestSessionManager)
 Para incentivar el registro sin bloquear permanentemente al prospecto:

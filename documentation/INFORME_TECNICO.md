@@ -413,12 +413,13 @@ Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hu
   - **Desplazamiento Táctil Directo:** Implementado `enableSmoothTextDrag` con soporte de arrastre gestual deslizando el dedo directamente sobre el texto largo en celulares.
   - **Prevención de Volteo Accidental:** Detección de umbral de arrastre (`isTouchDragging`) para no voltear la tarjeta al scrollear en pantalla táctil.
   - **Aislamiento 3D:** Directivas `touch-action: pan-y !important` y `translateZ(1px)` en `.fc-card-face--back` junto a `pointer-events: none` en pseudo-elementos flex para garantizar captura fluida de eventos táctiles.
-  - **Calibración Tipográfica Generosa en PC y Motor Dinámico Shrink-to-Fit:**
-    - Escala generosa para PC (`2.60rem` breves, `1.95rem` medianos, `1.75rem` en ~200 caracteres, `1.50rem` - `1.30rem` extensos) para llenar armónicamente el espacio visual disponible en pantallas de escritorio sin texto empequeñecido ni márgenes vacíos excesivos.
-    - Motor dinámico *Shrink-to-Fit*: Cuando el texto desborda el contenedor visible (`scrollHeight > clientHeight + 2`), reduce gradualmente el tamaño en pasos de `0.04rem` para mostrar la máxima cantidad posible de contenido legible antes de activar la barra de scroll.
-    - Umbral mínimo protegido (`0.84rem` en móvil, `1.05rem` en PC) y sincronización reactiva ante rotación de pantalla (`resize`) y volteo de tarjeta (`toggleFlip`).
+  - **Calibración Tipográfica, Estabilidad en Giro y Optimización Lateral de Listas:**
+    - Erradicación del conflicto CSS vs JS: suprimido `transition: font-size` en `.content-text` y eliminadas reglas de `font-size` estáticas en `.fc-only-text` y `.fc-has-image` para prevenir renderizados duales o parpadeos.
+    - Estabilidad total en el giro (`toggleFlip`): eliminación de recálculos tipográficos durante la rotación 3D, garantizando que el texto conserve su tamaño exacto sin encogerse al voltear la tarjeta.
+    - Ancho completo y optimización en listas (`ol`, `ul`, `li`): ancho al 100% sin margen automático ni sangría artificial de 92%, reduciendo el padding de viñeta a `1.15rem` y el padding lateral del contenedor a `1.1rem` en móviles, habilitando más de 35% de espacio horizontal adicional para lectura continua.
+    - Motor determinista *Shrink-to-Fit*: cálculo proporcional en un solo paso matemático si el texto desborda (`scrollHeight > clientHeight + 4`) con piso mínimo protegido (`0.84rem` en móvil, `1.05rem` en PC).
 - **🧪 Cobertura de Pruebas Unitarias:**
-  - Suite de pruebas completa: **42 / 42 suites y 305 / 305 tests en verde (100%)**.
+  - Suite de pruebas completa: **43 / 43 suites y 313 / 313 tests en verde (100%)**.
 
 ---
 
