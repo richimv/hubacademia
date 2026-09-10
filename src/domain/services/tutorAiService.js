@@ -430,6 +430,7 @@ class TutorAiService {
             let context = "";
             const resourceContext = filters.resourceContext || null;
 
+            let retrievedRagData = null;
             if (resourceContext) {
                 // Modo Contexto de Recurso (Asistente de Voz / Chat del Recurso)
                 const content = resourceContext.content_html || "";
@@ -461,7 +462,7 @@ class TutorAiService {
                             console.warn(`⚠️ [TutorAiService] RAG de título no disponible, usando fallback básico centrado en el título: "${resourceContext.title}"`);
                             context = `[MODO ASISTENTE DE RECURSO - FALLBACK GENERATIVO EXPERTO]
 Tema principal de estudio: "${resourceContext.title}".
-INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobre el recurso titulado "${resourceContext.title}". Como el material completo no está indexado en la base vectorial ni en la base de datos, debes actuar como un especialista de élite en ${specialization} y generar una respuesta rica, detallada y perfectamente estructurada basándote estrictamente en tus conocimientos expertos sobre el tema exacto del título ("${resourceContext.title}").
+INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobre el recurso titulado "${resourceContext.title}". Como el material completo no está indexado en la base vectorial ni en la base de datos, debes actuar como un especialista senior en ${specialization} y generar una respuesta rica, detallada y perfectamente estructurada basándote estrictamente en tus conocimientos expertos sobre el tema exacto del título ("${resourceContext.title}").
 🚨 REGLA DE ORO: TIENES ABSOLUTAMENTE PROHIBIDO decir "no tengo acceso al contenido", "proporcióname el enlace", "no puedo acceder a páginas web externas" o excusas similares. El usuario sabe que eres el tutor integrado. Responde directamente con el resumen o explicación experta del tema indicado en el título de forma proactiva para deslumbrarlo, usando viñetas o tablas Markdown.`;
                         }
                     }
@@ -469,7 +470,7 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
                     console.log(`⚠️ [TutorAiService] RAG desactivado por límite. Usando fallback generativo experto para recurso.`);
                     context = `[MODO ASISTENTE DE RECURSO - FALLBACK GENERATIVO EXPERTO]
 Tema principal de estudio: "${resourceContext.title}".
-INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobre el recurso titulado "${resourceContext.title}". Como RAG está deshabilitado por límites, debes actuar como un especialista de élite en ${specialization} y generar una respuesta rica, detallada y perfectamente estructurada basándote en tus conocimientos expertos sobre el tema exacto del título ("${resourceContext.title}").`;
+INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobre el recurso titulado "${resourceContext.title}". Como RAG está deshabilitado por límites, debes actuar como un especialista senior en ${specialization} y generar una respuesta rica, detallada y perfectamente estructurada basándote en tus conocimientos expertos sobre el tema exacto del título ("${resourceContext.title}").`;
                 }
             } else if (specialization === 'flashcard_tutor') {
                 // Modo Tutor Flashcard Multidisciplinario (El contexto detallado ya fue inyectado en userMessage)
@@ -477,17 +478,28 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
                 context = "";
             } else {
                 // Modo Chat General (Normal RAG)
-                const activeRAG = ['medicine', 'education'].includes(specialization) && filters.useRag !== false;
+                const activeRAG = ['medicine', 'education'].includes(specialization) && filters.useRag === true;
                 if (activeRAG) {
                     // Pasamos predefinedTerms para evitar la doble llamada a la IA reescritora
-                    context = await RagService.searchContextSmart(mainSearchQuery, 20, { 
+                    retrievedRagData = await RagService.searchContextSmart(mainSearchQuery, 20, { 
                         mode: 'SEMANTIC', 
                         target,
                         namespace,
                         predefinedTerms: smartTopics
                     });
+                    context = (retrievedRagData && typeof retrievedRagData === 'object' && retrievedRagData.contextText !== undefined)
+                        ? retrievedRagData.contextText
+                        : (retrievedRagData ? String(retrievedRagData) : "");
                 }
             }
+
+            const hasRagContext = Boolean(
+                retrievedRagData &&
+                Array.isArray(retrievedRagData.sources) &&
+                retrievedRagData.sources.length > 0 &&
+                context &&
+                context.trim().length > 0
+            );
 
             // 3. Buscar imágenes (Solo para simuladores medicina/educación, nunca para flashcard_tutor multidisciplinario)
             let visualCatalog = '';
@@ -498,7 +510,7 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             // 4. Construir prompt según la especialización
             const contextConImagenes = visualCatalog ? `${visualCatalog}\n\n${context}` : context;
 
-            let systemPrompt = chatPrompts.buildPrompt(specialization, target, contextConImagenes);
+            let systemPrompt = chatPrompts.buildPrompt(specialization, target, contextConImagenes, { hasRagContext });
 
             const contents = history.map(h => {
                 const text = h.content || '';
@@ -522,7 +534,20 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
 
             // 6. Parsear la respuesta JSON de forma ultra-resiliente sin truncamiento por comillas internas
             const parsed = this._parseAiResponse(rawText);
-            const sanitizedRespuesta = parsed.respuesta;
+            let sanitizedRespuesta = parsed.respuesta || '';
+
+            // Si NO hubo contexto RAG (ej. usuario Free/Basic o sin fragmentos encontrados):
+            if (!hasRagContext) {
+                // Limpiar cualquier número de página hallucinated colado por el modelo
+                sanitizedRespuesta = sanitizedRespuesta
+                    .replace(/,\s*Pág\.?\s*\d+/gi, '')
+                    .replace(/\s*\(\s*Pág\.?\s*\d+\s*\)/gi, '')
+                    .replace(/\[\s*([^\]]+?)\s*,\s*Pág\.?\s*\d+\s*\]/gi, '[$1]')
+                    .replace(/\[\s*Pág\.?\s*\d+\s*\]/gi, '');
+            }
+
+            // Neutralizar cualquier código o identificador interno de casuística en el saludo o cuerpo
+            sanitizedRespuesta = sanitizedRespuesta.replace(/Caso-[A-Za-z0-9_-]+/gi, 'esta casuística');
 
             // 7. Log de la respuesta (Debug Visual)
             if (sanitizedRespuesta && sanitizedRespuesta.includes('![')) {
@@ -531,20 +556,49 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
                 console.warn('⚠️ [TutorAiService] IA NO insertó ninguna imagen del catálogo.');
             }
 
-            // Mapeo de fuentes según el dominio
-            const sourcesMap = {
-                'medicine': 'Biblioteca Médica Digital (NTS, GPC, Harrison)',
-                'education': 'Biblioteca Magisterial (CNEB, Normas MINEDU, Pruebas de Ascenso)'
-            };
+            // Consolidar fuentes y citas
+            const rawCitas = Array.isArray(parsed?.citas) ? parsed.citas : [];
+            let finalizedCitas = [];
+
+            if (hasRagContext) {
+                // 1. Normalizar citas devueltas por el modelo
+                if (rawCitas.length > 0) {
+                    finalizedCitas = rawCitas.map(c => {
+                        if (typeof c === 'string') {
+                            return { fuente: c, pagina: 'Consultada' };
+                        }
+                        const fuente = c.fuente || c.documento || c.title || c.recurso || 'Documento Oficial';
+                        const pagina = c.pagina || c.page || 'Consultada';
+                        return { fuente, pagina };
+                    }).filter(c => c.fuente);
+                }
+
+                // 2. Red de seguridad inteligente: Si el modelo no colocó citas en su JSON pero RAG obtuvo fuentes estructuradas con página
+                if (finalizedCitas.length === 0 && retrievedRagData?.sources && retrievedRagData.sources.length > 0) {
+                    finalizedCitas = retrievedRagData.sources.slice(0, 3).map(s => ({
+                        fuente: s.title || s.fuente || 'Documento Oficial',
+                        pagina: s.page ? `Pág. ${s.page}` : (s.pagina || 'Consultada')
+                    }));
+                }
+            } else {
+                // Usuario Free, Basic o sin fragmentos RAG: Estrictamente NINGUNA cita ni pastilla RAG
+                finalizedCitas = [];
+            }
+
+            const ragSourcesSummary = (hasRagContext && retrievedRagData?.sources && retrievedRagData.sources.length > 0)
+                ? retrievedRagData.sources.map(s => `${s.title}${s.page ? ` (Pág. ${s.page})` : ''}`).join(', ')
+                : null;
 
             return {
                 intencion: parsed?.intencion || `consulta_${specialization}`,
                 respuesta: sanitizedRespuesta,
                 sugerencias: Array.isArray(parsed?.sugerencias) ? parsed.sugerencias : [],
+                citas: finalizedCitas,
                 idioma_detectado: parsed?.idioma_detectado || 'es',
                 confianza: 0.9,
-                contextUsed: !!context,
-                sources: context ? (sourcesMap[specialization] || "Biblioteca Especializada") : "Conocimiento General"
+                contextUsed: hasRagContext,
+                sources: ragSourcesSummary,
+                ragSources: hasRagContext ? (retrievedRagData?.sources || []) : []
             };
 
         } catch (error) {
@@ -575,10 +629,12 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
         try {
             const parsed = JSON.parse(text);
             if (parsed && typeof parsed.respuesta === 'string' && parsed.respuesta.trim()) {
+                const rawCitas = Array.isArray(parsed.citas) ? parsed.citas : (Array.isArray(parsed.fuentes) ? parsed.fuentes : []);
                 return {
                     intencion: parsed.intencion || 'consulta',
                     respuesta: this._cleanResponseText(parsed.respuesta),
                     sugerencias: Array.isArray(parsed.sugerencias) ? parsed.sugerencias : [],
+                    citas: rawCitas,
                     idioma_detectado: parsed.idioma_detectado || 'es'
                 };
             }
@@ -593,7 +649,7 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             const remainder = text.substring(valueStartIndex);
 
             // El valor de "respuesta" termina antes de la siguiente clave del esquema o antes de la llave de cierre final
-            const boundaryRegex = /",\s*"(?:sugerencias|idioma_detectado|intencion|confianza|sources|contextUsed)"\s*:|"\s*\}\s*$/i;
+            const boundaryRegex = /",\s*"(?:sugerencias|citas|fuentes|idioma_detectado|intencion|confianza|sources|contextUsed)"\s*:|"\s*\}\s*$/i;
             const boundaryMatch = remainder.match(boundaryRegex);
 
             let extractedRespuesta = '';
@@ -618,6 +674,15 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
                 } catch (err) {}
             }
 
+            // Extraer citas si existen
+            let citas = [];
+            const citMatch = text.match(/"(?:citas|fuentes)"\s*:\s*\[([\s\S]*?)\]/i);
+            if (citMatch && citMatch[1]) {
+                try {
+                    citas = JSON.parse(`[${citMatch[1]}]`);
+                } catch (err) {}
+            }
+
             let intencion = 'consulta';
             const intMatch = text.match(/"intencion"\s*:\s*"([^"]+)"/i);
             if (intMatch && intMatch[1]) intencion = intMatch[1];
@@ -630,6 +695,7 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
                 intencion,
                 respuesta: this._cleanResponseText(extractedRespuesta),
                 sugerencias,
+                citas: Array.isArray(citas) ? citas : [],
                 idioma_detectado: idioma
             };
         }

@@ -74,22 +74,32 @@ describe('UserRepository', () => {
         });
     });
 
-    describe('renewWeeklyLivesIfNeeded', () => {
-        it('should execute the atomic weekly renewal and report whether a row changed', async () => {
+    describe('renewFreeLivesIfNeeded and renewWeeklyLivesIfNeeded', () => {
+        it('should execute the atomic 30-day renewal and report whether a row changed', async () => {
+            db.query.mockResolvedValue({ rowCount: 1 });
+
+            await expect(userRepository.renewFreeLivesIfNeeded('user-123')).resolves.toBe(true);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('INTERVAL \'30 days\''),
+                ['user-123', 10]
+            );
+        });
+
+        it('should support renewWeeklyLivesIfNeeded as backward-compatible alias', async () => {
             db.query.mockResolvedValue({ rowCount: 1 });
 
             await expect(userRepository.renewWeeklyLivesIfNeeded('user-123')).resolves.toBe(true);
-
             expect(db.query).toHaveBeenCalledWith(
-                expect.stringContaining('last_free_renewal'),
-                ['user-123']
+                expect.stringContaining('INTERVAL \'30 days\''),
+                ['user-123', 10]
             );
         });
 
         it('should return false when the user does not need renewal', async () => {
             db.query.mockResolvedValue({ rowCount: 0 });
 
-            await expect(userRepository.renewWeeklyLivesIfNeeded('user-123')).resolves.toBe(false);
+            await expect(userRepository.renewFreeLivesIfNeeded('user-123')).resolves.toBe(false);
         });
     });
 });

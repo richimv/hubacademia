@@ -14,8 +14,12 @@ class AuthService {
      * Obtiene el usuario local enriquecido con su estado de verificación.
      */
     async getUserWithStatus(userId) {
-        // ✅ RENOVACIÓN SEMANAL DE VIDAS - Delegada a UsageService (Fuente Única de Verdad)
-        await this.usageService.renewWeeklyLivesIfNeeded(userId);
+        // ✅ RENOVACIÓN MENSUAL DE VIDAS (30 DÍAS) - Delegada a UsageService (Fuente Única de Verdad)
+        if (typeof this.usageService.renewFreeLivesIfNeeded === 'function') {
+            await this.usageService.renewFreeLivesIfNeeded(userId);
+        } else {
+            await this.usageService.renewWeeklyLivesIfNeeded(userId);
+        }
 
         let user = await this.userRepository.findById(userId);
         if (!user) return null;

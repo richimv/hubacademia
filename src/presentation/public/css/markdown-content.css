@@ -362,3 +362,62 @@
     padding: 4px 0;
     margin: 0.8em 0 !important;
 }
+
+/* ============================================================
+   LIGHT MODE ADAPTATION (STUDIO SLATE - HIGH CONTRAST)
+   ============================================================
+   Garantiza que títulos, negritas y citas en las respuestas IA
+   tengan máxima nitidez y alto contraste en modo claro.
+   ============================================================ */
+[data-theme="light"] .markdown-content h1 {
+    color: #1e3a8a; /* Blue 900 - Título principal con alto impacto */
+    border-bottom: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+[data-theme="light"] .markdown-content h2 {
+    color: #1e40af; /* Blue 800 - Nítido, distinguible y profesional */
+    border-bottom: 1px solid rgba(37, 99, 235, 0.18);
+}
+
+[data-theme="light"] .markdown-content h3 {
+    color: #2563eb; /* Blue 600 - Destacado institucional de primer orden */
+}
+
+[data-theme="light"] .markdown-content h4 {
+    color: #3730a3; /* Indigo 800 */
+}
+
+[data-theme="light"] .markdown-content strong {
+    color: #1d4ed8; /* Blue 700 - Acento de alta visibilidad */
+    font-weight: 700;
+}
+
+[data-theme="light"] .markdown-content em {
+    color: #0f172a; /* Slate 900 */
+}
+
+[data-theme="light"] .markdown-content ul li::marker,
+[data-theme="light"] .markdown-content ol li::marker {
+    color: #2563eb; /* Blue 600 */
+}
+
+[data-theme="light"] .markdown-content blockquote {
+    border-left: 3px solid #4f46e5; /* Indigo 600 */
+    background: rgba(79, 70, 229, 0.05);
+    color: #334155; /* Slate 700 - Legible y elegante */
+}
+
+[data-theme="light"] .markdown-content code {
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a; /* Slate 900 */
+    border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+[data-theme="light"] .markdown-content hr {
+    border-top: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="light"] .markdown-content img {
+    border-color: rgba(15, 23, 42, 0.1);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}

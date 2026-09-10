@@ -144,13 +144,13 @@ class GlobalSidebar {
             <div class="sidebar-socials-container">
                 <span class="sidebar-section-title" style="padding: 0 0 0.5rem 0; text-align: center; width: 100%; display: block;">Síguenos</span>
                 <div class="sidebar-socials-icons">
-                    <a href="https://www.facebook.com/profile.php?id=61586735506660" target="_blank" rel="noopener noreferrer" class="sidebar-social-btn" title="Facebook">
+                    <a href="https://www.facebook.com/profile.php?id=61593284876205" target="_blank" rel="noopener noreferrer" class="sidebar-social-btn sidebar-social-fb" title="Facebook">
                         <i class="fab fa-facebook-f"></i>
                     </a>
-                    <a href="https://www.instagram.com/hubacademia_" target="_blank" rel="noopener noreferrer" class="sidebar-social-btn" title="Instagram">
-                        <i class="fab fa-instagram"></i>
+                    <a href="https://wa.me/51993869166?text=Hola%2C%20deseo%20comunicarme%20con%20Hub%20Academia" target="_blank" rel="noopener noreferrer" class="sidebar-social-btn sidebar-social-wa" title="WhatsApp">
+                        <i class="fab fa-whatsapp"></i>
                     </a>
-                    <a href="https://www.tiktok.com/@hub.academia" target="_blank" rel="noopener noreferrer" class="sidebar-social-btn" title="TikTok">
+                    <a href="https://www.tiktok.com/@hubacademia" target="_blank" rel="noopener noreferrer" class="sidebar-social-btn sidebar-social-tt" title="TikTok">
                         <i class="fab fa-tiktok"></i>
                     </a>
                 </div>

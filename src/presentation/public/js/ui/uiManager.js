@@ -1265,7 +1265,7 @@ class UIManager {
                 config.badgeText = 'Acceso Ilimitado';
                 config.badgeIcon = 'fa-crown';
                 features = [
-                    { icon: 'fa-check-circle', text: 'Consultas continuas sin esperas semanales' },
+                    { icon: 'fa-check-circle', text: 'Consultas continuas sin esperas mensuales' },
                     { icon: 'fa-check-circle', text: 'Retroalimentación detallada y resolución de dudas 24/7' }
                 ];
             }
@@ -1593,14 +1593,15 @@ class UIManager {
         const barHTML = `
             <style>
                 .freemium-status-bar {
-                    background: #272727ff;
-                    border-bottom: 1px solid #334155;
-                    color: white;
-                    padding: 8px 16px;
+                    background: var(--bg-secondary);
+                    border-bottom: 1px solid var(--border-color);
+                    color: var(--text-main);
+                    padding: 0 16px;
                     display: none; /* Oculto por defecto */
                     justify-content: center;
                     align-items: center;
-                    font-size: 0.9rem;
+                    font-size: 0.88rem;
+                    font-family: var(--font-main, 'Inter', system-ui, sans-serif);
                     position: fixed; /* ✅ FIXED: Always on top */
                     top: 0; 
                     left: 0;
@@ -1608,7 +1609,20 @@ class UIManager {
                     height: 46px; /* Explicit height matching CSS var */
                     box-sizing: border-box;
                     z-index: 9999; /* Z-Index Alto */
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    box-shadow: var(--shadow-sm);
+                    transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+                }
+                [data-theme="dark"] .freemium-status-bar {
+                    background: #090a0f;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    color: #f8fafc;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+                }
+                [data-theme="light"] .freemium-status-bar {
+                    background: #ffffff;
+                    border-bottom: 1px solid rgba(15, 23, 42, 0.09);
+                    color: #0f172a;
+                    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
                 }
                 .freemium-status-bar.visible {
                     display: flex;
@@ -1617,38 +1631,97 @@ class UIManager {
                 .status-content {
                     display: flex;
                     align-items: center;
-                    gap: 15px;
+                    gap: 14px;
                     width: 100%;
                     max-width: 1200px;
                     justify-content: center;
                 }
-                .usage-pill {
-                    background: rgba(255, 255, 255, 0.1);
-                    padding: 4px 10px;
-                    border-radius: 12px;
-                    font-weight: bold;
-                    color: #ffd700; /* Gold */
-                    display: flex;
+                .probation-text {
+                    font-weight: 800;
+                    letter-spacing: 0.03em;
+                    font-size: 0.82rem;
+                    display: inline-flex;
                     align-items: center;
-                    gap: 5px;
+                    gap: 6px;
+                }
+                [data-theme="dark"] .probation-text {
+                    color: #f8fafc;
+                }
+                [data-theme="light"] .probation-text {
+                    color: #0f172a;
+                }
+                .probation-text .bolt-icon {
+                    color: #f59e0b;
+                }
+                [data-theme="light"] .probation-text .bolt-icon {
+                    color: #d97706;
+                }
+                .usage-pill {
+                    padding: 3px 10px;
+                    border-radius: 9999px;
+                    font-weight: 800;
+                    font-size: 0.85rem;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
                     white-space: nowrap;
-                    transition: all 0.3s ease;
+                    transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+                }
+                [data-theme="dark"] .usage-pill {
+                    background: rgba(245, 158, 11, 0.15);
+                    border: 1px solid rgba(245, 158, 11, 0.35);
+                    color: #fbbf24;
+                }
+                [data-theme="light"] .usage-pill {
+                    background: rgba(217, 119, 6, 0.1);
+                    border: 1px solid rgba(217, 119, 6, 0.25);
+                    color: #b45309;
+                }
+                [data-theme="dark"] .usage-pill.low-lives {
+                    background: rgba(239, 68, 68, 0.2);
+                    border-color: rgba(239, 68, 68, 0.45);
+                    color: #fca5a5;
+                }
+                [data-theme="light"] .usage-pill.low-lives {
+                    background: rgba(239, 68, 68, 0.12);
+                    border-color: rgba(239, 68, 68, 0.35);
+                    color: #b91c1c;
+                }
+                .usage-label-text {
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                }
+                [data-theme="dark"] .usage-label-text {
+                    color: #94a3b8;
+                }
+                [data-theme="light"] .usage-label-text {
+                    color: #64748b;
                 }
                 .upgrade-btn-small {
-                    background: linear-gradient(45deg, #ffd700, #ffa500);
+                    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
                     border: none;
-                    border-radius: 20px;
-                    padding: 4px 12px;
-                    font-size: 0.8rem;
-                    font-weight: bold;
+                    border-radius: 9999px;
+                    padding: 5px 14px;
+                    font-size: 0.78rem;
+                    font-weight: 800;
                     cursor: pointer;
-                    color: #000;
+                    color: #ffffff;
+                    letter-spacing: 0.02em;
                     text-transform: uppercase;
-                    transition: transform 0.2s;
+                    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
                     white-space: nowrap;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    box-shadow: 0 2px 10px rgba(217, 119, 6, 0.35);
                 }
                 .upgrade-btn-small:hover {
-                    transform: scale(1.05);
+                    transform: translateY(-1px) scale(1.03);
+                    box-shadow: 0 4px 16px rgba(217, 119, 6, 0.5);
+                    color: #ffffff;
+                }
+                .upgrade-btn-small:active {
+                    transform: translateY(0) scale(0.98);
                 }
 
                 /* 📱 MOBILE RESPONSIVE OPTIMIZATION */
@@ -1664,15 +1737,15 @@ class UIManager {
                         display: none !important;
                     }
                     .usage-pill {
-                        padding: 4px 8px;
-                        font-size: 0.85rem;
+                        padding: 3px 8px;
+                        font-size: 0.82rem;
                     }
                     .upgrade-btn-small {
                         padding: 4px 10px;
-                        font-size: 0.75rem;
+                        font-size: 0.74rem;
                     }
                     .probation-text {
-                        font-size: 0.8rem;
+                        font-size: 0.78rem;
                         font-weight: 700;
                     }
                 }
@@ -1707,13 +1780,13 @@ class UIManager {
                 }
                 .freemium-toast i { color: #ffd700; }
             </style>
-            <div id="freemium-status-bar" class="freemium-status-bar" title="Tus créditos de vidas se restablecen a 10 cada 7 días automáticamente">
+            <div id="freemium-status-bar" class="freemium-status-bar" title="Tus créditos de vidas se restablecen a 10 cada 30 días automáticamente">
                 <div class="status-content">
-                    <span class="probation-text">⚡ <span class="hide-mobile">PLAN </span>GRATUITO</span>
+                    <span class="probation-text"><i class="fas fa-bolt bolt-icon"></i> <span class="hide-mobile">PLAN </span>GRATUITO</span>
                     <div class="usage-pill">
                         <i class="fas fa-bolt"></i> <span id="free-usage-count">--/--</span>
                     </div>
-                    <span class="hide-mobile">restantes</span>
+                    <span class="usage-label-text hide-mobile">restantes</span>
                     <button class="upgrade-btn-small" onclick="window.location.href='/pricing'">
                          💎 <span class="hide-mobile">Activar </span>Ilimitado
                     </button>
@@ -1775,30 +1848,26 @@ class UIManager {
         if (countSpan) {
             const prevText = countSpan.textContent;
             const newText = `${remaining}/${limit}`;
+            const pill = countSpan.closest('.usage-pill');
             
             if (prevText !== newText && prevText !== '--/--') {
-                // Agregar animación de rebote y destello dorado
-                const pill = countSpan.closest('.usage-pill');
+                // Agregar animación de rebote reactiva
                 if (pill) {
                     pill.style.transform = 'scale(1.15)';
-                    pill.style.background = 'rgba(255, 215, 0, 0.35)';
-                    pill.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.5)';
                     setTimeout(() => {
-                        pill.style.transform = 'scale(1)';
-                        pill.style.background = remaining <= 1 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.1)';
-                        pill.style.boxShadow = 'none';
+                        pill.style.transform = '';
                     }, 300);
                 }
             }
             
             countSpan.textContent = newText;
-            // Alerta visual si queda poco
-            if (remaining <= 1) {
-                countSpan.parentElement.style.background = 'rgba(239, 68, 68, 0.2)'; // Red tint
-                countSpan.style.color = '#f87171';
-            } else {
-                countSpan.parentElement.style.background = 'rgba(255, 255, 255, 0.1)';
-                countSpan.style.color = '#ffd700';
+            // Estado semántico reactivo según vidas restantes (Alerta si quedan 2 o menos)
+            if (pill) {
+                if (remaining <= 2) {
+                    pill.classList.add('low-lives');
+                } else {
+                    pill.classList.remove('low-lives');
+                }
             }
         }
     }
@@ -1880,7 +1949,7 @@ class UIManager {
         if (numRemaining <= 0) {
             // Informar que consumió la última vida sin bloquear ni mostrar modal prematuramente.
             // El modal solo aparecerá cuando intente una NUEVA acción con 0 vidas.
-            this.showToast('Has consumido tu última vida de prueba semanal. Te quedan 0 vidas.', 'warning', 4000);
+            this.showToast('Has consumido tu última vida de prueba mensual. Te quedan 0 vidas.', 'warning', 4000);
             return;
         }
 
@@ -1912,7 +1981,7 @@ class UIManager {
         return Promise.resolve(window.confirm(message));
     }
     /**
-     * Muestra el modal de bienvenida o renovación de vidas semanal para usuarios free.
+     * Muestra el modal de bienvenida o renovación de vidas mensual para usuarios free.
      */
     checkAndShowWelcomeModal(user) {
         if (!user || user._isOptimistic) return;
@@ -1950,13 +2019,13 @@ class UIManager {
         // Si el usuario ya vio la renovación/bienvenida de esta fecha específica, no hacemos nada
         if (lastSeen === lastRenewalDate) return;
 
-        const isRenewal = !!lastSeen; // Si ya vio alguna renovación antes, esta es una renovación semanal
+        const isRenewal = !!lastSeen; // Si ya vio alguna renovación antes, esta es una renovación mensual
         const modalId = 'welcome-freemium-modal';
         if (document.getElementById(modalId)) return;
 
-        const titleText = isRenewal ? '¡Tus 10 vidas semanales están listas!' : 'Bienvenido a Hub Academia';
+        const titleText = isRenewal ? '¡Tus 10 vidas mensuales están listas!' : 'Bienvenido a Hub Academia';
         const bodyText = isRenewal 
-            ? 'Hemos renovado tu cuenta. Recibiste de regalo <strong>10 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA esta semana.'
+            ? 'Hemos renovado tu cuenta. Recibiste de regalo <strong>10 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA este mes.'
             : 'Tu cuenta ha sido configurada correctamente. Dispones de <strong>10 créditos de uso</strong> para explorar todas las herramientas de estudio y productividad de la plataforma.';
         const buttonText = isRenewal ? '¡A estudiar!' : 'Acceder al Hub';
 

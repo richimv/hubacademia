@@ -97,7 +97,7 @@ class ChatController {
                 }
 
                 const tutorInstruction = `[MODO: TUTOR ACADÉMICO MULTIDISCIPLINARIO DE FLASHCARDS]
-Eres un tutor y mentor de élite en Hub Academia, experto en la disciplina de **${deckCategory}**.
+Eres un tutor y mentor senior en Hub Academia, experto en la disciplina de **${deckCategory}**.
 El estudiante está repasando sus tarjetas mnemotécnicas y tiene una duda específica.
 
 ESTRUCTURA DEL MAZO Y CONTEXTO DE LA TARJETA:
@@ -188,9 +188,9 @@ ${message}`;
 
                 // 5. Casuística / Situación compartida / Apoyo visual
                 let caseSection = '';
-                if (context.caseDescription || context.caseTitle || context.caseTableHtml || context.caseImageUrl) {
+                if (context.caseDescription || context.caseTableHtml || context.caseImageUrl) {
                     caseSection = `\nCASUÍSTICA / SITUACIÓN COMPARTIDA:
-${context.caseTitle ? `Título: ${context.caseTitle}\n` : ''}${context.caseDescription || ''}${context.caseTableHtml ? `\nTabla / Datos de Apoyo:\n${context.caseTableHtml}\n` : ''}${context.caseImageUrl ? `\nImagen de Casuística: ${context.caseImageUrl}\n` : ''}`;
+${context.caseDescription || ''}${context.caseTableHtml ? `\nTabla / Datos de Apoyo:\n${context.caseTableHtml}\n` : ''}${context.caseImageUrl ? `\nImagen de Casuística: ${context.caseImageUrl}\n` : ''}`;
                 }
 
                 let visualSupportSection = '';
@@ -205,7 +205,7 @@ ${context.caseTitle ? `Título: ${context.caseTitle}\n` : ''}${context.caseDescr
                 }
 
                 const tutorInstruction = `[MODO: TUTOR DE SIMULADOR DE EXAMEN]
-Eres un tutor de élite de Hub Academia especializado en ${examDomain === 'EDUCACION' ? 'Currículo Nacional, Didáctica y Casuística Pedagógica (MINEDU / CNEB)' : 'Medicina Peruana, Normas Técnicas MINSA, GPC y Diagnóstico Clínico'}.
+Eres un tutor senior de Hub Academia especializado en ${examDomain === 'EDUCACION' ? 'Currículo Nacional, Didáctica y Casuística Pedagógica (MINEDU / CNEB)' : 'Medicina Peruana, Normas Técnicas MINSA, GPC y Diagnóstico Clínico'}.
 El estudiante está interactuando con este reactivo en un simulacro interactivo y tiene una duda sobre su resolución, la clave o el sustento.
 
 CONFIGURACIÓN DE EXAMEN Y CONTEXTO DEL ALUMNO:
@@ -232,6 +232,7 @@ DIRECTRICES CLAVE PARA EL TUTOR:
 1. Explica con claridad, rigor pedagógico y didáctica por qué la clave correcta [${correctLetter}] es la opción acertada.
 2. Analiza las alternativas cuando sea pertinente para despejar dudas y reforzar el aprendizaje del alumno.
 3. 🚨 TIENES ACCESO COMPLETO AL REACTIVO Y A SUS OPCIONES. NUNCA digas que no te proporcionaron las opciones ni la pregunta.
+4. 🚨 PROHIBICIÓN ESTRICTA DE CÓDIGOS Y TÍTULOS INTERNOS: NUNCA menciones códigos de caso, títulos internos ni identificadores técnicos (como "Caso-Secundaria-Arte13", "CASO-01", códigos alfa-numéricos o IDs de base de datos) en tu saludo, inicio de mensaje o explicación. Refiérete a la casuística de forma natural diciendo "en esta casuística", "en la situación planteada" o "en este caso".
 
 ---
 PREGUNTA O DUDA DEL ESTUDIANTE:
@@ -274,17 +275,9 @@ ${message}`;
                 botMessage = await this.chatService.chatRepository.addMessage(conversationId, 'bot', response.respuesta);
             }
 
-            // 5. REGISTRAR EN ANALYTICS (Solo si hay usuario autenticado)
-            if (this.analyticsService && userId) {
-                const isEducational = this.analyticsService.isQueryEducational(message);
-
-                await this.analyticsService.recordSearchWithIntent(
-                    message,
-                    [],
-                    isEducational,
-                    userId, 'chatbot'
-                ).catch(err => console.warn("⚠️ Analytics error:", err.message));
-            }
+            // 5. PRIVACIDAD TOTAL: Las consultas de los usuarios en los chats (Quiz Tutor, Flashcards y General)
+            // son estrictamente confidenciales y NUNCA se registran en search_history ni analíticas de búsqueda.
+            // Únicamente se registran las búsquedas explícitas realizadas en la barra de Mi Biblioteca (searchService).
 
             // 6. ACTUALIZAR LÍMITES DE USO IA (Solo si aplica cobro y hay usuario autenticado)
             if (userId && req.usageType) {
@@ -415,17 +408,21 @@ ${message}`;
 
     async enrichResponse(userMessage, llmResult) {
         // La respuesta principal ya viene del LLM.
-        // Esta función ahora solo añade información extra o sugerencias.
-        const { intencion, confianza, respuesta, idioma_detectado } = llmResult;
+        // Esta función ahora propaga metadatos RAG (citas con página), fuentes y sugerencias.
+        const { intencion, confianza, respuesta, idioma_detectado, citas, sources, ragSources, contextUsed } = llmResult;
         console.log('🎯 Generando respuesta contextual para:', intencion);
 
         let enrichedResponse = respuesta;
-        // La lógica de enriquecimiento de cursos ahora la maneja Gemini con Function Calling.
 
+        const isRagActive = Boolean(contextUsed && Array.isArray(citas) && citas.length > 0);
         return {
             intencion,
             confianza: confianza || 0.85,
             respuesta: enrichedResponse,
+            citas: isRagActive ? citas : [],
+            sources: isRagActive ? (sources || null) : null,
+            ragSources: isRagActive ? (Array.isArray(ragSources) ? ragSources : []) : [],
+            contextUsed: isRagActive,
             idioma_detectado: idioma_detectado || 'es',
             sugerencias: await this.generateChatSuggestions(intencion, llmResult)
         };

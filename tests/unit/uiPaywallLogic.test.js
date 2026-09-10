@@ -85,7 +85,7 @@ describe('UI Paywall & Freemium Action Validation', () => {
             const numLimit = Number(limit) || 10;
 
             if (numRemaining <= 0) {
-                this.lastToast = { message: 'Has consumido tu última vida de prueba semanal. Te quedan 0 vidas.', type: 'warning' };
+                this.lastToast = { message: 'Has consumido tu última vida de prueba mensual. Te quedan 0 vidas.', type: 'warning' };
                 // NOTA: Nunca debe abrir showPaywallModal() prematuramente
                 return;
             }
@@ -249,7 +249,7 @@ describe('UI Paywall & Freemium Action Validation', () => {
         uiManager.showLifeDecrementToast(0, 10);
 
         expect(uiManager.lastToast).toBeDefined();
-        expect(uiManager.lastToast.message).toContain('Has consumido tu última vida de prueba semanal');
+        expect(uiManager.lastToast.message).toContain('Has consumido tu última vida de prueba mensual');
         expect(uiManager.modalVisible).toBe(false); // ✅ Crucial: No abre el modal prematuramente
     });
 
@@ -441,7 +441,7 @@ describe('Session Lifecycle, Freemium Status & Welcome Modal Guards', () => {
         expect(evaluateWelcomeModal(optimisticUser, '/dashboard')).toBe(false);
     });
 
-    test('checkAndShowWelcomeModal se muestra para usuario FREE confirmado que recibe renovación semanal', () => {
+    test('checkAndShowWelcomeModal se muestra para usuario FREE confirmado que recibe renovación mensual', () => {
         const freeUser = {
             id: 'usr_free',
             subscriptionTier: 'free',

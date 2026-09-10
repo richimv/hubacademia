@@ -78,7 +78,7 @@ A continuación se detalla el significado estratégico de cada métrica visible 
     -   *Propósito:* Mide el tamaño de la base de datos de usuarios registrados.
     -   *Valor:* Indica el éxito de tus campañas de captación y el crecimiento de tu comunidad académica.
 *   **Suscripciones Activas:** 
-    -   *Propósito:* Conteo real de usuarios con el Plan Avanzado/Elite.
+    -   *Propósito:* Conteo real de usuarios con planes de pago activos (Plan Básico o Avanzado).
     -   *Valor:* Es tu métrica de conversión principal (Conversion Rate). Te dice cuántos usuarios gratuitos están pasando a pago.
 
 ### B. Métricas de Visibilidad (Tráfico)
@@ -212,6 +212,12 @@ Integrado en la tarjeta `#ai-diagnosis-card` del panel de simuladores, este mód
    - **Adaptabilidad Modular:** El diagnóstico respeta la identidad cromática del módulo en curso: Verde Esmeralda/Teal (`#0d9488`) para **Salud (Medicina)** y Azul Cobalto (`#3b82f6`) para **Educación**.
    - **Tipografía y Jerarquía:** Badges de micro-temas y focos prioritarios en tipografía uppercase con padding refinado (`0.25rem 0.65rem`) y bordes sutiles.
 
+### G. Política Estricta de Privacidad del Usuario en Chats IA (Septiembre 2026)
+- **Cero Registro de Consultas de Chat:** Se eliminó de raíz la invocación de `analyticsService.recordSearchWithIntent(message, ..., 'chatbot')` desde `chatController.js`.
+- **Confidencialidad Total:** Las preguntas, dudas y mensajes que los usuarios envían a los tutores IA (Quiz Tutor, Repaso Tutor y Chatbot General) son estrictamente privados y confidenciales. No se almacenan en la tabla `search_history` ni en ninguna métrica de telemetría analítica textual.
+- **Alcance Exclusivo de Búsquedas:** La tabla `search_history` queda reservada única y exclusivamente para los términos introducidos conscientemente en la barra de búsqueda de **Mi Biblioteca** (`searchService.searchCourses`, origen `search_bar`).
+
 ---
 > [!IMPORTANT]
-> Esta arquitectura ha sido verificada y respaldada con 51 suites de tests unitarios (401 tests pasando) al 7 de septiembre de 2026.
+> Esta arquitectura ha sido verificada y respaldada con 53 suites de tests unitarios (422 tests pasando) al 10 de septiembre de 2026.
+

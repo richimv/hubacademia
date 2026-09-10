@@ -191,7 +191,7 @@ class QuizTutor {
         // ✅ Prevenir envío proactivo si ya no tiene vidas de prueba (Paywall solo cuando realmente está en cero)
         if (window.uiManager && typeof window.uiManager.isResourceLocked === 'function' && window.uiManager.isResourceLocked(true)) {
             if (typeof window.uiManager.showPaywallModal === 'function') {
-                window.uiManager.showPaywallModal('Has agotado tus vidas de prueba semanal. ¡Mejora tu plan para mantener acceso ilimitado!', 'quiz_tutor');
+                window.uiManager.showPaywallModal('Has agotado tus vidas de prueba mensual. ¡Mejora tu plan para mantener acceso ilimitado!', 'quiz_tutor');
             }
             return;
         }
@@ -278,7 +278,7 @@ class QuizTutor {
             }
 
             if (data.respuesta) {
-                this._addMessage(data.respuesta, 'bot');
+                this._addMessage(data.respuesta, 'bot', data.sugerencias, data.citas);
                 
                 // Agregar al historial de la sesión
                 this.history.push({ sender: 'user', content: text });
@@ -304,7 +304,17 @@ class QuizTutor {
         }
     }
 
-    _addMessage(text, role, suggestions = null) {
+    _escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    _addMessage(text, role, suggestions = null, citas = null) {
         const msgWrapper = document.createElement('div');
         msgWrapper.className = `tutor-message-wrapper ${role}`;
 
@@ -316,6 +326,9 @@ class QuizTutor {
             try {
                 const p = JSON.parse(text);
                 if (p && p.respuesta) text = p.respuesta;
+                if ((citas === null || citas === undefined) && p && (p.citas || p.fuentes)) {
+                    citas = p.citas || p.fuentes;
+                }
             } catch (e) {}
         }
 
@@ -323,6 +336,39 @@ class QuizTutor {
         let formattedText = window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
         msg.innerHTML = formattedText;
         msgWrapper.appendChild(msg);
+
+        // Renderizado de Citas Oficiales RAG (Libro / Norma y Página)
+        if (role === 'bot' && Array.isArray(citas) && citas.length > 0) {
+            const citationsContainer = document.createElement('div');
+            citationsContainer.className = 'tutor-citations-container';
+
+            const header = document.createElement('div');
+            header.className = 'tutor-citations-header';
+            header.innerHTML = '<i class="fas fa-bookmark"></i> <span>Fuentes Oficiales Consultadas (RAG):</span>';
+            citationsContainer.appendChild(header);
+
+            const badgesList = document.createElement('div');
+            badgesList.className = 'tutor-citations-badges';
+
+            citas.forEach(cita => {
+                const fuente = typeof cita === 'string' ? cita : (cita.fuente || cita.title || cita.documento || 'Documento Oficial');
+                let pagina = typeof cita === 'object' ? (cita.pagina || cita.page) : null;
+                if (pagina && !String(pagina).toLowerCase().includes('pág') && !isNaN(Number(pagina))) {
+                    pagina = `Pág. ${pagina}`;
+                } else if (!pagina) {
+                    pagina = 'Consultada';
+                }
+
+                const pill = document.createElement('span');
+                pill.className = 'tutor-citation-pill';
+                pill.title = `${fuente} (${pagina})`;
+                pill.innerHTML = `<i class="fas fa-book-open"></i> <strong class="tutor-citation-source">${this._escapeHtml(fuente)}</strong> <span class="tutor-citation-page">• ${this._escapeHtml(String(pagina))}</span>`;
+                badgesList.appendChild(pill);
+            });
+
+            citationsContainer.appendChild(badgesList);
+            msgWrapper.appendChild(citationsContainer);
+        }
 
         // Agregar acciones
         if (role === 'bot') {
@@ -332,14 +378,14 @@ class QuizTutor {
             const saveBtn = document.createElement('button');
             saveBtn.className = 'tutor-save-note-btn';
             saveBtn.innerHTML = '<i class="far fa-bookmark"></i> Guardar nota';
-            saveBtn.title = 'Guardar nota de estudio';
-            saveBtn.onclick = () => this.saveAsNote(text, saveBtn);
+            saveBtn.title = 'Guardar nota de estudio con fuentes';
+            saveBtn.onclick = () => this.saveAsNote(text, saveBtn, citas);
 
             const copyBtn = document.createElement('button');
             copyBtn.className = 'tutor-save-note-btn';
             copyBtn.innerHTML = '<i class="far fa-copy"></i> Copiar';
             copyBtn.title = 'Copiar al portapapeles';
-            copyBtn.onclick = () => this.copyToClipboard(text, copyBtn);
+            copyBtn.onclick = () => this.copyToClipboard(text, copyBtn, citas);
 
             actions.appendChild(saveBtn);
             actions.appendChild(copyBtn);
@@ -351,6 +397,7 @@ class QuizTutor {
             const copyBtn = document.createElement('button');
             copyBtn.className = 'tutor-save-note-btn';
             copyBtn.innerHTML = '<i class="far fa-copy"></i> Copiar';
+            copyBtn.title = 'Copiar al portapapeles';
             copyBtn.onclick = () => this.copyToClipboard(text, copyBtn);
 
             actions.appendChild(copyBtn);
@@ -361,9 +408,20 @@ class QuizTutor {
         this.dom.messages.scrollTop = this.dom.messages.scrollHeight;
     }
 
-    async copyToClipboard(text, btn) {
+    async copyToClipboard(text, btn, citas = null) {
         try {
-            await navigator.clipboard.writeText(text);
+            let textToCopy = text;
+            if (Array.isArray(citas) && citas.length > 0) {
+                const formattedCitas = citas.map(c => {
+                    const fuente = typeof c === 'string' ? c : (c.fuente || c.title || c.documento || 'Documento Oficial');
+                    const rawPag = typeof c === 'object' ? (c.pagina || c.page) : null;
+                    const pagStr = rawPag ? (String(rawPag).toLowerCase().includes('pág') ? rawPag : `Pág. ${rawPag}`) : 'Consultada';
+                    return `• ${fuente} (${pagStr})`;
+                }).join('\n');
+                textToCopy += `\n\n📚 Fuentes Oficiales Consultadas (RAG):\n${formattedCitas}`;
+            }
+
+            await navigator.clipboard.writeText(textToCopy);
             const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
             setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
@@ -372,7 +430,7 @@ class QuizTutor {
         }
     }
 
-    async saveAsNote(content, btn) {
+    async saveAsNote(content, btn, citas = null) {
         if (btn.classList.contains('saved') || btn.disabled) return;
         const originalHTML = btn.innerHTML;
 
@@ -382,11 +440,22 @@ class QuizTutor {
 
             const title = `Nota del Simulador: ${this.questionContext?.topic || 'General'}`;
 
+            let contentToSave = content;
+            if (Array.isArray(citas) && citas.length > 0) {
+                const formattedCitas = citas.map(c => {
+                    const fuente = typeof c === 'string' ? c : (c.fuente || c.title || c.documento || 'Documento Oficial');
+                    const rawPag = typeof c === 'object' ? (c.pagina || c.page) : null;
+                    const pagStr = rawPag ? (String(rawPag).toLowerCase().includes('pág') ? rawPag : `Pág. ${rawPag}`) : 'Consultada';
+                    return `- ${fuente} (${pagStr})`;
+                }).join('\n');
+                contentToSave += `\n\n### 📚 Fuentes Oficiales Consultadas (RAG):\n${formattedCitas}`;
+            }
+
             const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
                 method: 'POST',
                 body: JSON.stringify({
                     title: title,
-                    content: content,
+                    content: contentToSave,
                     sourceType: 'quiz'
                 })
             });

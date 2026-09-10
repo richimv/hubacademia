@@ -292,7 +292,7 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Se amplió el límite de caracteres por cara de tarjeta a **`1,000 caracteres`** para flashcards de texto puro.
     - Se implementó un límite condicional estricto de **`500 caracteres`** por cara cuando se activa la generación de Audio TTS para preservar el presupuesto y cuota gratuita de Google Cloud Text-to-Speech.
   - **Políticas de Privilegios y Control de Costos Multimedia (GCS / TTS)**:
-    - **Audio TTS e Imágenes Exclusivas del Plan Advanced**: La síntesis de voz (`_processAudioTts`) y la carga de imágenes (`uploadCardImage`, `POST /api/cards/upload-image`) están estrictamente reservadas para usuarios con tier `advanced`, `elite` o `admin`.
+    - **Audio TTS e Imágenes Exclusivas del Plan Advanced**: La síntesis de voz (`_processAudioTts`) y la carga de imágenes (`uploadCardImage`, `POST /api/cards/upload-image`) están estrictamente reservadas para usuarios con tier `advanced` o `admin`.
     - **Protección Paywall y Fallback Seguro**: Usuarios Free y Basic son interceptados visualmente con `window.uiManager.showPaywallModal(..., 'flashcards')` y protegidos en backend con código HTTP `403 Forbidden` (`paywall: true`).
     - **Cuotas de Carga Masiva Diarias**: `LIMITS.basic.batch_import = 3` (texto puro) y `LIMITS.advanced.batch_import = 10` (con opción de audio TTS), bloqueando cuentas Free para prevenir abuso de scripts.
   - **Armonización Visual y Consistencia de Diseño (Design System Negro Mate & Naranja Manta)**:

@@ -83,19 +83,20 @@ function getSafeProfileImageUrl(value) {
 }
 
 /**
- * Calcula la fecha de la próxima renovación semanal para usuarios Free
+ * Calcula la fecha de la próxima renovación mensual (cada 30 días) para usuarios Free
  * @param {Object} user - Objeto de usuario
  * @returns {{ formattedDate: string, daysLeft: number }}
  */
 function getNextFreeRenewalInfo(user) {
+    const RENEWAL_DAYS = 30;
     const lastRenewalStr = user.lastFreeRenewal || user.last_free_renewal;
     if (!lastRenewalStr) {
-        return { formattedDate: "Cada 7 días", daysLeft: 7 };
+        return { formattedDate: "Cada 30 días", daysLeft: RENEWAL_DAYS };
     }
 
     try {
         const lastRenewalDate = new Date(lastRenewalStr);
-        const nextRenewalDate = new Date(lastRenewalDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const nextRenewalDate = new Date(lastRenewalDate.getTime() + RENEWAL_DAYS * 24 * 60 * 60 * 1000);
         const now = new Date();
         const diffMs = nextRenewalDate.getTime() - now.getTime();
         const daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
@@ -107,7 +108,7 @@ function getNextFreeRenewalInfo(user) {
         return { formattedDate, daysLeft };
     } catch (e) {
         console.warn('⚠️ Error al calcular fecha de renovación:', e);
-        return { formattedDate: "Cada 7 días", daysLeft: 7 };
+        return { formattedDate: "Cada 30 días", daysLeft: RENEWAL_DAYS };
     }
 }
 
@@ -189,12 +190,12 @@ function renderSubscriptionDetails(user) {
             <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">PLAN GRATUITO</span>
-                    <span style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">10 VIDAS / SEMANA</span>
+                    <span style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">10 VIDAS / MES</span>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem; color: var(--text-secondary);">
-                    <div>• <strong>10 Créditos semanales</strong> para simuladores y tutorías</div>
-                    <div>• <strong>Recarga automática</strong> cada 7 días</div>
+                    <div>• <strong>10 Créditos mensuales</strong> para simuladores y tutorías</div>
+                    <div>• <strong>Recarga automática</strong> cada 30 días</div>
                 </div>
 
                 <div class="renewal-banner">
@@ -491,8 +492,8 @@ function renderUsageDetails(user) {
         container.innerHTML = cardsHTML;
     } else {
         // Plan Free / Pending
-        if (titleEl) titleEl.textContent = 'Créditos de Vidas Semanales';
-        if (subtitleEl) subtitleEl.textContent = 'Tus créditos se recargan automáticamente a 10 cada 7 días para practicar en simulacros y consultar al Tutor IA.';
+        if (titleEl) titleEl.textContent = 'Créditos de Vidas Mensuales';
+        if (subtitleEl) subtitleEl.textContent = 'Tus créditos se recargan automáticamente a 10 cada 30 días para practicar en simulacros y consultar al Tutor IA.';
 
         const usageCount = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
         const maxFreeLimit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
@@ -512,7 +513,7 @@ function renderUsageDetails(user) {
                     <div class="usage-title-group">
                         <div class="usage-title-text-wrap">
                             <div class="usage-title">Créditos de Exploración Disponibles</div>
-                            <span class="usage-badge-tag">Recarga Semanal (10 Vidas)</span>
+                            <span class="usage-badge-tag">Recarga Mensual (10 Vidas)</span>
                         </div>
                     </div>
                     <div class="usage-count-val" style="color: ${colorHex}; font-size: 1.25rem; font-weight: 800;">${remaining} / ${maxFreeLimit}</div>
@@ -521,7 +522,7 @@ function renderUsageDetails(user) {
                     <div class="usage-progress-bar" style="width: ${pct}%; background: ${colorHex};"></div>
                 </div>
                 <div class="usage-footer">
-                    <span class="usage-footer-left">Consumidos esta semana: ${usageCount}</span>
+                    <span class="usage-footer-left">Consumidos este mes: ${usageCount}</span>
                     <span class="usage-footer-right" style="color: ${colorHex}; font-weight: 600;">Disponibles: ${remaining} vidas</span>
                 </div>
             </div>

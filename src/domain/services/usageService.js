@@ -6,20 +6,30 @@ class UsageService {
     }
 
     /**
-     * 🔄 FUENTE ÚNICA DE VERDAD: Renovación semanal de vidas para usuarios Free/Pending.
+     * 🔄 FUENTE ÚNICA DE VERDAD: Renovación mensual de vidas para usuarios Free/Pending.
      * Resetea usage_count a 0, estandariza max_free_limit a 10 y actualiza last_free_renewal
-     * si han pasado 7 o más días desde la última renovación (zona horaria America/Lima).
+     * si han pasado 30 o más días desde la última renovación (zona horaria America/Lima).
      *
      * @param {string} userId - UUID del usuario
      * @returns {Promise<boolean>} true si se renovó, false si no era necesario
      */
-    async renewWeeklyLivesIfNeeded(userId) {
+    async renewFreeLivesIfNeeded(userId) {
         try {
+            if (typeof this.userRepository.renewFreeLivesIfNeeded === 'function') {
+                return await this.userRepository.renewFreeLivesIfNeeded(userId);
+            }
             return await this.userRepository.renewWeeklyLivesIfNeeded(userId);
         } catch (error) {
-            console.error('⚠️ [UsageService] Error al renovar vidas semanales:', error.message);
+            console.error('⚠️ [UsageService] Error al renovar vidas gratuitas:', error.message);
             return false;
         }
+    }
+
+    /**
+     * Alias de retrocompatibilidad para renewFreeLivesIfNeeded
+     */
+    async renewWeeklyLivesIfNeeded(userId) {
+        return this.renewFreeLivesIfNeeded(userId);
     }
 
     /**

@@ -2,6 +2,7 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const db = require('../../infrastructure/database/db');
 const crypto = require('crypto');
+const { FREE_PLAN_CONFIG } = require('../../infrastructure/config/limits');
 
 class UserRepository {
     // Helper privado para mapear fila de DB a Modelo
@@ -43,29 +44,37 @@ class UserRepository {
     }
 
     /**
-     * Renueva las vidas semanales de un usuario elegible de forma atómica.
+     * Renueva las vidas gratuitas de un usuario elegible de forma atómica cada 30 días (mensual).
      * La regla de negocio se orquesta desde UsageService; el repositorio
      * mantiene aquí el acceso SQL a la tabla users.
      *
      * @param {string} userId - UUID del usuario
      * @returns {Promise<boolean>} true si se actualizó la fila
      */
-    async renewWeeklyLivesIfNeeded(userId) {
+    async renewFreeLivesIfNeeded(userId) {
+        const maxLives = FREE_PLAN_CONFIG?.MAX_LIVES || 10;
         const result = await db.query(`
             UPDATE public.users
             SET usage_count = 0,
-                max_free_limit = 10,
+                max_free_limit = $2,
                 last_free_renewal = CURRENT_TIMESTAMP
             WHERE id = $1
               AND subscription_tier = 'free'
               AND (
                    last_free_renewal IS NULL
                    OR (last_free_renewal AT TIME ZONE 'America/Lima')::date
-                      <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '7 days')::date
+                      <= ((NOW() AT TIME ZONE 'America/Lima') - INTERVAL '30 days')::date
               )
-        `, [userId]);
+        `, [userId, maxLives]);
 
         return result.rowCount > 0;
+    }
+
+    /**
+     * Alias de retrocompatibilidad para renewFreeLivesIfNeeded
+     */
+    async renewWeeklyLivesIfNeeded(userId) {
+        return this.renewFreeLivesIfNeeded(userId);
     }
 
     /**

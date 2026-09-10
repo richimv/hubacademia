@@ -2222,7 +2222,7 @@ const SimulatorDash = (() => {
                         `;
                         guestStrategy = `Te sugerimos registrarte gratis para guardar tu progreso y seguir reforzando ${worst1.subject}.`;
                         guestSprint = [
-                            { step: 1, title: "Registro Gratuito", desc: "Crea tu cuenta gratis para desbloquear 10 vidas semanales de práctica." },
+                            { step: 1, title: "Registro Gratuito", desc: "Crea tu cuenta gratis para desbloquear 10 vidas mensuales de práctica." },
                             { step: 2, title: `Refuerzo en ${worst1.subject}`, desc: "Practica simulacros comentados para afianzar tus respuestas." },
                             { step: 3, title: "Consolidación", desc: "Evalúa tu avance diario antes de la prueba oficial de la Carrera Pública." }
                         ];
@@ -2249,7 +2249,7 @@ const SimulatorDash = (() => {
                         `;
                         guestStrategy = `Regístrate para continuar practicando y desbloquear análisis avanzados en ${worst1.subject}.`;
                         guestSprint = [
-                            { step: 1, title: "Registro Gratuito", desc: "Guarda tu historial de aciertos y accede a 10 vidas semanales." },
+                            { step: 1, title: "Registro Gratuito", desc: "Guarda tu historial de aciertos y accede a 10 vidas mensuales." },
                             { step: 2, title: `Clínica de ${worst1.subject}`, desc: "Revisa normas técnicas y algoritmos diagnósticos oficiales." },
                             { step: 3, title: "Simulacros Oficiales", desc: "Mide tu puntaje en simulacros reales de medicina (SERUMS/ENAM)." }
                         ];

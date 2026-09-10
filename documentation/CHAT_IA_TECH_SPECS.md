@@ -4,7 +4,7 @@
 El Chat Tutor de Hub Academia es un motor conversacional multi-dominio diseñado para responder dudas especializadas en tiempo real, utilizando una arquitectura **RAG Semántica Pura**.
 
 - **Motor Semántico (Pinecone):** Recuperación vectorial de alta fidelidad basada en significado profundo.
-- **Acceso por Tier:** El acceso a RAG vectorial (Pinecone) está reservado exclusivamente para suscriptores **Advanced / Elite** (hasta 25 consultas RAG/día). Los usuarios Basic/Free operan con IA generativa experta optimizada sin sobrecarga vectorial.
+- **Acceso por Tier:** El acceso a RAG vectorial (Pinecone) está reservado exclusivamente para suscriptores **Advanced** (hasta 25 consultas RAG/día). Los usuarios Basic/Free operan con IA generativa experta optimizada sin sobrecarga vectorial.
 - **Aislamiento por Namespaces:** Separación total entre conocimiento médico (`medicine`) y educativo (`education`).
 - **Rigor Técnico:** Fundamentación en fuentes oficiales (MINSA/MINEDU/CNEB).
 
@@ -36,7 +36,7 @@ El ecosistema de chat de Hub Academia se divide en 3 modalidades con arquitectur
   - **Tutor Pedagógico (`education`):** Especialista en Educación Peruana (MINEDU, CNEB, Ley 29944, RVM 094-2020). Consulta en el namespace `education` de Pinecone.
 - **Acceso a RAG Vectorial por Tier:**
   - **Admin:** RAG Semántico Puro 100% activo en Quiz Tutor con exención de límites de cuota diaria (cuenta activa garantizada independientemente de los valores de `subscription_tier` o `subscription_status` en la base de datos).
-  - **Advanced / Elite:** RAG Semántico Puro activo en Pinecone (hasta 25 consultas RAG/día). Si se agota, degrada automáticamente a IA generativa estándar sin RAG hasta los 100 mensajes diarios.
+  - **Advanced:** RAG Semántico Puro activo en Pinecone (hasta 25 consultas RAG/día). Si se agota, degrada automáticamente a IA generativa estándar sin RAG hasta los 100 mensajes diarios.
   - **Basic:** IA generativa experta optimizada **sin RAG** (50 mensajes/día).
   - **Free:** IA generativa experta **sin RAG**, descontando 1 vida por consulta de su pool de 10 vidas.
 - **Aislamiento de Semilla Semántica (ragQuerySeed):** La búsqueda vectorial en Pinecone y la extracción de temas técnicos se alimentan exclusivamente del enunciado del reactivo, área/tema y la duda específica del estudiante (`filters.rawUserMessage`), evitando inyectar el prompt con meta-instrucciones del sistema para prevenir la dilución y contaminación de embeddings.
@@ -95,15 +95,23 @@ Todas las respuestas del tutor siguen este esquema para ser renderizadas por el 
 ```json
 {
   "intencion": "consulta_especializada",
-  "respuesta": "Texto en Markdown pedagógico...",
-  "sugerencias": ["Pregunta 1", "Pregunta 2", "Pregunta 3"]
+  "respuesta": "Texto en Markdown pedagógico o clínico con citas en línea...",
+  "sugerencias": ["Pregunta 1", "Pregunta 2", "Pregunta 3"],
+  "citas": [
+    {
+      "fuente": "Harrison Principios de Medicina Interna",
+      "pagina": 1420
+    }
+  ]
 }
 ```
 - `responseMimeType: "application/json"` fuerza a Gemini a devolver JSON válido.
-- Parsing en `TutorAiService.js` con fallback de limpieza de bloques ```` ```json ````
+- `TutorAiService.js` parsea el JSON, extrae `respuesta`, `sugerencias` y `citas`.
+- **Fallback de Fuentes RAG:** Si la IA genera la respuesta sin el array `citas` pero se utilizó contexto RAG de Pinecone, `TutorAiService` extrae automáticamente las fuentes y páginas desde `retrievedRagData.sources` para garantizar la presencia de citas.
+- `ChatController.js` propaga `{ respuesta, sugerencias, citas, sources, ragSources, contextUsed }` hacia el cliente HTTP.
 
 ## 6. Evolución Técnica: De FTS a Pinecone Puro
-El sistema ha migrado de una búsqueda basada en palabras clave (FTS) a una arquitectura **100% basada en Contexto Semántico**. Esto garantiza que el tutor entienda sinónimos, pedagogía y relaciones clínicas complejas sin depender de una base de datos local.
+El sistema ha migrado de una búsqueda basada en palabras clave (FTS) a una arquitectura **100% basada en Contexto Semántico**. Esto garantiza que el tutor entienda sinónimos, pedagogía y relaciones clínicas kompleks sin depender de una base de datos local.
 
 ---
 
@@ -501,6 +509,10 @@ Para guiar al usuario e invitarlo a interactuar con el Tutor IA de manera amigab
   - El cliente captura los metadatos de la pregunta en curso (enunciado, opciones de respuesta, opción correcta, opción elegida por el usuario, resultado de acierto/error, explicación oficial, tema técnico y examen objetivo) y los transmite en el campo `context` con tipo `quiz_tutor`.
   - El backend (`chatController.js`) detecta este contexto e inyecta dinámicamente el prompt al modelo Gemini 2.5 Flash Lite.
   - Activa RAG semántico consultando Pinecone en el namespace correspondiente (`medicine` o `education`) basándose en la pregunta y temas técnicos.
+- **Visualización de Citas RAG con Número de Página en UI (`quiz-tutor.js`, `tutor.css`):**
+  - **Píldoras de Citación (`.tutor-citations-container`):** Al pie de cada respuesta con respaldo RAG, se renderiza un bloque de fuentes oficiales con encabezado `<i class="fas fa-book-bookmark"></i> Fuentes Oficiales Consultadas` y badges interactivos (`.tutor-citation-pill`).
+  - **Identificación de Recurso y Página:** Cada píldora exhibe el nombre limpio del recurso (`.tutor-citation-source`) y el número de página oficial recuperado de los metadatos vectoriales (`.tutor-citation-page`: `(Pág. X)`).
+  - **Preservación en Copiado y Notas:** Al usar las acciones rápidas del mensaje (Copiar al portapapeles o Guardar como Nota en Mi Biblioteca), el texto enriquecido añade automáticamente la sección `📚 Fuentes consultadas:` con el desglose de recursos y páginas correspondientes.
 - **Monetización y Límites:**
   - **Usuarios Free/Pending:** Consumen 1 vida global (`usage_count`) por consulta.
   - **Usuarios Active (Basic/Advanced):** Incrementan la cuota diaria (`daily_ai_usage` / `daily_rag_usage`), bloqueando el acceso en el middleware de cuota si se excede el límite asignado.
@@ -649,4 +661,81 @@ Se corrigió la expresión regular en `_cleanResponseText` y `_normalizeText` (`
 Se integró `tests/unit/tutorAiResponseIntegrity.test.js`, validando contra el caso real reportado, variaciones con citas múltiples, fórmulas científicas complejas y estructuras Markdown.
 
 ---
-*Última actualización: 4 de septiembre de 2026 (Blindaje anti-truncamiento de respuestas por límites semánticos, protección tipográfica LaTeX y mitigación de comillas en Tutor IA)*
+
+## 23. Optimización del RAG en Quiz Tutor para Usuarios Avanzados y Sistema de Citación por Página (Septiembre 2026)
+
+### 23.1 Normalización y Enrutamiento Robusto de Namespaces (`RagService.normalizeNamespace`)
+- **Aislamiento Multi-Dominio:** Se implementó una normalización resiliente para mapear variantes lingüísticas del cliente hacia los namespaces canónicos de Pinecone:
+  - Sinónimos médicos (`medicina`, `salud`, `clinica`, `serums`) $\rightarrow$ `medicine`.
+  - Sinónimos pedagógicos (`educacion`, `educación`, `docente`, `cneb`, `ascenso`) $\rightarrow$ `education`.
+  - Predeterminado seguro $\rightarrow$ `general`.
+- **Limpieza de Títulos de Recursos:** Método `_cleanResourceTitle` que remueve extensiones (`.pdf`, `.doc`) y sustituye guiones bajos (`_`) por espacios limpios para una presentación impecable al usuario.
+
+### 23.2 Filtrado Semántico por Umbral y Desduplicación
+- **Filtro de Relevancia (`score >= 0.35`):** Se descartan fragmentos con baja correlación semántica para evitar ruido en el contexto inyectado.
+- **Desduplicación de Fragmentos:** Se filtran fragmentos con textos idénticos normalizados antes de construir el bloque de contexto.
+- **Estructura Enriquecida de Retorno:** `_formatResults` devuelve un objeto que preserva compatibilidad hacia atrás mediante `.toString()` a la vez que expone la matriz estructurada `sources: [{ fuente, title, pagina, page, source, score }]`.
+
+### 23.3 Directiva de Citación con Número de Página en Prompts
+- En `src/domain/prompts/chatPrompts.js`, se actualizaron los prompts del Tutor Clínico (`medicine`) y Tutor Pedagógico (`education`), exigiendo fundamentación documental con número de página (`[Documento, Pág. X]` o `(según Documento, Pág. X)`).
+- Esquema JSON de salida en Gemini enriquecido con `"citas": [{ "fuente": "Nombre del Recurso", "pagina": 15 }]`.
+
+### 23.4 Fallback Defensivo y Flujo de Transporte
+- **Orquestación en `TutorAiService`:** Extrae el campo `citas` del JSON de Gemini y, en caso de omisión en el markdown del modelo, recurre de forma transparente a las mejores fuentes y páginas recuperadas de Pinecone (`retrievedRagData.sources`).
+- **Transporte HTTP en `ChatController`:** El endpoint `/api/chat` transporta `citas`, `sources`, `ragSources` y `contextUsed` hacia el cliente.
+
+### 23.5 Experiencia de Usuario (UI) en Quiz Tutor
+- **Píldoras Interactivas Dual-Theme (`tutor.css`, `quiz-tutor.js`):**
+  - Contenedor `.tutor-citations-container` y badges `.tutor-citation-pill`.
+  - Cada píldora muestra el libro/documento oficial y la etiqueta `(Pág. X)`.
+  - Diseño responsivo adaptado tanto a Dark Mode como Light Mode.
+- **Persistencia en Portapapeles y Notas:**
+  - Al copiar una respuesta (`copyToClipboard`) o guardarla como nota de estudio (`saveAsNote`), las citas con sus páginas correspondientes se concatenan automáticamente al final del texto.
+
+---
+
+## 24. Blindaje Anti-Alucinación en Citas RAG para Usuarios Free/Basic y Supresión de Códigos Internos de Casos (Septiembre 2026)
+
+### 24.1 Erradicación de Fugas de Códigos Internos de Casuística (`caseTitle`)
+- **Causa Raíz:** En `src/application/controllers/chatController.js`, el bloque de casuística compartida inyectaba el atributo `caseTitle` en el prompt (`Título: ${context.caseTitle}`). Dado que en el panel administrativo y base de datos los casos sin título comercial llevan por defecto su código interno (ej. `Caso-Secundaria-Arte13`), el modelo IA reproducía dicho código técnico en el saludo al alumno (ej. *"¡Hola! Entiendo tu duda sobre la resolución del caso 'Caso-Secundaria-Arte13'..."*).
+- **Corrección Arquitectural:**
+  1. Se eliminó la inyección de `Título: ${context.caseTitle}` en `chatController.js`. Solo se inyectan la descripción contextual pedagógica/clínica, tablas HTML de apoyo y URLs de imágenes.
+  2. Se añadió la **Directiva N° 4** en `chatController.js` y en los prompts base de `chatPrompts.js` prohibiendo expresamente mencionar códigos de caso, IDs o títulos de base de datos, instruyendo al tutor a referirse a la situación como *"en esta casuística"*, *"en la situación planteada"* o *"en este caso clínico"*.
+  3. Filtro de sanitización en `TutorAiService`: reemplazo defensivo de cualquier residuo regex `Caso-[A-Za-z0-9_-]+` por *"esta casuística"*.
+
+### 24.2 Blindaje Anti-Alucinación de Citas y Páginas para Planes Sin RAG (`free` y `basic`)
+- **Causa Raíz:** Aunque los usuarios Free y Basic tenían `useRag: false` y no consultaban Pinecone, `buildPrompt` inyectaba indiscriminadamente la directiva de citación con páginas (`[CNEB, Pág. 45]`) y el esquema JSON con ejemplo de citas. Como consecuencia, Gemini 2.5 alucinaba citas inventadas (ej. `[CNEB, Pág. 32]`) en el cuerpo del texto y poblaba el array `citas` en el JSON. `TutorAiService` y `chatController` reenviaban ese array a `quiz-tutor.js`, renderizando indebidamente el bloque `FUENTES OFICIALES CONSULTADAS (RAG):` a usuarios de planes sin acceso a RAG.
+- **Solución Multi-Capa:**
+  1. **Capa de Dominio (Prompts Diferenciados):** `chatPrompts.buildPrompt` recibe la bandera `hasRagContext`. Si es `false`, inyecta el `[MODO GENERAL EXPERTO - SIN RAG VECTORIAL]` prohibiendo terminantemente citar páginas ficticias en el texto y exigiendo `"citas": []`.
+  2. **Capa de Dominio (Servicio IA):** `TutorAiService.handleChat` valida `hasRagContext`. Si no hay RAG activo o no hay fragmentos de Pinecone, fuerza `finalizedCitas = []`, `contextUsed = false` y `sources = null`. Además, limpia preventivamente del texto cualquier patrón residual de número de página (`,\s*Pág\.?\s*\d+`, etc.).
+  3. **Capa de Aplicación (Controlador Express):** `ChatController.enrichResponse` evalúa `isRagActive = Boolean(contextUsed && Array.isArray(citas) && citas.length > 0)`. Si no se cumple, devuelve `citas: []`, `sources: null`, `ragSources: []` y `contextUsed: false`.
+  4. **Capa de Presentación (Frontend):** En `quiz-tutor.js`, la red de seguridad de parseo JSON respeta `citas: []` enviado por el backend y evita extraer citas del texto crudo, impidiendo la aparición de píldoras RAG para usuarios Free o Basic.
+
+### 24.3 Consistencia de Tiers y Erradicación del Término 'Élite'
+- Se erradicó por completo la palabra `"élite"` de todas las especificaciones, código y prompts, reemplazándola por el rol profesional `"senior"`.
+- Los únicos niveles de suscripción válidos en todo el ecosistema son: `free`, `basic`, `advanced` (y rol administrativo `admin`).
+
+### 24.4 Arquitectura y Compatibilidad con Apps Móviles (`HubDocenteApp` y `HubSaludApp`)
+- Las aplicaciones móviles de Expo/React Native consumen el endpoint `/api/chat` del backend mediante `DocenteService.askTutor` y `SaludService.askTutor`.
+- Las mejoras de backend (supresión de códigos internos, blindaje anti-alucinación sin RAG, y grounding RAG con metadatos de página) quedan operativas automáticamente para ambas aplicaciones móviles sin necesidad de refactorizar su capa de red.
+
+---
+
+## 25. Política Estricta de Privacidad del Usuario en Chats IA y Erradicación del Registro de Consultas (Septiembre 2026)
+
+### 25.1 Diagnóstico de Vulnerabilidad de Privacidad
+- Anteriormente, `ChatController.processMessage` ejecutaba `this.analyticsService.recordSearchWithIntent(message, [], isEducational, userId, 'chatbot')`, guardando en la tabla `search_history` los mensajes y preguntas formuladas por los usuarios al Tutor IA.
+- Esta práctica resultaba invasiva y contraria a las directivas de confidencialidad académica y privacidad del usuario, ya que las dudas que un estudiante formula a un tutor son de naturaleza estrictamente privada.
+
+### 25.2 Medidas de Privacidad Implementadas
+1. **Erradicación del Registro en Analíticas (`chatController.js`):**
+   - Se removió completamente la invocación a `recordSearchWithIntent` en el controlador de chat.
+   - Ninguna consulta formulada en el **Quiz Tutor** (simulacros), **Repaso Tutor** (flashcards) ni **Chatbot General** (asistente flotante) es almacenada en `search_history` ni en ninguna tabla de telemetría de texto del backend.
+2. **Alcance Exclusivo de Búsquedas (`search_history`):**
+   - La tabla `search_history` queda restringida única y exclusivamente a las búsquedas que el usuario ejecuta de forma deliberada y consciente en la barra de búsqueda de recursos de **Mi Biblioteca** (`searchService.searchCourses`, origen `search_bar`).
+3. **Mantenimiento de Métricas Numéricas Anónimas:**
+   - Se preservan únicamente los contadores numéricos agregados de consumo y cuotas (`daily_ai_usage`, `daily_rag_usage`, `usage_count`) necesarios para el cumplimiento de límites de suscripción y control de costos de API, sin persistir jamás el texto o contenido de las consultas.
+
+---
+*Última actualización: 10 de septiembre de 2026 (Blindaje Anti-Alucinación RAG para Free/Basic, Privacidad Estricta de Chats, Títulos de Alto Contraste en Modo Claro y Paridad Centralizada con Apps Móviles)*
+

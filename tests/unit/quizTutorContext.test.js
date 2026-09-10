@@ -63,8 +63,8 @@ describe('Quiz Tutor Context Normalization & Prompt Construction', () => {
 
         // 5. Casuística / Situación compartida / Apoyo visual
         let caseSection = '';
-        if (context.caseDescription || context.caseTitle || context.caseTableHtml || context.caseImageUrl) {
-            caseSection = `\nCASUÍSTICA / SITUACIÓN COMPARTIDA:\n${context.caseTitle ? `Título: ${context.caseTitle}\n` : ''}${context.caseDescription || ''}${context.caseTableHtml ? `\nTabla / Datos de Apoyo:\n${context.caseTableHtml}\n` : ''}${context.caseImageUrl ? `\nImagen de Casuística: ${context.caseImageUrl}\n` : ''}`;
+        if (context.caseDescription || context.caseTableHtml || context.caseImageUrl) {
+            caseSection = `\nCASUÍSTICA / SITUACIÓN COMPARTIDA:\n${context.caseDescription || ''}${context.caseTableHtml ? `\nTabla / Datos de Apoyo:\n${context.caseTableHtml}\n` : ''}${context.caseImageUrl ? `\nImagen de Casuística: ${context.caseImageUrl}\n` : ''}`;
         }
 
         let visualSupportSection = '';
@@ -79,7 +79,7 @@ describe('Quiz Tutor Context Normalization & Prompt Construction', () => {
         }
 
         return `[MODO: TUTOR DE SIMULADOR DE EXAMEN]
-Eres un tutor de élite de Hub Academia especializado en ${examDomain === 'EDUCACION' ? 'Currículo Nacional, Didáctica y Casuística Pedagógica (MINEDU / CNEB)' : 'Medicina Peruana, Normas Técnicas MINSA, GPC y Diagnóstico Clínico'}.
+Eres un tutor senior de Hub Academia especializado en ${examDomain === 'EDUCACION' ? 'Currículo Nacional, Didáctica y Casuística Pedagógica (MINEDU / CNEB)' : 'Medicina Peruana, Normas Técnicas MINSA, GPC y Diagnóstico Clínico'}.
 El estudiante está interactuando con este reactivo en un simulacro interactivo y tiene una duda sobre su resolución, la clave o el sustento.
 
 CONFIGURACIÓN DE EXAMEN Y CONTEXTO DEL ALUMNO:
@@ -103,6 +103,7 @@ DIRECTRICES CLAVE PARA EL TUTOR:
 1. Explica con claridad, rigor pedagógico y didáctica por qué la clave correcta [${correctLetter}] es la opción acertada.
 2. Analiza las alternativas cuando sea pertinente para despejar dudas y reforzar el aprendizaje del alumno.
 3. 🚨 TIENES ACCESO COMPLETO AL REACTIVO Y A SUS OPCIONES. NUNCA digas que no te proporcionaron las opciones ni la pregunta.
+4. 🚨 PROHIBICIÓN ESTRICTA DE CÓDIGOS Y TÍTULOS INTERNOS: NUNCA menciones códigos de caso, títulos internos ni identificadores técnicos (como "Caso-Secundaria-Arte13", "CASO-01", códigos alfa-numéricos o IDs de base de datos) en tu saludo, inicio de mensaje o explicación. Refiérete a la casuística de forma natural diciendo "en esta casuística", "en la situación planteada" o "en este caso".
 
 ---
 PREGUNTA O DUDA DEL ESTUDIANTE:
@@ -158,21 +159,23 @@ ${message}`;
         expect(res).toContain('RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [A] (Opción A) -> ✅ Correcta');
     });
 
-    test('should include case scenario, data table and image when provided', () => {
+    test('should include case scenario, data table and image when provided, omitting internal case title', () => {
         const mockContext = {
             type: 'quiz_tutor',
             questionText: 'A partir de la tabla...',
             options: ['30 estudiantes', '24 estudiantes'],
             correctOptionIndex: 0,
-            caseTitle: 'Encuesta de Dinosaurios',
+            caseTitle: 'Caso-Primaria-Mat15',
             caseDescription: 'La docente organizó los datos en una tabla.',
             caseTableHtml: '<table><tr><th>Dinosaurio</th></tr></table>',
             imageUrl: 'https://storage.googleapis.com/hubacademia/dinos.png'
         };
         const res = buildQuizTutorInstruction(mockContext, 'Explica');
-        expect(res).toContain('Título: Encuesta de Dinosaurios');
+        expect(res).not.toContain('Caso-Primaria-Mat15');
+        expect(res).not.toContain('Título:');
         expect(res).toContain('La docente organizó los datos en una tabla.');
         expect(res).toContain('Tabla / Datos de Apoyo:');
         expect(res).toContain('IMAGEN DE APOYO EN LA PREGUNTA: https://storage.googleapis.com/hubacademia/dinos.png');
+        expect(res).toContain('PROHIBICIÓN ESTRICTA DE CÓDIGOS Y TÍTULOS INTERNOS');
     });
 });

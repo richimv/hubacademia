@@ -22,6 +22,7 @@ Este documento define las reglas visuales, componentes interactivos, tokens CSS 
 11. [💬 Sistema Centralizado de Tooltips y Onboarding Guía](#11--sistema-centralizado-de-tooltips-y-onboarding-guía-tooltipmanager)
 12. [📐 Motor Universal de Tipografía Matemática, Científica y Notación Química](#12--motor-universal-de-tipografía-matemática-científica-y-notación-química-katex--markdownrenderer)
 13. [🖥️ Arquitectura y Estándar Visual del Panel de Gestión / Administración & Subcontenedores Avanzados](#13-️-arquitectura-y-estándar-visual-del-panel-de-gestión--administración-admin-panel--subcontenedores-avanzados-de-modales)
+14. [📚 Insignias de Fuentes y Citación RAG con Número de Página](#14--insignias-de-fuentes-y-citación-rag-con-número-de-página-tutor-citations-container-y-tutor-citation-pill)
 
 ---
 
@@ -442,7 +443,16 @@ Para erradicar popups nativos y bloqueantes (`alert()` y `confirm()`), la plataf
    - Cada consumo de crédito en cuentas Free dispara instantáneamente un toast con rayo dorado:  
      `1 crédito utilizado. Te quedan X/10 vidas de prueba.`
    - Si quedan 1 o 2 vidas: `¡Atención! Te quedan solo X/10 vidas de prueba.` (Toast de advertencia).
-   - Al agotarse las vidas (`remaining <= 0`): `Has agotado tus vidas de prueba semanal.` y apertura automática del `PaywallModal`.
+   - Al agotarse las vidas (`remaining <= 0`): `Has consumido tu última vida de prueba mensual. Te quedan 0 vidas.` y apertura preventiva del `PaywallModal`.
+
+4. **Barra de Vidas Freemium Dual-Theme (`.freemium-status-bar` en `uiManager.js`):**
+   - Barra flotante / anclada que muestra el balance de vidas mensual (10 vidas cada 30 días) del usuario en plan Free/Pending.
+   - **Arquitectura Dual-Theme Reactiva:** Utiliza reglas CSS contextuales (`[data-theme="dark"]` y `[data-theme="light"]`) sin estilos inline destructivos que impidan la conmutación en vivo de temas con el interruptor sol/luna:
+     - **Dark Mode:** Fondo `#090a0f`, borde `1px solid rgba(255, 255, 255, 0.08)`, tipografía `#f8fafc`. Píldora de contador en ámbar suave (`color: #fbbf24; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.28)`).
+     - **Light Mode:** Fondo `#ffffff`, borde `1px solid rgba(15, 23, 42, 0.09)`, sombra suave `0 2px 8px rgba(15, 23, 42, 0.05)`, tipografía `#0f172a`. Píldora de contador en ámbar oscuro de alto contraste (`color: #b45309; background: rgba(217, 119, 6, 0.1); border: 1px solid rgba(217, 119, 6, 0.25)`).
+   - **Estado Crítico de Vidas Bajas (`.low-lives`):** Al descender a 2 o menos vidas, la píldora conmuta mediante clase CSS a tonalidades carmesí de alerta (`#ef4444` en Dark, `#b91c1c` en Light) sin sobreescribir los estilos de tema.
+   - **Botón CTA Manta Pill:** Botón con gradiente de marca (`linear-gradient(135deg, #f97316 0%, #ea580c 100%)`), esquinas redondeadas tipo píldora (`50px`) y resplandor sutil para conducir a la pasarela de planes.
+   - **Tooltip Informativo:** Incluye tooltip descriptivo que clarifica la regla de negocio: *"Tus créditos de vidas se restablecen a 10 cada 30 días automáticamente"*.
 
 ---
 
@@ -662,3 +672,57 @@ Para maximizar la sobriedad, legibilidad y estética profesional durante la reso
     * Tarjetas de preguntas en vivo (`QuestionCard.tsx` y `ClinicalQuestionCard.tsx` en `caseDescriptionMarkdown`, `questionMarkdown`, `optionMarkdown`, `explanationMarkdown`).
     * Pantalla de revisión de simulacro (`app/quiz/results.tsx` en `reviewCaseDescription`, `reviewQuestionText`, `reviewOptionText`, `reviewExplanationText`).
 * **Preservación de Excepciones:** Las tablas de datos (`th`, `td`), los códigos fuente monospaciados y los encabezados semánticos conservan su alineación natural (`left` o `center` según aplique) para evitar distorsiones de espaciado.
+
+---
+
+## 14. 📚 Insignias de Fuentes y Citación RAG con Número de Página (`.tutor-citations-container` y `.tutor-citation-pill`)
+
+Para brindar transparencia académica y trazabilidad documental en las respuestas del Tutor IA con RAG (Pinecone) en simuladores de examen:
+
+### 14.1. Arquitectura de Componente
+* **Contenedor Principal (`.tutor-citations-container`):**
+  - Ubicado en la parte inferior del mensaje del bot, encima de la barra de acciones (copiar/guardar nota).
+  - Separador superior con borde sutil (`border-top: 1px solid var(--border-color)`), margen superior de `10px` y padding superior de `8px`.
+* **Encabezado de Citación (`.tutor-citations-header`):**
+  - Tipografía compacta `0.75rem` en negrita (700) con tracking suave (`letter-spacing: 0.03em`), texto en mayúsculas y color `var(--text-muted)`.
+  - Icono FontAwesome `<i class="fas fa-book-bookmark"></i>` con color de acento primario.
+* **Contenedor de Píldoras (`.tutor-citations-badges`):**
+  - Layout flexbox envolvente (`display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;`).
+
+### 14.2. Píldoras de Citación Individual (`.tutor-citation-pill`)
+* **Morfología y Dimensiones:**
+  - `display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9999px; font-size: 0.76rem; font-weight: 500;`.
+* **Tokens Dual-Theme:**
+  - **Dark Mode (`[data-theme="dark"]`):** Fondo `rgba(59, 130, 246, 0.12)`, borde `1px solid rgba(59, 130, 246, 0.25)`, texto de fuente `#93c5fd`.
+  - **Light Mode (`[data-theme="light"]`):** Fondo `rgba(37, 99, 235, 0.08)`, borde `1px solid rgba(37, 99, 235, 0.2)`, texto de fuente `#1d4ed8`.
+* **Distintivo de Número de Página (`.tutor-citation-page`):**
+  - Resaltado con badge tintado en ámbar/dorado (`(Pág. X)`):
+    - Dark Mode: `color: #fbbf24; background: rgba(245, 158, 11, 0.15); border-radius: 4px; padding: 1px 5px; font-weight: 600;`.
+    - Light Mode: `color: #b45309; background: rgba(217, 119, 6, 0.12); border-radius: 4px; padding: 1px 5px; font-weight: 600;`.
+* **Micro-interacción Hover:**
+  - `transform: translateY(-1px);` con transición suave `0.2s ease` para denotar interactividad.
+
+---
+
+## 15. ☀️ Estándar de Contraste Tipográfico y Legibilidad en Modo Claro (Light Mode) para Interfaces de Chat IA (Quiz Tutor, Repaso Tutor y Chat General)
+
+Para garantizar una experiencia de lectura óptima, sin fatiga visual y con máximo contraste accesible (WCAG AAA / AA):
+
+### 15.1. Diagnóstico y Corrección de Títulos Opacos
+- **Causa Raíz:** En temas claros (`[data-theme="light"]`), los encabezados Markdown (`h1`-`h4`) heredaban colores pastel de baja luminancia diseñados para fondo oscuro (`#93c5fd`, `#a5b4fc`), y las negritas (`.tutor-message strong`) empleaban un degradado cian con `-webkit-text-fill-color: transparent`, provocando un aspecto lavado, opaco e ilegible contra fondos blancos/grises.
+- **Tokens de Alto Contraste en Modo Claro (`markdown-content.css`):**
+  - `h1`: `#1e3a8a` (Azul Profundo 900) con borde inferior `rgba(30, 58, 138, 0.15)`. Contraste > 10:1.
+  - `h2`: `#1e40af` (Azul Intenso 800) con borde inferior `rgba(30, 64, 175, 0.12)`. Contraste > 8.5:1.
+  - `h3`: `#2563eb` (Azul Real 600). Contraste > 5.8:1.
+  - `h4`: `#3730a3` (Índigo 800). Contraste > 7:1.
+  - `strong`, `b`: `#1d4ed8` (Azul 700) en Markdown y `#1e40af` en `.tutor-message strong`, anulando el clipping transparente para lograr una definición nítida.
+  - Viñetas (`ul > li::marker`): `#2563eb`.
+  - Citas en bloque (`blockquote`): Borde `#4f46e5`, fondo `rgba(79, 70, 229, 0.05)`, texto `#334155`.
+  - Código inline (`code`): Fondo `rgba(15, 23, 42, 0.06)`, color `#0f172a`.
+  - Tablas: Encabezados con fondo `rgba(37, 99, 235, 0.08)` y texto `#0f172a`, bordes `rgba(15, 23, 42, 0.1)`.
+
+### 15.2. Tokens de Contenedor y Encabezados de Chat (`tutor.css`, `chat.css`)
+- **Cabeceras de Ventana (`.tutor-header-title`, `.chatbot-title h3`, `.chatbot-title-heading`):** Color sólido `#0f172a` (Slate 900) con peso 700, eliminando tonos grisáceos apagados.
+- **Cuerpo de Mensaje del Bot (`.tutor-message-bot`, `.message.bot .message-body`):** Fondo `#f8fafc` (Slate 50), texto base `#0f172a` (Slate 900, contraste > 14:1) y borde suave `1px solid rgba(15, 23, 42, 0.08)`.
+- **Botones de Acción y Sugerencias:** Bordes adaptativos `rgba(15, 23, 42, 0.12)`, fondos claros en reposo y hover con realce sutil.
+

@@ -133,7 +133,7 @@ describe('Profile Usage Rendering', () => {
         expect(mockContainer.innerHTML).toContain('Acceso Ilimitado de Administrador');
     });
 
-    test('renderUsageDetails debe renderizar creditos de vidas semanales para usuario Plan Gratuito', () => {
+    test('renderUsageDetails debe renderizar creditos de vidas mensuales para usuario Plan Gratuito', () => {
         const userFree = {
             subscriptionTier: 'free',
             subscriptionStatus: 'pending',
@@ -142,9 +142,30 @@ describe('Profile Usage Rendering', () => {
         };
 
         profileModule.renderUsageDetails(userFree);
-        expect(mockTitle.textContent).toContain('Vidas Semanales');
+        expect(mockTitle.textContent).toContain('Vidas Mensuales');
         expect(mockPlanTag.textContent).toBe('PLAN GRATUITO');
         expect(mockContainer.innerHTML).toContain('Disponibles');
         expect(mockContainer.innerHTML).toContain('6 / 10');
+        expect(mockSubtitle.textContent).toContain('30 días');
+        expect(mockContainer.innerHTML).toContain('Recarga Mensual');
+        expect(mockContainer.innerHTML).toContain('Consumidos este mes: 4');
+    });
+
+    test('getNextFreeRenewalInfo debe calcular fecha de renovacion cada 30 dias', () => {
+        const fakeDate = new Date('2026-09-01T12:00:00Z');
+        const userWithRenewal = {
+            lastFreeRenewal: fakeDate.toISOString()
+        };
+
+        const info = profileModule.getNextFreeRenewalInfo(userWithRenewal);
+        expect(info).toBeDefined();
+        expect(typeof info.formattedDate).toBe('string');
+        expect(info.daysLeft).toBeGreaterThan(0);
+        expect(info.daysLeft).toBeLessThanOrEqual(30);
+
+        const defaultInfo = profileModule.getNextFreeRenewalInfo({});
+        expect(defaultInfo.formattedDate).toBe('Cada 30 días');
+        expect(defaultInfo.daysLeft).toBe(30);
     });
 });
+

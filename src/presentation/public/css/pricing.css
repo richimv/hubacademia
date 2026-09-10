@@ -554,15 +554,15 @@ body::before {
 
 .modal-intro {
     color: var(--text-secondary);
-    font-size: 0.95rem;
-    margin-bottom: 1.5rem;
+    font-size: 0.92rem;
+    margin-bottom: 1.15rem;
     text-align: center;
 }
 
 .payment-tabs {
     display: flex;
     gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     background: var(--bg-tertiary);
     padding: 6px;
     border-radius: 14px;
@@ -619,101 +619,117 @@ body::before {
     color: var(--text-main);
 }
 
-/* Yape Premium Card UI */
+/* ==========================================================================
+   YAPE & PLIN MANUAL PAYMENT MODAL (Dual-Theme & Responsive)
+   ========================================================================== */
+
+.modal-header-wa-icon {
+    color: #25d366;
+    margin-right: 4px;
+}
+
 .yape-card-container {
     display: flex;
     justify-content: center;
-    margin: 1.5rem 0;
+    margin: 0.75rem 0 1.15rem 0;
+    width: 100%;
 }
 
 .yape-premium-card {
-    background: linear-gradient(135deg, #5b21b6 0%, #1e1b4b 60%, #0c4a6e 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: 1.5rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 0.75rem 1.25rem;
     width: 100%;
-    max-width: 320px;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: 1.25rem;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    box-shadow: var(--shadow-sm);
     position: relative;
     overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.yape-premium-card::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
-    pointer-events: none;
+[data-theme="dark"] .yape-premium-card {
+    background: linear-gradient(145deg, rgba(124, 58, 237, 0.08) 0%, rgba(15, 23, 42, 0.5) 100%), var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .yape-premium-card {
+    background: linear-gradient(145deg, rgba(124, 58, 237, 0.03) 0%, rgba(241, 245, 249, 0.8) 100%), var(--bg-tertiary);
+    border-color: var(--border-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
 .yape-card-brands {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 800;
-    font-size: 1.1rem;
-    letter-spacing: -0.02em;
-    text-transform: lowercase;
+    justify-content: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    width: 100%;
 }
 
-.brand-yape {
-    color: #00ffc4; /* Yape Green-Blue */
+.payment-brand-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.45rem 1.15rem;
+    border-radius: 9999px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.payment-brand-pill:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modal-brand-logo {
+    height: 28px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+.payment-brand-pill .brand-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.pill-yape .brand-name {
+    color: #6b21a8;
+}
+
+[data-theme="dark"] .pill-yape .brand-name {
+    color: #c084fc;
+}
+
+.pill-plin .brand-name {
+    color: #0284c7;
+}
+
+[data-theme="dark"] .pill-plin .brand-name {
+    color: #38bdf8;
 }
 
 .brand-divider {
-    color: rgba(255, 255, 255, 0.2);
-}
-
-.brand-plin {
-    color: #ff85ff; /* Plin Magenta-Pink */
-}
-
-.yape-qr-wrapper {
-    background: white;
-    padding: 10px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-}
-
-.yape-qr-img {
-    width: 150px;
-    height: 150px;
-    display: block;
-}
-
-.yape-card-details {
-    text-align: center;
-}
-
-.yape-phone {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: white;
-    letter-spacing: 0.05em;
-    margin-bottom: 2px;
-}
-
-.yape-owner {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: lowercase;
 }
 
 .payment-instructions {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 1.25rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     text-align: left;
 }
 
@@ -728,21 +744,27 @@ body::before {
 }
 
 .payment-instructions h4 i {
-    color: var(--primary-light);
+    color: var(--primary);
 }
 
 .payment-instructions ol {
     margin: 0;
     padding-left: 1.2rem;
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    line-height: 1.55;
 }
 
 .payment-instructions ol li strong {
     color: var(--text-main);
+}
+
+#instruction-amount {
+    color: var(--primary);
+    font-weight: 700;
 }
 
 .user-email-indicator {
@@ -752,52 +774,113 @@ body::before {
     gap: 8px;
     font-size: 0.85rem;
     color: var(--text-muted);
-    background: rgba(59, 130, 246, 0.05);
-    border: 1px solid rgba(59, 130, 246, 0.1);
-    padding: 8px 12px;
-    border-radius: 10px;
-    margin-top: 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    padding: 8px 14px;
+    border-radius: 12px;
+    margin-top: 0.5rem;
 }
 
 .user-email-indicator span {
     color: var(--text-main);
     font-weight: 600;
+    word-break: break-all;
+}
+
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 1.25rem;
 }
 
 .btn-whatsapp-confirm {
     background: #25d366;
-    color: #0c0f1d;
+    color: #ffffff;
     font-weight: 700;
-    padding: 10px 18px;
-    border-radius: 10px;
+    padding: 11px 20px;
+    border-radius: 12px;
     border: none;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
+    font-size: 0.95rem;
     transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
 }
 
 .btn-whatsapp-confirm:hover {
     background: #20ba5a;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
+    color: #ffffff;
 }
 
 .btn-cancel {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
     color: var(--text-secondary);
-    padding: 10px 16px;
-    border-radius: 10px;
+    padding: 11px 18px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 0.95rem;
     transition: all 0.2s ease;
 }
 
 .btn-cancel:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
     color: var(--text-main);
+}
+
+@media (max-width: 540px) {
+    .manual-payment-modal .modal-content {
+        margin: 0.75rem;
+        padding: 1.25rem;
+        border-radius: 18px;
+    }
+
+    .modal-footer {
+        flex-direction: column-reverse;
+        gap: 0.6rem;
+    }
+
+    .modal-footer .btn-cancel,
+    .modal-footer .btn-whatsapp-confirm {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .payment-tabs {
+        gap: 0.5rem;
+        padding: 4px;
+    }
+
+    .payment-tab {
+        padding: 8px 4px;
+    }
+
+    .payment-tab .tab-price {
+        font-size: 1.15rem;
+    }
+
+    .yape-premium-card {
+        padding: 0.65rem 0.85rem;
+    }
+
+    .payment-brand-pill {
+        padding: 0.45rem 0.95rem;
+    }
+
+    .modal-brand-logo {
+        height: 24px;
+    }
 }
 
 /* Responsividad para Yape Alternative */

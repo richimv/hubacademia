@@ -51,10 +51,10 @@ const checkAILimits = (type) => {
             let tier = isAdmin ? 'admin' : (user.subscription_tier || 'free');
             const status = user.subscription_status || 'pending';
 
-            // 0. RENOVACIÓN SEMANAL DE VIDAS - Delegada a UsageService (Fuente Única de Verdad)
+            // 0. RENOVACIÓN MENSUAL DE VIDAS (30 DÍAS) - Delegada a UsageService (Fuente Única de Verdad)
             if (!isAdmin && (tier === 'free' || status === 'pending' || status === 'expired')) {
                 try {
-                    const wasRenewed = await usageService.renewWeeklyLivesIfNeeded(userId);
+                    const wasRenewed = await usageService.renewFreeLivesIfNeeded(userId);
                     
                     if (wasRenewed) {
                         // Recargar los valores actualizados del usuario tras la renovación
@@ -66,7 +66,7 @@ const checkAILimits = (type) => {
                         }
                     }
                 } catch (e) {
-                    console.error('⚠️ Error al renovar vidas semanales en middleware:', e.message);
+                    console.error('⚠️ Error al renovar vidas en middleware:', e.message);
                 }
             }
 
@@ -184,10 +184,10 @@ const checkAILimits = (type) => {
                             }
                         }
                     } else {
-                        // 🪙 Cuenta Gratuita / Pending / Expired: Consume 1 vida de prueba semanal (10 max)
+                        // 🪙 Cuenta Gratuita / Pending / Expired: Consume 1 vida de prueba mensual (10 max)
                         if ((user.usage_count || 0) >= (user.max_free_limit || 10)) {
                             return res.status(403).json({
-                                error: 'Se han agotado tus 10 vidas de prueba semanal. Mejora tu plan a Basic o Advanced para continuar usando los diagnósticos con IA.',
+                                error: 'Se han agotado tus 10 vidas de prueba mensual. Mejora tu plan a Basic o Advanced para continuar usando los diagnósticos con IA.',
                                 reason: 'FREE_LIVES_EXHAUSTED',
                                 paywall: true
                             });

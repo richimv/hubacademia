@@ -62,7 +62,7 @@ En **Hub Academia** acompañamos tu preparación profesional enfocándonos exclu
 Contamos con opciones flexibles diseñadas a tu medida para tu preparación hacia el **SERUMS** o el **ASCENSO**:
 
 * **Plan Free (Prueba Gratuita)**:
-  - **20 Vidas de prueba gratis** automáticas al ingresar con tu cuenta de Google.
+  - **10 Vidas de prueba gratis** renovadas automáticamente cada 30 días.
 
 * **Plan Basic (Acceso Estándar)**:
   - **Simuladores ilimitados** para tu especialidad (SERUMS o ASCENSO).

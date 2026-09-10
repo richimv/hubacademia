@@ -164,7 +164,7 @@ class FlashcardTutor {
         // ✅ Prevenir envío proactivo si ya no tiene vidas de prueba (Paywall solo cuando realmente está en cero)
         if (window.uiManager && typeof window.uiManager.isResourceLocked === 'function' && window.uiManager.isResourceLocked(true)) {
             if (typeof window.uiManager.showPaywallModal === 'function') {
-                window.uiManager.showPaywallModal('Has agotado tus vidas de prueba semanal. ¡Mejora tu plan para mantener acceso ilimitado!', 'flashcards');
+                window.uiManager.showPaywallModal('Has agotado tus vidas de prueba mensual. ¡Mejora tu plan para mantener acceso ilimitado!', 'flashcards');
             }
             return;
         }

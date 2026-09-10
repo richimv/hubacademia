@@ -2,6 +2,31 @@
 
 Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
 
+### 🟢 [2026-09-10] - Optimización del RAG en Quiz Tutor para Usuarios Avanzados y Sistema de Citación con Número de Página
+
+- **🌲 Optimización y Enrutamiento Resiliente de RAG Semántico ([ragService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/ragService.js)):**
+  - **Normalización Automática de Namespaces (`normalizeNamespace`):** Se blindó el enrutamiento vectorial mapeando dinámicamente alias del cliente (`'medicina'`, `'salud'`, `'clinica'`, `'serums'`) al namespace canónico `'medicine'`, y (`'educacion'`, `'docente'`, `'cneb'`, `'ascenso'`) a `'education'`, con fallback seguro a `'general'`.
+  - **Filtrado por Umbral de Similitud y Desduplicación:** Se introdujo un corte estricto de similitud de coseno (`score >= 0.35`) y deduplicación de textos para garantizar que fragmentos con ruido semántico no contaminen el prompt de la IA.
+  - **Estructura Enriquecida de Fuentes y Páginas:** `RagService._formatResults` genera una colección estructurada `sources: [{ fuente, title, pagina, page, source, score }]` con títulos limpios (`_cleanResourceTitle` retirando `.pdf` y guiones bajos) y soporte de compatibilidad hacia atrás vía `.toString()`.
+
+- **🤖 Prompts Especializados con Citación de Página Obligatoria ([chatPrompts.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/prompts/chatPrompts.js) & [tutorAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/tutorAiService.js)):**
+  - **Directiva Mandatoria de Página:** Se actualizaron los prompts del Tutor Clínico (`medicine`) y Tutor Pedagógico (`education`) instruyendo a la IA a fundamentar cada concepto o dato técnico citando obligatoriamente el recurso oficial y su número de página (`[Documento, Pág. X]` o `(según Documento, Pág. X)`).
+  - **Esquema de Salida JSON Enriquecido:** Se incorporó el array `"citas": [{ "fuente": "...", "pagina": 15 }]` en el schema esperado de Gemini.
+  - **Fallback Automático Resiliente:** Si el modelo genera texto enriquecido pero omite el array de citas en su JSON, `TutorAiService` extrae automáticamente las fuentes y páginas desde el contexto RAG recuperado (`retrievedRagData.sources`), asegurando que la UI siempre exhiba las citas oficiales.
+  - **Transporte Transparente en Capa de Aplicación ([chatController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/chatController.js)):** La respuesta enriquecida transmite `citas`, `sources`, `ragSources` y `contextUsed` al cliente HTTP.
+
+- **🎨 Insignias de Citación RAG Dual-Theme en UI de Quiz Tutor ([quiz-tutor.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz-tutor.js) & [tutor.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/tutor.css)):**
+  - **Componente `.tutor-citations-container`:** Renderizado dinámico al pie del mensaje del bot con encabezado `<i class="fas fa-book-bookmark"></i> Fuentes Oficiales Consultadas`.
+  - **Badges Estilizados `.tutor-citation-pill`:** Píldoras con borde sutil, nombre limpio del recurso y etiqueta dorada de página `.tutor-citation-page` (`(Pág. X)`), con contraste calibrado para Modo Oscuro (`data-theme="dark"`) y Modo Claro (`data-theme="light"`).
+  - **Preservación en Copiado y Notas:** Las citas y páginas se incorporan de forma limpia al texto copiado al portapapeles (`copyToClipboard`) y al guardar la nota en Mi Biblioteca (`saveAsNote`).
+
+- **🧪 Cobertura de Pruebas Unitarias y Cache-Busting ([quizTutorRagCitations.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/quizTutorRagCitations.test.js)):**
+  - Nueva suite con 9 pruebas unitarias que verifican: normalización de namespaces, limpieza de títulos, estructura de fuentes con página, presencia de citas en prompts clínicos y docentes, extracción resiliente en `TutorAiService` con y sin citas en JSON, y transporte en `ChatController`.
+  - Sincronización de caché en las 17 plantillas HTML (`update-cache.js`).
+  - **100% de la suite de pruebas superada exitosamente (53 suites, 420 pruebas en verde)**.
+
+---
+
 ### 🟢 [2026-09-09] - Formato Tipográfico Justificado Profesional en Simuladores de Exámenes (Web y Apps Móviles)
 
 - **📖 Tipografía Justificada y Separación Silábica en Simulador Web ([quiz.css](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/css/quiz.css)):**

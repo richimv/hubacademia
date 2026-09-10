@@ -17,7 +17,7 @@ Este documento centraliza toda la arquitectura de monetización, el modelo de su
 | **Audio TTS e Imágenes**| No Incluido (Paywall) | Exclusivo (Síntesis TTS Google Cloud + Subida de Imágenes a GCS) | No Incluido (Paywall) |
 | **Generación IA Flashcards** | No Incluido | 30 pedidos / mes (Hasta 20 tarjetas por pedido con Gemini) | No Incluido |
 | **Clonación de Mazos** | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) |
-| **Simulador de Exámenes** | **CAP 15/Día** | **CAP 50/Día** | Descuenta vidas (10 de prueba semanal) |
+| **Simulador de Exámenes** | **CAP 15/Día** | **CAP 50/Día** | Descuenta vidas (10 de prueba mensual) |
 
 ---
 
@@ -34,7 +34,7 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 *   Para evitar fricciones iniciales, `AuthService.js` aprovisiona automáticamente preferencias base en el simulador: target `SERUMS`, carrera `Medicina Humana`, dificultad `Básico` y 5 áreas del temario oficial MINSA.
 
 ### Fase 2.2: El Modelo de Vidas (Freemium de Entrada)
-*   El usuario gratuito opera con un pool de **vidas** o créditos de prueba (columna `usage_count` inicializada en `10`, renovada cada 7 días).
+*   El usuario gratuito opera con un pool de **vidas** o créditos de prueba (columna `usage_count` inicializada en `10`, renovada cada 30 días / mensual).
 *   Cada acción core (empezar examen, evaluar speaking, mensaje de chat) descuenta créditos (las consultas de chat descuentan exactamente 1 vida y se ejecutan sin RAG). Cuando se agotan, la UI despliega de forma segura el modal paywall bloqueante impidiendo el abuso del servicio.
 
 ### Fase 2.3: Compra y Webhook de Mercado Pago
@@ -47,9 +47,11 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
     *   Actualiza la fecha de caducidad en formato UTC: `subscription_expires_at = NOW() + INTERVAL '4 months'` (ó 2 meses).
 
 ### Fase 2.3.1: Pago Manual vía Yape/Plin (Contacto Oficial WhatsApp)
-*   **Interfaz pricing.html y Apps Móviles**: Ofrece un banner destacado que abre un modal con el canal de atención oficial de WhatsApp asociado al número **+51 993 869166** (Hub Academia). No se expone ningún número para transferencias directas ni código QR estático; en su lugar, se guía al usuario a contactar por WhatsApp para recibir las instrucciones personalizadas de pago y activar su cuenta al instante.
+*   **Interfaz pricing.html y Apps Móviles**: Ofrece un banner destacado que abre un modal con el canal de atención oficial de WhatsApp asistido. Se erradicó cualquier exposición de número de teléfono en la UI (tarjetas o botones) para prevenir confusiones sobre transferencias directas a ese número; en su lugar, se presentan cápsulas de marca oficiales (`.payment-brand-pill`) para **Yape** y **Plin**, y se guía al usuario a contactar por WhatsApp para recibir las instrucciones personalizadas de pago y activar su cuenta al instante.
+*   **Diseño Dual-Theme y Responsivo (`pricing.css`)**: Implementa un contenedor con tokens CSS dinámicos de `DESIGN_SYSTEM.md` (`var(--bg-tertiary)`, `var(--card-bg)`, `var(--border-color)`), microinteracciones hover y adaptación responsiva fluida tanto para escritorio como para dispositivos móviles (`max-width: 540px`).
 *   **Pestañas de Planes**: Permite seleccionar dinámicamente el plan básico (S/ 9.90 por 2 meses) o el plan avanzado (S/ 24.90 por 4 meses) y actualiza automáticamente los montos e instrucciones en tiempo real.
-*   **Redirección Dinámica**: Mediante `pricing.js` / `pricing.tsx` y el gestor de sesión, se captura el email registrado del usuario para pre-llenar un mensaje de WhatsApp personalizado al hacer clic en "Contactar por WhatsApp (+51 993 869166)".
+*   **Redirección Dinámica**: Mediante `pricing.js` y el gestor de sesión, se captura el email registrado del usuario para pre-llenar un mensaje de WhatsApp personalizado al hacer clic en el botón "Contactar por WhatsApp" (redirigiendo en segundo plano al canal oficial).
+*   **Canales Sociales en Navegación Global (`sidebar.js` / `sidebar.css`)**: El menú lateral integra los canales oficiales verificados: Facebook (`https://www.facebook.com/profile.php?id=61593284876205`), WhatsApp (`https://wa.me/51993869166...`, sustituyendo a Instagram) y TikTok (`https://www.tiktok.com/@hubacademia`), con estilos adaptativos en modos claro y oscuro.
 *   **Activación y Consistencia Interactiva en el Panel de Gestión (`admin.js`)**: El administrador puede editar el registro de cualquier estudiante desde el Panel de Gestión. El sistema automatiza y restringe los valores en el cliente en tiempo real:
 *   Si selecciona `basic`, el estado cambia a `active` y se calcula la fecha actual + 2 meses.
 *   Si selecciona `advanced`, el estado cambia a `active` y se calcula la fecha actual + 4 meses.
@@ -92,7 +94,7 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
     *   **Texto Puro (Basic y Advanced)**: Permite hasta **1,000 caracteres** por cara (frente y dorso), ofreciendo amplitud para fórmulas, listas y explicaciones doctrinales.
     *   **Audio TTS Activado (Advanced únicamente)**: Aplica un tope condicional de **500 caracteres** por cara para preservar el presupuesto de síntesis de Google Cloud Text-to-Speech.
 *   **Políticas Multimedia (TTS e Imágenes)**:
-    *   **Audio TTS y Carga de Imágenes (`/api/cards/upload-image`)**: Exclusivos de planes `advanced`, `elite` y `admin`. Usuarios `free` o `basic` que intenten activar estas opciones reciben respuesta `403 Forbidden` (`paywall: true`) e intercepción visual inmediata con la modal Paywall.
+    *   **Audio TTS y Carga de Imágenes (`/api/cards/upload-image`)**: Exclusivos de planes `advanced` y `admin`. Usuarios `free` o `basic` que intenten activar estas opciones reciben respuesta `403 Forbidden` (`paywall: true`) e intercepción visual inmediata con la modal Paywall.
 *   **Carga Masiva vía Excel (`batch_import`)**:
     *   **Free**: 0 archivos/día (bloqueado para mitigar abusos de bots/scripts).
     *   **Basic**: Hasta 3 archivos Excel por día (hasta 100 tarjetas por archivo, texto puro de hasta 1,000 caracteres por cara).
@@ -109,7 +111,7 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 
 | Campo DB (`users`) | Tipo de Datos | Propósito Técnico |
 | :--- | :--- | :--- |
-| `subscription_tier` | `VARCHAR` | Nivel de plan activo (`'free'`, `'basic'`, `'advanced'`, `'elite'`). |
+| `subscription_tier` | `VARCHAR` | Nivel de plan activo (`'free'`, `'basic'`, `'advanced'`). |
 | `subscription_status` | `VARCHAR` | Estado de la suscripción (`'pending'`, `'active'`, `'expired'`). |
 | `subscription_expires_at`| `TIMESTAMP` | Fecha de expiración en tiempo UTC. |
 | `daily_ai_usage` | `INTEGER` | Mensajes diarios estándar sin RAG (normal, flashcard_tutor). |
@@ -127,14 +129,15 @@ Para evitar duplicar constantes en el frontend y backend:
 2.  **Inyección en Perfil (`getMe`):** El endpoint `/api/auth/me` inyecta dinámicamente la configuración `limits` del plan.
 3.  **Cliente Sync:** El validador en el cliente `validateFreemiumAction()` de [uiManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js) resuelve el límite dinámicamente, garantizando un mantenimiento centralizado.
 
-### 5.1 Renovación Semanal de Vidas Free (Fuente Única de Verdad)
-La lógica de renovación de vidas para usuarios Free/Pending está centralizada en un único método:
-*   **`UsageService.renewWeeklyLivesIfNeeded(userId)`** en [usageService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/usageService.js) (Capa de Dominio).
-*   Este método delega el acceso SQL a `UserRepository.renewWeeklyLivesIfNeeded()`, que ejecuta un `UPDATE` atómico en PostgreSQL: resetea `usage_count = 0`, estandariza `max_free_limit = 10` y actualiza `last_free_renewal = CURRENT_TIMESTAMP` si han pasado 7+ días calendario en zona horaria `America/Lima`.
+### 5.1 Renovación Mensual de Vidas Free (Fuente Única de Verdad)
+La lógica de renovación de vidas para usuarios Free/Pending está centralizada en:
+*   **`FREE_PLAN_CONFIG`** en [limits.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/infrastructure/config/limits.js) (`RENEWAL_INTERVAL_DAYS: 30`, `MAX_LIVES: 10`).
+*   **`UsageService.renewFreeLivesIfNeeded(userId)`** en [usageService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/usageService.js) (Capa de Dominio), con alias retrocompatible `renewWeeklyLivesIfNeeded(userId)`.
+*   Este método delega el acceso SQL a `UserRepository.renewFreeLivesIfNeeded()`, que ejecuta un `UPDATE` atómico en PostgreSQL: resetea `usage_count = 0`, estandariza `max_free_limit = 10` y actualiza `last_free_renewal = CURRENT_TIMESTAMP` si han pasado 30+ días calendario (`INTERVAL '30 days'`).
 *   Es invocado por:
     *   `authService.getUserWithStatus()` — cuando el frontend solicita datos del usuario vía `GET /api/auth/me`.
     *   `checkLimitsMiddleware.js` — cuando el usuario accede a cualquier endpoint protegido de IA.
-*   Elimina la duplicación previa de código SQL entre `authService.js` y `checkLimitsMiddleware.js`.
+*   Garantiza coherencia total y elimina la duplicación previa de código SQL entre controladores y middlewares.
 
 ---
 
@@ -185,10 +188,10 @@ Se ha consolidado el control de accesos y modales Paywall mediante `uiManager.js
   * **Pool de Vidas**: Operan con **10 vidas de prueba** (`usage_count`) que se descuentan al iniciar repasos, simulacros o enviar mensajes al Tutor IA.
   * **Regla de la Última Vida (Vida 10 de 10)**:
     * **Uso Ininterrumpido**: Cuando el usuario tiene 1 vida restante (`usageCount === 9`, `maxFreeLimit === 10`), el sistema le permite iniciar su sesión de estudio de flashcards o consultar al Tutor IA sin ninguna interrupción.
-    * **Prevención de Popups Prematuros en Toast**: `showLifeDecrementToast` emite una notificación de advertencia informativa (*"Has consumido tu última vida de prueba semanal. Te quedan 0 vidas."*) y **nunca** programa `showPaywallModal()` en temporizadores asíncronos (`setTimeout`).
+    * **Prevención de Popups Prematuros en Toast**: `showLifeDecrementToast` emite una notificación de advertencia informativa (*"Has consumido tu última vida de prueba mensual. Te quedan 0 vidas."*) y **nunca** programa `showPaywallModal()` en temporizadores asíncronos (`setTimeout`).
     * **Experiencia en Tutores IA (Quiz Tutor y Repaso Flashcard Tutor)**: Al recibir la respuesta del modelo de la última vida, el mensaje se añade al chat y el usuario puede leerlo con total tranquilidad. El modal Paywall **no** cubre la pantalla tras responder.
     * **Bloqueo Proactivo y Justo**: El modal Paywall solo se dispara cuando el usuario se encuentra **realmente en 0 vidas** e intenta iniciar una **nueva** acción que requiera vidas (abrir un nuevo mazo de repaso, iniciar otro simulacro o enviar un nuevo mensaje en el chat del tutor).
     * **Coerción Numérica Estricta**: Todas las comparaciones (`usage >= limit`) se ejecutan obligatoriamente mediante `Number()`, evitando trampas de coerción en JavaScript (donde el string `'9' >= '10'` evalúa a `true`).
 
 ---
-*Última actualización de la documentación consolidada: 5 de Septiembre de 2026 (Corrección de la Última Vida de Prueba, Prevención de Paywall Prematuro y Blindaje de Tutores IA)*
+*Última actualización de la documentación consolidada: 10 de Septiembre de 2026 (Extensión de Reposición a 30 Días / Mensual, Rediseño Dual-Theme de Barra de Vidas y Unificación Arquitectónica)*
