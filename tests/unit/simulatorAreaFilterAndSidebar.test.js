@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 describe('Simulador & Sidebar - Truncado de Áreas Extensas y Scrollbar Cross-Browser', () => {
@@ -32,16 +32,19 @@ describe('Simulador & Sidebar - Truncado de Áreas Extensas y Scrollbar Cross-Br
         });
     });
 
-    describe('2. Scrollbar Cross-Browser y Limpieza Visual en Sidebar Global', () => {
-        test('sidebar.css implementa scrollbar-width y scrollbar-color modernos para Firefox y navegadores estándar', () => {
-            expect(sidebarCss).toMatch(/\.sidebar-menu\s*\{[\s\S]*?scrollbar-width:\s*thin/);
-            expect(sidebarCss).toMatch(/\.sidebar-menu\s*\{[\s\S]*?scrollbar-color:/);
+        test('sidebar.css mantiene scrollbar invisible por defecto para estética limpia pero funcional', () => {
+            expect(sidebarCss).toMatch(/\.sidebar-menu\s*\{[\s\S]*?scrollbar-color:\s*transparent\s+transparent/);
+            expect(sidebarCss).toMatch(/\.sidebar-menu::-webkit-scrollbar-thumb\s*\{[\s\S]*?background:\s*transparent/);
         });
 
-        test('sidebar.css estiliza webkit-scrollbar-track y thumb sutil para WebKit/Blink (Chrome, Edge)', () => {
-            expect(sidebarCss).toContain('.sidebar-menu::-webkit-scrollbar-track');
-            expect(sidebarCss).toContain('.sidebar-menu::-webkit-scrollbar-thumb');
-            expect(sidebarCss).toMatch(/\.sidebar-menu::-webkit-scrollbar\s*\{[^}]*width:\s*4px/);
+        test('sidebar.css muestra scrollbar sutilmente SOLO en hover cuando el menú está desplegado', () => {
+            expect(sidebarCss).toContain('body:not(.sidebar-collapsed) .global-sidebar:hover .sidebar-menu');
+            expect(sidebarCss).toContain('body:not(.sidebar-collapsed) .sidebar-menu:hover');
+            expect(sidebarCss).toMatch(/body:not\(\.sidebar-collapsed\)[^{]*\.sidebar-menu:hover\s*\{[\s\S]*?scrollbar-color:/);
         });
-    });
+
+        test('sidebar.css desactiva y oculta el scrollbar por completo cuando el menú está plegado', () => {
+            expect(sidebarCss).toMatch(/body\.sidebar-collapsed\s+\.sidebar-menu\s*\{[\s\S]*?scrollbar-width:\s*none\s*!important/);
+            expect(sidebarCss).toMatch(/body\.sidebar-collapsed\s+\.sidebar-menu::-webkit-scrollbar\s*\{[\s\S]*?display:\s*none\s*!important/);
+        });
 });

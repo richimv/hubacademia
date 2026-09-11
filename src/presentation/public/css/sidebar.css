@@ -142,10 +142,11 @@ body.sidebar-collapsed {
     flex-direction: column;
     gap: 1.5rem;
     scrollbar-width: thin;
-    scrollbar-color: rgba(150, 150, 150, 0.2) transparent;
+    scrollbar-color: transparent transparent; /* Oculto por defecto, funcional con rueda de ratón */
+    transition: scrollbar-color 0.25s ease;
 }
 
-/* Custom scrollbar for sidebar */
+/* Custom scrollbar for sidebar (Invisible por defecto) */
 .sidebar-menu::-webkit-scrollbar {
     width: 4px;
 }
@@ -153,11 +154,23 @@ body.sidebar-collapsed {
     background: transparent;
 }
 .sidebar-menu::-webkit-scrollbar-thumb {
-    background: rgba(150, 150, 150, 0.2);
+    background: transparent;
     border-radius: 4px;
+    transition: background-color 0.25s ease;
 }
-.sidebar-menu::-webkit-scrollbar-thumb:hover {
-    background: rgba(150, 150, 150, 0.4);
+
+/* Aparece sutilmente SOLO al pasar el mouse por encima del menú desplegado (no plegado) */
+body:not(.sidebar-collapsed) .global-sidebar:hover .sidebar-menu,
+body:not(.sidebar-collapsed) .sidebar-menu:hover {
+    scrollbar-color: rgba(150, 150, 150, 0.25) transparent;
+}
+body:not(.sidebar-collapsed) .global-sidebar:hover .sidebar-menu::-webkit-scrollbar-thumb,
+body:not(.sidebar-collapsed) .sidebar-menu:hover::-webkit-scrollbar-thumb {
+    background: rgba(150, 150, 150, 0.25);
+}
+body:not(.sidebar-collapsed) .global-sidebar:hover .sidebar-menu::-webkit-scrollbar-thumb:hover,
+body:not(.sidebar-collapsed) .sidebar-menu:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(150, 150, 150, 0.5);
 }
 
 .sidebar-section {
@@ -380,6 +393,12 @@ body.sidebar-collapsed .sidebar-item i {
 
 body.sidebar-collapsed .sidebar-menu {
     padding: 1.25rem 0.5rem;
+    scrollbar-width: none !important;
+}
+
+body.sidebar-collapsed .sidebar-menu::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
 }
 
 body.sidebar-collapsed .sidebar-socials-container {
