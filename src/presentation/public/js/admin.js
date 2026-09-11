@@ -1409,15 +1409,22 @@ class AdminManager {
                     this.createImageUploadGroup('generic-image', 'Portada (Imagen Horizontal 16:9)', this.currentItem?.image_url || '');
                 break;
             }
-            case 'topic':
+            case 'topic': {
                 title.textContent = id ? 'Editar Tema' : 'Añadir Tema';
                 if (id) this.currentItem = this.allTopics.find(t => t.id === parseInt(id, 10));
+                
+                // Ordenar recursos para que los subidos/modificados recientemente aparezcan primero
+                const sortedRecentBooks = [...this.allBooks].sort((a, b) => {
+                    const dateA = new Date(a.updated_at || a.created_at || 0).getTime();
+                    const dateB = new Date(b.updated_at || b.created_at || 0).getTime();
+                    return (dateB - dateA) || ((b.id || 0) - (a.id || 0));
+                });
+
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Tema (*)', this.currentItem?.name || '', true) +
-                    // Descripción eliminada
-                    // SOLUCIÓN: Mostrar la lista de libros para asociarlos al tema.
-                    this.createCheckboxList('Libros de Referencia', 'generic-books', this.allBooks, this.currentItem?.bookIds || [], 'book') +
+                    this.createCheckboxList('Recursos de Referencia', 'generic-books', sortedRecentBooks, this.currentItem?.bookIds || [], 'book') +
                     '<div id="resources-container"></div>';
                 break;
+            }
 
 
             case 'student': {
@@ -1657,6 +1664,11 @@ class AdminManager {
                                 <span class="switch-slider"></span>
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Asignación de Temas / Categorías Asociadas -->
+                    <div style="margin-bottom: 15px;">
+                        ${this.createCheckboxList('Temas / Categorías Asociadas', 'generic-topics', this.allTopics, [], 'topic')}
                     </div>
 
                     <div style="margin-top: 20px; padding: 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px dashed var(--border-color); font-size: 0.85rem; color: var(--text-muted);">
@@ -3067,6 +3079,9 @@ class AdminManager {
                         const visible = document.getElementById('generic-visible').checked;
                         const openDirectly = document.getElementById('generic-open-directly').checked;
 
+                        // Capturar temas asociados seleccionados
+                        const topicIds = this.getSelectedIds('generic-topics');
+
                         if (!folderId) throw new Error('El ID de la carpeta es obligatorio.');
 
                         syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Escaneando Drive...';
@@ -3082,7 +3097,8 @@ class AdminManager {
                                 domain: domainVal,
                                 is_premium: isPremium,
                                 visible: visible,
-                                open_directly: openDirectly
+                                open_directly: openDirectly,
+                                topicIds
                             })
                         });
 

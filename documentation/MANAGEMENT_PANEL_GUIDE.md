@@ -190,7 +190,16 @@ Para asegurar legibilidad óptima tanto en **Modo Oscuro (Dark Matte)** como en 
     *   **CSS Primario (`admin.css`):** `#generic-modal .modal-content` cuenta con `width: 95%; max-width: 1100px; max-height: 92vh;` estático por defecto, asegurando que el primer fotograma de renderizado ya tenga las dimensiones correctas.
     *   **Ejecución Síncrona (`admin.js`):** El ajuste responsivo por JavaScript (`window.innerWidth <= 768`) se calcula y asigna sincrónicamente de forma inmediata **antes** de conmutar `this.genericModal.style.display = 'flex'`, erradicando por completo el uso de `setTimeout` asíncrono para el tamaño de ventana modal.
 
+## 11. 🔄 Sincronización Masiva de Google Drive con Temas y Recursos de Referencia (Septiembre 2026)
+*   **Asignación Masiva de Temas en Modal Drive Sync:**
+    *   El modal de importación de Google Drive (`case 'drive-sync'`) integra nativamente la lista de selección múltiple `Temas / Categorías Asociadas` (`generic-topics`).
+    *   Al ejecutar la sincronización, los IDs de temas seleccionados (`topicIds`) se transmiten al backend (`POST /api/admin/drive/sync-folder`) y se persisten de forma atómica e idempotente en la tabla relacional `topic_resources (resource_id, topic_id) VALUES (...) ON CONFLICT DO NOTHING`.
+    *   Tanto la creación como la actualización de recursos desde Drive invalidan de inmediato la caché en memoria del catálogo (`BookRepository.clearCache()`), reflejando las nuevas categorías instantáneamente.
+*   **Pestaña de Temas: "Recursos de Referencia" y Orden Cronológico:**
+    *   En el modal de creación y edición de temas (`case 'topic'`), la lista desplegable ha sido renombrada a **"Recursos de Referencia"** (sustituyendo "Libros de Referencia").
+    *   Los recursos en dicha lista se ordenan cronológicamente en orden descendente por fecha de modificación (`updated_at`), fecha de creación (`created_at`) o ID (`b.id - a.id`), asegurando que los materiales subidos o editados recientemente aparezcan en primer lugar para facilitar su asignación.
+
 ---
 > [!IMPORTANT]
-> Esta guía ha sido verificada contra el código fuente al 11 de septiembre de 2026. Toda la arquitectura se mantiene desacoplada, modular y validada en la suite completa de 56 tests unitarios (466 tests pasando al 100%).
+> Esta guía ha sido verificada contra el código fuente al 11 de septiembre de 2026. Toda la arquitectura se mantiene desacoplada, modular y validada en la suite completa de 57 tests unitarios (477 tests pasando al 100%).
 

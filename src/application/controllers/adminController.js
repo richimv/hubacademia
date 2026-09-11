@@ -558,7 +558,7 @@ class AdminController {
 
     async syncDriveFolder(req, res) {
         try {
-            const { folderId, resourceType, author, domain, is_premium, visible, open_directly } = req.body;
+            const { folderId, resourceType, author, domain, is_premium, visible, open_directly, topicIds } = req.body;
 
             if (!folderId || !resourceType) {
                 return res.status(400).json({ error: 'Faltan parámetros: folderId y resourceType son obligatorios.' });
@@ -571,7 +571,22 @@ class AdminController {
             const isVisible = visible !== false && String(visible).toLowerCase() !== 'false' && visible !== 0;
             const openDirectly = open_directly === true || String(open_directly).toLowerCase() === 'true' || open_directly === 1;
 
-            console.log(`📂 [Admin] Iniciando sincronización de carpeta Drive: ${folderId} como ${resourceType} en dominio ${resolvedDomain} (Premium: ${isPremium}, Visible: ${isVisible}, Directo: ${openDirectly})`);
+            // Normalizar temas asociados
+            let parsedTopicIds = [];
+            if (Array.isArray(topicIds)) {
+                parsedTopicIds = topicIds.map(t => parseInt(t, 10)).filter(t => !isNaN(t));
+            } else if (typeof topicIds === 'string' && topicIds.trim()) {
+                try {
+                    const parsed = JSON.parse(topicIds);
+                    if (Array.isArray(parsed)) {
+                        parsedTopicIds = parsed.map(t => parseInt(t, 10)).filter(t => !isNaN(t));
+                    }
+                } catch {
+                    parsedTopicIds = [];
+                }
+            }
+
+            console.log(`📂 [Admin] Iniciando sincronización de carpeta Drive: ${folderId} como ${resourceType} en dominio ${resolvedDomain} (Premium: ${isPremium}, Visible: ${isVisible}, Directo: ${openDirectly}, Temas: ${parsedTopicIds.length})`);
 
             const DriveService = require('../../domain/services/driveService');
             const files = await DriveService.getFilesFromFolder(folderId);
@@ -619,7 +634,8 @@ class AdminController {
                         resolvedDomain,
                         isPremium,
                         isVisible,
-                        openDirectly
+                        openDirectly,
+                        parsedTopicIds
                     );
                     if (result.action === 'updated') updatedCount++;
                     else insertedCount++;

@@ -56,6 +56,11 @@ La plataforma clasifica automáticamente cada publicación y material en su sect
 
 ### C. Widget de Novedades y Boletín Reciente (30 Días / Mensual) (`components.js` & `browse.css`)
 - **Alcance Temporal:** Muestra las publicaciones oficiales e investigaciones más recientes del **mes en curso (últimos 30 días)**.
+- **Filtrado Estricto de Novedades (Normas y Noticias Exclusivamente):** Tanto en la consulta SQL (`bookRepository.js`: `r.resource_type IN ('norma', 'noticia')`) como en el componente UI (`components.js`: `createNewsBulletinWidgetHTML`), el boletín filtra de forma exclusiva **normas legales y noticias oficiales**, manteniendo papers en su sección académica y guías técnicas en su respectiva categoría.
+- **Simetría Completa de Filtros en Salud y Educación (`search.js`):** El sector Educación dispone ahora del repertorio simétrico de 6 píldoras de navegación (*🔥 Novedades*, *Libros y Manuales*, *Papers Científicos*, *Normas y Directivas*, *Guías Técnicas* y *Otros Recursos*).
+- **Tarjetas de Recursos con Difuminado Suave (`components.css`):**
+  - Se redujo la densidad del degradado inferior en `.unified-resource-card.has-bg-image .urc-visual-overlay` a `linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.35) 35%, transparent 65%)`.
+  - Esto despeja el 65% superior de la portada para exhibir con mayor luminosidad y detalle las miniaturas de libros y documentos sin sacrificar la legibilidad del texto en la zona inferior.
 - **Estructura Plana y Control de Altura (Zero Box-in-a-Box):**
   - Contenedor plano `.news-bulletin-container` sin marcos dobles ni envoltorios decorativos.
   - Tarjeta principal `.news-lead-card` como contenedor único de 2 columnas (1.25fr / 0.75fr en desktop; 1 columna en móvil) con altura calibrada (`min-height: 220px; max-height: 270px;` en desktop) y padding moderado (`1.5rem 2rem;`), eliminando espacios vacíos desmedidos.
@@ -164,4 +169,4 @@ La biblioteca se actualiza de forma autónoma mediante **Scheduled Tasks** en **
 ---
 
 ## 🧪 Verificación y Suite de Pruebas Unitarias
-El sistema de biblioteca cuenta con una suite de pruebas unitarias (`npm test`) pasando al **100% (12/12 test suites, 87/87 pruebas pasando en verde)**.
+El sistema de biblioteca y el ecosistema completo cuentan con una suite de pruebas unitarias pasando al **100% (57/57 test suites, 477/477 pruebas pasando en verde)**.

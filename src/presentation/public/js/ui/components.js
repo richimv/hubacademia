@@ -1096,7 +1096,13 @@ window.openVerifiedNewsUrl = function (url, id, type, isPremium, openDirectly) {
  * aplicando un distinguido resaltado dorado a las novedades principales.
  */
 function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
-    if (!newsItems || newsItems.length === 0) {
+    // Filtrar estrictamente a recursos de tipo noticia y norma
+    const validNews = (newsItems || []).filter(item => {
+        const type = (item.resource_type || item.type || '').toLowerCase();
+        return type === 'noticia' || type === 'norma';
+    });
+
+    if (!validNews || validNews.length === 0) {
         return `
             <div class="news-bulletin-empty">
                 <h3 class="news-empty-title">No hay novedades registradas en los últimos 30 días</h3>
@@ -1109,8 +1115,7 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
         const type = (item.resource_type || item.type || '').toLowerCase();
         if (type === 'noticia') return 'Noticia';
         if (type === 'norma') return 'Norma legal';
-        if (type === 'guia') return 'Guía técnica';
-        return 'Investigación';
+        return 'Novedad Oficial';
     };
 
     const cleanSnippet = (html, maxLen = 140) => {
@@ -1119,13 +1124,13 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
         return clean.length > maxLen ? clean.substring(0, maxLen) + '...' : clean;
     };
 
-    const hasExplicitFeatured = newsItems.some(item => item.is_featured === true || item.featured === true);
+    const hasExplicitFeatured = validNews.some(item => item.is_featured === true || item.featured === true);
 
-    const cardsHTML = newsItems.map((item, index) => {
+    const cardsHTML = validNews.map((item, index) => {
         const isFeatured = hasExplicitFeatured
             ? (item.is_featured === true || item.featured === true)
             : (index === 0);
-        const itemType = (item.resource_type || item.type || 'paper').toLowerCase();
+        const itemType = (item.resource_type || item.type || 'norma').toLowerCase();
         const baseCategory = getCategoryLabel(item);
         const categoryLabel = isFeatured ? `${baseCategory} • Novedad Principal` : baseCategory;
         const openDirectly = item.open_directly === true || String(item.open_directly) === 'true';

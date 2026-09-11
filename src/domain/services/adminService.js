@@ -288,20 +288,20 @@ class AdminService {
         return await adminRepository.deleteQuestion(id);
     }
 
-    async syncResource(url, cleanTitle, resourceType, persistentThumbnailUrl, author, domain = 'medicine', isPremium = false, visible = true, openDirectly = false) {
+    async syncResource(url, cleanTitle, resourceType, persistentThumbnailUrl, author, domain = 'medicine', isPremium = false, visible = true, openDirectly = false, topicIds = []) {
         await this._acquireLock(url);
         try {
             const existing = await adminRepository.getResourceByUrl(url);
 
             if (existing) {
                 const finalThumb = persistentThumbnailUrl || existing.image_url;
-                await adminRepository.updateResource(existing.id, cleanTitle, resourceType, finalThumb, domain, isPremium, visible, openDirectly);
+                await adminRepository.updateResource(existing.id, cleanTitle, resourceType, finalThumb, domain, isPremium, visible, openDirectly, topicIds);
                 return { action: 'updated' };
             } else {
                 const resourceId = `RES_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
                 const resultAuthor = author || 'Admin Hub';
                 try {
-                    await adminRepository.addResource(resourceId, cleanTitle, resultAuthor, url, resourceType, persistentThumbnailUrl, domain, isPremium, visible, openDirectly);
+                    await adminRepository.addResource(resourceId, cleanTitle, resultAuthor, url, resourceType, persistentThumbnailUrl, domain, isPremium, visible, openDirectly, topicIds);
                     return { action: 'inserted' };
                 } catch (dbError) {
                     // Si ocurre un error de llave duplicada (ej. código 23505 de PostgreSQL para unique_violation)
@@ -311,7 +311,7 @@ class AdminService {
                         const retryExisting = await adminRepository.getResourceByUrl(url);
                         if (retryExisting) {
                             const finalThumb = persistentThumbnailUrl || retryExisting.image_url;
-                            await adminRepository.updateResource(retryExisting.id, cleanTitle, resourceType, finalThumb, domain, isPremium, visible, openDirectly);
+                            await adminRepository.updateResource(retryExisting.id, cleanTitle, resourceType, finalThumb, domain, isPremium, visible, openDirectly, topicIds);
                             return { action: 'updated' };
                         }
                     }

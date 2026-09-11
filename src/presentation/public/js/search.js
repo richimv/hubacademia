@@ -1084,26 +1084,14 @@ class SearchComponent {
 
         if (this.activeTab === 'salud' || this.activeTab === 'educacion') {
             let data = [];
-            let biblioFilters = [];
-
-            if (this.activeSector === 'medicine') {
-                biblioFilters = [
-                    { id: '🔥 Novedades', val: 'news' },
-                    { id: 'Libros y Manuales', val: 'book' },
-                    { id: 'Papers Científicos', val: 'paper' },
-                    { id: 'Normas y Directivas', val: 'norma' },
-                    { id: 'Guías Técnicas', val: 'guia' },
-                    { id: 'Otros Recursos', val: 'other' }
-                ];
-            } else {
-                // EDUCACIÓN: Únicamente Novedades, Libros, Papers y Normas
-                biblioFilters = [
-                    { id: '🔥 Novedades', val: 'news' },
-                    { id: 'Libros y Manuales', val: 'book' },
-                    { id: 'Papers Científicos', val: 'paper' },
-                    { id: 'Normas y Directivas', val: 'norma' }
-                ];
-            }
+            const biblioFilters = [
+                { id: '🔥 Novedades', val: 'news' },
+                { id: 'Libros y Manuales', val: 'book' },
+                { id: 'Papers Científicos', val: 'paper' },
+                { id: 'Normas y Directivas', val: 'norma' },
+                { id: 'Guías Técnicas', val: 'guia' },
+                { id: 'Otros Recursos', val: 'other' }
+            ];
 
             filtersContainer.innerHTML = biblioFilters.map(f => `
                 <button class="manta-filter-pill ${this.activeFilter === f.id ? 'active' : ''}" data-filter-id="${f.id}" data-filter-val="${f.val}">

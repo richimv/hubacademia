@@ -1,13 +1,19 @@
 const db = require('../../infrastructure/database/db');
 
+const globalBookCache = new Map();
+
 class BookRepository {
     constructor() {
-        this.cache = new Map();
+        this.cache = globalBookCache;
         this.CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
     }
 
     clearCache() {
         this.cache.clear();
+    }
+
+    static clearCache() {
+        globalBookCache.clear();
     }
 
     async findAll(filters = {}) {
@@ -28,7 +34,7 @@ class BookRepository {
 
         if (type) {
             if (type === 'news' || isNews) {
-                conditions.push(`r.resource_type IN ('paper', 'norma', 'guia', 'noticia')`);
+                conditions.push(`r.resource_type IN ('norma', 'noticia')`);
                 conditions.push(`r.created_at >= (NOW() - INTERVAL '30 days')`);
             } else {
                 params.push(type);

@@ -32,7 +32,8 @@ describe('AdminService - syncResource', () => {
             'medicine',
             false,
             true,
-            false
+            false,
+            []
         );
         expect(result).toEqual({ action: 'inserted' });
     });
@@ -53,9 +54,31 @@ describe('AdminService - syncResource', () => {
             'medicine',
             false,
             true,
-            false
+            false,
+            []
         );
         expect(result).toEqual({ action: 'updated' });
+    });
+
+    it('should pass topicIds to addResource and updateResource when provided', async () => {
+        adminRepository.getResourceByUrl.mockResolvedValue(undefined);
+        adminRepository.addResource.mockResolvedValue(undefined);
+
+        await adminService.syncResource(url, title, type, thumb, author, 'education', true, false, true, [10, 20]);
+
+        expect(adminRepository.addResource).toHaveBeenCalledWith(
+            expect.stringMatching(/^RES_\d+_\d+$/),
+            title,
+            author,
+            url,
+            type,
+            thumb,
+            'education',
+            true,
+            false,
+            true,
+            [10, 20]
+        );
     });
 
     it('should fallback to update when DB insertion fails with code 23505 (unique_violation)', async () => {
@@ -82,7 +105,8 @@ describe('AdminService - syncResource', () => {
             'medicine',
             false,
             true,
-            false
+            false,
+            []
         );
         expect(result).toEqual({ action: 'updated' });
     });

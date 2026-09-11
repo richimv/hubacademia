@@ -401,18 +401,54 @@ class AdminRepository {
         return result.rows[0];
     }
 
-    async updateResource(id, title, resourceType, imageUrl, domain = 'medicine', isPremium = false, visible = true, openDirectly = false) {
+    async updateResource(id, title, resourceType, imageUrl, domain = 'medicine', isPremium = false, visible = true, openDirectly = false, topicIds = null) {
         await db.query(
             'UPDATE resources SET title = $1, resource_type = $2, image_url = $3, domain = $4, is_premium = $5, visible = $6, open_directly = $7 WHERE id = $8',
             [title, resourceType, imageUrl, domain, isPremium, visible, openDirectly, id]
         );
+        if (id && Array.isArray(topicIds) && topicIds.length > 0) {
+            for (const tId of topicIds) {
+                const cleanTId = parseInt(tId, 10);
+                if (!isNaN(cleanTId)) {
+                    await db.query(
+                        'INSERT INTO topic_resources (resource_id, topic_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                        [id, cleanTId]
+                    );
+                }
+            }
+        }
+        try {
+            const BookRepository = require('./bookRepository');
+            if (BookRepository && typeof BookRepository.clearCache === 'function') {
+                BookRepository.clearCache();
+            }
+        } catch (_) {}
     }
 
-    async addResource(resourceId, title, author, url, resourceType, imageUrl, domain = 'medicine', isPremium = false, visible = true, openDirectly = false) {
-        await db.query(
-            'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium, image_url, domain, visible, open_directly) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+    async addResource(resourceId, title, author, url, resourceType, imageUrl, domain = 'medicine', isPremium = false, visible = true, openDirectly = false, topicIds = []) {
+        const result = await db.query(
+            'INSERT INTO resources (resource_id, title, author, url, resource_type, is_premium, image_url, domain, visible, open_directly) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id',
             [resourceId, title, author, url, resourceType, isPremium, imageUrl, domain, visible, openDirectly]
         );
+        const numericId = result.rows[0]?.id;
+        if (numericId && Array.isArray(topicIds) && topicIds.length > 0) {
+            for (const tId of topicIds) {
+                const cleanTId = parseInt(tId, 10);
+                if (!isNaN(cleanTId)) {
+                    await db.query(
+                        'INSERT INTO topic_resources (resource_id, topic_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                        [numericId, cleanTId]
+                    );
+                }
+            }
+        }
+        try {
+            const BookRepository = require('./bookRepository');
+            if (BookRepository && typeof BookRepository.clearCache === 'function') {
+                BookRepository.clearCache();
+            }
+        } catch (_) {}
+        return numericId;
     }
 
     async exportTableToCSVBuffer(tableName, columns = '*') {
