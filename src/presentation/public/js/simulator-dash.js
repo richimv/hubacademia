@@ -331,6 +331,13 @@ const SimulatorDash = (() => {
         if (!summaryBox || !config) return;
         summaryBox.style.display = 'flex';
 
+        const escapeAttr = (str) => String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
         let targetText = config.target || '';
         let infoText = '';
         if (config.career) {
@@ -342,9 +349,9 @@ const SimulatorDash = (() => {
         const isDefault = config.configType === 'default' || !config.configType;
         const areasCount = config.areas ? config.areas.length : 0;
 
-        let pillsHtml = `<span class="config-summary-pill config-summary-pill--accent">${targetText}</span>`;
+        let pillsHtml = `<span class="config-summary-pill config-summary-pill--accent">${escapeAttr(targetText)}</span>`;
         if (infoText) {
-            pillsHtml += ` <span class="config-summary-pill">${infoText}</span>`;
+            pillsHtml += ` <span class="config-summary-pill config-summary-pill--area" title="${escapeAttr(infoText)}">${escapeAttr(infoText)}</span>`;
         }
         if (isDefault) {
             pillsHtml += ` <span class="config-summary-pill config-summary-pill--count">Examen Oficial (Todas las áreas)</span>`;

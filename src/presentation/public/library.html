@@ -40,24 +40,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/base.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/header.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/footer.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/dashboard.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/components.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/modal.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/sidebar.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/search.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/browse.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/results.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/course.css?v=2944bdf630c8">
+    <link rel="stylesheet" href="/css/theme.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/base.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/header.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/footer.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/dashboard.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/components.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/modal.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/sidebar.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/search.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/browse.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/results.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/course.css?v=865e03c33f09">
 
     <!-- Global scripts -->
-    <script src="/js/config.js?v=2944bdf630c8"></script>
-    <script src="/js/utils/themeManager.js?v=2944bdf630c8"></script>
+    <script src="/js/config.js?v=865e03c33f09"></script>
+    <script src="/js/utils/themeManager.js?v=865e03c33f09"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=2944bdf630c8"></script>
+    <script src="/js/utils/markdown-renderer.js?v=865e03c33f09"></script>
 
     <!-- ✅ Schema.org / JSON-LD -->
     <script type="application/ld+json">
@@ -332,7 +332,7 @@
             align-self: center !important;
         }
 
-        /* Grid de recursos: 6 columnas en escritorio, 3 en celulares (recuperar diseño imperativo) */
+        /* Grid de recursos estandarizado: 5 columnas en escritorio, 3 en tablet, 2 en móviles */
         .books-grid,
         .courses-grid,
         .careers-grid,
@@ -341,11 +341,30 @@
         .results-list,
         .library-list,
         .documents-grid-premium,
-        .medical-books-grid {
+        .medical-books-grid,
+        .ml-grid,
+        .general-grid {
             display: grid !important;
-            grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-            gap: 1rem !important;
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 1.25rem !important;
             width: 100% !important;
+        }
+
+        @media (max-width: 1024px) {
+            .books-grid,
+            .courses-grid,
+            .careers-grid,
+            .browse-grid,
+            .manta-content-grid,
+            .results-list,
+            .library-list,
+            .documents-grid-premium,
+            .medical-books-grid,
+            .ml-grid,
+            .general-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 1rem !important;
+            }
         }
 
         /* Responsividad de contenedores y textos en biblioteca */
@@ -401,7 +420,7 @@
                 font-size: 0.85rem !important;
             }
 
-            /* Grid responsivo exacto: 3 recursos por fila en celulares */
+            /* Grid responsivo exacto: 2 recursos por fila en celulares para apreciar portadas y títulos */
             .books-grid,
             .courses-grid,
             .careers-grid,
@@ -410,10 +429,12 @@
             .results-list,
             .library-list,
             .documents-grid-premium,
-            .medical-books-grid {
+            .medical-books-grid,
+            .ml-grid,
+            .general-grid {
                 display: grid !important;
-                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-                gap: 0.5rem !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.85rem !important;
                 width: 100% !important;
             }
 
@@ -488,7 +509,7 @@
         /* Estilos modernos para el tablón de Notas (UI/UX Premium - Globales para PC y Mobile) */
         #panel-notes .library-list {
             display: grid !important;
-            grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
             gap: 1.25rem !important;
             width: 100% !important;
         }
@@ -691,45 +712,6 @@
             gap: 1.5rem;
             margin-bottom: 1.5rem;
             flex-wrap: wrap;
-            width: 100%;
-        }
-
-        .notes-search-wrapper {
-            position: relative;
-            flex: 1;
-            min-width: 250px;
-        }
-
-        .notes-search-wrapper .search-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            pointer-events: none;
-        }
-
-        .notes-search-wrapper input {
-            width: 100%;
-            padding: 0.65rem 1rem 0.65rem 2.6rem;
-            background: var(--bg-tertiary) !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: 30px;
-            color: var(--text-main) !important;
-            font-size: 0.9rem;
-            outline: none;
-            transition: all 0.2s;
-            box-sizing: border-box;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .notes-search-wrapper input:focus {
-            border-color: var(--primary) !important;
-            background: var(--surface-hover) !important;
-            box-shadow: 0 0 10px var(--primary-glow) !important;
-        }
-
         .notes-sort-wrapper {
             display: flex;
             align-items: center;
@@ -886,21 +868,21 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=2944bdf630c8"></script>
-    <script src="/js/services/authApiService.js?v=2944bdf630c8"></script>
-    <script src="/js/services/analyticsApiService.js?v=2944bdf630c8"></script>
-    <script src="/js/sessionManager.js?v=2944bdf630c8"></script>
-    <script src="/js/ui/uiManager.js?v=2944bdf630c8"></script>
-    <script src="/js/ui/tooltipManager.js?v=2944bdf630c8"></script>
-    <script src="/js/ui/components.js?v=2944bdf630c8"></script>
-    <script src="/js/ui/confirmationModal.js?v=2944bdf630c8"></script>
-    <script src="/js/services/searchService.js?v=2944bdf630c8"></script>
-    <script type="module" src="/js/search.js?v=2944bdf630c8"></script>
-    <script src="/js/services/libraryService.js?v=2944bdf630c8"></script>
-    <script src="/js/ui/libraryUI.js?v=2944bdf630c8"></script>
-    <script src="/js/ui/sidebar.js?v=2944bdf630c8"></script>
-    <script src="/js/security.js?v=2944bdf630c8"></script>
-    <script src="/js/app.js?v=2944bdf630c8"></script>
+    <script src="/js/services/networkService.js?v=865e03c33f09"></script>
+    <script src="/js/services/authApiService.js?v=865e03c33f09"></script>
+    <script src="/js/services/analyticsApiService.js?v=865e03c33f09"></script>
+    <script src="/js/sessionManager.js?v=865e03c33f09"></script>
+    <script src="/js/ui/uiManager.js?v=865e03c33f09"></script>
+    <script src="/js/ui/tooltipManager.js?v=865e03c33f09"></script>
+    <script src="/js/ui/components.js?v=865e03c33f09"></script>
+    <script src="/js/ui/confirmationModal.js?v=865e03c33f09"></script>
+    <script src="/js/services/searchService.js?v=865e03c33f09"></script>
+    <script type="module" src="/js/search.js?v=865e03c33f09"></script>
+    <script src="/js/services/libraryService.js?v=865e03c33f09"></script>
+    <script src="/js/ui/libraryUI.js?v=865e03c33f09"></script>
+    <script src="/js/ui/sidebar.js?v=865e03c33f09"></script>
+    <script src="/js/security.js?v=865e03c33f09"></script>
+    <script src="/js/app.js?v=865e03c33f09"></script>
 </body>
 
 </html>

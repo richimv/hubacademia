@@ -17,17 +17,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/base.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/header.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/footer.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/dashboard.css?v=2944bdf630c8">
-    <link rel="stylesheet" href="/css/sidebar.css?v=2944bdf630c8">
+    <link rel="stylesheet" href="/css/components.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/theme.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/base.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/header.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/modal.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/footer.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/dashboard.css?v=865e03c33f09">
+    <link rel="stylesheet" href="/css/sidebar.css?v=865e03c33f09">
 
     <!-- ✅ FIX: Cargar librería de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=2944bdf630c8"></script>
-    <script src="/js/utils/themeManager.js?v=2944bdf630c8"></script>
+    <script src="/js/config.js?v=865e03c33f09"></script>
+    <script src="/js/utils/themeManager.js?v=865e03c33f09"></script>
 </head>
 
 <body class="hero-hidden">
@@ -38,9 +40,9 @@
                 <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
                 <span class="logo-text">Dashboard</span>
             </a>
-            <button id="btn-update-ai" class="btn"
-                style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.4rem 0.8rem; border-radius: 8px; cursor:pointer; margin-left: 1rem;"><i
-                    class="fas fa-sync-alt"></i> Actualizar</button>
+            <button id="btn-update-ai" class="btn btn-secondary-action header-action-btn" style="margin-left: 1rem;">
+                <i class="fas fa-sync-alt"></i> <span>Actualizar</span>
+            </button>
         </div>
         <div class="header-nav">
             <div id="user-session-controls">
@@ -74,10 +76,10 @@
                 </div>
 
                 <!-- Premium -->
-                <div class="kpi-card" style="border: 1px solid var(--accent-warning);">
+                <div class="kpi-card kpi-card-warning">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
-                            <div class="kpi-label" style="color: var(--accent-warning);">Suscripciones Activas</div>
+                            <div class="kpi-label">Suscripciones Activas</div>
                             <div class="kpi-value" id="kpi-premium">0</div>
                         </div>
                         <div class="kpi-icon color-amber"><i class="fas fa-crown"></i></div>
@@ -96,14 +98,13 @@
                 </div>
 
                 <!-- Usuarios en Vivo (NUEVO) -->
-                <div class="kpi-card"
-                    style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);">
+                <div class="kpi-card kpi-card-live">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
-                            <div class="kpi-label" style="color: #f87171;">🔥 En Vivo Ahora</div>
+                            <div class="kpi-label">🔥 En Vivo Ahora</div>
                             <div class="kpi-value" id="kpi-live">0</div>
                         </div>
-                        <div class="kpi-icon" style="color: #ef4444;"><i class="fas fa-bolt"></i></div>
+                        <div class="kpi-icon"><i class="fas fa-bolt"></i></div>
                     </div>
                 </div>
 
@@ -154,8 +155,7 @@
 
             <!-- AI Insights -->
             <div id="ai-insights-container" style="margin-top: 3rem; margin-bottom: 3rem;">
-                <div class="ai-loading-card"
-                    style="background: #1e293b; padding: 2rem; border-radius: 12px; text-align: center; border: 1px dashed #475569; color: #94a3b8;">
+                <div class="ai-loading-card">
                     <i class="fas fa-brain fa-pulse"></i> Esperando análisis de IA...
                 </div>
             </div>
@@ -197,15 +197,15 @@
 
     <!-- Scripts -->
     
-    <script src="/js/services/networkService.js?v=2944bdf630c8"></script>
-    <script src="/js/services/authApiService.js?v=2944bdf630c8"></script>
-    <script src="/js/sessionManager.js?v=2944bdf630c8"></script>
-    <script src="/js/ui/uiManager.js?v=2944bdf630c8"></script>
-    <script src="/js/ui/tooltipManager.js?v=2944bdf630c8"></script>
-    <script src="/js/dashboard.js?v=2944bdf630c8"></script>
-    <script src="/js/ui/sidebar.js?v=2944bdf630c8"></script>
-    <script src="/js/app.js?v=2944bdf630c8"></script>
-    <script src="/js/services/analyticsApiService.js?v=2944bdf630c8"></script>
+    <script src="/js/services/networkService.js?v=865e03c33f09"></script>
+    <script src="/js/services/authApiService.js?v=865e03c33f09"></script>
+    <script src="/js/sessionManager.js?v=865e03c33f09"></script>
+    <script src="/js/ui/uiManager.js?v=865e03c33f09"></script>
+    <script src="/js/ui/tooltipManager.js?v=865e03c33f09"></script>
+    <script src="/js/dashboard.js?v=865e03c33f09"></script>
+    <script src="/js/ui/sidebar.js?v=865e03c33f09"></script>
+    <script src="/js/app.js?v=865e03c33f09"></script>
+    <script src="/js/services/analyticsApiService.js?v=865e03c33f09"></script>
     <script>
         // Auth Check inline para evitar FOUC
         const token = localStorage.getItem('authToken');

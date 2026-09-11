@@ -498,10 +498,16 @@ class LibraryUI {
         });
 
         // 3. Render HTML
-        let html = `<button class="library-add-note-btn" onclick="window.libraryUI.openNoteEditor()"><i class="fas fa-plus"></i> Crear nota</button>`;
+        let html = `
+            <div class="library-add-note-btn" onclick="window.libraryUI.openNoteModal()">
+                <div class="add-icon-circle"><i class="fas fa-plus"></i></div>
+                <span style="font-weight: 700;">Nueva Nota</span>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; margin-top: 4px;">Crear apunte de estudio</p>
+            </div>
+        `;
 
         if (notes.length === 0) {
-            html += `<div class="empty-state" style="grid-column: span 6; text-align: center; padding: 3rem;"><i class="far fa-sticky-note" style="font-size: 2.5rem; color: var(--text-muted); opacity: 0.5; margin-bottom: 1rem; display: block;"></i><p>No se encontraron notas.</p></div>`;
+            html += `<div class="empty-state" style="grid-column: 2 / -1; text-align: center; padding: 3rem;"><i class="far fa-sticky-note" style="font-size: 2.5rem; color: var(--text-muted); opacity: 0.5; margin-bottom: 1rem; display: block;"></i><p>No se encontraron notas.</p></div>`;
         } else {
             html += notes.map(note => this._createNoteItemHTML(note)).join('');
         }
@@ -665,45 +671,45 @@ class LibraryUI {
         if (document.querySelector('.note-modal-overlay')) return;
 
         const modal = document.createElement('div');
-        modal.className = 'note-modal-overlay';
+        modal.className = 'modal-overlay note-modal-overlay';
         modal.id = 'note-modal-overlay';
         modal.innerHTML = `
-            <div class="note-modal">
-                <div class="note-modal-header">
-                    <h3 id="note-modal-header-text"><i class="fas fa-sticky-note"></i> Ver Nota</h3>
-                    <button class="note-modal-close" onclick="window.libraryUI.closeNoteModal()"><i class="fas fa-times"></i></button>
+            <div class="modal-content note-modal" style="max-width: 650px;">
+                <div class="modal-header note-modal-header">
+                    <h2 id="note-modal-header-text"><i class="fas fa-sticky-note" style="color: #f59e0b;"></i> Ver Nota</h2>
+                    <button type="button" class="modal-close-btn note-modal-close" onclick="window.libraryUI.closeNoteModal()" aria-label="Cerrar modal">&times;</button>
                 </div>
                 
-                <div class="note-modal-body" id="note-modal-viewer" style="display:block;">
+                <div class="modal-body note-modal-body" id="note-modal-viewer" style="display:block;">
                 </div>
 
-                <div class="note-modal-body" id="note-modal-editor" style="display:none;">
-                    <input type="text" id="note-editor-title" class="note-editor-title" placeholder="Título de la nota">
+                <div class="modal-body note-modal-body" id="note-modal-editor" style="display:none; flex-direction:column; gap:0.75rem;">
+                    <input type="text" id="note-editor-title" class="note-editor-title form-input" placeholder="Título de la nota">
                     <div class="note-editor-toolbar" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('**', '**')" title="Negrita"><i class="fas fa-bold"></i></button>
-                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('*', '*')" title="Cursiva"><i class="fas fa-italic"></i></button>
-                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('### ', '')" title="Título"><i class="fas fa-heading"></i></button>
-                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('- ', '')" title="Lista"><i class="fas fa-list-ul"></i></button>
-                        <button class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('> ', '')" title="Cita"><i class="fas fa-quote-left"></i></button>
+                        <button type="button" class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('**', '**')" title="Negrita"><i class="fas fa-bold"></i></button>
+                        <button type="button" class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('*', '*')" title="Cursiva"><i class="fas fa-italic"></i></button>
+                        <button type="button" class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('### ', '')" title="Título"><i class="fas fa-heading"></i></button>
+                        <button type="button" class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('- ', '')" title="Lista"><i class="fas fa-list-ul"></i></button>
+                        <button type="button" class="note-toolbar-btn" onclick="window.libraryUI.insertFormat('> ', '')" title="Cita"><i class="fas fa-quote-left"></i></button>
                         
                         <!-- Color Selector -->
                         <div style="margin-left:auto; display:flex; gap:0.3rem;" id="note-color-picker">
                             <input type="hidden" id="note-editor-color" value="">
                         </div>
                     </div>
-                    <textarea id="note-editor-textarea" class="note-editor-textarea" placeholder="Escribe aquí tu nota..."></textarea>
+                    <textarea id="note-editor-textarea" class="note-editor-textarea form-input" placeholder="Escribe aquí tu nota..."></textarea>
                 </div>
 
-                <div class="note-modal-footer">
-                    <div id="note-view-actions">
-                        <button class="note-delete-btn" id="note-modal-delete" onclick="window.libraryUI.deleteNote(window.libraryUI.editingNoteId)"><i class="fas fa-trash"></i> Eliminar</button>
-                        <button onclick="window.libraryUI.switchToEditor()"><i class="fas fa-edit"></i> Editar</button>
+                <div class="modal-footer note-modal-footer">
+                    <div id="note-view-actions" style="display:flex; gap:0.75rem; align-items:center;">
+                        <button type="button" class="btn-action btn-secondary-action note-delete-btn" id="note-modal-delete" onclick="window.libraryUI.deleteNote(window.libraryUI.editingNoteId)"><i class="fas fa-trash"></i> Eliminar</button>
+                        <button type="button" class="btn-action btn-secondary-action" onclick="window.libraryUI.closeNoteModal()">Cerrar</button>
+                        <button type="button" class="btn-action btn-primary" onclick="window.libraryUI.switchToEditor()"><i class="fas fa-edit"></i> Editar</button>
                     </div>
-                    <div id="note-edit-actions" style="display:none;">
-                        <button onclick="window.libraryUI.switchToViewer()">Cancelar</button>
-                        <button class="active" style="background:var(--primary); color:white; border:none;" onclick="window.libraryUI.saveNote()">Guardar Cambios</button>
+                    <div id="note-edit-actions" style="display:none; gap:0.75rem; align-items:center;">
+                        <button type="button" class="btn-action btn-secondary-action" id="note-modal-cancel" onclick="window.libraryUI.switchToViewer()">Cancelar</button>
+                        <button type="button" class="btn-action btn-primary" id="note-modal-save" onclick="window.libraryUI.saveNote()"><i class="fas fa-save"></i> Guardar</button>
                     </div>
-                    <button onclick="window.libraryUI.closeNoteModal()">Cerrar</button>
                 </div>
             </div>
         `;
@@ -750,7 +756,7 @@ class LibraryUI {
             this.switchToEditor();
         }
 
-        document.getElementById('note-modal-overlay').classList.add('open');
+        document.getElementById('note-modal-overlay').classList.add('open', 'active');
         if (window.uiManager) {
             window.uiManager.pushModalState('note-modal-overlay');
         } else {
@@ -789,13 +795,17 @@ class LibraryUI {
 
     switchToEditor() {
         document.getElementById('note-modal-viewer').style.display = 'none';
-        document.getElementById('note-modal-editor').style.display = 'block';
+        const editor = document.getElementById('note-modal-editor');
+        if (editor) {
+            editor.style.display = 'flex';
+            editor.style.flexDirection = 'column';
+        }
         document.getElementById('note-view-actions').style.display = 'none';
-        document.getElementById('note-edit-actions').style.display = 'block';
+        document.getElementById('note-edit-actions').style.display = 'flex';
         
         const headerText = document.getElementById('note-modal-header-text');
         if (headerText) {
-            headerText.innerHTML = `<i class="fas fa-edit"></i> Editar Nota`;
+            headerText.innerHTML = `<i class="fas fa-edit" style="color: #3b82f6;"></i> ${this.editingNoteId ? 'Editar Nota' : 'Nueva Nota'}`;
         }
     }
 
@@ -806,7 +816,7 @@ class LibraryUI {
         }
         document.getElementById('note-modal-viewer').style.display = 'block';
         document.getElementById('note-modal-editor').style.display = 'none';
-        document.getElementById('note-view-actions').style.display = 'block';
+        document.getElementById('note-view-actions').style.display = 'flex';
         document.getElementById('note-edit-actions').style.display = 'none';
 
         const headerText = document.getElementById('note-modal-header-text');
@@ -841,6 +851,15 @@ class LibraryUI {
             return;
         }
 
+        const saveBtn = document.getElementById('note-modal-save');
+        const cancelBtn = document.getElementById('note-modal-cancel');
+        const originalHTML = saveBtn ? saveBtn.innerHTML : '';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        }
+        if (cancelBtn) cancelBtn.disabled = true;
+
         try {
             const method = this.editingNoteId ? 'PUT' : 'POST';
             const url = this.editingNoteId ?
@@ -865,11 +884,21 @@ class LibraryUI {
             }
         } catch (err) {
             console.error('Error guardando nota:', err);
+            if (window.uiManager) window.uiManager.showToast('❌ Ocurrió un error al guardar la nota.');
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalHTML;
+            }
+            if (cancelBtn) cancelBtn.disabled = false;
         }
     }
 
     closeNoteModal() {
-        document.getElementById('note-modal-overlay').classList.remove('open');
+        const overlay = document.getElementById('note-modal-overlay');
+        if (overlay) {
+            overlay.classList.remove('open', 'active');
+        }
         if (window.uiManager) {
             window.uiManager.popModalState('note-modal-overlay');
         } else {
@@ -888,6 +917,8 @@ class LibraryUI {
     }
 
     async deleteNote(noteId) {
+        if (!noteId) return;
+
         // Ensure window.confirmationModal is defined
         if (!window.confirmationModal && typeof ConfirmationModal !== 'undefined') {
             window.confirmationModal = new ConfirmationModal();
@@ -899,14 +930,33 @@ class LibraryUI {
             
         if (!confirmed) return;
 
+        const deleteBtn = document.getElementById('note-modal-delete');
+        const cardDeleteBtn = document.querySelector(`.note-card-action-btn.delete[data-note-id="${noteId}"]`);
+        const targetBtn = deleteBtn || cardDeleteBtn;
+        const originalHTML = targetBtn ? targetBtn.innerHTML : '';
+        if (targetBtn) {
+            targetBtn.disabled = true;
+            targetBtn.innerHTML = deleteBtn ? '<i class="fas fa-spinner fa-spin"></i> Eliminando...' : '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
         try {
-            await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/notes/${noteId}`, {
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/notes/${noteId}`, {
                 method: 'DELETE'
             });
-            this.service.loadFullLibrary();
-            this.closeNoteModal();
+            if (res.ok) {
+                await this.service.loadFullLibrary();
+                this.closeNoteModal();
+            } else {
+                if (window.uiManager) window.uiManager.showToast('❌ Error al eliminar la nota.');
+            }
         } catch (err) {
             console.error('Error eliminando nota:', err);
+            if (window.uiManager) window.uiManager.showToast('❌ Ocurrió un error al eliminar la nota.');
+        } finally {
+            if (targetBtn) {
+                targetBtn.disabled = false;
+                targetBtn.innerHTML = originalHTML;
+            }
         }
     }
 

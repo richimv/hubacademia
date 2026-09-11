@@ -161,6 +161,15 @@
     line-height: 1;
 }
 
+.config-summary-pill--area {
+    max-width: 210px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 .config-summary-pill--accent {
     background: var(--primary-glow);
     border-color: var(--primary);
@@ -1979,6 +1988,10 @@
         font-size: 0.72rem !important;
         padding: 0.4rem 0.65rem !important;
         gap: 0.35rem !important;
+    }
+
+    .config-summary-pill--area {
+        max-width: 140px;
     }
 
     .context-hero-buttons-row {

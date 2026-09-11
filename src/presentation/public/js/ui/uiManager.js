@@ -1519,10 +1519,16 @@ class UIManager {
      * ✅ MEJORA PREMIUM: Glastomorfismo y Auth Directo
      */
     injectModalHTML() {
+        if (typeof window !== 'undefined' && window.location) {
+            const path = window.location.pathname || '';
+            if (path.startsWith('/dashboard') || path.startsWith('/admin')) {
+                return;
+            }
+        }
         if (document.getElementById(this.modalId)) return;
 
         const modalHTML = `
-            <div id="${this.modalId}" class="auth-prompt-modal">
+            <div id="${this.modalId}" class="auth-prompt-modal" style="display: none;">
                 <div class="modal-content premium-glass-dark">
                     <div class="modal-header">
                         <h2 style="color: var(--text-main) !important;"><i class="fas fa-rocket" style="color: var(--primary);"></i> Únete a Hub Academia</h2>

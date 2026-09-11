@@ -157,18 +157,26 @@ Optimización de la carga de bibliografía y guías clínicas mediante el escane
 
 ---
 
-## 8. 🗑️ Acciones Masivas y Persistencia de Filtros
-Para acelerar la curaduría y administración de recursos, se incorporaron controles de selección masiva y persistencia de estado UX.
+## 8. 🗑️ Acciones Masivas y Persistencia de Filtros (Blindaje Arquitectónico Septiembre 2026)
+Para acelerar la curaduría y administración de recursos con máxima seguridad operativa y cero borrado accidental:
 
-*   **Borrado Masivo (Bulk Delete):**
-    *   **Casillas de Selección:** Cada tarjeta de recurso (en todas las pestañas: Carreras, Cursos, Alumnos, Temas, Recursos, Preguntas) incluye un checkbox de selección.
-    *   **Barra de Acciones Flotante:** Al seleccionar uno o más elementos, aparece una barra inferior `#admin-bulk-actions-bar` con el conteo de elementos seleccionados, la opción de deseleccionarlos todos o eliminarlos en bloque con confirmación previa.
+*   **Borrado Masivo Blindado (Bulk Delete):**
+    *   **Casillas de Selección:** Cada tarjeta de recurso (en todas las pestañas: Carreras, Cursos, Alumnos, Temas, Recursos, Preguntas) incluye un checkbox `.admin-item-checkbox`.
+    *   **Barra de Acciones Flotante:** Al seleccionar uno o más elementos, aparece la barra inferior `#admin-bulk-actions-bar` con el conteo exacto de elementos seleccionados, botón para **"Seleccionar visibles"**, botón para **"Desmarcar"** y botón para **"Eliminar seleccionados"**.
+    *   **Modal de Confirmación Transparente e Itemizado:** Antes de ejecutar el borrado, el modal lista explícitamente los títulos de los elementos a eliminar (hasta 8 elementos con viñetas + conteo de adicionales restantes), indicando el tipo amigable del recurso y advirtiendo sobre la irreversibilidad y purga de imágenes asociadas.
     *   **Limpieza de GCS en Cascada:** Al eliminar masivamente recursos o preguntas, el backend purga automáticamente tanto sus archivos de portada/miniatura en el bucket de Google Cloud Storage (GCS) como cualquier imagen embebida dentro de su contenido HTML guardado por TinyMCE.
-*   **Soporte de Selección en Rango (Shift + Click):**
-    *   Los administradores pueden marcar un checkbox inicial y luego presionar la tecla `Shift` mientras hacen clic en otro checkbox posterior para seleccionar (o deseleccionar) de forma automática y masiva todos los elementos intermedios.
-*   **Persistencia de Filtros y Búsqueda (Cero Reset de Inputs):**
-    *   El buscador y los filtros de tipo y ordenamiento se almacenan en el estado global (`this.searchState` y `this.tabSortState`).
-    *   Al guardar cambios tras editar, añadir nuevos ítems o refrescar la base de datos, el buscador ya no se borra. La vista se vuelve a filtrar de forma automática conservando las consultas de búsqueda y las selecciones de tipo/ordenamiento que el administrador tenía configuradas previamente.
+*   **Soporte de Selección en Rango Blindado (Shift + Clic sobre Elementos Visibles):**
+    *   La selección con Shift + Clic opera **estrictamente sobre elementos visibles** (`style.display !== 'none'`). Si se filtra la vista (por ejemplo, mostrando solo "Papers"), los elementos ocultos (Normas, Guías, etc.) son omitidos al 100%, garantizando que nunca se seleccionen ni se borren recursos fuera del filtro actual.
+*   **Auto-Reset de Selección ante Cambios de Filtro o Búsqueda:**
+    *   Al escribir en el buscador (`admin-search-input`), cambiar el tipo (`admin-type-filter`), cambiar el dominio (`admin-domain-filter`), alterar el ordenamiento (`tab-sort-select`) o cambiar de pestaña (`switchTab`), se invoca de inmediato `this.clearBulkSelection()` para prevenir selecciones residuales invisibles.
+*   **Filtros Multidominio (Salud y Educación) y Búsqueda Avanzada:**
+    *   **Recursos (`tab-books`):** Selector `.admin-domain-filter` para filtrar concurrentemente por dominio (*Todos*, *Salud / Medicina*, *Educación Docente*), tipo de recurso (*Papers*, *Guías*, *Libros*, etc.) y texto libre. Las tarjetas incorporan badges semánticos de dominio (`Salud` en verde esmeralda `.admin-badge-green`, `Educación` en azul cobalto `.admin-badge-blue`).
+    *   **Preguntas (`tab-questions`):** Filtro de vinculación a casos (*Todas*, *Vinculadas a Caso*, *Preguntas Sueltas/Independientes*) y filtro por dominios/targets.
+    *   **Casos (`tab-cases`):** Filtrado dinámico por dominio y carrera, preservando la búsqueda activa.
+*   **Arquitectura de Cabecera en Dos Filas Responsiva (Cero Colapso UI/UX):**
+    *   **Fila Superior (`.tab-top-row`):** Aloja los selectores de filtro (`.admin-filters-group`) a la izquierda y los botones de acción (`.action-buttons`) a la derecha con margen automático.
+    *   **Fila Inferior (`.tab-search-row`):** Ubica la barra de búsqueda (`.search-bar-container`) a lo ancho completo justo debajo de los botones y filtros, evitando que los controles se aplasten o se quiebren de forma asimétrica al reducir la resolución en PC, tabletas o celulares.
+    *   **Erradicación de Código Muerto:** Eliminación de elementos huérfanos e inactivos (como `#bulk-link-case-btn`).
 
 ## 9. 🎨 Sistema Visual Dual-Theme y Badges Semánticos de Alto Contraste (Agosto 2026)
 Para asegurar legibilidad óptima tanto en **Modo Oscuro (Dark Matte)** como en **Modo Claro (Light Slate)**:
@@ -177,6 +185,12 @@ Para asegurar legibilidad óptima tanto en **Modo Oscuro (Dark Matte)** como en 
 *   **Interruptor de Tema Global:** Integración de `#theme-toggle-btn` en el encabezado del panel de administración para alternar entre ambos modos al instante.
 *   **Jerarquía en el Modal de Preguntas:** El bloque de asignación de **Casuística Agrupada / Caso Clínico (Opcional)** se ubica en la parte superior del formulario antes del cuerpo de la pregunta, permitiendo definir primero el contexto padre y el orden del ítem (`case_order`) de manera lógica y natural.
 
+## 10. 🖼️ Arquitectura de Renderizado de Modales y Cero Parpadeo (Flash Eradication)
+*   **Dimensionamiento Estático y Síncrono:** Para eliminar el parpadeo donde el modal se abría brevemente a 500px antes de expandirse a 1100px:
+    *   **CSS Primario (`admin.css`):** `#generic-modal .modal-content` cuenta con `width: 95%; max-width: 1100px; max-height: 92vh;` estático por defecto, asegurando que el primer fotograma de renderizado ya tenga las dimensiones correctas.
+    *   **Ejecución Síncrona (`admin.js`):** El ajuste responsivo por JavaScript (`window.innerWidth <= 768`) se calcula y asigna sincrónicamente de forma inmediata **antes** de conmutar `this.genericModal.style.display = 'flex'`, erradicando por completo el uso de `setTimeout` asíncrono para el tamaño de ventana modal.
+
 ---
 > [!IMPORTANT]
-> Esta guía ha sido verificada contra el código fuente al 27 de agosto de 2026. Toda la arquitectura se mantiene desacoplada y validada en la suite de 29 tests unitarios (194 tests pasando).
+> Esta guía ha sido verificada contra el código fuente al 11 de septiembre de 2026. Toda la arquitectura se mantiene desacoplada, modular y validada en la suite completa de 56 tests unitarios (466 tests pasando al 100%).
+

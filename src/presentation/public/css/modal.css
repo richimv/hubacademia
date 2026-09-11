@@ -24,7 +24,9 @@ body.modal-open {
 .modal.active, 
 .modal-overlay.active,
 .modal.visible,
-.modal-overlay.visible {
+.modal-overlay.visible,
+.modal.open,
+.modal-overlay.open {
     display: flex !important;
 }
 
@@ -249,6 +251,19 @@ body.modal-open {
 
 .modal-footer .btn-action:not(.btn-secondary-action):hover {
     box-shadow: 0 6px 16px rgba(249, 115, 22, 0.45) !important;
+    transform: translateY(-1px);
+}
+
+.modal-footer .btn-action.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35) !important;
+    border: none !important;
+}
+
+.modal-footer .btn-action.btn-primary:hover {
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5) !important;
     transform: translateY(-1px);
 }
 

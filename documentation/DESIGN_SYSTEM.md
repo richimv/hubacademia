@@ -227,6 +227,7 @@ Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente
   * **Orden y Dimensiones Universales de Botones:**
     * **Botón Secundario (Izquierda del grupo de acción):** `.btn-secondary-action` ("Cancelar" o "Cerrar"). Altura fija `42px`, min-width `105px`, padding `0 1.25rem`, fondo `var(--bg-tertiary)`, borde `1.5px solid var(--border-color)`, color `var(--text-main)`, `border-radius: 10px`, `font-weight: 600`, `font-size: 0.9rem`.
     * **Botón Primario (Derecha):** `.btn-action` ("Crear", "Guardar", "Generar", "Clonar"). Altura fija `42px`, min-width `110px`, padding `0 1.5rem`, degradado temático de acción, sin borde, color blanco `#ffffff`, `border-radius: 10px`, `font-weight: 700`, `font-size: 0.9rem`, sombra de elevación `box-shadow: 0 4px 12px rgba(...)`.
+    * **Feedback Asíncrono y Prevención de Doble Envío (Regla Obligatoria CRUD):** Al desencadenar cualquier mutación asíncrona o acción CRUD ("Guardar", "Crear", "Eliminar", "Generar", etc.), el botón de acción debe deshabilitarse inmediatamente (`disabled = true`) y mostrar el spinner canónico institucional (`<i class="fas fa-spinner fa-spin"></i> Guardando...` / `Eliminando...`). Los botones secundarios del grupo (ej. "Cancelar") también deben deshabilitarse mientras la petición está en vuelo. Al concluir la operación o ante cualquier excepción (`finally`), se debe rehabilitar el botón (`disabled = false`) y restaurar su HTML original, evitando clics repetidos y garantizando coherencia en toda la plataforma.
 
 ### 3.18. Expansión, Estilización y Búsqueda Universal en "Mi Biblioteca"
 * **Contenedor Amplio y Desencajonado:** Eliminación de contenedores `.glass-card` con bordes anidados duplicados. Contenedor directo `.dashboard-container` con `max-width: 1400px; width: 100%; padding: 1.5rem 2rem;` para que los recursos ocupen el ancho total con holgura.
@@ -299,10 +300,9 @@ Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente
 ## 4. 📐 Grids, Layouts y Responsividad
 
 ### 4.1. Cuadrícula de Biblioteca (Resources Grid)
-* **Escritorio (> 1200px):** Exactamente **6 columnas por fila** (`repeat(6, minmax(0, 1fr))`).
-* **Portátiles Medianos (900px a 1200px):** **4 columnas por fila** (`repeat(4, minmax(0, 1fr))`).
-* **Tabletas (600px a 900px):** **3 columnas por fila** (`repeat(3, minmax(0, 1fr))`).
-* **Celulares (<= 600px):** **2 columnas por fila** (`repeat(2, minmax(0, 1fr))`) con brecha de espacio reducida a `0.75rem`.
+* **Escritorio (> 1024px):** Exactamente **5 columnas por fila** (`repeat(5, minmax(0, 1fr))`) con separación ergonómica `gap: 1.25rem`. Esto amplía el ancho útil de cada tarjeta a ~220px-250px, otorgando máxima legibilidad al título (2 líneas completas con line-height 1.38) y permitiendo apreciar íntegramente la portada/carátula sin sensación de sobre-compresión de tienda barata.
+* **Tabletas y Pantallas Medianas (768px a 1024px):** **3 columnas por fila** (`repeat(3, minmax(0, 1fr))`) con `gap: 1rem`.
+* **Celulares y Dispositivos Móviles (<= 768px):** Exactamente **2 columnas por fila** (`repeat(2, minmax(0, 1fr))`) con `gap: 0.85rem`, tipografía de títulos calibrada a `0.85rem` y padding de contenido a `0.65rem 0.6rem`, garantizando que la carátula y el título del recurso se aprecien nítidos y sin recortes agresivos.
 
 ### 4.2. Responsividad del Panel de Simuladores (Salud & Educación)
 * **Escritorio (> 900px):**
@@ -354,6 +354,11 @@ Para conservar una estética de producto digital premium, moderna y no saturada 
 2. **Jerarquía Tipográfica sobre Iconos:** La claridad y estructura de la información debe descansar principalmente en una tipografía limpia (`Inter`), buenos pesos visuales, espaciados generosos (`gap`, `padding`, `margin`) y contrastes calibrados, no en la proliferación de símbolos gráficos.
 3. **Evitar Sobrecarga en Tarjetas y Contenedores:** En subtarjetas, sprints tácticos, badges o listas explicativas, priorizar texto claro con viñetas sutiles o números de paso limpios (ej. `Paso 1`, `Paso 2`, `Paso 3`) antes que saturar con múltiples iconos coloridos de diferentes familias.
 4. **Armonía y Escala:** Cuando se empleen iconos (ej. en botones primarios o avisos críticos), su tamaño no debe competir con el texto principal (`font-size: 0.85rem a 1rem` en iconos en línea, o badges cuadrados contenidos de `36px` a `42px`). Mantener siempre una paleta monocromática o tonalidades atenuadas (`var(--text-secondary)`, `var(--text-muted)` o acentos semánticos controlados).
+
+### 7.2. 🚫 Principio de Esbeltez Estructural y Sobriedad Visual
+1. **Sin Insignias ni Sellos Inventados:** No inventar sellos decorativos, sellos de verificación falsos, cintas de seguridad ni etiquetas pseudo-oficiales. La jerarquía visual debe descansar en tipografía limpia y metadatos auténticos.
+2. **Sin Contenedores Anidados Innecesarios (No Box-in-a-Box):** Evitar envolver componentes dentro de múltiples marcos o tarjetas redundantes. Un único contenedor directo con espaciado uniforme es siempre preferible a cajas dentro de cajas.
+3. **Sin Redundancia de Elementos (Iconos, Botones y Colores Innecesarios):** Apegarse estrictamente a la paleta institucional del sistema de temas. Queda prohibido añadir botones superfluos, efectos de borde estridentes o difuminados decorativos que resten legibilidad y limpieza a la interfaz.
 
 ---
 
@@ -512,17 +517,28 @@ El Panel de Gestión (`/admin`, `admin.html`, `admin.js`, `admin.css`) es la con
   * **Estado Activo (`.tab-link.active`):** Fondo `var(--bg-tertiary)`, color `var(--primary)`, borde inferior activo o contorno de acento de 2px, garantizando contraste 100% nítido en modo claro (`#2563eb` sobre fondo Slate) y modo oscuro (`#3b82f6` sobre Matte Black).
 * **Contenedor de Contenido (`.tab-content`):** Transición suave entre pestañas con display condicional (`display: none` / `display: block`).
 
-### 13.2. Controles de Cabecera, Buscador Universal y Filtros Dinámicos
-* **Barra de Herramientas (`.tab-header-controls`):** Flexbox adaptativo con `display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 1.25rem;`.
-* **Agrupador de Búsqueda y Orden (`.search-sort-wrapper`):** Flexbox con `display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1; min-width: 280px;`.
-* **Buscador Universal (`.admin-search-input`):**
-  * Contenedor `.search-bar-container` con icono FontAwesome a la izquierda `16px`, input con `background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 10px; height: 40px; padding-left: 2.25rem;`.
+### 13.2. Controles de Cabecera: Arquitectura en Dos Filas Responsiva (Acciones/Filtros Arriba, Búsqueda Abajo)
+Para prevenir el colapso horizontal, desbordamiento lateral o quiebres asimétricos entre resoluciones de PC, tabletas y celulares:
+* **Contenedor Maestro de Cabecera (`.tab-header-controls`):** Flexbox vertical con `display: flex; flex-direction: column; gap: 0.85rem; width: 100%; margin-bottom: 1.5rem;`.
+* **Fila Superior de Control (`.tab-top-row`):**
+  * `display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; width: 100%;`.
+  * **Zona Izquierda (`.admin-filters-group`):** Agrupa selectores de dominio (`.admin-domain-filter`), tipo (`.admin-type-filter`), vinculación de casos y ordenamiento (`.tab-sort-select`).
+  * **Zona Derecha (`.action-buttons`):** Agrupa botones de acción secundaria (`.btn-secondary`: Importar, Sincronizar Drive, Subida Masiva) y primarios (`.btn-primary`: Nueva Pregunta, Añadir Recurso, Añadir Carrera, etc.) con `margin-left: auto`.
+* **Fila Inferior de Búsqueda Despejada (`.tab-search-row`):**
+  * `display: flex; align-items: center; gap: 1rem; width: 100%;`.
+  * **Buscador Universal (`.search-bar-container`):** Se expande a lo ancho (`width: 100%; flex: 1; max-width: none;`) debajo de los botones y filtros, evitando cualquier compresión de texto o placeholder.
   * **Placeholders Contextuales por Pestaña:**
     * Alumnos (`tab-students`): `"Buscar por nombre o correo..."`.
-    * Recursos (`tab-books`): `"Buscar recursos..."`.
+    * Recursos (`tab-books`): `"Buscar recursos por título o autor..."`.
+    * Preguntas (`tab-questions`): `"Buscar preguntas (Servidor)..."`.
+    * Casuísticas (`tab-cases`): `"Buscar casuísticas por código, título o texto..."`.
     * General: `"Buscar..."`.
-  * **Algoritmo de Búsqueda Multiatributo (`applySearchFilterForTab`):** Evalúa concurrentemente `item.textContent`, `item.dataset.email` y `item.dataset.name` para coincidencias instantáneas sin peticiones redundantes a la base de datos.
-* **Filtros Selectores (`.admin-type-filter`, `.tab-sort-select`):** Altura estándar `40px`, radio `10px`, fondo `var(--input-bg)`, borde `var(--input-border)`, color `var(--text-main)`.
+  * **Contador de Resultados (`.results-counter`, `#questions-counter`, `#cases-counter`):** Tipografía `0.85rem`, color `var(--text-muted)` alineado a la derecha o al pie de la búsqueda.
+* **Algoritmo de Búsqueda Multiatributo (`applySearchFilterForTab`):** Evalúa concurrentemente `item.textContent`, `item.dataset.email` y `item.dataset.name` para coincidencias instantáneas sin peticiones redundantes a la base de datos.
+* **Adaptación Móvil (`@media (max-width: 768px)`):**
+  * `.tab-top-row` colapsa a columna fluida vertical.
+  * Botones de acción adoptan cuadrícula adaptativa (`flex: 1 1 calc(50% - 0.5rem)`).
+  * Los filtros y la barra de búsqueda ocupan el 100% del ancho con altura táctil estándar de `40px`.
 
 ### 13.3. Tarjetas de Elementos de Administración (`.admin-item-card`)
 * **Superficie de Tarjeta:** Fondo `var(--card-bg)`, borde `1px solid var(--border-color)`, radio `14px`, padding `1rem 1.25rem`, sombra suave `var(--shadow-sm)`.
@@ -630,18 +646,19 @@ La modal universal de confirmación implementa una jerarquía accesible de alta 
   * Pie: `.confirmation-modal-footer` con botón secundario `.btn-secondary` ("Cancelar") a la izquierda y primario `.btn-primary` ("Confirmar") a la derecha.
 
 ### 13.9. Arquitectura y Reglas de la Pestaña de Gestión de Alumnos / Usuarios
-* **Autenticación Exclusiva Google OAuth:**
-  * Hub Academia opera exclusivamente mediante **Google OAuth** (`signInWithIdToken` / `signInWithOAuth`).
-  * Los alumnos creados por el administrador en el panel acceden directamente autenticándose con su correo Google. Se erradica por completo el concepto de contraseñas locales o botones rotos de reseteo.
-* **Sincronización Bidireccional de Suscripciones:**
-  * **Frontend Dinámico (`admin.js`):**
-    * Seleccionar `Plan Básico` fuerza estado `Activo` y fecha actual + 2 meses.
-    * Seleccionar `Plan Avanzado` fuerza estado `Activo` y fecha actual + 4 meses.
-    * Seleccionar `Gratuito (Free)` fuerza estado `Inactivo/Pending` y vacía la fecha.
-    * Cambiar manualmente a `Inactivo` o `Expirado` degrada el tier a `Free` y limpia la fecha.
-  * **Backend Atómico (`adminService.js`):**
-    * Red de seguridad de negocio (`resolveSubscriptionConsistency`): fuerza consistencia de tiers y calcula expiración (+2m basic, +4m advanced) si no fue enviada.
-    * **Fidelización Automática:** Al activar un usuario (`subscriptionStatus: 'active'`), se restablecen a cero (`0`) todos los contadores de consumo (`usageCount = 0`, `dailyAiUsage = 0`, `dailyRagUsage = 0`, `dailySimulatorUsage = 0`, `monthlyFlashcardsUsage = 0`) para garantizar un ciclo de membresía limpio e íntegro.
+* **Diseño y Jerarquía Visual de Tarjetas de Alumno (`.admin-item-card`):**
+  * Tarjeta con borde temático de entidad en ámbar (`#f59e0b`).
+  * Identificador primario con nombre completo (`font-weight: 600`) y correo Google institucional en tipografía secundaria accesible (`var(--text-muted)`).
+  * Matriz semántica de badges obligatorios:
+    - **Nivel de Membresía:** `.admin-badge-blue` para Plan Básico, `.admin-badge-purple` para Plan Avanzado, `.admin-badge-muted` para Acceso Gratuito.
+    - **Estado Operativo:** `.admin-badge-green` para Activo, `.admin-badge-danger` para Expirado, `.admin-badge-muted` para Inactivo o Pendiente.
+    - **Vigencia Temporal:** Indicador con fecha formateada (`📅 Expira: DD/MM/AAAA`).
+* **Norma de Interfaz para Autenticación Federada con Google OAuth:**
+  * La plataforma opera mediante autenticación federada universal con **Google OAuth**.
+  * Los formularios modales de alta y edición de alumnos prescinden de campos de contraseña local, generadores de claves o botones de reseteo, conservando una interfaz minimalista, limpia y enfocada en datos de contacto y nivel de membresía.
+* **Comportamiento Visual Reactivo del Formulario de Membresía:**
+  * Al seleccionar Plan Básico o Avanzado en el selector modal, la UI preconfigura visualmente el estado a Activo y proyecta la fecha estimada de expiración (+2 meses o +4 meses).
+  * Al seleccionar Plan Gratuito, la interfaz ajusta automáticamente el estado a Pendiente/Inactivo y despeja el campo de fecha para mantener consistencia visual.
 
 ### 13.10. Estándar de Tipografía Justificada Profesional en Simuladores de Exámenes (Web y Móvil)
 Para maximizar la sobriedad, legibilidad y estética profesional durante la resolución y análisis de exámenes pedagógicos y médicos:
@@ -708,9 +725,9 @@ Para brindar transparencia académica y trazabilidad documental en las respuesta
 
 Para garantizar una experiencia de lectura óptima, sin fatiga visual y con máximo contraste accesible (WCAG AAA / AA):
 
-### 15.1. Diagnóstico y Corrección de Títulos Opacos
-- **Causa Raíz:** En temas claros (`[data-theme="light"]`), los encabezados Markdown (`h1`-`h4`) heredaban colores pastel de baja luminancia diseñados para fondo oscuro (`#93c5fd`, `#a5b4fc`), y las negritas (`.tutor-message strong`) empleaban un degradado cian con `-webkit-text-fill-color: transparent`, provocando un aspecto lavado, opaco e ilegible contra fondos blancos/grises.
-- **Tokens de Alto Contraste en Modo Claro (`markdown-content.css`):**
+### 15.1. Jerarquía y Tokens de Alto Contraste en Modo Claro (`markdown-content.css`)
+Para garantizar una experiencia de lectura óptima, sin fatiga visual y con máximo contraste accesible (WCAG AAA / AA), los encabezados y estilos de énfasis en modo claro aplican los siguientes tokens normativos:
+* **Tokens Tipográficos en Modo Claro:**
   - `h1`: `#1e3a8a` (Azul Profundo 900) con borde inferior `rgba(30, 58, 138, 0.15)`. Contraste > 10:1.
   - `h2`: `#1e40af` (Azul Intenso 800) con borde inferior `rgba(30, 64, 175, 0.12)`. Contraste > 8.5:1.
   - `h3`: `#2563eb` (Azul Real 600). Contraste > 5.8:1.

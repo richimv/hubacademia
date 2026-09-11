@@ -15,8 +15,9 @@
 /* Base de Secciones Animadas al Scroll */
 .scroll-animate-section {
     position: relative;
-    padding: 6rem 2rem;
-    min-height: auto; /* ✅ Alturas adaptativas según contenido */
+    padding: 3.5rem 2rem;
+    min-height: calc(100vh - var(--header-height-desktop, 70px));
+    scroll-margin-top: var(--header-height-desktop, 70px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -745,6 +746,7 @@
     .scroll-animate-section {
         padding: 3.5rem 1.5rem !important;
         min-height: auto !important;
+        scroll-margin-top: var(--header-height-mobile, 50px) !important;
         overflow: visible !important;
     }
     

@@ -250,7 +250,10 @@ class AdminManager {
         });
 
         const handleSearchFilter = (e) => {
-            if (e.target.classList.contains('admin-search-input') || e.target.classList.contains('admin-type-filter')) {
+            if (e.target.classList.contains('admin-search-input') || e.target.classList.contains('admin-type-filter') || e.target.classList.contains('admin-domain-filter')) {
+                // 🛡️ Al filtrar o buscar, limpiar inmediatamente cualquier selección previa para evitar borrar elementos ocultos
+                this.clearBulkSelection();
+
                 clearTimeout(this.searchTimeout);
                 const input = e.target;
 
@@ -261,11 +264,13 @@ class AdminManager {
                     const tabContent = document.getElementById(tabId);
                     const searchInput = tabContent.querySelector('.admin-search-input');
                     const typeSelect = tabContent.querySelector('.admin-type-filter');
+                    const domainSelect = tabContent.querySelector('.admin-domain-filter');
 
                     // Guardar estado
                     this.searchState[tabId] = {
                         search: searchInput ? searchInput.value.trim() : '',
-                        filter: typeSelect ? typeSelect.value : 'all'
+                        filter: typeSelect ? typeSelect.value : 'all',
+                        domain: domainSelect ? domainSelect.value : 'all'
                     };
 
                     this.applySearchFilterForTab(tabId);
@@ -279,6 +284,7 @@ class AdminManager {
         // ✅ NUEVO: Listener delegado para los controles de ordenamiento en cada pestaña
         document.getElementById('admin-main-container').addEventListener('change', (e) => {
             if (e.target.classList.contains('tab-sort-select')) {
+                this.clearBulkSelection();
                 const tabId = e.target.dataset.tab;
                 this.tabSortState[tabId] = e.target.value;
                 // Re-renderizar la pestaña actual
@@ -286,7 +292,7 @@ class AdminManager {
             }
         });
 
-        // ✅ NUEVO: Listener delegado para los checkboxes de selección masiva (con soporte para Shift + Click)
+        // ✅ BLINDADO: Listener delegado para los checkboxes de selección masiva (ESTRICTAMENTE ELEMENTOS VISIBLES)
         document.getElementById('admin-main-container').addEventListener('click', (e) => {
             if (e.target.classList.contains('admin-item-checkbox')) {
                 const currentCheckbox = e.target;
@@ -298,12 +304,21 @@ class AdminManager {
                 const activeTab = document.querySelector('.tab-content.active');
                 if (!activeTab) return;
 
-                // Obtener todos los checkboxes en la pestaña activa
-                const checkboxes = Array.from(activeTab.querySelectorAll('.admin-item-checkbox'));
+                // Helper de visibilidad estricta para el contenedor de la tarjeta
+                const isCardVisible = (cb) => {
+                    const card = cb.closest('.admin-item-card, .item-card');
+                    return card && card.style.display !== 'none';
+                };
 
-                if (e.shiftKey && this.lastCheckedCheckbox && activeTab.contains(this.lastCheckedCheckbox)) {
-                    const start = checkboxes.indexOf(currentCheckbox);
-                    const end = checkboxes.indexOf(this.lastCheckedCheckbox);
+                // Obtener SOLO los checkboxes de tarjetas actualmente VISIBLES en la pestaña activa
+                const visibleCheckboxes = Array.from(activeTab.querySelectorAll('.admin-item-checkbox')).filter(isCardVisible);
+
+                // Si el checkbox clickeado no está visible por alguna razón, ignorar
+                if (!isCardVisible(currentCheckbox)) return;
+
+                if (e.shiftKey && this.lastCheckedCheckbox && activeTab.contains(this.lastCheckedCheckbox) && isCardVisible(this.lastCheckedCheckbox)) {
+                    const start = visibleCheckboxes.indexOf(currentCheckbox);
+                    const end = visibleCheckboxes.indexOf(this.lastCheckedCheckbox);
 
                     if (start !== -1 && end !== -1) {
                         const rangeStart = Math.min(start, end);
@@ -311,7 +326,7 @@ class AdminManager {
                         const isChecked = currentCheckbox.checked;
 
                         for (let i = rangeStart; i <= rangeEnd; i++) {
-                            const cb = checkboxes[i];
+                            const cb = visibleCheckboxes[i];
                             cb.checked = isChecked;
 
                             const itemVal = cb.dataset.id;
@@ -341,6 +356,13 @@ class AdminManager {
         });
 
         // Botones de la barra de acciones masivas
+        const selectVisibleBtn = document.getElementById('bulk-select-visible-btn');
+        if (selectVisibleBtn) {
+            selectVisibleBtn.addEventListener('click', () => {
+                this.selectVisibleItems();
+            });
+        }
+
         const cancelBtn = document.getElementById('bulk-cancel-selection-btn');
         if (cancelBtn) {
             cancelBtn.addEventListener('click', () => {
@@ -558,33 +580,42 @@ class AdminManager {
 
         const headerHTML = `
             <div class="tab-header-controls">
-                <div class="search-sort-wrapper">
+                <div class="tab-top-row">
+                    <div class="admin-filters-group">
+                        <select class="admin-domain-filter" data-target-tab="tab-books">
+                            <option value="all">Todos los Dominios</option>
+                            <option value="medicine">Salud Profesional</option>
+                            <option value="education">Educación Docente</option>
+                        </select>
+                        <select class="admin-type-filter" data-target-tab="tab-books">
+                            <option value="all">Todos los Tipos</option>
+                            <option value="book">Libro/Manual</option>
+                            <option value="paper">Paper Científico</option>
+                            <option value="norma">Norma/Directiva</option>
+                            <option value="guia">Guía Clínica</option>
+                            <option value="noticia">Noticia Oficial</option>
+                            <option value="video">Video</option>
+                            <option value="other">Imagen/Otro</option>
+                        </select>
+                        <select class="tab-sort-select" data-tab="tab-books">
+                            <option value="date-desc">📅 Más Recientes</option>
+                            <option value="alpha-asc">🔤 A-Z</option>
+                        </select>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn-secondary" onclick="window.adminManager.openGenericModal('drive-sync')">
+                            <i class="fab fa-google-drive"></i> <span class="hide-mobile">Sincronizar Drive</span>
+                        </button>
+                        <button class="btn-primary" onclick="window.adminManager.openGenericModal('book')">
+                            <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Recurso</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="tab-search-row">
                     <div class="search-bar-container">
                         <i class="fas fa-search"></i>
-                        <input type="text" class="admin-search-input" data-target-tab="tab-books" placeholder="Buscar recursos...">
+                        <input type="text" class="admin-search-input" data-target-tab="tab-books" placeholder="Buscar recursos por título o autor...">
                     </div>
-                    <select class="admin-type-filter" data-target-tab="tab-books">
-                        <option value="all">Todos los Tipos</option>
-                        <option value="book">Libro/Manual</option>
-                        <option value="paper">Paper Científico</option>
-                        <option value="norma">Norma/Directiva</option>
-                        <option value="guia">Guía Clínica</option>
-                        <option value="noticia">Noticia Oficial</option>
-                        <option value="video">Video</option>
-                        <option value="other">Imagen/Otro</option>
-                    </select>
-                    <select class="tab-sort-select" data-tab="tab-books">
-                        <option value="date-desc">📅 Más Recientes</option>
-                        <option value="alpha-asc">🔤 A-Z</option>
-                    </select>
-                </div>
-                <div class="action-buttons">
-                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('drive-sync')">
-                        <i class="fab fa-google-drive"></i> <span class="hide-mobile">Sincronizar Drive</span>
-                    </button>
-                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('book')">
-                        <i class="fas fa-plus"></i> <span class="hide-mobile">Añadir Recurso</span>
-                    </button>
                 </div>
             </div>
         `;
@@ -606,7 +637,37 @@ class AdminManager {
 
         const content = `
             <div class="tab-header-controls">
-                <div class="search-sort-wrapper">
+                <div class="tab-top-row">
+                    <div class="admin-filters-group">
+                        <select class="admin-type-filter admin-domain-filter" 
+                            title="Filtrar por dominio de preguntas"
+                            onchange="window.adminManager.handleDomainChange(this.value)">
+                            ${domains.map(d => `<option value="${d.id}" ${this.currentQuestionDomain === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
+                        </select>
+
+                        <select class="admin-type-filter" 
+                            title="Filtrar por asociación a casos"
+                            onchange="window.adminManager.handleQuestionCaseFilterChange(this.value)">
+                            <option value="all" ${(!this.currentQuestionCaseFilter || this.currentQuestionCaseFilter === 'all') ? 'selected' : ''}>Todos los Casos / Indep.</option>
+                            <option value="linked" ${this.currentQuestionCaseFilter === 'linked' ? 'selected' : ''}>Vinculadas a Caso</option>
+                            <option value="unlinked" ${this.currentQuestionCaseFilter === 'unlinked' ? 'selected' : ''}>Independientes (Sin Caso)</option>
+                        </select>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-question')">
+                            <i class="fas fa-file-import"></i> <span class="hide-mobile">Importar</span>
+                        </button>
+                        <button class="btn-primary btn-ai" onclick="window.adminManager.openGenericModal('ai-question')">
+                            <i class="fas fa-robot"></i> <span class="hide-mobile">Generar IA</span>
+                        </button>
+                        <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')">
+                            <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva Pregunta</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-search-row">
                     <div class="search-bar-container">
                         <i class="fas fa-search"></i>
                         <input type="text" class="admin-search-input-dynamic" 
@@ -614,27 +675,9 @@ class AdminManager {
                             value="${this.escapeHtml(this.currentQuestionSearch)}"
                             oninput="window.adminManager.handleDynamicSearch(this.value)">
                     </div>
-
-                    <select class="admin-type-filter" 
-                        onchange="window.adminManager.handleDomainChange(this.value)">
-                        ${domains.map(d => `<option value="${d.id}" ${this.currentQuestionDomain === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
-                    </select>
-
-                    <div id="questions-counter" style="font-size: 0.85rem; color: var(--text-muted); margin-left: 10px;">
+                    <div id="questions-counter" class="results-counter">
                         Mostrando ${this.allQuestions.length} resultados
                     </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-question')">
-                        <i class="fas fa-file-import"></i> <span class="hide-mobile">Importar</span>
-                    </button>
-                    <button class="btn-primary btn-ai" onclick="window.adminManager.openGenericModal('ai-question')">
-                        <i class="fas fa-robot"></i> <span class="hide-mobile">Generar IA</span>
-                    </button>
-                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('question')">
-                        <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva Pregunta</span>
-                    </button>
                 </div>
             </div>
             <div id="questions-list-container" class="items-list-container">
@@ -645,11 +688,19 @@ class AdminManager {
     }
 
     handleDomainChange(domain) {
+        this.clearBulkSelection();
         this.currentQuestionDomain = domain;
         this.refreshQuestions();
     }
 
+    handleQuestionCaseFilterChange(filter) {
+        this.clearBulkSelection();
+        this.currentQuestionCaseFilter = filter;
+        this.refreshQuestions();
+    }
+
     handleDynamicSearch(val) {
+        this.clearBulkSelection();
         this.currentQuestionSearch = val;
         clearTimeout(this.searchTimeout);
         this.searchTimeout = setTimeout(() => {
@@ -658,6 +709,7 @@ class AdminManager {
     }
 
     async refreshQuestions() {
+        this.clearBulkSelection();
         const listContainer = document.getElementById('questions-list-container');
         const counter = document.getElementById('questions-counter');
 
@@ -665,7 +717,10 @@ class AdminManager {
 
         try {
             const url = new URL(`${window.AppConfig.API_URL}/api/admin/questions`);
-            url.searchParams.append('domain', this.currentQuestionDomain);
+            url.searchParams.append('domain', this.currentQuestionDomain || 'all');
+            if (this.currentQuestionCaseFilter && this.currentQuestionCaseFilter !== 'all') {
+                url.searchParams.append('caseFilter', this.currentQuestionCaseFilter);
+            }
             if (this.currentQuestionSearch) {
                 url.searchParams.append('search', this.currentQuestionSearch);
             }
@@ -710,7 +765,25 @@ class AdminManager {
 
         const content = `
             <div class="tab-header-controls">
-                <div class="search-sort-wrapper">
+                <div class="tab-top-row">
+                    <div class="admin-filters-group">
+                        <select class="admin-type-filter admin-domain-filter" 
+                            onchange="window.adminManager.handleCaseDomainChange(this.value)">
+                            ${domains.map(d => `<option value="${d.id}" ${this.currentCaseDomain === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-case')">
+                            <i class="fas fa-file-excel"></i> <span class="hide-mobile">Subida Masiva</span>
+                        </button>
+                        <button class="btn-primary" onclick="window.adminManager.openGenericModal('case')">
+                            <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva Casuística</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-search-row">
                     <div class="search-bar-container">
                         <i class="fas fa-search"></i>
                         <input type="text" class="admin-search-input-dynamic" 
@@ -718,24 +791,9 @@ class AdminManager {
                             value="${this.escapeHtml(this.currentCaseSearch)}"
                             oninput="window.adminManager.handleDynamicCaseSearch(this.value)">
                     </div>
-
-                    <select class="admin-type-filter" 
-                        onchange="window.adminManager.handleCaseDomainChange(this.value)">
-                        ${domains.map(d => `<option value="${d.id}" ${this.currentCaseDomain === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
-                    </select>
-
-                    <div id="cases-counter" style="font-size: 0.85rem; color: var(--text-muted); margin-left: 10px;">
+                    <div id="cases-counter" class="results-counter">
                         Mostrando ${this.allCases.length} casuísticas
                     </div>
-                </div>
-
-                <div class="action-buttons" style="display: flex; gap: 8px;">
-                    <button class="btn-secondary" onclick="window.adminManager.openGenericModal('bulk-case')">
-                        <i class="fas fa-file-excel"></i> <span class="hide-mobile">Subida Masiva</span>
-                    </button>
-                    <button class="btn-primary" onclick="window.adminManager.openGenericModal('case')">
-                        <i class="fas fa-plus"></i> <span class="hide-mobile">Nueva Casuística</span>
-                    </button>
                 </div>
             </div>
 
@@ -747,11 +805,13 @@ class AdminManager {
     }
 
     handleCaseDomainChange(domain) {
+        this.clearBulkSelection();
         this.currentCaseDomain = domain;
         this.refreshCases();
     }
 
     handleDynamicCaseSearch(val) {
+        this.clearBulkSelection();
         this.currentCaseSearch = val;
         clearTimeout(this.caseSearchTimeout);
         this.caseSearchTimeout = setTimeout(() => {
@@ -760,6 +820,7 @@ class AdminManager {
     }
 
     async refreshCases() {
+        this.clearBulkSelection();
         const listContainer = document.getElementById('cases-list-container');
         const counter = document.getElementById('cases-counter');
 
@@ -1617,6 +1678,21 @@ class AdminManager {
 
         fieldsContainer.innerHTML = fieldsHTML;
         this.hydrateImagePreviews(fieldsContainer);
+
+        // Ajustar dimensiones del modal sincrónicamente antes de mostrarlo para erradicar el parpadeo
+        const modalContent = this.genericModal.querySelector('.modal-content');
+        if (modalContent) {
+            if (window.innerWidth <= 768) {
+                modalContent.style.maxWidth = '100%';
+                modalContent.style.width = 'calc(100% - 16px)';
+                modalContent.style.maxHeight = '94vh';
+            } else {
+                modalContent.style.maxWidth = '1100px';
+                modalContent.style.width = '95%';
+                modalContent.style.maxHeight = '92vh';
+            }
+        }
+
         this.genericModal.style.display = 'flex';
 
         // LÓGICA DE SUSCRIPCIONES DINÁMICAS Y CONSISTENCIA PARA ESTUDIANTES
@@ -1758,21 +1834,6 @@ class AdminManager {
         // SOLUCIÓN DEFINITIVA: Inicializar el estado visual de los componentes después de renderizar.
         // Esto soluciona los dos problemas reportados.
         
-        // --- NUEVO: Aumentar tamaño de modal globalmente para todas las pestañas ---
-        setTimeout(() => {
-            const modalContent = this.genericModal.querySelector('.modal-content');
-            if (modalContent) {
-                if (window.innerWidth <= 768) {
-                    modalContent.style.maxWidth = '100%';
-                    modalContent.style.width = 'calc(100% - 16px)';
-                    modalContent.style.maxHeight = '94vh';
-                } else {
-                    modalContent.style.maxWidth = '1100px';
-                    modalContent.style.width = '95%';
-                    modalContent.style.maxHeight = '92vh';
-                }
-            }
-        }, 0);
 
         this.genericModal.querySelectorAll('.searchable-dropdown-container').forEach(container => {
             if (container.dataset.multiselect === 'true') {
@@ -3222,7 +3283,17 @@ class AdminManager {
 
         return `
             <div class="tab-header-controls">
-                <div class="search-sort-wrapper">
+                <div class="tab-top-row">
+                    <div class="admin-filters-group">
+                        ${sortSelectHTML}
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn-primary" onclick="window.adminManager.openGenericModal('${type}')">
+                            <i class="fas fa-plus"></i> <span>${buttonLabel}</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="tab-search-row">
                     <div class="search-bar-container">
                         <i class="fas fa-search"></i>
                         <input type="text"
@@ -3230,11 +3301,7 @@ class AdminManager {
                             placeholder="${searchPlaceholder}"
                             data-target-tab="${tabId}">
                     </div>
-                    ${sortSelectHTML}
                 </div>
-                <button class="btn-primary" onclick="window.adminManager.openGenericModal('${type}')">
-                    <i class="fas fa-plus"></i> <span>${buttonLabel}</span>
-                </button>
             </div>
         `;
     }
@@ -3646,6 +3713,30 @@ class AdminManager {
         }
     }
 
+    selectVisibleItems() {
+        const activeTab = document.querySelector('.tab-content.active');
+        if (!activeTab) return;
+
+        const visibleCheckboxes = Array.from(activeTab.querySelectorAll('.admin-item-checkbox')).filter(cb => {
+            const card = cb.closest('.admin-item-card, .item-card');
+            return card && card.style.display !== 'none';
+        });
+
+        if (visibleCheckboxes.length === 0) return;
+
+        visibleCheckboxes.forEach(cb => {
+            cb.checked = true;
+            const id = cb.dataset.id;
+            const type = cb.dataset.type;
+            if (type) this.selectedType = type;
+            if (!this.selectedIds.includes(id)) {
+                this.selectedIds.push(id);
+            }
+        });
+
+        this.updateBulkActionsBar();
+    }
+
     clearBulkSelection() {
         this.selectedIds = [];
         this.selectedType = '';
@@ -3677,7 +3768,42 @@ class AdminManager {
         const type = this.selectedType;
         const count = this.selectedIds.length;
 
-        const confirmMsg = `¿Estás seguro de que quieres eliminar masivamente estos ${count} elementos (${type})? Esta acción no se puede deshacer y eliminará permanentemente todos los recursos e imágenes asociadas.`;
+        // 🛡️ RECOLECCIÓN TRANSPARENTE DE NOMBRES/TÍTULOS PARA VERIFICACIÓN VISUAL
+        const activeTab = document.querySelector('.tab-content.active');
+        const selectedTitles = [];
+        if (activeTab) {
+            this.selectedIds.forEach(id => {
+                const cb = activeTab.querySelector(`.admin-item-checkbox[data-id="${id}"]`);
+                if (cb) {
+                    const card = cb.closest('.admin-item-card, .item-card');
+                    if (card) {
+                        const titleEl = card.querySelector('h3');
+                        const title = card.dataset.name || (titleEl ? titleEl.textContent.trim() : `ID: ${id}`);
+                        if (title && !selectedTitles.includes(title)) {
+                            selectedTitles.push(title);
+                        }
+                    }
+                }
+            });
+        }
+
+        const maxDisplay = 8;
+        const previewList = selectedTitles.slice(0, maxDisplay).map(t => `• ${t}`).join('\n');
+        const remaining = selectedTitles.length - maxDisplay;
+        const remainingText = remaining > 0 ? `\n... y ${remaining} elemento(s) más.` : '';
+
+        const typeLabels = {
+            book: 'Recursos / Bibliografía',
+            question: 'Preguntas',
+            case: 'Casuísticas',
+            career: 'Carreras',
+            course: 'Cursos',
+            topic: 'Temas',
+            student: 'Alumnos'
+        };
+        const typeFriendly = typeLabels[type] || type;
+
+        const confirmMsg = `¿Estás seguro de que deseas eliminar permanentemente estos ${count} elementos de tipo "${typeFriendly}"?\n\nElementos que se eliminarán:\n${previewList}${remainingText}\n\n⚠️ Esta acción no se puede deshacer y eliminará permanentemente todos los recursos e imágenes asociadas.`;
 
         if (!await window.confirmationModal.show(confirmMsg, 'Eliminación Masiva', 'Eliminar Todo', 'Cancelar')) {
             return;
@@ -3735,6 +3861,11 @@ class AdminManager {
             typeSelect.value = state.filter;
         }
 
+        const domainSelect = tabContent.querySelector('.admin-domain-filter');
+        if (domainSelect && state.domain) {
+            domainSelect.value = state.domain;
+        }
+
         const sortSelect = tabContent.querySelector('.tab-sort-select');
         if (sortSelect && this.tabSortState[tabId]) {
             sortSelect.value = this.tabSortState[tabId];
@@ -3754,11 +3885,17 @@ class AdminManager {
             }
 
             let matchesType = true;
-            if (state.filter !== 'all') {
+            if (state.filter && state.filter !== 'all') {
                 matchesType = item.dataset.resourceType === state.filter;
             }
 
-            const matches = matchesText && matchesType;
+            let matchesDomain = true;
+            if (state.domain && state.domain !== 'all') {
+                const itemDomain = (item.dataset.domain || 'medicine').toLowerCase();
+                matchesDomain = itemDomain === state.domain.toLowerCase();
+            }
+
+            const matches = matchesText && matchesType && matchesDomain;
             item.style.display = matches ? '' : 'none';
         });
 

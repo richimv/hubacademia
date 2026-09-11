@@ -79,6 +79,19 @@ describe('Admin Panel - Modales Responsivas y Contraste Dual-Theme', () => {
             expect(adminJs).toContain("modalContent.style.width = 'calc(100% - 16px)';");
             expect(adminJs).toContain("modalContent.style.maxWidth = '100%';");
         });
+
+        test('#generic-modal .modal-content tiene ancho y max-width estáticos en admin.css para erradicar flash', () => {
+            expect(adminCss).toMatch(/#generic-modal\s+\.modal-content\s*\{[^}]*max-width:\s*1100px/);
+            expect(adminCss).toMatch(/#generic-modal\s+\.modal-content\s*\{[^}]*width:\s*95%/);
+        });
+
+        test('admin.js ajusta las dimensiones de modalContent sincrónicamente antes de display flex', () => {
+            const sizePos = adminJs.indexOf("modalContent.style.maxWidth = '1100px';");
+            const displayPos = adminJs.indexOf("this.genericModal.style.display = 'flex';");
+            expect(sizePos).toBeGreaterThan(-1);
+            expect(displayPos).toBeGreaterThan(-1);
+            expect(sizePos).toBeLessThan(displayPos);
+        });
     });
 
     describe('3. Integración de TinyMCE Editor con Dual-Theme Dinámico', () => {

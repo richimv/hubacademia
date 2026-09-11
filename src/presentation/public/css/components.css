@@ -229,15 +229,6 @@
     /* Fixed: Dark text on light background */
 }
 
-/* =================================
-   Sección de Descubre más (ELIMINADA)
-   ================================= */
-/* 
-.discover-more-section { ... }
-.recommendations-section { ... }
-... (Estilos eliminados para limpiar) 
-*/
-
 .discover-title {
     font-size: 1.4rem;
     font-weight: 600;
@@ -573,8 +564,7 @@
 
 /* Zona de Información (Bottom) */
 .urc-info-zone {
-    padding: 0.75rem;
-    /* Manta style compact text below image but with padding restored */
+    padding: 0.85rem 0.9rem;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -587,11 +577,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 .urc-badge {
-    font-size: 0.65rem;
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
     padding: 3px 8px;
@@ -603,17 +593,16 @@
 }
 
 .urc-size {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
 }
 
 .urc-title {
-    font-size: 0.85rem;
-    /* Reducido de 0.95rem */
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--text-main);
-    margin: 0 0 0.5rem 0;
-    line-height: 1.3;
+    margin: 0 0 0.4rem 0;
+    line-height: 1.38;
     /* Truncar a 2 líneas siempre */
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -624,8 +613,7 @@
 }
 
 .urc-author {
-    font-size: 0.75rem;
-    /* Reducido de 0.8rem */
+    font-size: 0.78rem;
     color: var(--text-muted);
     margin-top: auto;
     /* Empujar hacia abajo */
@@ -801,10 +789,10 @@
         background: rgba(10, 10, 10, 0.8) !important;
     }
 
-    /* 🚨 Texto minimalista: menos padding y fuentes más pequeñas para que respire */
+    /* 🚨 Texto equilibrado y espacioso para 2 columnas en móviles */
     .urc-info-zone {
-        padding: 0.4rem !important;
-        gap: 0.2rem !important;
+        padding: 0.65rem 0.6rem !important;
+        gap: 0.3rem !important;
     }
 
     .unified-resource-card.has-bg-image .urc-info-zone {
@@ -813,32 +801,29 @@
     }
 
     .urc-meta {
-        margin-bottom: 0.15rem !important;
+        margin-bottom: 0.2rem !important;
     }
 
     .urc-badge {
-        font-size: 0.55rem !important;
-        /* Etiqueta más fina */
-        padding: 2px 5px !important;
-        gap: 3px !important;
+        font-size: 0.65rem !important;
+        padding: 2px 6px !important;
+        gap: 4px !important;
         letter-spacing: 0.3px;
     }
 
     .urc-size {
-        font-size: 0.6rem !important;
+        font-size: 0.68rem !important;
     }
 
     .urc-title {
-        font-size: 0.75rem !important;
-        /* Título más delicado */
-        line-height: 1.2 !important;
-        margin-bottom: 0.15rem !important;
+        font-size: 0.85rem !important;
+        line-height: 1.35 !important;
+        margin-bottom: 0.2rem !important;
     }
 
     .urc-author {
-        font-size: 0.65rem !important;
-        color: rgba(255, 255, 255, 0.6) !important;
-        /* Suavizar el autor */
+        font-size: 0.72rem !important;
+        color: rgba(255, 255, 255, 0.75) !important;
     }
 
     .urc-icon-fallback {
@@ -859,12 +844,12 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
     }
 
-    /* 🚨 FIX: Forzar EXACTAMENTE 3 columnas en móvil (intacto) */
+    /* 🚨 Estandarización de 2 columnas ergonómicas en móvil */
     .books-grid,
     .ml-grid,
     .general-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 0.5rem !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.85rem !important;
     }
 }
 
@@ -1272,57 +1257,19 @@
     border-color: #ef4444;
 }
 
-/* Note Viewer Modal */
+/* Note Viewer Modal (Alineado con el Estándar Universal modal.css) */
 .note-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(12px) !important;
-    z-index: 10010;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s;
-    overscroll-behavior: contain !important;
-}
-
-.note-modal-overlay.open {
-    opacity: 1;
-    visibility: visible;
+    z-index: 2000000 !important;
 }
 
 .note-modal {
-    background: var(--modal-bg) !important;
-    border: 1px solid var(--border-glow) !important;
-    border-radius: 24px !important;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow-xl) !important;
-    transform: translateY(20px) scale(0.95);
-    transition: transform 0.3s;
-    color: var(--text-main);
+    max-width: 650px !important;
+    max-height: 90vh !important;
 }
 
-.note-modal-overlay.open .note-modal {
-    transform: translateY(0) scale(1);
-}
-
-.note-modal-header {
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-color) !important;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.note-modal-header h3 {
+.note-modal-header h2 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-main);
     display: flex;
@@ -1330,28 +1277,8 @@
     gap: 8px;
 }
 
-.note-modal-header h3 i {
-    color: #f59e0b;
-}
-
-.note-modal-close {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
-    transition: all 0.2s;
-}
-
-.note-modal-close:hover {
-    background: var(--surface-hover);
-    color: var(--text-main);
-}
-
 .note-modal-body {
-    padding: 1.25rem;
+    padding: 1.5rem !important;
     overflow-y: auto;
     flex: 1;
     color: var(--text-main);
@@ -1364,13 +1291,13 @@
 .note-editor-title {
     width: 100%;
     background: var(--input-bg) !important;
-    border: 1px solid var(--input-border) !important;
+    border: 1.5px solid var(--border-color) !important;
     border-radius: 12px !important;
     color: var(--text-main) !important;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     padding: 0.75rem 1rem !important;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     outline: none;
     transition: all 0.2s ease !important;
     box-sizing: border-box !important;
@@ -1379,7 +1306,7 @@
 .note-editor-title:focus {
     border-color: var(--primary) !important;
     background: var(--input-bg) !important;
-    box-shadow: 0 0 10px var(--primary-glow) !important;
+    box-shadow: 0 0 0 3px var(--primary-glow) !important;
 }
 
 /* ✅ Estilos del Visor de Notas y Chats Unificados (Markdown Rico) */
@@ -1512,19 +1439,14 @@
     border-top: 1px solid var(--border);
     margin: 1.5rem 0;
 }
-
-.note-editor-title:focus {
-    border-color: var(--primary);
-}
-
 .note-editor-toolbar {
     display: flex;
-    gap: 5px;
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border: 1px solid var(--border);
+    gap: 6px;
+    padding: 6px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--border-color);
 }
 
 .note-toolbar-btn {
@@ -1535,26 +1457,26 @@
     justify-content: center;
     background: transparent;
     border: none;
-    color: var(--text-muted);
-    border-radius: 4px;
+    color: var(--text-secondary);
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     font-size: 0.9rem;
 }
 
 .note-toolbar-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--surface-hover);
     color: var(--text-main);
 }
 
 .note-editor-textarea {
     width: 100%;
-    height: 300px;
-    background: rgba(15, 23, 42, 0.4) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    height: 280px;
+    background: var(--input-bg) !important;
+    border: 1.5px solid var(--border-color) !important;
     border-radius: 12px !important;
     color: var(--text-main) !important;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: inherit;
     font-size: 0.95rem;
     line-height: 1.6;
     resize: none;
@@ -1565,39 +1487,24 @@
 }
 
 .note-editor-textarea:focus {
-    border-color: var(--primary-light) !important;
-    background: rgba(15, 23, 42, 0.6) !important;
-    box-shadow: 0 0 10px rgba(96, 165, 250, 0.15) !important;
+    border-color: var(--primary) !important;
+    background: var(--input-bg) !important;
+    box-shadow: 0 0 0 3px var(--primary-glow) !important;
 }
 
 .note-modal-footer {
-    padding: 0.75rem 1.25rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
     display: flex;
-    gap: 8px;
+    gap: 0.75rem;
     justify-content: flex-end;
-}
-
-.note-modal-footer button {
-    padding: 8px 18px !important;
-    border-radius: 12px !important;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    background: rgba(255, 255, 255, 0.02) !important;
-    color: var(--text-muted);
-}
-
-.note-modal-footer button:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: var(--text-main);
+    align-items: center;
 }
 
 .note-modal-footer .note-delete-btn:hover {
-    color: #ef4444;
-    border-color: #ef4444;
+    color: var(--danger) !important;
+    border-color: var(--danger) !important;
+    background: var(--danger-bg) !important;
 }
 
 /* Fullscreen Mode — Ocupa toda la pantalla */

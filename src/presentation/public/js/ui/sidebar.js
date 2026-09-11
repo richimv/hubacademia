@@ -328,6 +328,25 @@ class GlobalSidebar {
             item.addEventListener('click', (e) => {
                 // Interceptar enlaces de biblioteca si ya estamos en la página de biblioteca
                 const href = item.getAttribute('href');
+                const isHomePage = window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname === '/index' || window.location.pathname === '';
+                
+                if (href && (href.startsWith('/#') || href.startsWith('#')) && isHomePage) {
+                    const targetHash = href.startsWith('/#') ? href.substring(1) : href;
+                    const targetEl = document.querySelector(targetHash);
+                    if (targetEl) {
+                        e.preventDefault();
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.remove('open');
+                            backdrop.classList.remove('active');
+                            document.body.classList.remove('sidebar-open');
+                        }
+                        history.pushState(null, '', targetHash);
+                        this.highlightActiveItem();
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        return;
+                    }
+                }
+
                 if (href && href.startsWith('/library') && window.location.pathname.includes('/library')) {
                     const urlParams = new URLSearchParams(href.split('?')[1] || '');
                     const tab = urlParams.get('tab') || 'resources';

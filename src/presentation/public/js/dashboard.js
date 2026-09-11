@@ -3,6 +3,7 @@ class DashboardManager {
         this.apiUrl = `${window.AppConfig.API_URL}/api/admin/dashboard-stats`;
         this.aiUrl = `${window.AppConfig.API_URL}/api/admin/run-ai`; // Endpoint para activar Python
         this.charts = {}; // Store chart instances
+        this.currentChartData = null;
 
         this.init();
         this.setupEventListeners();
@@ -17,6 +18,20 @@ class DashboardManager {
                 this.triggerAiUpdate(btnUpdate);
             });
         }
+
+        // Suscripción reactiva ante cambios de tema (Dark / Light)
+        if (window.themeManager && typeof window.themeManager.onThemeChange === 'function') {
+            window.themeManager.onThemeChange(() => {
+                if (this.currentChartData) {
+                    this.renderCharts(this.currentChartData);
+                }
+            });
+        }
+        window.addEventListener('hub:theme-change', () => {
+            if (this.currentChartData) {
+                this.renderCharts(this.currentChartData);
+            }
+        });
     }
 
     async init() {
@@ -33,19 +48,24 @@ class DashboardManager {
             this.renderAiSection(data.ai);
 
             // Mostrar contenido, ocultar loader
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block'; // Usar 'block' es más seguro para layout general
+            const loadingEl = document.getElementById('loading');
+            const mainContentEl = document.getElementById('main-content');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (mainContentEl) mainContentEl.style.display = 'block';
         } catch (error) {
             console.error('Fatal Error:', error);
             if (error.message === 'Unauthorized') return; // NetworkService maneja el logout
 
-            document.getElementById('loading').innerHTML = `
-                <div style="text-align: center; color: #ef4444;">
-                    <i class="fas fa-exclamation-triangle fa-2x"></i>
-                    <p style="margin-top: 1rem;">Error cargando datos: ${this._escapeHtml(error.message)}</p>
-                    <button onclick="window.location.reload()" class="btn" style="margin-top:1rem">Reintentar</button>
-                </div>
-            `;
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) {
+                loadingEl.innerHTML = `
+                    <div style="text-align: center; color: #ef4444;">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        <p style="margin-top: 1rem;">Error cargando datos: ${this._escapeHtml(error.message)}</p>
+                        <button onclick="window.location.reload()" class="btn btn-secondary-action" style="margin-top:1rem">Reintentar</button>
+                    </div>
+                `;
+            }
         }
     }
 
@@ -67,15 +87,13 @@ class DashboardManager {
     }
 
     renderKPIs(data) {
-        // data ya viene mergeado con kpi y realTime
-        const kpi = data.kpi || data; // Manejo flexible si la estructura cambia
+        const kpi = data.kpi || data;
         
         this.animateValue('kpi-users', kpi.totalUsers || 0);
         this.animateValue('kpi-premium', kpi.premiumUsers || 0);
         this.animateValue('kpi-searches', kpi.totalSearches || 0);
         this.animateValue('kpi-chat', kpi.totalChatMessages || 0);
 
-        // NUEVOS KPIs
         if (data.realTime) {
             this.animateValue('kpi-live', data.realTime.activeNow || 0);
         }
@@ -87,12 +105,12 @@ class DashboardManager {
     animateValue(id, value) {
         const obj = document.getElementById(id);
         if (!obj) return;
-        obj.textContent = new Intl.NumberFormat('es-PE').format(value); // Formato local Perú
+        obj.textContent = new Intl.NumberFormat('es-PE').format(value);
     }
 
     renderCharts(data) {
-        // Destruir gráficos anteriores si existen (para evitar superposiciones al recargar)
-        // Nota: Chart.js maneja instancias en el canvas. En esta versión simple asumimos carga única.
+        if (!data) return;
+        this.currentChartData = data;
         this.createBarChart('chart-courses', data.topCourses, 'Cursos Populares', '#3b82f6');
         this.createBarChart('chart-books', data.topResources, 'Recursos Populares', '#10b981');
     }
@@ -101,27 +119,23 @@ class DashboardManager {
         const container = document.getElementById('ai-insights-container');
         if (!container) return;
 
-        // Si no hay data de nada
         if (!aiData) {
             container.innerHTML = `
                 <div class="ai-loading-card">
                     <i class="fas fa-robot"></i> Sin análisis reciente.
-                    <br><small style="color: #64748b;">Haz clic en "Actualizar IA" para generar predicciones.</small>
+                    <br><small style="color: var(--text-muted);">Haz clic en "Actualizar IA" para generar predicciones.</small>
                 </div>`;
             return;
         }
 
-        // Helper para generar tarjeta
         const createCard = (title, icon, pred, typeIcon) => {
-            // Detectar nombre de predicción en cualquiera de las llaves posibles
             const predictionName = pred ? (pred.predictedCourse || pred.predictedBook || pred.predictedResource) : null;
 
             if (!predictionName) {
-                // Tarjeta vacía/placeholder
                 return `
-                <div class="ai-card" style="display:flex; flex-direction:column; justify-content:center; align-items:center; opacity:0.7;">
-                   <div style="font-size:3rem; margin-bottom:1rem; color:#334155;">${typeIcon}</div>
-                   <div style="color:#64748b;">Sin suficientes datos para ${title}</div>
+                <div class="ai-card" style="display:flex; flex-direction:column; justify-content:center; align-items:center; opacity:0.75;">
+                   <div style="font-size:3rem; margin-bottom:1rem; color: var(--border-color);">${typeIcon}</div>
+                   <div style="color: var(--text-muted);">Sin suficientes datos para ${title}</div>
                 </div>`;
             }
 
@@ -134,7 +148,7 @@ class DashboardManager {
             <div class="ai-card">
                 <div class="ai-header">
                     <div class="ai-title"><i class="${icon}"></i> ${title}</div>
-                    <div style="color: #94a3b8; font-size: 0.75rem;">
+                    <div style="color: var(--text-muted); font-size: 0.75rem;">
                         Basado en ${safeSearchCount} búsquedas
                     </div>
                 </div>
@@ -148,7 +162,7 @@ class DashboardManager {
                 </div>
 
                 <div class="confidence-section" style="margin-top:auto;">
-                    <div style="display:flex; justify-content:space-between; font-size: 0.8rem; color: #cbd5e1; margin-bottom: 5px;">
+                    <div style="display:flex; justify-content:space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">
                         <span>Confianza</span>
                         <span>${confidencePercent}%</span>
                     </div>
@@ -178,7 +192,6 @@ class DashboardManager {
             });
 
             if (res.ok) {
-                // Recargar todo el dashboard para ver los nuevos datos
                 await this.init();
                 if (window.uiManager) window.uiManager.showToast('¡Análisis de IA completado exitosamente!', 'success');
             } else {
@@ -204,8 +217,6 @@ class DashboardManager {
             .replace(/'/g, '&#039;');
     }
 
-
-
     createBarChart(canvasId, items, label, color) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
@@ -225,6 +236,19 @@ class DashboardManager {
         const labels = items.map(i => i.name.length > 25 ? i.name.substring(0, 25) + '...' : i.name);
         const values = items.map(i => parseInt(i.visits));
 
+        // Detección reactiva de tema (Dark vs Light)
+        const isDark = window.themeManager
+            ? window.themeManager.isDark()
+            : (!document.documentElement.getAttribute('data-theme') || document.documentElement.getAttribute('data-theme') === 'dark');
+
+        const textColor = isDark ? '#f8fafc' : '#0f172a';
+        const textMuted = isDark ? '#94a3b8' : '#64748b';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.08)';
+        const tooltipBg = isDark ? '#18181b' : '#ffffff';
+        const tooltipText = isDark ? '#f8fafc' : '#0f172a';
+        const tooltipBody = isDark ? '#cbd5e1' : '#475569';
+        const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(15, 23, 42, 0.12)';
+
         // Save new instance
         this.charts[canvasId] = new Chart(ctx, {
             type: 'bar',
@@ -234,7 +258,7 @@ class DashboardManager {
                     label: 'Visitas',
                     data: values,
                     backgroundColor: color,
-                    borderRadius: 4,
+                    borderRadius: 6,
                     barThickness: 20
                 }]
             },
@@ -245,21 +269,21 @@ class DashboardManager {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: '#1e293b',
-                        titleColor: '#f8fafc',
-                        bodyColor: '#cbd5e1',
-                        borderColor: '#334155',
+                        backgroundColor: tooltipBg,
+                        titleColor: tooltipText,
+                        bodyColor: tooltipBody,
+                        borderColor: tooltipBorder,
                         borderWidth: 1
                     }
                 },
                 scales: {
                     x: {
-                        grid: { color: '#334155' },
-                        ticks: { color: '#94a3b8' }
+                        grid: { color: gridColor },
+                        ticks: { color: textMuted }
                     },
                     y: {
                         grid: { display: false },
-                        ticks: { color: '#f8fafc', font: { size: 12 } }
+                        ticks: { color: textColor, font: { size: 12, weight: '500' } }
                     }
                 }
             }

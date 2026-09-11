@@ -56,9 +56,16 @@ La plataforma clasifica automáticamente cada publicación y material en su sect
 
 ### C. Widget de Novedades y Boletín Reciente (30 Días / Mensual) (`components.js` & `browse.css`)
 - **Alcance Temporal:** Muestra las publicaciones oficiales e investigaciones más recientes del **mes en curso (últimos 30 días)**.
-- **Soporte de Portadas e Imágenes (`image_url`):**
-  - **Tarjeta Hero:** Si el recurso tiene portada asignada, la resuelve mediante `window.resolveImageUrl()` y la renderiza en el contenedor `.news-hero-media`. Si no tiene portada o falla el enlace, aplica fallback `onerror` limpio manteniendo la legibilidad del texto.
-  - **Tarjetas Secundarias:** Presentan portadas superiores `.news-sec-media` con bordes redondeados y efectos hover de escala suave.
+- **Estructura Plana y Control de Altura (Zero Box-in-a-Box):**
+  - Contenedor plano `.news-bulletin-container` sin marcos dobles ni envoltorios decorativos.
+  - Tarjeta principal `.news-lead-card` como contenedor único de 2 columnas (1.25fr / 0.75fr en desktop; 1 columna en móvil) con altura calibrada (`min-height: 220px; max-height: 270px;` en desktop) y padding moderado (`1.5rem 2rem;`), eliminando espacios vacíos desmedidos.
+- **Adaptación de Imagen al Contenedor y Difuminado Exclusivo:**
+  - La imagen `.news-lead-img` se posiciona de forma absoluta (`position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;`), adaptándose estrictamente al contenedor sin expandir la altura del mismo.
+  - La difuminación suave mediante degradado (`linear-gradient`) aplica **únicamente al recurso principal**, desvaneciéndose hacia blanco `#ffffff` (claro) o negro `#0a0a0a` (oscuro).
+  - Tarjetas secundarias `.news-item-card` en cuadrícula de 3 columnas con proporción `16:9` nítida y delimitada con borde inferior, **sin difuminación alguna**.
+- **Sobriedad Editorial y Ausencia de Artificios:**
+  - Prohibición total de insignias inventadas ("VERIFICADO", "EXPEDIENTE DIGITAL", "EDICIÓN OFICIAL"), puntos de ventana simulados o icon clutter.
+  - La jerarquía se sostiene exclusivamente en kickers tipográficos, títulos claros, fuentes y botones discretos.
 
 ### D. Página de Destino (`/resource?id=X`) y Visor Inmersivo
 - **Página de Destino:** Presenta la portada en gran tamaño, metadatos de autoría, botones de acción (*Estudiar*, *Descargar*, *Guardar*) y resumen factual estilo enciclopedia.
@@ -80,13 +87,18 @@ La biblioteca adapta sus pestañas según el estado de la sesión del usuario:
 
 ---
 
-## 5. 🛠️ Tablón de Notas Personales y Tutor IA
+## 5. 🛠️ Tablón de Notas Personales y Modal Canónica Universal (Sección 3.17)
 
 - **Guardado Directo desde el Chat:** Cada respuesta generada por el Tutor IA incluye el control de un clic **"Guardar como Nota"**, formateando y almacenando el contenido en la biblioteca del estudiante.
 - **Creación Manual de Notas (`openNoteModal`):** Permite al estudiante redactar notas de estudio desde cero a través del botón "Nueva Nota" en el tablón, delegando limpiamente a `openNoteEditor(noteId)` en `libraryUI.js`.
+- **Modal Canónica de Notas (Estándar Universal de Modales):**
+  - **Estructura Estricta de 4 Capas:** `.modal-overlay.note-modal-overlay` > `.modal-content.note-modal` > `.modal-header` con `<h2>` + `.modal-close-btn` > `.modal-body` con scroll confinado > `.modal-footer`.
+  - **Tokens Dinámicos Dual-Theme:** El editor de notas consume estrictamente `var(--input-bg)` y `var(--border-color)` en lugar de tonos rígidos, garantizando legibilidad nítida con fondo claro y borde suave en tema claro, y mate slate en tema oscuro.
+  - **Grupo de Acción en Modo Edición (`#note-edit-actions`):** Contiene de forma exclusiva el botón secundario **"Cancelar"** (`.btn-action.btn-secondary-action`) y el botón primario **"Guardar"** (`.btn-action.btn-primary`), erradicando botones huérfanos o duplicados.
+  - **Grupo de Acción en Modo Lectura (`#note-view-actions`):** Proporciona **"Eliminar"** (`.btn-secondary-action.note-delete-btn`), **"Cerrar"** (`.btn-secondary-action`) y **"Editar"** (`.btn-primary`).
 - **Visualización en Tarjetas Modernas (`.note-card`):** Sustituye los listados planos por tarjetas visuales con indicador cromático.
 - **Herramientas de Tablón (`.notes-toolbar`):**
-  - **Buscador de Notas:** Filtrado en caliente por palabras clave en título o contenido.
+  - **Buscador de Notas:** Filtrado en caliente por palabras clave en título o contenido en cápsula redondeada de 44px.
   - **Selector de Orden:** Organiza notas por fecha (Recientes/Antiguas), alfabéticamente (A-Z), por color asignado o por origen (Chat / Manual).
 
 ---

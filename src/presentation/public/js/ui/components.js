@@ -496,6 +496,27 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         if (courseBadge) {
             areaBadge = `<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">${courseBadge}</div>`;
         }
+    } else if (type === 'book') {
+        const domainText = item.domain === 'education' ? 'Educación' : 'Salud';
+        const domainClass = item.domain === 'education' ? 'admin-badge-blue' : 'admin-badge-green';
+        const domainBadge = `<span class="admin-badge ${domainClass}">${domainText}</span>`;
+        const typeLabelMap = {
+            book: 'Libro/Manual',
+            paper: 'Paper',
+            norma: 'Norma',
+            guia: 'Guía',
+            noticia: 'Noticia',
+            video: 'Video',
+            other: 'Otro'
+        };
+        const rType = item.resource_type || item.type || 'book';
+        const typeBadge = `<span class="admin-badge admin-badge-muted">${typeLabelMap[rType] || rType}</span>`;
+        areaBadge = `
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">
+                ${domainBadge}
+                ${typeBadge}
+            </div>
+        `;
     } else if (type === 'question') {
         const isMedicine = item.domain === 'medicine';
         const isEducation = item.domain === 'education';
@@ -602,7 +623,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         }
 
         return `
-            <div class="admin-item-card item-card resource-item-card" ${resourceTypeAttr} data-name="${safeHtmlValue(item.title || item.name || displayName || '')}">
+            <div class="admin-item-card item-card resource-item-card" ${resourceTypeAttr} data-name="${safeHtmlValue(item.title || item.name || displayName || '')}" data-domain="${safeHtmlValue(item.domain || 'medicine')}" data-target="${safeHtmlValue(item.target || '')}">
                 <div class="admin-item-checkbox-wrapper">
                     <input type="checkbox" class="admin-item-checkbox" data-type="${type}" data-id="${item.id}" title="Seleccionar para acción masiva">
                 </div>
@@ -639,7 +660,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
     }
 
     return `
-        <div class="admin-item-card item-card" ${resourceTypeAttr} data-email="${safeHtmlValue(item.email || '')}" data-name="${safeHtmlValue(item.name || displayName || '')}">
+        <div class="admin-item-card item-card" ${resourceTypeAttr} data-email="${safeHtmlValue(item.email || '')}" data-name="${safeHtmlValue(item.name || displayName || '')}" data-domain="${safeHtmlValue(item.domain || '')}" data-target="${safeHtmlValue(item.target || '')}" data-case-id="${safeHtmlValue(item.case_id || '')}">
             <div class="admin-item-checkbox-wrapper">
                 <input type="checkbox" class="admin-item-checkbox" data-type="${type}" data-id="${item.id}" title="Seleccionar para acción masiva">
             </div>
@@ -1069,153 +1090,74 @@ window.openVerifiedNewsUrl = function (url, id, type, isPremium, openDirectly) {
 };
 
 /**
- * Crea la interfaz exclusiva estilo Boletín de Novedades (News Widget) para los últimos 30 días (Mes actual).
+/**
+ * Crea la interfaz estilo boletín de novedades para los últimos 30 días.
+ * Estructura homogénea unificada con el mismo formato de tarjeta para todas las publicaciones,
+ * aplicando un distinguido resaltado dorado a las novedades principales.
  */
 function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
     if (!newsItems || newsItems.length === 0) {
         return `
-            <div class="news-bulletin-empty" style="text-align: center; padding: 4rem 2rem; background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 1.5rem; margin-top: 1rem;">
-                <i class="far fa-newspaper" style="font-size: 3rem; color: #3b82f6; margin-bottom: 1rem; opacity: 0.7;"></i>
-                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">No hay novedades registradas en los últimos 30 días</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 500px; margin: 0 auto;">Nuestra IA monitorea periódicamente la web oficial para publicar investigaciones y normas de ${domain === 'medicine' ? 'Salud' : 'Educación'}.</p>
+            <div class="news-bulletin-empty">
+                <h3 class="news-empty-title">No hay novedades registradas en los últimos 30 días</h3>
+                <p class="news-empty-desc">Nuestra plataforma indexa continuamente publicaciones recientes de ${domain === 'medicine' ? 'Salud' : 'Educación'}.</p>
             </div>
         `;
     }
 
-    const featured = newsItems[0];
-    const secondary = newsItems.slice(1);
-
-    const getBadgeInfo = (item) => {
+    const getCategoryLabel = (item) => {
         const type = (item.resource_type || item.type || '').toLowerCase();
-        if (type === 'noticia') return { label: 'NOTICIA OFICIAL', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.35)', text: '#c084fc' };
-        if (type === 'norma') return { label: 'NORMA OFICIAL', bg: 'rgba(217, 119, 6, 0.15)', border: 'rgba(217, 119, 6, 0.35)', text: '#fbbf24' };
-        if (type === 'guia') return { label: 'GUÍA TÉCNICA', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.35)', text: '#34d399' };
-        return { label: 'PAPER CIENTÍFICO', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.35)', text: '#60a5fa' };
+        if (type === 'noticia') return 'Noticia';
+        if (type === 'norma') return 'Norma legal';
+        if (type === 'guia') return 'Guía técnica';
+        return 'Investigación';
     };
 
-    const getHeroStyle = (item) => {
-        const type = (item.resource_type || item.type || '').toLowerCase();
-        if (type === 'noticia') {
-            return {
-                border: '1px solid rgba(168, 85, 247, 0.45)',
-                shadow: '0 15px 40px rgba(168, 85, 247, 0.12)'
-            };
-        }
-        if (type === 'norma') {
-            return {
-                border: '1px solid rgba(245, 158, 11, 0.45)',
-                shadow: '0 15px 40px rgba(245, 158, 11, 0.12)'
-            };
-        }
-        if (type === 'guia') {
-            return {
-                border: '1px solid rgba(16, 185, 129, 0.45)',
-                shadow: '0 15px 40px rgba(16, 185, 129, 0.12)'
-            };
-        }
-        return {
-            border: '1px solid rgba(59, 130, 246, 0.45)',
-            shadow: '0 15px 40px rgba(59, 130, 246, 0.12)'
-        };
-    };
-
-    const cleanSnippet = (html) => {
-        if (!html) return 'Resumen factual comprobado. Haz clic en el botón inferior para abrir la publicación oficial original.';
+    const cleanSnippet = (html, maxLen = 140) => {
+        if (!html) return '';
         const clean = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-        return clean.length > 220 ? clean.substring(0, 220) + '...' : clean;
+        return clean.length > maxLen ? clean.substring(0, maxLen) + '...' : clean;
     };
 
-    const featBadge = getBadgeInfo(featured);
-    const featStyle = getHeroStyle(featured);
-    const featOpenDirectly = featured.open_directly === true || String(featured.open_directly) === 'true';
-    const featIsPremium = featured.is_premium === true;
-    const featUrl = featured.url || '';
-    const featThumb = window.resolveImageUrl ? window.resolveImageUrl(featured.image_url, featured.resource_type || 'paper') : (featured.image_url || 'assets/paper.webp');
+    const hasExplicitFeatured = newsItems.some(item => item.is_featured === true || item.featured === true);
 
-    const featuredHTML = `
-        <div class="news-hero-card has-media" style="background: var(--card-bg); border: ${featStyle.border}; box-shadow: ${featStyle.shadow};">
-            <div class="news-hero-body">
-                <div class="news-hero-tags">
-                    <span class="news-pill-tag" style="background: ${featBadge.bg}; border: 1px solid ${featBadge.border}; color: ${featBadge.text}; font-weight: 700; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem;">
-                        ${featBadge.label}
-                    </span>
-                    <span class="news-freshness-tag"><i class="fas fa-bolt"></i> Novedad Reciente (Últimos 30 Días)</span>
-                </div>
-                <h3 class="news-hero-title">${featured.title}</h3>
-                <div class="news-hero-meta">
-                    <span class="news-author"><i class="fas fa-building-columns"></i> ${featured.author || 'Entidad Oficial / Investigadores'}</span>
-                </div>
-                <p class="news-hero-snippet">${cleanSnippet(featured.content_html)}</p>
-                <div class="news-hero-footer">
-                    <button class="news-primary-btn" onclick="window.openVerifiedNewsUrl('${featUrl}', '${featured.id}', '${featured.resource_type || 'paper'}', ${featIsPremium}, ${featOpenDirectly})">
-                        <i class="fas fa-external-link-alt"></i> Leer Documento Oficial Verificado
-                    </button>
-                </div>
-            </div>
-            <div class="news-hero-media">
-                <img src="${featThumb}" alt="${featured.title}" class="news-hero-img" loading="lazy" decoding="async">
-            </div>
-        </div>
-    `;
-
-    const secondaryCardsHTML = secondary.map(item => {
+    const cardsHTML = newsItems.map((item, index) => {
+        const isFeatured = hasExplicitFeatured
+            ? (item.is_featured === true || item.featured === true)
+            : (index === 0);
         const itemType = (item.resource_type || item.type || 'paper').toLowerCase();
-        const badge = getBadgeInfo(item);
+        const baseCategory = getCategoryLabel(item);
+        const categoryLabel = isFeatured ? `${baseCategory} • Novedad Principal` : baseCategory;
         const openDirectly = item.open_directly === true || String(item.open_directly) === 'true';
         const isPremium = item.is_premium === true;
         const itemUrl = item.url || '';
-        const secThumb = window.resolveImageUrl ? window.resolveImageUrl(item.image_url, itemType) : (item.image_url || 'assets/paper.webp');
+        const thumb = window.resolveImageUrl ? window.resolveImageUrl(item.image_url, itemType) : (item.image_url || 'assets/paper.webp');
+        const snippet = cleanSnippet(item.content_html, 140);
+        const author = item.author || (domain === 'medicine' ? 'MINSA Perú' : 'MINEDU Perú');
 
         return `
-            <div class="news-secondary-card has-media" data-type="${itemType}" onclick="window.openVerifiedNewsUrl('${itemUrl}', '${item.id}', '${itemType}', ${isPremium}, ${openDirectly})">
-                <div class="news-sec-media">
-                    <img src="${secThumb}" alt="${item.title}" class="news-sec-img" loading="lazy" decoding="async">
+            <article class="news-item-card news-secondary-card ${isFeatured ? 'news-card-featured' : ''}" data-type="${itemType}" onclick="window.openVerifiedNewsUrl('${itemUrl}', '${item.id}', '${itemType}', ${isPremium}, ${openDirectly})">
+                <div class="news-item-media news-sec-media">
+                    <img src="${thumb}" alt="${item.title}" class="news-item-img news-sec-img" loading="lazy" decoding="async">
                 </div>
-                <div class="news-sec-body">
-                    <div class="news-sec-header">
-                        <span class="news-pill-tag" style="background: ${badge.bg}; border: 1px solid ${badge.border}; color: ${badge.text}; font-size: 0.7rem; padding: 2px 10px; border-radius: 12px;">
-                            ${badge.label}
-                        </span>
-                        <span class="news-sec-date"><i class="far fa-clock"></i> Reciente</span>
-                    </div>
-                    <h4 class="news-sec-title">${item.title}</h4>
-                    <div class="news-sec-author">
-                        <i class="fas fa-user-edit"></i> ${item.author || 'Fuente Oficial'}
-                    </div>
-                    <p class="news-sec-snippet">${cleanSnippet(item.content_html)}</p>
-                    <div class="news-sec-footer">
-                        <span class="news-sec-link"><i class="fas fa-arrow-right"></i> Abrir Recurso</span>
+                <div class="news-item-body news-sec-body">
+                    <span class="news-item-kicker">${categoryLabel}</span>
+                    <h4 class="news-item-title news-sec-title">${item.title}</h4>
+                    <div class="news-item-meta news-sec-author">${author}</div>
+                    ${snippet ? `<p class="news-item-summary news-sec-snippet">${snippet}</p>` : ''}
+                    <div class="news-item-footer news-sec-footer">
+                        <span class="news-item-link news-sec-link">Ver publicación</span>
                     </div>
                 </div>
-            </div>
+            </article>
         `;
     }).join('');
 
     return `
-        <div class="news-widget-wrapper">
-            <div class="news-widget-header">
-                <div class="news-widget-title-area">
-                    <h2 class="news-widget-main-title">
-                        <i class="fas fa-newspaper" style="color: #3b82f6;"></i> 
-                        Novedades y Boletín Reciente
-                    </h2>
-                    <p class="news-widget-desc">Últimos papers de investigación científica, noticias y normas oficiales verificadas de ${domain === 'medicine' ? 'Salud' : 'Educación'}</p>
-                </div>
-                <div class="news-widget-badge-count">
-                    <span>${newsItems.length} Publicaciones</span>
-                </div>
+        <div class="news-bulletin-container news-widget-wrapper">
+            <div class="news-grid news-secondary-grid news-sec-grid">
+                ${cardsHTML}
             </div>
-
-            ${featuredHTML}
-
-            ${secondary.length > 0 ? `
-                <div class="news-sec-section">
-                    <h4 class="news-sec-heading"><i class="fas fa-list-ul"></i> Otras Novedades del Sector</h4>
-                    <div class="news-sec-grid">
-                        ${secondaryCardsHTML}
-                    </div>
-                </div>
-            ` : ''}
         </div>
     `;
 }

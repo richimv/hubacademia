@@ -4,17 +4,21 @@
  * Utiliza IntersectionObserver para un rendimiento de 60fps libre de lag.
  */
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Vincular el scroll suave del botón Explorar
-    const exploreBtn = document.getElementById('hero-explore-btn');
-    if (exploreBtn) {
-        exploreBtn.onclick = (e) => {
-            e.preventDefault();
-            const targetSection = document.querySelector('.scroll-animate-section');
-            if (targetSection) {
-                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 1. Vincular el scroll suave del botón Explorar y pills de categorías
+    document.querySelectorAll('.hero-ecosystem-pills a[href^="#"], #hero-explore-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const href = btn.getAttribute('href');
+            if (href && href.startsWith('#')) {
+                const targetSection = document.querySelector(href);
+                if (targetSection) {
+                    e.preventDefault();
+                    history.pushState(null, '', href);
+                    if (window.globalSidebar) window.globalSidebar.highlightActiveItem();
+                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             }
-        };
-    }
+        });
+    });
 
     // 2. IntersectionObserver para las secciones animadas
     const animatedSections = document.querySelectorAll('.scroll-animate-section');
@@ -37,6 +41,16 @@ document.addEventListener('DOMContentLoaded', () => {
         animatedSections.forEach(section => {
             observer.observe(section);
         });
+    }
+
+    // 3. Soporte para aterrizaje directo con hash en URL
+    if (window.location.hash) {
+        setTimeout(() => {
+            const targetSection = document.querySelector(window.location.hash);
+            if (targetSection) {
+                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 150);
     }
 
     // 3. Abrir Chat desde el botón del Tutor IA en Home

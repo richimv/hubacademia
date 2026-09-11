@@ -46,7 +46,7 @@ describe('Admin Panel - Búsqueda de Usuarios por Correo y Nombre', () => {
     });
 
     test('El placeholder del buscador en la pestaña Alumnos/Usuarios indica búsqueda por correo', () => {
-        expect(adminJs).toContain("tabId === 'tab-students' ? 'Buscar por nombre o correo...' : 'Buscar...'");
+        expect(adminJs).toContain("tabId === 'tab-students' ? 'Buscar por nombre o correo...'");
     });
 
     test('El algoritmo de filtrado en applySearchFilterForTab evalúa data-email, data-name y textContent', () => {

@@ -58,10 +58,16 @@ Para determinar qué es "Tendencia", el motor utiliza una arquitectura híbrida 
 
 ## 4. Visualización (Admin Dashboard)
 
-El archivo `dashboard.js` se encarga de transformar la data cruda en visualizaciones:
-- **KPIs Animados:** Usuarios, Búsquedas e Interacciones.
+El archivo `dashboard.js` se encarga de transformar la data cruda en visualizaciones accesibles y de alto impacto:
+- **KPIs Animados:** Usuarios, Búsquedas e Interacciones con `animateValue` y formateo numérico localizado (`Intl.NumberFormat('es-PE')`).
 - **En Vivo (Nuevo):** Contador activo basado en la ventana de 5 minutos de la tabla `web_traffic`.
-- **Gráficos (Chart.js):** Consumo de series temporales para ver la evolución de cursos y libros populares.
+- **Arquitectura Dual-Theme Reactiva (Dark Matte 🌙 / Light Slate Studio ☀️):**
+  - **Tokens Semánticos:** `.kpi-card` y `.chart-card` consumen `var(--card-bg)`, eliminando fondos oscuros estáticos `rgba(10, 10, 10, 0.4)`. En modo claro lucen en blanco puro (`#ffffff`) con bordes sutiles y sombras suaves (`var(--shadow-sm)`), mientras que en modo oscuro adoptan el negro mate institucional (`#0a0a0a`).
+  - **Variantes Semánticas:** Clases declarativas `.kpi-card-warning` (`var(--warning-border)`) y `.kpi-card-live` (`var(--danger-bg)`, `var(--danger-border)`) sin estilos inline destructivos.
+  - **Gráficos Reactivos (Chart.js):** Detección dinámica de tema (`window.themeManager.isDark()`). Los gráficos de barras horizontales conmutan en tiempo real ante eventos de cambio de tema (`onThemeChange` y `hub:theme-change`):
+    - *Modo Oscuro:* Rejilla `rgba(255, 255, 255, 0.08)`, etiquetas X `#94a3b8`, etiquetas Y `#f8fafc`, tooltip oscuro (`#18181b`).
+    - *Modo Claro:* Rejilla `rgba(15, 23, 42, 0.08)`, etiquetas X `#64748b`, etiquetas Y `#0f172a`, tooltip blanco (`#ffffff`) con tipografía oscura.
+- **Aislamiento de Modales:** La página administrativa incluye `modal.css` y `components.css` garantizando integridad visual. Asimismo, `uiManager.js` aísla por defecto con `display: none;` y excluye la inyección de la modal de captura de visitantes (`auth-prompt-modal`) en rutas administrativas `/dashboard` y `/admin`.
 
 ## 5. Escalabilidad y Rendimiento
 
