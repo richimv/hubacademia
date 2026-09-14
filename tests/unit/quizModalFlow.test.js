@@ -32,8 +32,9 @@ describe('Quiz Modals Flow & Anti-Repetition Lifecycle Verification', () => {
     describe('1. Modal de Finalización & Botón "Nuevo Examen"', () => {
         it('window.startNewExam verifica demo/visitante y sale de quiz redirigiendo al dashboard', () => {
             expect(quizJs).toContain('window.startNewExam = function () {');
-            // Verifica que detecta modo demo o visitante sin intentos
-            expect(quizJs).toMatch(/isDemo\s*\|\|\s*isGuest/);
+            // Verifica que usuarios autenticados nunca son tratados como visitantes
+            expect(quizJs).toContain('const isAuthenticated = !!user || !!token;');
+            expect(quizJs).toContain('if (!isAuthenticated) {');
             // Verifica que limpia la sesión activa
             expect(quizJs).toContain('clearSession();');
             // Verifica que muestra modal de registro con callback para salir al cerrar
@@ -53,14 +54,15 @@ describe('Quiz Modals Flow & Anti-Repetition Lifecycle Verification', () => {
     });
 
     describe('2. Modal de Reanudación ("Simulacro en progreso") & Botón "Iniciar nuevo"', () => {
-        it('al descartar sesión anterior (resume === false), resetea estado en limpio y pasa IDs descartados a startQuiz', () => {
-            expect(quizJs).toMatch(/else\s+if\s*\(resume\s*===\s*false\)\s*\{[\s\S]*?const\s+discardedQuestionIds\s*=\s*\(recovered\s*&&/);
+        it('al descartar sesión anterior (resume === false), resetea estado en limpio y rearma un nuevo examen con el banco completo', () => {
+            expect(quizJs).toMatch(/else\s+if\s*\(resume\s*===\s*false\)\s*\{/);
+            expect(quizJs).toMatch(/clearSession\(\);/);
             expect(quizJs).toMatch(/state\.questions\s*=\s*\[\];/);
             expect(quizJs).toMatch(/state\.currentQuestionIndex\s*=\s*0;/);
             expect(quizJs).toMatch(/state\.score\s*=\s*0;/);
             expect(quizJs).toMatch(/state\.answers\s*=\s*\[\];/);
             expect(quizJs).toMatch(/state\.quizSessionId\s*=\s*null;/);
-            expect(quizJs).toMatch(/await\s+startQuiz\(discardedQuestionIds\);/);
+            expect(quizJs).toMatch(/await\s+startQuiz\(\);/);
         });
 
         it('startQuiz recibe temporarySeenIds y los inyecta en el payload de /start y en /demo', () => {

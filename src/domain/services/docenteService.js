@@ -204,10 +204,6 @@ class DocenteService {
 
         const bankCount = balancedBatch.length;
         let batchIsHealthy = bankCount >= limit;
-
-        if (!isDefault && normalizedAllAreas.length >= 5 && areasWithStock.length < 5) {
-            batchIsHealthy = false;
-        }
         let source = 'BANK';
         let sampledAreas = bankSampledAreas.map(a => areaMap.get(a) || a);
 

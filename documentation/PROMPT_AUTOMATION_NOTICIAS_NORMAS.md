@@ -288,6 +288,31 @@ Responde de forma clara y directa:
 ---
 
 ## 📋 Registro de Ejecución y Noticias Ingestadas (Logs)
+- **Fecha:** 13 de setiembre de 2026 (Curaduría Semanal MINSA: 07/09/2026 al 13/09/2026)
+- **Responsable:** Antigravity AI Curador Oficial de Salud
+- **Estado de Ingesta:** ✅ Exitosa (5 recursos calificados e ingestados en PostgreSQL)
+- **Recursos Ingestados:**
+  1. **Norma Legal (medicine):** [Resolución Directoral N.° 010-2026-DIGEP-MINSA: Modificación de Cronograma del Proceso SERUMS 2026-II](https://www.gob.pe/institucion/minsa/normas-legales/8591954-010-2026-digep-minsa) (Publicada el 12 de setiembre de 2026).
+  2. **Informe/Comunicado Oficial (medicine):** [Ampliación del Periodo de Adjudicación de Plazas SERUMS Remuneradas de Medicina (Proceso 2026-II)](https://www.gob.pe/institucion/minsa/informes-publicaciones/8591955-ampliacion-del-periodo-de-adjudicacion-de-plazas-serums-remuneradas-de-medicina) (Publicado el 12 de setiembre de 2026).
+  3. **Informe/Listado Oficial (medicine):** [Listado de Postulantes Aptos a la Fase Remunerada del Proceso SERUMS 2026-II](https://www.gob.pe/institucion/minsa/informes-publicaciones/8578182-listado-de-postulantes-aptos-a-la-fase-remunerada-del-proceso-serums-2026-ii) (Publicado el 8 de setiembre de 2026).
+  4. **Informe/Listado Oficial (medicine):** [Listado de Postulantes Aptos y No Aptos al Proceso SERUMS 2026-II](https://www.gob.pe/institucion/minsa/informes-publicaciones/8578167-listado-de-postulante-aptos-y-no-aptos-al-proceso-serums-2026-ii) (Publicado el 8 de setiembre de 2026).
+  5. **Informe/Programación Oficial (medicine):** [Programa de Adjudicación de Plazas Remuneradas SERUMS 2026-II](https://www.gob.pe/institucion/minsa/informes-publicaciones/8571745-programa-de-adjudicacion-de-plazas-remuneradas-serums-2026-ii) (Publicado el 8 de setiembre de 2026).
+- **Recursos Descartados (Filtro temático/temporal):**
+  - **Noticias MINSA (26 evaluadas):** 0 calificaron. Descartadas en su totalidad por versar sobre temas asistenciales, campañas de salud o gestión general: donación de órganos (Hospital Loayza y Dos de Mayo), arritmias cardíacas (Hospital Cayetano Heredia), vacunación en colegios de Lima Norte, lluvias en Huancabamba, podcast infantil "Minsa Cuentos", nuevo Ministro de Salud Luis Dyer Ampuero (juramentación y visitas hospitalarias a San Bartolomé y Hospital de Emergencias Grau), talleres de salud bucal, primeros auxilios SAMU y ferias integrales de salud.
+  - **Normas Legales MINSA (29 evaluadas):** 28 descartadas. RMs 798 a 810-2026, RSG 216 a 230-2026, RD 319 a 321-2026-OGA y DS 014-2026-SA descartadas por versar sobre reorganización administrativa institucional de 90 días, designaciones/ceses de cargos de confianza, afectación en uso de inmuebles a DIRIS y transferencias presupuestarias internas.
+  - **Informes y Publicaciones MINSA:** Descartados informes sobre dietas de la administración central, contrataciones CAS, penalidades administrativas a proveedores, modificaciones del Cuadro Multianual de Necesidades (CMN), actas de sesiones ordinarias del Consejo Nacional de Salud y bases de concursos de dibujo/ensayos ("Crónicas de la Salud", "Obesidad y Diabetes").
+- **Detalle:** Validación estricta HTTP 200 y detección anti-Soft 404 superada en los 5 recursos; deduplicación comprobada contra la tabla `resources`. Proceso de adjudicación SERUMS 2026-II actualizado con el nuevo cronograma modificado y la prórroga de plazas de medicina.
+
+- **Fecha:** 13 de setiembre de 2026 (Curaduría Semanal MINEDU: 07/09/2026 al 13/09/2026)
+- **Responsable:** Antigravity AI Curador Oficial
+- **Estado de Ingesta:** ✅ Monitoreo Semanal de Educación al día (0 recursos ingestados por política estricta de cero inserciones forzadas).
+- **Recursos Descartados (Filtro temático/temporal):**
+  - **Noticias MINEDU (10 evaluadas):** Concurso Nacional de Buenas Prácticas Docentes 2026 (concurso pedagógico/innovación escolar), alianza MINEDU-SERVIR para capacitación de equipos directivos DRE/UGEL (formación continua de personal en ejercicio, no concurso de acceso), asignaciones temporales por ruralidad/bilingüe (Decreto Supremo N.° 172-2026-EF), brecha digital y conectividad satelital, Premio Arguedas, aulas tipo domo en Junín, respuesta ante emergencias y casos de seguridad escolar.
+  - **Normas Legales MINEDU (25 evaluadas):** RVM 162-2026 y RVM 163-2026 (apelaciones de IIEE privadas y entidades educativas); RSG 198, 199, 200 y 201-2026 (modificaciones presupuestarias, designación de coordinadora legal y equipo de costos); RM 530 a 549-2026 (designaciones y renuncias en direcciones de educación universitaria/DIGERE/DIGESE, transferencias presupuestarias, representantes FENTASE y CAFAE, autorización de viaje IPD, relación de obras por impuestos y adecuación CENFOTUR).
+  - **Informes y Publicaciones MINEDU:** Contratos PAC, comunicado 9 de convocatorias CAS para personal administrativo, materiales de capacitación FTE EBR / infraestructura deportiva universitaria y agenda temprana regulatoria.
+  - **Portal de Evaluación Docente (evaluaciondocente.perueduca.pe):** Sin nuevas publicaciones en los últimos 7 días. La última comunicación registrada corresponde al 05/09/2026 sobre la fecha de la Prueba Nacional de Ascenso Docente del 25 de octubre (ya auditada e ingestada en la semana previa).
+- **Detalle:** Se cumplió de forma rigurosa con la directriz de descartar toda publicación ajena a los temas magisteriales exclusivos (Nombramiento, Ascenso Docente y Acceso a Cargos Directivos) para preservar la máxima veracidad y confiabilidad del Hub de Recursos de Hub Academia.
+
 - **Fecha:** 07 de septiembre de 2026 (Curaduría Semanal MINEDU: 31/08/2026 al 07/09/2026)
 - **Responsable:** Antigravity AI Curador Oficial
 - **Estado de Ingesta:** ✅ Exitosa (2 recursos ingestados)

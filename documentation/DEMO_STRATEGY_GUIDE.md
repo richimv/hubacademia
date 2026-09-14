@@ -103,8 +103,27 @@ A diferencia de la plataforma web donde los visitantes pueden realizar simulacro
 
 ---
 
+## 🔒 Control de Autenticación y Modal de Finalización
+
+### 1. Bypass Estricto para Usuarios Autenticados
+- **Problema Corregido**: Al hacer clic en el botón "Nuevo Examen" de la modal de finalización ("¡Simulacro Finalizado!"), los usuarios logueados (Free, Basic, Advanced, Admin) eran erróneamente tratados como visitantes si existía un parámetro residual `?demo=true` o si `window.sessionManager?.getToken` no estaba definido. Esto disparaba la modal de registro ("Únete a Hub Academia").
+- **Solución Implementada**:
+  - `startNewExam` ahora valida la identidad del usuario mediante `window.sessionManager.getUser()` y `localStorage.getItem('authToken')`.
+  - Si el usuario está autenticado (`isAuthenticated === true`), se limpia la sesión local (`clearSession`), se elimina cualquier parámetro `demo` residual de la URL y se recarga la página inmediatamente para iniciar un nuevo examen limpio.
+  - La modal de registro (`showAuthPromptModal`) **SOLO** se muestra a visitantes anónimos (`!isAuthenticated`) que hayan agotado su cuota diaria de 1 intento demo.
+  - En `startQuiz()`, la verificación de cuota diaria de `GuestSessionManager.canTakeDailyDemo()` está condicionada estrictamente a `!isAuth`.
+
+### 2. Priorización del Banco y Prevención de RAG Prematuro
+- **Agotamiento Real del Banco**: Tanto en el inicio regular como al pulsar "Iniciar nuevo" en la modal de reanudación, el sistema prioriza agotar al 100% las preguntas disponibles en el banco (agrupadas por casuísticas completas y preguntas individuales).
+- **Rearmado Limpio en Reanudación ("Iniciar nuevo")**: Al descartar una sesión en progreso para iniciar un nuevo examen, las preguntas no concluidas no se bloquean ni se excluyen temporalmente; se reintegran de forma transparente a la totalidad del banco elegible en base de datos (dado que nunca fueron culminadas ni marcadas en `user_question_history`). Esto permite rearmar un lote balanceado y completo de 10qs o 20qs aprovechando al máximo el stock disponible de casuísticas y preguntas sueltas.
+- **Eliminación de RAG Prematuro**: Se eliminó la regla artificial que forzaba RAG si el stock no cubría 5 áreas a pesar de contar con las preguntas suficientes requeridas (`bankCount >= limit`). RAG solo se invoca cuando la base de datos realmente carece del número de preguntas exigido para la ronda.
+- **Empaquetamiento Atómico**: Los casos/casuísticas se preservan enteros e íntegros en bloques atómicos contiguos sin mutilaciones ni fragmentaciones de preguntas hermanas.
+
+---
+
 ## 💎 Beneficios
 - **Alta Fidelidad**: El usuario prueba el producto REAL, no una maqueta.
 - **Conversión Progresiva**: 1 sesión diaria en web es suficiente para demostrar el valor antes de pedir el registro.
-- **Eficiencia**: Cero consumo de créditos de IA para usuarios no registrados.
+- **Eficiencia**: Cero consumo de créditos de IA para usuarios no registrados y uso prioritario del banco existente para usuarios registrados.
 - **Orden**: Aislamiento total entre perfiles médicos y docentes desde el primer clic.
+

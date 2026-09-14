@@ -8,9 +8,13 @@ class MedicoRepository {
         const isRealMock = mode === 'real';
 
         if (!isRealMock && userId) {
-            const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
-            const seenRes = await db.query(seenQuery, [userId]);
-            seenIds = seenRes.rows.map(r => r.question_id);
+            try {
+                const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
+                const seenRes = await db.query(seenQuery, [userId]);
+                seenIds = (seenRes && seenRes.rows) ? seenRes.rows.map(r => r.question_id) : [];
+            } catch (err) {
+                console.warn(`[MedicoRepo] Error consultando user_question_history:`, err?.message);
+            }
         }
 
         if (sessionSeenIds && Array.isArray(sessionSeenIds) && sessionSeenIds.length > 0) {
@@ -126,7 +130,7 @@ class MedicoRepository {
         }
 
         // Salvaguarda resiliente: si las preguntas no vistas son insuficientes para el cupo mínimo solicitado
-        if (questions.length < Math.min(limit, 20) && seenIds.length > 0) {
+        if (questions.length < limit && seenIds.length > 0) {
             try {
                 const currentQuestionIds = questions.map(q => q.id).filter(Boolean);
                 let fallbackWhere = `WHERE qb.domain = 'medicine' AND ($2::text IS NULL OR qb.target = $2)`;

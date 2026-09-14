@@ -143,10 +143,6 @@ class MedicoService {
 
         const bankCount = balancedBatch.length;
         let batchIsHealthy = bankCount >= limit;
-
-        if (!isDefault && normalizedAllAreas.length >= 5 && areasWithStock.length < 5) {
-            batchIsHealthy = false;
-        }
         let source = 'BANK';
         let sampledAreas = bankSampledAreas.map(a => areaMap.get(a) || a);
 
@@ -487,6 +483,7 @@ class MedicoService {
                 }
             }
         }
+
 
         // 6. Mezclar de forma balanceada los bloques para que los casos no queden siempre agrupados al principio,
         // garantizando que las preguntas de cada casuística se mantengan siempre contiguas y en su orden oficial

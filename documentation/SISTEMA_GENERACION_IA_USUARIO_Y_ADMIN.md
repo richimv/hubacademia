@@ -216,4 +216,22 @@ Para garantizar la precisión técnica, el sistema utiliza dos prospectos base e
 
 ---
 
-**Documentación integrada de Medicina y Educación — actualizada el 22 de agosto de 2026.**
+### 🛡️ Canal Dual de Modelos de IA y Facturación (AI Studio Prepay vs Vertex AI)
+
+A partir de 2026, la infraestructura de generación cuenta con un llamador híbrido resiliente ("Dual AI Channeler"):
+
+1. **Google AI Studio (Canal REST via `GEMINI_API_KEY`)**:
+   - Modelos soportados: `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite`.
+   - **Política de Facturación Prepay (Marzo 2026 en adelante)**: Google AI Studio transiciona las cuentas desarrollador al sistema **Prepay** (pago anticipado de créditos, mínimo $5 USD). Los costos de la API se descuentan en tiempo real del saldo prepago. Si el saldo llega a $0 USD, las API keys asociadas cesan su funcionamiento de inmediato.
+2. **Google Cloud Vertex AI (Canal Empresarial Postpago)**:
+   - Modelos verificados en producción (`us-central1`):
+     - `gemini-2.5-flash-lite` (Activo y verificado sin fecha de shutdown).
+     - `gemini-2.5-flash` (Activo y verificado sin fecha de shutdown).
+     - `gemini-2.5-pro` (Activo y verificado).
+   - **Disponibilidad de Modelos 3.x en Vertex AI**: Los modelos experimentales como `gemini-3.5-flash-lite` o `gemini-3.1-flash-lite` no están publicados en el catálogo GA de Vertex AI (retornan error HTTP 404 `Publisher model was not found`). Por tanto, Vertex AI opera de forma fija y estable con la familia oficial `gemini-2.5`.
+   - **Garantía Operativa**: Si la API key de AI Studio se agota o sufre corte por la política de prepago de Google, el sistema captura el fallo de forma transparente y conmuta automáticamente al canal de **Vertex AI**, garantizando servicio ininterrumpido mediante postpago corporativo de Google Cloud.
+
+---
+
+**Documentación integrada de Medicina y Educación — actualizada en setiembre de 2026.**
+

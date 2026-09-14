@@ -556,10 +556,7 @@ async function init() {
                 renderQuestion();
                 if (state.maxQuestions >= 50 || state.mode === 'real') startMockTimer();
             } else if (resume === false) {
-                console.log("🆕 Descartando sesión anterior por elección del usuario.");
-                const discardedQuestionIds = (recovered && Array.isArray(recovered.questions))
-                    ? recovered.questions.map(q => q.id).filter(Boolean)
-                    : [];
+                console.log("🆕 Descartando sesión anterior por elección del usuario e iniciando nuevo examen con el banco completo.");
                 clearSession();
                 state.questions = [];
                 state.currentQuestionIndex = 0;
@@ -569,7 +566,7 @@ async function init() {
                 state.isFinished = false;
                 state.startTime = null;
                 state.quizId = Date.now().toString(36); // Generar ID único
-                await startQuiz(discardedQuestionIds);
+                await startQuiz();
             } else {
                 console.log("🚪 El usuario cerró el modal sin seleccionar. Retornando al dashboard...");
                 handleExit();
@@ -825,31 +822,42 @@ function clearSession() {
 
 // Exponer función para iniciar nuevo examen limpiando caché sin race conditions
 window.startNewExam = function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    const isDemo = state.isDemo || urlParams.get('demo') === 'true';
-    const hasToken = typeof window.sessionManager?.getToken === 'function' && !!window.sessionManager.getToken();
-    const isGuest = !hasToken || (window.GuestSessionManager && typeof window.GuestSessionManager.canTakeDailyDemo === 'function' && !window.GuestSessionManager.canTakeDailyDemo());
+    const user = window.sessionManager ? window.sessionManager.getUser() : null;
+    const token = localStorage.getItem('authToken');
+    const isAuthenticated = !!user || !!token;
 
     const exitToDashboard = () => {
         const ctx = state.context || 'MEDICINA';
         window.location.href = `simulator-dashboard?context=${ctx}`;
     };
 
-    if (isDemo || isGuest) {
-        console.log("🏁 Demo finalizada (visitante sin intentos restantes). Saliendo de quiz...");
-        clearSession();
-        if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
-            window.uiManager.showAuthPromptModal(() => {
+    // Solo visitantes no autenticados están restringidos por cuota de demo diaria
+    if (!isAuthenticated) {
+        const cannotTakeDemo = window.GuestSessionManager && typeof window.GuestSessionManager.canTakeDailyDemo === 'function' && !window.GuestSessionManager.canTakeDailyDemo();
+        if (cannotTakeDemo) {
+            console.log("🏁 Demo finalizada (visitante sin intentos restantes). Saliendo de quiz...");
+            clearSession();
+            if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+                window.uiManager.showAuthPromptModal(() => {
+                    exitToDashboard();
+                });
+            } else {
                 exitToDashboard();
-            });
-        } else {
-            exitToDashboard();
+            }
+            return;
         }
-        return;
     }
 
     console.log("🆕 Iniciando nuevo examen (limpiando sesión activa).");
     clearSession();
+    if (isAuthenticated) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('demo')) {
+            url.searchParams.delete('demo');
+            window.location.href = url.pathname + url.search;
+            return;
+        }
+    }
     location.reload();
 };
 
@@ -887,8 +895,12 @@ async function startQuiz(temporarySeenIds = []) {
         state.maxQuestions = 10;
         state.mode = 'arcade';
 
-        // --- 📊 DEMO ANTI-REPETITION & LÍMITE (1 intento por día para visitantes) ---
-        if (window.GuestSessionManager && !window.GuestSessionManager.canTakeDailyDemo()) {
+        // --- 📊 DEMO ANTI-REPETITION & LÍMITE (1 intento por día para visitantes no autenticados) ---
+        const user = window.sessionManager ? window.sessionManager.getUser() : null;
+        const token = localStorage.getItem('authToken');
+        const isAuth = !!user || !!token;
+
+        if (!isAuth && window.GuestSessionManager && !window.GuestSessionManager.canTakeDailyDemo()) {
             elements.loadingOverlay.classList.add('hidden');
             const exitToDashboard = () => {
                 const ctx = state.context || 'MEDICINA';
