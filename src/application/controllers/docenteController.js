@@ -58,8 +58,9 @@ class DocenteController {
 
             console.log(`🎮 Generando Ronda ${round} de ${finalTarget} para ${user.name}. Limit: ${limit}`);
 
+            const seenIds = Array.isArray(req.body.seenIds) ? req.body.seenIds : (Array.isArray(req.body.excludeIds) ? req.body.excludeIds : []);
             const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode };
-            const quizData = await docenteService.generateQuiz(categoryOptions, user.id, limit, user.subscriptionTier);
+            const quizData = await docenteService.generateQuiz(categoryOptions, user.id, limit, user.subscriptionTier, seenIds);
             const secureSession = secureQuizSessionsEnabled()
                 ? await quizSessionService.createSession({ userId: user.id, domain: 'education', questions: quizData.questions })
                 : null;

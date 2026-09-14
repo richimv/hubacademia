@@ -5,7 +5,7 @@ class MedicoRepository {
 
     async findQuestionsInBankBatch(target, topics, limit = 10, userId, career = null, difficulty = null, sessionSeenIds = [], mode = null) {
         let seenIds = [];
-        const isRealMock = mode === 'real' || limit >= 50;
+        const isRealMock = mode === 'real';
 
         if (!isRealMock && userId) {
             const seenQuery = `SELECT question_id FROM user_question_history WHERE user_id = $1 AND seen_at > NOW() - INTERVAL '24 hours'`;
@@ -45,7 +45,7 @@ class MedicoRepository {
         }
 
         if (seenIds.length > 0) {
-            whereClauses += ` AND qb.id <> ALL($${paramIdx}::uuid[]) `;
+            whereClauses += ` AND qb.id <> ALL($${paramIdx}::uuid[]) AND (qb.case_id IS NULL OR qb.case_id NOT IN (SELECT case_id FROM question_bank WHERE id = ANY($${paramIdx}::uuid[]) AND case_id IS NOT NULL)) `;
             params.push(seenIds);
             paramIdx++;
         }
@@ -122,6 +122,55 @@ class MedicoRepository {
                 questions = reassembled;
             } catch (caseErr) {
                 console.error("⚠️ Error clusterizando preguntas de caso en MedicoRepo:", caseErr.message);
+            }
+        }
+
+        // Salvaguarda resiliente: si las preguntas no vistas son insuficientes para el cupo mínimo solicitado
+        if (questions.length < Math.min(limit, 20) && seenIds.length > 0) {
+            try {
+                const currentQuestionIds = questions.map(q => q.id).filter(Boolean);
+                let fallbackWhere = `WHERE qb.domain = 'medicine' AND ($2::text IS NULL OR qb.target = $2)`;
+                if (filterTopics) {
+                    fallbackWhere += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))`;
+                }
+                const fallbackParams = [topics, target];
+                let fbIdx = 3;
+                if (career) {
+                    fallbackWhere += ` AND (qb.career IS NULL OR qb.career = $${fbIdx}) `;
+                    fallbackParams.push(career);
+                    fbIdx++;
+                }
+                if (!isMixtoDifficulty) {
+                    fallbackWhere += ` AND qb.difficulty = $${fbIdx} `;
+                    fallbackParams.push(difficulty);
+                    fbIdx++;
+                }
+                if (currentQuestionIds.length > 0) {
+                    fallbackWhere += ` AND qb.id <> ALL($${fbIdx}::uuid[]) `;
+                    fallbackParams.push(currentQuestionIds);
+                    fbIdx++;
+                }
+                const needed = Math.max(1, limit - questions.length);
+                const fallbackQuery = `
+                    SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
+                           qb.explanation_image_url, qb.image_url, qb.domain, qb.topic,
+                           qb.case_id, qb.case_order,
+                           cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
+                           cs.image_url as case_image_url
+                    FROM question_bank qb
+                    LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
+                    ${fallbackWhere}
+                    ORDER BY RANDOM()
+                    LIMIT $${fbIdx}
+                `;
+                fallbackParams.push(needed);
+                const fallbackRes = await db.query(fallbackQuery, fallbackParams);
+                if (fallbackRes.rows && fallbackRes.rows.length > 0) {
+                    console.log(`ℹ️ [MedicoRepo] Reciclando ${fallbackRes.rows.length} preguntas del banco por límite alcanzado de preguntas no vistas en 24h.`);
+                    questions = [...questions, ...fallbackRes.rows];
+                }
+            } catch (fbErr) {
+                console.warn("⚠️ [MedicoRepo] Error en fallback de preguntas:", fbErr.message);
             }
         }
 

@@ -557,9 +557,19 @@ async function init() {
                 if (state.maxQuestions >= 50 || state.mode === 'real') startMockTimer();
             } else if (resume === false) {
                 console.log("🆕 Descartando sesión anterior por elección del usuario.");
+                const discardedQuestionIds = (recovered && Array.isArray(recovered.questions))
+                    ? recovered.questions.map(q => q.id).filter(Boolean)
+                    : [];
                 clearSession();
+                state.questions = [];
+                state.currentQuestionIndex = 0;
+                state.score = 0;
+                state.answers = [];
+                state.quizSessionId = null;
+                state.isFinished = false;
+                state.startTime = null;
                 state.quizId = Date.now().toString(36); // Generar ID único
-                await startQuiz();
+                await startQuiz(discardedQuestionIds);
             } else {
                 console.log("🚪 El usuario cerró el modal sin seleccionar. Retornando al dashboard...");
                 handleExit();
@@ -815,6 +825,29 @@ function clearSession() {
 
 // Exponer función para iniciar nuevo examen limpiando caché sin race conditions
 window.startNewExam = function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDemo = state.isDemo || urlParams.get('demo') === 'true';
+    const hasToken = typeof window.sessionManager?.getToken === 'function' && !!window.sessionManager.getToken();
+    const isGuest = !hasToken || (window.GuestSessionManager && typeof window.GuestSessionManager.canTakeDailyDemo === 'function' && !window.GuestSessionManager.canTakeDailyDemo());
+
+    const exitToDashboard = () => {
+        const ctx = state.context || 'MEDICINA';
+        window.location.href = `simulator-dashboard?context=${ctx}`;
+    };
+
+    if (isDemo || isGuest) {
+        console.log("🏁 Demo finalizada (visitante sin intentos restantes). Saliendo de quiz...");
+        clearSession();
+        if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
+            window.uiManager.showAuthPromptModal(() => {
+                exitToDashboard();
+            });
+        } else {
+            exitToDashboard();
+        }
+        return;
+    }
+
     console.log("🆕 Iniciando nuevo examen (limpiando sesión activa).");
     clearSession();
     location.reload();
@@ -823,7 +856,7 @@ window.startNewExam = function () {
 
 
 // 2. Iniciar Quiz (Llamada al Backend)
-async function startQuiz() {
+async function startQuiz(temporarySeenIds = []) {
     // Mostrar Pantalla de Carga y Tips Dinámicos
     showLoadingOverlay();
 
@@ -844,7 +877,8 @@ async function startQuiz() {
             difficulty: state.difficulty,
             limit: state.maxQuestions,
             mode: state.mode,
-            configType: state.configType
+            configType: state.configType,
+            seenIds: Array.isArray(temporarySeenIds) ? temporarySeenIds : []
         })
     };
 
@@ -856,10 +890,16 @@ async function startQuiz() {
         // --- 📊 DEMO ANTI-REPETITION & LÍMITE (1 intento por día para visitantes) ---
         if (window.GuestSessionManager && !window.GuestSessionManager.canTakeDailyDemo()) {
             elements.loadingOverlay.classList.add('hidden');
+            const exitToDashboard = () => {
+                const ctx = state.context || 'MEDICINA';
+                window.location.href = `simulator-dashboard?context=${ctx}`;
+            };
             if (window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function') {
-                window.uiManager.showAuthPromptModal();
+                window.uiManager.showAuthPromptModal(() => {
+                    exitToDashboard();
+                });
             } else {
-                window.location.href = '/register';
+                exitToDashboard();
             }
             return;
         }
@@ -872,7 +912,8 @@ async function startQuiz() {
         };
         const domainParam = contextMap[state.context || 'MEDICINA'] || 'medicine';
         const seenIds = JSON.parse(localStorage.getItem(`guest_seen_ids_${domainParam}`) || '[]');
-        fetchUrl = `${API_URL}/demo?domain=${domainParam}&limit=10&excludeIds=${seenIds.join(',')}`;
+        const combinedExclude = [...new Set([...seenIds, ...(Array.isArray(temporarySeenIds) ? temporarySeenIds : [])])];
+        fetchUrl = `${API_URL}/demo?domain=${domainParam}&limit=10&excludeIds=${combinedExclude.join(',')}`;
         if (state.targetExam) fetchUrl += `&target=${encodeURIComponent(state.targetExam)}`;
         if (state.career) fetchUrl += `&career=${encodeURIComponent(state.career)}`;
         if (state.difficulty) fetchUrl += `&difficulty=${encodeURIComponent(state.difficulty)}`;
@@ -1022,6 +1063,10 @@ async function startQuiz() {
     }
 
     state.questions = Array.isArray(data.questions) ? data.questions : [];
+    state.currentQuestionIndex = 0;
+    state.score = 0;
+    state.answers = [];
+    state.isFinished = false;
     if (state.isDemo || state.mode === 'arcade' || state.maxQuestions === 10) {
         state.maxQuestions = 10;
         state.mode = 'arcade';

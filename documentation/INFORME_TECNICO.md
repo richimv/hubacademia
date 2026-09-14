@@ -2,6 +2,48 @@
 
 Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
 
+### 🟢 [2026-09-13] - Corrección Crítica del Motor Anti-Repetición 24h y Ordenamiento Orgánico de Casuísticas Agrupadas
+
+- **🔍 Diagnóstico y Causa Raíz de Repetición en Exámenes de 20 Preguntas ([docenteRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/docenteRepository.js), [medicoRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/medicoRepository.js)):**
+  - **Causa Raíz:** En `findQuestionsInBankBatch`, la condición evaluaba `const isRealMock = mode === 'real' || limit >= 50;`. Dado que `docenteService.js` y `medicoService.js` solicitaban un lote candidato de `Math.max(50, limit * 3)` para permitir empaquetado y balance por áreas, `limit` llegaba siempre con un valor $\ge 50$ (50 para 10q, 60 para 20q).
+  - **Efecto:** `isRealMock` se volvía `true` para absolutamente todos los exámenes (incluso 10 y 20 preguntas). Como resultado, la consulta a `user_question_history` se omitía en su totalidad, `seenIds` permanecía vacío (`[]`), y las preguntas culminadas previamente volvían a aparecer de inmediato al iniciar un nuevo examen.
+
+- **⚙️ Corrección y Robustecimiento de la Capa de Repositorio:**
+  - **Identificación Estricta:** Se desacopló el tamaño del lote de la naturaleza del examen: `const isRealMock = mode === 'real';`.
+  - **Exclusión de Preguntas y Hermanas de Casuísticas:** Se implementó una subconsulta SQL que excluye tanto los reactivos ya vistos por el usuario en las últimas 24 horas como cualquier pregunta hermana perteneciente a la misma casuística (`qb.id <> ALL($${paramIdx}::uuid[]) AND (qb.case_id IS NULL OR qb.case_id NOT IN (SELECT case_id FROM question_bank WHERE id = ANY($${paramIdx}::uuid[]) AND case_id IS NOT NULL))`), erradicando la fragmentación o corte de casuísticas.
+  - **Reciclaje Resiliente con Fallback Seguro:** Si un usuario agota las preguntas no vistas del banco en un tema o dificultad antes de que transcurran las 24 horas, el repositorio ejecuta una consulta de reciclaje (`fallbackQuery`) para nunca interrumpir la experiencia de práctica ni lanzar errores.
+  - **Omitido en Simulacros Reales:** En simulacros oficiales (`mode === 'real'`), la consulta a `user_question_history` se omite intencionalmente para permitir práctica ilimitada sin bloqueos.
+
+- **🧩 Empaquetado Atómico Orgánico y Soporte en Modo Personalizado ([docenteService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/docenteService.js), [medicoService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/medicoService.js)):**
+  - **Transmisión de Modo:** Se calculó explícitamente `modeToPass = isRealMock ? 'real' : (categoryOptions.mode || 'standard');` para propagar el modo exacto desde la capa de servicio al repositorio.
+  - **Preservación Atómica Universal:** Se eliminó la restricción `&& isDefault`, asegurando que las casuísticas se mantengan agrupadas atómicamente y sin truncamientos tanto en configuraciones por defecto como personalizadas (`configType === 'custom'`).
+  - **Distribución Orgánica e Indiferente:** Se estructuró el empaquetado en `packedUnits` (bloques enteros de casos clínicos/pedagógicos y preguntas sueltas), mezclando aleatoriamente los bloques antes de aplanar el array (`shuffledUnits.flat()`). Esto garantiza que los casos no aparezcan siempre rígidamente al inicio (posiciones 1..6), sino distribuidos de manera orgánica en el examen, manteniendo estrictamente el orden secuencial ascendente (`case_order`) de las preguntas hermanas dentro de cada caso.
+
+- **🪟 Flujo de Modales en Simuladores y Salida Ergonómica en Demo ([quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js), [uiManager.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/ui/uiManager.js)):**
+  - **Modal de Finalización ("¡Simulacro Finalizado!") y Botón "Nuevo Examen":**
+    - En usuarios autenticados: al enviar las respuestas (`/submit`), las preguntas se registran en `user_question_history`. Al presionar "Nuevo Examen", `clearSession()` purga la sesión previa y solicita un examen fresco; el backend excluye automáticamente las preguntas y casos recién vistos en 24h, garantizando reactivos inéditos.
+    - En versión Demo (visitantes): como los invitados disponen de 1 único intento diario (`canTakeDailyDemo`), hacer clic en "Nuevo Examen" dispara la modal de registro (`showAuthPromptModal`) y, en caso de cerrarse sin registrarse, redirige automáticamente al dashboard del simulador (`simulator-dashboard?context=...`). Se erradica por completo el estado donde el visitante quedaba atrapado en una pantalla vacía de examen.
+  - **Modal de Reanudación ("Simulacro en progreso") y Botón "Iniciar nuevo":**
+    - Las preguntas de un examen interrumpido **NUNCA se marcan como vistas** en la base de datos (pues solo `/submit` escribe en `user_question_history`).
+    - Al presionar "Iniciar nuevo", el cliente extrae los IDs de las preguntas de la sesión descartada (`discardedQuestionIds`) y los transmite como `seenIds` en la petición `/start`.
+    - Reseteo atómico en memoria: `questions = []`, `currentQuestionIndex = 0`, `score = 0`, `answers = []`, `quizSessionId = null`, garantizando un inicio impecable desde la pregunta 1.
+  - **Propagación en Controladores ([docenteController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/docenteController.js), [medicoController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/medicoController.js)):**
+    - Se habilitó la extracción de `seenIds` / `excludeIds` desde `req.body`, propagándolos de forma transparente a `generateQuiz` en la capa de servicios y repositorios.
+
+- **🧪 Cobertura de Pruebas Unitarias ([tests/unit/antiRepetitionQuiz.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/antiRepetitionQuiz.test.js), [tests/unit/quizModalFlow.test.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/tests/unit/quizModalFlow.test.js)):**
+  - Dos suites de prueba especializadas con 16 pruebas unitarias que validan:
+    1. Consulta y exclusión de preguntas vistas en 24h para 10q y 20q.
+    2. Reciclaje resiliente cuando el stock de reactivos no vistos se agota.
+    3. Omisión estricta de `user_question_history` en Simulacro Real (`mode === 'real'`).
+    4. Empaquetado atómico contiguo con `case_order` ascendente y distribución orgánica.
+    5. Propagación de `seenIds` desde el controlador HTTP a la capa de servicio.
+    6. Flujo de salida al dashboard en modo Demo al cerrar la modal de registro.
+    7. Reseteo atómico del estado del simulador al descartar sesión previa.
+    8. Inserción en `user_question_history` únicamente al culminar examen (`saveQuizHistory`).
+  - **Total: 59 suites de prueba aprobadas, 493 pruebas en verde (100% éxito)**.
+
+---
+
 ### 🟢 [2026-09-10] - Optimización del RAG en Quiz Tutor para Usuarios Avanzados y Sistema de Citación con Número de Página
 
 - **🌲 Optimización y Enrutamiento Resiliente de RAG Semántico ([ragService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/ragService.js)):**

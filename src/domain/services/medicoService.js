@@ -110,10 +110,11 @@ class MedicoService {
         const isRealMock = categoryOptions.mode === 'real' || limit >= 50;
         const isDefault = isRealMock || categoryOptions.configType === 'default' || !categoryOptions.configType;
         const queryAreas = isDefault ? ['*'] : normalizedAllAreas;
+        const modeToPass = isRealMock ? 'real' : (categoryOptions.mode || 'standard');
 
-        console.log(`📡 [MedicoService] Target: ${target} | Career: ${career} | Config: ${categoryOptions.configType || 'default'} | Mode: ${categoryOptions.mode || 'standard'} | QueryAreas: ${queryAreas.join(', ')} | Limit: ${limit}`);
+        console.log(`📡 [MedicoService] Target: ${target} | Career: ${career} | Config: ${categoryOptions.configType || 'default'} | Mode: ${modeToPass} | QueryAreas: ${queryAreas.join(', ')} | Limit: ${limit}`);
 
-        const rawBankQuestions = await medicoRepository.findQuestionsInBankBatch(target, queryAreas, Math.max(50, limit * 3), userId, career, difficulty, seenIds, categoryOptions.mode);
+        const rawBankQuestions = await medicoRepository.findQuestionsInBankBatch(target, queryAreas, Math.max(50, limit * 3), userId, career, difficulty, seenIds, modeToPass);
 
         const questionsByArea = {};
         const returnedTopics = new Set();
@@ -414,7 +415,7 @@ class MedicoService {
 
         rawBankQuestions.forEach(q => {
             const topicKey = q.topic ? q.topic.toUpperCase() : 'GENERAL';
-            if (q.case_id && isDefault) {
+            if (q.case_id) {
                 if (!registeredCaseIds.has(q.case_id)) {
                     registeredCaseIds.add(q.case_id);
                     const fullCase = casesMap.get(q.case_id);
@@ -427,17 +428,18 @@ class MedicoService {
             }
         });
 
-        const packedQuestions = [];
+        const packedUnits = [];
+        let currentCount = 0;
         const areasList = activeAreas.length > 0
             ? activeAreas
             : Array.from(new Set([...soloQuestionsByArea.keys(), ...caseUnitsByArea.keys()]));
 
         // 3. Selección balanceada de casos completos (solo si caben enteros en el cupo restante)
         let hasCasesToProcess = true;
-        while (hasCasesToProcess && packedQuestions.length < limit) {
+        while (hasCasesToProcess && currentCount < limit) {
             let addedAnyCaseInRound = false;
             for (const area of areasList) {
-                const spaceLeft = limit - packedQuestions.length;
+                const spaceLeft = limit - currentCount;
                 if (spaceLeft <= 0) break;
 
                 const areaCases = caseUnitsByArea.get(area);
@@ -445,7 +447,8 @@ class MedicoService {
                     const fittingCaseIdx = areaCases.findIndex(c => c.length <= spaceLeft);
                     if (fittingCaseIdx !== -1) {
                         const [fittingCase] = areaCases.splice(fittingCaseIdx, 1);
-                        packedQuestions.push(...fittingCase);
+                        packedUnits.push(fittingCase);
+                        currentCount += fittingCase.length;
                         addedAnyCaseInRound = true;
                     }
                 }
@@ -457,15 +460,16 @@ class MedicoService {
 
         // 4. Completar el espacio restante con Preguntas Sueltas (size 1) de forma balanceada
         let hasSoloToProcess = true;
-        while (hasSoloToProcess && packedQuestions.length < limit) {
+        while (hasSoloToProcess && currentCount < limit) {
             let addedAnySoloInRound = false;
             for (const area of areasList) {
-                const spaceLeft = limit - packedQuestions.length;
+                const spaceLeft = limit - currentCount;
                 if (spaceLeft <= 0) break;
 
                 const soloList = soloQuestionsByArea.get(area);
                 if (soloList && soloList.length > 0) {
-                    packedQuestions.push(soloList.shift());
+                    packedUnits.push([soloList.shift()]);
+                    currentCount += 1;
                     addedAnySoloInRound = true;
                 }
             }
@@ -475,15 +479,19 @@ class MedicoService {
         }
 
         // 5. Salvaguarda: Si aún faltara completar cupo y quedan solos en cualquier área
-        if (packedQuestions.length < limit) {
+        if (currentCount < limit) {
             for (const soloList of soloQuestionsByArea.values()) {
-                while (soloList.length > 0 && packedQuestions.length < limit) {
-                    packedQuestions.push(soloList.shift());
+                while (soloList.length > 0 && currentCount < limit) {
+                    packedUnits.push([soloList.shift()]);
+                    currentCount += 1;
                 }
             }
         }
 
-        return packedQuestions;
+        // 6. Mezclar de forma balanceada los bloques para que los casos no queden siempre agrupados al principio,
+        // garantizando que las preguntas de cada casuística se mantengan siempre contiguas y en su orden oficial
+        const shuffledUnits = packedUnits.sort(() => 0.5 - Math.random());
+        return shuffledUnits.flat();
     }
 
     async getLeaderboard() {

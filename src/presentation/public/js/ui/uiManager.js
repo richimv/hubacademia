@@ -150,6 +150,11 @@ class UIManager {
                     } else {
                         // Comportamiento regular para modales inyectados (como auth o video)
                         modal.style.display = 'none';
+                        if (modalId === this.modalId && typeof this._authModalOnClose === 'function') {
+                            const cb = this._authModalOnClose;
+                            this._authModalOnClose = null;
+                            cb();
+                        }
                     }
                 }
             });
@@ -1488,7 +1493,10 @@ class UIManager {
     /**
      * Muestra el modal de restricción "Soft Block".
      */
-    showAuthPromptModal() {
+    showAuthPromptModal(onClose = null) {
+        if (typeof onClose === 'function') {
+            this._authModalOnClose = onClose;
+        }
         this.injectModalHTML();
         const modal = document.getElementById(this.modalId);
         if (modal) {
@@ -1507,6 +1515,11 @@ class UIManager {
         if (modal) {
             modal.style.display = 'none';
             this.popModalState(this.modalId);
+        }
+        if (typeof this._authModalOnClose === 'function') {
+            const cb = this._authModalOnClose;
+            this._authModalOnClose = null;
+            cb();
         }
     }
 
@@ -1578,6 +1591,16 @@ class UIManager {
             </div>`;
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        const modalEl = document.getElementById(this.modalId);
+        if (modalEl && !modalEl._hasBackdropListener) {
+            modalEl._hasBackdropListener = true;
+            modalEl.addEventListener('click', (e) => {
+                if (e.target === modalEl) {
+                    this.hideAuthPromptModal();
+                }
+            });
+        }
     }
 
     /**
