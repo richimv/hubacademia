@@ -99,7 +99,10 @@ function validateDiagnosticStats(stats) {
         avg_score: Math.min(Math.max(avg_score, 0), 20), // 0 a 20
         accuracy: Math.min(Math.max(accuracy, 0), 100), // 0 to 100
         mastered_cards: Math.max(mastered_cards, 0),
-        radar_data: cleanRadarData
+        radar_data: cleanRadarData,
+        targetScale: stats.targetScale ? Math.min(Math.max(parseInt(stats.targetScale, 10) || 2, 2), 8) : undefined,
+        target: typeof stats.target === 'string' ? stats.target.replace(/[^a-zA-Z0-9_\-\s]/g, '').substring(0, 30).trim() : undefined,
+        minedu_score: (stats.minedu_score !== undefined && !isNaN(parseFloat(stats.minedu_score))) ? Math.min(Math.max(parseFloat(stats.minedu_score), 0), 90) : undefined
     };
 }
 

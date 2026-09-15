@@ -2,6 +2,7 @@ const AnalyticsService = require('../../domain/services/analyticsService');
 const UserRepository = require('../../domain/repositories/userRepository'); // 1. Importar la CLASE del repositorio.
 const { VertexAI } = require('@google-cloud/vertexai'); // ✅ NUEVO: Importar Vertex para el Analizador
 const securityUtils = require('../../domain/utils/securityUtils');
+const mineduScoringService = require('../../domain/services/mineduScoringService');
 
 // CONFIGURACIÓN VERTEX AI
 const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
@@ -312,6 +313,11 @@ class AnalyticsController {
                 return res.status(400).json({ error: 'Datos estadísticos inválidos o corruptos.' });
             }
 
+            // Propagar targetScale si fue enviado en body o en stats
+            const targetScale = req.body.targetScale || rawStats.targetScale || stats.targetScale || 2;
+            stats.targetScale = targetScale;
+            if (req.body.target && !stats.target) stats.target = req.body.target;
+
             // 💸 DESCONTAR CUOTA / VIDAS según el tipo definido por el middleware (usage_count para Free, daily_ai_usage para Advanced)
             if (req.usageType && tier !== 'admin') {
                 try {
@@ -338,6 +344,7 @@ class AnalyticsController {
             let tutorRole = "Tutor Médico experto y evaluador del Examen Nacional de Medicina (ENAM / SERUMS / Residentado)";
             let examType = "médico cirujano en preparación intensiva para sus exámenes oficiales nacionales";
             let areaLabel = "RENDIMIENTO Y MATRIZ POR ÁREAS CLÍNICAS";
+            let scaleSectionPrompt = "";
             let strengthTextPrompt = "El análisis debe centrarse en el dominio clínico, razonamiento diagnóstico, correlación fisiopatológica y precisión terapéutica. Destaca sus áreas más sólidas con porcentajes reales de acierto.";
             let weaknessTextPrompt = "Identifica patrones de error sistemático, sesgos diagnósticos (ej. sesgo de anclaje, confusión en dosis críticas o no reconocer signos de alarma) y el riesgo real en el puntaje de la prueba oficial.";
             let highYieldPrompt = "Una 'Píldora Clínica High-Yield' de alto impacto que suelen preguntar en los exámenes oficiales sobre una de sus áreas débiles.";
@@ -346,15 +353,31 @@ class AnalyticsController {
             let step3Title = "Simulacros de Alta Exigencia";
 
             if (context === 'EDUCACION') {
+                const cutoff = mineduScoringService.getScaleCutoff(targetScale);
+                const mineduScore = (stats.minedu_score !== undefined && !isNaN(parseFloat(stats.minedu_score)))
+                    ? parseFloat(stats.minedu_score)
+                    : Math.round(((stats.avg_score / 20) * 90) * 10) / 10;
+                const gap = Math.round((mineduScore - cutoff.minPoints) * 10) / 10;
+                const statusStr = gap >= 0
+                    ? `+${gap.toFixed(1)} pts de margen (PROYECCIÓN APROBATORIA)`
+                    : `-${Math.abs(gap).toFixed(1)} pts de déficit (BRECHA POR CUBRIR)`;
+
                 tutorRole = "Asesor Pedagógico Especialista en Evaluación y Currículo Nacional (CNEB / Minedu)";
-                examType = "docente en preparación para la Prueba Nacional de Nombramiento o Ascenso de Escala Magisterial";
+                examType = `docente en preparación para la Prueba Nacional de Ascenso de Escala Magisterial (Postula a: ${cutoff.name})`;
                 areaLabel = "RENDIMIENTO POR COMPETENCIAS PEDAGÓGICAS";
-                strengthTextPrompt = "El análisis debe centrarse en la mediación pedagógica, resolución de casuísticas de aula, criterios de retroalimentación reflexiva y didáctica específica.";
-                weaknessTextPrompt = "Identifica patrones de confusión en casuísticas (ej. confundir retroalimentación descriptiva con reflexiva, o confundir conflicto cognitivo con disonancia) y el impacto en la matriz de rúbricas oficiales.";
-                highYieldPrompt = "Una 'Píldora Pedagógica High-Yield' sobre un principio doctrinal clave del CNEB de alta recurrencia en la prueba nacional.";
-                step1Title = "Refuerzo Doctrinal del CNEB";
-                step2Title = "Casuísticas de Retroalimentación";
-                step3Title = "Simulacros de Gestión y Rúbricas";
+                scaleSectionPrompt = `
+                ESCALA OBJETIVO DEL POSTULANTE (MINEDU):
+                - Meta Postulada: ${cutoff.name}
+                - Puntaje Mínimo Requerido: ${cutoff.minPoints} / 90 puntos (equiv. ${cutoff.vigesimalEquivalent}/20)
+                - Puntaje Actual Estimado: ${mineduScore} / 90 puntos
+                - Estado frente al Corte: ${statusStr}
+                `;
+                strengthTextPrompt = `El análisis debe centrarse en la mediación pedagógica, resolución de casuísticas de aula y cómo sus fortalezas respaldan su avance hacia la ${cutoff.name}.`;
+                weaknessTextPrompt = `Identifica patrones de confusión en casuísticas y la brecha concreta de puntos para asegurar el corte de ${cutoff.minPoints} pts de la ${cutoff.name}.`;
+                highYieldPrompt = "Una 'Píldora Pedagógica High-Yield' sobre un principio doctrinal clave del CNEB de alta recurrencia en la prueba nacional de Ascenso.";
+                step1Title = `Refuerzo Doctrinal para ${cutoff.name}`;
+                step2Title = "Casuísticas de Retroalimentación y Rúbricas";
+                step3Title = "Simulacros Oficiales MINEDU (60q)";
             }
 
             // Prompt analítico adaptado para Plan Avanzado (Deep Reasoning)
@@ -365,6 +388,7 @@ class AnalyticsController {
             Nota Promedio: ${stats.avg_score} / 20
             Precisión Global: ${stats.accuracy}%
             Tarjetas Repasadas y Dominadas: ${stats.mastered_cards}
+            ${scaleSectionPrompt}
             
             ${areaLabel}:
             ${JSON.stringify(stats.radar_data, null, 2)}
@@ -402,7 +426,8 @@ class AnalyticsController {
         } catch (error) {
             console.error('❌ Error en getAIDiagnostic:', error);
             try {
-                const fallback = this.analyticsService.generateHeuristicDiagnostic(req.body.stats || {}, req.body.context || 'MEDICINA');
+                const fallbackStats = { ...(req.body.stats || {}), targetScale: req.body.targetScale || req.body.stats?.targetScale || 2 };
+                const fallback = this.analyticsService.generateHeuristicDiagnostic(fallbackStats, req.body.context || 'MEDICINA');
                 return res.json({ success: true, ...fallback });
             } catch (fallbackErr) {
                 res.status(500).json({ error: 'Hubo un problema generando tu diagnóstico con IA.' });

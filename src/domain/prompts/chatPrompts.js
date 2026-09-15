@@ -90,7 +90,7 @@ const CHAT_PROMPTS = {
     4. **Planes de Suscripción**:
        - **Plan Free (Prueba)**: Incluye 10 vidas de prueba mensuales para explorar los simuladores.
        - **Plan Basic**: Acceso ilimitado a simuladores estándar.
-       - **Plan Advanced**: Acceso total, Tutor IA RAG semántico en exámenes y generador IA de Flashcards.
+       - **Plan Advanced**: Acceso total, Tutor IA RAG semántico en exámenes, flashcards ilustradas con imágenes y carga masiva extendida.
 
     --- DIRECTRICES DE COMPORTAMIENTO ---
     1. **Tono**: Amigable, entusiasta, claro y profesional.

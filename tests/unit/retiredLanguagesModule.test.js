@@ -37,9 +37,10 @@ describe('Retired language-learning module boundaries', () => {
         const deckController = require('../../src/application/controllers/deckController');
 
         expect(deckController._normalizeCategory('Inexistente')).toBe('General');
+        expect(deckController._normalizeCategory('Tecnología')).toBe('General');
         expect(deckController._normalizeCategory('Idiomas')).toBe('Idiomas');
         expect(deckController._normalizeCategory('Educación')).toBe('Educación');
-        expect(deckController._normalizeCategory('Tecnología')).toBe('Tecnología');
+        expect(deckController._normalizeCategory('Medicina')).toBe('Medicina');
     });
 
     test('TTS voice resolution has no dependency on the retired repository', () => {

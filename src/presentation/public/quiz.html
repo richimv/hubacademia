@@ -13,15 +13,15 @@
     <!-- CSS Moderno (Glassmorphism) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Centralized Design System Tokens -->
-    <link rel="stylesheet" href="/css/theme.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/quiz.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/modal.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/components.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/tutor.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=aaa1df235e59">
+    <link rel="stylesheet" href="/css/theme.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/quiz.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/modal.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/components.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/tutor.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=3d3dbbe5c01a">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script src="/js/config.js?v=aaa1df235e59"></script>
-    <script src="/js/utils/themeManager.js?v=aaa1df235e59"></script>
+    <script src="/js/config.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/utils/themeManager.js?v=3d3dbbe5c01a"></script>
 
     <!-- Critical Loading Screen CSS (Inmune a problemas de caché del navegador) -->
     <style>
@@ -361,7 +361,20 @@
                 </svg>
                 <span class="score-value" id="finalScore">0/10</span>
             </div>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem;">¿Qué te pareció el nivel?</p>
+
+            <!-- Contenedor Oficial MINEDU (Escala Magisterial / Base 90) -->
+            <div id="mineduScoreContainer" style="display: none; margin: 0.75rem 0 1rem; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); text-align: center;">
+                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #60a5fa; margin-bottom: 0.25rem;">
+                    <i class="fas fa-graduation-cap"></i> Prueba Nacional MINEDU (Base 90)
+                </div>
+                <div id="mineduOfficialScore" style="font-size: 1.45rem; font-weight: 800; color: #3b82f6; line-height: 1.2;">
+                    0.0 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">/ 90 pts</span>
+                </div>
+                <div id="mineduScaleBadge" style="margin-top: 0.45rem; display: inline-block; font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 9999px;">
+                </div>
+                <div id="mineduScaleMessage" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.35rem; line-height: 1.35;">
+                </div>
+            </div>
 
             <div class="results-actions">
                 <button id="btn-review-exam" type="button" onclick="event.preventDefault(); window.showExamReview(); return false;" class="btn-results-review">
@@ -397,17 +410,17 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=aaa1df235e59"></script>
-    <script src="/js/services/networkService.js?v=aaa1df235e59"></script>
-    <script src="/js/services/authApiService.js?v=aaa1df235e59"></script>
-    <script src="/js/services/analyticsApiService.js?v=aaa1df235e59"></script>
-    <script src="/js/sessionManager.js?v=aaa1df235e59"></script>
-    <script src="/js/ui/components.js?v=aaa1df235e59"></script>
-    <script src="/js/ui/confirmationModal.js?v=aaa1df235e59"></script>
-    <script src="/js/ui/uiManager.js?v=aaa1df235e59"></script>
-    <script src="/js/app.js?v=aaa1df235e59"></script>
-    <script src="/js/quiz-tutor.js?v=aaa1df235e59"></script>
-    <script type="module" src="/js/quiz.js?v=aaa1df235e59"></script>
+    <script src="/js/utils/markdown-renderer.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/services/networkService.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/services/authApiService.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/services/analyticsApiService.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/sessionManager.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/ui/components.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/ui/confirmationModal.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/ui/uiManager.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/app.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/quiz-tutor.js?v=3d3dbbe5c01a"></script>
+    <script type="module" src="/js/quiz.js?v=3d3dbbe5c01a"></script>
 </body>
 
 </html>

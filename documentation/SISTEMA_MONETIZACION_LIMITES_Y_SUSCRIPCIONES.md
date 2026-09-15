@@ -12,10 +12,10 @@ Este documento centraliza toda la arquitectura de monetización, el modelo de su
 | **Tutor IA (Chat)** | Estándar (50 msg/día, Sin RAG) | Inteligente con RAG / Razonamiento (100 msg/día) | Estándar (Sin RAG, Descuenta vidas) |
 | **Consultas RAG** | No Incluido (0 msg/día) | Incluido (Hasta 25 msg RAG/Día, degradable a estándar) | No Incluido (Bloqueado) |
 | **Voz (Audio Assistant)**| Estándar (50 msg/día) | Avanzado (100 msg/día) | Descuenta vidas |
-| **Flashcards (Manuales)** | Ilimitadas (Texto puro hasta 1,000 caracteres por cara) | Personalizadas con Audio TTS (500 chars) e Imágenes (1,000 chars texto) | Estudio de mazos y repaso básico |
-| **Carga Masiva Excel** | 3 archivos/día (Hasta 100 tarjetas/archivo, texto puro) | 10 archivos/día (Hasta 100 tarjetas/archivo con opción Audio TTS) | Bloqueado con Paywall |
-| **Audio TTS e Imágenes**| No Incluido (Paywall) | Exclusivo (Síntesis TTS Google Cloud + Subida de Imágenes a GCS) | No Incluido (Paywall) |
-| **Generación IA Flashcards** | No Incluido | 30 pedidos / mes (Hasta 20 tarjetas por pedido con Gemini) | No Incluido |
+| **Flashcards (Manuales)** | Ilimitadas (Texto puro hasta 1,000 caracteres por cara) | Personalizadas con Imágenes (1,000 chars texto por cara) | Estudio de mazos y repaso básico |
+| **Carga Masiva Excel** | 3 archivos/día (Hasta 100 tarjetas/archivo, texto puro) | 10 archivos/día (Hasta 100 tarjetas/archivo) | Bloqueado con Paywall |
+| **Imágenes en Flashcards**| No Incluido (Paywall) | Exclusivo (Subida y visualización de imágenes en GCS) | No Incluido (Paywall) |
+| **Generación IA y Audio TTS** | Retirado de Web (Exclusivo MeduCat) | Retirado de Web (Exclusivo MeduCat) | Retirado de Web (Exclusivo MeduCat) |
 | **Clonación de Mazos** | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) |
 | **Simulador de Exámenes** | **CAP 15/Día** | **CAP 50/Día** | Descuenta vidas (10 de prueba mensual) |
 
@@ -91,16 +91,15 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 
 ### 3.4 Módulo: Tarjetas de Repaso y Flashcards (deckController.js / deckService.js)
 *   **Creación Manual y Longitudes de Texto**:
-    *   **Texto Puro (Basic y Advanced)**: Permite hasta **1,000 caracteres** por cara (frente y dorso), ofreciendo amplitud para fórmulas, listas y explicaciones doctrinales.
-    *   **Audio TTS Activado (Advanced únicamente)**: Aplica un tope condicional de **500 caracteres** por cara para preservar el presupuesto de síntesis de Google Cloud Text-to-Speech.
-*   **Políticas Multimedia (TTS e Imágenes)**:
-    *   **Audio TTS y Carga de Imágenes (`/api/cards/upload-image`)**: Exclusivos de planes `advanced` y `admin`. Usuarios `free` o `basic` que intenten activar estas opciones reciben respuesta `403 Forbidden` (`paywall: true`) e intercepción visual inmediata con la modal Paywall.
+    *   **Texto Puro (Basic y Advanced)**: Permite hasta **1,000 caracteres** por cara (frente y dorso), ofreciendo amplitud para fórmulas, listas y explicaciones pedagógicas o médicas.
+*   **Políticas de Imágenes en Flashcards**:
+    *   **Carga de Imágenes (`/api/cards/upload-image`)**: Exclusivo de planes `advanced` y `admin`. Usuarios `free` o `basic` que intenten subir imágenes reciben respuesta `403 Forbidden` (`paywall: true`) e intercepción visual inmediata con la modal Paywall.
 *   **Carga Masiva vía Excel (`batch_import`)**:
     *   **Free**: 0 archivos/día (bloqueado para mitigar abusos de bots/scripts).
     *   **Basic**: Hasta 3 archivos Excel por día (hasta 100 tarjetas por archivo, texto puro de hasta 1,000 caracteres por cara).
-    *   **Advanced**: Hasta 10 archivos Excel por día (hasta 100 tarjetas por archivo con soporte opcional de síntesis de voz TTS en lote).
-*   **Generación de Flashcards con IA (`monthly_flashcards_usage`)**:
-    *   Exclusivo del Plan Avanzado con cuota de **30 solicitudes mensuales** (hasta 20 tarjetas generadas por solicitud mediante Gemini).
+    *   **Advanced**: Hasta 10 archivos Excel por día (hasta 100 tarjetas por archivo).
+*   **Generación de Flashcards con IA y Audio TTS [Retirados de Web - Exclusivos de MeduCat]**:
+    *   La generación masiva automatizada con IA y la síntesis neural de audio TTS fueron erradicadas de la plataforma web de Hub Academia para optimizar su enfoque en Educación, Medicina, Idiomas y General, pasando a ser exclusivas de la app móvil **MeduCat**.
 *   **Clonación y Mazos de Comunidad**:
     *   Todos los tiers (Free, Basic, Advanced) pueden clonar y estudiar mazos públicos con audios e imágenes existentes sin generar costos extra en GCS/TTS (reutilización atómica de URLs).
     *   Protección anti-duplicados y rate limiting de máximo 30 clonaciones por día para prevenir flooding.
@@ -153,7 +152,7 @@ La lógica de renovación de vidas para usuarios Free/Pending está centralizada
 *   **Diseño Glassmorphic Cyber-Minimalist**: Tarjetas translúcidas oscuras con desenfoque de fondo, degradados dorados/esmeralda y tipografía de alto contraste.
 *   **Selector de Planes**:
     *   **Plan Básico (S/ 9.90 por 2 Meses)**: 15 simulacros diarios, 50 consultas diarias de IA estándar, flashcards manuales ilimitadas.
-    *   **Plan Avanzado (S/ 24.90 por 4 Meses)**: 50 simulacros diarios, 100 consultas diarias de IA con 25 RAG semánticos, 30 pedidos mensuales de flashcards con IA + Audio TTS.
+    *   **Plan Avanzado (S/ 24.90 por 4 Meses)**: 50 simulacros diarios, 100 consultas diarias de IA con 25 RAG semánticos, flashcards ilustradas con imágenes y carga masiva extendida (10 archivos/día).
 *   **Pasarelas de Pago Multi-Método**:
     *   **Yape / Plin QR**: Datos oficiales de cuenta (Ricardo M. / +51 980844817) y botón con mensaje pre-llenado para WhatsApp con correo registrado.
     *   **Mercado Pago (Tarjeta de Crédito / Débito)**: Integración segura mediante `paymentService.createOrder()` y navegación web in-app (`WebBrowser.openBrowserAsync`).

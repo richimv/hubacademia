@@ -706,3 +706,88 @@ Para consolidar la misma robustez técnica en **Hub Educación App (`HubDocenteA
 ### 4. Blindaje del Motor RAG
 * **En Simulacros Reales:** RAG **100% Desactivado** tanto en Web como en las Apps Móviles. Los reactivos provienen de forma exclusiva del banco verificado en PostgreSQL (`source: 'BANK'`). El Tutor IA permanece bloqueado durante la prueba (modo ciego estricto).
 * **En Exámenes Cortos (10q / 20q):** El RAG opera exclusivamente por déficit ($\text{neededCount} = \text{limit} - \text{bankCount}$) en bloques paralelos de $\le 5$ preguntas, guardando cada reactivo generado en PostgreSQL para auto-abastecer el banco.
+
+---
+
+## 🏆 8. Sistema Oficial de Calificación MINEDU (Base 90) & Diagnóstico Inteligente por IA Multiplataforma (Septiembre 2026)
+
+Para garantizar total fidelidad con la **Prueba Nacional del Concurso de Ascenso de Escala Magisterial** establecida por el Ministerio de Educación del Perú (MINEDU), se diseñó e implementó un subsistema integral de evaluación, visualización y diagnóstico basado en la normativa oficial de **Base 90**:
+
+```
+========================================================================================================
+CAPA                IMPLEMENTACIÓN WEB (hubacademia)               APP MÓVIL (HubDocenteApp)
+========================================================================================================
+1. PRESENTATION     • quiz.html & quiz.js                          • app/quiz/results.tsx
+                      (#mineduScoreContainer, score 90,              (Puntaje Oficial MINEDU / 90 pts,
+                      badge de meta y brecha de puntos)              badge de logro y brecha)
+                    • simulator-dashboard.html & .js               • components/ExamConfigModal.tsx
+                      (Selector #config-target-scale, badge          (Selector táctil de Escalas 2 a 8)
+                      de escala en filtro activo, línea              • components/HistoricalTrendChart.tsx
+                      de aprobación dinámica Chart.js)               (Línea punteada de corte según escala)
+                    • Eliminación de texto huérfano               • components/AIDiagnosisCard.tsx
+                      "¿Qué te pareció el nivel?"                    (Badge de escala y diagnóstico MINEDU)
+                                                                   • app/(tabs)/home.tsx (Propagación reactiva)
+
+2. APPLICATION      • docenteController.js                         • application/hooks/useDocenteQuiz.ts
+                      (Extracción y sanitización de targetScale,     (Propagación de targetScale en fetchs)
+                      inyección en stats y evolution)              • application/state/quizState.ts
+                    • analyticsController.js                         (Retención de targetScale en sesión)
+                      (Inyección de escala, corte y brecha
+                      en prompt de Gemini 2.5 Flash)
+
+3. DOMAIN           • mineduScoringService.js                      • domain/types/docente.ts
+                      (Servicio desacoplado con tabla inmutable      (Tipado targetScale?: 2|3|4|5|6|7|8)
+                      MINEDU_SCALE_CUTOFFS, Base 90 y brechas)     • domain/services/docenteService.ts
+                    • analyticsService.js                            (Envío de targetScale en getAIDiagnostic)
+                      (Proyección base 90 y recomendaciones
+                      adaptadas a la escala en motor heurístico)
+                    • securityUtils.js
+                      (Saneamiento y clamping de targetScale 2-8)
+
+4. INFRASTRUCTURE   • user_simulator_preferences                   • AsyncStorage / SecureStore
+                      (config_json.targetScale persistido)           (simActiveConfig_educacion con targetScale)
+                    • PostgreSQL quiz_history (Sin alteración)     • Paridad de red con /api/docente/*
+========================================================================================================
+```
+
+### 8.1 Marco Normativo Oficial y Fórmulas Matemáticas
+- **Estructura:** 60 preguntas de opción múltiple (casuística pedagógica y especialidad curricular).
+- **Ponderación:** 1.5 puntos por respuesta correcta, 0 puntos por incorrecta o en blanco (sin penalización).
+- **Puntaje Máximo:** 90.0 puntos.
+- **Fórmula Proporcional Unificada:**
+  $$\text{Puntaje}_{90} = \text{round}\left(\frac{\text{Aciertos}}{\text{Total}} \times 90, 1\right)$$
+  Permite evaluar con la misma métrica oficial los simulacros rápidos de 10q, los formativos de 20q y los simulacros reales de 60q.
+- **Matriz Inmutable de Escalas Magisteriales (`MINEDU_SCALE_CUTOFFS`):**
+
+| Escala Magisterial | Puntaje Mínimo Requerido | Aciertos Mínimos (de 60) | Equivalencia Vigesimal (/20) |
+| :---: | :---: | :---: | :---: |
+| **2.ª Escala** | **54.0 pts** | 36 correctas | **12.0** |
+| **3.ª Escala** | **57.0 pts** | 38 correctas | **12.7** |
+| **4.ª Escala** | **60.0 pts** | 40 correctas | **13.3** |
+| **5.ª Escala** | **63.0 pts** | 42 correctas | **14.0** |
+| **6.ª Escala** | **66.0 pts** | 44 correctas | **14.7** |
+| **7.ª Escala** | **69.0 pts** | 46 correctas | **15.3** |
+| **8.ª Escala** | **69.0 pts** | 46 correctas | **15.3** |
+
+### 8.2 Línea de Aprobación Dinámica Adaptativa
+En lugar de una línea estática fija en 14.0 puntos vigesimales, la plataforma calibra en tiempo real la meta en función de la escala seleccionada por el docente:
+- **En Web (`simulator-dash.js`):** El endpoint `/api/docente/evolution` calcula `approvalThreshold20` y `approvalLabel` adaptados a `targetScale`. El gráfico lineal de Chart.js dibuja la línea de aprobación personalizada (ej. `Línea de Aprobación Oficial (60.0 pts / 13.3 - 4.ª Escala)`).
+- **En Móvil (`HistoricalTrendChart.tsx`):** La línea discontinua SVG refleja el corte exacto de la escala postulada.
+
+### 8.3 Diagnóstico Inteligente por IA (Patrones de Error) con Enfoque Magisterial
+El servicio de diagnóstico cognitivo integra la escala magisterial objetivo del docente:
+1. **Saneamiento de Seguridad (`securityUtils.js`):** `validateDiagnosticStats` valida y acota `targetScale` (enteros entre 2 y 8).
+2. **Motor Heurístico (`analyticsService.js`):** Proyecta la nota vigesimal a base 90, calcula `evaluateScaleStatus` y enriquece:
+   - **Fortalezas y Oportunidades:** Indica si supera o dista del mínimo legal de la escala.
+   - **Estrategia Recomendada:** Propone focos de estudio orientados a cerrar la brecha de puntos (`gapPoints`).
+   - **Sprint Táctico en 3 Pasos:** Pasos priorizados según las subáreas deficitarias detectadas en la escala.
+3. **Razonamiento Profundo LLM (`analyticsController.js`):** Inyecta en el prompt contextual de Google Cloud Vertex AI (Gemini 2.5 Flash) la escala objetivo, el corte aprobatorio en base 90 y la brecha del postulante.
+4. **Visualización Multiplataforma:**
+   - **Web:** El informe del dashboard y el modo demo proyectan las métricas oficiales.
+   - **Móvil:** `AIDiagnosisCard.tsx` luce un badge visual con la escala meta y renderiza las sugerencias de la IA con tipografía `RichMarkdown.tsx`.
+
+### 8.4 Principio de Casa Limpia y Salud del Código (`code-health-rules.md`)
+- **Zero Migrations:** No se ejecutó ningún `ALTER TABLE`; las escalas se serializan en el campo existente `config_json` de `user_simulator_preferences`.
+- **Aislamiento Médico:** El módulo de Salud (SERUMS/ENAM) permanece 100% inmune con su propio esquema vigesimal / 100 reactivos.
+- **Depuración de UI:** Se erradicó el texto muerto e interactividad nula *"¿Qué te pareció el nivel?"* en `quiz.html`.
+- **Cumplimiento de `DESIGN_SYSTEM.md`:** El selector de escala en modales adopta la directriz `.modal-body select` con tokens `--input-bg`, `--input-border`, `--input-text`, iconos FontAwesome 6 y sin estilos inline discordantes.

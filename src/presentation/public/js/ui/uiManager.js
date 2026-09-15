@@ -1317,15 +1317,15 @@ class UIManager {
         } else if (context === 'flashcards' || context === 'monthly_flashcards' || context === 'study') {
             if (userTier === 'basic') {
                 config.title = '¡Función Exclusiva Plan Avanzado! 🚀';
-                config.message = customMsg || 'La generación con IA, audios TTS e imágenes en flashcards son exclusivas del Plan Avanzado. ¡Mejora tu plan para activarlas!';
+                config.message = customMsg || 'La asignación de imágenes a tarjetas y la carga masiva extendida son exclusivas del Plan Avanzado. ¡Mejora tu plan para activarlas!';
                 config.btnText = 'Mejorar a Avanzado';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-rocket';
                 config.badgeText = 'Plan Avanzado';
                 config.badgeIcon = 'fa-rocket';
                 features = [
-                    { icon: 'fa-check-circle', text: 'Generación asistida de flashcards con IA' },
-                    { icon: 'fa-check-circle', text: 'Narración con audio TTS HD e imágenes' }
+                    { icon: 'fa-check-circle', text: 'Flashcards ilustradas con imágenes (anverso y reverso)' },
+                    { icon: 'fa-check-circle', text: 'Carga masiva Excel extendida (10 archivos/día)' }
                 ];
             } else if (userTier === 'advanced' || userTier === 'admin') {
                 config.title = '¡Cuota Mensual Completada! 🏆';

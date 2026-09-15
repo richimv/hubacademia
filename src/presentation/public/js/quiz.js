@@ -433,6 +433,7 @@ async function init() {
 
     state.targetExam = urlParams.get('target') || (savedConfig ? savedConfig.target : (state.context === 'EDUCACION' ? 'ASCENSO' : 'SERUMS'));
     state.career = urlParams.get('career') || (savedConfig ? savedConfig.career : null);
+    state.targetScale = parseInt(urlParams.get('targetScale') || (savedConfig ? savedConfig.targetScale : 2), 10) || 2;
     state.mode = urlParams.get('mode') || '';
     state.configType = urlParams.get('configType') || (savedConfig && savedConfig.configType ? savedConfig.configType : 'default');
 
@@ -1801,6 +1802,66 @@ async function finishQuiz() {
     const denominator = state.maxQuestions; // 🎯 Siempre sobre el total configurado (10, 20, 100)
     if (elements.finalScore) {
         elements.finalScore.textContent = `${state.score}/${denominator}`;
+    }
+
+    // Adaptación Oficial MINEDU (Ascenso Docente / Base 90)
+    const isEduAscenso = (state.context === 'EDUCACION' || ['ASCENSO', 'NOMBRAMIENTO', 'ACCESO_CARGOS'].includes(state.targetExam));
+    const mineduContainer = document.getElementById('mineduScoreContainer');
+    if (mineduContainer) {
+        if (isEduAscenso) {
+            mineduContainer.style.display = 'block';
+            const totalQ = denominator || 1;
+            const mineduScore = Math.round(((state.score / totalQ) * 90) * 10) / 10;
+            const officialScoreEl = document.getElementById('mineduOfficialScore');
+            if (officialScoreEl) {
+                officialScoreEl.innerHTML = `${mineduScore.toFixed(1)} <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">/ 90 pts</span>`;
+            }
+
+            const targetScale = state.targetScale || 2;
+            const scalePointsMap = { 2: 54, 3: 57, 4: 60, 5: 63, 6: 66, 7: 69, 8: 69 };
+            const requiredMin = scalePointsMap[targetScale] || 54;
+            const passed = mineduScore >= requiredMin;
+            const gap = Math.round((mineduScore - requiredMin) * 10) / 10;
+
+            // Escala más alta alcanzada
+            let achievedScale = null;
+            for (let s = 8; s >= 2; s--) {
+                if (mineduScore >= scalePointsMap[s]) {
+                    achievedScale = s;
+                    break;
+                }
+            }
+
+            const badgeEl = document.getElementById('mineduScaleBadge');
+            const msgEl = document.getElementById('mineduScaleMessage');
+
+            if (badgeEl) {
+                if (passed) {
+                    badgeEl.style.background = 'rgba(16, 185, 129, 0.15)';
+                    badgeEl.style.color = '#10b981';
+                    badgeEl.style.border = '1px solid rgba(16, 185, 129, 0.35)';
+                    badgeEl.innerHTML = `<i class="fas fa-check-circle"></i> Meta Superada: ${targetScale}.ª Escala`;
+                } else {
+                    badgeEl.style.background = 'rgba(239, 68, 68, 0.15)';
+                    badgeEl.style.color = '#ef4444';
+                    badgeEl.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+                    badgeEl.innerHTML = `<i class="fas fa-times-circle"></i> Meta Pendiente: ${targetScale}.ª Escala`;
+                }
+            }
+
+            if (msgEl) {
+                if (passed) {
+                    const extra = gap > 0 ? ` (+${gap.toFixed(1)} pts sobre el mínimo requerido)` : '';
+                    const achievedText = (achievedScale && achievedScale > targetScale) ? ` ¡Incluso alcanzas la ${achievedScale}.ª Escala!` : '';
+                    msgEl.textContent = `Puntaje aprobatorio alcanzado para la ${targetScale}.ª Escala (${requiredMin} pts).${extra}${achievedText}`;
+                } else {
+                    const diff = Math.abs(gap);
+                    msgEl.textContent = `Te faltaron ${diff.toFixed(1)} pts para alcanzar el mínimo de la ${targetScale}.ª Escala (${requiredMin} pts).`;
+                }
+            }
+        } else {
+            mineduContainer.style.display = 'none';
+        }
     }
 
     // Calcular porcentaje para el círculo (SVG dashoffset)

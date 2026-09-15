@@ -12,7 +12,6 @@ const FlashcardManager = (() => {
     let currentDeckId = null; // ✅ Persist deckId at module level
     let currentDeckName = ''; // ✅ Persist deckName
     let currentDeckCategory = 'General'; // ✅ Persist category (Derecho, Medicina, etc.)
-    let currentAudio = null; // ✅ Manejo de audio global para detener si se cambia de tarjeta
     let isGuest = false; // ✅ Track guest status for feature gating
 
     // --- DOM Elements ---
@@ -338,14 +337,6 @@ const FlashcardManager = (() => {
         ui.frontText.innerHTML = window.MarkdownRenderer.render(card.front_content || '');
         ui.backText.innerHTML = window.MarkdownRenderer.render(card.back_content || '');
 
-        // ✅ NUEVO: Lógica de Ocultación (Modo Listening/Speaking)
-        // Usamos visibility:hidden para mantener el layout intacto pero forzar el oído
-        ui.frontText.style.visibility = card.hide_text_frente ? 'hidden' : 'visible';
-        ui.backText.style.visibility = card.hide_text_dorso ? 'hidden' : 'visible';
-
-        if (ui.frontImage) ui.frontImage.style.visibility = card.hide_text_frente ? 'hidden' : 'visible';
-        if (ui.backImage) ui.backImage.style.visibility = card.hide_text_dorso ? 'hidden' : 'visible';
-
         // --- Render Images if they exist ---
         const hasFrontImage = !!card.image_url;
         const hasBackImage = !!card.explanation_image_url;
@@ -374,63 +365,6 @@ const FlashcardManager = (() => {
         // 🟢 FIX: Adjust Font Size to fit container (Maximizar visibilidad y prevenir scroll prematuro)
         adjustFontSize(ui.frontText, card.front_content || '', hasFrontImage, false);
         adjustFontSize(ui.backText, card.back_content || '', hasBackImage, true);
-
-        // ✅ NUEVO: Renderizar Botones de Audio Premium
-        renderAudioButton(frontFace, card.audio_url_frente, 'front', !!card.hide_text_frente);
-        renderAudioButton(backFace, card.audio_url_dorso, 'back', !!card.hide_text_dorso);
-    }
-
-    /**
-     * ✅ NUEVO: Renderiza un botón de audio minimalista con glassmorphism
-     */
-    function renderAudioButton(parent, audioUrl, side, isCentered = false) {
-        // Eliminar botones previos si existen en TODA la cara de la tarjeta
-        const rootFace = parent.closest('.fc-card-face') || parent;
-        rootFace.querySelectorAll('.fc-audio-btn').forEach(b => b.remove());
-
-        if (!audioUrl) return;
-
-        const btn = document.createElement('button');
-        btn.className = `fc-audio-btn fc-audio-btn--${side}`;
-        if (isCentered) btn.classList.add('fc-audio-btn--centered');
-
-        btn.innerHTML = '<i class="fas fa-volume-up"></i>';
-        btn.title = isCentered ? "Reproducir audio (Modo Escucha)" : "Reproducir pronunciación premium";
-        
-        // Importante: stopPropagation para que la tarjeta no se de vuelta al clickear el audio
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            playAudio(audioUrl);
-        };
-
-        parent.appendChild(btn);
-    }
-
-    /**
-     * ✅ NUEVO: Lógica de reproducción de audio
-     */
-    let _audioDebounce = false;
-    function playAudio(url) {
-        if (_audioDebounce) return;
-        _audioDebounce = true;
-        setTimeout(() => { _audioDebounce = false; }, 800); // 800ms de bloqueo
-
-        try {
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio = null;
-            }
-
-            const fullUrl = window.resolveImageUrl(url);
-            currentAudio = new Audio(fullUrl);
-            currentAudio.play().catch(e => {
-                console.error("Audio playback failed:", e);
-                _audioDebounce = false;
-            });
-        } catch (e) {
-            console.error("Error playing audio:", e);
-            _audioDebounce = false;
-        }
     }
 
     function toggleFlip() {

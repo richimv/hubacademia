@@ -4,6 +4,7 @@ const { secureQuizSessionsEnabled, sendQuizSessionError } = require('./quizSessi
 const UsageService = require('../../domain/services/usageService');
 const usageService = new UsageService();
 const { LIMITS } = require('../../infrastructure/config/limits');
+const mineduScoringService = require('../../domain/services/mineduScoringService');
 
 class DocenteController {
 
@@ -182,8 +183,9 @@ class DocenteController {
 
     async getStats(req, res) {
         try {
-            const { context, target, limit, days, areas, career } = req.query;
+            const { context, target, limit, days, areas, career, targetScale } = req.query;
             const areaList = areas ? areas.split(',') : null;
+            const scaleCutoff = mineduScoringService.getScaleCutoff(targetScale || 2);
 
             if (!req.user) {
                 const exampleKpis = {
@@ -203,12 +205,23 @@ class DocenteController {
                         { subject: "Características y desarrollo del estudiante", accuracy: 50, correct: 20, total: 40 }
                     ],
                     system_deck_id: "example-deck",
-                    isGuest: true
+                    isGuest: true,
+                    minedu_avg_score_90: ((14.5 / 20) * 90).toFixed(1),
+                    scaleEvaluation: mineduScoringService.evaluateScaleStatus((14.5 / 20) * 90, targetScale || 2),
+                    targetScale: scaleCutoff.scale,
+                    targetScaleName: scaleCutoff.name
                 };
                 return res.json({ success: true, kpis: exampleKpis });
             }
 
             const kpis = await docenteService.getUserQuizStats(req.user.id, context || 'EDUCACION', target, limit, days, areaList, career);
+            if (kpis && kpis.avg_score) {
+                const numericAvg = parseFloat(kpis.avg_score) || 0;
+                kpis.minedu_avg_score_90 = ((numericAvg / 20) * 90).toFixed(1);
+                kpis.scaleEvaluation = mineduScoringService.evaluateScaleStatus((numericAvg / 20) * 90, targetScale || 2);
+                kpis.targetScale = scaleCutoff.scale;
+                kpis.targetScaleName = scaleCutoff.name;
+            }
             res.json({ success: true, kpis });
         } catch (error) {
             console.error('Error en getStats (Docente):', error);
@@ -218,13 +231,23 @@ class DocenteController {
 
     async getEvolution(req, res) {
         try {
-            const { context, target, limit, days, areas, career } = req.query;
+            const { context, target, limit, days, areas, career, targetScale } = req.query;
             const areaList = areas ? areas.split(',') : null;
+            const scaleInfo = mineduScoringService.getScaleCutoff(targetScale || 2);
 
             if (!req.user) {
                 const exampleChart = {
                     labels: ["Sesión 1", "Sesión 2", "Sesión 3"],
-                    scores: ["14.0", "15.5", "16.0"]
+                    scores: ["14.0", "15.5", "16.0"],
+                    scores10: ["14.0", "15.5", "16.0"],
+                    scores20: [null, null, null],
+                    scoresReal: [null, null, null],
+                    scoresMinedu: ["63.0", "69.8", "72.0"],
+                    approvalThreshold20: scaleInfo.vigesimalEquivalent,
+                    approvalThreshold90: scaleInfo.minPoints,
+                    targetScale: scaleInfo.scale,
+                    targetScaleName: scaleInfo.name,
+                    approvalLabel: `Aprobatorio ${scaleInfo.name} ≥ ${scaleInfo.vigesimalEquivalent.toFixed(1)} (${scaleInfo.minPoints} pts)`
                 };
                 return res.json({ success: true, chart: exampleChart });
             }
@@ -243,7 +266,16 @@ class DocenteController {
                 scores10: data.map(d => (d.total_questions <= 15) ? parseFloat(d.score_20).toFixed(1) : null),
                 scores20: data.map(d => (d.total_questions > 15 && d.total_questions < 50) ? parseFloat(d.score_20).toFixed(1) : null),
                 scoresReal: data.map(d => (d.total_questions >= 50) ? parseFloat(d.score_20).toFixed(1) : null),
-                scores: data.map(d => parseFloat(d.score_20).toFixed(1))
+                scores: data.map(d => parseFloat(d.score_20).toFixed(1)),
+                scoresMinedu: data.map(d => {
+                    const mineduVal = (d.score / (d.total_questions || 1)) * 90;
+                    return parseFloat(mineduVal.toFixed(1));
+                }),
+                approvalThreshold20: scaleInfo.vigesimalEquivalent,
+                approvalThreshold90: scaleInfo.minPoints,
+                targetScale: scaleInfo.scale,
+                targetScaleName: scaleInfo.name,
+                approvalLabel: `Aprobatorio ${scaleInfo.name} ≥ ${scaleInfo.vigesimalEquivalent.toFixed(1)} (${scaleInfo.minPoints} pts)`
             };
 
             res.json({ success: true, chart: chartData });

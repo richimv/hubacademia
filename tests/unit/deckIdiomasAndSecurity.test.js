@@ -74,16 +74,6 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
             expect(mockRes.status).toHaveBeenCalledWith(403);
             expect(mockRes.json).toHaveBeenCalledWith({ error: 'Mazo no encontrado o acceso denegado' });
         });
-
-        it('deckController.generateCards should respond with 403 when deck does not belong to user', async () => {
-            mockReq.body = { topic: 'Gramática Francesa', amount: 5 };
-            trainingRepository.getDeckById.mockResolvedValue(null);
-
-            await deckController.generateCards(mockReq, mockRes);
-
-            expect(mockRes.status).toHaveBeenCalledWith(403);
-            expect(mockRes.json).toHaveBeenCalledWith({ error: 'Mazo no encontrado o acceso denegado' });
-        });
     });
 
     describe('Clone Deck Category Preservation', () => {
@@ -186,13 +176,15 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
             expect(css).toContain('order: -1');
         });
 
-        it('repaso.js should position Idiomas between Educación and Matemáticas in community categories', () => {
+        it('repaso.js should only contain Educación, Medicina, Idiomas and General in community categories', () => {
             const code = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
-            const eduIdx = code.indexOf("{ id: 'Educación'");
-            const idiomasIdx = code.indexOf("{ id: 'Idiomas'");
-            const matIdx = code.indexOf("{ id: 'Matemáticas'");
-            expect(eduIdx).toBeLessThan(idiomasIdx);
-            expect(idiomasIdx).toBeLessThan(matIdx);
+            expect(code).toContain("{ id: 'Educación', name: 'Educación'");
+            expect(code).toContain("{ id: 'Medicina', name: 'Medicina'");
+            expect(code).toContain("{ id: 'Idiomas', name: 'Idiomas'");
+            expect(code).toContain("{ id: 'General', name: 'General'");
+            expect(code).not.toContain("{ id: 'Matemáticas'");
+            expect(code).not.toContain("{ id: 'Historia'");
+            expect(code).not.toContain("{ id: 'Derecho'");
         });
 
         it('deck-explorer.js and dashboard.css should support vertical chevrons on mobile', () => {
@@ -232,12 +224,13 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
             expect(js).not.toContain('📚 General');
         });
 
-        it('repaso.js and repaso.html should render AI sparkles SVG icon instead of wand/pencil', () => {
+        it('repaso.js and repaso.html should not contain AI generation buttons or ai-modal', () => {
             const html = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/repaso.html'), 'utf8');
             const js = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
-            expect(html).toContain('ai-sparkles-icon');
-            expect(js).toContain('ai-sparkles-icon');
-            expect(js).not.toContain('<i class="fas fa-magic"></i> <span class="btn-text">Crear con IA</span>');
+            expect(html).not.toContain('id="ai-modal"');
+            expect(js).not.toContain('btn-fh-ai');
+            expect(js).not.toContain('generateAiCards');
+            expect(js).not.toContain('openAiModal');
         });
 
         it('dashboard.css should prevent white text on hover for .btn-secondary-action in light mode', () => {

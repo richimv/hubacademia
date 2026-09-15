@@ -270,78 +270,6 @@ class RepasoManager {
             }
         });
 
-        // Sincronizar selectores de idioma dinámicos según el estado del checkbox
-        const ttsFront = document.getElementById('card-tts-front');
-        const ttsBack = document.getElementById('card-tts-back');
-        const bulkTtsFront = document.getElementById('bulk-tts-front');
-        const bulkTtsBack = document.getElementById('bulk-tts-back');
-
-        if (ttsFront) ttsFront.addEventListener('change', () => this.syncTtsLanguageSelectors());
-        if (ttsBack) ttsBack.addEventListener('change', () => this.syncTtsLanguageSelectors());
-        if (bulkTtsFront) bulkTtsFront.addEventListener('change', () => this.syncTtsLanguageSelectors());
-        if (bulkTtsBack) bulkTtsBack.addEventListener('change', () => this.syncTtsLanguageSelectors());
-    }
-
-    syncTtsLanguageSelectors() {
-        const isAdvanced = this.isAdvancedOrAdmin;
-
-        const ttsFront = document.getElementById('card-tts-front');
-        const langFront = document.getElementById('card-tts-lang-front');
-        if (ttsFront && langFront) {
-            if (ttsFront.checked && !isAdvanced) {
-                ttsFront.checked = false;
-                if (window.uiManager?.showPaywallModal) {
-                    window.uiManager.showPaywallModal('La generación de audio TTS es exclusiva del Plan Avanzado. ¡Mejora tu plan para activarla!', 'flashcards');
-                } else {
-                    window.uiManager.showToast('⚠️ Audio TTS es exclusivo del Plan Avanzado.', 'warning');
-                }
-            }
-            const container = langFront.closest('.settings-lang-select-container');
-            if (ttsFront.checked) {
-                langFront.disabled = false;
-                if (container) container.classList.add('enabled');
-            } else {
-                langFront.disabled = true;
-                if (container) container.classList.remove('enabled');
-            }
-        }
-
-        const ttsBack = document.getElementById('card-tts-back');
-        const langBack = document.getElementById('card-tts-lang-back');
-        if (ttsBack && langBack) {
-            if (ttsBack.checked && !isAdvanced) {
-                ttsBack.checked = false;
-                if (window.uiManager?.showPaywallModal) {
-                    window.uiManager.showPaywallModal('La generación de audio TTS es exclusiva del Plan Avanzado. ¡Mejora tu plan para activarla!', 'flashcards');
-                } else {
-                    window.uiManager.showToast('⚠️ Audio TTS es exclusivo del Plan Avanzado.', 'warning');
-                }
-            }
-            const container = langBack.closest('.settings-lang-select-container');
-            if (ttsBack.checked) {
-                langBack.disabled = false;
-                if (container) container.classList.add('enabled');
-            } else {
-                langBack.disabled = true;
-                if (container) container.classList.remove('enabled');
-            }
-        }
-
-        const bulkTtsFront = document.getElementById('bulk-tts-front');
-        if (bulkTtsFront && bulkTtsFront.checked && !isAdvanced) {
-            bulkTtsFront.checked = false;
-            if (window.uiManager?.showPaywallModal) {
-                window.uiManager.showPaywallModal('La generación de audio TTS en carga masiva es exclusiva del Plan Avanzado. ¡Mejora tu plan para activarla!', 'flashcards');
-            }
-        }
-
-        const bulkTtsBack = document.getElementById('bulk-tts-back');
-        if (bulkTtsBack && bulkTtsBack.checked && !isAdvanced) {
-            bulkTtsBack.checked = false;
-            if (window.uiManager?.showPaywallModal) {
-                window.uiManager.showPaywallModal('La generación de audio TTS en carga masiva es exclusiva del Plan Avanzado. ¡Mejora tu plan para activarla!', 'flashcards');
-            }
-        }
     }
 
     // --- Views ---
@@ -612,14 +540,9 @@ class RepasoManager {
 
         const CATEGORIES = [
             { id: 'ALL', name: 'Todas', icon: 'fas fa-border-all' },
-            { id: 'Medicina', name: 'Medicina', icon: 'fas fa-user-md' },
             { id: 'Educación', name: 'Educación', icon: 'fas fa-graduation-cap' },
+            { id: 'Medicina', name: 'Medicina', icon: 'fas fa-user-md' },
             { id: 'Idiomas', name: 'Idiomas', icon: 'fas fa-language' },
-            { id: 'Matemáticas', name: 'Matemáticas', icon: 'fas fa-calculator' },
-            { id: 'Historia', name: 'Historia', icon: 'fas fa-landmark' },
-            { id: 'Derecho', name: 'Derecho', icon: 'fas fa-balance-scale' },
-            { id: 'Ciencia', name: 'Ciencia', icon: 'fas fa-flask' },
-            { id: 'Tecnología', name: 'Tecnología', icon: 'fas fa-laptop-code' },
             { id: 'General', name: 'General', icon: 'fas fa-book' }
         ];
 
@@ -984,11 +907,6 @@ class RepasoManager {
                     <button type="button" class="btn-premium btn-premium-secondary btn-fh-add">
                         <i class="fas fa-plus"></i> <span class="btn-text">Añadir Tarjeta</span>
                     </button>
-                    ${isAdvancedOrAdmin ? `
-                    <button type="button" class="btn-premium btn-premium-ia btn-fh-ai">
-                        <svg class="ai-sparkles-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block; vertical-align:-0.2em; flex-shrink:0;"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg><span class="btn-text">Crear con IA</span>
-                    </button>
-                    ` : ''}
                     ` : ''}
                     
                     <button type="button" class="btn-premium btn-premium-secondary btn-fh-stats">
@@ -1031,9 +949,6 @@ class RepasoManager {
         const btnAdd = container.querySelector('.btn-fh-add');
         if (btnAdd) btnAdd.onclick = () => this.openAddCardModal();
 
-        const btnAi = container.querySelector('.btn-fh-ai');
-        if (btnAi) btnAi.onclick = () => this.openAiModal();
-
         const btnStats = container.querySelector('.btn-fh-stats');
         if (btnStats) btnStats.onclick = () => this.token ? this.openStatsModal(total, mastered, pending) : window.uiManager.showAuthPromptModal();
 
@@ -1066,11 +981,6 @@ class RepasoManager {
                             <option value="General" ${currentCat === 'General' ? 'selected' : ''}>General</option>
                             <option value="Medicina" ${currentCat === 'Medicina' ? 'selected' : ''}>Medicina</option>
                             <option value="Educación" ${currentCat === 'Educación' ? 'selected' : ''}>Educación</option>
-                            <option value="Matemáticas" ${currentCat === 'Matemáticas' ? 'selected' : ''}>Matemáticas</option>
-                            <option value="Historia" ${currentCat === 'Historia' ? 'selected' : ''}>Historia</option>
-                            <option value="Derecho" ${currentCat === 'Derecho' ? 'selected' : ''}>Derecho</option>
-                            <option value="Ciencia" ${currentCat === 'Ciencia' ? 'selected' : ''}>Ciencia</option>
-                            <option value="Tecnología" ${currentCat === 'Tecnología' ? 'selected' : ''}>Tecnología</option>
                             <option value="Idiomas" ${currentCat === 'Idiomas' ? 'selected' : ''}>Idiomas</option>
                         </select>
                     </div>
@@ -1526,7 +1436,7 @@ class RepasoManager {
                     window.location.href = `/flashcards?deckId=${card.deck_id}&cardId=${card.id}&deckName=${deckName}&category=${category}`;
                 } else window.uiManager.showAuthPromptModal();
             } else if (action === 'edit') {
-                this.onEditCardClick(card.id, card.front_content, card.back_content, card.image_url, card.explanation_image_url, card.audio_url_frente, card.audio_url_dorso, card.tts_lang_frente, card.tts_lang_dorso, card.hide_text_frente, card.hide_text_dorso);
+                this.onEditCardClick(card.id, card.front_content, card.back_content, card.image_url, card.explanation_image_url);
             } else if (action === 'delete') {
                 this.onDeleteCardClick(card.id, card.front_content);
             }
@@ -1574,9 +1484,9 @@ class RepasoManager {
         return c.interval_days > 21 ? 'srs-status-easy' : 'srs-status-good';
     }
 
-    onEditCardClick(id, front, back, imageUrl = '', backImageUrl = '', audioUrlFront = '', audioUrlBack = '', ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
+    onEditCardClick(id, front, back, imageUrl = '', backImageUrl = '') {
         if (this.token) {
-            this.openEditCardModal(id, front, back, imageUrl, backImageUrl, audioUrlFront, audioUrlBack, ttsLangFront, ttsLangBack, hideTextFront, hideTextBack);
+            this.openEditCardModal(id, front, back, imageUrl, backImageUrl);
         } else {
             window.uiManager.showAuthPromptModal();
         }
@@ -1794,31 +1704,6 @@ class RepasoManager {
         if (imgUrlFront) imgUrlFront.value = '';
         if (imgUrlBack) imgUrlBack.value = '';
 
-        // Reset Audio UI
-        const ttsFrontLabel = document.querySelector('label[for="card-tts-front"]');
-        const ttsBackLabel = document.querySelector('label[for="card-tts-back"]');
-        if (ttsFrontLabel) ttsFrontLabel.innerText = 'Generar audio TTS';
-        if (ttsBackLabel) ttsBackLabel.innerText = 'Generar audio TTS';
-
-        const statusFront = document.getElementById('audio-status-front');
-        const statusBack = document.getElementById('audio-status-back');
-        if (statusFront) statusFront.style.display = 'none';
-        if (statusBack) statusBack.style.display = 'none';
-
-        document.getElementById('card-delete-audio-front').value = 'false';
-        document.getElementById('card-delete-audio-back').value = 'false';
-
-        // Reset Checkboxes de visibilidad e idioma
-        const langFront = document.getElementById('card-tts-lang-front');
-        const langBack = document.getElementById('card-tts-lang-back');
-        if (langFront) langFront.value = 'es-ES';
-        if (langBack) langBack.value = 'es-ES';
-
-        const hideFront = document.getElementById('card-hide-text-front');
-        const hideBack = document.getElementById('card-hide-text-back');
-        if (hideFront) hideFront.checked = false;
-        if (hideBack) hideBack.checked = false;
-
         // Reset Bulk UI si existe
         const preview = document.getElementById('bulk-upload-preview');
         if (preview) preview.style.display = 'none';
@@ -1828,13 +1713,6 @@ class RepasoManager {
         if (fileLabel) fileLabel.textContent = 'Seleccionar Archivo';
         const bulkCountText = document.getElementById('bulk-count-text');
         if (bulkCountText) bulkCountText.textContent = '0 tarjetas detectadas';
-        const bulkTtsFront = document.getElementById('bulk-tts-front');
-        if (bulkTtsFront) bulkTtsFront.checked = false;
-        const bulkTtsBack = document.getElementById('bulk-tts-back');
-        if (bulkTtsBack) bulkTtsBack.checked = false;
-
-        // Sincronizar el estado visual de selectores de idioma
-        this.syncTtsLanguageSelectors();
     }
 
     openAddCardModal() {
@@ -1862,23 +1740,6 @@ class RepasoManager {
         document.getElementById('card-modal').classList.remove('active');
         if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
             window.uiManager.popModalState('card-modal');
-        }
-    }
-
-    async openAiModal() {
-        const allowed = await this._checkUsageLimit();
-        if (!allowed) return;
-
-        document.getElementById('ai-modal').classList.add('active');
-        if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
-            window.uiManager.pushModalState('ai-modal');
-        }
-    }
-
-    closeAiModal() {
-        document.getElementById('ai-modal').classList.remove('active');
-        if (window.uiManager && typeof window.uiManager.popModalState === 'function') {
-            window.uiManager.popModalState('ai-modal');
         }
     }
 
@@ -2171,53 +2032,25 @@ class RepasoManager {
         const imageUrl = document.getElementById('card-image-url-front').value || null;
         const backImageUrl = document.getElementById('card-image-url-back').value || null;
 
-        // ✅ NUEVO: Capturar preferencias de Audio TTS
-        const generateTtsFront = (document.getElementById('card-tts-front')?.checked && front.length >= 2) || false;
-        const generateTtsBack = (document.getElementById('card-tts-back')?.checked && back.length >= 2) || false;
-
         const isAdvanced = this.isAdvancedOrAdmin;
-        const hasMedia = imageUrl || backImageUrl || this._pendingFiles.front || this._pendingFiles.back || generateTtsFront || generateTtsBack;
+        const hasMedia = imageUrl || backImageUrl || this._pendingFiles.front || this._pendingFiles.back;
 
         if (hasMedia && !isAdvanced) {
             if (window.uiManager?.showPaywallModal) {
-                window.uiManager.showPaywallModal('La generación de audio TTS y la asignación de imágenes son exclusivas del Plan Avanzado. ¡Mejora tu plan para desbloquearlas!', 'flashcards');
+                window.uiManager.showPaywallModal('La asignación de imágenes es exclusiva del Plan Avanzado. ¡Mejora tu plan para desbloquearlas!', 'flashcards');
             } else {
-                window.uiManager.showToast('⚠️ Audio e imágenes son exclusivos del Plan Avanzado.', 'warning');
+                window.uiManager.showToast('⚠️ Las imágenes son exclusivas del Plan Avanzado.', 'warning');
             }
             return;
         }
 
-        // 🛡️ VALIDACIÓN DE SEGURIDAD CONDICIONAL (500 con TTS / 1000 texto estándar)
-        if (generateTtsFront && front.length > 500) {
-            window.uiManager.showToast('⚠️ Al activar audio TTS en el frente, el texto no puede superar 500 caracteres.', 'warning');
-            return;
-        }
-        if (generateTtsBack && back.length > 500) {
-            window.uiManager.showToast('⚠️ Al activar audio TTS en el dorso, el texto no puede superar 500 caracteres.', 'warning');
-            return;
-        }
+        // 🛡️ VALIDACIÓN DE SEGURIDAD (1000 texto estándar)
         if (front.length > 1000 || back.length > 1000) {
             window.uiManager.showToast('⚠️ El texto de la tarjeta no puede superar los 1000 caracteres por cara.', 'warning');
             return;
         }
 
-        if (document.getElementById('card-tts-front')?.checked && front.length < 2) {
-            window.uiManager.showToast('El frente debe tener texto para generar audio.', 'warning');
-            return;
-        }
-        if (document.getElementById('card-tts-back')?.checked && back.length < 2) {
-            window.uiManager.showToast('El dorso debe tener texto para generar audio.', 'warning');
-            return;
-        }
-        const ttsLangFront = document.getElementById('card-tts-lang-front')?.value || 'es-ES';
-        const ttsLangBack = document.getElementById('card-tts-lang-back')?.value || 'es-ES';
-        const hideTextFront = document.getElementById('card-hide-text-front')?.checked || false;
-        const hideTextBack = document.getElementById('card-hide-text-back')?.checked || false;
-
-        const deleteAudioFront = document.getElementById('card-delete-audio-front')?.value === 'true';
-        const deleteAudioBack = document.getElementById('card-delete-audio-back')?.value === 'true';
-
-        // ✅ NUEVO: Manejo según el Modo Activo
+        // Manejo según el Modo Activo
         if (this.currentCardMode === 'bulk') {
             if (!this._pendingBulkCards || this._pendingBulkCards.length === 0) {
                 window.uiManager.showToast('⚠️ Primero selecciona un archivo Excel válido.', 'warning');
@@ -2267,15 +2100,7 @@ class RepasoManager {
                 front,
                 back,
                 imageUrl: finalImageUrl,
-                backImageUrl: finalBackImageUrl,
-                generateTtsFront,
-                generateTtsBack,
-                ttsLangFront,
-                ttsLangBack,
-                hideTextFront,
-                hideTextBack,
-                deleteAudioFront,
-                deleteAudioBack
+                backImageUrl: finalBackImageUrl
             };
             let res;
 
@@ -2355,7 +2180,7 @@ class RepasoManager {
         }
     }
 
-    openEditCardModal(id, front, back, imageUrl = '', backImageUrl = '', audioUrlFront = '', audioUrlBack = '', ttsLangFront = 'es-ES', ttsLangBack = 'es-ES', hideTextFront = false, hideTextBack = false) {
+    openEditCardModal(id, front, back, imageUrl = '', backImageUrl = '') {
         this._clearCardModal(); // 🧹 Limpieza atómica antes de cargar datos nuevos
 
         document.getElementById('card-deck-id').value = this.currentDeck.id;
@@ -2363,29 +2188,6 @@ class RepasoManager {
         document.getElementById('card-front').value = front;
         document.getElementById('card-back').value = back;
         document.getElementById('modal-title').innerText = 'Editar Tarjeta';
-
-        // ✅ Cargar configuración TTS y visibilidad
-        const langFront = document.getElementById('card-tts-lang-front');
-        const langBack = document.getElementById('card-tts-lang-back');
-        if (langFront) langFront.value = ttsLangFront || 'es-ES';
-        if (langBack) langBack.value = ttsLangBack || 'es-ES';
-
-        const hideFront = document.getElementById('card-hide-text-front');
-        const hideBack = document.getElementById('card-hide-text-back');
-        if (hideFront) hideFront.checked = hideTextFront || false;
-        if (hideBack) hideBack.checked = hideTextBack || false;
-
-        // ✅ UI Dinámica para Audio
-        const ttsFrontLabel = document.querySelector('label[for="card-tts-front"]');
-        const ttsBackLabel = document.querySelector('label[for="card-tts-back"]');
-
-        if (ttsFrontLabel) ttsFrontLabel.innerText = audioUrlFront ? 'Actualizar/Regenerar audio' : 'Generar audio TTS';
-        if (ttsBackLabel) ttsBackLabel.innerText = audioUrlBack ? 'Actualizar/Regenerar audio' : 'Generar audio TTS';
-
-        const statusFront = document.getElementById('audio-status-front');
-        const statusBack = document.getElementById('audio-status-back');
-        if (statusFront) statusFront.style.display = audioUrlFront ? 'flex' : 'none';
-        if (statusBack) statusBack.style.display = audioUrlBack ? 'flex' : 'none';
 
         // Previews Anverso
         this._updateImagePreview('front', imageUrl);
@@ -2403,9 +2205,6 @@ class RepasoManager {
         const tabs = document.getElementById('card-modal-tabs');
         if (tabs) tabs.style.display = 'none';
         this.switchCardMode('individual');
-
-        // Sincronizar selectores de idioma
-        this.syncTtsLanguageSelectors();
 
         if (window.uiManager && typeof window.uiManager.pushModalState === 'function') {
             window.uiManager.pushModalState('card-modal');
@@ -2488,13 +2287,6 @@ class RepasoManager {
         const localUrl = URL.createObjectURL(file);
         this._updateImagePreview(side, localUrl);
         input.value = '';
-    }
-
-    removeAudio(side) {
-        const status = document.getElementById(`audio-status-${side}`);
-        if (status) status.style.display = 'none';
-        const deleteInput = document.getElementById(`card-delete-audio-${side}`);
-        if (deleteInput) deleteInput.value = 'true';
     }
 
     removeImage(side) {
@@ -2607,31 +2399,6 @@ class RepasoManager {
     }
 
     async _saveBulkCards(deckId) {
-        const isAdvanced = this.isAdvancedOrAdmin;
-        const generateTtsFront = document.getElementById('bulk-tts-front')?.checked || false;
-        const generateTtsBack = document.getElementById('bulk-tts-back')?.checked || false;
-
-        if ((generateTtsFront || generateTtsBack) && !isAdvanced) {
-            if (window.uiManager?.showPaywallModal) {
-                window.uiManager.showPaywallModal('La generación de audio TTS en carga masiva es una función exclusiva del Plan Avanzado. ¡Mejora tu plan para activarla!', 'flashcards');
-            } else {
-                window.uiManager.showToast('⚠️ Audio TTS masivo es exclusivo del Plan Avanzado.', 'warning');
-            }
-            return;
-        }
-
-        // 🛡️ VALIDACIÓN DE LONGITUD CONDICIONAL (500 chars si se activa Audio TTS)
-        if (generateTtsFront || generateTtsBack) {
-            const hasOverlength = this._pendingBulkCards.some(c =>
-                (generateTtsFront && c.front && c.front.length > 500) ||
-                (generateTtsBack && c.back && c.back.length > 500)
-            );
-            if (hasOverlength) {
-                window.uiManager.showToast('⚠️ Al activar audio TTS, ninguna tarjeta en el Excel puede superar los 500 caracteres por cara.', 'warning');
-                return;
-            }
-        }
-
         const submitBtn = document.querySelector('#card-form button[type="submit"]');
         const originalText = submitBtn ? submitBtn.innerHTML : '';
 
@@ -2645,10 +2412,7 @@ class RepasoManager {
                 method: 'POST',
                 isRetryable: true,
                 body: JSON.stringify({
-                    cards: this._pendingBulkCards,
-                    generateTtsFront,
-                    generateTtsBack,
-                    ttsLang: document.getElementById('bulk-tts-lang')?.value || 'es-ES'
+                    cards: this._pendingBulkCards
                 })
             });
 
@@ -2673,106 +2437,6 @@ class RepasoManager {
             }
         }
     }
-
-    // AI Generation
-    async generateAiCards() {
-        const topic = document.getElementById('ai-topic')?.value;
-        const amount = document.getElementById('ai-amount')?.value || 5;
-        if (!topic) return window.uiManager.showToast('✍️ Escribe un tema para la IA');
-
-        document.getElementById('ai-loading').style.display = 'block';
-
-        try {
-            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/decks/${this.currentDeck.id}/generate`, {
-                method: 'POST',
-                isRetryable: true,
-                body: JSON.stringify({
-                    topic,
-                    amount,
-                    generateTtsFront: document.getElementById('ai-tts-front')?.checked || false,
-                    generateTtsBack: document.getElementById('ai-tts-back')?.checked || false,
-                    ttsLang: document.getElementById('ai-tts-lang')?.value || 'es-ES'
-                })
-            });
-
-            if (res.status === 403) {
-                const errorData = await res.json().catch(() => ({}));
-                if (window.uiManager) window.uiManager.showPaywallModal(errorData.error, 'flashcards');
-                document.getElementById('ai-loading').style.display = 'none';
-                return;
-            }
-
-            if (res.ok) {
-                const data = await res.json().catch(() => ({ count: 5 }));
-                this.closeAiModal();
-                this.loadFolder(this.currentDeck.id);
-                // Sincronización gestionada por NetworkService
-
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Tarjetas Generadas!',
-                        text: `Se generaron ${data.count || 5} tarjetas sobre "${topic}".`,
-                        background: 'rgba(20, 20, 20, 0.95)',
-                        confirmButtonText: 'A estudiar'
-                    });
-                } else {
-                    window.uiManager.showToast(`✅ ¡Éxito! Se generaron tarjetas sobre "${topic}".`);
-                }
-            } else {
-                const errorData = await res.json().catch(() => ({}));
-                this.closeAiModal();
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire('Error del Servidor', errorData.error || 'Hubo un fallo generando las tarjetas. Intenta de nuevo.', 'error');
-                } else {
-                    window.uiManager.showToast('❌ Error al generar tarjetas: ' + (errorData.error || 'Fallo desconocido'));
-                }
-            }
-        } catch (err) {
-            console.error('Network Error AI Cards:', err);
-            this.closeAiModal();
-            if (typeof Swal !== 'undefined') {
-                Swal.fire('Error de Conexión', 'No se pudo contactar con el servidor. Revisa tu internet.', 'error');
-            } else {
-                window.uiManager.showToast('❌ Error de conexión al generar con IA.');
-            }
-        } finally {
-            document.getElementById('ai-loading').style.display = 'none';
-        }
-    }
-
-
-    /**
-     * Verifica de forma pasiva (sin descontar nada) si el usuario es elegible
-     * para generar tarjetas por IA usando su límite mensual o global.
-     */
-    async _checkUsageLimit() {
-        try {
-            const res = await window.uiManager.safeFetch(`${window.AppConfig.API_URL}/api/usage/check-ai-limits`, {
-                method: 'GET'
-            });
-
-            const data = await res.json().catch(() => ({}));
-
-            if (res.ok) {
-                return true;
-            } else if (res.status === 403) {
-                // Bifurcación Inteligente UI: Vida de Prueba vs Límite Básico/Avanzado
-                if (window.uiManager && window.uiManager.showPaywallModal) {
-                    window.uiManager.showPaywallModal(null, 'flashcards');
-                }
-                return false;
-            } else {
-                console.error('Error no tipificado evaluando AI limits:', data);
-                return true; // Fail-open: ignorar error 500 para permitirle intentar real
-            }
-        } catch (err) {
-            console.error('Error de red verificando uso:', err);
-            return true; // Fail-open en caso de error de red
-        }
-    }
-
-
 
     confirmDeleteDeck(deckId, deckName) {
         // Show custom delete modal

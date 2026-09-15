@@ -86,15 +86,14 @@ CREATE TABLE public.user_flashcards (
 
 ## 3. 🎯 Entidades Reales y Modelos de Negocio
 
-### 3.1 Categorías Temáticas Oficiales (`categories`)
-1. **Medicina** (Casos clínicos, diagnóstico, farmacología)
-2. **Educación** (Pedagogía CNEB, teorías de aprendizaje, didáctica)
-3. **Derecho** (Doctrina jurídica, códigos, jurisprudencia)
-4. **Tecnología** (Programación, algoritmos, arquitectura de software)
-5. **Matemáticas** (Fórmulas, teoremas, cálculo)
-6. **Historia** (Cronologías, hitos, acontecimientos)
-7. **Ciencia** (Física, química, biología)
-8. **General** (Conocimientos generales)
+### 3.1 Categorías Temáticas Oficiales (`categories`) [Septiembre 2026]
+Tras el desacoplamiento de la app móvil MeduCat, el módulo web Hub Academia limita sus áreas a cuatro dominios oficiales:
+1. **General** (Conocimientos generales y comodín para mazos multidisciplinarios)
+2. **Medicina** (Casos clínicos, diagnóstico, farmacología, salud humana)
+3. **Educación** (Pedagogía CNEB, teorías de aprendizaje, didáctica docente)
+4. **Idiomas** (Vocabulario, estructuras y aprendizaje lingüístico: inglés, italiano, etc.)
+
+*(Nota: Categorías históricas como Derecho, Tecnología, Matemáticas, Historia o Ciencia se normalizan a `General` en la plataforma web).*
 
 ---
 
@@ -133,14 +132,14 @@ Durante la sesión de estudio, el usuario voltea la tarjeta (Giro 3D / Flip) y c
 
 ### Tarjetas:
 - `GET /api/decks/:deckId/cards`: Listado de tarjetas de un mazo.
-- `POST /api/decks/:deckId/cards`: Crear nueva tarjeta individual con soporte de imagen y audio TTS.
+- `POST /api/decks/:deckId/cards`: Crear nueva tarjeta individual con soporte de imagen.
 - `PUT /api/cards/:cardId`: Actualizar contenido de anverso/reverso.
 - `DELETE /api/cards/:cardId`: Eliminar tarjeta individual.
 - `GET /api/decks/:deckId/cards/due`: Cola de tarjetas listas para repasar hoy en el mazo.
 - `GET /api/flashcard/due`: Cola de tarjetas listas para repasar hoy de todos los mazos del usuario.
 - `POST /api/flashcard/review`: Registrar calificación SM-2 (`cardId`, `quality`, `currentInterval`, `currentEf`, `currentReps`).
-- `POST /api/decks/:deckId/generate`: Generación automática de flashcards con Gemini IA a partir de un tema.
-- `POST /api/chat`: Tutor IA contextual de la flashcard (`context: 'flashcard_tutor'`, inyectando `deckCategory`, `front`, `back`).
+- *(Retirado en Web)* `POST /api/decks/:deckId/generate`: Generación automática de flashcards con IA (exclusiva de la app móvil MeduCat).
+- `POST /api/chat`: Tutor IA contextual de la flashcard (`context: 'flashcard_tutor'`, inyectando `deckCategory`, `front`, `back`). Activo y multidisciplinario en vivo.
 
 ---
 

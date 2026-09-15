@@ -83,6 +83,21 @@ El backend de Hub Academia validará la URL y los campos, guardándolos en la ta
 
 ## 📊 Historial de Ingestas Recientes
 
+### 🗓️ Ingesta: 14 de Septiembre de 2026
+- **Estado**: ✅ Ingesta exitosa (10 nuevos papers procesados).
+- **Proporción de Papers**: 100% (10/10).
+- **Resumen de Recursos Ingeridos**:
+  1. `[MEDICINE]` *Tambotatug pelitecán en cáncer de pulmón de células pequeñas tras terapia basada en platino* (The New England Journal of Medicine - PMID 42734213)
+  2. `[MEDICINE]` *Inmunogenicidad de dosis fraccionadas de un quinto y la mitad de la vacuna contra la fiebre amarilla 17DD en comparación con la dosis completa en niños de 9 a 23 meses en Uganda: ensayo clínico aleatorizado fase 4* (The Lancet - PMID 42727590)
+  3. `[MEDICINE]` *Inmunogenicidad y seguridad de una vacuna antigripal tetravalente de dosis alta derivada de cultivo celular con adyuvante MF59 en adultos de 50 años o más: ensayo controlado aleatorizado fase 3* (The Lancet Infectious Diseases - PMID 42721997)
+  4. `[MEDICINE]` *Derivación simultánea, validación y comparación de razones de riesgo predictoras en ecuaciones de riesgo cardiovascular en pacientes con diabetes de países de altos frente a no altos ingresos: estudio de cohorte* (The BMJ - PMID 42727977)
+  5. `[MEDICINE]` *Monitorización de síntomas informados por el paciente en cáncer de pulmón (ensayo SYMPRO-Lung): resultados de supervivencia a largo plazo de un ensayo clínico aleatorizado por grupos* (The Lancet Oncology - PMID 42727592)
+  6. `[EDUCATION]` *El aprendizaje basado en problemas y proyectos como marcos para la educación apoyada en IA generativa: evidencia emergente de una revisión sistemática y metaanálisis de tres niveles* (Acta Psychologica / Elsevier - PMID 42710297)
+  7. `[EDUCATION]` *Liderazgo curricular docente, alfabetización curricular y fidelidad curricular: asociaciones estructurales e indirectas en un modelo de senderos transversal* (Acta Psychologica / Elsevier - PMID 42704936)
+  8. `[EDUCATION]` *Más allá del agotamiento profesional: perfiles de vulnerabilidad psicológica en docentes de educación secundaria* (Acta Psychologica / Elsevier - PMID 42710296)
+  9. `[EDUCATION]` *Lo que preguntan los estudiantes importa: patrones estáticos y longitudinales de formulación de preguntas en diálogos estudiante-LLM y compromiso cognitivo autorreportado* (PLOS ONE - PMID 42709768)
+  10. `[EDUCATION]` *Ferias de ciencias en educación secundaria: caracterización de las prácticas de comunicación y presentación de los estudiantes y su asociación con los resultados en ferias de ciencias* (PLOS ONE - PMID 42726745)
+
 ### 🗓️ Ingesta: 31 de Agosto de 2026
 - **Estado**: ✅ Ingesta exitosa (10 nuevos papers procesados).
 - **Proporción de Papers**: 100% (10/10).

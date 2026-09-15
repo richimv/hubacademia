@@ -350,6 +350,9 @@ const SimulatorDash = (() => {
         const areasCount = config.areas ? config.areas.length : 0;
 
         let pillsHtml = `<span class="config-summary-pill config-summary-pill--accent">${escapeAttr(targetText)}</span>`;
+        if (config.target === 'ASCENSO' && config.targetScale) {
+            pillsHtml += ` <span class="config-summary-pill config-summary-pill--accent" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.35); color: var(--primary-light);"><i class="fas fa-layer-group" style="margin-right: 0.25rem;"></i>Meta: ${escapeAttr(config.targetScale)}.ª Escala</span>`;
+        }
         if (infoText) {
             pillsHtml += ` <span class="config-summary-pill config-summary-pill--area" title="${escapeAttr(infoText)}">${escapeAttr(infoText)}</span>`;
         }
@@ -700,6 +703,9 @@ const SimulatorDash = (() => {
             }
             if (activeConfig.difficulty) {
                 baseParams += `&difficulty=${encodeURIComponent(activeConfig.difficulty)}`;
+            }
+            if (activeConfig.targetScale) {
+                baseParams += `&targetScale=${encodeURIComponent(activeConfig.targetScale)}`;
             }
         }
 
@@ -1173,6 +1179,12 @@ const SimulatorDash = (() => {
                 if (careerBox) careerBox.style.display = t === 'SERUMS' ? 'block' : 'none';
             }
 
+            // Toggle Escala Magisterial UI (educacion only)
+            if (currentContext === 'EDUCACION') {
+                const scaleBox = document.getElementById('educacion-scale-container');
+                if (scaleBox) scaleBox.style.display = t === 'ASCENSO' ? 'block' : 'none';
+            }
+
             // Default area selection logic
             let defaultAreas = [];
             if (t === 'ENAM') {
@@ -1290,6 +1302,15 @@ const SimulatorDash = (() => {
                 if (currentContext === 'MEDICINA') {
                     const serumsInfo = document.getElementById('serums-info-alert');
                     if (serumsInfo) serumsInfo.style.display = finalTarget === 'SERUMS' ? 'block' : 'none';
+                } else if (currentContext === 'EDUCACION') {
+                    const scaleBox = document.getElementById('educacion-scale-container');
+                    const scaleSelect = document.getElementById('config-target-scale');
+                    if (scaleBox) {
+                        scaleBox.style.display = finalTarget === 'ASCENSO' ? 'block' : 'none';
+                    }
+                    if (scaleSelect && activeConfig && activeConfig.targetScale) {
+                        scaleSelect.value = String(activeConfig.targetScale);
+                    }
                 }
 
                 // Preselect configMode based on activeConfig.configType (force default for guests)
@@ -1370,7 +1391,13 @@ const SimulatorDash = (() => {
                 btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
                 btnSave.disabled = true;
 
-                activeConfig = { configType, target, areas: selectedAreas, career };
+                let targetScale = null;
+                if (currentContext === 'EDUCACION' && target === 'ASCENSO') {
+                    const scaleSelect = document.getElementById('config-target-scale');
+                    targetScale = scaleSelect ? parseInt(scaleSelect.value, 10) || 2 : 2;
+                }
+
+                activeConfig = { configType, target, areas: selectedAreas, career, ...(targetScale ? { targetScale } : {}) };
                 localStorage.setItem(`simActiveConfig_${currentContext}`, JSON.stringify(activeConfig)); // Persist locally
                 const activeSessionUserId = (window.sessionManager && window.sessionManager.getUser()) ? window.sessionManager.getUser().id : 'guest';
                 localStorage.removeItem(`simulator_active_session_${activeSessionUserId}`); // Clear any pending quiz session on config change
@@ -1398,7 +1425,8 @@ const SimulatorDash = (() => {
                 renderConfigSummary(summaryBox, {
                     target: target,
                     career: career,
-                    areas: selectedAreas
+                    areas: selectedAreas,
+                    targetScale: targetScale
                 });
 
                 // Update Links
@@ -1436,6 +1464,9 @@ const SimulatorDash = (() => {
                 else if (currentContext === 'EDUCACION') careerVal = 'EBR - Primaria';
             }
             if (careerVal) qs += `&career=${encodeURIComponent(careerVal)}`;
+            if (activeConfig && activeConfig.targetScale) {
+                qs += `&targetScale=${encodeURIComponent(activeConfig.targetScale)}`;
+            }
             if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo
             if (activeDays) qs += `&days=${activeDays}`;     // Filtro por tiempo
 
@@ -1457,12 +1488,19 @@ const SimulatorDash = (() => {
                 if (!evoCanvas) return; // Guard for non-dashboard pages
 
                 const evolutionCtx = evoCanvas.getContext('2d');
+                const threshold = (data.chart && data.chart.approvalThreshold20 !== undefined && data.chart.approvalThreshold20 !== null)
+                    ? parseFloat(data.chart.approvalThreshold20)
+                    : 14;
+                const thresholdLabel = (data.chart && data.chart.approvalLabel)
+                    ? data.chart.approvalLabel
+                    : 'Aprobatorio ≥ 14';
+
                 // Helpers para la línea de aprobatoria
                 const approvalLine = {
                     id: 'approvalLine',
                     afterDatasetsDraw(chart) {
                         const { ctx, chartArea: { left, right }, scales: { y } } = chart;
-                        const yPos = y.getPixelForValue(14);
+                        const yPos = y.getPixelForValue(threshold);
                         ctx.save();
                         ctx.beginPath();
                         ctx.setLineDash([6, 4]);
@@ -1475,7 +1513,7 @@ const SimulatorDash = (() => {
                         ctx.fillStyle = 'rgba(245, 158, 11, 0.75)';
                         ctx.font = '600 10px Inter, sans-serif';
                         ctx.textAlign = 'right';
-                        ctx.fillText('Aprobatorio ≥ 14', right - 4, yPos - 5);
+                        ctx.fillText(thresholdLabel, right - 4, yPos - 5);
                         ctx.restore();
                     }
                 };
@@ -1635,6 +1673,9 @@ const SimulatorDash = (() => {
                 else if (currentContext === 'EDUCACION') careerVal = 'EBR - Primaria';
             }
             if (careerVal) qs += `&career=${encodeURIComponent(careerVal)}`;
+            if (activeConfig && activeConfig.targetScale) {
+                qs += `&targetScale=${encodeURIComponent(activeConfig.targetScale)}`;
+            }
             if (activeMode) qs += `&limit=${activeMode}`;   // Filtro por modo (10 = Rápido, 20 = Estudio)
             if (activeDays) qs += `&days=${activeDays}`;     // Filtro por tiempo (7, 30)
             let apiBase = '/api/medico';
@@ -1668,7 +1709,11 @@ const SimulatorDash = (() => {
 
             const scoreSubEl = document.getElementById('stat-score-sub');
             if (scoreSubEl) {
-                scoreSubEl.textContent = "Basado en tus últimos simulacros";
+                if (currentContext === 'EDUCACION' && kpis && kpis.minedu_avg_score_90) {
+                    scoreSubEl.textContent = `Equiv. oficial: ${kpis.minedu_avg_score_90} / 90 pts`;
+                } else {
+                    scoreSubEl.textContent = "Basado en tus últimos simulacros";
+                }
             }
 
             if (accuracyEl) accuracyEl.textContent = `${accuracyNum}%`;
@@ -1780,12 +1825,23 @@ const SimulatorDash = (() => {
             }
 
             const evolutionCtx = evoCanvas.getContext('2d');
+            let demoThreshold = 14;
+            let demoThresholdLabel = 'Aprobatorio ≥ 14';
+            if (currentContext === 'EDUCACION') {
+                const targetScaleNum = (activeConfig && activeConfig.targetScale) ? parseInt(activeConfig.targetScale, 10) : 2;
+                const scaleEquivs = { 2: 12.0, 3: 12.7, 4: 13.3, 5: 14.0, 6: 14.7, 7: 15.3, 8: 15.3 };
+                const scalePoints = { 2: 54, 3: 57, 4: 60, 5: 63, 6: 66, 7: 69, 8: 69 };
+                demoThreshold = scaleEquivs[targetScaleNum] || 12.0;
+                const pts = scalePoints[targetScaleNum] || 54;
+                demoThresholdLabel = `Aprobatorio ${targetScaleNum}.ª Escala ≥ ${demoThreshold.toFixed(1)} (${pts} pts)`;
+            }
+
             // Plugin línea de aprobatoria (también en demo)
             const approvalLineDemo = {
                 id: 'approvalLineDemo',
                 afterDatasetsDraw(chart) {
                     const { ctx, chartArea: { left, right }, scales: { y } } = chart;
-                    const yPos = y.getPixelForValue(14);
+                    const yPos = y.getPixelForValue(demoThreshold);
                     ctx.save();
                     ctx.beginPath();
                     ctx.setLineDash([6, 4]);
@@ -1798,7 +1854,7 @@ const SimulatorDash = (() => {
                     ctx.fillStyle = 'rgba(245, 158, 11, 0.75)';
                     ctx.font = '600 10px Inter, sans-serif';
                     ctx.textAlign = 'right';
-                    ctx.fillText('Aprobatorio ≥ 14', right - 4, yPos - 5);
+                    ctx.fillText(demoThresholdLabel, right - 4, yPos - 5);
                     ctx.restore();
                 }
             };
@@ -2207,8 +2263,12 @@ const SimulatorDash = (() => {
                     guestLevel = guestIndex >= 70 ? 'Nivel Competente' : 'Nivel en Desarrollo';
 
                     if (isEducacion) {
+                        const targetScale = activeConfig.targetScale || 2;
+                        const scaleName = `${targetScale}.ª Escala`;
+                        const scalePoints = { 2: 54, 3: 57, 4: 60, 5: 63, 6: 66, 7: 69, 8: 69 }[targetScale] || 54;
+
                         guestStrengths = `
-                            <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--primary); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-arrow-trend-up"></i> MODO PRUEBA DEMO</div>
+                            <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--primary); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-graduation-cap"></i> MODO PRUEBA DEMO · META: ${scaleName} (${scalePoints} PTS)</div>
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Has demostrado criterio pedagógico en tu simulacro de prueba:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
@@ -2219,7 +2279,7 @@ const SimulatorDash = (() => {
                         `;
                         guestWeaknesses = `
                             <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--text-muted); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-crosshairs"></i> FOCO DE MEJORA</div>
-                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Oportunidad de refuerzo detectada en tu evaluación:</p>
+                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Oportunidad de refuerzo detectada en tu evaluación para alcanzar los ${scalePoints} pts de la ${scaleName}:</p>
                             <ul style="margin:0; padding:0; list-style:none;">
                                 <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
                                     <i class="fas fa-crosshairs" style="color:var(--text-muted); margin-top:2px;"></i>
@@ -2227,11 +2287,11 @@ const SimulatorDash = (() => {
                                 </li>
                             </ul>
                         `;
-                        guestStrategy = `Te sugerimos registrarte gratis para guardar tu progreso y seguir reforzando ${worst1.subject}.`;
+                        guestStrategy = `Te sugerimos registrarte gratis para proyectar tu puntaje oficial en Base 90 hacia la ${scaleName} y reforzar ${worst1.subject}.`;
                         guestSprint = [
-                            { step: 1, title: "Registro Gratuito", desc: "Crea tu cuenta gratis para desbloquear 10 vidas mensuales de práctica." },
+                            { step: 1, title: "Registro Gratuito", desc: `Crea tu cuenta gratis para proyectar tus notas hacia la ${scaleName}.` },
                             { step: 2, title: `Refuerzo en ${worst1.subject}`, desc: "Practica simulacros comentados para afianzar tus respuestas." },
-                            { step: 3, title: "Consolidación", desc: "Evalúa tu avance diario antes de la prueba oficial de la Carrera Pública." }
+                            { step: 3, title: `Simulacro Real (${scalePoints} pts)`, desc: `Evalúa tu avance diario hacia el corte de ${scalePoints} pts de tu escala.` }
                         ];
                     } else {
                         guestStrengths = `
@@ -2357,6 +2417,11 @@ const SimulatorDash = (() => {
 
                 if (!statsPayload.radar_data) {
                     statsPayload.radar_data = [];
+                }
+
+                if (currentContext === 'EDUCACION') {
+                    statsPayload.targetScale = activeConfig.targetScale || 2;
+                    statsPayload.target = activeConfig.target || 'ASCENSO';
                 }
 
                 const result = await window.AnalyticsApiService.getAIDiagnostic(statsPayload, currentContext);

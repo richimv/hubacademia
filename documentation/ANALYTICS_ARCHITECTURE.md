@@ -188,18 +188,20 @@ Integrado en la tarjeta `#ai-diagnosis-card` del panel de simuladores, este mód
 
 2. **Usuarios Gratuitos (Free) y Básicos (Basic) — Diagnóstico Heurístico Enriquecido:**
    - En el backend (`/api/analytics/diagnostic`), `AnalyticsService.generateHeuristicDiagnostic(stats, context)` procesa la matriz real de especialidades (`radar_data`), notas promedio y precisión global.
-   - **Índice de Preparación Oficial (`readinessIndex` & `readinessLevel`):** Pondera la nota (0-20) y efectividad global para emitir un badge de competencia (`Nivel Sobresaliente`, `Nivel Competente`, `Nivel en Desarrollo`, `Nivel Inicial`).
-   - **Auditoría de Fortalezas & Focos Críticos:** Tarjetas con conteo exacto de reactivos correctos/fallados, porcentajes reales y directivas de normas oficiales (MINSA/ASPEFAM o CNEB/Minedu).
-   - **Sprint Táctico en 3 Pasos:** Pasos estructurados de acción inmediata (Refuerzo Conceptual, Práctica Focalizada en Modo Estudio 20q, y Consolidación de Velocidad).
+   - **Correlación con Escala Magisterial MINEDU:** En contexto `EDUCACION`, evalúa la escala objetivo (`targetScale`), proyecta la nota oficial sobre Base 90 y contrasta contra el puntaje de corte (54 a 69 pts), calculando margen a favor o brecha en puntos requeridos.
+   - **Índice de Preparación Oficial (`readinessIndex` & `readinessLevel`):** Pondera la nota (0-20 o Base 90) y efectividad global para emitir un badge de competencia (`Nivel Sobresaliente`, `Nivel Competente`, `Nivel en Desarrollo`, `Nivel Inicial`).
+   - **Auditoría de Fortalezas & Focos Críticos:** Tarjetas con conteo exacto de reactivos correctos/fallados, porcentajes reales y directivas de normas oficiales (MINSA/ASPEFAM o CNEB/Minedu). En Educación, incluye bullet de proyección aprobatoria o brecha de puntos para el ascenso.
+   - **Sprint Táctico en 3 Pasos:** Pasos estructurados de acción inmediata adaptados a la meta de la escala seleccionada.
    - **Cuotas:** Consume 1 vida de prueba en Free (`usage_count`) y 0 tokens diarios en Basic (`req.usageType = null`, estático).
 
 3. **Usuarios Avanzados (Advanced) y Administradores (Admin) — Deep Reasoning Cognitivo:**
    - Invoca al motor de IA mediante canal dual resiliente `_callGeminiDiagnostic()`:
      - **Canal Primario (Google Cloud Vertex AI SDK - Gemini Enterprise Agent Platform):** Ejecución directa en GCP (`us-central1`) con `gemini-2.5-flash-lite` (y `gemini-2.5-flash`), con facturación enterprise integrada y sin dependencia de saldos prepago de AI Studio.
      - **Canal Secundario de Contingencia (Google AI Studio REST):** Soporte opcional con modelos Flash Lite (`gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite`).
+   - **Contextualización Escalar:** En Educación, el prompt para Gemini inyecta la meta postulada (${cutoff.name}), el corte reglamentario oficial, el puntaje actual estimado y el estado de brecha, orientando los sesgos cognitivos hacia las rúbricas y casuísticas de la prueba nacional.
    - **Detección de Sesgos Diagnósticos:** Identifica patrones de confusión sistemática frente a distractores (ej. sesgo de anclaje, no reconocimiento de signos de alarma, confusión entre retroalimentación formativa y descriptiva).
    - **Píldora High-Yield Oficial:** Provee un concepto clave de alta recurrencia en las pruebas oficiales de medicina (ENAM/SERUMS/Residentado) o docencia (Nombramiento/Ascenso).
-   - **Sprint Táctico IA:** 3 acciones tácticas de estudio personalizadas a la medida del usuario.
+   - **Sprint Táctico IA:** 3 acciones tácticas de estudio personalizadas a la medida del usuario y su meta de escala.
    - **Cuotas:** Consume 1 token de su cuota diaria (`daily_ai_usage`) de 100 mensajes/día.
 
 4. **Resiliencia y Fallback Silencioso:**
@@ -223,7 +225,25 @@ Integrado en la tarjeta `#ai-diagnosis-card` del panel de simuladores, este mód
 - **Confidencialidad Total:** Las preguntas, dudas y mensajes que los usuarios envían a los tutores IA (Quiz Tutor, Repaso Tutor y Chatbot General) son estrictamente privados y confidenciales. No se almacenan en la tabla `search_history` ni en ninguna métrica de telemetría analítica textual.
 - **Alcance Exclusivo de Búsquedas:** La tabla `search_history` queda reservada única y exclusivamente para los términos introducidos conscientemente en la barra de búsqueda de **Mi Biblioteca** (`searchService.searchCourses`, origen `search_bar`).
 
+### H. Línea de Aprobación Dinámica Adaptativa para Ascenso Magisterial (Septiembre 2026)
+Para reflejar fielmente las metas individuales de los docentes en preparación para el concurso de Ascenso de Escala Magisterial:
+1. **Umbral Dinámico por Escala Objetivo (`targetScale`):**
+   - En lugar de una línea estática arbitraria de 11.0 ó 12.0 puntos, el backend (`docenteController.getEvolution` y `docenteController.getStats`) calcula el corte oficial requerido según la escala seleccionada por el usuario (Escalas 2 a 8):
+     - 2.ª Escala: 54.0 pts / 90 (equiv. vigesimal **12.0**)
+     - 3.ª Escala: 57.0 pts / 90 (equiv. vigesimal **12.7**)
+     - 4.ª Escala: 60.0 pts / 90 (equiv. vigesimal **13.3**)
+     - 5.ª Escala: 63.0 pts / 90 (equiv. vigesimal **14.0**)
+     - 6.ª Escala: 66.0 pts / 90 (equiv. vigesimal **14.7**)
+     - 7.ª y 8.ª Escala: 69.0 pts / 90 (equiv. vigesimal **15.3**)
+2. **Renderizado en Gráficos (Web & Mobile):**
+   - **Web (`simulator-dash.js`):** El plugin de anotaciones o dataset punteado de Chart.js recibe `approvalThreshold20` y la etiqueta personalizada (`approvalLabel`, ej. `Meta 4.ª Escala: 13.3 (60.0 pts)`), ajustando la línea horizontal de meta en tiempo real.
+   - **Mobile (`HistoricalTrendChart.tsx`):** Un componente SVG dinámico proyecta la línea de guiones y la etiqueta de la meta seleccionada en la escala visual 0-20.
+3. **Consistencia en Modo Invitado (Guest):**
+   - `renderGuestDemoData` adapta la línea de meta según la escala seleccionada por el visitante, permitiendo experimentar la meta visual antes de autenticarse.
+
 ---
 > [!IMPORTANT]
-> Esta arquitectura ha sido verificada y respaldada con 53 suites de tests unitarios (422 tests pasando) al 10 de septiembre de 2026.
+> Esta arquitectura ha sido verificada y respaldada con 60 suites de tests unitarios (504 tests pasando) al 14 de septiembre de 2026.
+
+
 

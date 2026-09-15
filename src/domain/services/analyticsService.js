@@ -5,6 +5,7 @@ const AnalyticsRepository = require('../repositories/analyticsRepository');
 const { normalizeText } = require('../utils/textUtils');
 const CourseRepository = require('../repositories/courseRepository');
 const TopicRepository = require('../repositories/topicRepository');
+const mineduScoringService = require('./mineduScoringService');
 
 class AnalyticsService {
     constructor() {
@@ -478,7 +479,17 @@ class AnalyticsService {
         const accuracy = Number(stats?.accuracy) || 0;
         const avgScore = Number(stats?.avg_score) || 0;
 
-        // 1. Cálculo de Nivel de Competencia y Readiness Index
+        // 1. Evaluación Oficial MINEDU para Educación
+        let mineduEvaluation = null;
+        if (isEducacion) {
+            const targetScale = stats?.targetScale || 2;
+            const mineduScore = (stats?.minedu_score !== undefined && !isNaN(parseFloat(stats.minedu_score)))
+                ? parseFloat(stats.minedu_score)
+                : Math.round(((avgScore / 20) * 90) * 10) / 10;
+            mineduEvaluation = mineduScoringService.evaluateScaleStatus(mineduScore, targetScale);
+        }
+
+        // 2. Cálculo de Nivel de Competencia y Readiness Index
         let readinessLevel = 'Nivel Inicial';
         let readinessColor = '#f43f5e';
         let readinessIndex = 45;
@@ -524,9 +535,14 @@ class AnalyticsService {
         if (topics.length === 0) {
             // Usuario sin historial de simulacros aún
             if (isEducacion) {
+                const scalePill = mineduEvaluation ? `
+                    <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--primary); border:1px solid var(--border-color); text-transform:uppercase;"><i class="fas fa-graduation-cap"></i> Meta: ${mineduEvaluation.targetScaleName} (${mineduEvaluation.minPointsRequired} pts / 90)</span>
+                ` : '';
+
                 strengths = `
-                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
                         <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(59,130,246,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(59,130,246,0.25)); text-transform:uppercase; letter-spacing:0.04em;">ESTÁNDAR OFICIAL CNEB</span>
+                        ${scalePill}
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">El temario oficial de la Carrera Pública Magisterial evalúa competencias fundamentales para la prueba nacional:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
@@ -556,7 +572,9 @@ class AnalyticsService {
                         </li>
                     </ul>
                 `;
-                strategy = "Inicia con un simulacro rápido de 10 preguntas para calibrar tu matriz de competencias y activar tu diagnóstico adaptativo con métricas.";
+                strategy = mineduEvaluation
+                    ? `Inicia con un simulacro rápido de 10 preguntas para calibrar tu matriz de competencias y proyectar tu nota hacia la ${mineduEvaluation.targetScaleName}.`
+                    : "Inicia con un simulacro rápido de 10 preguntas para calibrar tu matriz de competencias y activar tu diagnóstico adaptativo con métricas.";
                 sprint = [
                     { step: 1, title: "Prueba Diagnóstica", desc: "Resuelve un Simulacro Rápido (10q) para calibrar tus notas iniciales." },
                     { step: 2, title: "Revisión de Casuísticas", desc: "Usa el Modo Estudio (20q) para analizar el sustento técnico de cada reactivo." },
@@ -618,13 +636,26 @@ class AnalyticsService {
                 const worstFailStr1 = worst1.total ? ` (${worst1.total - worst1.correct} errores en ${worst1.total} reactivos)` : '';
                 const worstFailStr2 = (worst2 && worst2.total) ? ` (${worst2.total - worst2.correct} errores en ${worst2.total} reactivos)` : '';
 
+                const scaleScoreHeader = mineduEvaluation ? `
+                    <span style="font-size:0.75rem; font-weight:700; color:var(--primary);"><i class="fas fa-graduation-cap"></i> ${mineduEvaluation.mineduScore.toFixed(1)} / 90 pts (Meta ${mineduEvaluation.targetScaleName}: ${mineduEvaluation.minPointsRequired} pts)</span>
+                ` : '';
+
+                const scalePassBullet = mineduEvaluation && mineduEvaluation.passed ? `
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-award" style="color:var(--primary); margin-top:2px;"></i>
+                        <span><strong>Proyección Aprobatoria Oficial:</strong> Tu puntaje proyectado de <strong>${mineduEvaluation.mineduScore.toFixed(1)} pts</strong> supera el umbral de la <strong>${mineduEvaluation.targetScaleName}</strong> (+${mineduEvaluation.gapPoints.toFixed(1)} pts de margen).</span>
+                    </li>
+                ` : '';
+
                 strengths = `
-                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
                         <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(59,130,246,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(59,130,246,0.25)); text-transform:uppercase; letter-spacing:0.04em;">${readinessLevel.toUpperCase()}</span>
                         <span style="font-size:0.75rem; color:var(--text-secondary);">${accuracy}% Precisión Global</span>
+                        ${scaleScoreHeader}
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Has consolidado un sólido criterio pedagógico en tus áreas con mayor efectividad:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
+                        ${scalePassBullet}
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
                             <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
                             <span>Dominio consolidado en <strong>${best1.subject}</strong> con <strong>${best1.accuracy}%</strong> de efectividad${bestTotalStr1}. Evidencias buen manejo de procesos didácticos y mediación del aprendizaje.</span>
@@ -637,12 +668,20 @@ class AnalyticsService {
                     </ul>
                 `;
 
+                const scaleGapBullet = mineduEvaluation && !mineduEvaluation.passed ? `
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-bullseye" style="color:var(--text-muted); margin-top:2px;"></i>
+                        <span><strong>Brecha para Ascenso:</strong> Te faltan <strong>${Math.abs(mineduEvaluation.gapPoints).toFixed(1)} pts</strong> en Base 90 para alcanzar los ${mineduEvaluation.minPointsRequired} pts mínimos de la <strong>${mineduEvaluation.targetScaleName}</strong>.</span>
+                    </li>
+                ` : '';
+
                 weaknesses = `
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
                         <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.04em;">FOCO CRÍTICO PRIORITARIO</span>
                     </div>
                     <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Se identificaron áreas de alta incidencia en la prueba que presentan oportunidades de mejora inmediata:</p>
                     <ul style="margin:0; padding:0; list-style:none;">
+                        ${scaleGapBullet}
                         <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
                             <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
                             <span>Brecha detectada en <strong>${worst1.subject}</strong> con <strong>${worst1.accuracy}%</strong> de precisión${worstFailStr1}. Conviene repasar criterios de retroalimentación formativa y rúbricas.</span>
@@ -655,8 +694,17 @@ class AnalyticsService {
                     </ul>
                 `;
 
-                strategy = `Prioriza la resolución de simulacros focalizados en ${worst1.subject} para afianzar casuísticas del CNEB y maximizar tu nota en la prueba de Ascenso o Nombramiento.`;
-                sprint = [
+                strategy = mineduEvaluation
+                    ? (mineduEvaluation.passed
+                        ? `Consolida tu rendimiento en ${worst1.subject} para asegurar tu ventaja y ratificar tu ascenso a la ${mineduEvaluation.targetScaleName} (corte ${mineduEvaluation.minPointsRequired} pts).`
+                        : `Prioriza la resolución de simulacros focalizados en ${worst1.subject} para cubrir los ${Math.abs(mineduEvaluation.gapPoints).toFixed(1)} pts necesarios para la ${mineduEvaluation.targetScaleName} (${mineduEvaluation.minPointsRequired} pts).`)
+                    : `Prioriza la resolución de simulacros focalizados en ${worst1.subject} para afianzar casuísticas del CNEB y maximizar tu nota en la prueba de Ascenso o Nombramiento.`;
+
+                sprint = mineduEvaluation ? [
+                    { step: 1, title: `Refuerzo en ${worst1.subject}`, desc: `Repasa las definiciones y casuísticas clave de ${worst1.subject} para asegurar los puntos hacia tu ${mineduEvaluation.targetScaleName}.` },
+                    { step: 2, title: "Modo Estudio (20 Preguntas)", desc: "Entrena con justificaciones completas para aprender a descartar distractores típicos." },
+                    { step: 3, title: "Simulacro Real MINEDU (60q)", desc: `Evalúa tu puntaje oficial en base 90 frente a la meta de ${mineduEvaluation.minPointsRequired} pts de la ${mineduEvaluation.targetScaleName}.` }
+                ] : [
                     { step: 1, title: `Refuerzo en ${worst1.subject}`, desc: `Repasa las definiciones doctrinales y normativas del CNEB específicas de ${worst1.subject}.` },
                     { step: 2, title: "Modo Estudio (20 Preguntas)", desc: "Entrena con justificaciones completas para aprender a descartar distractores típicos." },
                     { step: 3, title: `Mantenimiento en ${best1.subject}`, desc: `Consolida tu ventaja en ${best1.subject} mediante simulacros rápidos de 10 preguntas.` }
@@ -733,7 +781,8 @@ class AnalyticsService {
             strategy,
             readinessIndex,
             readinessLevel,
-            sprint
+            sprint,
+            ...(mineduEvaluation ? { mineduEvaluation } : {})
         };
     }
 }

@@ -163,11 +163,10 @@ El sistema de chat en Hub Academia no es un chatbot monolítico, sino una suite 
 | **Precio y Vigencia** | S/ 0 (Pool de 10 vidas/semana) | **S/ 9.90** (2 Meses) | **S/ 24.90** (4 Meses) |
 | **Tutor IA (Chat)** | Estándar (Descuenta vidas, Sin RAG) | 50 mensajes/día (Sin RAG) | **100 mensajes/día (Con hasta 25 RAG/día)** |
 | **Simulador de Exámenes** | Descuenta vidas | **15 simulacros / día** | **50 simulacros / día** |
-| **Flashcards Manuales** | Texto básico | Ilimitadas (1,000 chars por cara) | Ilimitadas + Audio TTS + Imágenes |
-| **Síntesis de Audio TTS** | No incluido (Paywall) | No incluido (Paywall) | **Incluido (Google Cloud Neural TTS)** |
+| **Flashcards Manuales** | Texto básico | Ilimitadas (1,000 chars por cara) | Ilimitadas + Imágenes |
 | **Carga de Imágenes GCS** | No incluido (Paywall) | No incluido (Paywall) | **Incluido (Almacenamiento seguro)** |
-| **Carga Masiva Excel** | Bloqueado | 3 archivos / día (100 cards c/u) | **10 archivos / día (con opción TTS)** |
-| **Generación IA Flashcards**| Bloqueado | Bloqueado | **30 solicitudes / mes (Gemini)** |
+| **Carga Masiva Excel** | Bloqueado | 3 archivos / día (100 cards c/u) | **10 archivos / día** |
+| **Síntesis Audio TTS e IA Flashcards**| No incluido | No incluido | **Retirado de Web (Exclusivo MeduCat)** |
 | **Diagnóstico Clínico IA** | Bloqueado | Bloqueado | **Incluido (Correlación de fallas)** |
 | **Comunidad y Mazos** | 30 clones / día | 30 clones / día | **30 clones / día** |
 

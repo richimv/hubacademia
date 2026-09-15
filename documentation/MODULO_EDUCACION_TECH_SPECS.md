@@ -426,3 +426,62 @@ Se habilitó formalmente la modalidad de **Simulacro Real (Oficial)** (`mode=rea
    - `/start` solicita directamente el total exacto del examen (`limit: state.maxQuestions`: 10, 20, 60 o 100), reduciendo en un 90% las consultas a PostgreSQL y volviendo el examen 100% inmune a micro-cortes de internet.
    - Algoritmo `packExamQuestions`: agrupa las casuísticas como bloques atómicos indivisibles ($K$ preguntas). Solo se agregan si caben completas en el cupo restante (`spaceLeft >= K`), completando el residuo exacto con preguntas individuales (tamaño 1). Esto garantiza matemáticamente que **ninguna casuística sea cortada a la mitad** y que el total alcance con precisión quirúrgica el límite del examen.
    - En PostgreSQL, la cuota por área escala dinámicamente (`GREATEST(3, CEIL(limit / topicsCount * 1.5))`), garantizando abastecimiento amplio de candidatos para cualquier modalidad.
+
+---
+
+## 19. Sistema Oficial de Calificación MINEDU — Concurso de Ascenso de Escala Magisterial (Septiembre 2026)
+
+Para alinear el simulador con los estándares normativos de la Carrera Pública Magisterial del Perú, se implementó el motor de cálculo oficial para la **Prueba Nacional de Ascenso Docente** (Base 90 puntos) manteniendo 100% de retrocompatibilidad y sin requerir migraciones estructurales de base de datos (`ALTER TABLE`).
+
+### 19.1 Reglas Normativas Oficiales MINEDU
+- **Total de reactivos:** 60 preguntas de casuística pedagógica y especialidad disciplinar.
+- **Valor por acierto:** 1.5 puntos.
+- **Penalización por error o en blanco:** 0 puntos (sin puntaje en contra).
+- **Puntaje máximo posible:** 90 puntos.
+- **Puntajes mínimos aprobatorios por escala:**
+  - **2.ª Escala:** 54.0 puntos (36 aciertos / equiv. 12.0 en escala vigesimal).
+  - **3.ª Escala:** 57.0 puntos (38 aciertos / equiv. 12.7 en escala vigesimal).
+  - **4.ª Escala:** 60.0 puntos (40 aciertos / equiv. 13.3 en escala vigesimal).
+  - **5.ª Escala:** 63.0 puntos (42 aciertos / equiv. 14.0 en escala vigesimal).
+  - **6.ª Escala:** 66.0 puntos (44 aciertos / equiv. 14.7 en escala vigesimal).
+  - **7.ª Escala:** 69.0 puntos (46 aciertos / equiv. 15.3 en escala vigesimal).
+  - **8.ª Escala:** 69.0 puntos (46 aciertos / equiv. 15.3 en escala vigesimal).
+
+### 19.2 Fórmula Proporcional Unificada
+Para permitir que los docentes evalúen su rendimiento en cualquier modalidad de práctica (Modo Rápido 10q, Modo Estudio 20q y Simulacro Real 60q), se aplica la fórmula matemática proporcional unificada:
+$$\text{Puntaje}_{90} = \text{round}\left(\frac{\text{Aciertos}}{\text{Total}} \times 90, 1\right)$$
+*(En exámenes oficiales de 60 preguntas, equivale exactamente a $\text{Aciertos} \times 1.5$)*.
+
+### 19.3 Servicio Puro de Dominio (`mineduScoringService.js`)
+Ubicado en `src/domain/services/mineduScoringService.js`, desacoplado de infraestructura:
+- `MINEDU_SCALE_CUTOFFS`: Diccionario inmutable con los umbrales mínimos, aciertos requeridos y equivalencias de las 7 escalas (2 a 8).
+- `calculateMineduScore(correctAnswers, totalQuestions)`: Retorna el puntaje sobre 90 redondeado a un decimal.
+- `getScaleCutoff(targetScale)`: Retorna la configuración de la escala con control de límites y fallbacks seguros (default: Escala 2).
+- `evaluateScaleStatus(mineduScore, targetScale)`: Determina si el postulante aprobó, la brecha en puntos (`gapPoints`), la escala máxima alcanzada y el mensaje pedagógico correspondiente.
+
+### 19.4 Persistencia y Retrocompatibilidad
+- **`quiz_history.score`:** Mantiene el almacenamiento del número de aciertos (`correct`), preservando intacto el comportamiento de exámenes históricos y del módulo médico (SERUMS).
+- **`user_simulator_preferences.config_json`:** Almacena el nuevo campo `targetScale` (2 al 8) dentro del objeto JSONB sin requerir modificaciones en el esquema SQL.
+
+### 19.5 Sincronización Web y Mobile
+- **Plataforma Web (`hubacademia`):**
+  - `simulator-dashboard.html`: Selector interactivo de Escala Objetivo (2.ª a 8.ª Escala) condicional al target `ASCENSO`.
+  - `simulator-dash.js`: Píldora de escala en el resumen de configuración, propagación de `targetScale` en enlaces y peticiones, y KPI de evolución con línea punteada de corte dinámico según la escala seleccionada.
+  - `quiz.html` & `quiz.js`: Modal de resultados con tarjeta de Puntaje Oficial MINEDU (ej. `63.0 / 90 pts`), badge oficial de logro y brecha de puntos.
+- **Aplicación Móvil (`HubDocenteApp`):**
+  - `ExamConfigModal.tsx`: Selector visual de escala objetivo persistido en preferencias.
+  - `HistoricalTrendChart.tsx`: Línea de corte de aprobación dinámica trazada por SVG con tooltip contextual de meta.
+  - `results.tsx`: Presentación de puntaje base 90 y diagnóstico de escala alcanzada.
+  - `AIDiagnosisCard.tsx`: Integración de píldora de meta de escala (`targetScale`), evaluación de brecha y envío sincronizado a analítica.
+
+### 19.6 Diagnóstico Inteligente por IA Adaptado a Escala y Limpieza de Modal (Septiembre 2026)
+1. **Calibración Heurística y Cognitiva por Escala:**
+   - Tanto el generador heurístico (`analyticsService.generateHeuristicDiagnostic`) como el motor de IA profunda con Gemini (`analyticsController.getAIDiagnostic`) reciben y procesan `targetScale`.
+   - Comparan la nota proyectada en Base 90 ($P_{90} = \frac{\text{avg\_score}}{20} \times 90$) con el puntaje de corte oficial de la escala (54 a 69 pts).
+   - Generan diagnósticos pedagógicos de acierto/error orientados a la escala:
+     - **Fortalezas:** Proyección aprobatoria oficial y margen de puntos a favor.
+     - **Áreas prioritarias:** Brecha concreta en puntos requeridos para asegurar el ascenso.
+     - **Estrategia y Sprint:** Acciones tácticas de 3 pasos focalizadas en las casuísticas que cierran la brecha hacia la escala meta.
+2. **Depuración de la Modal de Resultados (`quiz.html`):**
+   - Se removió el texto huérfano estático `¿Qué te pareció el nivel?`, eliminando fricción visual y consolidando la botonera de acciones clave (`Ver Corrección`, `Salir`, `Nuevo Examen`).
+

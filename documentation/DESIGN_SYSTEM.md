@@ -1,10 +1,9 @@
-# 🎨 Design System & Branding: Hub Academia v3.5
+# 🎨 Design System & Branding: Hub Academia
 
-**Estado:** Fuente de Verdad (Single Source of Truth)  
-**Versión:** 3.5  
+**Estado:** Fuente de Verdad Normativa (Single Source of Truth)  
 **Enfoque Estético:** Dual-Theme Engine (Dark Mode Matte Black 🌙 / Light Mode Studio Slate ☀️) / Cyber-Minimalist / Manta Pill Gradients
 
-Este documento define las reglas visuales, componentes interactivos, tokens CSS y directrices de experiencia de usuario (UX) para **Hub Academia**. Sirve como guía de referencia obligatoria para mantener la coherencia en todas las interfaces de la plataforma.
+Este documento define las reglas visuales, estándares de componentes interactivos, tokens CSS y directrices de experiencia de usuario (UX) para **Hub Academia**. Constituye la especificación técnica y visual obligatoria para el diseño y desarrollo de todas las interfaces, modales, componentes y contenedores de la plataforma.
 
 ---
 
@@ -15,7 +14,7 @@ Este documento define las reglas visuales, componentes interactivos, tokens CSS 
 4. [📐 Grids, Layouts y Responsividad](#4--grids-layouts-y-responsividad)
 5. [✨ Micro-interacciones y Efectos](#5--micro-interacciones-y-efectos)
 6. [🚀 Reglas UX Mandatorias](#6--reglas-ux-mandatorias)
-7. [🎨 Iconografía (Font Awesome 6.4.0)](#7--iconografía-font-awesome-640)
+7. [🎨 Iconografía (Font Awesome 6.4.0) & Principio de Sobriedad Visual](#7--iconografía-font-awesome-640--principio-de-sobriedad-visual)
 8. [📱 Mobile Design Systems: HubDocenteApp & HubSaludApp](#8--mobile-design-systems-hubdocenteapp--hubsaludapp-light-theme)
 9. [📋 Sistema de Revisión de Examen (Correction Mode & Dual-Theme UI)](#9--sistema-de-revisión-de-examen-correction-mode--dual-theme-ui)
 10. [🔔 Sistema Centralizado de Alertas, Toasts y Vidas en Tiempo Real](#10--sistema-centralizado-de-alertas-toasts-y-vidas-en-tiempo-real)
@@ -23,6 +22,7 @@ Este documento define las reglas visuales, componentes interactivos, tokens CSS 
 12. [📐 Motor Universal de Tipografía Matemática, Científica y Notación Química](#12--motor-universal-de-tipografía-matemática-científica-y-notación-química-katex--markdownrenderer)
 13. [🖥️ Arquitectura y Estándar Visual del Panel de Gestión / Administración & Subcontenedores Avanzados](#13-️-arquitectura-y-estándar-visual-del-panel-de-gestión--administración-admin-panel--subcontenedores-avanzados-de-modales)
 14. [📚 Insignias de Fuentes y Citación RAG con Número de Página](#14--insignias-de-fuentes-y-citación-rag-con-número-de-página-tutor-citations-container-y-tutor-citation-pill)
+15. [☀️ Estándar de Contraste Tipográfico y Legibilidad en Modo Claro para Interfaces de Chat IA](#15-️-estándar-de-contraste-tipográfico-y-legibilidad-en-modo-claro-light-mode-para-interfaces-de-chat-ia-quiz-tutor-repaso-tutor-y-chat-general)
 
 ---
 
@@ -82,15 +82,15 @@ Utilizamos exclusivamente la tipografía **Inter** para asegurar alta legibilida
 
 ## 3. 🔲 Componentes Core
 
-### 3.1. Modales (Estándar Negro Mate con Backdrop Blur)
-Todas las ventanas modales de la plataforma deben seguir este patrón visual exacto:
-* **Overlay tras el Modal (`.modal-overlay`):** Capa difuminada semi-transparente `rgba(0, 0, 0, 0.75)` con `backdrop-filter: blur(12px) saturate(160%)` que permite percibir suavemente la página de fondo.
-* **Cuerpo del Modal (`.modal-content`):** `#0a0a0a` (Negro Mate Puro Sólido OPACO, sin transparencias internas para que el contenido sea 100% nítido).
-* **Borde:** `1px solid rgba(255, 255, 255, 0.08)`.
+### 3.1. Modales (Estándar Universal Dual-Theme con Backdrop Blur)
+Todas las ventanas modales de la plataforma deben estructurarse bajo este patrón visual y técnico:
+* **Overlay tras el Modal (`.modal-overlay`):** `background: var(--modal-overlay-bg)` (`rgba(0, 0, 0, 0.75)` en Dark Mode / `rgba(15, 23, 42, 0.5)` en Light Mode) con `backdrop-filter: blur(12px) saturate(160%)` que permite percibir suavemente la página de fondo.
+* **Cuerpo del Modal (`.modal-content`):** `background: var(--modal-bg)` (`#0a0a0a` en Dark Mode / `#ffffff` en Light Mode). Superficie sólida y opaca, sin transparencias internas para asegurar nitidez total de lectura.
+* **Borde:** `1px solid var(--border-color)`.
 * **Esquinas:** `20px` (Rounded).
-* **Sombra:** `0 25px 50px -12px rgba(0, 0, 0, 0.9)`.
+* **Sombra:** `var(--shadow-xl)` (`0 25px 50px -12px rgba(0, 0, 0, 0.9)` en Dark Mode / `0 20px 40px -12px rgba(0, 0, 0, 0.12)` en Light Mode).
 
-### 3.2. Botones y Estados Hover
+### 3.2. Botones, Estados Interactivos y Feedback Asíncrono
 
 > [!IMPORTANT]
 > El estilo **Manta Pill Gradient con Insignia Circular de Icono** o **Manta Orange Degradado** son los estándares estéticos obligatorios para botones primarios de acción. Los botones secundarios deben mantener una estética limpia y sobria, integrándose perfectamente con el explorador.
@@ -102,11 +102,17 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
   * **Hover:** `transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5); color: #ffffff;`.
 
 * **Botón Secundario (`.btn-secondary` / `.btn-premium-secondary`):**
-  * **Fondo Inicial:** `rgba(255, 255, 255, 0.04)` (Translúcido limpio).
-  * **Borde:** `1px solid rgba(255, 255, 255, 0.08)`.
-  * **Forma:** `border-radius: 10px - 12px` | Texto `#e2e8f0`.
-  * **Interacción Hover (Estándar Explorador):** `background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); color: #ffffff; transform: translateY(-1px);`.
+  * **Fondo Inicial:** `var(--surface-hover)` o `rgba(255, 255, 255, 0.04)` en Dark Mode / `rgba(0, 0, 0, 0.04)` en Light Mode.
+  * **Borde:** `1px solid var(--border-color)`.
+  * **Forma:** `border-radius: 10px - 12px` | Texto `var(--text-main)`.
+  * **Interacción Hover:** `background: var(--border-hover); border-color: var(--border-hover); color: var(--text-main); transform: translateY(-1px);`.
   * **Regla de Coherencia:** Queda estrictamente prohibido usar fondos plomos opacos (ej. `#334155` o `rgba(51,65,85,0.8)`) o aplicar halos/bordes de resplandor naranja aislados sobre botones secundarios que rompan la armonía visual.
+
+* **Feedback Asíncrono y Prevención de Doble Envío (Regla Obligatoria CRUD):**
+  Al desencadenar cualquier mutación asíncrona o acción CRUD ("Guardar", "Crear", "Eliminar", "Generar", "Actualizar", etc.):
+  1. **Deshabilitación Inmediata:** El botón de acción debe deshabilitarse de inmediato (`disabled = true`) junto con los botones secundarios del grupo (ej. "Cancelar") para bloquear clics redundantes.
+  2. **Spinner Institucional:** El botón debe reemplazar su contenido o anteponer el spinner institucional estándar de la web: `<i class="fas fa-spinner fa-spin"></i> Guardando...` (o `Eliminando...`, `Procesando...`, etc.).
+  3. **Restauración Obligatoria:** Al completarse la promesa o en la cláusula `finally` de captura de errores, el botón debe rehabilitarse (`disabled = false`) y restaurar su HTML original.
 
 ### 3.3. Badges de Estado e Insignias de Plan
 * **Pill Badge Plan Active (`.badge-premium`):**
@@ -115,13 +121,14 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
   * Fondo `rgba(16, 185, 129, 0.12)`, borde `1px solid rgba(16, 185, 129, 0.3)`, texto `#34d399` en negrita (600), radio `50px`.
 
 ### 3.4. Inputs y Form Controles
-* **Fondo:** `#121212` (Dark Slate Matte).
-* **Borde:** `1px solid rgba(255, 255, 255, 0.08)`.
-* **Focus State:** Borde cambia a `#3b82f6` con un shadow azul difuminado (`box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15)`).
-* **Borde de Esquinas:** `12px`.
+* **Fondo:** `var(--input-bg)` (`#121212` en Dark Mode / `#ffffff` en Light Mode).
+* **Borde:** `1px solid var(--input-border)`.
+* **Texto:** `var(--input-text)` (`#ffffff` en Dark Mode / `#0f172a` en Light Mode).
+* **Focus State:** Borde cambia a `var(--primary)` (`#3b82f6`) con un shadow azul difuminado (`box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15)`).
+* **Borde de Esquinas:** `10px` a `12px`.
 
 ### 3.5. Modales de Zona de Peligro / Advertencia Crítica (`.modal-content.danger-variant`)
-* **Propósito:** Confirmación de acciones irreversibles (Eliminación de cuenta, purga de historial).
+* **Propósito:** Confirmación de acciones irreversibles (Eliminación de cuenta, purga de datos o registros).
 * **Borde Destacado:** `1px solid rgba(239, 68, 68, 0.3)`.
 * **Caja de Aviso Interna:** Fondo `rgba(239, 68, 68, 0.08)`, borde `1px solid rgba(239, 68, 68, 0.2)`, texto `#fca5a5`.
 * **Botón de Confirmación Peligrosa (`.btn-danger-pill`):**
@@ -136,14 +143,14 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 * **Ítems de Consumo (`.usage-item`):** Fondo `var(--bg-tertiary)`, borde `var(--border-color)`, ajuste automático de texto con `word-break: break-word` e indicadores de cuotas en tiempo real.
 
 ### 3.7. Hero Banner Centrado Dual-Theme (`.hub-hero-container`)
-* **Cuadrícula Técnica y Resplandores Ambientales (`.hero-ambient-glow`):** Cuadrícula nítida visible en Dark (`rgba(255, 255, 255, 0.055)`) y Light (`rgba(15, 23, 42, 0.075)`), combinada con iluminación radial multidimensional (azul eléctrico, índigo y violeta en Dark; azul cielo y lavanda suave en Light) que elimina la monotonía del blanco y da profundidad SaaS moderna.
+* **Cuadrícula Técnica y Resplandores Ambientales (`.hero-ambient-glow`):** Cuadrícula nítida visible en Dark (`rgba(255, 255, 255, 0.055)`) y Light (`rgba(15, 23, 42, 0.075)`), combinada con iluminación radial multidimensional (azul eléctrico, índigo y violeta en Dark; azul cielo y lavanda suave en Light) que brinda profundidad SaaS moderna.
 * **Pill Badges Temáticos:** Enlaces superiores estilizados en píldora con microinteracciones para `💊 Salud (SERUMS)` y `🎓 Educación (Ascenso Docente)`.
 * **Tipografía Dinámica:** Título H1 `Tu Hub Académico` con gradiente de texto `.hero-gradient-text` optimizado para Dark (`#38bdf8` -> `#818cf8` -> `#ec4899`) y Light (`#2563eb` -> `#6366f1` -> `#db2777`).
 * **Botón de Acción Principal (`.hero-primary-cta`):** Píldora degradada interactiva con efecto de elevación y desplazamiento suave hacia los módulos.
 * **Cuadrícula Bento de Métricas (`.hero-metrics-grid`):** 4 tarjetas de estadísticas (`1K+`, `5K+`, `98%`, `24/7`) con fondo `var(--card-bg)`, borde `var(--border-color)`, barra superior dinámica en hover y valores tipográficos en `var(--text-main)`.
 
 ### 3.8. Header User Profile Pill (`.user-menu-toggle`)
-* **Componente de Usuario Enriquecido:** Reemplaza el botón circular simple por una píldora estética con avatar circular, columna con nombre de usuario (`.user-header-name`) y plan de suscripción (`.user-header-tier` ej: `Plan Avanzado`, `Plan Pro`, `Plan Gratuito`), junto con una flecha chevron animada `⌄`.
+* **Componente de Usuario Enriquecido (`.user-menu-toggle`):** Píldora estética con avatar circular, columna con nombre de usuario (`.user-header-name`), plan de suscripción (`.user-header-tier`, ej: `Plan Avanzado`, `Plan Pro`, `Plan Gratuito`) y flecha chevron animada `⌄`. Queda prohibido el uso de botones circulares simples aislados sin indicador de cuenta.
 * **Comportamiento Responsivo:** En dispositivos móviles ultra-compactos `<= 640px` colapsa ordenadamente a avatar + chevron para evitar desbordamientos en la barra de navegación.
 
 ### 3.9. Mockup Showcases en Landing Page (`.edu-preview-showcase`, `.med-preview-showcase`)
@@ -155,7 +162,7 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 * **Botones FSRS de Calificación (`.control-btn`):** Tarjetas interactivas con `var(--card-bg)`, sombra `var(--shadow-md)`, colores temáticos de feedback (Rojo `Olvidé`, Naranja `Difícil`, Azul `Bien`, Esmeralda `Fácil`) y hover con halo cromático sutil sin sombras negras excesivas.
 * **Drawer Tutor IA (`.tutor-chat-panel`):** Panel lateral con `var(--card-bg)`, borde `var(--border-color)`, input con `var(--input-bg)` y `var(--input-text)` y burbujas de respuesta en `var(--bg-tertiary)`.
 * **Explorador y Gestión de Mazos (`repaso.html`):** Títulos de mazo en `var(--text-main)`, botones de acción secundarios en `var(--card-bg)` con borde limpio, buscador adaptativo y filas de tarjetas con relieve y contraste completo.
-* **Eliminación de Sombras Excesivas:** Sustitución de sombras oscuras duras (36px/40px) por elevaciones refinadas (`var(--shadow-md)`, `var(--shadow-lg)`, `var(--shadow-xl)`).
+* **Sistema de Elevación y Sombras:** Las tarjetas y contenedores utilizan elevaciones estandarizadas (`var(--shadow-md)`, `var(--shadow-lg)`, `var(--shadow-xl)`). Queda prohibido el uso de sombras oscuras duras (>30px) que manchen la interfaz.
 
 ### 3.11. Simuladores, Dashboard, Quiz & Revisión de Exámenes Dual-Theme (`/simulator-dashboard`, `/quiz`)
 * **Modal de Configuración de Simulacro:** Título en `var(--text-main)`, subtítulos en `var(--text-secondary)`, tarjetas de objetivo de examen con `var(--card-bg)` y selección activa con `var(--primary-glow)` y `var(--primary)`. Toggle de modo con `var(--bg-tertiary)` y `var(--border-color)`.
@@ -164,7 +171,7 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 * **Análisis de Patrones de Error (Advanced IA):** Fondos `var(--bg-tertiary)`, bordes punteados `var(--border-color)`, textos de alto contraste (`var(--text-main)` y `var(--text-secondary)`) y botón primario píldora (`#btn-analyze-ai`) con resplandor glow.
 * **Barra de Filtro Activo (`#active-config-summary`):** Píldora moderna con `var(--card-bg)` y `var(--border-color)`.
 * **Pantalla de Revisión de Examen (`.review-card`):** Tarjetas de preguntas en `var(--card-bg)` con sombra `var(--shadow-sm)`, opciones de respuesta `.review-opt` con `var(--bg-tertiary)`, feedback correcto/incorrecto con bordes claros y explicaciones pedagógicas sobre `var(--surface-hover)`.
-* **Desactivación de Banner de Modo Invitado:** Eliminada la inyección persistente del banner de modo invitado para una interfaz de usuario completamente limpia y despejada.
+* **Limpieza de Interfaz (Sin Banners Invasivos):** La interfaz debe mantenerse completamente limpia y despejada, sin banners persistentes invasivos que obstruyan la navegación o el contenido académico.
 
 ### 3.12. Identidad Cromática por Módulo (Salud Verde Cian vs Educación Azul vs Repaso Naranja)
 * **Módulo Salud (SERUMS / Medicina):** Paleta clínica en **Verde Cian / Teal** (`#14b8a6`, `#0d9488`, `#2dd4bf`), presente en píldoras del Hero (`.pill-salud`), secciones de aterrizaje (`#salud-section`), títulos con `.accent-green-text`, botón CTA `.btn-med-theme`, vitrina mockup (`.mockup-floating-pill.pill-med`), bordes y sombras de tarjetas `.med-card-theme`, y variables dinámicas `--primary` (`#0d9488`), `--primary-dark` (`#0f766e`), `--primary-light` (`#2dd4bf`) y resplandores en `simulator-dash.js`.
@@ -176,16 +183,16 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 
 ### 3.14. Perfil de Usuario, Precios y Chat Flotante Dual-Theme
 * **Página de Precios (`/pricing`, `#pricing-section`):** Títulos y precios en `var(--text-main)`, botón de Plan Básico en `var(--bg-tertiary)` con borde y Plan Avanzado en Teal `#14b8a6`. Integración obligatoria de FontAwesome para renderizado de iconos del sidebar y header.
-* **Perfil de Usuario (`/profile`):** Eliminación de sombras oscuras pesadas (85%-90%) sustituidas por `var(--shadow-sm)` y `var(--shadow-md)`. Textos y tarjetas de consumo de IA sincronizados con `var(--text-main)`, `var(--text-secondary)`, `var(--bg-tertiary)` y `var(--border-color)`.
-* **Chatbot Flotante (`chat.css`):** Cabecera `.chatbot-header` adaptativa con `var(--header-bg)` y `var(--border-color)`, eliminando el tono gris plomo fijo en modo claro. Tarjeta de bienvenida con fondo `var(--bg-tertiary)` y borde primario.
+* **Perfil de Usuario (`/profile`):** Utiliza elevaciones suaves `var(--shadow-sm)` y `var(--shadow-md)` (prohibidas sombras oscuras pesadas >80%). Textos y tarjetas de consumo de IA sincronizados obligatoriamente con `var(--text-main)`, `var(--text-secondary)`, `var(--bg-tertiary)` y `var(--border-color)`.
+* **Chatbot Flotante (`chat.css`):** Cabecera `.chatbot-header` adaptativa con `var(--header-bg)` y `var(--border-color)` (prohibidos tonos gris plomo fijos en modo claro). Tarjeta de bienvenida con fondo `var(--bg-tertiary)` y borde primario.
 
 ### 3.15. Menú Lateral (Sidebar) con Acceso a Planes y Precios
-* **Retiro de Selector de Tema:** El interruptor de tema se mantiene exclusivamente en la cabecera superior principal (`.main-header`).
-* **Enlace a Planes y Precios:** Se añade la sección `sidebar-section-pricing` con icono `<i class="fas fa-crown"></i>` y enlace a `/pricing`, sincronizada con el enrutador de páginas activas `highlightActiveItem()`.
+* **Ubicación Normativa del Selector de Tema:** El interruptor de tema se ubica de forma exclusiva en la cabecera superior principal (`.main-header`). No debe duplicarse en el menú lateral ni en barras secundarias.
+* **Enlace a Planes y Precios en Sidebar:** El sidebar incluye obligatoriamente la sección `sidebar-section-pricing` con icono `<i class="fas fa-crown"></i>` y enlace a `/pricing`, sincronizada con el enrutador de páginas activas `highlightActiveItem()`.
 
 ### 3.16. Modales de Repaso, Biblioteca y Registro Dual-Theme
 * **Modales del Módulo Repaso y Paywalls (`repaso.html`, `uiManager.js`, `heatmap.js`):**
-  * Modal Paywall / Acceso Premium (`showUpgradeModal` en `uiManager.js`): Texto explicativo en `var(--text-main)` de alto contraste (resolviendo texto blanco invisible en tema claro), títulos en degradado dorado y botón de acción con sombra y tipografía de impacto.
+  * Modal Paywall / Acceso Premium (`showUpgradeModal` en `uiManager.js`): Texto explicativo obligatorio en `var(--text-main)` de alto contraste (garantizando legibilidad absoluta en modo claro y oscuro), títulos en degradado dorado y botón de acción con sombra y tipografía de impacto.
   * Modal de Bienvenida Freemium (`welcome-freemium-modal`): Fondo `var(--modal-bg)`, borde `var(--border-color)` y textos en `var(--text-main)` y `var(--text-secondary)`.
   * Modal Previsualización de Mazo (`#preview-deck-modal`): Título en `var(--text-main)`, tarjetas individuales con `var(--bg-tertiary)`, `var(--border-color)`, pregunta en `var(--text-main)` y respuesta en `var(--text-secondary)`.
   * Modal Guía de Estudio (`#deck-guide-modal`): Fondo `#deck-guide-content` con `var(--bg-tertiary)` y texto `var(--text-main)`.
@@ -202,12 +209,14 @@ Todas las ventanas modales de la plataforma deben seguir este patrón visual exa
 * **Cabecera Móvil y Controles de Sesión (`header.css`):**
   * Logo y Título alineados estrictamente a la izquierda en móvil (`position: static; transform: none`).
   * Controles de usuario logueado en móvil simplificados exclusivamente al avatar circular (`34px x 34px`), ocultando nombre y etiqueta de plan para evitar solapamientos.
+
 ### 3.17. Estándar Universal de Modales (Arquitectura, Barras de Desplazamiento y Botones)
 Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente patrón modular estricto:
 
 * **1. Contenedor y Capas (`.modal-overlay` y `.modal-content`):**
   * Fondo overlay: `background: var(--modal-overlay-bg); backdrop-filter: blur(12px) saturate(160%);` con bloqueo de scroll corporal (`body.modal-open`).
   * Contenedor modal: `background: var(--modal-bg); border: 1px solid var(--border-color); border-radius: 20px; box-shadow: var(--shadow-xl); max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;`.
+  * **Prevención de Parpadeo de Renderizado (Flash Eradication):** Las dimensiones deben estar declaradas estáticamente en CSS (`max-width: 1100px; width: 95%; max-height: 92vh;`) y los ajustes dinámicos de tamaño por JavaScript deben ejecutarse sincrónicamente **antes** de conmutar `display = 'flex'`, erradicando parpadeos de tamaño inicial o esperas asíncronas con `setTimeout`.
 * **2. Cabecera Fija (`.modal-header`):**
   * `padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); background: transparent; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;`.
   * Título `<h2>` en `var(--text-main)` con icono temático institucional.
@@ -230,7 +239,7 @@ Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente
     * **Feedback Asíncrono y Prevención de Doble Envío (Regla Obligatoria CRUD):** Al desencadenar cualquier mutación asíncrona o acción CRUD ("Guardar", "Crear", "Eliminar", "Generar", etc.), el botón de acción debe deshabilitarse inmediatamente (`disabled = true`) y mostrar el spinner canónico institucional (`<i class="fas fa-spinner fa-spin"></i> Guardando...` / `Eliminando...`). Los botones secundarios del grupo (ej. "Cancelar") también deben deshabilitarse mientras la petición está en vuelo. Al concluir la operación o ante cualquier excepción (`finally`), se debe rehabilitar el botón (`disabled = false`) y restaurar su HTML original, evitando clics repetidos y garantizando coherencia en toda la plataforma.
 
 ### 3.18. Expansión, Estilización y Búsqueda Universal en "Mi Biblioteca"
-* **Contenedor Amplio y Desencajonado:** Eliminación de contenedores `.glass-card` con bordes anidados duplicados. Contenedor directo `.dashboard-container` con `max-width: 1400px; width: 100%; padding: 1.5rem 2rem;` para que los recursos ocupen el ancho total con holgura.
+* **Contenedor Amplio y Desencajonado:** Se utiliza un único contenedor directo `.dashboard-container` con `max-width: 1400px; width: 100%; padding: 1.5rem 2rem;` para que los recursos ocupen el ancho total con holgura. Queda prohibido el uso de contenedores con bordes anidados duplicados o cajas dentro de cajas.
 * **Encabezado Minimalista:** Título `<h1>` `Mi Biblioteca` limpio y conciso, sin párrafos de descripción que resten espacio vertical, permitiendo una elevación óptima de las pestañas y el catálogo.
 * **Barra de Búsqueda Estilizada en Cápsula (`.notes-search-wrapper`):**
   * Diseño homogéneo para todas las pestañas de Biblioteca (*Catálogo de Recursos* y *Notas*).
@@ -300,7 +309,7 @@ Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente
 ## 4. 📐 Grids, Layouts y Responsividad
 
 ### 4.1. Cuadrícula de Biblioteca (Resources Grid)
-* **Escritorio (> 1024px):** Exactamente **5 columnas por fila** (`repeat(5, minmax(0, 1fr))`) con separación ergonómica `gap: 1.25rem`. Esto amplía el ancho útil de cada tarjeta a ~220px-250px, otorgando máxima legibilidad al título (2 líneas completas con line-height 1.38) y permitiendo apreciar íntegramente la portada/carátula sin sensación de sobre-compresión de tienda barata.
+* **Escritorio (> 1024px):** Exactamente **5 columnas por fila** (`repeat(5, minmax(0, 1fr))`) con separación ergonómica `gap: 1.25rem`. El ancho útil de cada tarjeta es de ~220px-250px, garantizando máxima legibilidad al título (2 líneas completas con line-height 1.38) y una visualización completa y nítida de la portada/carátula sin sobre-compresión visual.
 * **Tabletas y Pantallas Medianas (768px a 1024px):** **3 columnas por fila** (`repeat(3, minmax(0, 1fr))`) con `gap: 1rem`.
 * **Celulares y Dispositivos Móviles (<= 768px):** Exactamente **2 columnas por fila** (`repeat(2, minmax(0, 1fr))`) con `gap: 0.85rem`, tipografía de títulos calibrada a `0.85rem` y padding de contenido a `0.65rem 0.6rem`, garantizando que la carátula y el título del recurso se aprecien nítidos y sin recortes agresivos.
 
@@ -322,6 +331,17 @@ Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente
   * **Gráficos y Canvas:** Altura optimizada a `220px` (y `190px` en <480px) para conservar visibilidad del contenido sin obligar al usuario a hacer scroll excesivo.
   * **Diagnóstico Inteligente IA:** Apilamiento de 1 columna para tarjetas de Fortalezas y Brechas, con botones de acción táctiles de tamaño completo.
 
+### 4.3. Contención de Desbordamiento y Truncado de Textos Largos (Ellipsis)
+En componentes interactivos con restricción de ancho (píldoras de filtro, badges, selectores, botones y celdas tabulares) donde los nombres de áreas pedagógicas, carreras o temas sean extensos:
+* **Regla CSS Obligatoria:**
+  ```css
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  ```
+* **Comportamiento UX:** Evita que nombres largos quiebren la altura de la fila o se desplacen hacia abajo rompiendo la cuadrícula. Al truncar con puntos suspensivos, se debe proveer el texto íntegro en el atributo accesible `title="..."` para consulta del usuario al posar el cursor o mantener presionado.
+
 ---
 
 ## 5. ✨ Micro-interacciones y Efectos
@@ -335,11 +355,22 @@ Toda modal en Hub Academia debe estructurarse obligatoriamente bajo el siguiente
 
 ## 6. 🚀 Reglas UX Mandatorias
 
-1. **Superficies Negro Mate Estrictas:** 
+1. **Superficies Negro Mate Estrictas en Modo Oscuro:** 
    > [!WARNING]
    > Usar siempre `#050505` para el fondo principal de la página (`body`), `#0a0a0a` para tarjetas y contenedores principales, y `#121212` para sub-tarjetas o ítems anidados. Prohibido usar fondos con degradados azulados o capas `::before` de resplandor radial azul en los contenedores principales.
-2. **Botones Primarios de Acción:**
-   * Utilizar siempre el degradado Manta Cyan-Blue (`linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%)`) con forma pill (`border-radius: 50px`).
+2. **Superficies Clean Slate en Modo Claro:**
+   > [!WARNING]
+   > Usar siempre `#f8fafc` para el fondo principal (`body`), `#ffffff` para tarjetas y modales, y `#f1f5f9` para subtarjetas o fondos secundarios, con bordes `#e2e8f0` y tipografía `#0f172a`.
+3. **Botones Primarios de Acción:**
+   * Utilizar siempre el degradado Manta Cyan-Blue (`linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%)`) o Manta Orange (`linear-gradient(135deg, #f97316 0%, #ea580c 100%)`) con forma pill (`border-radius: 50px`).
+4. **Prevención Obligatoria de Doble Envío y Spinners CRUD:**
+   * En todo formulario o botón que efectúe acciones asíncronas o CRUD (Guardar, Eliminar, Crear, etc.), se debe deshabilitar inmediatamente el botón y mostrar el spinner institucional (`<i class="fas fa-spinner fa-spin"></i>`), rehabilitándolo únicamente al concluir la operación en bloque `finally`.
+5. **Prohibición Estricta de Popups Nativos:**
+   * Queda estrictamente prohibido el uso de `alert()`, `confirm()` o `prompt()` nativos del navegador. Toda confirmación, aviso o alerta debe realizarse mediante `window.confirmationModal` o el sistema institucional de toasts.
+6. **Ausencia de Contenedores Anidados Redundantes (No Box-in-a-Box):**
+   * Evitar envolver componentes dentro de múltiples marcos o tarjetas redundantes. Un único contenedor directo con espaciado uniforme es siempre preferible a cajas dentro de cajas.
+7. **Confinamiento Estricto de Scrollbars:**
+   * En toda ventana modal, la barra de desplazamiento debe confinarse exclusivamente a `.modal-body`. Queda prohibido el desbordamiento de barras hacia la cabecera o el pie de la modal.
 
 ---
 
@@ -385,7 +416,7 @@ Las aplicaciones móviles de React Native / Expo (`HubDocenteApp` y `HubSaludApp
 * **Tipografía:** Textos principales en `#0f172a` (Slate 900) y secundarios en `#475569` (Slate 600).
 
 ### 8.3. Reglas de Componentes Móviles
-* **Eliminación de Demo Mode en Apps Móviles:** Redirección inmediata a `/(auth)/login` para usuarios no registrados o `/(tabs)/home` para usuarios autenticados.
+* **Restricción de Acceso en Apps Móviles (Sin Modo Invitado):** Redirección obligatoria a `/(auth)/login` para usuarios no autenticados o `/(tabs)/home` para usuarios con sesión activa. La navegación en las aplicaciones móviles requiere autenticación válida.
 * **Badge de Concursos Disponibles:**
   - `HubDocenteApp`: Solo `ASCENSO` habilitado; `NOMBRAMIENTO` y `ACCESO_CARGOS` con badge "Pronto".
   - `HubSaludApp`: Solo `SERUMS` habilitado; `ENAM`, `RESIDENTADO` y `CONCURSO_MINSA` con badge "Pronto".
@@ -433,7 +464,7 @@ La pantalla de revisión post-examen (`.review-container`) ofrece un análisis d
 
 ## 10. 🔔 Sistema Centralizado de Alertas, Toasts y Vidas en Tiempo Real
 
-Para erradicar popups nativos y bloqueantes (`alert()` y `confirm()`), la plataforma cuenta con una arquitectura de alertas reactivas y no intrusivas:
+Queda estrictamente prohibido el uso de popups nativos del navegador (`alert()`, `confirm()`, `prompt()`). Toda notificación, confirmación o alerta debe canalizarse a través de los componentes reactivos institucionalizados:
 
 1. **Modal de Confirmación y Alerta (`window.confirmationModal`):**
    - Basado en `.confirmation-modal-card` con tokens dinámicos (`--modal-bg`, `--text-main`, `--border-color`).
@@ -490,7 +521,7 @@ La plataforma cuenta con un canal de renderizado matemático y científico unifi
 * **Alfabeto Griego y Operadores:** Soporte completo para $\alpha, \beta, \gamma, \delta, \theta, \pi, \sigma, \omega, \infty, \pm, \neq, \le, \ge, \rightarrow$.
 
 ### 12.2. Arquitectura de Ciclo de Vida y Seguridad (XSS vs KaTeX)
-1. **Pre-extracción y Aislamiento:** `_extractMath()` aísla los bloques matemáticos antes de que `marked.js` los procese, evitando que los guiones bajos (`_` de subíndices) o asteriscos (`*` de multiplicación) sean mutilados como cursivas o negritas.
+1. **Pre-extracción y Aislamiento:** `_extractMath()` aísla los bloques matemáticos antes de que `marked.js` los procese, evitando que los guiones bajos (`_` de subíndices) o asteriscos (`*` de multiplicación) sean interpretados erróneamente como cursivas o negritas.
 2. **Sanitización DOM XSS:** `_sanitizeDom()` purga código malicioso del cuerpo Markdown plano antes de inyectar las ecuaciones, protegiendo las coordenadas geométricas espaciales (`style="top:..."`) que KaTeX requiere para el posicionamiento exacto de numeradores y denominadores.
 3. **Salida Pura HTML:** KaTeX se compila con `output: 'html'`, garantizando renderizado instantáneo sin discrepancias de MathML.
 4. **Contenedor Responsivo (`.katex-display-wrapper`):** Envuelve las ecuaciones en bloque con desplazamiento horizontal táctil (`-webkit-overflow-scrolling: touch`), evitando cualquier desbordamiento visual en teléfonos móviles.
@@ -561,7 +592,7 @@ Para prevenir el colapso horizontal, desbordamiento lateral o quiebres asimétri
 
 ### 13.4. Arquitectura Avanzada de Modales del Panel de Gestión (`.modal`, `.modal-content`)
 Todas las modales operadas por `openGenericModal()` y `saveGenericForm()` se adhieren al siguiente estándar universal:
-* **Erradicación de Colores Rígidos:** Prohibido el uso de `#0f0f13` o fondos oscuros hardcodeados. El cuerpo modal consume estrictamente:
+* **Superficies Dinámicas Dual-Theme (Prohibición de Colores Hardcodeados):** Prohibido el uso de `#0f0f13` o fondos oscuros hardcodeados. El cuerpo modal consume estrictamente:
   ```css
   background: var(--modal-bg);
   border: 1px solid var(--border-color);
@@ -726,7 +757,7 @@ Para brindar transparencia académica y trazabilidad documental en las respuesta
 Para garantizar una experiencia de lectura óptima, sin fatiga visual y con máximo contraste accesible (WCAG AAA / AA):
 
 ### 15.1. Jerarquía y Tokens de Alto Contraste en Modo Claro (`markdown-content.css`)
-Para garantizar una experiencia de lectura óptima, sin fatiga visual y con máximo contraste accesible (WCAG AAA / AA), los encabezados y estilos de énfasis en modo claro aplican los siguientes tokens normativos:
+Los encabezados y estilos de énfasis en modo claro aplican los siguientes tokens normativos:
 * **Tokens Tipográficos en Modo Claro:**
   - `h1`: `#1e3a8a` (Azul Profundo 900) con borde inferior `rgba(30, 58, 138, 0.15)`. Contraste > 10:1.
   - `h2`: `#1e40af` (Azul Intenso 800) con borde inferior `rgba(30, 64, 175, 0.12)`. Contraste > 8.5:1.
@@ -742,4 +773,3 @@ Para garantizar una experiencia de lectura óptima, sin fatiga visual y con máx
 - **Cabeceras de Ventana (`.tutor-header-title`, `.chatbot-title h3`, `.chatbot-title-heading`):** Color sólido `#0f172a` (Slate 900) con peso 700, eliminando tonos grisáceos apagados.
 - **Cuerpo de Mensaje del Bot (`.tutor-message-bot`, `.message.bot .message-body`):** Fondo `#f8fafc` (Slate 50), texto base `#0f172a` (Slate 900, contraste > 14:1) y borde suave `1px solid rgba(15, 23, 42, 0.08)`.
 - **Botones de Acción y Sugerencias:** Bordes adaptativos `rgba(15, 23, 42, 0.12)`, fondos claros en reposo y hover con realce sutil.
-

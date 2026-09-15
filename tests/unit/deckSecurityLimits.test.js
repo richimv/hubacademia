@@ -48,27 +48,12 @@ describe('DeckController Security & Cost Limits', () => {
             }));
         });
 
-        it('should reject TTS generation if front exceeds 500 characters', async () => {
-            mockReq.body = {
-                front: 'A'.repeat(550),
-                back: 'Valid back',
-                generateTtsFront: true
-            };
-
-            await deckController.addCard(mockReq, mockRes);
-
-            expect(mockRes.status).toHaveBeenCalledWith(400);
-            expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
-                error: expect.stringContaining('500')
-            }));
-        });
-
-        it('should reject TTS generation or Image upload for Basic or Free user with 403 paywall', async () => {
+        it('should reject Image upload for Basic or Free user with 403 paywall', async () => {
             mockReq.user.subscription_tier = 'basic';
             mockReq.body = {
                 front: 'Front text',
                 back: 'Back text',
-                generateTtsFront: true
+                imageUrl: 'https://storage.googleapis.com/test-bucket/front.png'
             };
 
             await deckController.addCard(mockReq, mockRes);
@@ -124,38 +109,6 @@ describe('DeckController Security & Cost Limits', () => {
                 count: 100
             }));
         });
-
-        it('should reject bulk TTS if user is not Advanced', async () => {
-            mockReq.user.subscription_tier = 'basic';
-            mockReq.body = {
-                cards: [{ front: 'F', back: 'B' }],
-                generateTtsFront: true
-            };
-
-            await deckController.addBulkCards(mockReq, mockRes);
-
-            expect(mockRes.status).toHaveBeenCalledWith(403);
-            expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
-                paywall: true
-            }));
-        });
-
-        it('should reject bulk TTS if any card exceeds 500 characters', async () => {
-            mockReq.body = {
-                cards: [
-                    { front: 'Short front', back: 'Short back' },
-                    { front: 'A'.repeat(520), back: 'Short back' }
-                ],
-                generateTtsFront: true
-            };
-
-            await deckController.addBulkCards(mockReq, mockRes);
-
-            expect(mockRes.status).toHaveBeenCalledWith(400);
-            expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
-                error: expect.stringContaining('500')
-            }));
-        });
     });
 
     describe('Image Upload Validation (uploadCardImage)', () => {
@@ -174,27 +127,27 @@ describe('DeckController Security & Cost Limits', () => {
 
     describe('Community Public Decks Sorting & Visibility', () => {
         it('should call DeckService.getPublicDecks with category and page parameters', async () => {
-            mockReq.query = { page: '1', limit: '20', category: 'Tecnología' };
+            mockReq.query = { page: '1', limit: '20', category: 'Medicina' };
             const mockPublicDecks = [
-                { id: 'deck-latest', name: 'Mazo Reciente', category: 'Tecnología', updated_at: new Date().toISOString() },
-                { id: 'deck-older', name: 'Mazo Antiguo', category: 'Tecnología', updated_at: new Date(Date.now() - 86400000).toISOString() }
+                { id: 'deck-latest', name: 'Mazo Reciente', category: 'Medicina', updated_at: new Date().toISOString() },
+                { id: 'deck-older', name: 'Mazo Antiguo', category: 'Medicina', updated_at: new Date(Date.now() - 86400000).toISOString() }
             ];
             DeckService.getPublicDecks.mockResolvedValue(mockPublicDecks);
 
             await deckController.getPublicDecks(mockReq, mockRes);
 
-            expect(DeckService.getPublicDecks).toHaveBeenCalledWith(1, 20, 'Tecnología');
+            expect(DeckService.getPublicDecks).toHaveBeenCalledWith(1, 20, 'Medicina');
             expect(mockRes.json).toHaveBeenCalledWith({ success: true, decks: mockPublicDecks });
         });
 
         it('should update deck visibility with category parameter', async () => {
             mockReq.params = { deckId: 'deck-1' };
-            mockReq.body = { is_public: true, category: 'Derecho' };
-            DeckService.updateDeckVisibility.mockResolvedValue({ id: 'deck-1', is_public: true, category: 'Derecho' });
+            mockReq.body = { is_public: true, category: 'Educación' };
+            DeckService.updateDeckVisibility.mockResolvedValue({ id: 'deck-1', is_public: true, category: 'Educación' });
 
             await deckController.toggleVisibility(mockReq, mockRes);
 
-            expect(DeckService.updateDeckVisibility).toHaveBeenCalledWith('user-123', 'deck-1', true, 'Derecho');
+            expect(DeckService.updateDeckVisibility).toHaveBeenCalledWith('user-123', 'deck-1', true, 'Educación');
             expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
         });
     });

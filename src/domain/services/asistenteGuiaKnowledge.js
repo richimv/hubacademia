@@ -71,7 +71,7 @@ Contamos con opciones flexibles diseñadas a tu medida para tu preparación haci
 * **Plan Advanced (Experiencia Total + IA)**:
   - **Acceso Ilimitado Total** a simuladores de examen y banco de preguntas.
   - **Tutor IA Contextual con RAG Semántico** en cada pregunta de simulacro y tarjeta de repaso.
-  - Generación inteligente de Flashcards automatizadas con Inteligencia Artificial.
+  - **Flashcards Ilustradas con Imágenes** y carga masiva extendida (10 archivos Excel/día).
 
 👉 [Ver Tabla de Planes y Precios](/pricing)`,
                 sugerencias: this.pills.visitor

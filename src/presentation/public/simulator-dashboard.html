@@ -40,21 +40,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/base.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/header.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/footer.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/dashboard.css?v=aaa1df235e59">
+    <link rel="stylesheet" href="/css/theme.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/base.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/header.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/footer.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/dashboard.css?v=3d3dbbe5c01a">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/modal.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/sidebar.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/components.css?v=aaa1df235e59">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=aaa1df235e59"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="/css/modal.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/sidebar.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/components.css?v=3d3dbbe5c01a">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=3d3dbbe5c01a"> <!-- ✅ Formato unificado de Markdown IA -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <link rel="stylesheet" href="/css/quiz.css?v=aaa1df235e59">
-    <script src="/js/config.js?v=aaa1df235e59"></script>
-    <script src="/js/utils/themeManager.js?v=aaa1df235e59"></script>
+    <link rel="stylesheet" href="/css/quiz.css?v=3d3dbbe5c01a">
+    <script src="/js/config.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/utils/themeManager.js?v=3d3dbbe5c01a"></script>
 
     <!-- ✅ Schema.org / JSON-LD -->
     <script type="application/ld+json">
@@ -574,6 +574,26 @@
                     </select>
                 </div>
 
+                <!-- Contenedor Escala Magisterial Objetivo (Solo Educación - Ascenso) -->
+                <div id="educacion-scale-container" style="display:none; margin-top: 1rem;">
+                    <h4 class="modal-section-title">
+                        <i class="fas fa-layer-group" style="color: var(--primary); margin-right: 0.35rem;"></i>
+                        Escala Magisterial a la que postulas
+                    </h4>
+                    <select id="config-target-scale">
+                        <option value="2">2.ª Escala (Puntaje Mínimo: 54 pts / 36 aciertos)</option>
+                        <option value="3">3.ª Escala (Puntaje Mínimo: 57 pts / 38 aciertos)</option>
+                        <option value="4">4.ª Escala (Puntaje Mínimo: 60 pts / 40 aciertos)</option>
+                        <option value="5">5.ª Escala (Puntaje Mínimo: 63 pts / 42 aciertos)</option>
+                        <option value="6">6.ª Escala (Puntaje Mínimo: 66 pts / 44 aciertos)</option>
+                        <option value="7">7.ª Escala (Puntaje Mínimo: 69 pts / 46 aciertos)</option>
+                        <option value="8">8.ª Escala (Puntaje Mínimo: 69 pts / 46 aciertos)</option>
+                    </select>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.35;">
+                        La Prueba Nacional consta de 60 preguntas (1.5 pts c/u, total 90 pts). Tu línea de aprobación se calibrará según esta escala.
+                    </p>
+                </div>
+
 
                 <!-- Modo de Configuración (Examen Oficial vs Personalizado) -->
                 <div class="config-section" id="config-mode-selection-container">
@@ -647,23 +667,23 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=aaa1df235e59"></script>
+    <script src="/js/services/networkService.js?v=3d3dbbe5c01a"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=aaa1df235e59"></script>
-    <script src="/js/services/authApiService.js?v=aaa1df235e59"></script>
-    <script src="/js/services/analyticsApiService.js?v=aaa1df235e59"></script>
-    <script src="/js/sessionManager.js?v=aaa1df235e59"></script>
-    <script src="/js/ui/uiManager.js?v=aaa1df235e59"></script>
-    <script src="/js/ui/tooltipManager.js?v=aaa1df235e59"></script>
-    <script src="/js/ui/components.js?v=aaa1df235e59"></script>
-    <script src="/js/ui/sidebar.js?v=aaa1df235e59"></script>
-    <script src="/js/app.js?v=aaa1df235e59"></script>
+    <script src="/js/utils/markdown-renderer.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/services/authApiService.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/services/analyticsApiService.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/sessionManager.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/ui/uiManager.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/ui/tooltipManager.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/ui/components.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/ui/sidebar.js?v=3d3dbbe5c01a"></script>
+    <script src="/js/app.js?v=3d3dbbe5c01a"></script>
 
     <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 
-    <script src="/js/simulator-dash.js?v=aaa1df235e59"></script>
+    <script src="/js/simulator-dash.js?v=3d3dbbe5c01a"></script>
 </body>
 
 </html>

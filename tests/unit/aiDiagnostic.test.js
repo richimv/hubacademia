@@ -95,14 +95,67 @@ describe('AI Diagnostic Controller & Heuristic Analytics Engine', () => {
             expect(medEmpty.readinessIndex).toBeDefined();
             expect(Array.isArray(medEmpty.sprint)).toBe(true);
         });
+
+        it('should evaluate MINEDU target scale status when targetScale is provided (Escala 4: Aprobado)', () => {
+            const stats = {
+                avg_score: '14.0', // equiv Base 90: (14/20)*90 = 63.0 pts
+                accuracy: 70,
+                mastered_cards: 5,
+                targetScale: 4, // Escala 4 cutoff = 60 pts
+                radar_data: [
+                    { subject: 'Constructivismo y Aprendizaje', accuracy: 80, total: 10, correct: 8 },
+                    { subject: 'Evaluación Formativa', accuracy: 60, total: 10, correct: 6 }
+                ]
+            };
+
+            const result = analyticsService.generateHeuristicDiagnostic(stats, 'EDUCACION');
+            expect(result.mineduEvaluation).toBeDefined();
+            expect(result.mineduEvaluation.passed).toBe(true);
+            expect(result.mineduEvaluation.targetScale).toBe(4);
+            expect(result.mineduEvaluation.targetScaleName).toBe('4.ª Escala');
+            expect(result.mineduEvaluation.minPointsRequired).toBe(60);
+            expect(result.mineduEvaluation.mineduScore).toBe(63.0);
+            expect(result.mineduEvaluation.gapPoints).toBe(3.0);
+            expect(result.strengths).toContain('Proyección Aprobatoria Oficial');
+            expect(result.strengths).toContain('4.ª Escala');
+            expect(result.strategy).toContain('4.ª Escala');
+        });
+
+        it('should evaluate MINEDU target scale gap when score falls below target cutoff (Escala 5: Faltan Puntos)', () => {
+            const stats = {
+                avg_score: '12.0', // equiv Base 90: (12/20)*90 = 54.0 pts
+                accuracy: 60,
+                mastered_cards: 3,
+                targetScale: 5, // Escala 5 cutoff = 63 pts
+                radar_data: [
+                    { subject: 'Teorías del Aprendizaje', accuracy: 70, total: 10, correct: 7 },
+                    { subject: 'Didáctica de la Especialidad', accuracy: 50, total: 10, correct: 5 }
+                ]
+            };
+
+            const result = analyticsService.generateHeuristicDiagnostic(stats, 'EDUCACION');
+            expect(result.mineduEvaluation).toBeDefined();
+            expect(result.mineduEvaluation.passed).toBe(false);
+            expect(result.mineduEvaluation.targetScale).toBe(5);
+            expect(result.mineduEvaluation.minPointsRequired).toBe(63);
+            expect(result.mineduEvaluation.mineduScore).toBe(54.0);
+            expect(result.mineduEvaluation.gapPoints).toBe(-9.0);
+            expect(result.weaknesses).toContain('Brecha para Ascenso');
+            expect(result.weaknesses).toContain('5.ª Escala');
+            expect(result.weaknesses).toContain('9.0 pts');
+            expect(result.strategy).toContain('5.ª Escala');
+        });
     });
 
-    describe('securityUtils.validateDiagnosticStats Array Support', () => {
-        it('should properly sanitize and preserve radar_data as an array of objects', () => {
+    describe('securityUtils.validateDiagnosticStats Array and Scale Support', () => {
+        it('should properly sanitize and preserve radar_data, targetScale, and minedu_score', () => {
             const raw = {
                 avg_score: '14.5',
                 accuracy: 72,
                 mastered_cards: 5,
+                targetScale: '4',
+                minedu_score: '65.25',
+                target: 'ASCENSO',
                 radar_data: [
                     { subject: 'Medicina Interna <script>alert(1)</script>', accuracy: 85, correct: 17, total: 20 },
                     { subject: 'Cirugía General', accuracy: 120, correct: -2, total: 10 }
@@ -112,10 +165,18 @@ describe('AI Diagnostic Controller & Heuristic Analytics Engine', () => {
             const validated = securityUtils.validateDiagnosticStats(raw);
             expect(validated.avg_score).toBe(14.5);
             expect(validated.accuracy).toBe(72);
+            expect(validated.targetScale).toBe(4);
+            expect(validated.minedu_score).toBe(65.25);
+            expect(validated.target).toBe('ASCENSO');
             expect(validated.radar_data.length).toBe(2);
             expect(validated.radar_data[0].subject).toBe('Medicina Interna');
             expect(validated.radar_data[1].accuracy).toBe(100); // Clamped
             expect(validated.radar_data[1].correct).toBe(0); // Clamped
+        });
+
+        it('should clamp targetScale between 2 and 8 in validateDiagnosticStats', () => {
+            expect(securityUtils.validateDiagnosticStats({ avg_score: 10, accuracy: 50, mastered_cards: 0, radar_data: [], targetScale: 1 }).targetScale).toBe(2);
+            expect(securityUtils.validateDiagnosticStats({ avg_score: 10, accuracy: 50, mastered_cards: 0, radar_data: [], targetScale: 10 }).targetScale).toBe(8);
         });
     });
 });

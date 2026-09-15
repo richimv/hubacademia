@@ -191,7 +191,6 @@ router.get('/decks/:deckId/cards/:cardId/study', auth, checkAILimits('monthly_fl
 router.get('/decks/:deckId/cards', optionalAuth, DeckController.listCards); 
 router.post('/decks/:deckId/cards', auth, checkAILimits('monthly_flashcards'), DeckController.addCard);
 router.post('/decks/:deckId/cards/batch', auth, checkAILimits('monthly_flashcards'), DeckController.addBulkCards);
-router.post('/decks/:deckId/generate', auth, checkAILimits('monthly_flashcards'), DeckController.generateCards); 
 router.put('/decks/:deckId', auth, DeckController.updateDeck);
 router.delete('/decks/:deckId', auth, DeckController.deleteDeck); 
 router.put('/decks/:deckId/cards/reorder', auth, DeckController.reorderCards); 

@@ -30,13 +30,12 @@ El **Módulo de Repaso** es el sistema de memorización a largo plazo de Hub Aca
 - **DeckExplorer**: Componente lateral que gestiona la navegación en árbol. Implementa carga perezosa (lazy loading) para sub-mazos.
 - **RepasoManager**: Controlador principal de la vista de contenido. Maneja el renderizado de cabeceras, cuadrículas de mazos y listas de tarjetas.
 
-### C. Sistema de Audio Premium (TTS Neural)
-- **Motor de Voz**: Integración con **Google Cloud Text-to-Speech (Neural Voices)** para generar pronunciaciones de alta fidelidad en múltiples idiomas (ES, EN, IT, FR, DE).
-- **Consumo Inteligente**: Los audios se generan una sola vez, se optimizan en el backend y se sirven desde GCS para minimizar la latencia.
-- **Modo Escucha (Listening)**: Permite ocultar el texto de la tarjeta para forzar el entrenamiento auditivo, centrando automáticamente el botón de audio.
+### C. Sistema de Audio Premium (TTS Neural) [Retirado de la Web - Exclusivo de MeduCat]
+- **Estado Actual en Web**: Erradicado del frontend y backend de Hub Academia Web en septiembre 2026 para simplificar la plataforma. Esta funcionalidad ha sido trasladada como característica exclusiva a la aplicación móvil independiente **MeduCat**.
 
-### D. Generación con IA
-- **IA Assistant**: Integración con modelos de lenguaje para generar flashcards automáticamente a partir de temas médicos específicos. Soporta la creación de hasta **20 tarjetas por intento**.
+### D. Generación con IA de Tarjetas [Retirado de la Web - Exclusivo de MeduCat]
+- **Estado Actual en Web**: El endpoint de generación automática masiva de flashcards con IA (`POST /decks/:deckId/generate`) y el modal UI respectivo han sido retirados del proyecto web. La generación asistida con IA es ahora exclusiva de **MeduCat**.
+- **Tutor Contextual en Sesión de Repaso**: Se mantiene **100% activo** mediante `POST /api/chat` y el prompt `flashcard_tutor`, asistiendo al estudiante en vivo durante el estudio.
 
 ---
 
@@ -473,8 +472,34 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Se creó la suite dedicada `tests/unit/repasoTierAndOrdering.test.js` (11 pruebas unitarias cubriendo resolución de admin, gating por tier en carga masiva, ordenación SQL reciente y llamadas a `touchDeck`).
     - 45/45 suites de prueba pasando al 100%.
 
+- **Desacoplamiento del Ecosistema Móvil y Especialización Vertical (V46)**:
+  - El módulo de Repaso de Hub Academia Web enfoca su alcance exclusivamente en las áreas troncales de **Salud** (Medicina Humana, Farmacología, Obstetricia, Urgencias) y **Educación** (Nombramiento Docente, CNEB, Ascenso de Escala).
+  - Toda la gestión de flashcards médicas y pedagógicas de la plataforma web continúa centralizada en `/api/decks` y `/api/flashcard`.
+  - La aplicación móvil desacoplada (**MeduCat**) pasa a operar de forma autónoma con su propia base de datos en Supabase (`zlzwgavmhperdytbeewf`), bucket multimedia dedicado (`meducat-media`) y repositorio documental propio en su directorio.
+
+- **Simplificación del Módulo Repaso Web y Erradicación de IA/TTS (V47 - Septiembre 2026)**:
+  - **Erradicación de Generación de Tarjetas con IA**:
+    - Se eliminó el endpoint `POST /api/decks/:deckId/generate` en `src/infrastructure/routes/apiRoutes.js`.
+    - Se retiró el método `generateCards` de `deckController.js` y `generateFlashcardsFromTopic` junto con la inicialización de VertexAI en `flashcardService.js`.
+    - Se eliminó el modal `#ai-modal` de `repaso.html` y el botón de acción "Crear con IA" (`#btn-fh-ai`) con sus correspondientes manejadores en `repaso.js`.
+    - La funcionalidad de generación automática masiva de tarjetas queda exclusivamente en la aplicación móvil **MeduCat**.
+  - **Erradicación de Síntesis de Voz (TTS) y Audio en Tarjetas**:
+    - Se eliminó el helper `_processAudioTts` y la constante `MAX_TTS_TEXT_LENGTH` de `deckController.js`.
+    - Se limpiaron los métodos `addCard`, `addBulkCards` y `updateCard` de todos los parámetros de generación de audio (`generateTtsFront`, `generateTtsBack`, `ttsLangFront`, `ttsLangBack`, etc.).
+    - Se removieron los selectores de idioma de audio, checkboxes de pronunciación y modo listening (`hide_text_frente`, `hide_text_dorso`) en `repaso.html`, `repaso.js` y `flashcards.js`.
+  - **Restricción de Categorías Temáticas (4 Áreas Oficiales)**:
+    - Las categorías válidas en la plataforma web se redujeron estrictamente a 4: **General**, **Medicina**, **Educación** e **Idiomas**.
+    - Las categorías obsoletas (Derecho, Historia, Matemáticas, Tecnología, Ciencia) se normalizan automáticamente a `General`.
+    - Se actualizaron las píldoras de filtrado en la vista Comunidad (`repaso.js`) y los selectores `<select>` de creación y publicación de mazos (`repaso.html`, `repaso.js`).
+  - **Preservación Intacta del Tutor Repaso Contextual**:
+    - El prompt de sistema `flashcard_tutor` en `src/domain/prompts/chatPrompts.js` se mantuvo **estrictamente inalterado**, preservando su pedagogía socrática y naturaleza multidisciplinaria para asistir tanto a docentes como a estudiantes de medicina y cualquier materia en vivo.
+  - **Verificación y Pruebas Unitarias**:
+    - Actualizadas las suites `tests/unit/deckIdiomasAndSecurity.test.js`, `tests/unit/deckSecurityLimits.test.js` y `tests/unit/retiredLanguagesModule.test.js`.
+    - 60/60 suites de Jest pasando satisfactoriamente (503/503 pruebas al 100%).
+
 ---
 
 **Documentación Técnica Actualizada - Septiembre 2026.**
+
 
 
