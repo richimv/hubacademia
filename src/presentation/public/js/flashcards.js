@@ -5,7 +5,7 @@
 
 const FlashcardManager = (() => {
     // --- Config & State ---
-    const API_URL = `${window.AppConfig.API_URL}/api/flashcard`;
+    const API_URL = (window.AppConfig && window.AppConfig.API_URL) ? `${window.AppConfig.API_URL}/api/flashcard` : '/api/flashcard';
     let queue = [];
     let currentCard = null;
     let isFlipped = false;
@@ -764,7 +764,6 @@ const FlashcardManager = (() => {
     // --- Public API ---
     return {
         init,
-        playAudio,
         rate,
         handleExit,
         triggerDiscoveryEffect
