@@ -1,7 +1,7 @@
 # 🏛️ PROJECT BRIEF MAESTRO: HUB ACADEMIA (2026)
 > **Documento Central de Verdad de Negocio, Producto y Arquitectura Técnica**  
 > **Plataforma Web:** `hubacademia.com` | **Ecosistema Móvil:** `HubDocenteApp`, `HubSaludApp`, `HubRepasoApp`  
-> **Versión del Sistema:** V6.5 Industrial | **Estado Operativo:** Producción / Alta Disponibilidad
+> **Versión del Sistema:** V6.6 Industrial (Septiembre 2026) | **Estado Operativo:** Producción / Alta Disponibilidad
 
 ---
 
@@ -9,7 +9,7 @@
 
 ### 1.1 ¿Qué es Hub Academia?
 **Hub Academia** es una plataforma EdTech de alto rendimiento especializada en la preparación, entrenamiento interactivo y certificación oficial de profesionales en el Perú, enfocándose de manera estratégica y prioritaria en dos sectores altamente regulados y de impacto nacional:
-1. **Educación (Sector Magisterial):** Preparación para las evaluaciones oficiales del Ministerio de Educación (**MINEDU**), tales como Ascenso de Escala Magisterial (EBR Inicial, Primaria, Secundaria en todas las especialidades, EBA y EBE), Nombramiento Docente y Acceso a Cargos Directivos.
+1. **Educación (Sector Magisterial):** Preparación para las evaluaciones oficiales del Ministerio de Educación (**MINEDU**), tales como Ascenso de Escala Magisterial (EBR Inicial, Primaria, Secundaria en todas las especialidades, EBA y EBE), Nombramiento Docente y Acceso a Cargos Directivos. Incorpora el sistema de calificación oficial en Base 90 con umbrales aprobatorios dinámicos por Escalas Magisteriales 2 a 8.
 2. **Salud (Ciencias Médicas y Asistenciales):** Banco de entrenamiento y simulacros para el Servicio Rural y Urbano Marginal de Salud (**SERUMS**), Examen Nacional de Medicina (**ENAM**) y **Residentado Médico** para egresados de Medicina Humana y Enfermería, alineado estrictamente a las Normas Técnicas de Salud (NTS) y Guías de Práctica Clínica (GPC) del Ministerio de Salud (**MINSA**).
 
 ### 1.2 Misión y Visión Corporativa
@@ -48,7 +48,7 @@ El proyecto sigue estrictamente el patrón de arquitectura limpia desacoplada en
 ┌──────────────────────────────────────▼──────────────────────────────────────┐
 │                              3. DOMAIN LAYER                                │
 │  - Lógica de Negocio Pura: docenteService, medicoService, flashcardService, │
-│    tutorAiService, ragService, ttsService, adminAiService (Sniper-RAG)       │
+│    tutorAiService, ragService, deckService, adminAiService (Sniper-RAG)     │
 │  - Repositorios de Persistencia: *Repository.js                             │
 │  - Algoritmos: SuperMemo-2 (SM-2 SRS), Fisher-Yates Temario Shuffle         │
 │  - Plantillas de Prompts de Grado Industrial: generationPrompts, chatPrompts│
@@ -58,9 +58,10 @@ El proyecto sigue estrictamente el patrón de arquitectura limpia desacoplada en
 │                           4. INFRASTRUCTURE LAYER                           │
 │  - Base de Datos Relacional: Supabase PostgreSQL con Row Level Security     │
 │  - Base de Datos Vectorial: Pinecone Serverless (Namespaces: education/med) │
-│  - Modelos de IA: Vertex AI (Gemini Enterprise Agent Platform: 2.5 Flash Lite)│
+│  - Modelos de IA: Google Cloud Vertex AI Exclusivo (Gemini Enterprise:      │
+│    Cascada 3.5 Flash Lite ➡️ 3.1 Flash Lite ➡️ 2.5 Flash Lite ➡️ 2.5 Flash)   │
 │  - Almacenamiento & Multimedia: Google Cloud Storage + Sharp (WebP 1000px)  │
-│  - Servicios Externos: Mercado Pago (Webhooks), Google Cloud TTS, Resend    │
+│  - Servicios Externos: Mercado Pago (Webhooks), Resend                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -74,9 +75,20 @@ El proyecto sigue estrictamente el patrón de arquitectura limpia desacoplada en
 * **Modos de Examen Configurables:**
   * *Entrenamiento Rápido:* 10 preguntas con feedback instantáneo.
   * *Simulacro Estándar:* 20 preguntas balanceadas por subtemas.
-  * *Examen Tipo Oficial:* 60 preguntas (Ascenso Docente) o 100 preguntas (SERUMS/Residentado) con cronómetro oficial y bloqueo de pantalla.
+  * *Examen Tipo Oficial:* 60 preguntas (Ascenso Docente MINEDU - 1.5 pts/pregunta, 90 pts máx) o 100 preguntas (SERUMS/Residentado - 0.2 pts/pregunta, 20 pts máx) con cronómetro oficial y bloqueo de pantalla.
+* **Sistema de Calificación Oficial MINEDU Base 90 (Escalas Magisteriales 2 a 8):**
+  * *Fórmula Proporcional Universal:* $\text{Puntaje Base 90} = \left(\frac{\text{Aciertos}}{\text{Total Preguntas}}\right) \times 90$, aplicable consistentemente a cualquier modo de examen (10, 20 o 60 preguntas).
+  * *Umbrales Aprobatorios Oficiales por Escala:*
+    * **Segunda Escala:** 54 puntos ($60.0\%$)
+    * **Tercera Escala:** 57 puntos ($63.3\%$)
+    * **Cuarta Escala:** 60 puntos ($66.7\%$)
+    * **Quinta Escala:** 63 puntos ($70.0\%$)
+    * **Sexta Escala:** 66 puntos ($73.3\%$)
+    * **Séptima Escala:** 69 puntos ($76.7\%$)
+    * **Octava Escala:** 69 puntos ($76.7\%$)
+  * *Sincronización Web y Móvil (`HubDocenteApp`):* Presentación del puntaje obtenido sobre 90, umbral requerido según la escala seleccionada por el docente, badge de estado oficial (Aprobado / No alcanzado) y desglose de aciertos.
 * **Motor Híbrido "Banco Infinito":** Si el banco local de preguntas tiene stock insuficiente para una especialidad seleccionada, el backend genera en tiempo real preguntas balanceadas mediante Gemini sin interrumpir la experiencia de usuario.
-* **Analítica de Rendimiento:** Desglose psicométrico post-examen (`area_stats` en JSONB) que identifica fortalezas y temas críticos a reforzar.
+* **Diagnóstico Inteligente por IA (Patrones de Error):** Desglose psicométrico y cognitivo post-examen (`area_stats` en JSONB) que correlaciona las fallas con la escala magisterial objetivo, la brecha de puntaje hacia la meta y los subtemas críticos a reforzar.
 
 ### 3.2 🎯 Pipeline de Generación "Sniper-RAG" (5 Fases de Calidad Industrial)
 Diseñado para alimentar el banco con reactivos de nivel oficial, eliminando sesgos y garantizando validez:
@@ -102,7 +114,7 @@ El sistema de chat en Hub Academia no es un chatbot monolítico, sino una suite 
 
 2. **📝 Modalidad 2: Quiz Tutor (Tutor en Simuladores de Examen - `quiz_tutor`):**
    - **Frontend:** `quiz.html` / `quiz-tutor.js` (Panel lateral interactivo con modo pantalla completa).
-   - **Backend:** `chatController.js` ↔ `tutorAiService.js` (Modelo Primario: `gemini-2.5-flash-lite` vía Vertex AI SDK / Gemini Enterprise Agent Platform).
+   - **Backend:** `chatController.js` ↔ `tutorAiService.js` (Modelo Primario: Cascada forward-compatible en **Google Cloud Vertex AI** `gemini-3.5-flash-lite` ➡️ `gemini-3.1-flash-lite` ➡️ `gemini-2.5-flash-lite` ➡️ `gemini-2.5-flash`, 100% pospago corporativo GCP).
    - **Inyección de Contexto en Vivo:** Recibe los datos completos de la casuística: Dominio (`MEDICINA` o `EDUCACION`), Examen (`SERUMS`, `ASCENSO`, etc.), Carrera/Especialidad, Pregunta, Alternativas A-D, Respuesta correcta, Respuesta marcada por el alumno y Justificación oficial.
    - **Especializaciones y RAG:**
      - *Tutor Clínico (`medicine`):* Consulta el namespace `medicine` en Pinecone (NTS MINSA, GPC, tratados clínicos) e inserta proactivamente hasta 3 infografías/esquemas del catálogo visual.
@@ -114,7 +126,7 @@ El sistema de chat en Hub Academia no es un chatbot monolítico, sino una suite 
 
 3. **🧠 Modalidad 3: Flashcard Tutor (Tutor en Módulo de Repaso - `flashcard_tutor`):**
    - **Frontend:** `flashcards.html` / `tutor-chat.js` (Activación al girar la tarjeta en la sesión SM-2).
-   - **Backend:** `chatController.js` ↔ `tutorAiService.js` (Modelo Primario: `gemini-2.5-flash-lite` vía Vertex AI SDK).
+   - **Backend:** `chatController.js` ↔ `tutorAiService.js` (Modelo Primario: Cascada forward-compatible en Vertex AI SDK).
    - **Inyección de Contexto de Tarjeta:** Recibe la disciplina (`deckCategory`), nombre del mazo (`deckName`), tema (`topic`), anverso (`front`), reverso (`back`) e imágenes adjuntas.
    - **Especialización Multidisciplinaria Pura:** Adapta automáticamente su rigor y marco analítico a la materia de la tarjeta (**Derecho**, **Medicina**, **Educación**, **Tecnología / Programación**, **Matemáticas**, **Historia**, **Ciencias**, **General**).
    - **Aislamiento Temático Estricto (CERO CONTAMINACIÓN):**
@@ -128,14 +140,12 @@ El sistema de chat en Hub Academia no es un chatbot monolítico, sino una suite 
 * **Gestión Jerárquica:** Mazos del sistema (oficiales) y mazos personalizados creados por el usuario con soporte de submazos multinivel.
 * **Categorías Oficiales:** Medicina, Educación, Derecho, Tecnología, Matemáticas, Historia, Ciencia y General.
 * **Algoritmo SuperMemo-2:** Calcula repeticiones, factor de facilidad ($EF \ge 1.3$) e intervalos en días según la autoevaluación del alumno (Otra vez, Difícil, Bien, Fácil).
-* **Multimedia y Accesibilidad:**
+* **Multimedia y Enfoque de Estudio Atómico:**
   * Texto enriquecido de hasta 1,000 caracteres por cara.
-  * Síntesis de voz neural multi-idioma (Google Cloud TTS en `es-ES`, `en-US`, `fr-FR`, `it-IT`, `de-DE`).
-  * Modo "Listening" (ocultamiento de texto para entrenamiento auditivo).
-  * Carga y vinculación de imágenes en Google Cloud Storage.
+  * Carga y vinculación de imágenes optimizadas en Google Cloud Storage (exclusivo Plan Avanzado).
+  * **Erradicación de Voz Neural Cloud TTS:** La síntesis vocal en la nube (Google Cloud Text-to-Speech) fue retirada de la plataforma web y de las aplicaciones móviles para eliminar sobrecostos de infraestructura y dependencias innecesarias, consolidando un aprendizaje visual y atómico de alto impacto cognitivo.
 * **Generación e Importación:**
-  * Importación masiva desde archivos Excel (hasta 100 tarjetas por archivo).
-  * Generador automático de mazos con IA basado en temas o textos pegados.
+  * Importación masiva desde archivos Excel (hasta 100 tarjetas por archivo con texto enriquecido).
   * Clonación comunitaria de mazos públicos con límite anti-spam (30 clones/día).
 
 ### 3.5 📚 Mi Biblioteca de Estudio & Boletín Científico-Normativo
@@ -166,7 +176,7 @@ El sistema de chat en Hub Academia no es un chatbot monolítico, sino una suite 
 | **Flashcards Manuales** | Texto básico | Ilimitadas (1,000 chars por cara) | Ilimitadas + Imágenes |
 | **Carga de Imágenes GCS** | No incluido (Paywall) | No incluido (Paywall) | **Incluido (Almacenamiento seguro)** |
 | **Carga Masiva Excel** | Bloqueado | 3 archivos / día (100 cards c/u) | **10 archivos / día** |
-| **Síntesis Audio TTS e IA Flashcards**| No incluido | No incluido | **Retirado de Web (Exclusivo MeduCat)** |
+| **Síntesis Audio TTS Cloud** | Retirado definitivamente | Retirado definitivamente | Retirado definitivamente (cero costos recurrentes) |
 | **Diagnóstico Clínico IA** | Bloqueado | Bloqueado | **Incluido (Correlación de fallas)** |
 | **Comunidad y Mazos** | 30 clones / día | 30 clones / día | **30 clones / día** |
 
@@ -211,7 +221,7 @@ A continuación se detalla la totalidad de las tecnologías, frameworks, librer�
 | **Express-Rate-Limit** | `^8.2.1` | Application | Limitador de tasa y protección perimetral contra saturación de peticiones y fuerza bruta. |
 | **Multer** | `^2.0.2` | Application | Middleware para procesamiento y carga de archivos binarios en memoria (`multipart/form-data`). |
 | **Nodemon** | `^3.1.10` | Dev Tooling | Recarga en caliente automática del servidor Express durante el desarrollo. |
-| **Jest** | `^30.2.0` | Testing Suite | Framework de pruebas unitarias automatizadas con cobertura total de controladores y servicios (17 suites). |
+| **Jest** | `^30.2.0` | Testing Suite | Framework de pruebas unitarias automatizadas con cobertura total de controladores y servicios (60 suites, 503 tests en verde al 100%). |
 
 ---
 
@@ -230,18 +240,17 @@ A continuación se detalla la totalidad de las tecnologías, frameworks, librer�
 ### 7.3 Inteligencia Artificial, LLMs & Computación Cognitiva
 | Modelo / Servicio | Proveedor / SDK | Propósito y Función en el Sistema |
 | :--- | :--- | :--- |
-| **Gemini 2.5 Flash Lite** | `@google-cloud/vertexai` (`^1.10.0`) | **Canal Primario de Producción:** Inferencia enterprise de ultra-baja latencia y cero costo de tokens de pensamiento para el Tutor IA, generadores Sniper-RAG, Diagnóstico IA y Flashcards. |
-| **Gemini 2.5 Flash / Pro** | `@google-cloud/vertexai` | Respaldo enterprise para razonamiento analítico profundo en evaluaciones complejas. |
-| **Gemini 3.5 / 3.1 Flash Lite** | Google AI Studio REST (API Key) | Canal secundario de contingencia para pruebas rápidas de laboratorio y experimentación. |
-| **text-multilingual-embedding-002** | Google Vertex AI (`aiplatform`) | Vectorización semántica multilingüe estándar de 768 dimensiones para chunks y consultas en Pinecone. |
-| **Google Cloud Text-to-Speech (TTS)** | `@google-cloud/text-to-speech` (`^6.4.0`) | Síntesis vocal neuronal WaveNet/Neural2 en 5 idiomas (`es-ES`, `en-US`, `fr-FR`, `it-IT`, `de-DE`) para Flashcards. |
+| **Gemini Enterprise AI (Vertex AI)** | `@google-cloud/vertexai` (`^1.10.0`) | **Canal Exclusivo de Producción (100% Pospago GCP):** Inferencia empresarial de ultra-baja latencia con cascada forward-compatible: `gemini-3.5-flash-lite` ➡️ `gemini-3.1-flash-lite` ➡️ `gemini-2.5-flash-lite` ➡️ `gemini-2.5-flash` para Tutores IA, generadores Sniper-RAG y Diagnóstico IA. |
+| **text-multilingual-embedding-002** | Google Vertex AI (`aiplatform`) | Vectorización semántica multilingüe estándar de 768 dimensiones para chunks y consultas vectoriales en Pinecone. |
+| **Google AI Studio REST** | Erradicado al 100% | Desactivado y eliminado del código para evitar bloqueos por esquemas prepago/recargas de créditos de Google AI Studio. |
+| **Google Cloud Text-to-Speech (TTS)** | Retirado / Deprecado | Síntesis vocal en la nube retirada de los flujos de usuario web y móvil para optimizar costos de infraestructura. |
 
 ---
 
 ### 7.4 Almacenamiento Cloud & Procesamiento Multimedia
 | Servicio / Librería | Versión | Propósito y Función en el Sistema |
 | :--- | :--- | :--- |
-| **Google Cloud Storage (GCS)** | `@google-cloud/storage` (`^7.19.0`) | Repositorio de objetos en la nube para infografías médicas, audios TTS, portadas y miniaturas. |
+| **Google Cloud Storage (GCS)** | `@google-cloud/storage` (`^7.19.0`) | Repositorio de objetos en la nube para infografías médicas, imágenes pedagógicas, portadas y miniaturas. |
 | **Sharp** | `^0.33.5` | Motor de compresión y transformación de imágenes en C++ (conversión a WebP, 1000px ancho max, 80% calidad y retención de metadatos). |
 | **Google Drive API** | `googleapis` (`^171.4.0`) | Sincronización masiva de carpetas académicas de Drive y descarga de miniaturas de alta resolución. |
 
@@ -296,59 +305,73 @@ A continuación se detalla la totalidad de las tecnologías, frameworks, librer�
 
 ---
 
-## 8. 🧠 Estrategia de IA: Google Cloud Vertex AI (Gemini Enterprise Agent Platform) vs. Google AI Studio & Gobernanza de Modelos
+## 8. 🧠 Estrategia de IA: Google Cloud Vertex AI Exclusivo (Gemini Enterprise Agent Platform) & Gobernanza de Modelos
 
-### 8.1 Contexto de la Evolución de Google Cloud (2026)
-Google Cloud Platform (GCP) unificó y expandió su infraestructura de inteligencia artificial bajo el ecosistema **Gemini Enterprise Agent Platform** (documentado en `cloud.google.com/gemini-enterprise-agent-platform`).
+### 8.1 Erradicación de Google AI Studio y Consolidación en Vertex AI Empresarial (2026)
+A partir de setiembre de 2026, la infraestructura de inteligencia artificial de Hub Academia opera **exclusivamente sobre Google Cloud Vertex AI (Gemini Enterprise Agent Platform)** con facturación mensual postpago corporativa en el proyecto `gen-lang-client-0179928353` (región `us-central1`).
 
-Esta evolución establece una frontera técnica y comercial definitiva entre dos plataformas de Google:
+**Decisión Técnica de Erradicación de Google AI Studio:**
+Google AI Studio modificó sus políticas de acceso requiriendo la recarga obligatoria de saldo prepago en créditos (mínimo $5 USD). Ante el agotamiento de saldo prepago, los endpoints de AI Studio cortan de inmediato el servicio. Dado que la plataforma opera bajo un modelo de facturación postpago empresarial en Google Cloud Platform (GCP), **se erradicó al 100% Google AI Studio (`generativelanguage.googleapis.com`) del backend**, eliminando cualquier riesgo de suspensión por saldo prepago y garantizando alta disponibilidad continua mediante acuerdos de nivel de servicio (SLA) corporativos.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      DOS ECOSISTEMAS DE IA EN GOOGLE                        │
-├──────────────────────────────────────┬──────────────────────────────────────┤
-│ ☁️ GOOGLE CLOUD VERTEX AI (ENTERPRISE) │ 🌐 GOOGLE AI STUDIO (DEV PORTAL)     │
-│ (Gemini Enterprise Agent Platform)   │ (ai.google.dev)                      │
-├──────────────────────────────────────┼──────────────────────────────────────┤
-│ • Producción Industrial con SLA      │ • Prototipado y experimentación      │
-│ • Autenticación IAM / Service Account│ • Autenticación por GEMINI_API_KEY   │
-│ • Facturación mensual postpago GCP   │ • Exige esquema prepago de créditos  │
-│ • Catálogo de modelos certificados   │ • Sandbox de Developer Previews      │
-│ • Proyecto: gen-lang-client-...      │ • Deprecación rápida de versiones    │
-└──────────────────────────────────────┴──────────────────────────────────────┘
+│                   ARQUITECTURA DE IA EXCLUSIVA DE PRODUCCIÓN                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ☁️ GOOGLE CLOUD VERTEX AI (GEMINI ENTERPRISE AGENT PLATFORM)                 │
+│ • Facturación: Mensual postpago empresarial vía Google Cloud Billing        │
+│ • Autenticación: Google Cloud Service Account IAM (`googleCredentials.js`)  │
+│ • Región Primaria: `us-central1`                                            │
+│ • SDK Oficial: `@google-cloud/vertexai` (^1.10.0)                           │
+│ • Google AI Studio: ERRADICADO (0 dependencias prepago, 0 llaves de prueba) │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 8.2 Matriz de Disponibilidad y Benchmarks Empíricos (Región `us-central1`)
-A partir de los escaneos automatizados en vivo ejecutados en el servidor (`scan_vertex.js` y `test_models.js`), se determinó la matriz oficial de compatibilidad técnica:
+### 8.2 Calendario Oficial de Retiro de Google Cloud para la Familia Gemini 2.5
+Según la notificación oficial emitida por Google Cloud para los endpoints de *Gemini Enterprise Agent Platform*:
 
-| Identificador de Modelo | Estado en Vertex AI (GCP) | Estado en AI Studio (REST) | Razón de Término / Comportamiento | Rol en Hub Academia |
-| :--- | :--- | :--- | :--- | :--- |
-| **`gemini-2.5-flash-lite`** | 🟢 **100% OPERATIVO** | 🟢 **100% OPERATIVO** | `STOP` (Ultra-rápido, sin overhead de thinking) | **Canal Primario Universal** en todos los servicios |
-| **`gemini-2.5-flash`** | 🟢 **100% OPERATIVO** | 🛑 Retirado en Studio | `STOP` (Con modo thinking interno integrado) | Respaldo secundario en Vertex AI |
-| **`gemini-2.5-pro`** | 🟢 **100% OPERATIVO** | 🛑 Retirado en Studio | `STOP` (Alta profundidad analítica) | Auditorías y análisis cognitivo complejo |
-| **`gemini-3.5-flash-lite`** | ⏳ 404 (Developer Preview) | 🟢 **100% OPERATIVO** | `STOP` (Exclusivo en sandbox AI Studio) | Contingencia en canal REST |
-| **`gemini-3.1-flash-lite`** | ⏳ 404 (Developer Preview) | 🟢 **100% OPERATIVO** | `STOP` (Exclusivo en sandbox AI Studio) | Contingencia en canal REST |
-| **`gemini-1.5-flash / 2.0`** | 🛑 Descontinuado (404) | 🛑 Descontinuado (404) | Error 404 permanente | Retirados del código base |
+| Hito Oficial de Google | Fecha Límite | Impacto Operativo y Acción en Hub Academia |
+| :--- | :--- | :--- |
+| **Fase 1: Retiro Público** | **20 de Octubre de 2026** | Los modelos de Gemini 2.5 entran en fase de retiro público. Los proyectos activos con tráfico continuo (como `gen-lang-client-0179928353`) **mantienen acceso ininterrumpido sin variación de tarifas**. |
+| **Fase 2: Shutdown `2.5 Flash Lite`** | **28 de Enero de 2027** | Apagado definitivo y retiro de servicio de `gemini-2.5-flash-lite`. |
+| **Fase 2: Shutdown `2.5 Flash / Pro`** | **31 de Marzo de 2027** | Apagado definitivo y retiro de servicio de `gemini-2.5-flash` y `gemini-2.5-pro`. |
+| **Destinos Oficiales de Migración GA** | **Gemini 3.1 Flash Lite / 3.5 Flash Lite** | Los modelos sucesores recomendados por Google son `gemini-3.1-flash-lite` y `gemini-3.5-flash-lite`. |
 
-### 8.3 Arquitectura Multi-Canal Resiliente de Invocación
-Para garantizar **cero interrupciones de cara al estudiante** y erradicar cualquier dependencia financiera de claves prepago de AI Studio, todo servicio generativo del backend implementa una cascada de tres niveles:
+### 8.3 Cascada Forward-Compatible Resiliente de Invocación
+Para anticipar y neutralizar el calendario de retiros de Google sin requerir migraciones de emergencia ni provocar downtime, todos los servicios de inferencia generativa del backend (`adminAiService.js`, `tutorAiService.js`, `analyticsController.js`, `ragService.js`) implementan la siguiente **cascada progresiva hacia adelante**:
 
-1. **Canal 1 (Primario - Google Cloud Vertex AI):**
-   - Invocación vía `@google-cloud/vertexai` autenticada con credenciales nativas de GCP.
-   - Modelo: `gemini-2.5-flash-lite` (y `gemini-2.5-flash` como respaldo de inferencia).
-   - Ventaja: Facturación postpago automática en Google Cloud, cuotas empresariales escalables y latencia de sub-segundo.
+```
+[Invocación de Servicio]
+         │
+         ▼
+┌─────────────────────────────────┐
+│  1. gemini-3.5-flash-lite (GA)  │  ◄── Adopción automática instantánea
+└────────┬────────────────────────┘
+         │ (Fallback si 404 en región)
+         ▼
+┌─────────────────────────────────┐
+│  2. gemini-3.1-flash-lite (GA)  │  ◄── Adopción automática instantánea
+└────────┬────────────────────────┘
+         │ (Fallback si 404 en región)
+         ▼
+┌─────────────────────────────────┐
+│  3. gemini-2.5-flash-lite       │  ◄── Activo hoy en us-central1 (SLA Enterprise)
+└────────┬────────────────────────┘
+         │ (Fallback ante micro-corte)
+         ▼
+┌─────────────────────────────────┐
+│  4. gemini-2.5-flash            │  ◄── Respaldo de alta capacidad analítica
+└────────┬────────────────────────┘
+         │ (Solo en Diagnóstico IA)
+         ▼
+┌─────────────────────────────────┐
+│  5. Motor Heurístico de Reserva │  ◄── Generador algorítmico local sin dependencias
+└─────────────────────────────────┘
+```
 
-2. **Canal 2 (Secundario - Google AI Studio REST):**
-   - Invocación HTTP directa mediante `axios` hacia `https://generativelanguage.googleapis.com/v1beta/models/...`.
-   - Modelos: `gemini-3.5-flash-lite` ➡️ `gemini-3.1-flash-lite` ➡️ `gemini-2.5-flash-lite`.
-   - Actúa únicamente como respaldo en caso de micro-cortes transitorios en los endpoints regionales de GCP.
+1. **Adopción Automática de Nueva Generación:** Tan pronto Google habilite la disponibilidad general (GA) de `gemini-3.5-flash-lite` o `gemini-3.1-flash-lite` en la región `us-central1` de Vertex AI, el sistema comenzará a consumir dichos modelos inmediatamente sin requerir actualizaciones de código ni despliegues adicionales.
+2. **Alta Resiliencia en Producción Actual:** Durante la fase de transición actual, si los modelos 3.x responden con código 404 por despliegue regional progresivo de Google, la cascada conmuta en milisegundos a `gemini-2.5-flash-lite` (y secundariamente a `gemini-2.5-flash`), garantizando respuestas ultra-rápidas y exitosas.
+3. **Red de Seguridad Heurística (Diagnóstico Inteligente):** Si ocurriese un corte global de red externa, el módulo de analítica conmuta de forma transparente al motor determinístico (`AnalyticsService.generateHeuristicDiagnostic`), entregando al estudiante su diagnóstico de brechas por escala sin arrojar jamás un error HTTP 500.
 
-3. **Canal 3 (Terciario - Motor Heurístico / Estático Enriquecido):**
-   - En rutas críticas como Diagnóstico IA (`/api/analytics/diagnostic`), si fallan ambos proveedores externos, conmuta de forma silenciosa e instantánea al generador heurístico (`AnalyticsService.generateHeuristicDiagnostic`), entregando el desglose de competencias y el sprint táctico sin arrojar jamás un error 500 al cliente.
-
-### 8.4 Protocolo de Mantenimiento y Actualización de Modelos
-Cuando Google libere nuevas versiones de la serie **Gemini 3.x** al catálogo general de Vertex AI:
-1. **Ejecutar Escáner de Verificación:** Correr `node scratch/scan_vertex.js` para comprobar la respuesta 200 en la región `us-central1`.
-2. **Promover en Cascada:** Modificar la constante `vertexCandidateModels` en `tutorAiService.js`, `analyticsController.js`, `adminAiService.js`, `flashcardService.js` y `ragService.js`.
-3. **Validar Suite de Pruebas:** Ejecutar `npm test` asegurando que las 31 suites unitarias pasen al 100%.
-4. **Actualizar Documentación:** Registrar la fecha de promoción y métricas de latencia en este documento maestro.
+### 8.4 Protocolo de Monitoreo y Validación Continua
+* **Verificación en Vivo:** Pruebas empíricas automatizadas contra el proyecto GCP para validar códigos de estado HTTP 200 y tiempos de respuesta (< 1.5s).
+* **Suite de Regresión Automatizada:** Validación obligatoria mediante `npm test -- --runInBand`, asegurando que el 100% de las 60 suites de pruebas (503 pruebas unitarias) pasen limpiamente en verde antes de cada despliegue a producción.

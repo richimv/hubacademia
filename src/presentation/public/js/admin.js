@@ -501,6 +501,11 @@ class AdminManager {
 
         } catch (error) {
             console.error('❌ Error cargando datos iniciales:', error);
+            if (error.message && (error.message.includes('401') || error.message.includes('403') || error.message === 'Unauthorized')) {
+                document.body.innerHTML = '';
+                window.location.replace('/');
+                return;
+            }
             if (this.sectionsContainer) {
                 this.sectionsContainer.innerHTML = `<p class="error-state">Error al cargar los datos del panel. Asegúrate de que el servidor esté funcionando y las rutas API estén correctas.</p>`;
             }
@@ -3935,15 +3940,35 @@ class AdminManager {
     }
 }
 
-// Inicializar administrador cuando el DOM y los servicios estén listos
+// Inicializar administrador cuando el DOM y los servicios estén listos y verificados
 document.addEventListener('DOMContentLoaded', () => {
-    if (!window.NetworkService) {
-        console.error('❌ [Admin] NetworkService no detectado. Reintentando en 100ms...');
-        setTimeout(() => {
-            if (window.NetworkService) window.adminManager = new AdminManager();
-            else console.error('❌ [Admin] Fallo crítico: NetworkService no disponible.');
-        }, 100);
-        return;
-    }
-    window.adminManager = new AdminManager();
+    const verifyAdminAndInit = async () => {
+        try {
+            if (!window.NetworkService || !window.sessionManager) {
+                setTimeout(verifyAdminAndInit, 50);
+                return;
+            }
+
+            const user = await window.sessionManager.initialize();
+            if (!user || user.role !== 'admin') {
+                console.warn('⛔ [Admin Shield] Acceso no autorizado denegado. Redirigiendo...');
+                document.body.innerHTML = '';
+                window.location.replace('/');
+                return;
+            }
+
+            // ✅ Acceso verificado criptográficamente por el backend: Retirar el escudo
+            const shield = document.getElementById('admin-shield-style');
+            if (shield) shield.remove();
+            document.documentElement.style.display = '';
+
+            window.adminManager = new AdminManager();
+        } catch (err) {
+            console.error('❌ [Admin Shield] Error verificando privilegios:', err);
+            document.body.innerHTML = '';
+            window.location.replace('/');
+        }
+    };
+
+    verifyAdminAndInit();
 });

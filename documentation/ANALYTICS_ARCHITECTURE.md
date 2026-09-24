@@ -195,9 +195,8 @@ Integrado en la tarjeta `#ai-diagnosis-card` del panel de simuladores, este mód
    - **Cuotas:** Consume 1 vida de prueba en Free (`usage_count`) y 0 tokens diarios en Basic (`req.usageType = null`, estático).
 
 3. **Usuarios Avanzados (Advanced) y Administradores (Admin) — Deep Reasoning Cognitivo:**
-   - Invoca al motor de IA mediante canal dual resiliente `_callGeminiDiagnostic()`:
-     - **Canal Primario (Google Cloud Vertex AI SDK - Gemini Enterprise Agent Platform):** Ejecución directa en GCP (`us-central1`) con `gemini-2.5-flash-lite` (y `gemini-2.5-flash`), con facturación enterprise integrada y sin dependencia de saldos prepago de AI Studio.
-     - **Canal Secundario de Contingencia (Google AI Studio REST):** Soporte opcional con modelos Flash Lite (`gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite`).
+   - Invoca al motor de IA mediante canal exclusivo de **Google Enterprise AI (Vertex AI)** `_callGeminiDiagnostic()` con autenticación por cuenta de servicio GCP y facturación pospago corporativa (erradicando al 100% Google AI Studio y el riesgo de recargas prepago).
+   - **Cascada de Modelos Forward-Compatible:** Intenta prioritariamente `gemini-3.5-flash-lite` y `gemini-3.1-flash-lite`, conmutando fluidamente al puente verificado `gemini-2.5-flash-lite` (activo hoy) y `gemini-2.5-flash` durante el despliegue regional de Google Cloud.
    - **Contextualización Escalar:** En Educación, el prompt para Gemini inyecta la meta postulada (${cutoff.name}), el corte reglamentario oficial, el puntaje actual estimado y el estado de brecha, orientando los sesgos cognitivos hacia las rúbricas y casuísticas de la prueba nacional.
    - **Detección de Sesgos Diagnósticos:** Identifica patrones de confusión sistemática frente a distractores (ej. sesgo de anclaje, no reconocimiento de signos de alarma, confusión entre retroalimentación formativa y descriptiva).
    - **Píldora High-Yield Oficial:** Provee un concepto clave de alta recurrencia en las pruebas oficiales de medicina (ENAM/SERUMS/Residentado) o docencia (Nombramiento/Ascenso).

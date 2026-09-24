@@ -2,6 +2,33 @@
 
 Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
 
+### 🟢 [2026-09-22] - Migración Exclusiva a Google Enterprise AI (Vertex AI), Erradicación de Google AI Studio, Retiro de TTS y Calificación MINEDU Base 90
+
+- **☁️ Migración Exclusiva a Google Cloud Vertex AI y Erradicación de Google AI Studio ([adminAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/adminAiService.js), [tutorAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/tutorAiService.js), [analyticsController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/analyticsController.js), [ragService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/ragService.js)):**
+  - **Causa Raíz:** Google AI Studio transicionó las cuentas a esquema obligatorio prepago con recarga mínima de créditos ($5 USD), cortando la API ante saldo cero. Dado que la plataforma opera bajo facturación mensual postpago empresarial en Google Cloud Platform (`gen-lang-client-0179928353`), se erradicó al 100% Google AI Studio (`generativelanguage.googleapis.com`) del backend.
+  - **Calendario Oficial de Retiro de Google Cloud para Gemini 2.5:**
+    - *20 de Octubre de 2026:* Fase 1 de retiro público (proyectos activos retienen acceso sin interrupción).
+    - *28 de Enero de 2027:* Apagado definitivo (Shutdown) de `gemini-2.5-flash-lite`.
+    - *31 de Marzo de 2027:* Apagado definitivo (Shutdown) de `gemini-2.5-flash` y `gemini-2.5-pro`.
+    - *Destinos recomendados:* `gemini-3.1-flash-lite` y `gemini-3.5-flash-lite`.
+  - **Cascada Forward-Compatible en Vertex AI:**
+    `gemini-3.5-flash-lite` ➡️ `gemini-3.1-flash-lite` ➡️ `gemini-2.5-flash-lite` (activo hoy) ➡️ `gemini-2.5-flash`.
+    Tan pronto Google libere en GA los modelos 3.x en la región `us-central1` de Vertex AI, el backend los adoptará automáticamente sin requerir actualizaciones de código. Hoy en día conmuta con cero latencia a `gemini-2.5-flash-lite`.
+  - **Respaldo Heurístico:** En Diagnóstico IA, ante caídas externas conmuta a `AnalyticsService.generateHeuristicDiagnostic`, garantizando cero errores 500.
+
+- **🎓 Sistema Oficial MINEDU Base 90 & Escalas Magisteriales 2 a 8 ([docenteService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/docenteService.js), [quiz.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/presentation/public/js/quiz.js), [HubDocenteApp](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/HubDocenteApp)):**
+  - Implementación de la escala oficial MINEDU de 90 puntos con la fórmula proporcional $\text{Puntaje} = (\text{aciertos} / \text{total}) \times 90$.
+  - Integración de umbrales aprobatorios oficiales por escala magisterial (E2: 54, E3: 57, E4: 60, E5: 63, E6: 66, E7: 69, E8: 69).
+  - Sincronización completa en la modal de resultados del examen (web) y en la app móvil `HubDocenteApp`.
+  - Diagnóstico inteligente por IA correlacionado con la escala magisterial objetivo del docente y la brecha de puntaje requerida.
+
+- **🔇 Consolidación y Confirmación del Retiro de Síntesis Vocal TTS (Google Cloud Text-to-Speech):**
+  - Se confirmó el retiro definitivo de la generación de audio neural TTS en la nube de todos los flujos de usuario web y móvil, eliminando costos recurrentes de API. El módulo de Flashcards se consolida en el estudio visual de alta fidelidad con SuperMemo-2 y recursos multimedia en GCS.
+
+- **🧪 Cobertura Total de Pruebas Unitarias y Tipado:**
+  - Ejecución integral de la suite de Jest: **60 suites de pruebas pasadas, 503 tests en verde al 100%**.
+  - Validación de TypeScript en aplicaciones móviles (`HubDocenteApp` y `HubSaludApp`): `npx tsc --noEmit` con **0 errores**.
+
 ### 🟢 [2026-09-13] - Corrección Crítica del Motor Anti-Repetición 24h y Ordenamiento Orgánico de Casuísticas Agrupadas
 
 - **🔍 Diagnóstico y Causa Raíz de Repetición en Exámenes de 20 Preguntas ([docenteRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/docenteRepository.js), [medicoRepository.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/repositories/medicoRepository.js)):**

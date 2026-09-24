@@ -11,11 +11,10 @@ Este documento centraliza toda la arquitectura de monetización, el modelo de su
 | **Costo / Duración** | S/ 9.90 (2 Meses) | S/ 24.90 (4 Meses) | Gratuito |
 | **Tutor IA (Chat)** | Estándar (50 msg/día, Sin RAG) | Inteligente con RAG / Razonamiento (100 msg/día) | Estándar (Sin RAG, Descuenta vidas) |
 | **Consultas RAG** | No Incluido (0 msg/día) | Incluido (Hasta 25 msg RAG/Día, degradable a estándar) | No Incluido (Bloqueado) |
-| **Voz (Audio Assistant)**| Estándar (50 msg/día) | Avanzado (100 msg/día) | Descuenta vidas |
 | **Flashcards (Manuales)** | Ilimitadas (Texto puro hasta 1,000 caracteres por cara) | Personalizadas con Imágenes (1,000 chars texto por cara) | Estudio de mazos y repaso básico |
 | **Carga Masiva Excel** | 3 archivos/día (Hasta 100 tarjetas/archivo, texto puro) | 10 archivos/día (Hasta 100 tarjetas/archivo) | Bloqueado con Paywall |
 | **Imágenes en Flashcards**| No Incluido (Paywall) | Exclusivo (Subida y visualización de imágenes en GCS) | No Incluido (Paywall) |
-| **Generación IA y Audio TTS** | Retirado de Web (Exclusivo MeduCat) | Retirado de Web (Exclusivo MeduCat) | Retirado de Web (Exclusivo MeduCat) |
+| **Generación IA y Audio TTS** | Retirado definitivamente | Retirado definitivamente | Retirado definitivamente |
 | **Clonación de Mazos** | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) | Ilimitado estudio comunitario (Máx 30 clones/día anti-spam) |
 | **Simulador de Exámenes** | **CAP 15/Día** | **CAP 50/Día** | Descuenta vidas (10 de prueba mensual) |
 
@@ -35,7 +34,7 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 
 ### Fase 2.2: El Modelo de Vidas (Freemium de Entrada)
 *   El usuario gratuito opera con un pool de **vidas** o créditos de prueba (columna `usage_count` inicializada en `10`, renovada cada 30 días / mensual).
-*   Cada acción core (empezar examen, evaluar speaking, mensaje de chat) descuenta créditos (las consultas de chat descuentan exactamente 1 vida y se ejecutan sin RAG). Cuando se agotan, la UI despliega de forma segura el modal paywall bloqueante impidiendo el abuso del servicio.
+*   Cada acción core (empezar simulacro, estudiar mazos, mensaje a tutores IA) descuenta créditos (las consultas de chat descuentan exactamente 1 vida y se ejecutan sin RAG). Cuando se agotan, la UI despliega de forma segura el modal paywall bloqueante impidiendo el abuso del servicio.
 
 ### Fase 2.3: Compra y Webhook de Mercado Pago
 *   El usuario adquiere un plan premium redireccionándose a Mercado Pago (`paymentController.js`). El servidor inyecta una variable oculta en la pasarela: `external_reference: "USER_ID_UUID|advanced"`.
@@ -98,10 +97,10 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
     *   **Free**: 0 archivos/día (bloqueado para mitigar abusos de bots/scripts).
     *   **Basic**: Hasta 3 archivos Excel por día (hasta 100 tarjetas por archivo, texto puro de hasta 1,000 caracteres por cara).
     *   **Advanced**: Hasta 10 archivos Excel por día (hasta 100 tarjetas por archivo).
-*   **Generación de Flashcards con IA y Audio TTS [Retirados de Web - Exclusivos de MeduCat]**:
-    *   La generación masiva automatizada con IA y la síntesis neural de audio TTS fueron erradicadas de la plataforma web de Hub Academia para optimizar su enfoque en Educación, Medicina, Idiomas y General, pasando a ser exclusivas de la app móvil **MeduCat**.
+*   **Generación Automatizada de Flashcards con IA y Audio TTS (Retirados)**:
+    *   La generación masiva automatizada con IA en la web y la síntesis neural de audio TTS fueron erradicadas para optimizar el rendimiento y centrarse en el entrenamiento riguroso de Educación y Salud.
 *   **Clonación y Mazos de Comunidad**:
-    *   Todos los tiers (Free, Basic, Advanced) pueden clonar y estudiar mazos públicos con audios e imágenes existentes sin generar costos extra en GCS/TTS (reutilización atómica de URLs).
+    *   Todos los tiers (Free, Basic, Advanced) pueden clonar y estudiar mazos públicos sin generar costos de almacenamiento en GCS (reutilización atómica de referencias).
     *   Protección anti-duplicados y rate limiting de máximo 30 clonaciones por día para prevenir flooding.
 
 ---
@@ -176,12 +175,11 @@ Se ha consolidado el control de accesos y modales Paywall mediante `uiManager.js
 * **Usuarios con Plan Básico (`subscription_tier === 'basic'`)**:
   * **Tutor IA (Chat)**: No utilizan el sistema de vidas. Disponen de **50 mensajes/día** (`daily_ai_usage`).
   * **Al Alcanzar Límite**: `uiManager.showPaywallModal(null, 'chat_standard')` despliega el modal interactivo proponiendo la mejora al **Plan Avanzado** (*"Mejorar a Avanzado"*), destacando el acceso a 100 mensajes diarios y RAG semántico.
-  * **Flashcards Multimedia**: Intentos de usar síntesis de voz TTS o subida de imágenes despliegan el Paywall proponiendo upgrade a Avanzado sin interrumpir la sesión activa.
+  * **Flashcards Multimedia**: Intentos de subir imágenes a tarjetas despliegan el Paywall proponiendo upgrade a Avanzado sin interrumpir la sesión activa.
 
 * **Usuarios con Plan Avanzado (`subscription_tier === 'advanced'`)**:
   * **Tutor IA (Chat)**: Disponen de **100 mensajes/día** con hasta **25 consultas RAG/día** (con fallback generativo experto automático tras 25 RAGs).
   * **Al Alcanzar Límite (100/100)**: Se muestra el modal de reconocimiento (*"¡Meta Diaria Alcanzada! 🏆"*), invitando a continuar al día siguiente sin mensajes confusos de renovar suscripción.
-  * **Flashcards IA (30/mes)**: Al agotar la cuota mensual de 30 pedidos con Gemini, se informa amigablemente el reinicio de la cuota para el próximo mes.
 
 * **Usuarios Plan Gratuito / Pending (`subscription_tier === 'free'` o estado `pending` / `expired`)**:
   * **Pool de Vidas**: Operan con **10 vidas de prueba** (`usage_count`) que se descuentan al iniciar repasos, simulacros o enviar mensajes al Tutor IA.

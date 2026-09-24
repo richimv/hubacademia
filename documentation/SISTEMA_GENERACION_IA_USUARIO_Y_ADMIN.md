@@ -88,9 +88,7 @@ Para mitigar el colapso de variedad y evitar que la IA use siempre las mismas ap
 ## 🎯 Alcance actual de generación
 
 * **Dominios canónicos:** `medicine` y `education`, validados mediante lista blanca en `adminRepository.js`.
-* **Dificultad canónica:** `Senior`, coherente con las 817 preguntas activas verificadas en producción.
-* **Modelo de IA:** `gemini-3.1-flash-lite` mediante Google AI Studio REST y Vertex AI como canal alterno; el fallback operacional se mantiene dentro del servicio de generación.
-* **Persistencia:** los lotes aprobados se almacenan en `question_bank`; la generación respeta el historial y los identificadores UUID válidos para evitar repeticiones y errores de consulta.
+* **Modelo de IA:** Google Enterprise AI (Vertex AI) exclusivo mediante autenticación de cuenta de servicio GCP (pospago), con cascada adaptativa forward-compatible: `gemini-3.5-flash-lite` ➡️ `gemini-3.1-flash-lite` ➡️ `gemini-2.5-flash-lite` (activo hoy) ➡️ `gemini-2.5-flash`. Erradicación al 100% de Google AI Studio (prepago).
 
 ---
 
@@ -216,20 +214,23 @@ Para garantizar la precisión técnica, el sistema utiliza dos prospectos base e
 
 ---
 
-### 🛡️ Canal Dual de Modelos de IA y Facturación (AI Studio Prepay vs Vertex AI)
+### 🛡️ Arquitectura Exclusiva de Google Cloud Vertex AI Pospago y Cascada Forward-Compatible
 
-A partir de 2026, la infraestructura de generación cuenta con un llamador híbrido resiliente ("Dual AI Channeler"):
+A partir de setiembre de 2026, la infraestructura de generación y RAG opera **exclusivamente sobre Google Cloud Vertex AI (Gemini Enterprise Agent Platform)** con facturación pospago empresarial en el proyecto `gen-lang-client-0179928353`:
 
-1. **Google AI Studio (Canal REST via `GEMINI_API_KEY`)**:
-   - Modelos soportados: `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite`.
-   - **Política de Facturación Prepay (Marzo 2026 en adelante)**: Google AI Studio transiciona las cuentas desarrollador al sistema **Prepay** (pago anticipado de créditos, mínimo $5 USD). Los costos de la API se descuentan en tiempo real del saldo prepago. Si el saldo llega a $0 USD, las API keys asociadas cesan su funcionamiento de inmediato.
-2. **Google Cloud Vertex AI (Canal Empresarial Postpago)**:
-   - Modelos verificados en producción (`us-central1`):
-     - `gemini-2.5-flash-lite` (Activo y verificado sin fecha de shutdown).
-     - `gemini-2.5-flash` (Activo y verificado sin fecha de shutdown).
-     - `gemini-2.5-pro` (Activo y verificado).
-   - **Disponibilidad de Modelos 3.x en Vertex AI**: Los modelos experimentales como `gemini-3.5-flash-lite` o `gemini-3.1-flash-lite` no están publicados en el catálogo GA de Vertex AI (retornan error HTTP 404 `Publisher model was not found`). Por tanto, Vertex AI opera de forma fija y estable con la familia oficial `gemini-2.5`.
-   - **Garantía Operativa**: Si la API key de AI Studio se agota o sufre corte por la política de prepago de Google, el sistema captura el fallo de forma transparente y conmuta automáticamente al canal de **Vertex AI**, garantizando servicio ininterrumpido mediante postpago corporativo de Google Cloud.
+1. **Erradicación Total de Google AI Studio (Canal REST)**:
+   - Google AI Studio impuso políticas de saldo prepago obligatorio (mínimo $5 USD), cortando el servicio si el crédito se extingue.
+   - En consecuencia, se eliminó al 100% el canal REST de AI Studio (`generativelanguage.googleapis.com`), blindando a Hub Academia contra suspensiones imprevistas y operando bajo el SLA de Google Cloud Platform.
+2. **Calendario Oficial de Retiro de Google Cloud para Gemini 2.5**:
+   - **20 de Octubre de 2026 (Fase 1 - Retiro Público):** Tráfico existente en proyectos activos continúa sin afectación ni cambios tarifarios.
+   - **28 de Enero de 2027 (Fase 2 - Shutdown):** Desconexión total y definitiva de `gemini-2.5-flash-lite`.
+   - **31 de Marzo de 2027 (Fase 2 - Shutdown):** Desconexión total y definitiva de `gemini-2.5-flash` y `gemini-2.5-pro`.
+   - **Destinos Oficiales de Migración GA:** `Gemini 3.1 Flash Lite` y `Gemini 3.5 Flash Lite`.
+3. **Cascada Forward-Compatible en `adminAiService.js` y `ragService.js`**:
+   - La arquitectura ejecuta automáticamente la cascada de inferencia en Vertex AI:
+     `gemini-3.5-flash-lite` ➡️ `gemini-3.1-flash-lite` ➡️ `gemini-2.5-flash-lite` (activo hoy) ➡️ `gemini-2.5-flash`.
+   - Tan pronto Google active la disponibilidad general de `gemini-3.5-flash-lite` o `3.1` en `us-central1` de Vertex AI, el generador RAG los consumirá automáticamente de forma inmediata sin requerir cambios de código ni despliegues adicionales.
+   - En la producción actual, ante la respuesta 404 durante el despliegue progresivo de Google, la cascada conmuta en milisegundos a `gemini-2.5-flash-lite`, garantizando generación ininterrumpida de reactivos de alta precisión psicométrica.
 
 ---
 

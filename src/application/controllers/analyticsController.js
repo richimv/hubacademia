@@ -226,14 +226,25 @@ class AnalyticsController {
     }
 
     async _callGeminiDiagnostic(prompt) {
-        const apiKey = process.env.GEMINI_API_KEY;
+        if (!vertex_ai) {
+            throw new Error('VertexAI no está inicializado en AnalyticsController');
+        }
 
-        // 1. Canal Primario: Google Cloud Vertex AI (GCP Enterprise)
+        // Canal Exclusivo: Google Cloud Vertex AI (GCP Enterprise)
+        // Erradica por completo Google AI Studio (Prepago) y aplica cascada recomendada:
+        // 1. gemini-3.5-flash-lite
+        // 2. gemini-3.1-flash-lite
+        // 3. gemini-2.5-flash-lite (Activo hoy hasta el 28 de enero de 2027)
+        // 4. gemini-2.5-flash
         const vertexCandidateModels = [
+            'gemini-3.5-flash-lite',
+            'gemini-3.1-flash-lite',
             'gemini-2.5-flash-lite',
             'gemini-2.5-flash'
         ];
         console.log(`📡 [VertexAI Analytics] Conectando a Vertex AI SDK (GCP Enterprise)...`);
+        let lastError = null;
+
         for (const modelName of vertexCandidateModels) {
             try {
                 const vertexModel = vertex_ai.getGenerativeModel({
@@ -251,43 +262,12 @@ class AnalyticsController {
                     return rawText;
                 }
             } catch (err) {
+                lastError = err;
                 console.warn(`⚠️ [VertexAI Analytics Fallo - ${modelName}]:`, err.message);
             }
         }
 
-        // 2. Canal Secundario de Contingencia: Google AI Studio REST API
-        if (apiKey) {
-            const candidateModels = [
-                'gemini-3.5-flash-lite',
-                'gemini-3.1-flash-lite',
-                'gemini-2.5-flash-lite'
-            ];
-            const axios = require('axios');
-            for (const modelName of candidateModels) {
-                try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-                    const payload = {
-                        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            responseMimeType: 'application/json',
-                            temperature: 0.4,
-                            maxOutputTokens: 2048
-                        }
-                    };
-                    console.log(`📡 [REST Analytics Contingencia] Llamando a ${modelName} vía Google AI Studio...`);
-                    const res = await axios.post(url, payload, { timeout: 20000 });
-                    if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
-                        const rawText = res.data.candidates[0].content.parts[0].text;
-                        console.log(`✅ [REST Analytics Éxito] Diagnóstico generado con modelo: ${modelName}`);
-                        return rawText;
-                    }
-                } catch (err) {
-                    console.warn(`⚠️ [REST Analytics Fallo - ${modelName}]:`, err.message);
-                }
-            }
-        }
-
-        throw new Error('No se pudo conectar con los proveedores de IA (Vertex y REST).');
+        throw (lastError || new Error('No se pudo conectar con Vertex AI en ningún modelo de la cascada.'));
     }
 
     async getAIDiagnostic(req, res) {

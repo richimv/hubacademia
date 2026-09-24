@@ -83,6 +83,21 @@ El backend de Hub Academia validará la URL y los campos, guardándolos en la ta
 
 ## 📊 Historial de Ingestas Recientes
 
+### 🗓️ Ingesta: 21 de Septiembre de 2026
+- **Estado**: ✅ Ingesta exitosa (10 nuevos papers procesados).
+- **Proporción de Papers**: 100% (10/10).
+- **Resumen de Recursos Ingeridos**:
+  1. `[MEDICINE]` *Blinatumomab para el reemplazo de quimioterapia en leucemia linfoblástica aguda pediátrica* (The New England Journal of Medicine - PMID 42748428)
+  2. `[MEDICINE]` *Ensayo clínico de una dieta materna rica en huevos y cacahuetes para reducir la alergia alimentaria infantil* (The New England Journal of Medicine - PMID 42748429)
+  3. `[MEDICINE]` *Intervalos de vigilancia por colonoscopia e incidencia de cáncer colorrectal tras la extirpación de adenomas* (The New England Journal of Medicine - PMID 42748427)
+  4. `[MEDICINE]` *Beneficio de supervivencia del trasplante de riñón de donante fallecido frente a diálisis continua: emulación de ensayo clínico objetivo internacional* (The BMJ - PMID 42759976)
+  5. `[MEDICINE]` *Instilación intrauterina de mepivacaína frente a placebo para el control del dolor durante la inserción del DIU: ensayo clínico aleatorizado* (JAMA - PMID 42752558)
+  6. `[EDUCATION]` *Integración secuencial de simulación virtual y video auténtico para el entrenamiento de habilidades de observación en candidatos a docentes de educación inicial: un estudio de intervención basado en diseño* (PLOS ONE - PMID 42766573)
+  7. `[EDUCATION]` *Transmisiones emocionales recíprocas entre docentes y estudiantes: vinculación de las emociones del docente con las del alumnado y la calidad del vínculo pedagógico* (British Journal of Educational Psychology - PMID 42765430)
+  8. `[EDUCATION]` *Cómo influyen el clima de aula y la perseverancia en el rendimiento académico en lenguas extranjeras: roles mediadores de la ansiedad y el aburrimiento* (Frontiers in Psychology - PMID 42761250)
+  9. `[EDUCATION]` *Desarrollo de una prueba psicométrica de habilidades espaciales para estudiantes de 4.º grado de educación primaria: estudio de validez y confiabilidad* (Frontiers in Psychology - PMID 42755593)
+  10. `[EDUCATION]` *Exploración de la dinámica del disfrute en la escritura de segundas lenguas tradicional frente a la asistida por ChatGPT: estudio de casos múltiples basado en la teoría de sistemas dinámicos complejos* (Acta Psychologica / Elsevier - PMID 42753509)
+
 ### 🗓️ Ingesta: 14 de Septiembre de 2026
 - **Estado**: ✅ Ingesta exitosa (10 nuevos papers procesados).
 - **Proporción de Papers**: 100% (10/10).

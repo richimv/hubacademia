@@ -26,11 +26,11 @@ CAPA                   WEB (hubacademia)                                  APP (H
 3. DOMAIN              • deckService.js / flashcardService.js             • domain/types/repaso.ts
                        • flashcardRepository.js                           • domain/services/repasoService.ts
                        • Algoritmo SuperMemo-2 (SM-2 SRS)                 • domain/algorithms/sm2.ts
-                       • Prompts de IA Flashcards y Tutor Contextual
+                       • Tutor Contextual Flashcards
 
 4. INFRASTRUCTURE      • apiRoutes.js (/api/decks/*, /api/flashcard/*)    • infrastructure/network/NetworkService.ts
                        • Supabase Client (Tablas decks & user_flashcards) • infrastructure/storage/SecureStore.ts
-                       • Google Cloud Storage (Imágenes y Audio TTS)      • infrastructure/api/repasoApi.ts
+                       • Google Cloud Storage (Imágenes de estudio)       • infrastructure/api/repasoApi.ts
 ========================================================================================================
 ```
 

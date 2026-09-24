@@ -114,23 +114,21 @@ Es el motor de retención y memorización a largo plazo de Hub Academia. Está d
 ### 🛠️ 4.2 Características y Servicios del Módulo
 1. **Algoritmo Científico SuperMemo-2 (Repetición Espaciada - SRS):**
    - Basado en la ciencia cognitiva para combatir la **Curva del Olvido**. El sistema calcula el intervalo matemático exacto (1 día, 3 días, 7 días, 1 mes) en que debe reaparecer una tarjeta según la facilidad de recuerdo del alumno (Otra vez, Difícil, Bien, Fácil), logrando una retención superior al 90% con el mínimo tiempo de repaso.
-2. **Generación Automática de Mazos con IA en Segundos:**
-   - El usuario solo escribe un tema (ej. *"Antibióticos betalactámicos"*, *"Principios del CNEB"*, *"Patrones de diseño de software"*) o pega un texto largo, y la IA genera instantáneamente hasta **20 tarjetas interactivas estructuradas** con preguntas, respuestas y conceptos clave.
-3. **Voz Neural Multi-Idioma de Alta Fidelidad (Google Cloud TTS):**
-   - Reproducción de audio con pronunciación nativa realista en 5 idiomas: **Español, Inglés, Francés, Italiano y Alemán**.
-   - Incluye el **Modo Listening (Modo Escucha)**, que oculta el texto para obligar al estudiante a entrenar la comprensión auditiva antes de voltear la tarjeta.
-4. **Tarjetas Enriquecidas con Multimedia y Carga Masiva:**
-   - Soporte de hasta **1,000 caracteres de texto enriquecido por cara** y adjunto de imágenes ilustrativas optimizadas.
-   - **Importación Masiva desde Excel:** Permite subir archivos de hasta 100 flashcards en un solo clic.
-5. **Tutor IA de Tarjeta Contextual:**
-   - Botón integrado dentro de la sesión de estudio que permite chatear con la IA sobre esa tarjeta específica para pedirle ejemplos adicionales, reglas mnemotécnicas o explicaciones más sencillas sin salirse del mazo.
+2. **Estudio Visual y Atómico de Alta Retención:**
+   - Enfoque pedagógico centrado en microconceptos atómicos sin distracciones, con formato enriquecido de hasta **1,000 caracteres por cara** e imágenes explicativas de alta resolución almacenadas en Google Cloud Storage.
+3. **Importación Masiva Inteligente desde Excel:**
+   - Permite subir archivos estructurados de hasta **100 flashcards en un solo clic** para cargar bancos completos de estudio en segundos.
+4. **Tutor IA de Tarjeta Contextual:**
+   - Botón integrado dentro de la sesión de estudio que permite chatear con la IA sobre esa tarjeta específica para pedirle ejemplos adicionales, reglas mnemotécnicas o explicaciones pedagógicas sencillas sin salirse del mazo.
+5. **Comunidad y Mazos Compartidos:**
+   - Explorador de mazos públicos creados por la comunidad académica con clonación en un clic y protección anti-spam.
 
 ---
 
 ### 🎨 4.3 Guía de Diseño y Elementos Gráficos
 * **Color de Acento Principal:** Violeta Eléctrico, Púrpura y Magenta (`#8b5cf6` / `#a855f7` / `#ec4899`).
-* **Elementos Visuales Clave:** Flashcards con efecto 3D giratorio, ondas de audio / audífonos para voz neural, icono de cerebro con conexiones neuronales, reloj de intervalos de tiempo (SuperMemo-2), y botón mágico de creación con IA.
-* **Mensaje Central a Transmitir:** *"Memoriza en la mitad del tiempo y no olvides nunca más: Flashcards potenciadas con repetición espaciada, audio neural e Inteligencia Artificial."*
+* **Elementos Visuales Clave:** Flashcards con efecto 3D giratorio, esquemas visuales e infografías, icono de cerebro con conexiones neuronales, reloj de intervalos de tiempo (SuperMemo-2), y botón interactivo del Tutor IA.
+* **Mensaje Central a Transmitir:** *"Memoriza en la mitad del tiempo y no olvides nunca más: Flashcards potenciadas con repetición espaciada SuperMemo-2 y Tutor Inteligente con IA."*
 
 ---
 
@@ -141,7 +139,7 @@ Es el motor de retención y memorización a largo plazo de Hub Academia. Está d
 | **1. Hub Academia (Global)** | Docentes, Médicos, Enfermeros, Universitarios | Ecosistema 4 en 1 para dominar exámenes oficiales del Estado. | Simulador + Tutor IA RAG + Flashcards + Biblioteca. | Confianza, Vanguardia, Certeza de Éxito. |
 | **2. Educación (Docente Pro)** | Maestros EBR Inicial, Primaria, Secundaria, EBA, EBE | Superar Ascenso y Nombramiento con casuísticas del CNEB. | Tutor con leyes magisteriales y simulacros de 60q. | Empatía, Realización Profesional, Seguridad. |
 | **3. Salud (Simulador Clínico)** | Médicos, Enfermeros, Internos, Obstetras | Adjudicar la mejor plaza SERUMS y Residentado Médico. | Casos clínicos estructurados con NTS MINSA e infografías. | Rigor Científico, Eficiencia de Tiempo, Prestigio. |
-| **4. Repaso (Flashcards IA)** | Estudiantes y profesionales de distintas disciplinas | Retener conceptos densos y consolidar conocimiento a largo plazo. | Algoritmo SuperMemo-2, Audio Neural y creación IA en 3s. | Agilidad Mental, Facilidad, Dominio Total. |
+| **4. Repaso (Flashcards IA)** | Estudiantes y profesionales de distintas disciplinas | Retener conceptos densos y consolidar conocimiento a largo plazo. | Algoritmo SuperMemo-2, imágenes GCS y Tutor IA contextual. | Agilidad Mental, Facilidad, Dominio Total. |
 
 ---
 

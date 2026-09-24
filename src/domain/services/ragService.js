@@ -35,22 +35,19 @@ class RagService {
      */
     async extractSmartTerms(message, specialization, target = '') {
         try {
-            if (!this._rewriterModel) {
-                const { VertexAI } = require('@google-cloud/vertexai');
-                const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
-                const vertexAI = new VertexAI({
-                    project: process.env.GOOGLE_CLOUD_PROJECT,
-                    location: location
-                });
-                this._rewriterModel = vertexAI.getGenerativeModel({
-                    model: 'gemini-2.5-flash-lite',
-                    generationConfig: {
-                        temperature: 0.1,
-                        maxOutputTokens: 512,
-                        responseMimeType: "application/json"
-                    }
-                });
-            }
+            const { VertexAI } = require('@google-cloud/vertexai');
+            const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+            const vertexAI = new VertexAI({
+                project: process.env.GOOGLE_CLOUD_PROJECT,
+                location: location
+            });
+
+            const candidateModels = [
+                'gemini-3.5-flash-lite',
+                'gemini-3.1-flash-lite',
+                'gemini-2.5-flash-lite',
+                'gemini-2.5-flash'
+            ];
 
             const role = specialization === 'medicine'
                 ? 'indexador médico experto. Extrae términos clínicos (diagnósticos, síntomas, fármacos, normas NTS/GPC).'
@@ -61,9 +58,31 @@ class RagService {
             CONTEXTO/TARGET: ${target}
             Responde SOLO JSON: {"terms": ["término1", "término2", ...]}`;
 
-            const result = await this._rewriterModel.generateContent({
-                contents: [{ role: "user", parts: [{ text: prompt }] }]
-            });
+            let result = null;
+            for (const modelName of candidateModels) {
+                try {
+                    const model = vertexAI.getGenerativeModel({
+                        model: modelName,
+                        generationConfig: {
+                            temperature: 0.1,
+                            maxOutputTokens: 512,
+                            responseMimeType: "application/json"
+                        }
+                    });
+                    result = await model.generateContent({
+                        contents: [{ role: "user", parts: [{ text: prompt }] }]
+                    });
+                    if (result && result.response && result.response.candidates && result.response.candidates[0]) {
+                        break;
+                    }
+                } catch (err) {
+                    // Continuar al siguiente modelo en cascada
+                }
+            }
+
+            if (!result || !result.response || !result.response.candidates || !result.response.candidates[0]) {
+                throw new Error("Ningún modelo de la cascada respondió en RagService");
+            }
 
             const rawText = result.response.candidates[0].content.parts[0].text;
             // Limpieza robusta de JSON

@@ -8,12 +8,21 @@ El Chat Tutor de Hub Academia es un motor conversacional multi-dominio diseñado
 - **Aislamiento por Namespaces:** Separación total entre conocimiento médico (`medicine`) y educativo (`education`).
 - **Rigor Técnico:** Fundamentación en fuentes oficiales (MINSA/MINEDU/CNEB).
 
-## 2. Arquitectura de Modelos
-El sistema utiliza **Gemini 3.1 Flash Lite** (`gemini-3.1-flash-lite`) como motor principal de inferencia, optimizado para latencia mínima y razonamiento multimodal.
+### 2. Arquitectura de Modelos y Migración a Google Enterprise AI (Vertex AI)
+El sistema opera exclusivamente bajo **Google Enterprise AI (Vertex AI)** con facturación pospago corporativa GCP, habiendo **erradicado al 100% cualquier dependencia de Google AI Studio (REST/Prepago)**.
 
-- **Orquestación:** `TutorAiService.js` gestiona el routing dinámico, la inyección de contexto y la sanitización de payloads.
-- **UI Desacoplada de Marcas:** Las interfaces móviles y web no muestran nombres de modelos comerciales ("Gemini 2.5", etc.), manteniendo una experiencia de usuario limpia y enfocada en el sustento pedagógico y clínico.
-- **Semantic Expansion:** Motor de re-escritura en `RagService.js` que expande la consulta del usuario en temas técnicos.
+- **Infraestructura Exclusiva:** Autenticación directa por cuenta de servicio (`GOOGLE_APPLICATION_CREDENTIALS`) con el SDK `@google-cloud/vertexai`.
+- **Cascada de Modelos Forward-Compatible:**
+  1. `gemini-3.5-flash-lite`: Objetivo prioritario de nueva generación (en proceso de rollout por Google a endpoints regionales).
+  2. `gemini-3.1-flash-lite`: Destino de migración de disponibilidad general (GA) recomendado por Google para `2.5 Flash Lite`.
+  3. `gemini-2.5-flash-lite`: Puente activo y verificado en producción (disponible y garantizado para este proyecto activo hasta el 28 de enero de 2027).
+  4. `gemini-2.5-flash`: Respaldo de alta capacidad (activo hasta el 31 de marzo de 2027).
+- **Calendario Oficial de Retiro Google Cloud (Proyecto `gen-lang-client-0179928353`):**
+  - *20 de octubre de 2026 (Fase 1 - Retirada Pública):* El tráfico activo del proyecto no se interrumpe y continúa operando con normalidad.
+  - *28 de enero de 2027 (Fase 2):* Discontinuación permanente de `2.5 Flash Lite`.
+  - *31 de marzo de 2027:* Discontinuación permanente de `2.5 Flash` y `2.5 Pro`.
+- **UI Desacoplada de Marcas:** Las interfaces móviles y web no muestran nombres de modelos comerciales, manteniendo una experiencia de usuario limpia y enfocada en el sustento pedagógico y clínico.
+- **Semantic Expansion:** Motor de re-escritura en `RagService.js` que expande la consulta del usuario en términos técnicos usando la misma cascada Vertex AI.
 - **Embeddings:** Vertex AI `text-multilingual-embedding-002` (768 dimensiones).
 
 ## 3. Modalidades y Especializaciones Reales del Chat

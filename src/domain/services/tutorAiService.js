@@ -267,17 +267,21 @@ class TutorAiService {
     }
 
     /**
-     * Ejecuta una llamada resiliente con reintentos hacia Gemini (REST / Vertex)
+     * Ejecuta una llamada resiliente exclusiva hacia Vertex AI (Google Enterprise AI)
+     * Erradica por completo Google AI Studio (Prepago) y aplica la cascada recomendada por Google:
+     * 1. gemini-3.5-flash-lite
+     * 2. gemini-3.1-flash-lite
+     * 3. gemini-2.5-flash-lite (Activo hoy hasta el 28 de enero de 2027)
+     * 4. gemini-2.5-flash
      */
     async _callModelResilient(contents, systemPrompt) {
-        const apiKey = process.env.GEMINI_API_KEY;
-        const maxRetries = 2;
-        let delayMs = 1000;
         let lastError = null;
 
-        // 1. Canal Primario Principal: Google Cloud Vertex AI (Gemini Enterprise Agent Platform)
+        // Canal Exclusivo: Google Cloud Vertex AI (Gemini Enterprise Agent Platform)
         if (this.vertex_ai) {
             const vertexCandidateModels = [
+                'gemini-3.5-flash-lite',
+                'gemini-3.1-flash-lite',
                 'gemini-2.5-flash-lite',
                 'gemini-2.5-flash'
             ];
@@ -305,72 +309,8 @@ class TutorAiService {
             }
         }
 
-        // 2. Canal Secundario de Contingencia: Google AI Studio REST
-        if (apiKey) {
-            const restCandidateModels = [
-                'gemini-3.5-flash-lite',
-                'gemini-3.1-flash-lite',
-                'gemini-2.5-flash-lite'
-            ];
-            for (const modelName of restCandidateModels) {
-                for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                    try {
-                        const axios = require('axios');
-                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-                        
-                        // Sanitizar contents para asegurar partes no vacías
-                        const sanitizedContents = (contents || []).map(c => ({
-                            role: c.role === 'model' ? 'model' : 'user',
-                            parts: (c.parts || []).map(p => {
-                                if (p.inlineData) {
-                                    return { inline_data: { mime_type: p.inlineData.mimeType, data: p.inlineData.data } };
-                                }
-                                return p;
-                            }).filter(p => p.text || p.inline_data)
-                        })).filter(c => c.parts.length > 0);
-
-                        const payload = {
-                            contents: sanitizedContents.length > 0 ? sanitizedContents : [{ role: 'user', parts: [{ text: 'Hola' }] }],
-                            systemInstruction: {
-                                parts: [{ text: systemPrompt }]
-                            },
-                            generationConfig: {
-                                responseMimeType: "application/json",
-                                temperature: 0.8,
-                                maxOutputTokens: 8192,
-                                topP: 0.9
-                            }
-                        };
-
-                        console.log(`📡 [REST Tutor Contingencia] Llamando a ${modelName} vía Google AI Studio...`);
-                        const res = await axios.post(url, payload, { timeout: 25000 });
-                        
-                        if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
-                            const text = res.data.candidates[0].content.parts[0].text;
-                            console.log(`✅ [REST Tutor Éxito] Respuesta generada con modelo: ${modelName}`);
-                            return text;
-                        }
-                        throw new Error("Respuesta inválida del servidor REST");
-                    } catch (err) {
-                        lastError = err;
-                        const status = err.response ? err.response.status : null;
-                        console.warn(`⚠️ [REST Tutor Fallo - ${modelName}]:`, err.message);
-                        
-                        if (status === 404 || status === 400 || status === 403) {
-                            break;
-                        }
-
-                        if (attempt < maxRetries) {
-                            await new Promise(resolve => setTimeout(resolve, delayMs));
-                            delayMs *= 2;
-                        }
-                    }
-                }
-            }
-        }
-
-        console.error("❌ [TutorAiService] Todos los canales e intentos de IA fallaron.");
-        throw lastError;
+        console.error("❌ [TutorAiService] La llamada a Vertex AI falló con todos los modelos de la cascada.");
+        throw (lastError || new Error("VertexAI no está inicializado"));
     }
 
     /**

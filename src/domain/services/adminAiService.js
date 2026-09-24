@@ -41,55 +41,53 @@ class AdminAiService {
     }
 
     /**
-     * 🧠 LLAMADOR DE MODELO DUAL Y RESILIENTE (AI CHANNELER)
-     * Ejecuta la llamada a Gemini utilizando la API REST de Google AI Studio (si hay GEMINI_API_KEY)
-     * o mediante Vertex AI.
+     * 🧠 LLAMADOR DE MODELO EXCLUSIVO VERTEX AI (GOOGLE ENTERPRISE AI)
+     * Conexión directa mediante @google-cloud/vertexai con autenticación GCP por cuenta de servicio (Pospago).
+     * Erradica por completo Google AI Studio (Prepago) y aplica cascada generacional:
+     * 1. gemini-3.5-flash-lite
+     * 2. gemini-3.1-flash-lite
+     * 3. gemini-2.5-flash-lite (Activo hoy hasta el 28 de enero de 2027)
+     * 4. gemini-2.5-flash
      */
     async _callModel(prompt) {
-        const apiKey = process.env.GEMINI_API_KEY;
-        let restError = null;
+        if (!this.vertex_ai) {
+            throw new Error("VertexAI no está inicializado en AdminAiService");
+        }
 
-        if (apiKey) {
-            const candidateModels = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
-            const axios = require('axios');
-            for (const modelName of candidateModels) {
-                try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-                    const payload = {
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            responseMimeType: "application/json",
-                            temperature: 0.4
-                        }
-                    };
-                    console.log(`📡 [REST] Llamando a ${modelName} a través de Google AI Studio...`);
-                    const res = await axios.post(url, payload, { timeout: 15000 });
-                    if (res.data && res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content) {
-                        const text = res.data.candidates[0].content.parts[0].text;
-                        return {
-                            response: {
-                                candidates: [{
-                                    content: { parts: [{ text }] }
-                                }]
-                            }
-                        };
+        const candidateModels = [
+            'gemini-3.5-flash-lite',
+            'gemini-3.1-flash-lite',
+            'gemini-2.5-flash-lite',
+            'gemini-2.5-flash'
+        ];
+
+        let lastError = null;
+
+        for (const modelName of candidateModels) {
+            try {
+                console.log(`📡 [VertexAI RAG] Consultando ${modelName}...`);
+                const model = this.vertex_ai.getGenerativeModel({
+                    model: modelName,
+                    generationConfig: {
+                        maxOutputTokens: 16384,
+                        temperature: 0.4,
+                        responseMimeType: "application/json"
                     }
-                } catch (err) {
-                    restError = err;
-                    console.warn(`⚠️ [REST Fallo - ${modelName}]:`, err.message);
+                });
+
+                const result = await model.generateContent(prompt);
+                if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].content) {
+                    console.log(`✅ [VertexAI RAG Éxito] Respuesta generada con modelo: ${modelName}`);
+                    return result;
                 }
+            } catch (err) {
+                lastError = err;
+                console.warn(`⚠️ [VertexAI RAG - ${modelName}]: ${err.message}`);
             }
         }
 
-        // Intento por Vertex AI
-        try {
-            console.log("📡 [VertexAI] Llamando a gemini-2.5-flash-lite...");
-            return await this.model.generateContent(prompt);
-        } catch (err) {
-            console.error("❌ [VertexAI Fallo] Error con gemini-2.5-flash-lite en Vertex AI:", err.message);
-            if (restError) throw restError;
-            throw err;
-        }
+        console.error("❌ [VertexAI Fallo] No se pudo generar contenido con ningún modelo de la cascada:", lastError?.message);
+        throw lastError;
     }
 
     _parseJSON(text) {

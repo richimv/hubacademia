@@ -185,7 +185,7 @@ class CoursesController {
     async getBooks(req, res) {
         try {
             const { type, domain, includeHidden } = req.query; // ✅ Soporte para filtrado por tipo y dominio
-            const isHiddenIncluded = includeHidden === 'true';
+            const isHiddenIncluded = includeHidden === 'true' && Boolean(req.user && req.user.role === 'admin');
             const books = await this.adminService.getAll('book', { type, domain, includeHidden: isHiddenIncluded });
             
             if (isHiddenIncluded) {

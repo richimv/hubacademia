@@ -196,8 +196,7 @@ Todas las ventanas modales de la plataforma deben estructurarse bajo este patró
   * Modal de Bienvenida Freemium (`welcome-freemium-modal`): Fondo `var(--modal-bg)`, borde `var(--border-color)` y textos en `var(--text-main)` y `var(--text-secondary)`.
   * Modal Previsualización de Mazo (`#preview-deck-modal`): Título en `var(--text-main)`, tarjetas individuales con `var(--bg-tertiary)`, `var(--border-color)`, pregunta en `var(--text-main)` y respuesta en `var(--text-secondary)`.
   * Modal Guía de Estudio (`#deck-guide-modal`): Fondo `#deck-guide-content` con `var(--bg-tertiary)` y texto `var(--text-main)`.
-  * Modal Estadísticas del Mazo (`#stats-modal` y `heatmap.js`): Título y contador de Total Tarjetas (`#modal-total`) en `var(--text-main)`, tarjetas de KPI, dona SRS y Activity Heatmap con días, intensidad, tooltips y leyendas sincronizados con `var(--text-main)`, `var(--text-secondary)` y `var(--border-color)`.
-  * Modal de Generación IA (`#ai-modal`) y Carga Masiva: Opciones de audio TTS y fondos en `var(--bg-tertiary)` y `var(--text-main)`.
+  * Modal de Carga Masiva y Configuración: Fondos en `var(--bg-tertiary)` y `var(--text-main)` con bordes sutiles `var(--border-color)` (módulo de audio neural TTS retirado).
 * **Tarjetas de Mazos de Repaso (`repaso.js`, `repaso.css`):**
   * Fila Superior Desacoplada (`.deck-card-top-row`): Badge a la izquierda y contenedor de acciones a la derecha (`.deck-card-actions`) sin colisiones.
   * Botón Play (`.btn-act-play`): Fondo degradado naranja de alto contraste con icono blanco `#ffffff` nítido.

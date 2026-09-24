@@ -32,7 +32,7 @@ Hub Academia ofrece una suite de herramientas de estudio simplificada y libre de
     *   **Educación:** Entrenamiento especializado exclusivamente para la evaluación de Ascenso Docente (EBR, EBA, EBE) con casuísticas pedagógicas reales y sustento oficial.
     *   **Salud (SERUMS):** Banco de preguntas clínicas para médicos y enfermeros alineado a las evaluaciones oficiales del Minsa.
 2.  **Módulo de Repaso (Flashcards):**
-    *   Sistema de memorización basado en tarjetas organizadas por mazos y un algoritmo de repetición espaciada. Permite la autoevaluación de la facilidad de recuerdo, reproducción de audio con pronunciación de voz neural en múltiples idiomas, carga de imágenes y la generación automática de tarjetas con IA.
+    *   Sistema de memorización basado en tarjetas organizadas por mazos y el algoritmo de repetición espaciada SuperMemo-2 (SM-2). Permite la autoevaluación de la facilidad de recuerdo, formato enriquecido de hasta 1,000 caracteres, carga de imágenes ilustrativas, importación masiva desde Excel y acompañamiento de un Tutor IA contextual.
 3.  **Mi Biblioteca de Estudio:**
     *   El centro de gestión del conocimiento personalizado. Permite organizar y acceder rápidamente a recursos compartidos (libros, papers, guías de práctica clínica, normas técnicas y videos de salud y educación), marcarlos como favoritos para evitar buscarlos de nuevo, y gestionar notas personales (creadas manualmente o guardadas a partir de conversaciones con el Tutor IA).
 

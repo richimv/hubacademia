@@ -127,7 +127,7 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
 ### G. Seguridad, Monetización y Control de Cuotas (V16)
 - **Escudos de Caracteres (Safety Caps)**:
     - **Límite de Texto**: Restricción estricta de **400 caracteres** por cara para garantizar tarjetas atómicas y evitar el almacenamiento de documentos extensos.
-    - **Límite de Síntesis (TTS)**: Para optimizar costos de Google Cloud, el audio premium solo procesa los primeros **500 caracteres** de cada cara.
+    - **Límite de Síntesis (TTS) [Histórico - Retirado en V47]**: El módulo de audio TTS neural fue erradicado para optimizar costos de Google Cloud.
 
 - **Política de Consumo de Vidas (Usuarios Free)**:
     El sistema aplica una filosofía de **"Mantenimiento Gratuito vs. Valor de Pago"**:

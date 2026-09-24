@@ -36,6 +36,21 @@ class DashboardManager {
 
     async init() {
         try {
+            if (window.sessionManager) {
+                const user = await window.sessionManager.initialize();
+                if (!user || user.role !== 'admin') {
+                    console.warn('⛔ [Dashboard Shield] Acceso no autorizado denegado. Redirigiendo...');
+                    document.body.innerHTML = '';
+                    window.location.replace('/');
+                    return;
+                }
+            }
+
+            // ✅ Acceso verificado criptográficamente por el backend: Retirar el escudo
+            const shield = document.getElementById('admin-shield-style');
+            if (shield) shield.remove();
+            document.documentElement.style.display = '';
+
             const data = await this.fetchData();
 
             // 1. Renderizar KPIs (Pasamos el objeto completo que contiene kpi y realTime)
@@ -54,7 +69,11 @@ class DashboardManager {
             if (mainContentEl) mainContentEl.style.display = 'block';
         } catch (error) {
             console.error('Fatal Error:', error);
-            if (error.message === 'Unauthorized') return; // NetworkService maneja el logout
+            if (error.message && (error.message.includes('401') || error.message.includes('403') || error.message === 'Unauthorized')) {
+                document.body.innerHTML = '';
+                window.location.replace('/');
+                return;
+            }
 
             const loadingEl = document.getElementById('loading');
             if (loadingEl) {
@@ -293,5 +312,12 @@ class DashboardManager {
 
 // Start
 document.addEventListener('DOMContentLoaded', () => {
-    new DashboardManager();
+    const waitForServicesAndStart = () => {
+        if (!window.NetworkService || !window.sessionManager) {
+            setTimeout(waitForServicesAndStart, 50);
+            return;
+        }
+        new DashboardManager();
+    };
+    waitForServicesAndStart();
 });
