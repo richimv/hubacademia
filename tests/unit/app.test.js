@@ -281,6 +281,36 @@ describe('app.js Presentation Orchestrator', () => {
         });
     });
 
+    describe('setupDirectLoginListener()', () => {
+        test('debe asignar onclick para redirigir a /login sin redirect si esta en raiz', () => {
+            const mockBtn = {};
+            global.document.getElementById.mockImplementation(id => id === 'open-login-modal' ? mockBtn : null);
+            global.window.location.pathname = '/';
+            global.window.location.search = '';
+
+            appModule.setupDirectLoginListener();
+            expect(typeof mockBtn.onclick).toBe('function');
+
+            const mockEvent = { preventDefault: jest.fn() };
+            mockBtn.onclick(mockEvent);
+
+            expect(mockEvent.preventDefault).toHaveBeenCalled();
+            expect(global.window.location.href).toBe('/login');
+        });
+
+        test('debe incluir parámetro redirect si está en una ruta secundaria', () => {
+            const mockBtn = {};
+            global.document.getElementById.mockImplementation(id => id === 'open-login-modal' ? mockBtn : null);
+            global.window.location.pathname = '/pricing';
+            global.window.location.search = '?plan=advanced';
+
+            appModule.setupDirectLoginListener();
+            mockBtn.onclick({ preventDefault: jest.fn() });
+
+            expect(global.window.location.href).toBe('/login?redirect=%2Fpricing%3Fplan%3Dadvanced');
+        });
+    });
+
     describe('updateHeaderUI()', () => {
         test('debe renderizar el botón Acceder si el usuario es null', () => {
             const mockContainer = { innerHTML: '' };

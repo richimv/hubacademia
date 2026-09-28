@@ -102,4 +102,42 @@ describe('UserRepository', () => {
             await expect(userRepository.renewFreeLivesIfNeeded('user-123')).resolves.toBe(false);
         });
     });
+
+    describe('delete', () => {
+        it('should perform cascade deletion using connection pool transaction', async () => {
+            const mockClient = {
+                query: jest.fn().mockResolvedValue({ rowCount: 1 }),
+                release: jest.fn()
+            };
+            db.pool = jest.fn().mockReturnValue({
+                connect: jest.fn().mockResolvedValue(mockClient)
+            });
+
+            const result = await userRepository.delete('user-to-delete');
+
+            expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
+            expect(mockClient.query).toHaveBeenCalledWith('DELETE FROM user_flashcards WHERE user_id = $1', ['user-to-delete']);
+            expect(mockClient.query).toHaveBeenCalledWith('DELETE FROM users WHERE id = $1', ['user-to-delete']);
+            expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+            expect(mockClient.release).toHaveBeenCalled();
+            expect(result).toEqual({ success: true });
+        });
+
+        it('should fallback to direct queries if pool is not available', async () => {
+            db.pool = undefined;
+            db.query.mockResolvedValue({ rowCount: 1 });
+
+            const result = await userRepository.delete('user-fallback-delete');
+
+            expect(db.query).toHaveBeenCalledWith('DELETE FROM users WHERE id = $1', ['user-fallback-delete']);
+            expect(result).toEqual({ success: true });
+        });
+
+        it('should throw an error if user is not found on deletion', async () => {
+            db.pool = undefined;
+            db.query.mockResolvedValue({ rowCount: 0 });
+
+            await expect(userRepository.delete('user-missing')).rejects.toThrow('Usuario no encontrado.');
+        });
+    });
 });

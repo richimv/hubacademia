@@ -212,10 +212,8 @@ class FlashcardRepository {
                 SELECT 
                     d.id, d.name, d.icon, d.description, d.color, COALESCE(d.category, 'General') as category,
                     d.saves_count, d.likes_count, d.created_at, d.updated_at,
-                    u.name as author_name,
                     (SELECT COUNT(*) FROM user_flashcards uf WHERE uf.deck_id = d.id) as total_cards
                 FROM decks d
-                LEFT JOIN users u ON d.user_id = u.id
                 WHERE d.is_public = true AND ($3 = 'ALL' OR COALESCE(d.category, 'General') = $3)
                 ORDER BY COALESCE(d.updated_at, d.created_at) DESC, d.created_at DESC
                 LIMIT $1 OFFSET $2
@@ -228,10 +226,8 @@ class FlashcardRepository {
                     SELECT 
                         d.id, d.name, d.icon, d.description, d.color, COALESCE(d.category, 'General') as category,
                         d.saves_count, d.likes_count, d.created_at,
-                        u.name as author_name,
                         (SELECT COUNT(*) FROM user_flashcards uf WHERE uf.deck_id = d.id) as total_cards
                     FROM decks d
-                    LEFT JOIN users u ON d.user_id = u.id
                     WHERE d.is_public = true AND ($3 = 'ALL' OR COALESCE(d.category, 'General') = $3)
                     ORDER BY d.created_at DESC
                     LIMIT $1 OFFSET $2

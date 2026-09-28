@@ -25,7 +25,7 @@ function sanitizeInputForAI(text, maxLength = LIMITS.CONTEXT_TEXT) {
     // Eliminar posibles etiquetas HTML/Script
     sanitized = sanitized.replace(/<[^>]*>/gi, '');
     
-    // Neutralizar intentos de Prompt Injection comunes
+    // Neutralizar intentos de Prompt Injection comunes (OWASP LLM01 / LLM02)
     const jailbreakPatterns = [
         /ignore\s+(all\s+)?(previous\s+)?instructions/gi,
         /olvida\s+las\s+instrucciones\s+(anteriores)?/gi,
@@ -34,7 +34,15 @@ function sanitizeInputForAI(text, maxLength = LIMITS.CONTEXT_TEXT) {
         /act\s+as\s+a/gi,
         /eres\s+ahora\s+un/gi,
         /nueva\s+instrucción/gi,
-        /ignora\s+las\s+reglas/gi
+        /ignora\s+las\s+reglas/gi,
+        /developer\s+mode/gi,
+        /dan\s+mode/gi,
+        /jailbreak/gi,
+        /reveal\s+(your\s+)?(system\s+)?prompt/gi,
+        /muestra\s+(tu\s+)?prompt\s+del\s+sistema/gi,
+        /bypass\s+(the\s+)?filter/gi,
+        /simula\s+que\s+no\s+tienes\s+restricciones/gi,
+        /disregard\s+(all\s+)?instructions/gi
     ];
     
     jailbreakPatterns.forEach(pattern => {
@@ -122,9 +130,41 @@ function validateCSVExportParams(tableName, columns = '*') {
     return true;
 }
 
+/**
+ * Sanitiza una celda para exportación segura a CSV/Excel (Mitigación CWE-1236: Formula Injection).
+ * Si la celda inicia con =, +, -, @, \t, \r, antepone un apóstrofo (') para forzar interpretación como texto.
+ */
+function sanitizeCSVCell(val) {
+    if (val === null || val === undefined) return '';
+    if (val instanceof Date) return val.toISOString();
+    let str = String(val);
+    if (/^[=+\-@\t\r]/.test(str)) {
+        str = "'" + str;
+    }
+    return str.replace(/"/g, '""').replace(/\n/g, ' ');
+}
+
+/**
+ * Lista blanca de columnas de consumo dinámico permitidas para actualización en DB (OWASP A03).
+ */
+const ALLOWED_USAGE_COLUMNS = new Set([
+    'daily_ai_usage',
+    'usage_count',
+    'monthly_flashcards_usage',
+    'daily_import_usage',
+    'daily_simulator_usage'
+]);
+
+function isValidUsageColumn(column) {
+    return typeof column === 'string' && ALLOWED_USAGE_COLUMNS.has(column.trim());
+}
+
 module.exports = {
     LIMITS,
+    ALLOWED_USAGE_COLUMNS,
     sanitizeInputForAI,
     validateDiagnosticStats,
-    validateCSVExportParams
+    validateCSVExportParams,
+    sanitizeCSVCell,
+    isValidUsageColumn
 };

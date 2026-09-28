@@ -1870,13 +1870,31 @@ class UIManager {
             document.body.classList.add('has-trial-mode'); // ✅ Add class
         }
 
+        const isEmailVerified = user.emailVerified !== false;
         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
         const limit = user.maxFreeLimit !== undefined ? user.maxFreeLimit : (user.max_free_limit || 10);
-        const remaining = Math.max(0, limit - usage);
+        const remaining = isEmailVerified ? Math.max(0, limit - usage) : 0;
+
+        const upgradeBtn = bar ? bar.querySelector('.upgrade-btn-small') : null;
+        const labelSpan = bar ? bar.querySelector('.usage-label-text') : null;
+
+        if (!isEmailVerified) {
+            if (labelSpan) labelSpan.textContent = 'bloqueadas (no verificado)';
+            if (upgradeBtn) {
+                upgradeBtn.innerHTML = '✉️ <span class="hide-mobile">Verificar </span>Correo';
+                upgradeBtn.onclick = () => window.location.href = '/profile';
+            }
+        } else {
+            if (labelSpan) labelSpan.textContent = 'restantes';
+            if (upgradeBtn) {
+                upgradeBtn.innerHTML = '💎 <span class="hide-mobile">Activar </span>Ilimitado';
+                upgradeBtn.onclick = () => window.location.href = '/pricing';
+            }
+        }
 
         if (countSpan) {
             const prevText = countSpan.textContent;
-            const newText = `${remaining}/${limit}`;
+            const newText = isEmailVerified ? `${remaining}/${limit}` : `0/${limit}`;
             const pill = countSpan.closest('.usage-pill');
             
             if (prevText !== newText && prevText !== '--/--') {
@@ -1890,12 +1908,17 @@ class UIManager {
             }
             
             countSpan.textContent = newText;
-            // Estado semántico reactivo según vidas restantes (Alerta si quedan 2 o menos)
+            // Estado semántico reactivo según vidas restantes o verificación
             if (pill) {
-                if (remaining <= 2) {
+                if (!isEmailVerified) {
                     pill.classList.add('low-lives');
+                    pill.title = 'Correo electrónico no confirmado. Verifica tu correo para activar tus 10 vidas mensuales.';
+                } else if (remaining <= 2) {
+                    pill.classList.add('low-lives');
+                    pill.title = 'Tus créditos de vidas se restablecen a 10 cada 30 días';
                 } else {
                     pill.classList.remove('low-lives');
+                    pill.title = 'Tus créditos de vidas se restablecen a 10 cada 30 días';
                 }
             }
         }
@@ -2015,6 +2038,9 @@ class UIManager {
     checkAndShowWelcomeModal(user) {
         if (!user || user._isOptimistic) return;
 
+        // 🛡️ REGLA: Si la cuenta no está verificada, no tiene vidas activas; nunca mostrar modal
+        if (user.emailVerified === false) return;
+
         // Excluir de páginas de examen y estudio para no interrumpir simulacros ni flashcards
         const isExcludedPage = window.location.pathname.includes('/flashcards') || 
                                window.location.pathname.includes('/quiz') || 
@@ -2031,7 +2057,7 @@ class UIManager {
         const status = String(user.subscriptionStatus || user.subscription_status || 'pending').toLowerCase().trim();
         if (tier !== 'free' || tier === 'basic' || tier === 'advanced' || status === 'active') return;
 
-        // Solo mostrar si usage_count es 0 (indica vidas completas, es decir, inicio o renovación)
+        // Solo mostrar si usage_count es 0 (indica vidas completas, es decir, renovación mensual)
         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
         if (usage > 0) return;
 
@@ -2043,20 +2069,33 @@ class UIManager {
             ? lastRenewalStr.toISOString().split('T')[0]
             : String(lastRenewalStr).split('T')[0];
 
-        const lastSeen = localStorage.getItem('lastSeenFreeRenewal');
+        // Clave aislada por usuario para evitar que cuentas nuevas en la misma máquina hereden marcas antiguas
+        const userId = user.id || user.email || 'anonymous';
+        const storageKey = `lastSeenFreeRenewal_${userId}`;
+        const lastSeen = localStorage.getItem(storageKey);
 
-        // Si el usuario ya vio la renovación/bienvenida de esta fecha específica, no hacemos nada
+        // Si es el registro inicial (creación en la misma fecha o primera vez que inicia sesión):
+        const createdStr = user.createdAt || user.created_at;
+        const createdDate = createdStr 
+            ? ((createdStr instanceof Date) ? createdStr.toISOString().split('T')[0] : String(createdStr).split('T')[0])
+            : null;
+
+        // 🛡️ NUNCA mostrar modal al registrarse por primera vez:
+        if (!lastSeen || (createdDate && createdDate === lastRenewalDate)) {
+            // Guardar silenciosamente para este usuario y salir sin mostrar modal intrusivo
+            localStorage.setItem(storageKey, lastRenewalDate);
+            return;
+        }
+
+        // Si ya vio la renovación de esta fecha específica, no hacemos nada
         if (lastSeen === lastRenewalDate) return;
 
-        const isRenewal = !!lastSeen; // Si ya vio alguna renovación antes, esta es una renovación mensual
         const modalId = 'welcome-freemium-modal';
         if (document.getElementById(modalId)) return;
 
-        const titleText = isRenewal ? '¡Tus 10 vidas mensuales están listas!' : 'Bienvenido a Hub Academia';
-        const bodyText = isRenewal 
-            ? 'Hemos renovado tu cuenta. Recibiste de regalo <strong>10 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA este mes.'
-            : 'Tu cuenta ha sido configurada correctamente. Dispones de <strong>10 créditos de uso</strong> para explorar todas las herramientas de estudio y productividad de la plataforma.';
-        const buttonText = isRenewal ? '¡A estudiar!' : 'Acceder al Hub';
+        const titleText = '¡Tus 10 vidas mensuales están listas!';
+        const bodyText = 'Recibiste de regalo <strong>10 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA este mes.';
+        const buttonText = '¡A estudiar!';
 
         const modalHTML = `
             <div id="${modalId}" class="auth-prompt-modal" style="display:flex; backdrop-filter: blur(15px); background: rgba(0,0,0,0.5);">
@@ -2083,7 +2122,7 @@ class UIManager {
                         </p>
                     </div>
 
-                    <button class="btn-primary" onclick="window.uiManager.closeWelcomeModal('${modalId}', '${lastRenewalDate}')" style="
+                    <button class="btn-primary" onclick="window.uiManager.closeWelcomeModal('${modalId}', '${lastRenewalDate}', '${userId}')" style="
                         width: 100%; 
                         background: #3b82f6; 
                         color: white; 
@@ -2104,13 +2143,16 @@ class UIManager {
         this.pushModalState(modalId);
     }
 
-    closeWelcomeModal(id, lastRenewalDate) {
+    closeWelcomeModal(id, lastRenewalDate, userId) {
         const modal = document.getElementById(id);
         if (modal) {
             modal.style.display = 'none';
             this.popModalState(id);
         }
         if (lastRenewalDate) {
+            if (userId) {
+                localStorage.setItem(`lastSeenFreeRenewal_${userId}`, lastRenewalDate);
+            }
             localStorage.setItem('lastSeenFreeRenewal', lastRenewalDate);
             localStorage.setItem('hasSeenFreemiumWelcome_v2', 'true');
         }

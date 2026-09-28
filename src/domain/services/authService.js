@@ -77,12 +77,22 @@ class AuthService {
 
             const isAutoAdmin = adminEmails.includes(normalizedEmail);
 
+            // 🛡️ PRESERVACIÓN DE IDENTIDAD: Si el usuario ya existe en base de datos y tiene un nombre
+            // personalizado (por ejemplo, editado desde su perfil), lo conservamos intacto
+            // para evitar que la sincronización con Google OAuth sobrescriba su nombre elegido.
+            const existingUser = (typeof this.userRepository?.findByEmail === 'function' ? await this.userRepository.findByEmail(normalizedEmail) : null) || 
+                                 (typeof this.userRepository?.findById === 'function' ? await this.userRepository.findById(verifiedIdentity.id) : null);
+
+            const finalName = (existingUser && typeof existingUser.name === 'string' && existingUser.name.trim().length > 0)
+                ? existingUser.name.trim()
+                : safeName;
+
             // 1. Delegamos el registro/sincronización al repositorio (vía stored procedure)
             // El repositorio usa sp_register_user que hace un UPSERT atómico.
             const userData = {
                 id: verifiedIdentity.id,
                 email: normalizedEmail,
-                name: safeName,
+                name: finalName,
                 role: isAutoAdmin ? 'admin' : 'student',
                 avatar_url: avatarUrl
             };
@@ -98,9 +108,7 @@ class AuthService {
                 user = await this.userRepository.update(user.id, { role: 'admin' });
             }
 
-            // 2. Eliminada la provisión automática de preferencias.
-            // Ahora el frontend obligará al usuario a configurar el simulador manualmente
-            // para evitar mezclar dominios (Medicina vs Educación) y evitar exámenes por defecto erróneos.
+            user.emailVerified = !!(verifiedIdentity.email_confirmed_at || isAutoAdmin);
 
             return user;
         } catch (error) {
@@ -112,30 +120,31 @@ class AuthService {
     // --- Método deleteAccount simplificado para Google OAuth ---
 
     /**
-     * Eliminar cuenta de usuario
+     * Eliminar cuenta de usuario en cascada completa
      * @param {string} userId
      */
     async deleteAccount(userId) {
-        // En un flujo Google-Only, no pedimos password para borrar.
-        // El usuario ya está autenticado por OAuth.
-
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!serviceRoleKey) {
-            throw new Error('Error de configuración del servidor.');
-        }
-        const { createClient } = require('@supabase/supabase-js');
-        const supabaseAdmin = createClient(process.env.SUPABASE_URL, serviceRoleKey);
-
-        // 1. Eliminar de Supabase (Admin API)
-        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
-        if (deleteError) {
-            console.error('Error eliminando usuario de Supabase:', deleteError);
-            throw new Error('Error al eliminar la cuenta en el proveedor.');
-        }
-
-        // 2. Eliminar de Base de Datos Local
+        // 1. Eliminar de Base de Datos Local en cascada completa (mazos, respuestas, notas, bibliotecas, usuario)
         await this.userRepository.delete(userId);
+
+        // 2. Eliminar de Supabase (Admin API) si la clave de servicio está configurada
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (serviceRoleKey && process.env.SUPABASE_URL) {
+            try {
+                const { createClient } = require('@supabase/supabase-js');
+                const supabaseAdmin = createClient(process.env.SUPABASE_URL, serviceRoleKey);
+                const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+                if (deleteError) {
+                    const msg = (deleteError.message || '').toLowerCase();
+                    if (!msg.includes('not found') && deleteError.status !== 404) {
+                        console.error('Error eliminando usuario de Supabase Auth:', deleteError);
+                    }
+                }
+            } catch (supaErr) {
+                console.warn('⚠️ Supabase Admin deleteUser warning:', supaErr.message);
+            }
+        }
 
         return { success: true };
     }
@@ -162,6 +171,21 @@ class AuthService {
                 name,
                 last_name_change_at: new Date()
             });
+
+            // 🔄 Sincronizar metadatos en Supabase Auth si la clave administrativa está disponible
+            try {
+                const supabaseAdmin = supabase.supabaseAdmin || (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+                    ? require('@supabase/supabase-js').createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+                    : null);
+                if (supabaseAdmin) {
+                    await supabaseAdmin.auth.admin.updateUserById(userId, {
+                        user_metadata: { full_name: name, name: name }
+                    });
+                }
+            } catch (sbErr) {
+                console.warn('⚠️ No se pudo sincronizar nombre en Supabase Auth metadata:', sbErr.message);
+            }
+
             return updatedUser;
         } catch (error) {
             throw error;

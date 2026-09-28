@@ -181,6 +181,7 @@ async function auth(req, res, next) {
             return res.status(401).json({ error: 'Usuario no registrado en el sistema.' });
         }
 
+        dbUser.emailVerified = !!sbUser.email_confirmed_at;
         req.user = dbUser;
         next();
 
@@ -222,7 +223,10 @@ async function optionalAuth(req, res, next) {
 
         if (sbUser) {
             const dbUser = await userRepository.findById(sbUser.id);
-            if (dbUser) req.user = dbUser;
+            if (dbUser) {
+                dbUser.emailVerified = !!sbUser.email_confirmed_at;
+                req.user = dbUser;
+            }
         }
     } catch (err) {
         if (err.message.includes('fetch failed') || err.code === 'UND_ERR_CONNECT_TIMEOUT') {

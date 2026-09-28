@@ -8,15 +8,6 @@
 (function () {
     console.log('🛡️ Security Shield Activado');
 
-    // 1. Deshabilitar Click Derecho (Context Menu)
-    document.addEventListener('contextmenu', (e) => {
-        // Permitir en inputs para poder copiar/pegar texto si es necesario
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            return;
-        }
-        e.preventDefault();
-        return false;
-    });
 
     // 2. Deshabilitar Atajos de Teclado de Desarrollo (F12, Ctrl+U, etc.)
     document.addEventListener('keydown', (e) => {

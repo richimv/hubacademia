@@ -48,6 +48,49 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
         });
     });
 
+    describe('Public Deck Privacy & Anonymization in Community', () => {
+        it('flashcardRepository.getPublicDecks should not query author_name or join users table', async () => {
+            const actualRepo = jest.requireActual('../../src/domain/repositories/flashcardRepository');
+            const mockDb = require('../../src/infrastructure/database/db');
+            mockDb.query.mockResolvedValueOnce({ rows: [{ id: 'deck-1', name: 'Mazo Anon' }] });
+
+            const results = await actualRepo.getPublicDecks(1, 20, 'Medicina');
+
+            expect(mockDb.query).toHaveBeenCalled();
+            const sqlQuery = mockDb.query.mock.calls[0][0];
+            expect(sqlQuery).not.toContain('author_name');
+            expect(sqlQuery).not.toContain('JOIN users');
+            expect(results).toEqual([{ id: 'deck-1', name: 'Mazo Anon' }]);
+        });
+
+        it('flashcardRepository.getPublicDecks fallback should also not query author_name or join users table', async () => {
+            const actualRepo = jest.requireActual('../../src/domain/repositories/flashcardRepository');
+            const mockDb = require('../../src/infrastructure/database/db');
+            const err42703 = new Error('Undefined column');
+            err42703.code = '42703';
+            mockDb.query
+                .mockRejectedValueOnce(err42703)
+                .mockResolvedValueOnce({ rows: [{ id: 'deck-2', name: 'Mazo Fallback' }] });
+
+            const results = await actualRepo.getPublicDecks(1, 20, 'ALL');
+
+            expect(mockDb.query).toHaveBeenCalledTimes(2);
+            const fallbackSql = mockDb.query.mock.calls[1][0];
+            expect(fallbackSql).not.toContain('author_name');
+            expect(fallbackSql).not.toContain('JOIN users');
+            expect(results).toEqual([{ id: 'deck-2', name: 'Mazo Fallback' }]);
+        });
+
+        it('repaso.js frontend community deck template should not expose user or author names', () => {
+            const fs = require('fs');
+            const path = require('path');
+            const repasoJs = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
+
+            expect(repasoJs).not.toMatch(/&gt;\s*Por:/);
+            expect(repasoJs).not.toContain('deck.author_name');
+        });
+    });
+
     describe('IDOR Protection on Deck Mutation & Card Creation', () => {
         it('DeckService.addCard should throw error when deck does not belong to the user', async () => {
             trainingRepository.getDeckById.mockResolvedValue(null);

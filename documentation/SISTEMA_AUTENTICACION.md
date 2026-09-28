@@ -120,6 +120,98 @@ Es el canal explícito principal, activado manualmente por el usuario ("Acceder"
 ### 2.3. Estado y Compatibilidad en Aplicaciones Móviles (HubDocenteApp y HubSaludApp)
 * **Aislamiento de Entorno:** Las aplicaciones móviles del ecosistema están construidas en React Native (Expo) y gestionan la autenticación mediante el módulo nativo `WebBrowser.openAuthSessionAsync` acoplado a deep linking (`Linking.createURL`).
 * **Inmunidad a FedCM:** La biblioteca DOM `accounts.google.com/gsi/client` y el protocolo FedCM son APIs del navegador web. Las aplicaciones móviles se conectan directamente vía browser modal nativo del sistema operativo (Custom Tabs en Android / ASWebAuthenticationSession en iOS), por lo que **no requieren modificaciones ni están expuestas a los conflictos de FedCM/One Tap del navegador web**.
+* **Seguridad de Deep Linking (OWASP Mobile M9):**
+  * Toda URL entrante por deep linking debe ser validada contra el esquema oficial permitido (`hubacademia://`, `hubdocente://`, `hubsalud://`) mediante funciones de guarda que descarten esquemas maliciosos o peligrosos (`javascript:`, `data:`, `file:`, `intent:`).
+  * Los tokens recibidos en callbacks móviles deben ser consumidos de inmediato y nunca persistidos en la URL ni compartidos entre componentes no autenticados.
+* **Almacenamiento Criptográfico Seguro (OWASP Mobile M1):**
+  * En clientes móviles, los tokens de acceso y sesión deben almacenarse de forma mandatoria en `ExpoSecureStore`, respaldado por el Hardware Keystore en Android y el Keychain en iOS, prohibiendo estrictamente el uso de `AsyncStorage` en texto plano para material criptográfico o credenciales.
+
+### 2.4. Flujo Híbrido: Email / Password con Código OTP de 8 Dígitos y Estándar MeduCat
+
+Para usuarios que no utilizan cuentas de Google o acceden desde navegadores institucionales restrictivos, Hub Academia implementa un flujo dual con verificación estricta de correo electrónico respaldado por Supabase GoTrue ("Confirm email" activo en el dashboard):
+
+#### Anatomía del Código OTP de 8 Dígitos
+* Supabase Auth envía un código numérico de 8 dígitos (`{{ .Token }}`).
+* La interfaz implementa un modal embebido interactivo de 8 casillas (`VerifyEmailOtpModal`) con soporte para copiado/pegado automático, teclado numérico nativo en dispositivos móviles (`inputmode="numeric"`) y navegación automática de foco.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Estudiante
+    participant UI as login.html / login.js
+    participant Val as authValidation.js
+    participant Supabase as Supabase GoTrue Auth
+    participant Backend as Backend Express
+    participant DB as PostgreSQL
+
+    Estudiante->>UI: Ingresa Nombre, Email y Contraseña Segura
+    UI->>Val: Valida Formato, Typos, Password Rules y Dominio Desechable
+    Val-->>UI: Formulario Válido (0 errores)
+    UI->>Supabase: signUp({ email, password, options: { data: { full_name } } })
+    Supabase-->>UI: Registro aceptado (Email no confirmado, Token 8 dígitos despachado)
+    UI->>UI: Despliega Modal OTP (Cooldown 60s activo)
+    Estudiante->>UI: Digita código de 8 dígitos recibido
+    UI->>Supabase: verifyOtp({ email, token, type: 'signup' })
+    Supabase-->>UI: 200 OK + Session JWT (email_confirmed_at != null)
+    UI->>Backend: POST /api/auth/sync (Bearer Token)
+    Backend->>DB: sp_register_user(...) [Persistencia atómica]
+    Backend-->>UI: 200 OK { user: safeUser, emailVerified: true }
+    UI->>UI: Redirección Segura a destino (OWASP A01 Safe Redirect)
+```
+
+#### Resolución Sin Fricción de los 3 Escenarios MeduCat:
+1. **Escenario A (Registro Fresco & Temporizador 60s):**
+   - Al registrarse, se activa una cuenta regresiva visible: *"Reenviar nuevo código en 60s..."*.
+   - Al llegar a `00:00`, el texto muta reactivamente al botón interactivo: *"¿No recibiste el código? Reenviar"*.
+   - El reenvío invoca `supabase.auth.resend({ type: 'signup', email })`, rearmando el temporizador a 60s para prevenir saturación de la bandeja del usuario o abusos de cuota SMTP.
+2. **Escenario B (Inicio de Sesión Diferido con Cuenta Pendiente):**
+   - Si el estudiante cerró la pestaña y vuelve días después para entrar por *"Iniciar Sesión"*, Supabase responde con el error `Email not confirmed` (`email_not_confirmed`).
+   - El sistema intercepta el error, suprime alertas genéricas y despliega inmediatamente el modal de verificación OTP pre-cargado con su correo, ofreciendo el reenvío de un código fresco.
+3. **Escenario C (Intento de Registro Duplicado):**
+   - Si el usuario olvida que ya tenía cuenta e intenta registrarse nuevamente, Supabase devuelve `User already registered` o `A user with this email address has already been registered`.
+   - El sistema detecta la colisión, muestra una alerta informativa amigable (*"Esta cuenta ya existe. Por favor ingresa tu contraseña para iniciar sesión"*) y conmuta automáticamente a la pestaña de *"Iniciar Sesión"*, preservando el correo ingresado y situando el cursor en el campo de contraseña.
+
+#### Controles Anti-Abuso y Protección de Checkout:
+1. **Filtro de Dominios Desechables (`isDisposableEmail`):** Lista negra de dominios temporales (*10minutemail, tempmail, guerrillamail, yopmail, mailinator, etc.*) bloqueando registros ficticios masivos.
+2. **Checklist de Seguridad en Tiempo Real:** Exige mínimo 8 caracteres, al menos 1 mayúscula, 1 minúscula, 1 número, sin espacios en blanco y sin caracteres de control.
+3. **Sugerencias de Dominios por Typos (`suggestEmailDomain`):** Detecta errores frecuentes como `@gmil.com` -> `@gmail.com`, `@hotmial.com` -> `@hotmail.com`, evitando que el usuario pierda su código de activación por un error de digitación.
+4. **Protección de Pasarela de Pagos (`pricing.js`):** Antes de iniciar la orden con Mercado Pago, el sistema valida `currentUser.emailVerified !== false`. Si la cuenta no está verificada, bloquea el pago y muestra el aviso de confirmación requerida con enlace directo a `/login?redirect=pricing`.
+
+### 2.5. Gating Progresivo, Protección de Recursos y Experiencia de Usuario (Fase 2)
+
+Para neutralizar el vector de ataque de "creación masiva de cuentas ficticias" sin sacrificar la ergonomía del usuario legítimo, Hub Academia implementa un sistema de acceso escalonado (*Tiered / Progressive Access Gateway*) tanto en backend como en frontend:
+
+#### 1. Protección de Endpoints de Alto Costo (`checkLimitsMiddleware.js`)
+El middleware interceptor inspecciona defensivamente la propiedad `req.user.emailVerified` adjunta por `authMiddleware`. Si un usuario autenticado no ha confirmado su correo electrónico (`req.user.emailVerified === false`) y no ostenta privilegios de administrador, se deniega inmediatamente el consumo de recursos sensibles:
+* **Simulacros de Examen (`simulator`):** `/api/medico/start` y `/api/docente/start` retornan `403 Forbidden` con payload `{ error: 'Debes confirmar tu correo electrónico con el código de 8 dígitos para iniciar simulacros de examen.', reason: 'EMAIL_VERIFICATION_REQUIRED', emailVerified: false }`.
+* **Tutorías Pedagógicas y Flashcard Tutor (`chat_standard` con contexto):** Consultas al Tutor IA retornan `403 Forbidden` (`EMAIL_VERIFICATION_REQUIRED`).
+* **Diagnósticos Clínicos y Académicos (`isDiagnostic`):** Generación de informes dinámicos con Gemini (`/api/analytics/diagnostic`) retorna `403 Forbidden` (`EMAIL_VERIFICATION_REQUIRED`).
+* **Flashcards y Módulos de Repaso (`monthly_flashcards`):** Creación, importación masiva y generaciones con IA en `/api/decks` retornan `403 Forbidden` (`EMAIL_VERIFICATION_REQUIRED`).
+* **Chat Guía Efímero:** El asistente de soporte general en `/api/chat` (sin RAG ni persistencia) se mantiene habilitado con `cost = 0` y `usageType = null`, permitiendo a los estudiantes solicitar orientación para verificar su cuenta.
+
+#### 2. Bloqueo de Vidas Gratuitas (0 Vidas Activas hasta Confirmar)
+* En cuentas pendientes de confirmación, `hasGlobalLives` evalúa estrictamente a `false`.
+* El usuario visualiza `0/10 vidas disponibles (bloqueadas)` tanto en la barra Freemium (`uiManager.js`) como en la sección de consumo del perfil (`profile.js`), desincentivando el registro automatizado de cuentas falsas para agotar vidas.
+
+#### 3. Experiencia Visual y Verificación In-Situ en Perfil (`profile.html` / `profile.js`)
+* **Banner de Advertencia Superior:** Si `user.emailVerified === false`, se inyecta un banner contextual ámbar (`.unverified-alert-banner`) en la parte superior del perfil alertando la restricción de vidas y ofreciendo el botón `"Confirmar con Código OTP"`.
+* **Badge Interactivo en Cabecera:** Muestra la insignia interactiva `badge-status-unverified` (*"Correo No Verificado • Verificar"*), que abre directamente el modal de verificación.
+* **Tarjeta de Seguridad y Cuenta:** El indicador "Estado de Identidad" muta reactivamente a `Pendiente de Verificación` (amarillo) o `Activa y Verificada` (verde esmeralda).
+* **Modal de Verificación Embebido (`#otp-modal`):** Permite ingresar el código de 8 dígitos recibido por correo, verificarlo directamente con `supabaseClient.auth.verifyOtp` y resincronizar la sesión en tiempo real (`updateEmailVerificationUI(true)`) sin requerir recargar la página.
+
+#### 4. Barra Freemium Reactiva (`uiManager.js`)
+* Si `user.emailVerified === false`, el contador de vidas refleja `0/10`, el pill activa la alerta visual `.low-lives` y el botón de acción principal conmuta automáticamente a `"✉️ Verificar Correo"`, vinculando directamente a `/profile`.
+
+#### 5. Paridad Multiplataforma Completa en Aplicaciones Móviles
+* **Ecosistema Móvil:** Implementado al 100% en **HubDocenteApp** y **HubSaludApp** con paridad respecto a **MeduCat**:
+  - `VerifyEmailOtpModal.tsx`: Modal nativo con 8 casillas interactivas, auto-enfoque, teclado numérico y temporizador de 60s con reenvío.
+  - `authValidation.ts`: Funciones de filtrado de dominios desechables, sugerencias tipográficas (`suggestEmailDomain`), validación de nombres, contraseñas y códigos OTP.
+  - `AuthContext.tsx`: Métodos `signInWithEmail`, `signUpWithEmail`, `verifyEmailOtp`, `resendVerificationOtp`, `resetPassword`, cálculo de `isEmailVerified` y congelamiento de vidas a `0/10` para cuentas no confirmadas.
+  - `login.tsx`: Conmutador de pestañas (Iniciar Sesión / Crear Cuenta), botón de Google con selector de cuentas, checklist en vivo de contraseñas y resolución sin fricción de los 3 escenarios MeduCat (A, B y C).
+  - `profile.tsx`: Banner de alerta de correo no confirmado, status badge `NO VERIFICADO`, tarjeta de vidas bloqueadas con candado y botón de activación in-situ.
+  - `pricing.tsx`: Banner superior y bloqueo preventivo de pagos (Mercado Pago / Yape) si el usuario no ha verificado su cuenta.
+  - **Verificación de Tipado:** 0 errores de TypeScript (`tsc --noEmit`) en ambas aplicaciones.
+
 
 ---
 
@@ -252,7 +344,7 @@ BEGIN
     ON CONFLICT (email) 
     DO UPDATE SET
         id = EXCLUDED.id, -- Sincronizar el ID de Supabase Auth
-        name = EXCLUDED.name,
+        name = COALESCE(NULLIF(TRIM(public.users.name), ''), EXCLUDED.name), -- Preservar nombre personalizado
         role = CASE 
             WHEN EXCLUDED.role = 'admin' THEN 'admin'
             ELSE public.users.role
@@ -261,7 +353,7 @@ BEGIN
         updated_at = NOW()
     RETURNING *;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 -- Revocación de privilegios públicos (Solo backend con credenciales seguras de servicio)
 REVOKE EXECUTE ON FUNCTION public.sp_register_user(uuid, text, text, text, text, text) FROM PUBLIC, anon, authenticated;
@@ -270,8 +362,8 @@ REVOKE EXECUTE ON FUNCTION public.sp_register_user(uuid, text, text, text, text,
 ### Garantías de este diseño:
 1. **Inmunidad a Colisiones (`23505 Immunity`):** `ON CONFLICT (email) DO UPDATE` garantiza cero errores de concurrencia al registrar usuarios simultáneos.
 2. **Preservación y Elevación de Privilegios:** La cláusula condicional `CASE WHEN EXCLUDED.role = 'admin' THEN 'admin' ELSE public.users.role END` asegura que una cuenta designada como administradora nunca quede degradada a `student` tras un re-login, elevando automáticamente su privilegio en base de datos.
-3. **Seguridad de Esquema (`search_path`):** La directiva explícita `SET search_path = public` mitiga vulnerabilidades de inyección por suplantación de esquemas (aprobada por el Supabase Security Linter).
-4. **Acceso Restringido:** Ejecución revocada para roles anónimos y autenticados (`REVOKE EXECUTE FROM anon, authenticated`).
+3. **Seguridad de Esquema contra Trojan Object Hijack (`search_path = public, pg_temp`):** La directiva explícita `SET search_path = public, pg_temp;` fija el orden de resolución de tablas y operadores, neutralizando ataques donde un actor malicioso define funciones u operadores homónimos en esquemas temporales (`pg_temp`) para secuestrar el contexto privilegiado de una función `SECURITY DEFINER`.
+4. **Acceso Restringido:** Ejecución revocada para roles anónimos y autenticados (`REVOKE EXECUTE FROM anon, authenticated`). Solo el pool de conexiones del backend con `service_role` puede invocarla.
 
 ---
 
@@ -354,7 +446,83 @@ Las aplicaciones móviles del ecosistema (**HubDocenteApp** y **HubSaludApp**) c
    ```
 
 ---
+
+## 10. Matriz de Mitigación de Amenazas y Controles OWASP / MeduCat
+
+Para garantizar que el flujo de autenticación e identidad de Hub Academia cuente con los más altos estándares de seguridad moderna (paridad con MeduCat Security Roadmap):
+
+| Vector de Amenaza | Riesgo / CVE | Control Implementado en Hub Academia |
+| :--- | :--- | :--- |
+| **Trojan Object Hijack en PostgreSQL** | CWE-426 / Shadowing en `SECURITY DEFINER` | Declaración explícita `SET search_path = public, pg_temp;` en funciones almacenadas (`sp_register_user.sql`), revocando privilegios a roles públicos y anónimos. |
+| **Condiciones de Carrera (TOCTOU)** | Explotación de consumo de saldo / vidas | Verificación atómica en SQL `UPDATE users SET usage_count = usage_count + 1 WHERE id = $1 AND usage_count + 1 <= max_free_limit RETURNING *` en `userRepository.js`. |
+| **Ataques de Temporización (Timing Attacks)** | Comparación insegura de strings en tokens | Uso estricto de `crypto.timingSafeEqual` en verificación de webhooks de pago (`paymentController.js`) y tokens internos de microservicios (`authMiddleware.js`). |
+| **Falsificación de Roles / Escalada** | Elevación de privilegios vía body JSON | Los campos `role` o privilegios provistos en `req.body` son completamente ignorados en `authController.syncUser` y `updateProfile`. El rol se asigna únicamente en backend mediante whitelist hardcodeada (`ADMIN_EMAILS`). |
+| **Secuestro de Callbacks Móviles** | OWASP Mobile M9: Deep Link Hijacking | Validación de esquemas permitidos (`hubacademia://`, `hubdocente://`, `hubsalud://`), purga de fragmentos hash tras lectura y descarte de esquemas peligrosos (`javascript:`, `intent:`). |
+| **Tokens Zombis / Inseguridad Móvil** | OWASP Mobile M1: Plaintext Credentials | Uso exclusivo de `ExpoSecureStore` respaldado por Android Keystore / iOS Keychain en móvil, y purga total de almacenamiento (*Nuclear Logout*) en cliente web. |
+| **Inyección SQL en Nombres de Columna** | OWASP A03: SQL Injection | Validación por lista blanca estricta (`isValidUsageColumn` en `securityUtils.js`) antes de interpolar columnas dinámicas de consumo en PostgreSQL. |
+| **Inyección de Fórmulas CSV / Excel** | CWE-1236: CSV Formula Injection | Función `sanitizeCSVCell` en `securityUtils.js` antepone un apóstrofo (`'`) si el valor comienza con `=`, `+`, `-`, `@`, `\t` o `\r`. |
+| **Prompt Injection y System Prompt Leak** | OWASP LLM01 / LLM02 | Sanitización de entradas contextuales con `sanitizeInputForAI` en `securityUtils.js`, filtrando directivas de jailbreak, roles no autorizados y solicitudes de extracción de prompt. |
+| **Abuso de Cuentas Ficticias / Bots** | Bot Registration & Quota Bypass | Detección y bloqueo estricto de proveedores de correo temporal en `authValidation.js` (`isDisposableEmail`), asignación de 0 vidas activas y bloqueo de checkout en `pricing.js` sin confirmación OTP previa. |
+| **Redirección Abierta en Autenticación** | OWASP A01: Broken Access Control | Sanitización de parámetros `redirect` en `getSafeRedirectUrl` (`login.js`), descartando dominios externos, esquemas `javascript:` o prefijos de doble barra `//`. |
+| **Bloqueo Bfcache en Botón Google** | UX Bug / History Traversal Freeze | Escuchadores reactivos a `pageshow`, `focus` y `visibilitychange` que restablecen el botón con vector SVG inline y limpian estados `disabled`. |
+
+---
+
+## 11. Recuperación de Contraseña, Cambio en Perfil y Resiliencia Bfcache
+
+### 11.1. Recuperación de Contraseña ("¿Olvidaste tu contraseña?")
+En `login.html` y `login.js`, el flujo de recuperación de clave se compone de dos fases dentro del modal `#recovery-modal`:
+1. **Paso 1 (Solicitud de Código):** El usuario ingresa su correo electrónico y el cliente invoca `supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/login' })`.
+2. **Paso 2 (Validación OTP de 8 Dígitos y Nueva Clave):** El usuario digita el código de 8 dígitos en las casillas interactivas, define su nueva contraseña sujeta al checklist en tiempo real de 5 reglas y confirma. El cliente valida el código con `supabase.auth.verifyOtp({ email, token, type: 'recovery' })` y luego persiste la nueva clave con `supabase.auth.updateUser({ password })`.
+3. **Soporte de Enlace Directo:** Si el usuario accede desde el botón del correo (`#access_token=...&type=recovery` o evento `PASSWORD_RECOVERY` en `onAuthStateChange`), el sistema salta automáticamente al Paso 2 sin requerir el código OTP.
+
+### 11.2. Cambio de Contraseña desde el Perfil de Usuario
+En `profile.html` y `profile.js`:
+- La sección "Seguridad y Cuenta" incluye la fila "Contraseña" con el botón `Cambiar Contraseña`.
+- Despliega el modal modular `#change-password-modal` con alternador de visualización (ojo), checklist interactivo de seguridad y ejecución directa contra `supabase.auth.updateUser({ password })`.
+
+### 11.3. Resiliencia contra Bfcache (Back-Forward Cache) en Google OAuth
+Cuando un usuario hace clic en "Continuar con Google", el botón muta a estado de carga con un spinner rotatorio. Si el usuario presiona el botón "Atrás" del navegador sin autenticarse, los motores de navegación modernos (Chromium/WebKit/Gecko) restauran la página congelada en memoria sin ejecutar `DOMContentLoaded`.
+- **Mitigación:** Se integró la función `resetGoogleAuthButton()` y `resetAllSubmitButtons()` suscrita a los eventos de ventana `pageshow`, `focus` y `visibilitychange`. Ante cualquier retorno al documento, el botón se regenera con su SVG vector oficial de Google y se retira el atributo `disabled`.
+
+### 11.4. Plantillas HTML de Correo para Supabase Dashboard
+Todas las plantillas HTML con `{{ .Token }}` de 8 dígitos y estilos corporativos Dual-Theme de Hub Academia están documentadas y listas para su copia directa en `documentation/PLANTILLAS_CORREO_SUPABASE.md`:
+1. *Confirm sign up* (Confirmación de registro de estudiante).
+2. *Reset password* (Restablecimiento de contraseña olvidada).
+3. *Magic link / OTP* (Inicio de sesión rápido con código).
+4. *Change email address* (Actualización segura de correo).
+5. *Reauthentication* (Re-autenticación para acciones sensibles).
+6. *Invite user* (Invitación de docentes y colaboradores).
+
+---
+
+## 12. Estabilidad de Ciclo de Vida y Eliminación en Cascada Atómica
+
+### 12.1. Supresión Estricta de Modales en Nuevos Registros
+- **Regla de Negocio:** Un usuario recién registrado jamás debe recibir un modal de *"¡Tus 10 vidas mensuales están listas!"* ni de *"Tu cuenta ha sido configurada correctamente..."* de forma impertinente.
+- **Implementación (`uiManager.js`):**
+  - Si `user.emailVerified === false`, la evaluación de renovación se cancela de inmediato.
+  - La clave de `localStorage` para registrar la última renovación vista está aislada por ID de usuario: `lastSeenFreeRenewal_${userId}`. Esto evita colisiones entre distintas cuentas evaluadas en el mismo navegador.
+  - Se detecta la condición de registro inicial comprobando si la fecha de creación del usuario coincide con la fecha de última renovación (`createdDate === lastRenewalDate`) o si no existe `lastSeen`. En tales casos, se registra silenciosamente en el almacenamiento local y se retorna sin mostrar ninguna ventana modal.
+
+### 12.2. Prevención de Recursión Global en Perfil (`profile.js`)
+- **Problema Detectado:** Al acceder a `profile.html`, se producía un desbordamiento de pila `RangeError: Maximum call stack size exceeded`.
+- **Causa Raíz:** En `profile.js`, la declaración a nivel de módulo `function getSupabaseClient()` sobreescribía la función canónica provista por `config.js` (`window.getSupabaseClient`), generando un ciclo infinito de autorreferencia.
+- **Solución:** Se renombró la función interna a `resolveSupabaseClient()` con guard clause defensivo y se garantizó la inclusión de `<script src="/js/config.js"></script>` en `profile.html` y `login.html`.
+
+### 12.3. Eliminación Atómica en Cascada de Cuentas (`userRepository.js` & `authService.js`)
+- Cuando un usuario o administrador solicita la eliminación permanente de una cuenta (`DELETE /api/auth/profile`), el sistema ejecuta una transacción atómica completa en PostgreSQL:
+  1. Purga de `user_flashcards` y `decks` propios.
+  2. Eliminación de preguntas de simulacros (`quiz_session_questions`), sesiones (`quiz_sessions`), historial (`quiz_history`, `user_question_history`) y preferencias (`user_simulator_preferences`).
+  3. Eliminación de bibliotecas de libros y cursos (`user_book_library`, `user_course_library`) y notas (`user_notes`).
+  4. Eliminación de registros de feedback, historial de búsqueda y eventos de pago (`payment_events`).
+  5. Desasociación analítica (`page_views.user_id = NULL`, `web_traffic.user_id = NULL`).
+  6. Eliminación final del registro maestro en `users` y su correspondiente usuario en Supabase Auth mediante la API de administración (`supabaseAdmin.auth.admin.deleteUser`).
+  *(Nota: Los chats y consultas con IA no requieren purga por ser 100% efímeros en memoria de sesión, sin tablas en base de datos).*
+
+---
 *Documentación técnica de arquitectura - Hub Academia.*  
-*Última actualización: 2026-09-06.*
+*Última actualización: 2026-09-28.*
+
 
 

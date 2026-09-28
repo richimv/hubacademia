@@ -51,9 +51,47 @@ function checkPremiumStatus(user) {
                 }
             }
         }
+
+        // 3. Renderizar insignia de cuenta asociada al checkout
+        renderCheckoutAccountBadge(user);
     } catch (e) {
         console.error("Error checking premium status:", e);
     }
+}
+
+/**
+ * Renderiza la insignia informativa indicando a qué cuenta se vinculará la suscripción
+ */
+function renderCheckoutAccountBadge(user) {
+    if (!user || !user.email) return;
+    const pricingHeader = document.querySelector('.pricing-header');
+    if (!pricingHeader) return;
+
+    let badge = document.getElementById('pricing-account-badge');
+    if (!badge) {
+        badge = document.createElement('div');
+        badge.id = 'pricing-account-badge';
+        badge.className = 'pricing-account-badge';
+        pricingHeader.insertAdjacentElement('afterend', badge);
+    }
+
+    const isVerified = user.emailVerified !== false;
+    const warningNotice = !isVerified
+        ? `<div style="margin-top: 8px; color: #ef4444; font-size: 0.82rem; font-weight: 600;">
+            <i class="fas fa-exclamation-triangle"></i> Tu correo no ha sido confirmado aún. 
+            <a href="/login?redirect=pricing" style="color: #3b82f6; text-decoration: underline; margin-left: 4px;">Confirmar con código OTP</a>
+           </div>`
+        : '';
+
+    badge.innerHTML = `
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 16px; margin: 0 auto 1.5rem auto; max-width: 540px; text-align: center; font-size: 0.88rem; color: var(--text-secondary); box-shadow: var(--shadow-sm);">
+            <i class="fas fa-user-check" style="color: var(--primary); margin-right: 6px;"></i>
+            Tu plan se vinculará a: <strong style="color: var(--text-main);">${user.email}</strong>
+            <span style="margin: 0 8px; opacity: 0.4;">|</span>
+            <a href="/login?redirect=pricing" style="color: var(--primary); text-decoration: none; font-weight: 600;">Cambiar cuenta</a>
+            ${warningNotice}
+        </div>
+    `;
 }
 
 /**
@@ -171,7 +209,22 @@ document.querySelectorAll('.plan-select-btn').forEach(button => {
         // Si no hay token, intentar obtenerlo de supabase (caso borde) u obligar a login
         if (!token) {
             if (window.uiManager) window.uiManager.showAuthPromptModal();
-            else window.location.href = 'login?redirect=pricing';
+            else window.location.href = '/login?redirect=pricing';
+            return;
+        }
+
+        // 🛡️ Prevenir pago si el usuario no ha verificado su correo con el código de 8 dígitos
+        const currentUser = window.sessionManager?.getUser?.();
+        if (currentUser && currentUser.emailVerified === false) {
+            const warningMsg = 'Debes confirmar tu correo electrónico con el código de seguridad de 8 dígitos antes de adquirir un plan.';
+            if (window.confirmationModal) {
+                window.confirmationModal.showAlert(warningMsg, 'Confirmación Requerida').then(() => {
+                    window.location.href = '/login?redirect=pricing';
+                });
+            } else {
+                alert(warningMsg);
+                window.location.href = '/login?redirect=pricing';
+            }
             return;
         }
 

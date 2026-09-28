@@ -115,7 +115,15 @@ class Server {
                     callback(null, false);
                 }
             },
-            credentials: true
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'x-client-info', 'apikey', 'X-Requested-With', 'Accept', 'Origin']
+        }));
+        this.app.options('*', cors({
+            origin: (origin, callback) => callback(null, true),
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'x-client-info', 'apikey', 'X-Requested-With', 'Accept', 'Origin']
         }));
 
         // ✅ EXPRESS.JSON Y URLENCODED CON LÍMITE HOLGADO

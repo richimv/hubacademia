@@ -320,4 +320,92 @@ describe('Check Limits Middleware', () => {
             expect(mockNext).toHaveBeenCalled();
         });
     });
+
+    describe('Email Verification Gating (Fase 2)', () => {
+        beforeEach(() => {
+            mockReq.user = { id: 1, emailVerified: false };
+            dbUser.subscription_tier = 'free';
+            dbUser.subscription_status = 'pending';
+            dbUser.usage_count = 0; // Has 10 theoretical lives, but unverified!
+            dbUser.max_free_limit = 10;
+        });
+
+        it('should block unverified user requesting AI diagnostic with 403 EMAIL_VERIFICATION_REQUIRED', async () => {
+            mockReq.path = '/diagnostic';
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockRes.status).toHaveBeenCalledWith(403);
+            expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
+                reason: 'EMAIL_VERIFICATION_REQUIRED',
+                emailVerified: false
+            }));
+            expect(mockNext).not.toHaveBeenCalled();
+        });
+
+        it('should block unverified user interacting with Quiz Tutor with 403 EMAIL_VERIFICATION_REQUIRED', async () => {
+            mockReq.body = { context: { type: 'quiz_tutor' } };
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockRes.status).toHaveBeenCalledWith(403);
+            expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
+                reason: 'EMAIL_VERIFICATION_REQUIRED',
+                emailVerified: false
+            }));
+            expect(mockNext).not.toHaveBeenCalled();
+        });
+
+        it('should allow unverified user to use General Guide Chat with zero cost and no RAG', async () => {
+            mockReq.body = { message: 'Hola, ¿cómo confirmo mi cuenta?' };
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockReq.cost).toBe(0);
+            expect(mockReq.useRag).toBe(false);
+            expect(mockReq.usageType).toBeNull();
+            expect(mockNext).toHaveBeenCalled();
+            expect(mockRes.status).not.toHaveBeenCalledWith(403);
+        });
+
+        it('should block unverified user on monthly_flashcards with 403 EMAIL_VERIFICATION_REQUIRED', async () => {
+            mockReq.path = '/decks/1/cards';
+            const middleware = checkAILimits('monthly_flashcards');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockRes.status).toHaveBeenCalledWith(403);
+            expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
+                reason: 'EMAIL_VERIFICATION_REQUIRED',
+                emailVerified: false
+            }));
+            expect(mockNext).not.toHaveBeenCalled();
+        });
+
+        it('should block unverified user on simulator (Medicina/Docente start) with 403 EMAIL_VERIFICATION_REQUIRED', async () => {
+            mockReq.path = '/medico/start';
+            const middleware = checkAILimits('simulator');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockRes.status).toHaveBeenCalledWith(403);
+            expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
+                reason: 'EMAIL_VERIFICATION_REQUIRED',
+                emailVerified: false
+            }));
+            expect(mockNext).not.toHaveBeenCalled();
+        });
+
+        it('should exempt Admin even if req.user.emailVerified is false', async () => {
+            mockReq.user = { id: 1, emailVerified: false, role: 'admin' };
+            dbUser.role = 'admin';
+            dbUser.subscription_tier = 'admin';
+            dbUser.subscription_status = 'active';
+
+            mockReq.path = '/medico/start';
+            const middleware = checkAILimits('simulator');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockNext).toHaveBeenCalled();
+            expect(mockRes.status).not.toHaveBeenCalledWith(403);
+        });
+    });
 });

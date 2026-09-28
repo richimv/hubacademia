@@ -76,12 +76,15 @@ class DeckController {
     _syncUsage = async (req) => {
         try {
             if (req.usageType && req.user && req.user.id) {
-                const db = require('../../infrastructure/database/db');
-                await db.query(
-                    `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
-                    [req.user.id]
-                );
-                console.log(`📉 Usage ${req.usageType} incremented for user ${req.user.id}`);
+                const { isValidUsageColumn } = require('../../domain/utils/securityUtils');
+                if (isValidUsageColumn(req.usageType)) {
+                    const db = require('../../infrastructure/database/db');
+                    await db.query(
+                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                        [req.user.id]
+                    );
+                    console.log(`📉 Usage ${req.usageType} incremented for user ${req.user.id}`);
+                }
             }
         } catch (e) {
             console.error('[DeckController._syncUsage] Error:', e.message);

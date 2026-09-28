@@ -16,10 +16,6 @@ class ChatController {
         // Bindeo explícito para mantener el contexto
         this.processMessage = this.processMessage.bind(this);
         this.trainModel = this.trainModel.bind(this);
-        this.getUserConversations = this.getUserConversations.bind(this);
-        this.getConversationMessages = this.getConversationMessages.bind(this);
-        this.updateConversationTitle = this.updateConversationTitle.bind(this);
-        this.deleteConversation = this.deleteConversation.bind(this);
     }
 
     /**
@@ -269,11 +265,8 @@ ${message}`;
 
             const response = await this.enrichResponse(message, aiResult);
 
-            // 4. Guardar la respuesta del bot en la BD (Solo si no es efímero).
-            let botMessage = { id: 'temp' };
-            if (!isEphemeral) {
-                botMessage = await this.chatService.chatRepository.addMessage(conversationId, 'bot', response.respuesta);
-            }
+            // 4. Modo Efímero: Los mensajes nunca se persisten en base de datos.
+            const botMessage = { id: 'temp' };
 
             // 5. PRIVACIDAD TOTAL: Las consultas de los usuarios en los chats (Quiz Tutor, Flashcards y General)
             // son estrictamente confidenciales y NUNCA se registran en search_history ni analíticas de búsqueda.
@@ -282,11 +275,12 @@ ${message}`;
             // 6. ACTUALIZAR LÍMITES DE USO IA (Solo si aplica cobro y hay usuario autenticado)
             if (userId && req.usageType) {
                 try {
+                    const { isValidUsageColumn } = require('../../domain/utils/securityUtils');
                     if (req.usageType === 'usage_count') {
                         const cost = req.cost || 1;
                         await this.usageService.checkAndIncrementUsage(userId, cost);
                         console.log(`📉 Límite de usage_count incrementado (+${cost}) para usuario ${userId}.`);
-                    } else if (req.usageType) {
+                    } else if (isValidUsageColumn(req.usageType)) {
                         const pool = require('../../infrastructure/database/db');
                         if (req.incrementRag) {
                             await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1, daily_rag_usage = daily_rag_usage + 1 WHERE id = $1`, [userId]);
@@ -303,24 +297,10 @@ ${message}`;
 
             console.log('✅ Respuesta generada exitosamente');
 
-            // ✅ NUEVO: Generación de título inteligente para conversaciones nuevas
-            if (!conversationId && !isEphemeral) {
-                // (Ya se creó arriba con un placeholder)
-            } else if (!req.body.conversationId && !isEphemeral) {
-                // Detectamos que era una conversación nueva por la ausencia de ID en el request original
-                TutorAiService.generateConversationTitle(message, response.respuesta)
-                    .then(newTitle => {
-                        console.log(`✨ Nuevo título generado: ${newTitle}`);
-                        this.chatService.chatRepository.updateTitle(conversationId, newTitle, userId);
-                    })
-                    .catch(err => console.warn("⚠️ Fallo al generar título inteligente:", err));
-            }
-
             res.json({
                 ...response,
-                // Devolver siempre el ID de la conversación para que el frontend pueda continuarla.
+                // Devolver siempre el ID de la conversación efímera
                 conversationId: conversationId,
-                // ✅ NUEVO: Devolver el ID del mensaje del bot para el feedback.
                 messageId: botMessage.id,
                 timestamp: new Date().toISOString()
             });
@@ -331,78 +311,6 @@ ${message}`;
                 error: 'Error al procesar el mensaje',
                 respuesta: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta nuevamente.'
             });
-        }
-    }
-
-    /**
-     * Obtiene la lista de todas las conversaciones de un usuario.
-     */
-    async getUserConversations(req, res) {
-        try {
-            const userId = req.user.id;
-            const conversations = await this.chatService.getConversations(userId);
-            res.json(conversations);
-        } catch (error) {
-            console.error('❌ Error obteniendo conversaciones:', error);
-            res.status(500).json({ error: 'Error al obtener las conversaciones.' });
-        }
-    }
-
-    /**
-     * Obtiene todos los mensajes de una conversación específica.
-     */
-    async getConversationMessages(req, res) {
-        try {
-            const userId = req.user.id;
-            const conversationId = parseInt(req.params.id, 10);
-            const messages = await this.chatService.getMessages(conversationId, userId);
-            res.json(messages);
-        } catch (error) {
-            console.error('❌ Error obteniendo mensajes:', error);
-            res.status(500).json({ error: 'Error al obtener los mensajes de la conversación.' });
-        }
-    }
-
-    /**
-     * Actualiza el título de una conversación.
-     */
-    async updateConversationTitle(req, res) {
-        try {
-            const userId = req.user.id;
-            const conversationId = parseInt(req.params.id, 10);
-            const { title } = req.body;
-
-            if (!title || title.trim() === '') {
-                return res.status(400).json({ error: 'El título no puede estar vacío.' });
-            }
-
-            const updatedConversation = await this.chatService.updateConversationTitle(conversationId, title, userId);
-            res.json(updatedConversation);
-        } catch (error) {
-            console.error('❌ Error actualizando título de conversación:', error);
-            res.status(500).json({ error: 'Error al actualizar el título.' });
-        }
-    }
-
-    /**
-     * Elimina una conversación.
-     */
-    async deleteConversation(req, res) {
-        try {
-            const userId = req.user.id;
-            const conversationId = parseInt(req.params.id, 10);
-
-            const wasDeleted = await this.chatService.deleteConversation(conversationId, userId);
-
-            if (wasDeleted) {
-                res.status(204).send(); // No Content
-            } else {
-                // Esto puede pasar si el usuario intenta borrar un chat que no es suyo o no existe.
-                res.status(404).json({ error: 'Conversación no encontrada o no tienes permiso para eliminarla.' });
-            }
-        } catch (error) {
-            console.error('❌ Error eliminando conversación:', error);
-            res.status(500).json({ error: 'Error al eliminar la conversación.' });
         }
     }
 

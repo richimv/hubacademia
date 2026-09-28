@@ -112,8 +112,6 @@ ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.search_history ENABLE ROW LEVEL SECURITY;
 -- Tablas de unión
@@ -156,16 +154,6 @@ CREATE POLICY "Public data is viewable by everyone." ON public.topic_resources F
 CREATE POLICY "Users can view their own data." ON public.users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update their own data." ON public.users FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
--- Tabla 'conversations': Un usuario puede gestionar completamente sus propias conversaciones.
-CREATE POLICY "Users can manage their own conversations." ON public.conversations FOR ALL
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
-
--- Tabla 'chat_messages': Un usuario puede gestionar mensajes de sus propias conversaciones.
-CREATE POLICY "Users can manage messages in their own conversations." ON public.chat_messages FOR ALL
-    USING ((SELECT user_id FROM conversations WHERE id = conversation_id) = auth.uid())
-    WITH CHECK ((SELECT user_id FROM conversations WHERE id = conversation_id) = auth.uid());
-
 -- Tabla 'feedback': Un usuario puede crear feedback y ver el suyo.
 CREATE POLICY "Users can create and view their own feedback." ON public.feedback FOR ALL
     USING (auth.uid() = user_id)
@@ -201,7 +189,7 @@ RETURNS text AS
 $func$
 -- ✅ CORRECCIÓN FINAL: Usar la versión de un solo argumento de unaccent, que es más estándar y robusta.
 SELECT extensions.unaccent($1)
-$func$ LANGUAGE sql IMMUTABLE SET search_path = public, extensions;
+$func$ LANGUAGE sql IMMUTABLE SET search_path = public, extensions, pg_temp;
 
 -- ✅ OPTIMIZACIÓN: Crear índices GIN en las columnas de texto que se usan para la búsqueda.
 -- Ahora usamos nuestra función inmutable `f_unaccent` para que PostgreSQL permita la creación del índice.
@@ -245,7 +233,7 @@ BEGIN
     ORDER BY 
         c.name;
 END; 
-$$ LANGUAGE plpgsql SET search_path = 'public';
+$$ LANGUAGE plpgsql SET search_path = public, pg_temp;
 
 -- Procedimiento Almacenado para la búsqueda principal de cursos.
 -- Reemplaza la lógica que estaba en `courseRepository.search()`.
@@ -297,7 +285,7 @@ BEGIN
     )
     ORDER BY c.name;
 END; 
-$$ LANGUAGE plpgsql SET search_path = 'public';
+$$ LANGUAGE plpgsql SET search_path = public, pg_temp;
 
 -- Se elimina la función find_courses_by_instructor ya que su lógica se ha integrado
 -- de forma correcta y robusta en la función principal search_courses. Esto simplifica el código.
@@ -358,4 +346,4 @@ BEGIN
     -- ✅ MEJORA: Ordenar por la puntuación de relevancia para mostrar primero las mejores coincidencias.
     ORDER BY MIN(car.relevance_score) ASC, c.name ASC;
 END; 
-$$ LANGUAGE plpgsql SET search_path = 'public';
+$$ LANGUAGE plpgsql SET search_path = public, pg_temp;

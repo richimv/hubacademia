@@ -10,15 +10,15 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=df7e55bd86c6">
-    <link rel="stylesheet" href="/css/base.css?v=df7e55bd86c6">
-    <link rel="stylesheet" href="/css/auth.css?v=df7e55bd86c6">
-    <link rel="stylesheet" href="/css/header.css?v=df7e55bd86c6">
-    <link rel="stylesheet" href="/css/footer.css?v=df7e55bd86c6">
-    <link rel="stylesheet" href="/css/modal.css?v=df7e55bd86c6">
-    <link rel="stylesheet" href="/css/sidebar.css?v=df7e55bd86c6">
-    <script src="/js/config.js?v=df7e55bd86c6"></script>
-    <script src="/js/utils/themeManager.js?v=df7e55bd86c6"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/base.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/auth.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/header.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/footer.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/modal.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/sidebar.css?v=5ca6b7db3040">
+    <script src="/js/config.js?v=5ca6b7db3040"></script>
+    <script src="/js/utils/themeManager.js?v=5ca6b7db3040"></script>
     <style>
         /* Stylized & Professional Design System for User Profile - Dual Theme */
         body {
@@ -630,6 +630,114 @@
                 align-self: stretch;
             }
         }
+
+        /* Unconfirmed Email Warning Banner */
+        .unverified-alert-banner {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .unverified-alert-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-width: 0;
+        }
+
+        .unverified-alert-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f59e0b;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .unverified-alert-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .unverified-alert-desc {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .btn-banner-verify {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #ffffff;
+            border: none;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-banner-verify:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
+        }
+
+        .badge-status-unverified {
+            background: rgba(245, 158, 11, 0.14);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .badge-status-unverified:hover {
+            background: rgba(245, 158, 11, 0.25);
+            border-color: #f59e0b;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 680px) {
+            .unverified-alert-banner {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: left;
+                padding: 1rem 1.15rem;
+                gap: 1rem;
+            }
+            .btn-banner-verify {
+                justify-content: center;
+                width: 100%;
+            }
+        }
+
+        /* Los estilos del modal OTP se heredan modularmente desde /css/auth.css */
     </style>
 </head>
 
@@ -654,6 +762,24 @@
         <div id="sidebar-container"></div>
 
         <main class="profile-container">
+            <!-- Unconfirmed Email Alert Banner -->
+            <div id="unverified-email-banner" class="unverified-alert-banner" style="display: none;">
+                <div class="unverified-alert-content">
+                    <div class="unverified-alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="unverified-alert-text">
+                        <div class="unverified-alert-title">Correo Electrónico No Confirmado</div>
+                        <div class="unverified-alert-desc">
+                            Tu cuenta aún no ha sido verificada. Debes confirmar tu correo para activar tus <strong>10 vidas de IA mensuales</strong>, iniciar simulacros y adquirir membresías.
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-banner-verify-otp" onclick="openProfileOtpModal()" class="btn-banner-verify">
+                    <i class="fas fa-key"></i> Confirmar con Código OTP
+                </button>
+            </div>
+
             <!-- Hero Header Card -->
             <div class="profile-header-card">
                 <div class="profile-avatar-container">
@@ -673,7 +799,9 @@
                         <div id="plan-badge-container">
                             <span class="badge-free">Plan Gratuito</span>
                         </div>
-                        <span class="badge-status-active"><i class="fas fa-check-circle"></i> Cuenta Verificada</span>
+                        <div id="email-verification-badge-container">
+                            <span class="badge-status-active"><i class="fas fa-check-circle"></i> Cuenta Verificada</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -706,11 +834,20 @@
                         </div>
                         <div class="security-row">
                             <span class="security-row-label">Estado de Identidad</span>
-                            <span class="security-row-val text-success" style="color: var(--success);"><i class="fas fa-check-circle" style="margin-right: 6px;"></i> Activa y Verificada</span>
+                            <span id="user-identity-status-val" class="security-row-val text-success" style="color: var(--success);"><i class="fas fa-check-circle" style="margin-right: 6px;"></i> Activa y Verificada</span>
                         </div>
                         <div class="security-row">
                             <span class="security-row-label">Rol en Plataforma</span>
                             <span id="user-role-val" class="security-row-val">Estudiante</span>
+                        </div>
+                        <div class="security-row" id="security-password-row">
+                            <div>
+                                <div class="security-row-label">Contraseña</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Protección de acceso a tu cuenta</div>
+                            </div>
+                            <button type="button" id="btn-open-change-pwd" onclick="openChangePasswordModal()" class="btn-icon-edit" style="font-size: 0.82rem; padding: 6px 12px;">
+                                <i class="fas fa-key"></i> <span>Cambiar Contraseña</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -765,7 +902,7 @@
             <div class="modal-body" style="padding: 1.5rem; gap: 1.25rem;">
                 <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: 12px; padding: 1rem; color: var(--danger); font-size: 0.875rem; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;">
                     <i class="fas fa-info-circle" style="margin-top: 2px; flex-shrink: 0;"></i>
-                    <span>Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta, historial de chats, favoritos y suscripciones.</span>
+                    <span>Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta, favoritos, progreso de estudio y suscripciones.</span>
                 </div>
                 <div class="form-group" style="margin-top: 0.5rem; text-align: left;">
                     <label for="delete-password" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-main); font-size: 0.875rem;">
@@ -803,20 +940,150 @@
                 </div>
             </div>
             <div class="modal-footer" style="padding: 1.25rem 1.5rem; border-top: 1px solid var(--border-color); background: transparent; display: flex; gap: 0.75rem; justify-content: flex-end;">
-                <button onclick="closeEditNameModal()" class="btn-secondary">Cancelar</button>
-                <button id="confirm-edit-name-btn" class="btn-action btn-primary" onclick="submitNameChange()">Guardar Cambios</button>
+                <button type="button" onclick="closeEditNameModal()" class="btn-secondary">Cancelar</button>
+                <button type="button" id="confirm-edit-name-btn" class="btn-action btn-primary" onclick="submitNameChange()">Guardar Cambios</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         MODAL DE VERIFICACIÓN OTP DE 8 DÍGITOS (VerifyEmailOtpModal)
+    ======================================================== -->
+    <div class="modal-overlay" id="otp-modal">
+        <div class="modal-card">
+            <div class="modal-header-row">
+                <div class="modal-icon-badge">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                    <h3 class="modal-title">Verificar Correo</h3>
+                    <div class="modal-subtitle">Código de seguridad de 8 dígitos</div>
+                </div>
+                <button type="button" class="modal-close-icon" id="otp-close-btn" onclick="closeProfileOtpModal()" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="otp-info-box">
+                <i class="fas fa-envelope-open-text"></i>
+                <div>
+                    Enviamos el código a <strong id="otp-email-display">tu correo</strong>. Revisa tu bandeja de entrada o spam.
+                </div>
+            </div>
+
+            <!-- Contenedor Interactivo de 8 Casillas OTP -->
+            <div class="otp-boxes-wrapper" id="otp-boxes-container">
+                <div class="otp-box active"><span class="otp-digit"></span></div>
+                <div class="otp-box"><span class="otp-digit"></span></div>
+                <div class="otp-box"><span class="otp-digit"></span></div>
+                <div class="otp-box"><span class="otp-digit"></span></div>
+                <div class="otp-box"><span class="otp-digit"></span></div>
+                <div class="otp-box"><span class="otp-digit"></span></div>
+                <div class="otp-box"><span class="otp-digit"></span></div>
+                <div class="otp-box"><span class="otp-digit"></span></div>
+            </div>
+
+            <!-- Input oculto para captura en móviles y desktop -->
+            <input type="tel" id="otp-hidden-input" class="otp-hidden-input" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="one-time-code">
+
+            <!-- Mensaje de Feedback -->
+            <div class="otp-feedback" id="otp-feedback"></div>
+
+            <button type="button" class="btn-otp-action" id="btn-otp-verify" disabled>
+                <i class="fas fa-check-circle"></i> Verificar Código
+            </button>
+
+            <!-- Reenvío de Código con Cooldown de 60s -->
+            <div class="otp-resend-row">
+                <span id="otp-countdown-text">Reenviar nuevo código en <strong>60s</strong></span>
+                <button type="button" class="btn-resend-link" id="btn-otp-resend">
+                    <i class="fas fa-redo"></i> ¿No recibiste el código? Reenviar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         MODAL DE CAMBIO DE CONTRASEÑA (ChangePasswordModal)
+    ======================================================== -->
+    <div class="modal-overlay" id="change-password-modal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header-row">
+                <div class="modal-icon-badge">
+                    <i class="fas fa-key"></i>
+                </div>
+                <div>
+                    <h3 class="modal-title">Cambiar Contraseña</h3>
+                    <div class="modal-subtitle">Actualiza tu clave de acceso a Hub Academia</div>
+                </div>
+                <button type="button" class="modal-close-icon" id="change-pwd-close-btn" onclick="closeChangePasswordModal()" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="form-change-password" class="auth-form" style="gap: 1.15rem;">
+                <div class="form-group">
+                    <label class="form-label" for="change-new-password">Nueva Contraseña</label>
+                    <div class="input-wrapper">
+                        
+                        <input type="password" id="change-new-password" class="form-input" placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
+                        <button type="button" class="btn-toggle-password" data-target="change-new-password" aria-label="Mostrar contraseña">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <!-- Criterios de Seguridad en Tiempo Real -->
+                    <div class="password-rules" id="change-pwd-rules-list">
+                        <div class="rule-item" id="cp-rule-length">
+                            <i class="far fa-circle rule-icon"></i> Mínimo 8 caracteres (máx. 100)
+                        </div>
+                        <div class="rule-item" id="cp-rule-upper">
+                            <i class="far fa-circle rule-icon"></i> Al menos una letra mayúscula (A-Z)
+                        </div>
+                        <div class="rule-item" id="cp-rule-lower">
+                            <i class="far fa-circle rule-icon"></i> Al menos una letra minúscula (a-z)
+                        </div>
+                        <div class="rule-item" id="cp-rule-number">
+                            <i class="far fa-circle rule-icon"></i> Al menos un número (0-9)
+                        </div>
+                        <div class="rule-item" id="cp-rule-spaces">
+                            <i class="far fa-circle rule-icon"></i> Sin espacios en blanco
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="change-confirm-password">Confirmar Nueva Contraseña</label>
+                    <div class="input-wrapper">
+                        
+                        <input type="password" id="change-confirm-password" class="form-input" placeholder="Repite tu nueva contraseña" required autocomplete="new-password">
+                        <button type="button" class="btn-toggle-password" data-target="change-confirm-password" aria-label="Mostrar contraseña">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mensaje de Feedback -->
+                <div class="otp-feedback" id="change-pwd-feedback" style="display: none;"></div>
+
+                <button type="submit" class="btn-submit-action" id="btn-submit-change-pwd">
+                    <i class="fas fa-save"></i> Guardar Nueva Contraseña
+                </button>
+            </form>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=df7e55bd86c6"></script>
-    <script src="/js/services/authApiService.js?v=df7e55bd86c6"></script>
-    <script src="/js/sessionManager.js?v=df7e55bd86c6"></script>
-    <script src="/js/app.js?v=df7e55bd86c6"></script>
-    <script src="/js/ui/sidebar.js?v=df7e55bd86c6"></script>
-    <script src="/js/profile.js?v=df7e55bd86c6"></script>
+    <script src="/js/config.js?v=5ca6b7db3040"></script>
+    <script src="/js/utils/authValidation.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/networkService.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/authApiService.js?v=5ca6b7db3040"></script>
+    <script src="/js/sessionManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/app.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/uiManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/sidebar.js?v=5ca6b7db3040"></script>
+    <script src="/js/profile.js?v=5ca6b7db3040"></script>
 
 </body>
 

@@ -15,7 +15,9 @@ jest.mock('@supabase/supabase-js', () => {
                     getUserById: jest.fn().mockResolvedValue({
                         data: { user: { email_confirmed_at: '2026-06-01T00:00:00Z' } },
                         error: null
-                    })
+                    }),
+                    deleteUser: jest.fn().mockResolvedValue({ error: null }),
+                    updateUserById: jest.fn().mockResolvedValue({ data: {}, error: null })
                 }
             }
         })
@@ -23,6 +25,7 @@ jest.mock('@supabase/supabase-js', () => {
 });
 
 const mockFindById = jest.fn();
+const mockFindByEmail = jest.fn();
 const mockCreate = jest.fn();
 const mockUpdate = jest.fn();
 const mockDelete = jest.fn();
@@ -32,6 +35,7 @@ jest.mock('../../src/domain/repositories/userRepository', () => {
     return jest.fn().mockImplementation(() => {
         return {
             findById: mockFindById,
+            findByEmail: mockFindByEmail,
             create: mockCreate,
             update: mockUpdate,
             delete: mockDelete,
@@ -105,6 +109,36 @@ describe('AuthService', () => {
                 role: 'admin',
                 avatar_url: null
             });
+        });
+
+        it('should preserve existing custom user name and not overwrite with Google profile name', async () => {
+            const googlePayload = {
+                id: 'custom-user-id',
+                email: 'estudiante@hubacademia.com',
+                name: 'Google Registered Name'
+            };
+
+            // Simular usuario existente con nombre personalizado
+            mockFindByEmail.mockResolvedValue({
+                id: 'custom-user-id',
+                email: 'estudiante@hubacademia.com',
+                name: 'Mi Nombre Personalizado'
+            });
+
+            const expectedPersistedUser = {
+                id: 'custom-user-id',
+                email: 'estudiante@hubacademia.com',
+                name: 'Mi Nombre Personalizado',
+                role: 'student'
+            };
+            mockCreate.mockResolvedValue(expectedPersistedUser);
+
+            const result = await authService.syncGoogleUser(googlePayload);
+
+            expect(result.name).toBe('Mi Nombre Personalizado');
+            expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+                name: 'Mi Nombre Personalizado'
+            }));
         });
     });
 
@@ -193,6 +227,18 @@ describe('AuthService', () => {
             expect(mockRenewWeeklyLivesIfNeeded).toHaveBeenCalledWith(userId);
             expect(mockFindById).toHaveBeenCalledWith(userId);
             expect(result).toEqual(mockUser);
+        });
+    });
+
+    describe('deleteAccount', () => {
+        it('should trigger cascading repository delete and complete successfully', async () => {
+            const userId = 'user-delete-test';
+            mockDelete.mockResolvedValue({ success: true });
+
+            const result = await authService.deleteAccount(userId);
+
+            expect(mockDelete).toHaveBeenCalledWith(userId);
+            expect(result).toEqual({ success: true });
         });
     });
 });

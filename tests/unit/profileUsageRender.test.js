@@ -167,5 +167,56 @@ describe('Profile Usage Rendering', () => {
         expect(defaultInfo.formattedDate).toBe('Cada 30 días');
         expect(defaultInfo.daysLeft).toBe(30);
     });
+
+    test('renderUsageDetails debe reflejar vidas bloqueadas (0 / 10) si la cuenta no esta verificada', () => {
+        const userUnverified = {
+            subscriptionTier: 'free',
+            subscriptionStatus: 'pending',
+            usageCount: 0,
+            maxFreeLimit: 10,
+            emailVerified: false
+        };
+
+        profileModule.renderUsageDetails(userUnverified);
+        expect(mockContainer.innerHTML).toContain('0 / 10');
+        expect(mockContainer.innerHTML).toContain('Cuenta No Confirmada (0 Vidas)');
+        expect(mockContainer.innerHTML).toContain('Bloqueadas: Confirma tu correo');
+    });
+
+    test('maskEmailForDisplay debe enmascarar correos manteniendo privacidad', () => {
+        expect(profileModule.maskEmailForDisplay('carlos@gmail.com')).toBe('ca***@gmail.com');
+        expect(profileModule.maskEmailForDisplay('al@hotmail.com')).toBe('al***@hotmail.com');
+        expect(profileModule.maskEmailForDisplay('x@test.com')).toBe('x***@test.com');
+        expect(profileModule.maskEmailForDisplay('')).toBe('');
+    });
+
+    test('updateEmailVerificationUI debe conmutar banner y badges segun isVerified', () => {
+        const mockBanner = { style: {} };
+        const mockBadgeContainer = { innerHTML: '' };
+        const mockIdentity = { className: '', style: {}, innerHTML: '' };
+
+        global.document.getElementById = jest.fn((id) => {
+            if (id === 'unverified-email-banner') return mockBanner;
+            if (id === 'email-verification-badge-container') return mockBadgeContainer;
+            if (id === 'user-identity-status-val') return mockIdentity;
+            return null;
+        });
+
+        // Caso 1: Correo No Verificado
+        profileModule.updateEmailVerificationUI(false, 'test@ejemplo.com');
+        expect(mockBanner.style.display).toBe('flex');
+        expect(mockBadgeContainer.innerHTML).toContain('badge-status-unverified');
+        expect(mockBadgeContainer.innerHTML).toContain('Correo No Verificado');
+        expect(mockIdentity.className).toContain('text-warning');
+        expect(mockIdentity.innerHTML).toContain('Pendiente de Verificación');
+
+        // Caso 2: Correo Verificado
+        profileModule.updateEmailVerificationUI(true, 'test@ejemplo.com');
+        expect(mockBanner.style.display).toBe('none');
+        expect(mockBadgeContainer.innerHTML).toContain('badge-status-active');
+        expect(mockBadgeContainer.innerHTML).toContain('Cuenta Verificada');
+        expect(mockIdentity.className).toContain('text-success');
+        expect(mockIdentity.innerHTML).toContain('Activa y Verificada');
+    });
 });
 

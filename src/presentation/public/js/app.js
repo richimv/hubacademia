@@ -180,15 +180,21 @@ function ensureThemeToggleButton() {
 }
 
 /**
- * Configura el botón "Acceder" de la cabecera para el inicio de sesión directo con Google.
+ * Configura el botón "Acceder" de la cabecera para dirigir a la vista de login.
  */
 function setupDirectLoginListener() {
     const openBtn = document.getElementById('open-login-modal');
     if (!openBtn) return;
 
     openBtn.onclick = (e) => {
-        e.preventDefault();
-        window.triggerGoogleLogin(openBtn);
+        if (e && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
+        const currentPath = (window.location.pathname || '') + (window.location.search || '');
+        const redirectParam = currentPath && currentPath !== '/' && !currentPath.includes('login')
+            ? `?redirect=${encodeURIComponent(currentPath)}`
+            : '';
+        window.location.href = `/login${redirectParam}`;
     };
 }
 
@@ -290,10 +296,7 @@ function updateHeaderUI(user) {
                 </button>
                 <div id="user-menu-dropdown" class="user-menu-dropdown">
                     <div class="user-menu-header">
-                        <span class="user-menu-name">
-                            ${displayName}
-                            <i class="fas fa-check-circle" title="Cuenta verificada via Google" style="color: #10b981; margin-left: 5px; font-size: 0.8rem;"></i>
-                        </span>
+                        <span class="user-menu-name">${displayName}</span>
                         <span class="user-menu-email">${user.email || ''}</span>
                     </div>
                     

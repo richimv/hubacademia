@@ -148,6 +148,7 @@ class UserRepository {
                     ON CONFLICT (email) 
                     DO UPDATE SET 
                         id = EXCLUDED.id,
+                        name = COALESCE(NULLIF(TRIM(public.users.name), ''), EXCLUDED.name),
                         role = CASE 
                             WHEN EXCLUDED.role = 'admin' THEN 'admin'
                             ELSE public.users.role
@@ -164,11 +165,14 @@ class UserRepository {
              if (dbError.code === '23505') {
                   const updateQuery = `
                     UPDATE public.users 
-                    SET id = $1, avatar_url = COALESCE($3, avatar_url), updated_at = NOW() 
+                    SET id = $1, 
+                        name = COALESCE(NULLIF(TRIM(public.users.name), ''), $3),
+                        avatar_url = COALESCE($4, avatar_url), 
+                        updated_at = NOW() 
                     WHERE lower(email) = $2
                     RETURNING *;
                   `;
-                  const updateRes = await db.query(updateQuery, [id, email.toLowerCase(), avatar_url]);
+                  const updateRes = await db.query(updateQuery, [id, email.toLowerCase(), name, avatar_url]);
                   return this._mapRowToUser(updateRes.rows[0]);
              }
 
@@ -252,6 +256,71 @@ class UserRepository {
     }
 
     async delete(id) {
+        if (typeof db.pool === 'function') {
+            const pool = db.pool();
+            if (pool && typeof pool.connect === 'function') {
+                const client = await pool.connect();
+                try {
+                    await client.query('BEGIN');
+
+                    // 1. Eliminar datos dependientes de flashcards y mazos
+                    await client.query('DELETE FROM user_flashcards WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM decks WHERE user_id = $1', [id]).catch(() => {});
+
+                    // 2. Eliminar sesiones de simulacros, preguntas asociadas y estadísticas
+                    await client.query(`
+                        DELETE FROM quiz_session_questions 
+                        WHERE session_id IN (SELECT id FROM quiz_sessions WHERE user_id = $1)
+                    `, [id]).catch(() => {});
+                    await client.query('DELETE FROM quiz_sessions WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM quiz_history WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM user_question_history WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM user_simulator_preferences WHERE user_id = $1', [id]).catch(() => {});
+
+                    // 3. Eliminar bibliotecas guardadas y notas del usuario
+                    await client.query('DELETE FROM user_book_library WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM user_course_library WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM user_notes WHERE user_id = $1', [id]).catch(() => {});
+
+                    // 4. Eliminar feedback, historial de búsqueda y eventos de pago
+                    await client.query('DELETE FROM feedback WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM search_history WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM payment_events WHERE user_id = $1', [id]).catch(() => {});
+
+                    // 6. Anonimizar analíticas históricas
+                    await client.query('UPDATE page_views SET user_id = NULL WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('UPDATE web_traffic SET user_id = NULL WHERE user_id = $1', [id]).catch(() => {});
+
+                    // 7. Eliminar el registro maestro del usuario
+                    const { rowCount } = await client.query('DELETE FROM users WHERE id = $1', [id]);
+
+                    await client.query('COMMIT');
+                    if (rowCount === 0) throw new Error(`Usuario no encontrado.`);
+                    return { success: true };
+                } catch (err) {
+                    await client.query('ROLLBACK').catch(() => {});
+                    throw err;
+                } finally {
+                    client.release();
+                }
+            }
+        }
+
+        // Fallback vía db.query (para pruebas o conexiones simples)
+        await db.query('DELETE FROM user_flashcards WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('DELETE FROM decks WHERE user_id = $1', [id]).catch(() => {});
+        await db.query(`
+            DELETE FROM quiz_session_questions 
+            WHERE session_id IN (SELECT id FROM quiz_sessions WHERE user_id = $1)
+        `, [id]).catch(() => {});
+        await db.query('DELETE FROM quiz_sessions WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('DELETE FROM quiz_history WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('DELETE FROM user_question_history WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('DELETE FROM user_simulator_preferences WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('DELETE FROM user_book_library WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('DELETE FROM user_course_library WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('DELETE FROM user_notes WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('DELETE FROM payment_events WHERE user_id = $1', [id]).catch(() => {});
         const { rowCount } = await db.query('DELETE FROM users WHERE id = $1', [id]);
         if (rowCount === 0) throw new Error(`Usuario no encontrado.`);
         return { success: true };

@@ -493,9 +493,19 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Se actualizaron las píldoras de filtrado en la vista Comunidad (`repaso.js`) y los selectores `<select>` de creación y publicación de mazos (`repaso.html`, `repaso.js`).
   - **Preservación Intacta del Tutor Repaso Contextual**:
     - El prompt de sistema `flashcard_tutor` en `src/domain/prompts/chatPrompts.js` se mantuvo **estrictamente inalterado**, preservando su pedagogía socrática y naturaleza multidisciplinaria para asistir tanto a docentes como a estudiantes de medicina y cualquier materia en vivo.
-  - **Verificación y Pruebas Unitarias**:
-    - Actualizadas las suites `tests/unit/deckIdiomasAndSecurity.test.js`, `tests/unit/deckSecurityLimits.test.js` y `tests/unit/retiredLanguagesModule.test.js`.
-    - 60/60 suites de Jest pasando satisfactoriamente (503/503 pruebas al 100%).
+
+- **Privacidad y Anonimización de Mazos Públicos en Comunidad (V48 - Septiembre 2026)**:
+  - **Motivación y Requerimiento de Privacidad**:
+    - Para garantizar el cumplimiento normativo de protección de datos personales (PII) y resguardar la identidad de docentes y estudiantes al compartir material educativo públicamente, los mazos publicados no deben revelar el nombre ni identidad de sus autores en la pestaña de Comunidad.
+  - **Capa de Infraestructura y Repositorio (`flashcardRepository.js`)**:
+    - Se eliminó `u.name as author_name` y el `LEFT JOIN users u ON d.user_id = u.id` tanto en la consulta primaria como en la consulta fallback (defensa ante código de error PostgreSQL `42703`) dentro del método `getPublicDecks`.
+    - Esta omisión previene la exposición de datos del usuario a nivel de red y base de datos, optimizando adicionalmente el rendimiento al suprimir una unión de tablas innecesaria.
+  - **Capa de Presentación (`repaso.js`)**:
+    - Se suprimió el bloque visual `&gt; Por: <span ...>${escapeHtml(deck.author_name || 'Estudiante')}</span>` en las tarjetas de escritorio (`.deck-card-desktop`).
+    - Se recalibró el espaciado vertical (`margin-bottom: 1.1rem` en el indicador de cantidad de tarjetas) para mantener la armonía estética y alineación con el botón de clonar.
+  - **Pruebas y Verificación**:
+    - Se incorporaron pruebas unitarias dedicadas en `tests/unit/deckIdiomasAndSecurity.test.js` verificando que las consultas SQL de `getPublicDecks` no referencien `author_name` ni unan la tabla `users`, y que el template en `repaso.js` no contenga referencias a autores.
+    - 63/63 suites de Jest ejecutadas con éxito (578/578 pruebas al 100%).
 
 ---
 

@@ -29,6 +29,7 @@ class AuthController {
 
             res.json({
                 ...userWithoutPassword,
+                emailVerified: user.emailVerified ?? req.user?.emailVerified ?? false,
                 limits: userLimits
             });
         } catch (error) {

@@ -301,12 +301,15 @@ class AnalyticsController {
             // 💸 DESCONTAR CUOTA / VIDAS según el tipo definido por el middleware (usage_count para Free, daily_ai_usage para Advanced)
             if (req.usageType && tier !== 'admin') {
                 try {
-                    const db = require('../../infrastructure/database/db');
-                    await db.query(
-                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
-                        [userId]
-                    );
-                    console.log(`📉 Cuota de ${req.usageType} incrementada para usuario ${userId} en Diagnóstico.`);
+                    const { isValidUsageColumn } = require('../../domain/utils/securityUtils');
+                    if (isValidUsageColumn(req.usageType)) {
+                        const db = require('../../infrastructure/database/db');
+                        await db.query(
+                            `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                            [userId]
+                        );
+                        console.log(`📉 Cuota de ${req.usageType} incrementada para usuario ${userId} en Diagnóstico.`);
+                    }
                 } catch (limitErr) {
                     console.error("⚠️ No se pudo actualizar el límite en base de datos. Continuando...", limitErr);
                 }

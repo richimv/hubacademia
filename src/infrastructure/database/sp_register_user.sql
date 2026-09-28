@@ -29,7 +29,7 @@ BEGIN
     ON CONFLICT (email) 
     DO UPDATE SET
         id = EXCLUDED.id, -- Sincronizar el ID de Supabase Auth
-        name = EXCLUDED.name,
+        name = COALESCE(NULLIF(TRIM(public.users.name), ''), EXCLUDED.name),
         role = CASE 
             WHEN EXCLUDED.role = 'admin' THEN 'admin'
             ELSE public.users.role
@@ -38,6 +38,6 @@ BEGIN
         updated_at = NOW()
     RETURNING *;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 REVOKE EXECUTE ON FUNCTION public.sp_register_user(uuid, text, text, text, text, text) FROM PUBLIC, anon, authenticated;

@@ -34,7 +34,7 @@ El ecosistema de chat de Hub Academia se divide en 3 modalidades con arquitectur
 - **Mecánica:** **100% Estático y Efímero** con **latencia de 0ms** y **costo $0 de inferencia IA o base de datos**. Procesa consultas mediante coincidencia inteligente de intención contra la base de conocimiento oficial.
 - **Propósito:** Orientación de la plataforma, explicación de los dos pilares oficiales (**SERUMS** para Salud y **ASCENSO** para Educación), información de planes y precios (Free, Basic, Advanced), sustento oficial y guía de registro.
 - **Cuotas y Vidas:** **0 consumo de vidas y 0 consumo de límites diarios** para todos los usuarios (visitantes y autenticados).
-- **Persistencia:** Cero escrituras en base de datos (las tablas `conversations` y `chat_messages` no se usan para este chat).
+- **Persistencia:** Cero escrituras en base de datos (todos los chats y consultas son 100% efímeros; no existen tablas de conversaciones ni mensajes en la base de datos).
 
 ### 3.2 📝 Modalidad 2: Quiz Tutor (Tutor en Simuladores de Examen - `quiz_tutor`)
 - **Implementación:** `quiz.html` / `quiz-tutor.js` (Frontend) ↔ `chatController.js` / `tutorAiService.js` (Backend).
@@ -242,7 +242,7 @@ marked.setOptions({
 
 ### 9.1 Chat General (Widget flotante)
 - **Archivo:** `js/chat.js`
-- **Persistencia:** Conversaciones guardadas en PostgreSQL vía `ChatService`.
+- **Persistencia:** 100% Efímero en memoria de sesión del cliente (Cero persistencia en base de datos).
 - **Historial:** Carga completa al cambiar de conversación.
 - **Sugerencias:** Pastillas clickeables generadas por la IA o fallback predefinido.
 
@@ -436,8 +436,8 @@ marked.setOptions({
 
 ### 9.1 Chat General (Widget flotante)
 - **Archivo:** `js/chat.js`
-- **Persistencia:** Conversaciones guardadas en PostgreSQL vía `ChatService`.
-- **Historial:** Carga completa al cambiar de conversación.
+- **Persistencia:** 100% Efímero en memoria de sesión del cliente (Cero persistencia en base de datos).
+- **Historial:** Efímero de sesión activa.
 - **Sugerencias:** Pastillas clickeables generadas por la IA o fallback predefinido.
 
 ### 9.2 Asistente de Voz (Audio Assistant) [ELIMINADO - JULIO 2026]

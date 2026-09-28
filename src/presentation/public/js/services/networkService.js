@@ -52,7 +52,7 @@ class NetworkService {
         const isDeckWriteEndpoint = (url.includes('/api/decks') || url.includes('/api/cards')) && (options.method === 'POST' || options.method === 'PUT') && !url.includes('/visibility') && !url.includes('/reorder') && !url.includes('/tree');
         const isDeckClone = url.includes('/clone') && (options.method === 'POST' || !options.method);
         const isSimulatorStart = (url.includes('/api/medico/start') || url.includes('/api/docente/start')) && (options.method === 'POST' || !options.method);
-        const isTutorOrAIChat = url.includes('/api/chat') && !url.includes('/conversations') && !(options.headers && (options.headers['X-General-Chat'] || options.headers['x-general-chat'])) && (options.method === 'POST' || !options.method);
+        const isTutorOrAIChat = url.includes('/api/chat') && !(options.headers && (options.headers['X-General-Chat'] || options.headers['x-general-chat'])) && (options.method === 'POST' || !options.method);
         const isDiagnostic = url.includes('/api/analytics/diagnostic') && options.method === 'POST';
 
         const isConsumptionEndpoint = isStudyEndpoint || isDeckWriteEndpoint || isDeckClone || isSimulatorStart || isTutorOrAIChat || isDiagnostic;

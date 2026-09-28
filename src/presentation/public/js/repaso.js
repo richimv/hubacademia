@@ -632,11 +632,8 @@ class RepasoManager {
                         </div>
                         <div style="font-size:1.6rem; margin-bottom:0.4rem;">${iconHtml}</div>
                         <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin-bottom:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(deck.name)}">${escapeHtml(deck.name)}</h3>
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.4rem;">
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.1rem;">
                             ${Math.max(0, Number(deck.total_cards) || 0)} tarjetas
-                        </div>
-                        <div style="font-size:0.75rem; color:#f97316; font-weight:600; margin-bottom:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            &gt; Por: <span style="color:var(--text-secondary)">${escapeHtml(deck.author_name || 'Estudiante')}</span>
                         </div>
                         <div style="margin-top:auto; width:100%;">
                             <button type="button" class="btn-clone-deck btn-clone-desktop">

@@ -1,5 +1,5 @@
 const db = require('../../infrastructure/database/db');
-const { validateCSVExportParams } = require('../utils/securityUtils');
+const { validateCSVExportParams, sanitizeCSVCell } = require('../utils/securityUtils');
 
 function formatPlainTextToHtml(text) {
     if (!text) return '';
@@ -458,12 +458,7 @@ class AdminRepository {
 
         const headers = Object.keys(res.rows[0]).join(',');
         const rows = res.rows.map(row =>
-            Object.values(row).map(val => {
-                if (val === null) return '';
-                if (val instanceof Date) return `"${val.toISOString()}"`;
-                const cleanVal = String(val).replace(/"/g, '""').replace(/\n/g, ' ');
-                return `"${cleanVal}"`;
-            }).join(',')
+            Object.values(row).map(val => `"${sanitizeCSVCell(val)}"`).join(',')
         ).join('\n');
 
         return headers + "\n" + rows;

@@ -156,7 +156,8 @@ const checkAILimits = (type) => {
             // 4. BIFURCACIÓN MAESTRA DE SUBSCRIPCIÓN
             // ✅ MEJORA: Un usuario solo es "Active" si tiene plan premium y status activo, o si es Admin.
             const isActiveAccount = (user.subscription_status === 'active' && user.subscription_tier !== 'free') || isAdmin;
-            const hasGlobalLives = (user.usage_count || 0) < (user.max_free_limit || 10);
+            const isEmailConfirmed = req.user?.emailVerified !== false || isAdmin;
+            const hasGlobalLives = isEmailConfirmed && ((user.usage_count || 0) < (user.max_free_limit || 10));
 
             // 5. CHEQUEO DE LA OPERACIÓN SOLICITADA
             let effectiveType = type;
@@ -166,6 +167,15 @@ const checkAILimits = (type) => {
                 const urlStr = req.originalUrl || '';
                 const isDiagnostic = pathStr.includes('/diagnostic') || urlStr.includes('/diagnostic');
                 if (isDiagnostic) {
+                    // 🛡️ REGLA FASE 2: Cuentas no confirmadas no pueden generar diagnósticos con IA
+                    if (!isEmailConfirmed) {
+                        return res.status(403).json({
+                            error: 'Debes confirmar tu correo electrónico con el código de 8 dígitos para generar diagnósticos con IA.',
+                            reason: 'EMAIL_VERIFICATION_REQUIRED',
+                            emailVerified: false
+                        });
+                    }
+
                     if (isActiveAccount) {
                         if (tier === 'basic') {
                             // 📘 Plan Básico Activo: Diagnóstico Heurístico Estático (0 tokens diarios de IA, 0 vidas)
@@ -202,6 +212,15 @@ const checkAILimits = (type) => {
                     const isTutorChat = (context && (context.type === 'quiz_tutor' || context.type === 'flashcard_tutor')) || spec === 'flashcard_tutor';
 
                     if (isTutorChat) {
+                        // 🛡️ REGLA FASE 2: Cuentas no confirmadas no pueden consultar al Tutor IA
+                        if (!isEmailConfirmed) {
+                            return res.status(403).json({
+                                error: 'Debes confirmar tu correo electrónico con el código de 8 dígitos para interactuar con el Tutor IA.',
+                                reason: 'EMAIL_VERIFICATION_REQUIRED',
+                                emailVerified: false
+                            });
+                        }
+
                         if (isActiveAccount) {
                             // 🛡️ CONTROL DE LÍMITE DIARIO DE CONSULTAS IA PARA PLANES BASIC Y ADVANCED (Admin exento)
                             if (!isAdmin && (user.daily_ai_usage || 0) >= userLimits.chat_standard) {
@@ -257,6 +276,15 @@ const checkAILimits = (type) => {
                 }
             }
             else if (effectiveType === 'monthly_flashcards') {
+                // 🛡️ REGLA FASE 2: Cuentas no confirmadas no pueden gestionar ni estudiar flashcards
+                if (!isEmailConfirmed) {
+                    return res.status(403).json({
+                        error: 'Debes confirmar tu correo electrónico con el código de 8 dígitos para gestionar o estudiar tus flashcards.',
+                        reason: 'EMAIL_VERIFICATION_REQUIRED',
+                        emailVerified: false
+                    });
+                }
+
                 if (!isActiveAccount) {
                     // 🛡️ REGLA DE BLOQUEO: Carga masiva es SOLO para Premium
                     const isBatchImport = req.path.includes('/batch');
@@ -314,6 +342,15 @@ const checkAILimits = (type) => {
                 }
             }
             else if (effectiveType === 'simulator') {
+                // 🛡️ REGLA FASE 2: Cuentas no confirmadas no pueden iniciar simulacros
+                if (!isEmailConfirmed) {
+                    return res.status(403).json({
+                        error: 'Debes confirmar tu correo electrónico con el código de 8 dígitos para iniciar simulacros de examen.',
+                        reason: 'EMAIL_VERIFICATION_REQUIRED',
+                        emailVerified: false
+                    });
+                }
+
                 if (!isActiveAccount) {
                     if (hasGlobalLives) {
                         req.usageType = 'usage_count';
