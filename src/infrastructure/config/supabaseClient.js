@@ -1,14 +1,14 @@
 require('dotenv').config({ override: true });
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY; // En Render, usa la ANON KEY o la SERVICE_ROLE (ambas funcionan para validar)
+const supabaseUrl = process.env.SUPABASE_URL || 'https://mock-supabase.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || (process.env.NODE_ENV === 'test' ? 'mock-anon-key' : null);
 
 if (!supabaseUrl || !supabaseKey) {
     console.error('❌ Faltan variables de entorno SUPABASE_URL o SUPABASE_KEY en el Backend.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
+const supabase = createClient(supabaseUrl, supabaseKey || 'mock-anon-key', {
     auth: {
         autoRefreshToken: false,
         persistSession: false,

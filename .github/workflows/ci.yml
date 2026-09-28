@@ -17,6 +17,7 @@ jobs:
       GOOGLE_CLOUD_PROJECT: mock-gcp-project
       GOOGLE_CLOUD_LOCATION: us-central1
       SUPABASE_URL: https://mock-supabase.supabase.co
+      SUPABASE_KEY: mock-anon-key
       SUPABASE_ANON_KEY: mock-anon-key
       SUPABASE_SERVICE_ROLE_KEY: mock-service-role-key
     steps:

@@ -12,6 +12,22 @@
 
 const fs = require('fs');
 const path = require('path');
+
+// Mock Supabase client antes de importar controladores para aislamiento en CI
+jest.mock('../../src/infrastructure/config/supabaseClient', () => ({
+    from: jest.fn(() => ({
+        select: jest.fn(),
+        insert: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn()
+    })),
+    auth: {
+        getUser: jest.fn(),
+        verifyOtp: jest.fn()
+    },
+    supabaseAdmin: null
+}));
+
 const CoursesController = require('../../src/application/controllers/coursesController');
 
 describe('Seguridad Blindada de Rutas Administrativas (Zero-Flicker y Control de Acceso)', () => {

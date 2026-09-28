@@ -1,7 +1,6 @@
 const SearchService = require('../../domain/services/searchService');
 const AdminService = require('../../domain/services/adminService'); // Importar el nuevo servicio
 const GeminiService = require('../../domain/services/mlService'); // ✅ RENOMBRADO: Para evitar conflictos.
-const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ IMPORTAR CLIENTE SUPABASE
 const mediaController = require('./mediaController'); // ✅ NUEVO: Para subida centralizada a GCS
 const DriveService = require('../../domain/services/driveService'); // ✅ NUEVO: Para extracción de miniaturas
 const fs = require('fs');
