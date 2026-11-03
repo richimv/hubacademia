@@ -1,0 +1,281 @@
+@import url('theme.css');
+
+/* Resets y extensiones del root */
+@media (min-width: 768px) {
+    :root {
+        --page-padding-x: 4%;
+    }
+}
+
+@media (min-width: 1600px) {
+    :root {
+        --page-padding-x: 8%;
+    }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--font-main);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+body.modal-open {
+    overflow: hidden !important;
+}
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+/* 🚨 BLINDAJE GLOBAL: Ningún enlace se subraya bajo ninguna circunstancia */
+a,
+a:hover,
+a:focus,
+a:active,
+a:visited {
+    text-decoration: none !important;
+}
+
+a:hover {
+    color: var(--primary);
+}
+
+button {
+    cursor: pointer;
+    font-family: var(--font-main);
+}
+
+em, i.italic-text {
+    font-style: italic;
+    color: inherit;
+}
+
+/* Headers / Typography Fixes */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    letter-spacing: -0.02em;
+    /* Modern editorial look */
+    font-weight: var(--font-weight-extrabold);
+    /* Heavy by default */
+}/* Glassmorphism Utilities */
+.glass-panel {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--glass-border);
+}
+
+.premium-border {
+    border: 1px solid var(--border-glow) !important;
+    box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.text-gradient-primary {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent-purple) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+}
+
+/* Utilities */
+.hidden {
+    display: none !important;
+}
+
+/* Global Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* Buttons */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary);
+    color: white !important;
+    /* Force white text */
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius-md);
+    border: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    transition: all 0.2s;
+    text-decoration: none !important;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: auto;
+    min-width: 100px;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background-color: var(--bg-tertiary);
+    color: var(--text-main);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: var(--surface-hover);
+    border-color: var(--border-hover);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-hover);
+}
+
+/* Container principal (Unified Layout) */
+.main-container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: var(--spacing-md) var(--page-padding-x);
+}
+
+/* presentation/public/css/quiz.css */
+/* THEME: HIGH-END CYBERPUNK / GLASSMORPHISM */
+
+/* --- 0. BUTTON FOR MAIN PAGE (Shared) --- */
+/* Estilos para el botón en index.html, fuera del scope del juego */
+.btn-gamified {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px var(--primary-glow);
+    text-decoration: none;
+    font-size: 1rem;
+    font-family: var(--font-main);
+}
+
+.btn-gamified:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.btn-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   GLOBAL TABLE STYLES (Responsive & Premium Dark/Light)
+   ========================================================================== */
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1.5rem 0;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+}
+
+.table-wrapper::-webkit-scrollbar {
+    height: 4px;
+}
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    background: transparent;
+    /* ✅ CRÍTICO: Forzar ancho mínimo en móviles para activar scroll del wrapper */
+    min-width: 500px; 
+}
+
+@media (min-width: 769px) {
+    table {
+        min-width: 100%; /* En PC puede ser 100% si no es muy ancha */
+    }
+}
+
+th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--table-border);
+}
+
+th {
+    background: var(--table-header-bg);
+    color: var(--primary);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:hover td {
+    background: var(--table-row-hover);
+}

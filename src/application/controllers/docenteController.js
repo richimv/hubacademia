@@ -1,0 +1,410 @@
+const docenteService = require('../../domain/services/docenteService');
+const quizSessionService = require('../../domain/services/quizSessionService');
+const { secureQuizSessionsEnabled, sendQuizSessionError } = require('./quizSessionControllerSupport');
+const UsageService = require('../../domain/services/usageService');
+const usageService = new UsageService();
+const { LIMITS } = require('../../infrastructure/config/limits');
+const mineduScoringService = require('../../domain/services/mineduScoringService');
+
+class DocenteController {
+
+    async startQuiz(req, res) {
+        try {
+            const { target, areas, round = 1, limit = 5, topic, career, difficulty, mode } = req.body;
+            const user = req.user;
+
+            const finalTarget = target || 'ASCENSO';
+            const finalCareer = career || 'EBR - Primaria';
+            let finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : []);
+
+            if (!finalAreas || finalAreas.length === 0) {
+                return res.status(400).json({ error: 'Debes configurar tu examen (áreas y especialidad) antes de comenzar.' });
+            }
+
+            const tier = String(user.subscriptionTier || 'free').toLowerCase();
+            const status = (user.subscriptionStatus || 'pending').toLowerCase();
+            const isPremium = (['basic', 'advanced'].includes(tier) && status === 'active') || user.role === 'admin';
+
+            if (round === 1 && !isPremium) {
+                const usageCheck = await usageService.checkAndIncrementUsage(user.id);
+                if (!usageCheck.allowed) {
+                    return res.status(403).json({
+                        error: 'Has alcanzado tu límite de acciones gratuitas.',
+                        limitReached: true,
+                        usage: usageCheck.usage,
+                        limit: usageCheck.limit
+                    });
+                }
+            }
+
+            if (isPremium && user.role !== 'admin' && round === 1) {
+                const userLimits = LIMITS[tier] || LIMITS.basic;
+                const simCap = userLimits.simulator || 15;
+                const dailySimUsage = user.dailySimulatorUsage || user.daily_simulator_usage || 0;
+                if (dailySimUsage >= simCap) {
+                    return res.status(403).json({
+                        error: `Has alcanzado tu límite diario de simulacros (${simCap}/día). Vuelve mañana o mejora tu plan para continuar practicando.`,
+                        limitReached: true,
+                        paywall: tier === 'basic'
+                    });
+                }
+            }
+
+            if (round > 2 && !isPremium) {
+                return res.status(403).json({
+                    error: 'Los niveles Profesional y Experto son exclusivos de usuarios Premium.',
+                    premiumLock: true
+                });
+            }
+
+            console.log(`🎮 Generando Ronda ${round} de ${finalTarget} para ${user.name}. Limit: ${limit}`);
+
+            const seenIds = Array.isArray(req.body.seenIds) ? req.body.seenIds : (Array.isArray(req.body.excludeIds) ? req.body.excludeIds : []);
+            const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode };
+            const quizData = await docenteService.generateQuiz(categoryOptions, user.id, limit, user.subscriptionTier, seenIds);
+            const secureSession = secureQuizSessionsEnabled()
+                ? await quizSessionService.createSession({ userId: user.id, domain: 'education', questions: quizData.questions })
+                : null;
+
+            const returnedTopic = quizData.topic || finalAreas[0];
+            const logTopic = finalAreas.length > 1 ? `Multi-Área (${finalAreas.length} áreas)` : returnedTopic;
+            console.log(`✅ Quiz Generado. Tema Real: ${logTopic} en Target: ${finalTarget}`);
+
+            res.json({
+                success: true,
+                topic: returnedTopic,
+                areas: quizData.areas || finalAreas,
+                round: round,
+                quizSessionId: secureSession?.quizSessionId || null,
+                quizSessionExpiresAt: secureSession?.expiresAt || null,
+                questions: secureSession?.questions || quizData.questions,
+                isPremium: isPremium,
+                source: quizData.source
+            });
+
+        } catch (error) {
+            console.error('❌ [Error] startQuiz (Docente):', error);
+            if (sendQuizSessionError(res, error)) return;
+            if (error.cause) {
+                console.error('🔍 [Causa Original]:', error.cause);
+            }
+
+            if (error.message === "AI_REPLENISHMENT_FAILED" || error.message === "AI_GENERATION_EMPTY") {
+                return res.status(500).json({
+                    success: false,
+                    error: "Hubo un problema técnico al generar nuevas preguntas de IA. Por favor, intenta de nuevo en unos segundos.",
+                    technicalError: true
+                });
+            }
+
+            if (error.message === "BANK_EXHAUSTED_AND_IA_FAILED") {
+                return res.status(404).json({
+                    success: false,
+                    error: "Has completado todas las preguntas disponibles para este tema.",
+                    noQuestions: true
+                });
+            }
+
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    async submitScore(req, res) {
+        try {
+            const { quizSessionId, topic, areas, target, difficulty, career, score, total_questions, questions } = req.body;
+            const userId = req.user.id;
+
+            if (!topic || (!quizSessionId && score === undefined)) {
+                return res.status(400).json({ error: 'Datos de puntaje incompletos.' });
+            }
+
+            if (quizSessionId && !secureQuizSessionsEnabled()) {
+                return res.status(409).json({ error: 'El flujo seguro del simulador aún no está habilitado.' });
+            }
+
+            const grading = quizSessionId
+                ? await quizSessionService.gradeForSubmission({ sessionId: quizSessionId, userId, domain: 'education', clientAnswers: questions })
+                : null;
+
+            const finalQuestions = (grading && grading.questions && grading.questions.length > 0)
+                ? grading.questions
+                : (questions || []);
+
+            const finalScore = grading?.score !== undefined
+                ? grading.score
+                : (score !== undefined ? score : finalQuestions.filter(q => q.isCorrect === true || (q.userAnswer !== undefined && q.correct_option_index !== undefined && Number(q.userAnswer) === Number(q.correct_option_index))).length);
+
+            const finalTotal = grading?.totalQuestions || total_questions || finalQuestions.length || 10;
+
+            const result = await docenteService.submitQuizResult(userId, {
+                topic,
+                areas,
+                target,
+                career,
+                difficulty,
+                score: finalScore,
+                totalQuestions: finalTotal,
+                questions: finalQuestions,
+                sourceSessionId: grading?.sessionId || null,
+                mode: req.body.mode || (finalTotal >= 50 ? 'real' : undefined)
+            });
+
+            if (grading) {
+                await quizSessionService.markSubmitted(grading.sessionId, result.attemptId);
+            }
+
+            const tier = String(req.user.subscriptionTier || 'free').toLowerCase();
+            const isActiveAccount = req.user.subscriptionStatus === 'active';
+
+            if (result.wasCreated !== false && isActiveAccount && ['basic', 'advanced'].includes(tier)) {
+                try {
+                    await docenteService.incrementUserSimulatorUsage(userId);
+                    console.log(`📉 [Simulator Limit] +1 Simulator Usage (Culminación) para Premium: ${req.user.email}`);
+                } catch (limitErr) {
+                    console.error("⚠️ Error incrementando uso de simulador al culminar (Docente):", limitErr);
+                }
+            }
+
+            res.json({
+                success: true,
+                message: 'Puntaje registrado exitosamente.',
+                attemptId: result.attemptId,
+                flashcardsCreated: result.flashcardsCreated,
+                score: finalScore,
+                totalQuestions: finalTotal
+            });
+
+        } catch (error) {
+            console.error('Error en submitScore (Docente):', error);
+            if (sendQuizSessionError(res, error)) return;
+            res.status(500).json({ error: 'Error guardando el puntaje.' });
+        }
+    }
+
+    async getStats(req, res) {
+        try {
+            const { context, target, limit, days, areas, career, targetScale } = req.query;
+            const areaList = areas ? areas.split(',') : null;
+            const scaleCutoff = mineduScoringService.getScaleCutoff(targetScale || 2);
+
+            if (!req.user) {
+                const exampleKpis = {
+                    avg_score: "14.5",
+                    accuracy: 72,
+                    total_correct: 145,
+                    total_incorrect: 55,
+                    mastered_cards: 12,
+                    strongest_topic: "Enfoque por competencias",
+                    weakest_topic: "Características y desarrollo del estudiante",
+                    radar_data: [
+                        { subject: "Enfoque por competencias", accuracy: 88, correct: 42, total: 48 },
+                        { subject: "Constructivismo y socioconstructivismo", accuracy: 75, correct: 36, total: 48 },
+                        { subject: "Planificación pedagógica", accuracy: 68, correct: 32, total: 47 },
+                        { subject: "Evaluación formativa y retroalimentación", accuracy: 62, correct: 28, total: 45 },
+                        { subject: "Convivencia democrática y clima de aula", accuracy: 55, correct: 22, total: 40 },
+                        { subject: "Características y desarrollo del estudiante", accuracy: 50, correct: 20, total: 40 }
+                    ],
+                    system_deck_id: "example-deck",
+                    isGuest: true,
+                    minedu_avg_score_90: ((14.5 / 20) * 90).toFixed(1),
+                    scaleEvaluation: mineduScoringService.evaluateScaleStatus((14.5 / 20) * 90, targetScale || 2),
+                    targetScale: scaleCutoff.scale,
+                    targetScaleName: scaleCutoff.name
+                };
+                return res.json({ success: true, kpis: exampleKpis });
+            }
+
+            const kpis = await docenteService.getUserQuizStats(req.user.id, context || 'EDUCACION', target, limit, days, areaList, career);
+            if (kpis && kpis.avg_score) {
+                const numericAvg = parseFloat(kpis.avg_score) || 0;
+                kpis.minedu_avg_score_90 = ((numericAvg / 20) * 90).toFixed(1);
+                kpis.scaleEvaluation = mineduScoringService.evaluateScaleStatus((numericAvg / 20) * 90, targetScale || 2);
+                kpis.targetScale = scaleCutoff.scale;
+                kpis.targetScaleName = scaleCutoff.name;
+            }
+            res.json({ success: true, kpis });
+        } catch (error) {
+            console.error('Error en getStats (Docente):', error);
+            res.status(500).json({ error: 'Error obteniendo estadísticas.' });
+        }
+    }
+
+    async getEvolution(req, res) {
+        try {
+            const { context, target, limit, days, areas, career, targetScale } = req.query;
+            const areaList = areas ? areas.split(',') : null;
+            const scaleInfo = mineduScoringService.getScaleCutoff(targetScale || 2);
+
+            if (!req.user) {
+                const exampleChart = {
+                    labels: ["Sesión 1", "Sesión 2", "Sesión 3"],
+                    scores: ["14.0", "15.5", "16.0"],
+                    scores10: ["14.0", "15.5", "16.0"],
+                    scores20: [null, null, null],
+                    scoresReal: [null, null, null],
+                    scoresMinedu: ["63.0", "69.8", "72.0"],
+                    approvalThreshold20: scaleInfo.vigesimalEquivalent,
+                    approvalThreshold90: scaleInfo.minPoints,
+                    targetScale: scaleInfo.scale,
+                    targetScaleName: scaleInfo.name,
+                    approvalLabel: `Aprobatorio ${scaleInfo.name} ≥ ${scaleInfo.vigesimalEquivalent.toFixed(1)} (${scaleInfo.minPoints} pts)`
+                };
+                return res.json({ success: true, chart: exampleChart });
+            }
+
+            const userId = req.user.id;
+            const docenteRepository = require('../../domain/repositories/docenteRepository');
+
+            let timeFilter = '';
+            if (days) {
+                timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
+            }
+
+            const data = await docenteRepository.getQuizEvolution(userId, target, limit, timeFilter, areaList, career);
+            const chartData = {
+                labels: data.map(d => d.date_label),
+                scores10: data.map(d => (d.total_questions <= 15) ? parseFloat(d.score_20).toFixed(1) : null),
+                scores20: data.map(d => (d.total_questions > 15 && d.total_questions < 50) ? parseFloat(d.score_20).toFixed(1) : null),
+                scoresReal: data.map(d => (d.total_questions >= 50) ? parseFloat(d.score_20).toFixed(1) : null),
+                scores: data.map(d => parseFloat(d.score_20).toFixed(1)),
+                scoresMinedu: data.map(d => {
+                    const mineduVal = (d.score / (d.total_questions || 1)) * 90;
+                    return parseFloat(mineduVal.toFixed(1));
+                }),
+                approvalThreshold20: scaleInfo.vigesimalEquivalent,
+                approvalThreshold90: scaleInfo.minPoints,
+                targetScale: scaleInfo.scale,
+                targetScaleName: scaleInfo.name,
+                approvalLabel: `Aprobatorio ${scaleInfo.name} ≥ ${scaleInfo.vigesimalEquivalent.toFixed(1)} (${scaleInfo.minPoints} pts)`
+            };
+
+            res.json({ success: true, chart: chartData });
+        } catch (error) {
+            console.error('Error fetching evolution (Docente):', error);
+            res.status(500).json({ error: 'Error obteniendo evolución.' });
+        }
+    }
+
+    async getLeaderboard(req, res) {
+        try {
+            const resultRows = await docenteService.getLeaderboard();
+            res.json({ success: true, leaderboard: resultRows });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Error leaderboard' });
+        }
+    }
+
+    async getNextBatch(req, res) {
+        try {
+            const { quizSessionId, target, areas, difficulty, topic, career, seenIds, mode } = req.body;
+            const userId = req.user.id;
+
+            if (secureQuizSessionsEnabled() && !quizSessionId) {
+                return res.status(400).json({ error: 'Identificador de sesión requerido.' });
+            }
+
+            const finalTarget = target || 'ASCENSO';
+            const finalCareer = career || 'EBR - Primaria';
+            let finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : []);
+
+            if (!finalAreas || finalAreas.length === 0) {
+                return res.status(400).json({ error: 'Configuración de áreas no encontrada.' });
+            }
+
+            const batchLimit = parseInt(req.body.limit, 10) || 10;
+            const result = await docenteService.generateQuiz(
+                { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode, configType: req.body.configType },
+                userId,
+                batchLimit,
+                req.user.subscriptionTier,
+                seenIds || []
+            );
+            const secureQuestions = secureQuizSessionsEnabled() && quizSessionId
+                ? await quizSessionService.appendQuestions({
+                    sessionId: quizSessionId,
+                    userId,
+                    domain: 'education',
+                    questions: result.questions
+                })
+                : null;
+
+            res.json({
+                success: true,
+                quizSessionId: quizSessionId || null,
+                questions: secureQuestions || result.questions,
+                areas: result.areas || finalAreas,
+                source: result.source
+            });
+
+        } catch (error) {
+            console.error('❌ [Error] getNextBatch (Docente):', error);
+            if (sendQuizSessionError(res, error)) return;
+            if (error.message && error.message.includes("No hay preguntas disponibles")) {
+                return res.status(404).json({ error: error.message, noQuestions: true });
+            }
+            res.status(500).json({ error: 'Error cargando más preguntas.' });
+        }
+    }
+
+    async getDemoQuestions(req, res) {
+        try {
+            const limit = parseInt(req.query.limit) || 10;
+            const excludeIds = req.query.excludeIds 
+                ? req.query.excludeIds.split(',').filter(id => id && id.length > 30)
+                : [];
+            
+            const target = req.query.target || 'ASCENSO';
+            const career = req.query.career || null;
+            const difficulty = req.query.difficulty || null;
+            const areas = req.query.areas || null;
+
+            const docenteRepository = require('../../domain/repositories/docenteRepository');
+            const questions = await docenteRepository.getRandomDemoQuestions(limit, excludeIds, target, career, difficulty, areas);
+            const secureSession = secureQuizSessionsEnabled()
+                ? await quizSessionService.createSession({
+                    userId: req.user?.id || null,
+                    domain: 'education',
+                    questions
+                })
+                : null;
+
+            res.json({
+                success: true,
+                quizSessionId: secureSession?.quizSessionId || null,
+                quizSessionExpiresAt: secureSession?.expiresAt || null,
+                questions: secureSession?.questions || questions,
+                topic: `DEMO: ${target}`,
+                isPremium: false,
+                source: 'BANK'
+            });
+        } catch (error) {
+            console.error('Error fetching demo questions (Docente):', error);
+            if (sendQuizSessionError(res, error)) return;
+            res.status(500).json({ error: 'Error cargando preguntas de demostración.' });
+        }
+    }
+
+    async answerQuestion(req, res) {
+        try {
+            if (!secureQuizSessionsEnabled()) {
+                return res.status(404).json({ error: 'Flujo seguro no habilitado.' });
+            }
+            const { quizSessionId, sessionQuestionId, selectedOptionIndex } = req.body;
+            const answer = await quizSessionService.recordAnswer({
+                sessionId: quizSessionId,
+                sessionQuestionId,
+                selectedOptionIndex,
+                userId: req.user?.id || null,
+                domain: 'education'
+            });
+            res.json({ success: true, answer });
+        } catch (error) {
+            console.error('Error registrando respuesta (Docente):', error);
+            if (sendQuizSessionError(res, error)) return;
+            res.status(500).json({ error: 'Error registrando la respuesta.' });
+        }
+    }
+}
+
+module.exports = new DocenteController();

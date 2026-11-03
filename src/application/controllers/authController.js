@@ -1,0 +1,102 @@
+const AuthService = require('../../domain/services/authService');
+const { LIMITS } = require('../../infrastructure/config/limits');
+
+class AuthController {
+    constructor(authService) {
+        this.authService = authService;
+        this.getMe = this.getMe.bind(this);
+        this.syncUser = this.syncUser.bind(this);
+        this.deleteAccount = this.deleteAccount.bind(this);
+        this.updateProfile = this.updateProfile.bind(this);
+    }
+
+    /**
+     * Obtiene el perfil del usuario actual (Middleware)
+     */
+    async getMe(req, res) {
+        if (!req.user) {
+            return res.status(401).json({ error: 'No autenticado' });
+        }
+
+        try {
+            const user = await this.authService.getUserWithStatus(req.user.id);
+            if (!user) {
+                return res.status(404).json({ error: 'Usuario no encontrado' });
+            }
+            // Omitimos passwordHash por seguridad
+            const { passwordHash, ...userWithoutPassword } = user;
+            const userLimits = LIMITS[user.subscriptionTier] || LIMITS.free;
+
+            res.json({
+                ...userWithoutPassword,
+                emailVerified: user.emailVerified ?? req.user?.emailVerified ?? false,
+                limits: userLimits
+            });
+        } catch (error) {
+            console.error('Error en getMe:', error);
+            res.status(500).json({ error: 'Error interno al obtener datos.' });
+        }
+    }
+
+    /**
+     * Endpoint para sincronización desde el frontend tras login con Google
+     */
+    async syncUser(req, res) {
+        const identity = req.authIdentity;
+        if (!identity || !identity.id || !identity.email) {
+            return res.status(401).json({ error: 'Identidad Supabase no verificada.' });
+        }
+
+        const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 120) : undefined;
+
+        try {
+            const user = await this.authService.syncGoogleUser({ identity, name });
+            const { passwordHash, ...safeUser } = user;
+            res.status(200).json({ message: 'Sincronización exitosa', user: safeUser });
+        } catch (error) {
+            console.error('❌ Error en syncUser:', error);
+            res.status(500).json({ error: 'Error al sincronizar usuario.' });
+        }
+    }
+
+    /**
+     * Eliminar cuenta de usuario
+     */
+    async deleteAccount(req, res) {
+        const userId = req.user.id;
+        try {
+            // Nota: Para usuarios Google no necesitamos password para confirmar borrado
+            await this.authService.deleteAccount(userId);
+            res.json({ message: 'Cuenta eliminada con éxito.' });
+        } catch (error) {
+            console.error('Error en deleteAccount:', error);
+            res.status(500).json({ error: 'Error al eliminar la cuenta.' });
+        }
+    }
+
+    /**
+     * Actualizar perfil de usuario
+     */
+    async updateProfile(req, res) {
+        try {
+            const { name } = req.body;
+            if (!name || name.trim().length < 2) {
+                return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres.' });
+            }
+            
+            const updatedUser = await this.authService.updateProfile(req.user.id, { name: name.trim() });
+            const { passwordHash, ...userWithoutPassword } = updatedUser;
+            res.json({ message: 'Perfil actualizado con éxito', user: userWithoutPassword });
+        } catch (error) {
+            // 🛡️ Filtro de errores de validación (Business Rules)
+            if (error.message.includes('Solo puedes cambiar tu nombre')) {
+                return res.status(400).json({ error: error.message });
+            }
+            
+            console.error('❌ Error interno en updateProfile:', error);
+            res.status(500).json({ error: 'Error interno al actualizar perfil' });
+        }
+    }
+}
+
+module.exports = AuthController;

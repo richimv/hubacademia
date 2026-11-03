@@ -1,0 +1,487 @@
+# Módulo Educación (Docente Pro) — Tech Specs
+
+> **Última actualización:** 2026-05-05  
+> **Estado:** ✅ Implementado (Frontend + Backend + Prompts)  
+> **Versión:** 3.0 — Multi-Dominio
+
+---
+
+## 1. Visión General
+
+El módulo **Docente Pro** es la expansión del sistema de simuladores de Hub Academia hacia el dominio de **Educación**. Permite a docentes peruanos prepararse para los exámenes de:
+
+- **Nombramiento Docente** — Ingreso a la Carrera Pública Magisterial (CPM)
+- **Ascenso de Escala** — Escalafón Magisterial
+- **Acceso a Cargos** — Directivos y Especialistas (UGEL/MINEDU)
+
+El módulo reutiliza la misma infraestructura del simulador médico (quiz engine, flashcards, analytics) pero con configuración de dominio específica.
+
+---
+
+## 2. Arquitectura Multi-Dominio
+
+```
+Frontend (simulators.html)
+    ├── ?domain=salud       → Tarjetas de Medicina
+    └── ?domain=educacion   → Tarjetas de Educación
+                                  │
+                                  ▼
+                simulator-dashboard.html?context=EDUCACION
+                                  │
+         ┌────────────────────────┼────────────────────────┐
+         ▼                        ▼                        ▼
+    NOMBRAMIENTO             ASCENSO              ACCESO_CARGOS
+         │                        │                        │
+         └────────────────────────┼────────────────────────┘
+                                  ▼
+                    docenteController.js (POST /api/docente/start)
+                                   │
+                      target: "NOMBRAMIENTO" ──→ domain: "education"
+                                   │
+                    docenteService.js (getQuestions)
+                                  │
+              ┌───────────────────┼───────────────────┐
+              ▼                                       ▼
+     question_bank (local)                generationPrompts.js
+     WHERE domain='education'             (buildEducationAdminPrompt)
+     AND target='NOMBRAMIENTO'            (buildEducationUserPrompt)
+```
+
+### Detección Automática de Dominio
+
+El sistema detecta el dominio basándose en el `target`, NO en un campo separado de "domain" del frontend:
+
+```javascript
+const EDUCATION_TARGETS = ['NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS'];
+const isEducation = EDUCATION_TARGETS.includes(target);
+const dbDomain = isEducation ? 'education' : 'medicine';
+```
+
+---
+
+## 3. Flujo de Datos (End-to-End)
+
+### 3.1 Flujo del Usuario
+
+1. **Página principal** → Clic en tarjeta "Docente Pro" del carrusel
+2. **`/simulators?domain=educacion`** → Selecciona "Simulador de Nombramiento"
+3. **`/simulator-dashboard?context=EDUCACION`** → Ve KPIs, configura examen
+4. **Modal de Configuración** → Selecciona target, modalidad/nivel, áreas
+5. **Iniciar Simulacro** → `POST /api/quiz/start` con `{ target: "NOMBRAMIENTO", areas: [...], career: "EBR - Primaria" }`
+6. **Quiz Engine** → Recibe preguntas de `question_bank` (domain='education') o generadas por IA
+
+### 3.2 Fallback de Áreas
+
+Cuando un usuario inicia sin configuración previa:
+
+| Dominio | Áreas por Defecto |
+|---|---|
+| **Medicina** | Salud Pública, Gestión de Servicios, Ética e Interculturalidad, Investigación, Cuidado Integral |
+| **Educación** | Comprensión Lectora, Razonamiento Lógico, Teorías del Aprendizaje, Principios CNEB, Evaluación Formativa |
+
+---
+
+## 4. Configuración del Modal (Frontend)
+
+El modal de configuración se renderiza dinámicamente según el contexto. Para educación:
+
+### 4.1 Examen Objetivo (Targets)
+
+| Target | Valor backend | Descripción |
+|---|---|---|
+| NOMBRAMIENTO | `NOMBRAMIENTO` | Ingreso CPM |
+| ASCENSO | `ASCENSO` | Escala Magisterial |
+| ACCESO A CARGOS | `ACCESO_CARGOS` | Directivos (Beta) |
+
+### 4.2 Modalidad / Nivel (Career)
+
+| Opción | Valor en `career` |
+|---|---|
+| EBR - Nivel Inicial | `EBR - Inicial` |
+| EBR - Nivel Primaria | `EBR - Primaria` |
+| EBR - Nivel Secundaria | `EBR - Secundaria - {Especialidad}` |
+
+Cuando se selecciona **Secundaria**, aparece un selector secundario con las especialidades:
+`Matemática, Comunicación, Ciencias Sociales, Ciencia y Tecnología, Educación Física, Arte y Cultura, Inglés, Educación Religiosa, Educación para el Trabajo`
+
+### 4.3 Áreas de Estudio
+
+| Grupo | Áreas | Condición |
+|---|---|---|
+| **Habilidades Generales** | Comprensión Lectora, Razonamiento Lógico | Siempre visible |
+| **Conocimientos Pedagógicos** | Teorías del Aprendizaje, Principios CNEB, Evaluación Formativa, Convivencia Escolar | Siempre visible |
+| **Didáctica de la Especialidad** | Estrategias de Enseñanza, Uso de Materiales Educativos, Casuística de Errores Frecuentes | Siempre visible |
+| **Gestión Institucional** | Liderazgo Pedagógico, Planificación Estratégica (PEI, PAT) | **Solo ACCESO_CARGOS** |
+
+---
+
+## 5. Sistema de Prompts (IA)
+
+### 5.1 Arquitectura del Catálogo
+
+```
+generationPrompts.js
+├── EDUCATION_TARGETS = ['NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS']
+├── getAdminPrompt(target, area, career, ragContext, styleExamples)
+│   ├── isEducation? → getEducationAdminRules() → buildEducationAdminPrompt()
+│   └── else        → getMedicineAdminRules()  → buildMedicineAdminPrompt()
+└── getUserPrompt(target, area, career, historyText)
+    ├── isEducation? → buildEducationUserPrompt()
+    └── else        → buildMedicineUserPrompt()
+```
+
+### 5.2 Reglas por Target
+
+#### NOMBRAMIENTO
+- **Perfil:** Postulante a CPM
+- **Enfoque:** Casuística de aula básica + CNEB + Conflictos cognitivos
+- **Fuentes:** CNEB (MINEDU) > Rutas de Aprendizaje > Marco del Buen Desempeño Docente
+- **Regla de Oro:** La pregunta DEBE presentar un "Caso Pedagógico" con acción docente requerida
+
+#### ASCENSO
+- **Perfil:** Docente experimentado
+- **Enfoque:** Retroalimentación Formativa + Evaluación por Competencias
+- **Fuentes:** Rúbricas de Evaluación MINEDU + CNEB
+- **Regla de Oro:** Las incorrectas parecen "buenas acciones tradicionales" pero carecen de andamiaje
+
+#### ACCESO_CARGOS
+- **Perfil:** Futuro Director/Especialista UGEL
+- **Enfoque:** Liderazgo Pedagógico + Instrumentos de Gestión (PEI, PAT, PCI, RI)
+- **Fuentes:** Ley de Reforma Magisterial > Guías de Gestión Escolar > Marco del Buen Desempeño Directivo
+- **Regla de Oro:** Escenario con gestión de recursos, personal o comunidad educativa
+
+### 5.3 Diferencias clave con Medicina
+
+| Aspecto | Medicina | Educación |
+|---|---|---|
+| Extensión de opciones | Máx. 12 palabras | Máx. 25 palabras |
+| Estilo de pregunta | Telegrama MINSA (datos + pregunta) | Casuística MINEDU (caso + acción) |
+| Tip final | `💡 TIP SERUMS:` | `💡 TIP PEDAGÓGICO:` |
+| Opción correcta | Basada en evidencia clínica | Refleja enfoque por competencias |
+| Opciones incorrectas | Basadas en errores clínicos comunes | Parecen buenas pero son conductistas |
+| Citación | NTS, RM, GPC | CNEB, Marco del Buen Desempeño |
+| Nro. opciones | 4 (ENAM/SERUMS), 5 (Residentado) | 4 (todos los targets) |
+
+### 5.4 Instrucción Anti-Conductismo
+
+Regla crítica inyectada en todos los prompts educativos:
+
+> *"ENFOQUE CONSTRUCTIVISTA: La opción correcta SIEMPRE debe reflejar el enfoque por competencias (MINEDU). Castiga el conductismo y la memorización."*
+
+Esto permite que la IA genere **distractores realistas** que simulan las trampas clásicas de los exámenes oficiales.
+
+---
+
+## 6. Base de Datos
+
+### 6.1 Tabla `question_bank`
+
+Las preguntas educativas se almacenan en la misma tabla que las médicas, diferenciadas por:
+
+```sql
+-- Preguntas de educación
+SELECT * FROM question_bank 
+WHERE domain = 'education' 
+AND target = 'NOMBRAMIENTO'
+AND topic = 'Evaluación Formativa y Retroalimentación';
+```
+
+**Campos relevantes:**
+
+| Campo | Ejemplo (Educación) |
+|---|---|
+| `domain` | `'education'` |
+| `target` | `'NOMBRAMIENTO'`, `'ASCENSO'`, `'ACCESO_CARGOS'` |
+| `career` | `'EBR - Primaria'`, `'EBR - Secundaria - Matemática'` |
+| `topic` | `'Comprensión Lectora'`, `'Planificación Curricular'` |
+| `subtopic` | `'Niveles de comprensión lectora'` (generado por IA) |
+| `difficulty` | `'Senior'` (estándar para todos) |
+
+### 6.2 Índices de Rendimiento
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_question_bank_domain_target 
+ON public.question_bank(domain, target);
+```
+
+---
+
+## 7. KPI / Analytics Pipeline
+
+### 7.1 Stats Endpoint
+
+```
+GET /api/quiz/stats?context=EDUCACION&target=NOMBRAMIENTO&areas=Comprensión+Lectora,...
+```
+
+El endpoint `getStats` en `docenteController.js` filtra `quiz_history` por `target` de forma unificada (para el simulador docente). El servicio `getUserQuizStats` agrega:
+- **Score promedio** (escala /20)
+- **Accuracy** (%)
+- **Radar Data** (desglose por área con correct/total)
+- **Strongest / Weakest topic**
+
+### 7.2 Bar Chart (Rendimiento por Área)
+
+El `renderBarChart()` en `simulator-dash.js` agrupa automáticamente las barras usando `areaToGroupMap`, que se construye desde `examAreasGrouped` del contexto activo.
+
+**Mapeo para Educación:**
+
+| Grupo | Color | Áreas |
+|---|---|---|
+| Habilidades Generales | 🟢 Esmeralda | Comprensión Lectora, Razonamiento Lógico |
+| Conocimientos Pedagógicos | 🔵 Azul | Teorías, CNEB, Evaluación Formativa, Convivencia |
+| Didáctica de la Especialidad | 🟡 Ámbar | Estrategias, Materiales, Casuística |
+| Gestión Institucional | 🟠 Naranja | Liderazgo, PEI/PAT |
+
+### 7.3 Guest Demo Data (Context-Aware)
+
+Los invitados ven datos de demostración adaptativos:
+- **Contexto EDUCACION:** Barras con Comprensión Lectora (88%), Razonamiento Lógico (75%), etc.
+- **Contexto MEDICINA:** Barras con Ginecología (90%), Medicina Interna (85%), etc.
+
+Esto aplica tanto al frontend (`renderGuestDemoData()`) como al backend (Guest Mode en `docenteController.getStats`).
+
+---
+
+## 8. Archivos Modificados / Creados
+
+### Frontend
+
+| Archivo | Descripción |
+|---|---|
+| `presentation/public/index.html` | Tarjeta carrusel + nav link "Docente Pro" |
+| `presentation/public/simulators.html` | Grid dinámico con `simulatorsHub.js` |
+| `presentation/public/js/simulatorsHub.js` | **NUEVO** — Controlador de landing por dominio |
+| `presentation/public/js/simulator-dash.js` | Targets dinámicos, career selector, áreas condicionales, KPIs context-aware |
+| `presentation/public/css/modules.css` | `.action-edu` color naranja |
+| `presentation/public/css/simulators.css` | Estilos para tarjetas educativas |
+| `presentation/public/assets/custom-edu-bg.png` | Imagen del carrusel |
+
+### Backend
+
+| Archivo | Descripción |
+|---|---|
+| `domain/prompts/generationPrompts.js` | Reescrito: arquitectura multi-dominio con funciones separadas |
+| `domain/services/docenteService.js` | Domain routing dinámico + fallback context-aware + stats filter unificado |
+| `application/controllers/docenteController.js` | Fallback áreas/career context-aware + Guest demo context-aware |
+
+### Infraestructura
+
+| Archivo | Descripción |
+|---|---|
+| `infrastructure/database/database_schema.sql` | Actualizado: tabla `user_notes`, índices, RLS |
+
+---
+
+## 9. Configuración Persistida
+
+La configuración del simulador se almacena en:
+
+### 9.1 LocalStorage (Respaldo local)
+```javascript
+localStorage.setItem('simActiveConfig', JSON.stringify({
+    target: 'NOMBRAMIENTO',
+    areas: ['Comprensión Lectora', 'Razonamiento Lógico', ...],
+    career: 'EBR - Primaria'
+}));
+```
+
+### 9.2 Base de datos (Cross-device sync)
+```sql
+-- Tabla: user_simulator_preferences
+INSERT INTO user_simulator_preferences (user_id, domain, config_json)
+VALUES ($1, 'educacion', '{"target":"NOMBRAMIENTO","areas":[...],"career":"EBR - Primaria"}');
+```
+
+---
+
+## 10. Preparación para Escalar
+
+### Pendientes para Fase 2:
+- [ ] RAG con Pinecone namespace `education` para inyectar fragmentos del CNEB y normativas MINEDU
+- [ ] Imágenes de fondo para tarjetas del dashboard educativo
+- [ ] Módulo "Creador de Sesiones de Clase" (próximamente)
+- [ ] Módulo "Generador de Rúbricas" (próximamente)
+- [ ] Chat con especialidad educativa (`chatPrompts.js` con context=EDUCACION)
+
+---
+
+## 11. Anti-Repetición y Sincronización de Sesiones (Septiembre 2026)
+Para evitar la duplicidad de preguntas durante las sesiones de estudio y simulacros, se implementaron mejoras en el flujo de datos:
+1. **Historial Persistente (`user_question_history`)**: Al culminar y enviar las respuestas de un simulacro a través del endpoint `/submit`, el backend registra inmediatamente todas las preguntas de ese examen en `user_question_history`. Si el usuario ya vio la pregunta, se incrementa `times_seen` y se actualiza `seen_at` a la hora actual.
+2. **Exclusión Dinámica y Atómica de Casuísticas (Septiembre 2026)**: Al generar preguntas (`generateQuiz`), el repositorio evalúa estrictamente `isRealMock = mode === 'real'`. Para exámenes estándar (10q, 20q, modo estudio), consulta `user_question_history` para las últimas 24 horas (`seen_at > NOW() - INTERVAL '24 hours'`) y las excluye del lote candidato. Además, excluye automáticamente cualquier pregunta hermana de las casuísticas vistas (`qb.id <> ALL($N::uuid[]) AND (qb.case_id IS NULL OR qb.case_id NOT IN (SELECT case_id FROM question_bank WHERE id = ANY($N::uuid[]) AND case_id IS NOT NULL))`), erradicando casos incompletos o partidos.
+3. **Fallback Resiliente**: Si el usuario agota las preguntas no vistas del banco en su área o nivel antes de transcurrir las 24 horas, el repositorio ejecuta una consulta de reciclaje permitiendo al usuario continuar practicando sin interrupciones.
+4. **Empaquetado Atómico Orgánico (`packExamQuestions`)**: Se preservan las casuísticas íntegras tanto en configuración estándar como personalizada (`custom`), y se barajan los bloques de casos y preguntas sueltas (`shuffledUnits.flat()`) para que los casos aparezcan distribuidos en posiciones variadas e indiferentes del examen, manteniendo contiguas y en estricto orden secuencial (`case_order`) las preguntas hermanas de cada caso.
+5. **Exclusión en la Misma Sesión**: Al solicitar lotes adicionales (`/next-batch`) en un mismo examen, el cliente envía la lista de IDs de preguntas actualmente presentadas en la sesión (`seenIds`). El backend concatena este vector con las preguntas de las últimas 24 horas para garantizar la exclusión absoluta de preguntas ya mostradas en la sesión activa actual.
+6. **Detección de Duplicados en IA (Jaccard & Normalización)**: En los flujos de generación asistida por IA (Admin y User), el backend recupera hasta 50 preguntas existentes de la base de datos para la misma área y target. Estas preguntas se inyectan en el prompt como historial prohibido. Adicionalmente, se ejecuta un algoritmo de similitud por palabras (coeficiente Jaccard > 0.65) en la fase de auditoría de calidad (`checkQuality`) que, de ser activado, obliga a la IA a regenerar el reactivo en un ciclo de refinamiento iterativo.
+
+
+
+## 12. Mejoras de Configuración, Simulacros Reales y Versión Demo (Mayo 2026)
+Para refinar la experiencia de configuración de estudio y los simulacros interactivos, se implementaron las siguientes adiciones:
+1. **Selección por Grupos (Frontend)**: Se implementó un checkbox maestro dinámico en el encabezado de cada sección de áreas dentro del modal de configuración. Este permite al usuario marcar o desmarcar todas las áreas de dicho grupo de golpe, manteniendo el comportamiento reactivo si decide desmarcar una de forma manual.
+2. **Evasión de Filtro en Simulacro Real (Universal)**: Al activar el modo de Simulacro Real (indicado mediante el parámetro `mode=real` en las peticiones al backend), el motor de autoevaluación ignora cualquier filtro de áreas/tópicos activos. En su lugar, el backend consulta preguntas de forma variada y equitativa de *todas* las áreas definidas para ese target en particular, garantizando una simulación integral del examen real para Medicina y Educación.
+3. **Mapeo de KPI en Demo de Educación**: Se corrigió el mapeo de demostración de los KPIs de Invitado para Educación, sustituyendo las áreas obsoletas de Nombramiento (ej. Razonamiento Lógico, Comprensión Lectora) por las de la nueva configuración de Ascenso Docente (ej. Constructivismo, Enfoque por competencias, etc.).
+4. **Remoción de Glow en Demo**: Se ocultó la animación pulsante (neon pulse glow) y el tooltip de sugerencia sobre el botón "Configurar Examen" para visitantes que no hayan iniciado sesión (`!token`), reduciendo el ruido visual para los usuarios demo.
+
+
+## 13. Evasión de Sesiones Cruzadas y Modal de Reanudación (Junio 2026)
+Para optimizar el flujo de usuarios al realizar simulacros y evitar conflictos de persistencia (ej. quedar atrapado en el examen de Inicial tras cambiar la configuración a Primaria), se realizaron las siguientes mejoras:
+1. **Propagación Universal de Filtros en URL**: Se modificó `updateModeLinks` en `simulator-dash.js` para propagar dinámicamente `career` y `difficulty` en todos los contextos (incluyendo Educación) si están activos en la configuración, asegurando que `quiz.html` siempre reciba los parámetros de la configuración seleccionada.
+2. **Limpieza Activa al Guardar**: Al guardar una nueva configuración de simulador en el panel principal (`btnSave.onclick`), se borra proactivamente cualquier examen sin terminar en caché local (`localStorage.removeItem('simulator_active_session')`).
+3. **Validación Estricta de Sesión (`loadSession`)**: En `quiz.js`, la función de recuperación de caché ahora contrasta rigurosamente la sesión almacenada con el contexto (`context`), examen objetivo (`targetExam`), nivel/modalidad (`career`), dificultad y áreas seleccionadas actualmente. Si existe alguna discrepancia, el caché viejo se limpia automáticamente y se inicia un examen fresco.
+4. **Confirmación Interactiva de Reanudación**: Si la configuración del examen actual coincide perfectamente con el simulacro incompleto en caché, se despliega el modal premium de confirmación (`window.confirmationModal`) consultando al usuario de forma clara si desea continuar con el examen anterior o comenzar uno limpio desde cero.
+
+---
+
+## 15. Corrección de Resiliencia en Reanudación de Exámenes y Registro de Estadísticas (Agosto 2026)
+
+### Diagnóstico de la Interrupción
+Se identificó que cuando un usuario interrumpía un simulacro (10q, 20q o Simulacro Real de 100q) y posteriormente lo reanudaba hasta culminar:
+1. **Desalineación de `total_questions`**: Al enviar los resultados al backend (`/submit`), la propiedad `total_questions` tomaba el valor dinámico de `state.currentQuestionIndex`. Si el examen se reanudaba o finalizaba en una pregunta previa a `state.maxQuestions` (o durante la última pregunta antes del incremento), `total_questions` guardaba un número menor (ej. 19 ó 9). Al consultar el dashboard, las queries SQL filtraban estrictamente por `WHERE total_questions = 20` o `= 10`, ocasionando que los exámenes reanudados no aparecieran en los gráficos de evolución ni en las estadísticas acumuladas.
+2. **Duplicación de Respuestas y Conteo de Puntaje**: La función `handleAnswer` utilizaba `state.answers.push()`, lo que provocaba que al reanudar una pregunta guardada y volver a seleccionarla, la respuesta se añadiera por duplicado en el arreglo, distorsionando el cálculo de `score` y el mapeo de respuestas en el backend.
+
+### Solución e Implementación Técnica
+1. **Asignación Atómica por Índice (`quiz.js`)**:
+   - Se reemplazó el método `.push()` en `handleAnswer` por asignación explícita `state.answers[state.currentQuestionIndex] = { ... }`.
+   - Se implementó la recomputación dinámica del puntaje exacto: `state.score = state.answers.filter(a => a && a.isCorrect).length;`.
+2. **Normalización del Payload de Culminación (`finishQuiz`)**:
+   - `total_questions` se fija de forma absoluta al denominador de la modalidad: `const totalCount = state.maxQuestions || state.questions.length;`. Esto garantiza coincidencia del 100% con los filtros de estadísticas del backend (`WHERE total_questions = 20`).
+3. **Re-animación Automática de Pregunta Reanudada**:
+   - En `renderQuestion`, si la pregunta actual ya posee una respuesta previa registrada en la sesión recuperada, se auto-aplica la retroalimentación visual y se activa el botón de *Siguiente*, permitiendo al usuario continuar fluidamente.
+
+El sistema de Inteligencia Artificial se segmenta claramente en dos componentes especializados:
+
+### 14.1 Chat General (Asistente Guía de la Plataforma)
+1. **Rol y Naturaleza**: Funciona como un **Asistente Guía efímero** (100% volátil, sin persistencia en BD y sin RAG en Pinecone) diseñado para orientar a visitantes y alumnos registrados en la navegación de la plataforma, simuladores disponibles (SERUMS y ASCENSO), metodologías de estudio y planes de suscripción.
+2. **Visitantes No Logueados**: Disponen de 2 consultas diarias de prueba en `localStorage`. Al 3er intento se bloquea el input mostrando la modal de registro (`showAuthPromptModal`).
+
+### 14.2 Tutores IA de Exámenes (Quiz) y Repaso (Flashcards)
+Para profundizar en las casuísticas pedagógicas, principios constructivistas del CNEB y guías oficiales, se integran los Tutores Contextuales RAG:
+1. **Contextualización Integral**: Al activarse en un simulador (`quiz_tutor`) o tarjeta (`flashcard_tutor`), la IA recibe los metadatos completos del reactivo (enunciado, alternativas, opción correcta, respuesta seleccionada por el estudiante, acierto/error y explicación oficial) **junto con la configuración exacta del examen** (`examContext`: EDUCACION/MEDICINA, `target`: ASCENSO/NOMBRAMIENTO/SERUMS, `career`: e.g. EBR Primaria o Especialidad Secundaria, `difficulty`, `areas` y `mode`).
+2. **RAG Semántico (Pinecone)**: Resuelve dudas sobre teorías del aprendizaje (Piaget, Vygotsky), enfoques transversales o rúbricas de evaluación del MINEDU utilizando RAG semántico sobre el namespace de educación (`education`), garantizando respuestas alineadas con el Currículo Nacional de Educación Básica (CNEB) y RVM 094-2020-MINEDU.
+3. **Control de Interfaz y Revisión**:
+   - En simuladores activos (10q/20q), el botón del Tutor IA se habilita al responder cada pregunta.
+   - **En la pantalla de culminación y revisión del examen (`showExamReview`)**: El botón de Tutor IA se remueve/oculta automáticamente de las tarjetas de pregunta y el panel flotante se cierra, ya que cada reactivo presenta de forma directa su explicación técnica y sustento oficial.
+4. **Modo Pantalla Completa en Escritorio (PC)**: Los paneles laterales de tutoría cuentan con el botón de expansión a pantalla completa (100vw x 100vh, `.tutor-chat-panel.chat-fullscreen`) para facilitar la lectura de tablas comparativas y esquemas Markdown en computadoras.
+5. **Monetización**: Los usuarios logueados consumen 1 vida global (`usage_count`) por respuesta exitosa en usuarios Free/Pending o 1 uso de su cuota activa en usuarios Premium (Basic/Advanced).
+
+---
+
+## 16. Paginación Reactiva por Lotes de 10 y Propagación de Sesión Segura (Agosto 2026)
+Para asegurar la continuidad en simulacros magisteriales (10q, 20q y Simulacros Reales):
+1. **Lotes de 10 Reactivos (`quiz.js`)**:
+   - Las preguntas se solicitan en bloques de 10 (`/api/docente/start` y `/api/docente/next-batch`).
+   - Un examen estándar de 10 preguntas se carga completamente en una sola consulta inicial.
+   - En exámenes de 20 preguntas o más, al estar a 3 preguntas de concluir el bloque en memoria (`questions.length - currentQuestionIndex <= 3`), el cliente solicita en segundo plano el siguiente lote de 10 enviando `seenIds`.
+2. **Sincronización `quizSessionId` y `configType`**:
+   - El cliente envía `quizSessionId` en `/next-batch` y `/submit`, evitando errores `400 Bad Request` en entornos con validación de sesión estricta.
+   - Se propaga el `configType` ('default' vs 'custom') para mantener la coherencia de áreas y casuísticas evaluadas.
+
+---
+
+## 17. Casuísticas Agrupadas y Situaciones Compartidas (Agosto 2026)
+
+Para reproducir fielmente la estructura de los exámenes oficiales del MINEDU (Ascenso y Nombramiento) donde una situación o texto compartido sirve de base para 2 o más preguntas consecutivas:
+
+1. **Entidad `case_scenarios`**:
+   - Tabla dedicada protegida con RLS que almacena `code`, `title`, `description_text` (enunciado común con soporte para tablas TinyMCE e imágenes) y `image_url`.
+   - Las preguntas en `question_bank` se asocian mediante `case_id` (FK) y `case_order` (orden 1, 2, 3...).
+2. **Algoritmo de Clustering Contiguo (`docenteRepository.js`)**:
+   - Al seleccionar preguntas balanceadas por tema, si una pregunta pertenece a una casuística, el repositorio consulta de inmediato todas sus preguntas hermanas del mismo `case_id`, las ordena por `case_order ASC` y las agrupa contiguamente dentro del lote, impidiendo que el caso sea fragmentado.
+3. **Renderizado en Examen (`quiz.js`, `quiz.html`)**:
+   - La tarjeta `#caseScenarioContainer` muestra la situación común, gráfico/tabla y badge `# de caso` por encima del reactivo.
+   - Si la pregunta no tiene casuística (`case_id === null`), el contenedor se oculta limpiamente.
+4. **Tutor IA Contextual (`chatController.js`, `quiz-tutor.js`)**:
+   - El Tutor IA en examen recibe `caseDescription`, `caseTitle` y `caseOrder` dentro de `context`, integrando la situación común en su prompt para dar explicaciones 100% certeras.
+5. **Gestión Masiva en Panel Admin y Excel**:
+   - Pestaña dedicada **Casuísticas / Casos** (`tab-cases`) en el Panel de Administración con filtrado por dominio, búsqueda en vivo y contador dinámico.
+   - En la modal de agregar o editar preguntas (`openGenericModal('question')`), se integra un fieldset reactivo para seleccionar la casuística padre y definir el orden (#1, #2, #3...) con auto-filtrado según dominio/target y botón de creación rápida.
+   - Herramienta de **Encadenamiento Masivo** (`link-case`): permite seleccionar 2 o más preguntas sueltas mediante checkboxes con soporte `Shift + Clic` y unirlas a una casuística común en un solo paso mediante la barra flotante de acciones.
+   - La plantilla de importación Excel soporta `CODIGO_CASO`, `ENUNCIADO_CASO` y `ORDEN_CASO`, auto-resolviendo la creación y vinculación en bloque.
+
+## 18. Apertura Oficial de Simulacros Reales y Resiliencia Temporal (Septiembre 2026)
+
+Se habilitó formalmente la modalidad de **Simulacro Real (Oficial)** (`mode=real`) tanto para Educación como para Salud, con los siguientes estándares de arquitectura:
+
+1. **Temporizador Reglamentario Adaptado**:
+   - **Educación (60 preguntas)**: Temporizador oficial de **3 horas (180 minutos = 10,800 segundos)** acorde a las pruebas de la Carrera Pública Magisterial (CNEB/MINEDU).
+   - **Salud (100 preguntas)**: Temporizador de **2 horas (120 minutos = 7,200 segundos)** según especificaciones ENAM / SERUMS.
+   - Formateo inteligente en la cabecera: `HH:MM:SS` cuando el tiempo restante supera 1 hora (ej. `02:59:45`) y `MM:SS` para tiempos menores.
+   - Visibilidad garantizada para Educación (`maxQuestions >= 50 || mode === 'real'`).
+2. **Modo Ciego Estricto (Blind Mode)**:
+   - Al tratarse de un examen oficial simulado, se neutraliza la retroalimentación y sustentación inmediata (`isStudyMode = false`). El postulante responde de corrido sin conocer el acierto/error de sus elecciones hasta la entrega formal.
+   - La corrección completa, explicaciones detalladas y el Tutor IA se activan de manera unificada en la pantalla de revisión final.
+3. **Exención de Bloqueo Anti-repetición (`user_question_history`)**:
+   - Al finalizar un Simulacro Real, se omite el registro en `user_question_history` para evitar bloquear preguntas por 24 horas.
+   - Permite a los postulantes realizar simulacros reales completos en cualquier momento sin esperar un día ni agotar el banco disponible.
+   - Dentro de la misma sesión activa, la exclusión de `sessionSeenIds` se mantiene rigurosa, garantizando cero reactivos duplicados dentro de la misma prueba.
+4. **Evasión Forzada de Configuración Personalizada**:
+   - En peticiones con `mode=real`, el servicio backend fuerza `isDefault = true` y `queryAreas = ['*']`, garantizando una selección equilibrada de todas las áreas oficiales del examen, sin sesgos por preferencias previas del usuario.
+5. **Persistencia de Cronómetro ante Pausas**:
+   - Al pausar o cerrar temporalmente una sesión de simulacro real, el tiempo restante guardado se preserva íntegro para permitir reanudar el examen con los segundos exactos restantes.
+6. **Filtro de KPIs en Dashboard**:
+   - Se añadió la pestaña `Simulacro Real` (`data-mode="real"`) en la barra de filtros del Panel de Analítica, compatible con la serie gráfica ámbar y cálculo de promedios específicos de exámenes oficiales.
+7. **Carga Total Atómica (Método B) y Empaquetado Indivisible de Casuísticas**:
+   - `/start` solicita directamente el total exacto del examen (`limit: state.maxQuestions`: 10, 20, 60 o 100), reduciendo en un 90% las consultas a PostgreSQL y volviendo el examen 100% inmune a micro-cortes de internet.
+   - Algoritmo `packExamQuestions`: agrupa las casuísticas como bloques atómicos indivisibles ($K$ preguntas). Solo se agregan si caben completas en el cupo restante (`spaceLeft >= K`), completando el residuo exacto con preguntas individuales (tamaño 1). Esto garantiza matemáticamente que **ninguna casuística sea cortada a la mitad** y que el total alcance con precisión quirúrgica el límite del examen.
+   - En PostgreSQL, la cuota por área escala dinámicamente (`GREATEST(3, CEIL(limit / topicsCount * 1.5))`), garantizando abastecimiento amplio de candidatos para cualquier modalidad.
+
+---
+
+## 19. Sistema Oficial de Calificación MINEDU — Concurso de Ascenso de Escala Magisterial (Septiembre 2026)
+
+Para alinear el simulador con los estándares normativos de la Carrera Pública Magisterial del Perú, se implementó el motor de cálculo oficial para la **Prueba Nacional de Ascenso Docente** (Base 90 puntos) manteniendo 100% de retrocompatibilidad y sin requerir migraciones estructurales de base de datos (`ALTER TABLE`).
+
+### 19.1 Reglas Normativas Oficiales MINEDU
+- **Total de reactivos:** 60 preguntas de casuística pedagógica y especialidad disciplinar.
+- **Valor por acierto:** 1.5 puntos.
+- **Penalización por error o en blanco:** 0 puntos (sin puntaje en contra).
+- **Puntaje máximo posible:** 90 puntos.
+- **Puntajes mínimos aprobatorios por escala:**
+  - **2.ª Escala:** 54.0 puntos (36 aciertos / equiv. 12.0 en escala vigesimal).
+  - **3.ª Escala:** 57.0 puntos (38 aciertos / equiv. 12.7 en escala vigesimal).
+  - **4.ª Escala:** 60.0 puntos (40 aciertos / equiv. 13.3 en escala vigesimal).
+  - **5.ª Escala:** 63.0 puntos (42 aciertos / equiv. 14.0 en escala vigesimal).
+  - **6.ª Escala:** 66.0 puntos (44 aciertos / equiv. 14.7 en escala vigesimal).
+  - **7.ª Escala:** 69.0 puntos (46 aciertos / equiv. 15.3 en escala vigesimal).
+  - **8.ª Escala:** 69.0 puntos (46 aciertos / equiv. 15.3 en escala vigesimal).
+
+### 19.2 Fórmula Proporcional Unificada
+Para permitir que los docentes evalúen su rendimiento en cualquier modalidad de práctica (Modo Rápido 10q, Modo Estudio 20q y Simulacro Real 60q), se aplica la fórmula matemática proporcional unificada:
+$$\text{Puntaje}_{90} = \text{round}\left(\frac{\text{Aciertos}}{\text{Total}} \times 90, 1\right)$$
+*(En exámenes oficiales de 60 preguntas, equivale exactamente a $\text{Aciertos} \times 1.5$)*.
+
+### 19.3 Servicio Puro de Dominio (`mineduScoringService.js`)
+Ubicado en `src/domain/services/mineduScoringService.js`, desacoplado de infraestructura:
+- `MINEDU_SCALE_CUTOFFS`: Diccionario inmutable con los umbrales mínimos, aciertos requeridos y equivalencias de las 7 escalas (2 a 8).
+- `calculateMineduScore(correctAnswers, totalQuestions)`: Retorna el puntaje sobre 90 redondeado a un decimal.
+- `getScaleCutoff(targetScale)`: Retorna la configuración de la escala con control de límites y fallbacks seguros (default: Escala 2).
+- `evaluateScaleStatus(mineduScore, targetScale)`: Determina si el postulante aprobó, la brecha en puntos (`gapPoints`), la escala máxima alcanzada y el mensaje pedagógico correspondiente.
+
+### 19.4 Persistencia y Retrocompatibilidad
+- **`quiz_history.score`:** Mantiene el almacenamiento del número de aciertos (`correct`), preservando intacto el comportamiento de exámenes históricos y del módulo médico (SERUMS).
+- **`user_simulator_preferences.config_json`:** Almacena el nuevo campo `targetScale` (2 al 8) dentro del objeto JSONB sin requerir modificaciones en el esquema SQL.
+
+### 19.5 Sincronización Web y Mobile
+- **Plataforma Web (`hubacademia`):**
+  - `simulator-dashboard.html`: Selector interactivo de Escala Objetivo (2.ª a 8.ª Escala) condicional al target `ASCENSO`.
+  - `simulator-dash.js`: Píldora de escala en el resumen de configuración, propagación de `targetScale` en enlaces y peticiones, y KPI de evolución con línea punteada de corte dinámico según la escala seleccionada.
+  - `quiz.html` & `quiz.js`: Modal de resultados con tarjeta de Puntaje Oficial MINEDU (ej. `63.0 / 90 pts`), badge oficial de logro y brecha de puntos.
+- **Aplicación Móvil (`HubDocenteApp`):**
+  - `ExamConfigModal.tsx`: Selector visual de escala objetivo persistido en preferencias.
+  - `HistoricalTrendChart.tsx`: Línea de corte de aprobación dinámica trazada por SVG con tooltip contextual de meta.
+  - `results.tsx`: Presentación de puntaje base 90 y diagnóstico de escala alcanzada.
+  - `AIDiagnosisCard.tsx`: Integración de píldora de meta de escala (`targetScale`), evaluación de brecha y envío sincronizado a analítica.
+
+### 19.6 Diagnóstico Inteligente por IA Adaptado a Escala y Limpieza de Modal (Septiembre 2026)
+1. **Calibración Heurística y Cognitiva por Escala:**
+   - Tanto el generador heurístico (`analyticsService.generateHeuristicDiagnostic`) como el motor de IA profunda con Gemini (`analyticsController.getAIDiagnostic`) reciben y procesan `targetScale`.
+   - Comparan la nota proyectada en Base 90 ($P_{90} = \frac{\text{avg\_score}}{20} \times 90$) con el puntaje de corte oficial de la escala (54 a 69 pts).
+   - Generan diagnósticos pedagógicos de acierto/error orientados a la escala:
+     - **Fortalezas:** Proyección aprobatoria oficial y margen de puntos a favor.
+     - **Áreas prioritarias:** Brecha concreta en puntos requeridos para asegurar el ascenso.
+     - **Estrategia y Sprint:** Acciones tácticas de 3 pasos focalizadas en las casuísticas que cierran la brecha hacia la escala meta.
+2. **Depuración de la Modal de Resultados (`quiz.html`):**
+   - Se removió el texto huérfano estático `¿Qué te pareció el nivel?`, eliminando fricción visual y consolidando la botonera de acciones clave (`Ver Corrección`, `Salir`, `Nuevo Examen`).
+

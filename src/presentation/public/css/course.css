@@ -1,0 +1,406 @@
+/* Course Page Styles */
+
+.search-section.sticky {
+    position: sticky;
+    top: calc(var(--header-height-desktop) + var(--trial-bar-height));
+    /* ✅ MATCH HEADER + BAR */
+    margin: 0;
+    width: 100%;
+    z-index: 900;
+    background: var(--surface);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem 1rem;
+    display: flex;
+    /* ✅ NEW: Flexbox */
+    justify-content: center;
+    /* ✅ NEW: Center input horizontally */
+    align-items: center;
+    /* ✅ NEW: Center input vertically */
+}
+
+/* 🚨 COMPACTO: Hero mínimo, sin desperdiciar espacio vertical */
+.hero-banner {
+    padding: 0.25rem 0;
+    background-color: var(--bg-main);
+}
+
+.hero-nav {
+    margin-bottom: 0.5rem;
+}
+
+.hero-title {
+    font-size: 1.75rem;
+    /* Was 2.5rem */
+    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.course-view,
+.detail-view-container {
+    /* 🚨 COMPACTO: Mínimo padding superior para aprovechar el espacio */
+    padding: 0.5rem 0 2rem 0;
+    max-width: 100%;
+    margin: 0;
+}
+
+/* ✅ OPTIMIZATION: Reduce padding on mobile to allow wider 2-col cards */
+@media (max-width: 768px) {
+
+    .course-view,
+    .detail-view-container {
+        padding: 0.25rem 0 !important;
+        /* 🔥 Drastic reduction to pull title up */
+    }
+}
+
+.overlap-container {
+    padding-top: 0.25rem;
+    position: relative;
+    z-index: 2;
+}
+
+/* Sections — 🚨 COMPACTO: Márgenes mínimos entre bloques */
+.section-block {
+    margin-bottom: 1rem;
+}
+
+.section-header {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    /* Was 1.5rem */
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ✅ NEW: Course/Catalog Header Styles (Fixed Green Strip Issue) */
+.course-main-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 0.5rem;
+    /* ✅ REDUCED: Was 2rem */
+    padding-bottom: 1rem;
+    /* ✅ REDUCED: Was 1.5rem */
+    border-bottom: 1px solid var(--border);
+}
+
+.course-header-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.course-header-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-view-title {
+    font-size: 1.5rem;
+    /* ✅ REDUCED: Was 2rem */
+    font-weight: 600;
+    /* ✅ REDUCED: Was 700 */
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.course-badge {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    align-self: flex-start;
+    border: 1px solid var(--border);
+}
+
+.detail-navigation {
+    margin-bottom: 1rem;
+}
+
+/* =========================================
+   📖 Books Grid Layout
+   (Unified Resource Card Styles Now Handled in components.css)
+   ========================================= */
+
+/* ✅ NEW: Action Buttons Footer (Optimized for Compact View) */
+/* =========================================
+   📖 Books Grid Layout
+   (Unified Resource Card Styles Now Handled in components.css)
+   ========================================= */
+
+/* ✅ NEW: Action Buttons Footer (Optimized for Compact View) */
+.book-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+/* =========================================
+   📄 Generic Resources Grid (Articles/Other)
+   ========================================= */
+.resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+
+/* =========================================
+   🎓 Course Detail Layout (Sidebar & Main Content)
+   ========================================= */
+.course-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    position: relative;
+}
+
+@media (min-width: 1024px) {
+    .course-detail-grid {
+        grid-template-columns: 1fr 320px;
+    }
+}
+
+.course-main-content {
+    min-width: 0;
+}
+
+.course-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+    .course-sidebar {
+        position: sticky;
+        top: calc(var(--header-height-desktop) + var(--trial-bar-height) + 1rem);
+    }
+}
+
+/* 🎥 Estilos Premium para Videoteca Explicativa */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 1.5rem !important;
+    margin-top: 1.5rem;
+}
+
+.video-card-premium {
+    background: #0f172a;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    position: relative;
+    width: 100%;
+}
+
+.video-card-premium:hover {
+    transform: translateY(-5px);
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.video-thumbnail-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.video-img-contain {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.video-play-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease;
+    z-index: 2;
+}
+
+.video-card-premium:hover .video-play-hint {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.play-circle-glow {
+    width: 54px;
+    height: 54px;
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(8px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    padding-left: 4px;
+}
+
+.video-card-premium:hover .play-circle-glow {
+    transform: scale(1.1);
+    background: var(--accent);
+    border-color: #fff;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+/* Overlay Minimalista de Título */
+.video-overlay-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 2rem 1rem 1rem 1rem;
+    background: linear-gradient(to top, rgba(10, 10, 10, 0.8) 0%, rgba(10, 10, 10, 0.8) 50%, transparent 100%);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    pointer-events: none; /* Dejar pasar los clics al wrapper principal */
+}
+
+.video-title-text {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.video-author-mini {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+@media (max-width: 768px) {
+    .video-overlay-info {
+        padding: 1.5rem 0.75rem 0.75rem 0.75rem;
+    }
+    
+    .video-title-text {
+        font-size: 0.85rem;
+    }
+}
+/* Premium States */
+.video-premium-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #000;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    z-index: 5;
+}
+
+.video-locked-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.8); /* ✅ Menos opacidad para ver el contenido */
+    backdrop-filter: blur(1px); /* ✅ Desenfoque mínimo sugerente */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem; /* ✅ Candado un poco más grande */
+    color: #f8fafc;
+    z-index: 10;
+}
+
+/* Contenedor de Video Responsivo (16:9) */
+.video-container-responsive {
+    position: relative;
+    width: 100%;
+    /* 🔥 SOLUCIÓN DEFINITIVA: aspect-ratio nativo */
+    aspect-ratio: 16 / 9;
+    height: auto;
+    overflow: hidden;
+    background: #000;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.video-container-responsive iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+/* 🔥 Mobile Spacing Overrides */@media (max-width: 768px) {
+    .video-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .video-title-text {
+        font-size: 1rem;
+    }
+
+    .search-section.sticky {
+        top: calc(var(--header-height-mobile) + var(--trial-bar-height)) !important;
+    }
+
+    .hero-banner { padding: 0.5rem 0; }
+    .hero-title { font-size: 1.4rem; }
+    
+    .course-main-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+.premium-badge-video { box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5; }
+.lock-overlay-video { z-index: 10; }

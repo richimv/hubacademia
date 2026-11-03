@@ -1,0 +1,644 @@
+const DeckService = require('../../domain/services/deckService');
+
+// 🛡️ CONSTANTES DE SEGURIDAD Y CONTROL DE COSTOS
+const SECURITY_LIMITS = {
+    MAX_TEXT_LENGTH: 1000,      // Límite estándar por cara (Frente / Dorso)
+    MIN_TEXT_LENGTH: 2,         // Evitar basura
+    MAX_BATCH_SIZE: 100         // Tarjetas por archivo Excel
+};
+
+const DECK_CATEGORIES = new Set([
+    'General', 'Medicina', 'Educación', 'Idiomas'
+]);
+
+class DeckController {
+    _normalizeCategory = (category, fallback = 'General') => {
+        const value = String(category || '').trim();
+        return DECK_CATEGORIES.has(value) ? value : fallback;
+    };
+
+    /**
+     * Helper to get common user context.
+     */
+    _getUserContext = (req) => {
+        const rawTier = req.user?.subscriptionTier || req.user?.subscription_tier || req.userTier || 'free';
+        const tier = String(rawTier).toLowerCase();
+        const role = String(req.user?.role || '').toLowerCase();
+        return {
+            userId: req.user ? req.user.id : 'GUEST',
+            isGuest: !req.user,
+            userTier: tier,
+            isAdvanced: ['advanced', 'admin'].includes(tier) || role === 'admin'
+        };
+    }
+
+    /**
+     * Helper to extract GCS image URLs from HTML content
+     */
+    _extractImageUrls = (html) => {
+        if (!html || typeof html !== 'string') return [];
+        // Match src="URL" but only for our GCS domain/bucket patterns
+        const regex = /src="([^">]+storage\.googleapis\.com[^">]+)"/g;
+        const urls = [];
+        let match;
+        while ((match = regex.exec(html)) !== null) {
+            urls.push(match[1]);
+        }
+        return urls;
+    }
+
+    /**
+     * Limpia de forma segura una lista de URLs de GCS si ya no están en uso en el sistema.
+     * @param {Array<string>} urls - URLs de imágenes o audios
+     */
+    _cleanOrphanMedia = async (urls) => {
+        if (!urls || !Array.isArray(urls) || urls.length === 0) return;
+        const mediaController = require('./mediaController');
+        const processed = new Set();
+
+        for (const url of urls) {
+            if (!url || typeof url !== 'string' || processed.has(url)) continue;
+            processed.add(url);
+            try {
+                const inUse = await DeckService.isMediaInUse(url);
+                if (!inUse) {
+                    await mediaController.deleteFile(url);
+                }
+            } catch (err) {
+                console.warn(`[DeckController] Error al verificar/eliminar media ${url}:`, err.message);
+            }
+        }
+    }
+
+    /**
+     * Helper to increment usage if middleware detected a quota need
+     */
+    _syncUsage = async (req) => {
+        try {
+            if (req.usageType && req.user && req.user.id) {
+                const { isValidUsageColumn } = require('../../domain/utils/securityUtils');
+                if (isValidUsageColumn(req.usageType)) {
+                    const db = require('../../infrastructure/database/db');
+                    await db.query(
+                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
+                        [req.user.id]
+                    );
+                    console.log(`📉 Usage ${req.usageType} incremented for user ${req.user.id}`);
+                }
+            }
+        } catch (e) {
+            console.error('[DeckController._syncUsage] Error:', e.message);
+        }
+    }
+
+    /**
+     * GET /api/decks
+     * Query Params: ?parentId=uuid (optional)
+     */
+    listDecks = async (req, res) => {
+        try {
+            const { userId } = this._getUserContext(req);
+            const { parentId } = req.query;
+            const decks = await DeckService.getUserDecks(userId, parentId || null);
+            res.json({ success: true, decks });
+        } catch (error) {
+            console.error('[listDecks] Error:', error);
+            res.status(500).json({ error: 'Error al obtener los mazos' });
+        }
+    }
+
+    /**
+     * GET /api/decks/tree
+     */
+    getDeckTree = async (req, res) => {
+        try {
+            const { userId } = this._getUserContext(req);
+            const decks = await DeckService.getDeckTree(userId);
+            res.json({ success: true, decks });
+        } catch (error) {
+            console.error('[getDeckTree] Error:', error);
+            res.status(500).json({ error: 'Error al obtener el árbol de mazos' });
+        }
+    }
+
+    /**
+     * GET /api/decks/:deckId
+     */
+    getDeckById = async (req, res) => {
+        try {
+            const { userId, isGuest } = this._getUserContext(req);
+            const { deckId } = req.params;
+            const deck = await DeckService.getDeckById(userId, deckId);
+
+            if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
+
+            // Security: Guests only for SYSTEM or PUBLIC decks
+            if (isGuest && deck.type !== 'SYSTEM' && !deck.is_public) {
+                return res.status(403).json({ error: 'Acceso denegado: Inicia sesión para ver este mazo' });
+            }
+
+            res.json({ success: true, deck });
+        } catch (error) {
+            console.error('[getDeckById] Error:', error);
+            res.status(500).json({ error: 'Error al obtener el mazo' });
+        }
+    }
+
+    /**
+     * GET /api/decks/:deckId/guide
+     */
+    getDeckGuide = async (req, res) => {
+        try {
+            const { userId } = this._getUserContext(req);
+            const { deckId } = req.params;
+            const description = await DeckService.getDeckGuide(userId, deckId);
+            res.json({ success: true, description });
+        } catch (error) {
+            console.error('[getDeckGuide] Error:', error);
+            res.status(500).json({ error: 'Error al obtener la guía' });
+        }
+    }
+
+    /**
+     * POST /api/decks
+     */
+    createDeck = async (req, res) => {
+        try {
+            const { name, icon, parentId, description, color, category } = req.body;
+            const { userId, isGuest } = this._getUserContext(req);
+
+            if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para crear mazos' });
+            if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
+
+            if (this._extractImageUrls(description).length > 2) {
+                return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
+            }
+
+            const safeCategory = this._normalizeCategory(category);
+            const deck = await DeckService.createDeck(userId, name, icon || 'fas fa-layer-group', parentId || null, description || null, color || null, safeCategory);
+            await this._syncUsage(req);
+            res.json({ success: true, deck });
+        } catch (error) {
+            console.error('[createDeck] Error:', error);
+            res.status(500).json({ error: 'Error al crear el mazo' });
+        }
+    }
+
+    /**
+     * PUT /api/decks/:deckId
+     */
+    updateDeck = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { name, icon, description, color, category } = req.body;
+            const { userId } = this._getUserContext(req);
+
+            if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
+
+            // 1. Get current deck for image cleanup
+            const currentDeck = await DeckService.getDeckById(userId, deckId);
+            if (!currentDeck) return res.status(404).json({ error: 'Mazo no encontrado' });
+
+            if (this._extractImageUrls(description).length > 2) {
+                return res.status(400).json({ error: 'Límite de 2 imágenes por Guía alcanzado.' });
+            }
+
+            const safeCategory = this._normalizeCategory(category);
+            const deck = await DeckService.updateDeck(userId, deckId, name, icon, description, color || null, safeCategory);
+            
+            // 🪙 CONSUMO DE VIDA: Solo si se está guardando una GUÍA (Descripción)
+            // Si solo cambia nombre o icono, es gratis.
+            if (description && description.trim().length > 0) {
+                await this._syncUsage(req);
+            }
+
+            // 2. Cleanup orphaned images in description
+            const oldImages = this._extractImageUrls(currentDeck.description);
+            const newImages = this._extractImageUrls(description);
+            const orphanedImages = oldImages.filter(url => !newImages.includes(url));
+
+            if (orphanedImages.length > 0) {
+                const mediaController = require('./mediaController');
+                for (const url of orphanedImages) {
+                    if (!(await DeckService.isMediaInUse(url))) {
+                        await mediaController.deleteFile(url);
+                    }
+                }
+            }
+
+            res.json({ success: true, deck });
+        } catch (error) {
+            console.error('[updateDeck] Error:', error);
+            res.status(500).json({ error: 'Error al actualizar el mazo' });
+        }
+    }
+
+    /**
+     * GET /api/decks/:deckId/cards/due
+     */
+    getDueCards = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { userId } = this._getUserContext(req);
+            const cards = await DeckService.getDueCards(userId, deckId);
+            
+            // 🪙 CONSUMO DE VIDA: Solo si hay tarjetas pendientes y el middleware lo marcó
+            if (cards && cards.length > 0) {
+                await this._syncUsage(req);
+            }
+
+            res.json({ success: true, cards });
+        } catch (error) {
+            console.error('[getDueCards] Error:', error);
+            res.status(500).json({ error: 'Error al obtener tarjetas pendientes' });
+        }
+    }
+
+    /**
+     * GET /api/decks/:deckId/cards/:cardId/study
+     */
+    getStudyCard = async (req, res) => {
+        try {
+            const { cardId } = req.params;
+            const { userId } = this._getUserContext(req);
+
+            const card = await DeckService.getCardById(cardId);
+
+            // Validar propiedad de la tarjeta (seguridad básica)
+            if (!card || card.user_id !== userId) {
+                return res.status(403).json({ error: 'Tarjeta no encontrada o sin acceso' });
+            }
+
+            // 🪙 CONSUMO DE VIDA: Estudiar una tarjeta individual también gasta 1 vida (Botón Play pequeño)
+            await this._syncUsage(req);
+
+            res.json({ success: true, cards: [card] }); // Envuelto en array para compatibilidad con el frontend
+        } catch (error) {
+            console.error('[getStudyCard] Error:', error);
+            res.status(500).json({ error: 'Error al obtener tarjeta de estudio' });
+        }
+    }
+
+    /**
+     * GET /api/decks/:deckId/cards
+     */
+    listCards = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { userId, isGuest } = this._getUserContext(req);
+
+            // Security: If Guest, ensure it's a SYSTEM deck OR a PUBLIC deck
+            if (isGuest) {
+                const deck = await DeckService.getDeckById('GUEST', deckId);
+                if (!deck || (deck.type !== 'SYSTEM' && !deck.is_public)) {
+                    return res.status(403).json({ error: 'Acceso denegado: No puedes ver estas tarjetas' });
+                }
+            }
+
+            const cards = await DeckService.getDeckCards(deckId);
+            res.json({ success: true, cards });
+        } catch (error) {
+            console.error('[listCards] Error:', error);
+            res.status(500).json({ error: 'Error al listar tarjetas' });
+        }
+    }
+
+    /**
+     * POST /api/decks/:deckId/cards
+     */
+    addCard = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { front, back, imageUrl, backImageUrl } = req.body;
+            const { userId, isAdvanced } = this._getUserContext(req);
+
+            // Validar que al menos haya texto o imagen en ambos lados
+            const hasFront = (front && front.trim()) || imageUrl;
+            const hasBack = (back && back.trim()) || backImageUrl;
+
+            if (!hasFront || !hasBack) {
+                return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
+            }
+
+            // 🛡️ REGLA PREMIUM / CONTROL DE COSTOS: Imágenes son exclusivas del Plan Advanced
+            const hasMedia = imageUrl || backImageUrl;
+            if (hasMedia && !isAdvanced) {
+                return res.status(403).json({
+                    error: 'La asignación de imágenes es una función exclusiva del Plan Avanzado. ¡Mejora tu plan para desbloquearla!',
+                    paywall: true
+                });
+            }
+
+            // 🛡️ VALIDACIÓN DE LONGITUD (1000 chars texto estándar)
+            if ((front && front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (back && back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH)) {
+                return res.status(400).json({ error: `El texto de la tarjeta no puede superar los ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres por cara.` });
+            }
+
+            const card = await DeckService.addCard(userId, deckId, front, back, imageUrl, backImageUrl);
+            await this._syncUsage(req);
+            res.json({ success: true, card });
+        } catch (error) {
+            console.error('[addCard] Error:', error);
+            if (error.message === 'Mazo no encontrado o acceso denegado') {
+                return res.status(403).json({ error: error.message });
+            }
+            res.status(500).json({ error: 'Error al añadir tarjeta' });
+        }
+    }
+
+    /**
+     * POST /api/decks/:deckId/cards/batch
+     */
+    addBulkCards = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { cards } = req.body;
+            const { userId, isGuest } = this._getUserContext(req);
+
+            if (isGuest) return res.status(403).json({ error: 'Inicia sesión para subir tarjetas.' });
+            if (!cards || !Array.isArray(cards)) return res.status(400).json({ error: 'Se requiere un array de tarjetas.' });
+
+            // LÍMITE DE SEGURIDAD (Backend Enforcement: 100 tarjetas por Excel)
+            if (cards.length > SECURITY_LIMITS.MAX_BATCH_SIZE) {
+                return res.status(400).json({ error: `Límite de ${SECURITY_LIMITS.MAX_BATCH_SIZE} tarjetas por archivo Excel excedido.` });
+            }
+
+            const hasOverlength = cards.some(c => (c.front && c.front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (c.back && c.back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH));
+            if (hasOverlength) {
+                return res.status(400).json({ error: `Una o más tarjetas en el lote exceden el límite de ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres.` });
+            }
+
+            const result = await DeckService.addBulkCards(userId, deckId, cards);
+            await this._syncUsage(req);
+            res.json({ success: true, count: result.inserted });
+        } catch (error) {
+            console.error('[addBulkCards] Error:', error);
+            if (error.message === 'Mazo no encontrado o acceso denegado') {
+                return res.status(403).json({ error: error.message });
+            }
+            res.status(500).json({ error: 'Error en la carga masiva.' });
+        }
+    }
+
+    /**
+     * PUT /api/decks/:deckId/cards/reorder
+     */
+    reorderCards = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { sortedIds } = req.body;
+            const { userId } = this._getUserContext(req);
+
+            if (!sortedIds || !Array.isArray(sortedIds)) {
+                return res.status(400).json({ error: 'Se requiere una lista de IDs para reordenar' });
+            }
+
+            await DeckService.updateCardsOrder(userId, deckId, sortedIds);
+            res.json({ success: true });
+        } catch (error) {
+            console.error('[reorderCards] Error:', error);
+            res.status(500).json({ error: 'Error al reordenar tarjetas' });
+        }
+    }
+
+    /**
+     * DELETE /api/cards/batch
+     */
+    deleteBulkCards = async (req, res) => {
+        try {
+            const { cardIds } = req.body;
+            const { userId } = this._getUserContext(req);
+
+            if (!cardIds || !Array.isArray(cardIds) || cardIds.length === 0) {
+                return res.status(400).json({ error: 'Se requieren IDs de tarjetas' });
+            }
+
+            // 1. Obtener las imágenes de GCS a eliminar
+            const imagesToDelete = await DeckService.getCardsImages(userId, cardIds);
+
+            // 2. Eliminar tarjetas de la BD
+            await DeckService.deleteBulkCards(userId, cardIds);
+
+            // 3. Limpiar GCS de forma unificada (solo si no están en uso)
+            const urlsToDelete = [];
+            for (const img of imagesToDelete) {
+                if (img.image_url) urlsToDelete.push(img.image_url);
+                if (img.explanation_image_url) urlsToDelete.push(img.explanation_image_url);
+                if (img.audio_url_frente) urlsToDelete.push(img.audio_url_frente);
+                if (img.audio_url_dorso) urlsToDelete.push(img.audio_url_dorso);
+            }
+            await this._cleanOrphanMedia(urlsToDelete);
+
+            res.json({ success: true, deletedCount: cardIds.length });
+        } catch (error) {
+            console.error('[deleteBulkCards] Error:', error);
+            res.status(500).json({ error: 'Error al eliminar tarjetas masivamente' });
+        }
+    }
+
+    /**
+     * PUT /api/cards/:cardId
+     */
+    updateCard = async (req, res) => {
+        try {
+            const { cardId } = req.params;
+            const { front, back, imageUrl, backImageUrl } = req.body;
+            const { userId, isAdvanced } = this._getUserContext(req);
+
+            // Validar que al menos haya texto o imagen en ambos lados
+            const hasFront = (front && front.trim()) || imageUrl;
+            const hasBack = (back && back.trim()) || backImageUrl;
+
+            if (!hasFront || !hasBack) {
+                return res.status(400).json({ error: 'La tarjeta debe tener contenido (texto o imagen) en ambos lados.' });
+            }
+
+            // 1. Obtener la tarjeta actual para comparar imágenes
+            const currentCard = await DeckService.getCardById(cardId);
+            if (!currentCard) return res.status(404).json({ error: 'Tarjeta no encontrada' });
+
+            // 🛡️ REGLA PREMIUM / CONTROL DE COSTOS: Imágenes son exclusivas de Advanced
+            const isAddingImage = (imageUrl && imageUrl !== currentCard.image_url) || (backImageUrl && backImageUrl !== currentCard.explanation_image_url);
+
+            if (isAddingImage && !isAdvanced) {
+                return res.status(403).json({
+                    error: 'La asignación de imágenes es una función exclusiva del Plan Avanzado. ¡Mejora tu plan para desbloquearla!',
+                    paywall: true
+                });
+            }
+
+            // 🛡️ VALIDACIÓN DE LONGITUD
+            if ((front && front.length > SECURITY_LIMITS.MAX_TEXT_LENGTH) || (back && back.length > SECURITY_LIMITS.MAX_TEXT_LENGTH)) {
+                return res.status(400).json({ error: `El texto de la tarjeta no puede superar los ${SECURITY_LIMITS.MAX_TEXT_LENGTH} caracteres por cara.` });
+            }
+
+            const card = await DeckService.updateCard(userId, cardId, front, back, imageUrl, backImageUrl);
+            await this._syncUsage(req);
+
+            // 2. Limpieza de GCS (Post-Guardado para imágenes)
+            const replacedUrls = [];
+            if (currentCard.image_url && currentCard.image_url !== imageUrl) replacedUrls.push(currentCard.image_url);
+            if (currentCard.explanation_image_url && currentCard.explanation_image_url !== backImageUrl) replacedUrls.push(currentCard.explanation_image_url);
+            await this._cleanOrphanMedia(replacedUrls);
+
+            res.json({ success: true, card });
+        } catch (error) {
+            console.error('[updateCard] Error:', error);
+            res.status(500).json({ error: 'Error al actualizar tarjeta' });
+        }
+    }
+
+    /**
+     * DELETE /api/cards/:cardId
+     */
+    deleteCard = async (req, res) => {
+        try {
+            const { cardId } = req.params;
+            const { userId } = this._getUserContext(req);
+
+            // 1. Obtener la tarjeta para saber qué archivos borrar
+            const card = await DeckService.getCardById(cardId);
+            if (!card) return res.status(404).json({ error: 'Tarjeta no encontrada' });
+
+            await DeckService.deleteCard(userId, cardId);
+
+            // 2. Limpiar GCS solo si nadie más usa la imagen/audio
+            await this._cleanOrphanMedia([
+                card.image_url,
+                card.explanation_image_url,
+                card.audio_url_frente,
+                card.audio_url_dorso
+            ]);
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error('[deleteCard] Error:', error);
+            res.status(500).json({ error: 'Error al eliminar tarjeta' });
+        }
+    }
+
+    /**
+     * DELETE /api/decks/:deckId
+     */
+    deleteDeck = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { userId } = this._getUserContext(req);
+
+            // 1. Obtener todas las imágenes y audios del árbol de mazos (Tarjetas + Descripciones)
+            const rawImageData = await DeckService.getDeckTreeImages(userId, deckId);
+
+            // 2. Eliminar el mazo y sub-mazos de la BD
+            await DeckService.deleteDeck(userId, deckId);
+
+            // 3. Limpiar GCS de forma segura y unificada
+            const urlsToDelete = [];
+            for (const row of rawImageData) {
+                if (row.image_url) urlsToDelete.push(row.image_url);
+                if (row.explanation_image_url) urlsToDelete.push(row.explanation_image_url);
+                if (row.audio_url_frente) urlsToDelete.push(row.audio_url_frente);
+                if (row.audio_url_dorso) urlsToDelete.push(row.audio_url_dorso);
+                if (row.deck_description) {
+                    urlsToDelete.push(...this._extractImageUrls(row.deck_description));
+                }
+            }
+            await this._cleanOrphanMedia(urlsToDelete);
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error('[deleteDeck] Error:', error);
+            res.status(500).json({ error: 'Error al eliminar el mazo' });
+        }
+    }
+
+    /**
+     * POST /api/cards/upload-image
+     */
+    uploadCardImage = async (req, res) => {
+        try {
+            const { isAdvanced, isGuest } = this._getUserContext(req);
+            if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para subir imágenes.' });
+
+            if (!isAdvanced) {
+                return res.status(403).json({
+                    error: 'La subida de imágenes para tarjetas es una función exclusiva del Plan Avanzado. ¡Mejora tu plan para desbloquearla!',
+                    paywall: true
+                });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({ error: 'No se recibió ninguna imagen.' });
+            }
+
+            const mediaController = require('./mediaController');
+            const gcsPath = await mediaController.uploadFile(req.file, 'flashcards', true, req.user.id);
+
+            await this._syncUsage(req);
+            res.json({ success: true, imageUrl: gcsPath });
+        } catch (error) {
+            console.error('[uploadCardImage] Error:', error);
+            res.status(500).json({ error: 'Error al subir imagen de tarjeta' });
+        }
+    }
+    /**
+     * GET /api/decks/public
+     */
+    getPublicDecks = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20;
+            const requestedCategory = req.query.category || 'ALL';
+            const category = requestedCategory === 'ALL'
+                ? 'ALL'
+                : this._normalizeCategory(requestedCategory);
+            const decks = await DeckService.getPublicDecks(page, limit, category);
+            res.json({ success: true, decks });
+        } catch (error) {
+            console.error('[getPublicDecks] Error:', error);
+            res.status(500).json({ error: 'Error al obtener mazos públicos' });
+        }
+    }
+
+    /**
+     * PUT /api/decks/:deckId/visibility
+     */
+    toggleVisibility = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { is_public, category } = req.body;
+            const { userId, isGuest } = this._getUserContext(req);
+
+            if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión' });
+            if (typeof is_public !== 'boolean') return res.status(400).json({ error: 'Estado de visibilidad inválido' });
+
+            const safeCategory = category ? this._normalizeCategory(category) : null;
+            const updated = await DeckService.updateDeckVisibility(userId, deckId, is_public, safeCategory);
+            res.json({ success: true, deck: updated });
+        } catch (error) {
+            console.error('[toggleVisibility] Error:', error);
+            res.status(500).json({ error: 'Error al cambiar visibilidad' });
+        }
+    }
+
+    /**
+     * POST /api/decks/:deckId/clone
+     */
+    cloneDeck = async (req, res) => {
+        try {
+            const { deckId } = req.params;
+            const { userId, isGuest } = this._getUserContext(req);
+
+            if (isGuest) return res.status(403).json({ error: 'Debes iniciar sesión para clonar' });
+
+            const newDeck = await DeckService.cloneDeck(userId, deckId);
+            await this._syncUsage(req);
+
+            res.json({ success: true, deck: newDeck });
+        } catch (error) {
+            console.error('[cloneDeck] Error:', error);
+            res.status(500).json({ error: error.message || 'Error al clonar el mazo' });
+        }
+    }
+}
+
+module.exports = new DeckController();

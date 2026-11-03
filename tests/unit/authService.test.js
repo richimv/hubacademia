@@ -1,0 +1,244 @@
+const AuthService = require('../../src/domain/services/authService');
+const db = require('../../src/infrastructure/database/db');
+
+jest.mock('../../src/infrastructure/database/db', () => {
+    return {
+        query: jest.fn()
+    };
+});
+
+jest.mock('@supabase/supabase-js', () => {
+    return {
+        createClient: jest.fn().mockReturnValue({
+            auth: {
+                admin: {
+                    getUserById: jest.fn().mockResolvedValue({
+                        data: { user: { email_confirmed_at: '2026-06-01T00:00:00Z' } },
+                        error: null
+                    }),
+                    deleteUser: jest.fn().mockResolvedValue({ error: null }),
+                    updateUserById: jest.fn().mockResolvedValue({ data: {}, error: null })
+                }
+            }
+        })
+    };
+});
+
+const mockFindById = jest.fn();
+const mockFindByEmail = jest.fn();
+const mockCreate = jest.fn();
+const mockUpdate = jest.fn();
+const mockDelete = jest.fn();
+const mockRenewWeeklyLivesIfNeeded = jest.fn();
+
+jest.mock('../../src/domain/repositories/userRepository', () => {
+    return jest.fn().mockImplementation(() => {
+        return {
+            findById: mockFindById,
+            findByEmail: mockFindByEmail,
+            create: mockCreate,
+            update: mockUpdate,
+            delete: mockDelete,
+            renewWeeklyLivesIfNeeded: mockRenewWeeklyLivesIfNeeded
+        };
+    });
+});
+
+jest.mock('../../src/infrastructure/config/supabaseClient');
+
+describe('AuthService', () => {
+    let authService;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        authService = new AuthService();
+    });
+
+    describe('syncGoogleUser', () => {
+        it('should sync Google user successfully', async () => {
+            const googleUser = {
+                id: 'sb-user-id',
+                email: 'test@example.com',
+                name: 'Test User'
+            };
+
+            const expectedUser = {
+                id: 'sb-user-id',
+                email: 'test@example.com',
+                name: 'Test User',
+                role: 'student'
+            };
+
+            mockCreate.mockResolvedValue(expectedUser);
+
+            const result = await authService.syncGoogleUser(googleUser);
+
+            expect(result).toEqual(expectedUser);
+            expect(mockCreate).toHaveBeenCalledWith({
+                id: googleUser.id,
+                email: googleUser.email,
+                name: googleUser.name,
+                role: 'student',
+                avatar_url: null
+            });
+        });
+
+        it('should assign admin role if email is in the admin list', async () => {
+            const adminUser = {
+                id: 'admin-id',
+                email: 'hubacademia01@gmail.com',
+                name: 'Admin User'
+            };
+
+            const expectedUser = {
+                id: 'admin-id',
+                email: 'hubacademia01@gmail.com',
+                name: 'Admin User',
+                role: 'admin'
+            };
+
+            mockCreate.mockResolvedValue(expectedUser);
+
+            const result = await authService.syncGoogleUser(adminUser);
+
+            expect(result.role).toBe('admin');
+            expect(mockCreate).toHaveBeenCalledWith({
+                id: adminUser.id,
+                email: adminUser.email,
+                name: adminUser.name,
+                role: 'admin',
+                avatar_url: null
+            });
+        });
+
+        it('should preserve existing custom user name and not overwrite with Google profile name', async () => {
+            const googlePayload = {
+                id: 'custom-user-id',
+                email: 'estudiante@hubacademia.com',
+                name: 'Google Registered Name'
+            };
+
+            // Simular usuario existente con nombre personalizado
+            mockFindByEmail.mockResolvedValue({
+                id: 'custom-user-id',
+                email: 'estudiante@hubacademia.com',
+                name: 'Mi Nombre Personalizado'
+            });
+
+            const expectedPersistedUser = {
+                id: 'custom-user-id',
+                email: 'estudiante@hubacademia.com',
+                name: 'Mi Nombre Personalizado',
+                role: 'student'
+            };
+            mockCreate.mockResolvedValue(expectedPersistedUser);
+
+            const result = await authService.syncGoogleUser(googlePayload);
+
+            expect(result.name).toBe('Mi Nombre Personalizado');
+            expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+                name: 'Mi Nombre Personalizado'
+            }));
+        });
+    });
+
+    describe('updateProfile', () => {
+        it('should update profile if name change restriction is not violated', async () => {
+            const userId = 'user-123';
+            const user = {
+                id: userId,
+                name: 'Old Name',
+                lastNameChangeAt: null,
+                role: 'student'
+            };
+
+            mockFindById.mockResolvedValue(user);
+            mockUpdate.mockResolvedValue({
+                ...user,
+                name: 'New Name'
+            });
+
+            const result = await authService.updateProfile(userId, { name: 'New Name' });
+
+            expect(result.name).toBe('New Name');
+            expect(mockUpdate).toHaveBeenCalledWith(userId, {
+                name: 'New Name',
+                last_name_change_at: expect.any(Date)
+            });
+        });
+
+        it('should throw error if user changed name within 7 days', async () => {
+            const userId = 'user-123';
+            const lastChange = new Date();
+            lastChange.setDate(lastChange.getDate() - 3); // 3 days ago
+
+            const user = {
+                id: userId,
+                name: 'Old Name',
+                lastNameChangeAt: lastChange.toISOString(),
+                role: 'student'
+            };
+
+            mockFindById.mockResolvedValue(user);
+
+            await expect(authService.updateProfile(userId, { name: 'New Name' }))
+                .rejects.toThrow(/Solo puedes cambiar tu nombre una vez por semana/);
+        });
+
+        it('should allow admin to change name even if changed within 7 days', async () => {
+            const userId = 'admin-123';
+            const lastChange = new Date();
+            lastChange.setDate(lastChange.getDate() - 3);
+
+            const user = {
+                id: userId,
+                name: 'Old Admin',
+                lastNameChangeAt: lastChange.toISOString(),
+                role: 'admin'
+            };
+
+            mockFindById.mockResolvedValue(user);
+            mockUpdate.mockResolvedValue({
+                ...user,
+                name: 'New Admin'
+            });
+
+            const result = await authService.updateProfile(userId, { name: 'New Admin' });
+
+            expect(result.name).toBe('New Admin');
+        });
+    });
+
+    describe('getUserWithStatus', () => {
+        it('should delegate weekly free lives renewal and fetch user', async () => {
+            const userId = 'user-123';
+            const mockUser = {
+                id: userId,
+                email: 'test@example.com',
+                subscriptionTier: 'free',
+                usageCount: 5
+            };
+
+            mockRenewWeeklyLivesIfNeeded.mockResolvedValue(false);
+            mockFindById.mockResolvedValue(mockUser);
+
+            const result = await authService.getUserWithStatus(userId);
+
+            expect(mockRenewWeeklyLivesIfNeeded).toHaveBeenCalledWith(userId);
+            expect(mockFindById).toHaveBeenCalledWith(userId);
+            expect(result).toEqual(mockUser);
+        });
+    });
+
+    describe('deleteAccount', () => {
+        it('should trigger cascading repository delete and complete successfully', async () => {
+            const userId = 'user-delete-test';
+            mockDelete.mockResolvedValue({ success: true });
+
+            const result = await authService.deleteAccount(userId);
+
+            expect(mockDelete).toHaveBeenCalledWith(userId);
+            expect(result).toEqual({ success: true });
+        });
+    });
+});

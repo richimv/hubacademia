@@ -1,0 +1,307 @@
+/* Estilos específicos para el Hub de Simuladores */
+:root {
+    --sim-card-bg: var(--bg-secondary);
+    --sim-border: var(--border-color);
+    --sim-text-title: var(--text-main);
+    --sim-text-desc: var(--text-secondary);
+    --sim-badge-bg: rgba(10, 10, 10, 0.6);
+}
+
+.dashboard-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-top: 2rem !important;
+}
+
+/* Distinct Header Style - Cleaned up obsolete header-glass / btn-back */
+
+.header-clean {
+    margin-bottom: 2.5rem;
+    text-align: center;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 var(--page-padding-x);
+}
+
+.header-clean h1 {
+    margin-bottom: 0.5rem !important;
+}
+
+.simulators-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+    .simulators-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Card variables for accents */
+.sim-card.card-med {
+    --accent: #3b82f6;
+    --accent-rgb: 59, 130, 246;
+}
+.sim-card.card-img-sim {
+    --accent: #eab308;
+    --accent-rgb: 234, 179, 8;
+}
+.sim-card.card-dx-sim {
+    --accent: #10b981;
+    --accent-rgb: 16, 185, 129;
+}
+.sim-card.card-edu-nom {
+    --accent: #f97316;
+    --accent-rgb: 249, 115, 22;
+}
+.sim-card.card-edu-sesion {
+    --accent: #eab308;
+    --accent-rgb: 234, 179, 8;
+}
+.sim-card.card-edu-rubrica {
+    --accent: #10b981;
+    --accent-rgb: 16, 185, 129;
+}
+.sim-card {
+    position: relative;
+    padding: 2rem 1.75rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 280px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+/* Vertical Left Accent Line */
+.sim-card::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    transition: width 0.3s ease;
+    opacity: 0.9;
+}
+
+.sim-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(var(--accent-rgb), 0.4);
+    box-shadow: 0 16px 36px rgba(var(--accent-rgb), 0.15), var(--shadow-lg);
+}
+
+.sim-card:hover::after {
+    width: 6px;
+    box-shadow: 0 0 15px var(--accent);
+}
+
+.sim-title {
+    color: var(--text-main);
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin-bottom: 0.65rem;
+    letter-spacing: -0.01em;
+    transition: color 0.3s ease;
+}
+
+.sim-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-bottom: 1.5rem;
+}
+
+/* Call-to-action Link */
+.sim-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.825rem;
+    font-weight: 700;
+    margin-top: auto;
+    width: fit-content;
+    padding: 0.45rem 1.15rem;
+    border-radius: 50px;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
+    transition: all 0.25s ease;
+}
+
+.sim-card:hover .sim-cta {
+    background: var(--accent);
+    color: #ffffff !important;
+    border-color: var(--accent);
+    box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.35);
+}
+
+.sim-cta i {
+    transition: transform 0.3s ease;
+}
+
+.sim-card:hover .sim-cta {
+    text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.4);
+}
+
+.sim-card:hover .sim-cta i {
+    transform: translateX(4px);
+}
+
+.sim-badge {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: var(--sim-badge-bg);
+    border: 1px solid var(--sim-border);
+    padding: 4px 10px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    backdrop-filter: blur(4px);
+    z-index: 6;
+}
+
+/* --- Mobile / Responsive: Compact Simulator Cards --- */
+@media (max-width: 768px) {
+    .sim-card {
+        min-height: auto !important;
+        padding: 1.5rem 1.25rem !important;
+        border-radius: 16px !important;
+        border-color: rgba(var(--accent-rgb), 0.25) !important;
+        box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+    }
+
+    .sim-card::after {
+        height: 3.5rem !important; /* Adjusted for mobile */
+    }
+
+    .sim-card:hover::after {
+        height: 4.0rem !important;
+    }
+
+    .sim-title {
+        font-size: 1.25rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    .sim-desc {
+        font-size: 0.85rem !important;
+        margin-bottom: 1.25rem !important;
+        line-height: 1.4 !important;
+    }
+
+    #sim-hub-title {
+        font-size: 1.9rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    #sim-hub-subtitle {
+        font-size: 0.95rem !important;
+        line-height: 1.4 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #sim-hub-title {
+        font-size: 1.65rem !important;
+    }
+}
+
+/* ============================================================
+   DYNAMIC THEMING & IMPROVEMENTS FOR SIMULATOR SECTIONS
+   ============================================================ */
+
+/* Volver al Inicio Premium Back Button */
+.btn-back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    color: var(--text-muted);
+    text-decoration: none !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 1.2rem;
+    border-radius: 50px;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.btn-back-home:hover {
+    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateX(-4px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.btn-back-home i {
+    font-size: 0.8rem;
+}
+
+/* Dynamic Accent Title Text */
+.accent-sim-text {
+    background: linear-gradient(135deg, #ffffff 40%, var(--accent-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: filter 0.3s ease;
+}
+
+.scroll-animate-section:hover .accent-sim-text {
+    filter: drop-shadow(0 0 10px rgba(var(--accent-rgb), 0.35));
+}
+
+/* Dynamic Glassmorphic Badge */
+.badge-sim-theme {
+    background: rgba(var(--accent-rgb), 0.1) !important;
+    color: var(--accent-light) !important;
+    border: 1px solid rgba(var(--accent-rgb), 0.25) !important;
+    box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.15);
+}
+
+/* Dynamic Premium CTA Button */
+.btn-sim-theme {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%) !important;
+}
+
+.btn-sim-theme:hover {
+    box-shadow: 0 12px 35px rgba(var(--accent-rgb), 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Dynamic Hover Glow for Preview Cards */
+.scroll-animate-section:hover .preview-card-glass {
+    border-color: rgba(var(--accent-rgb), 0.35) !important;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px rgba(var(--accent-rgb), 0.18) !important;
+}
+
+/* Dynamic Simulator Section Summary Text */
+.section-summary-text {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin-bottom: 2.2rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}

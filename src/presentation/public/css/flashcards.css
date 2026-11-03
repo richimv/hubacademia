@@ -1,0 +1,783 @@
+/* ==========================================================================
+   FLASHCARDS.CSS — Motor Visual Pure Dark v5
+   
+   ARQUITECTURA:
+   - Card Face usa Flexbox con 3 hijos de altura fija/flexible
+   - Badge Container: altura fija, nunca se comprime
+   - Content Area: flex:1 con overflow:hidden (toma todo el espacio restante)
+   - Hint Container: altura fija, nunca se comprime
+   
+   MANEJO DE IMAGENES 9:16:
+   - La imagen NUNCA usa height:100% (causa desbordamiento en flex/grid)
+   - En su lugar, usa max-height con calc() basado en la altura de la tarjeta
+   - object-fit:contain escala SIN cortar
+   ========================================================================== */
+
+:root {
+    --bg-pure: var(--bg-main);
+    --card-bg: var(--bg-secondary);
+    --border-dim: var(--border-color);
+    --text-primary: var(--text-main);
+    --text-secondary: var(--text-muted);
+    --accent-color: var(--primary);
+    --success-color: var(--success);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent !important; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-pure);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+#app-root {
+    width: 100%;
+    max-width: var(--max-width, 1440px);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* ✅ Cambio: Alinear desde arriba */
+    position: relative;
+    padding: 0 20px 40px;
+}
+
+/* --- View Sections --- */
+.view-section {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    animation: fadeIn 0.4s ease-out;
+}
+.view-section.active { 
+    display: flex; 
+    flex: 1; /* Ocupa el espacio restante */
+    justify-content: center; 
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ==========================================================================
+   EMPTY STATE — Pantalla "Todo al dia"
+   ========================================================================== */
+.empty-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 4rem 3rem;
+    border-radius: 24px;
+    text-align: center;
+    max-width: 550px;
+    margin: 0 auto;
+    width: 95%;
+    box-shadow: var(--shadow-xl);
+    color: var(--text-main);
+}
+
+/* Contenedor de botones de accion */
+.empty-actions {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+/* Botones gemelos dark/light */
+.btn-action {
+    padding: 1.1rem 2.2rem;
+    border-radius: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    background: var(--bg-tertiary);
+    color: var(--text-main);
+    font-size: 1rem;
+    min-width: 200px;
+}
+.btn-action.btn-primary {
+    background: var(--primary);
+    color: white !important;
+    border-color: var(--primary);
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+.btn-action:hover {
+    transform: translateY(-3px);
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+}
+
+/* ==========================================================================
+   FLASHCARD SCENE — Contenedor 3D
+   ========================================================================== */
+
+/* Alturas de tarjeta (usadas en calc() para limitar imagenes) */
+/* PC: 440px total - 55px badge - 40px hint = 345px para contenido */
+/* Movil: 420px total - 55px badge - 40px hint = 325px para contenido */
+
+.scene {
+    width: 100%;
+    max-width: 850px;
+    height: 440px;
+    margin-bottom: 2rem;
+    position: relative;
+    border-radius: 24px;
+    box-shadow: var(--shadow-xl);
+}
+
+.card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    transform-style: preserve-3d;
+}
+.card.is-flipped { transform: rotateY(180deg); }
+
+/* ==========================================================================
+   CARD FACE — Flexbox de 3 filas
+   ========================================================================== */
+.fc-card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 24px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    /* Flexbox columna: badge | contenido | hint */
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1.75rem 0.75rem 1.75rem;
+    overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    touch-action: pan-y;
+}
+.fc-card-face--back { 
+    transform: rotateY(180deg) translateZ(1px); 
+    -webkit-transform: rotateY(180deg) translateZ(1px);
+    touch-action: pan-y;
+}
+
+/* --- Fila 1: Badge (altura fija, nunca se comprime) --- */
+.fc-badge-container {
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.fc-badge {
+    background: var(--bg-tertiary);
+    padding: 6px 16px;
+    border-radius: 50px;
+    border: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    
+    /* Truncar nombres largos */
+    max-width: 280px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+}
+
+/* --- Fila 2: Content Area (toma todo el espacio restante) --- */
+.fc-content-area {
+    flex: 1;             
+    min-height: 0;       
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;    
+    width: 100%;
+    touch-action: pan-y;
+}
+
+/* --- Fila 3: Hint (altura fija, nunca se comprime) --- */
+.fc-hint-container {
+    height: 30px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.tap-hint { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+
+/* ==========================================================================
+   IMAGE CONTAINER
+   
+   Clave: NO usar height:100% en la imagen. En su lugar:
+   - El container tiene max-height explicito basado en la tarjeta
+   - La imagen usa max-height:100% + max-width:100% + object-fit:contain
+   - Esto permite que imagenes 9:16 se reduzcan proporcionalmente
+   ========================================================================== */
+.card-image-container {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    /* PC: max-height = 440px - 55px badge - 40px hint = 345px */
+    max-height: 345px;
+    flex-shrink: 1;      /* Puede encogerse si compite con texto */
+}
+.card-image-container.visible { display: flex; }
+
+/* La imagen se escala proporcionalmente sin cortarse */
+.card-image {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;    /* 100% del container, que ya esta limitado */
+    width: auto;
+    height: auto;        /* Tamano natural, limitado por max-height/max-width */
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+/* ==========================================================================
+   TEXTO — Adaptativo con scroll para contenido largo
+   ========================================================================== */
+.content-text {
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+    flex-shrink: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    white-space: normal;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-main) !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(249, 115, 22, 0.45) transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem 0.8rem;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain;
+    cursor: grab;
+}
+.content-text:active {
+    cursor: grabbing;
+}
+
+/* Centrado que no rompe el scroll superior y no bloquea toques */
+.content-text::before,
+.content-text::after {
+    content: '';
+    margin: auto;
+    pointer-events: none; /* No intercepta toques ni clics */
+    flex-shrink: 0;
+}
+
+.content-text > div, .content-text > p {
+    width: 100%;
+    z-index: 1;
+    color: var(--text-main) !important;
+}
+
+.content-text p {
+    margin: 0 0 0.5rem 0;
+    line-height: 1.45;
+    width: 100%;
+    z-index: 1;
+    color: var(--text-main) !important;
+}
+
+.content-text p:last-child {
+    margin-bottom: 0;
+}
+
+/* Listas y enumeraciones en flashcards */
+.content-text ol,
+.content-text ul {
+    text-align: left !important;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0.4rem 0;
+    padding-left: 1.35rem !important;
+    box-sizing: border-box;
+    list-style-position: outside !important;
+    z-index: 1;
+}
+
+.content-text ol {
+    list-style-type: decimal !important;
+}
+
+.content-text ul {
+    list-style-type: disc !important;
+}
+
+.content-text li {
+    margin-bottom: 0.45rem;
+    line-height: 1.45;
+    text-align: left !important;
+    color: var(--text-main) !important;
+}
+
+.content-text li::marker {
+    color: var(--primary) !important;
+    font-weight: 700;
+}
+
+/* ✅ Scrollbar visible y estilizada en Webkit */
+.content-text::-webkit-scrollbar {
+    width: 5px;
+}
+.content-text::-webkit-scrollbar-track {
+    background: transparent;
+}
+.content-text::-webkit-scrollbar-thumb {
+    background: rgba(249, 115, 22, 0.35);
+    border-radius: 10px;
+}
+.content-text::-webkit-scrollbar-thumb:hover {
+    background: rgba(249, 115, 22, 0.65);
+}
+
+/* ✅ SOLUCIÓN MÓVIL: Si hay imagen y el texto es largo, alineamos arriba para evitar bloqueo de scroll */
+@media (max-width: 768px) {
+    .fc-card-face.fc-has-image:not(.fc-only-image) .content-text {
+        justify-content: flex-start !important; /* Forza inicio arriba */
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+    }
+}
+
+/* ==========================================================================
+   MODO: Solo Imagen (sin texto visible)
+   height:100% da una referencia definida al container para que
+   max-height:100% en la <img> resuelva correctamente.
+   Sin esto, imagenes 9:16 se renderizan a tamano natural y se recortan.
+   ========================================================================== */
+.fc-card-face.fc-only-image .content-text { display: none; }
+.fc-card-face.fc-only-image .card-image-container {
+    flex: 1;             /* Toma todo el espacio del content-area */
+    height: 100%;        /* ✅ Referencia definida para la imagen */
+    max-height: none;    /* Sin limite, el content-area lo contiene */
+}
+
+/* ==========================================================================
+   MODO: Solo Texto (sin imagen)
+   ========================================================================== */
+.fc-card-face.fc-only-text .content-text {
+    /* La tipografía es gestionada dinámicamente por adjustFontSize en JS */
+}
+
+/* ==========================================================================
+   PC — 2 columnas (imagen izquierda, texto derecha)
+   ========================================================================== */
+@media (min-width: 769px) {
+    /* Content area se convierte en fila horizontal */
+    .fc-card-face.fc-has-image:not(.fc-only-image) .fc-content-area {
+        flex-direction: row;
+        gap: 2rem;
+        padding: 0 1rem;
+    }
+
+    /* Imagen: 45% del ancho, DEBE tener height:100% para que
+       max-height:100% en la <img> tenga una referencia real de alto.
+       Sin esto, la imagen 9:16 se renderiza a su tamano natural
+       y overflow:hidden del padre la recorta. */
+    .fc-card-face.fc-has-image:not(.fc-only-image) .card-image-container {
+        width: 50%;
+        height: 100%;      /* ✅ Referencia de alto para la imagen */
+        flex-shrink: 0;
+        max-height: none;
+    }
+
+    /* Texto: ocupa el 50% restante, centrado vertical */
+    .fc-card-face.fc-has-image:not(.fc-only-image) .content-text {
+        width: 50%;
+        flex-shrink: 0;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+/* ==========================================================================
+   MOBILE — Imagen arriba, texto abajo (stack vertical)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Tarjeta mas alta en movil */
+    .scene { height: 420px; }
+
+    /* Padding lateral optimizado en móvil para aprovechar el ancho útil */
+    .fc-card-face {
+        padding: 1rem 1.1rem 0.6rem 1.1rem;
+    }
+
+    .content-text {
+        padding: 0.25rem 0.35rem;
+    }
+
+    .content-text ol,
+    .content-text ul {
+        padding-left: 1.15rem !important;
+        margin: 0.35rem 0;
+    }
+
+    .content-text li {
+        margin-bottom: 0.45rem;
+        padding-left: 0.15rem;
+        line-height: 1.4;
+    }
+
+    /* Imagen + texto en movil: apilar desde arriba (sin espacio vacio)
+       justify-content: flex-start elimina el gap entre badge e imagen.
+       height: 55% da una referencia definida al container para que
+       max-height:100% en la <img> resuelva y no se ignore. */
+    .fc-card-face.fc-has-image:not(.fc-only-image) .fc-content-area {
+        justify-content: flex-start; /* ✅ Sin espacio superior */
+    }
+
+    .fc-card-face.fc-has-image:not(.fc-only-image) .card-image-container {
+        height: 55%;         /* ✅ Referencia definida para la imagen */
+        max-height: 55%;     /* Techo de seguridad */
+        flex-shrink: 0;
+        width: 100%;
+    }
+
+    .fc-card-face.fc-has-image:not(.fc-only-image) .content-text {
+        flex: 1; /* ✅ Toma todo el espacio restante bajo la imagen */
+        justify-content: center; /* Centrado vertical para alejar de imagen */
+        padding-bottom: 1rem; /* ✅ Aire al final */
+    }
+
+    /* Stats badge responsive */
+    .fc-stats-badge { padding: 6px 12px; }
+    .empty-actions { flex-direction: column; }
+    .btn-action { min-width: 100%; }
+}
+
+/* ==========================================================================
+   STUDY HEADER — Layout de navegación y stats
+   ========================================================================== */
+.study-header {
+    width: 100%;
+    max-width: 850px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 0;
+    margin-bottom: 1rem;
+    z-index: 100;
+}
+
+.fc-stats-badge {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.fc-stats-badge .label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.fc-stats-badge .count { color: var(--accent-color); font-weight: 900; }
+
+/* ==========================================================================
+   BACK NAV — Boton de volver
+   ========================================================================== */
+.back-nav {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    font-size: 1rem;
+    padding: 8px 0;
+}
+.back-nav:hover { color: var(--text-main); transform: translateX(-3px); }
+
+@media (max-width: 768px) { 
+    .study-header { padding: 1rem 0; margin-bottom: 0.5rem; }
+    .nav-text { display: none; }
+    .back-nav { font-size: 1.2rem; }
+}
+
+/* ==========================================================================
+   CONTROLS — Botones de dificultad FSRS
+   ========================================================================== */
+.controls {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    width: 100%;
+    max-width: 850px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(10px);
+}
+.controls.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+.control-btn {
+    border: 1.5px solid var(--border-color);
+    padding: 1.2rem 0.5rem;
+    border-radius: 18px;
+    color: var(--text-main);
+    font-weight: 800;
+    cursor: pointer;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.control-btn:hover { 
+    transform: translateY(-4px); 
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-again { 
+    color: #ef4444; 
+    border-color: rgba(239, 68, 68, 0.25); 
+}
+.btn-again:hover {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+}
+
+.btn-hard { 
+    color: #ea580c; 
+    border-color: rgba(234, 88, 12, 0.25); 
+}
+.btn-hard:hover {
+    border-color: #ea580c;
+    background: rgba(234, 88, 12, 0.08);
+    box-shadow: 0 4px 18px rgba(234, 88, 12, 0.25);
+    color: #ea580c;
+}
+
+.btn-good { 
+    color: #2563eb; 
+    border-color: rgba(37, 99, 235, 0.25); 
+}
+.btn-good:hover {
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, 0.08);
+    box-shadow: 0 4px 18px rgba(37, 99, 235, 0.25);
+    color: #2563eb;
+}
+
+.btn-easy { 
+    color: #059669; 
+    border-color: rgba(5, 150, 105, 0.25); 
+}
+.btn-easy:hover {
+    border-color: #059669;
+    background: rgba(5, 150, 105, 0.08);
+    box-shadow: 0 4px 18px rgba(5, 150, 105, 0.25);
+    color: #059669;
+}
+
+.sub-label { font-size: 0.72rem; color: var(--text-muted); opacity: 0.9; font-weight: 600; }
+
+/* ✅ BOTÓN DE AUDIO PREMIUM (Flotante Inferior Derecha) */
+.fc-audio-btn {
+    position: absolute;
+    bottom: 1.5rem; /* ✅ Bajado para evitar solapamientos con texto/imagen */
+    right: 1.5rem;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(249, 115, 22, 0.12);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(249, 115, 22, 0.35);
+    color: #ea580c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 100;
+    box-shadow: 0 4px 18px rgba(249, 115, 22, 0.2);
+}
+
+@media (hover: hover) {
+    .fc-audio-btn:hover {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        color: #ffffff;
+        border-color: transparent;
+        transform: scale(1.1) rotate(6deg);
+        box-shadow: 0 6px 24px rgba(249, 115, 22, 0.45);
+    }
+}
+
+.fc-audio-btn:active {
+    transform: scale(0.92);
+}
+
+.fc-audio-btn i {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+body.dark-mode .fc-audio-btn,
+[data-theme="dark"] .fc-audio-btn {
+    background: rgba(249, 115, 22, 0.2);
+    border-color: rgba(249, 115, 22, 0.45);
+    color: #fed7aa;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 768px) {
+    .fc-audio-btn {
+        width: 48px;
+        height: 48px;
+        bottom: 1.2rem;
+        right: 1.2rem;
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .controls { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+}
+
+/* ✅ EFECTO DE DESCUBRIMIENTO DEL TUTOR (Partículas ascendentes) */
+.tutor-discovery-aura {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(168, 85, 247, 0.1) 40%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0;
+    filter: blur(8px);
+    animation: auraFade 1.2s ease-out forwards;
+}
+
+@media screen and (max-width: 768px) {
+    .tutor-discovery-aura {
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 60%);
+        filter: blur(5px);
+    }
+}
+
+/* ✅ EFECTO NEÓN PARA EL BOTÓN DEL TUTOR */
+.flashcard-tutor-btn.neon-glow-pulse {
+    animation: neonPulse 1.2s ease-in-out infinite alternate;
+    border-color: #3b82f6 !important;
+    box-shadow: 
+        0 0 4px #3b82f6,
+        0 0 8px #a855f7,
+        inset 0 0 6px rgba(59, 130, 246, 0.4) !important;
+    transform: scale(1.015);
+}
+
+@keyframes neonPulse {
+    from {
+        box-shadow: 0 0 3px #3b82f6, 0 0 6px #a855f7, inset 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    to {
+        box-shadow: 0 0 8px #3b82f6, 0 0 15px #a855f7, inset 0 0 10px rgba(59, 130, 246, 0.5);
+        transform: scale(1.03);
+    }
+}
+
+/* Reducción extra en móviles */
+@media screen and (max-width: 768px) {
+    .flashcard-tutor-btn.neon-glow-pulse {
+        animation-duration: 1.5s;
+        box-shadow: 0 0 4px #3b82f6, 0 0 8px #a855f7 !important;
+    }
+    @keyframes neonPulse {
+        from { box-shadow: 0 0 2px #3b82f6, 0 0 4px #a855f7; }
+        to { box-shadow: 0 0 6px #3b82f6, 0 0 10px #a855f7; transform: scale(1.02); }
+    }
+}
+
+@keyframes auraFade {
+    0% { opacity: 0; transform: scale(0.5); }
+    30% { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0; transform: scale(1.5); }
+}
+
+/* Cleanup de partículas previas */
+
+/* Modificar el shimmer previo para que no sea necesario */
+.flashcard-tutor-btn::after { display: none; }
+
+/* ✅ MODO AUDIO CENTRALIZADO (Simplificado y Sin Deformación) */
+.fc-audio-btn--centered {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    bottom: auto !important;
+    right: auto !important;
+    /* Mantener tamaño original */
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 1.3rem !important;
+    /* Evitar "achatamiento" en móviles */
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+}
+
+@media (hover: hover) {
+    .fc-audio-btn--centered:hover {
+        transform: translate(-50%, -50%) scale(1.1) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .fc-audio-btn--centered {
+        width: 48px !important;
+        height: 48px !important;
+        font-size: 1.1rem !important;
+    }
+}
+
+/* ==========================================================================
+   OCULTAR BARRA DE VIDAS EN ESTUDIO (Evitar solapamientos y distracciones)
+   ========================================================================== */
+#freemium-status-bar {
+    display: none !important;
+}
+body.has-trial-mode {
+    padding-top: 0 !important;
+}

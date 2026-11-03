@@ -1,0 +1,499 @@
+const medicoRepository = require('../repositories/medicoRepository');
+const adminAiService = require('./adminAiService');
+
+function normalizeHealthAreaName(topic) {
+    if (!topic || typeof topic !== 'string') return 'Salud Pública';
+    const norm = topic.trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    if (norm.includes('cuidado integral') || norm.includes('atencion integral') || norm.includes('mais-bfc')) {
+        return 'Cuidado Integral de Salud';
+    }
+    if (norm.includes('gestion de servicios') || norm.includes('gestion en establecimientos') || (norm.includes('gestion') && norm.includes('salud'))) {
+        return 'Gestión de Servicios de Salud';
+    }
+    if (norm.includes('etica') || norm.includes('interculturalidad') || norm.includes('bioetica')) {
+        return 'Ética e Interculturalidad';
+    }
+    if (norm.includes('investigacion') || norm.includes('paper') || norm.includes('metodologia')) {
+        return 'Investigación';
+    }
+    if (norm.includes('salud publica') || norm.includes('epidemiologia')) {
+        return 'Salud Pública';
+    }
+
+    if (norm.includes('ginecologia') || norm.includes('obstetricia')) return 'Ginecología y Obstetricia';
+    if (norm.includes('medicina interna') || norm.includes('emergencias')) return 'Medicina Interna';
+    if (norm.includes('pediatria') || norm.includes('neonatologia')) return 'Pediatría';
+    if (norm.includes('cirugia') || norm.includes('trauma')) return 'Cirugía General';
+    if (norm.includes('anatomia')) return 'Anatomía';
+    if (norm.includes('fisiologia')) return 'Fisiología';
+    if (norm.includes('farmacologia')) return 'Farmacología';
+    if (norm.includes('microbiologia') || norm.includes('parasitologia')) return 'Microbiología y Parasitología';
+    if (norm.includes('cardiologia')) return 'Cardiología';
+    if (norm.includes('gastroenterologia')) return 'Gastroenterología';
+    if (norm.includes('neurologia')) return 'Neurología';
+    if (norm.includes('nefrologia')) return 'Nefrología';
+    if (norm.includes('neumologia')) return 'Neumología';
+    if (norm.includes('endocrinologia')) return 'Endocrinología';
+    if (norm.includes('infectologia')) return 'Infectología';
+    if (norm.includes('reumatologia')) return 'Reumatología';
+    if (norm.includes('traumatologia')) return 'Traumatología';
+
+    return topic.trim();
+}
+
+class MedicoService {
+
+    normalizeTopic(input) {
+        if (!input) return "GENERAL";
+        return input
+            .toUpperCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .trim()
+            .replace(/\s+/g, " ");
+    }
+
+    shuffleOptions(question) {
+        if (!question.options || !question.options.length) return question;
+
+        const originalOptions = question.options;
+        const mappedOptions = originalOptions.map((opt, index) => ({
+            text: opt,
+            isCorrect: index === question.correct_option_index
+        }));
+
+        for (let i = mappedOptions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [mappedOptions[i], mappedOptions[j]] = [mappedOptions[j], mappedOptions[i]];
+        }
+
+        question.options = mappedOptions.map(o => o.text);
+        question.correct_option_index = mappedOptions.findIndex(o => o.isCorrect);
+
+        return question;
+    }
+
+    async generateQuiz(categoryOptions, userId, limit = 10, subscriptionTier = 'free', seenIds = []) {
+        const target = categoryOptions.target || 'SERUMS';
+        const career = categoryOptions.career || 'Medicina Humana';
+        const difficulty = categoryOptions.difficulty || null;
+        let areas = categoryOptions.areas && categoryOptions.areas.length > 0 ? categoryOptions.areas : [];
+
+        if (categoryOptions.mode === 'real') {
+            areas = [
+                'Anatomía', 'Fisiología', 'Farmacología', 'Microbiología y Parasitología',
+                'Medicina Interna', 'Pediatría', 'Ginecología y Obstetricia', 'Cirugía General',
+                'Cardiología', 'Gastroenterología', 'Neurología', 'Nefrología', 'Neumología', 'Endocrinología', 'Infectología', 'Reumatología', 'Traumatología',
+                'Salud Pública', 'Cuidado Integral de Salud', 'Ética e Interculturalidad', 'Investigación', 'Gestión de Servicios de Salud'
+            ];
+        }
+
+        const isGeneric = !areas || areas.length === 0 ||
+            (areas.length === 1 && ['GENERAL', 'MEDICINA GENERAL', 'TODAS'].includes(areas[0].toUpperCase()));
+
+        if (isGeneric) {
+            areas = [
+                'Ciencias Básicas',
+                'Salud Pública',
+                'Ginecología y Obstetricia',
+                'Pediatría',
+                'Cirugía General',
+                'Medicina Interna'
+            ];
+        }
+
+        const normalizedAllAreas = areas.map(a => a.trim().toUpperCase());
+        const areaMap = new Map();
+        areas.forEach(a => areaMap.set(a.trim().toUpperCase(), a.trim()));
+
+        const isRealMock = categoryOptions.mode === 'real' || limit >= 50;
+        const isDefault = isRealMock || categoryOptions.configType === 'default' || !categoryOptions.configType;
+        const queryAreas = isDefault ? ['*'] : normalizedAllAreas;
+        const modeToPass = isRealMock ? 'real' : (categoryOptions.mode || 'standard');
+
+        console.log(`📡 [MedicoService] Target: ${target} | Career: ${career} | Config: ${categoryOptions.configType || 'default'} | Mode: ${modeToPass} | QueryAreas: ${queryAreas.join(', ')} | Limit: ${limit}`);
+
+        const rawBankQuestions = await medicoRepository.findQuestionsInBankBatch(target, queryAreas, Math.max(50, limit * 3), userId, career, difficulty, seenIds, modeToPass);
+
+        const questionsByArea = {};
+        const returnedTopics = new Set();
+        rawBankQuestions.forEach(q => {
+            const shuffledQ = this.shuffleOptions(q);
+            const topicKey = shuffledQ.topic ? shuffledQ.topic.toUpperCase() : 'GENERAL';
+            if (!questionsByArea[topicKey]) questionsByArea[topicKey] = [];
+            questionsByArea[topicKey].push(shuffledQ);
+            returnedTopics.add(topicKey);
+        });
+
+        const activeAreas = (isDefault && returnedTopics.size > 0)
+            ? Array.from(returnedTopics)
+            : normalizedAllAreas;
+
+        const areasWithStock = activeAreas.filter(area => questionsByArea[area] && questionsByArea[area].length > 0);
+
+        let bankSampledAreas;
+        if (limit > 10 || areasWithStock.length <= 5) {
+            bankSampledAreas = [...areasWithStock];
+        } else {
+            bankSampledAreas = areasWithStock.sort(() => 0.5 - Math.random()).slice(0, 5);
+        }
+
+        let balancedBatch = this.packExamQuestions(rawBankQuestions, limit, bankSampledAreas, isDefault);
+
+        const bankCount = balancedBatch.length;
+        let batchIsHealthy = bankCount >= limit;
+        let source = 'BANK';
+        let sampledAreas = bankSampledAreas.map(a => areaMap.get(a) || a);
+
+        if (!batchIsHealthy) {
+            const neededCount = Math.max(1, limit - bankCount);
+            const rawSampled = normalizedAllAreas.length >= 5
+                ? normalizedAllAreas.sort(() => 0.5 - Math.random()).slice(0, 5)
+                : normalizedAllAreas;
+
+            sampledAreas = rawSampled.map(a => areaMap.get(a) || a);
+            const areaPrompt = sampledAreas.join(', ');
+
+            console.log(`🤖 [Medico-IA] Lote insuficiente (${bankCount}/${limit}). Activando RAG para ${sampledAreas.length} áreas (generando ${neededCount} items faltantes)...`);
+            source = bankCount > 0 ? 'HYBRID' : 'AI_REPOSITION';
+
+            if (limit >= 50 || categoryOptions.mode === 'real') {
+                return { questions: balancedBatch, source: 'BANK', topic: sampledAreas[0], areas: areas };
+            }
+
+            try {
+                let aiQuestions = await adminAiService.generateRAGQuestions(target, areaPrompt, career, neededCount, true, difficulty);
+
+                if (aiQuestions && aiQuestions.length > 0) {
+                    aiQuestions = aiQuestions.map(q => this.shuffleOptions(q));
+                    const newIds = await medicoRepository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], target, career);
+                    if (newIds && newIds.length > 0) {
+                        aiQuestions.forEach((q, idx) => { if (newIds[idx]) q.id = newIds[idx]; });
+                    }
+                    balancedBatch = [...balancedBatch, ...aiQuestions].slice(0, limit);
+                } else if (bankCount === 0) {
+                    throw new Error("AI_GENERATION_EMPTY");
+                }
+            } catch (aiErr) {
+                console.error("❌ Error Crítico en Reposición IA (Medico):", aiErr);
+                if (balancedBatch && balancedBatch.length > 0) {
+                    console.log(`⚠️ [MedicoService] Retornando ${balancedBatch.length} preguntas disponibles del banco como fallback seguro.`);
+                    return {
+                        questions: balancedBatch.slice(0, limit),
+                        source: 'BANK',
+                        topic: sampledAreas[0],
+                        areas: areas
+                    };
+                }
+                throw new Error("AI_REPLENISHMENT_FAILED", { cause: aiErr });
+            }
+        }
+
+        return {
+            questions: balancedBatch.slice(0, limit),
+            source: source,
+            topic: sampledAreas[0],
+            areas: areas
+        };
+    }
+
+    async submitQuizResult(userId, quizData) {
+        const areaStats = {};
+        const allowedAreas = (quizData.areas && Array.isArray(quizData.areas) && quizData.areas.length > 0)
+            ? quizData.areas
+            : (quizData.topic ? [quizData.topic] : []);
+
+        // Normalizar topic principal a 'Multi-Área' si hay más de 1 área o es un simulacro
+        if (allowedAreas.length > 1 || !quizData.topic || quizData.topic.startsWith('Simulacro') || quizData.topic === 'General' || quizData.topic === 'MEDICINA') {
+            quizData.topic = allowedAreas.length === 1 ? normalizeHealthAreaName(allowedAreas[0]) : 'Multi-Área';
+        } else {
+            quizData.topic = normalizeHealthAreaName(quizData.topic);
+        }
+
+        // Forzar dificultad válida (nunca MIXTO)
+        quizData.difficulty = (quizData.difficulty && quizData.difficulty !== 'MIXTO') ? quizData.difficulty : 'Senior';
+
+        if (quizData.questions && Array.isArray(quizData.questions)) {
+            quizData.questions.forEach(q => {
+                let rawTopic = q.topic || q.area || quizData.topic || 'Salud Pública';
+                const isCorrect = q.isCorrect === true || (q.userAnswer !== undefined && q.correct_option_index !== undefined && Number(q.userAnswer) === Number(q.correct_option_index));
+
+                const isGeneric = !rawTopic || rawTopic === 'MEDICINA' || rawTopic === 'General' || rawTopic === 'Medicina General' || rawTopic.startsWith('Simulacro');
+
+                let topic = rawTopic;
+                if (isGeneric && allowedAreas.length > 0) {
+                    topic = allowedAreas[0];
+                } else if (allowedAreas.length > 0) {
+                    const matched = allowedAreas.find(a => rawTopic.toLowerCase().includes(a.toLowerCase()));
+                    if (matched) topic = matched;
+                } else if (topic.includes(',')) {
+                    topic = topic.split(',')[0].trim();
+                }
+
+                // Normalización canónica de mayúsculas/acentos
+                topic = normalizeHealthAreaName(topic);
+
+                if (!areaStats[topic]) {
+                    areaStats[topic] = { correct: 0, total: 0 };
+                }
+
+                areaStats[topic].total += 1;
+                if (isCorrect) {
+                    areaStats[topic].correct += 1;
+                }
+                q.topic = topic;
+                q.isCorrect = isCorrect;
+            });
+        }
+
+        const calculatedScore = quizData.questions && quizData.questions.length > 0
+            ? quizData.questions.filter(q => q.isCorrect === true).length
+            : (Number(quizData.score) || 0);
+
+        quizData.score = calculatedScore;
+        quizData.areaStats = areaStats;
+
+        const savedAttempt = await medicoRepository.saveQuizHistory(userId, quizData);
+        const attemptId = typeof savedAttempt === 'object' ? savedAttempt.attemptId : savedAttempt;
+        const wasCreated = typeof savedAttempt === 'object' ? savedAttempt.wasCreated : true;
+        console.log(`💾 [MedicoService] Historial de examen guardado. Intento ID: ${attemptId}`);
+
+        return { attemptId, flashcardsCreated: 0, wasCreated };
+    }
+
+    async incrementUserSimulatorUsage(userId) {
+        await medicoRepository.incrementSimulatorUsage(userId);
+    }
+
+    async getUserQuizStats(userId, context, target, limit, days = null, areas = null, career = null) {
+        let topicFilter = ` AND difficulty IN ('ENAM', 'SERUMS', 'ENARM', 'Básico', 'Intermedio', 'Avanzado', 'Senior', 'Junior', 'Facil', 'Medio', 'Dificil')`;
+        let timeFilter = '';
+        const params = [userId];
+
+        if (days) {
+            timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
+        }
+
+        if (target) {
+            params.push(target);
+            topicFilter = ` AND (target = $${params.length} OR (target IS NULL AND difficulty = $${params.length}))`;
+        }
+
+        if (career) {
+            params.push(career);
+            if (career === 'Medicina Humana') {
+                topicFilter += ` AND (career = $${params.length} OR career IS NULL)`;
+            } else {
+                topicFilter += ` AND career = $${params.length}`;
+            }
+        }
+
+        if (limit) {
+            if (limit === 'real' || limit === '100') {
+                topicFilter += ` AND total_questions >= 50`;
+            } else if (parseInt(limit, 10) === 10 || limit === 'arcade') {
+                topicFilter += ` AND total_questions <= 15`;
+            } else if (parseInt(limit, 10) === 20 || limit === 'study') {
+                topicFilter += ` AND total_questions > 15 AND total_questions < 50`;
+            } else {
+                params.push(parseInt(limit, 10));
+                topicFilter += ` AND total_questions = $${params.length}`;
+            }
+        }
+
+        const qStats = await medicoRepository.getBasicQuizStats(userId, topicFilter, params, timeFilter, areas);
+
+        let accuracy = 0;
+        let avgScore20 = 0;
+        const totalQ = parseInt(qStats.total_questions) || 0;
+        const totalCorrect = parseInt(qStats.total_correct) || 0;
+        const totalGames = parseInt(qStats.total_games) || 0;
+        const totalIncorrect = totalQ - totalCorrect;
+
+        if (totalQ > 0) {
+            accuracy = (totalCorrect / totalQ) * 100;
+            avgScore20 = (totalCorrect / totalQ) * 20;
+        }
+
+        const flashcardRepository = require('../repositories/flashcardRepository');
+        const mastered = await flashcardRepository.getMasteredFlashcardsCount ? await flashcardRepository.getMasteredFlashcardsCount(userId) : 0;
+
+        let strongest = 'N/A';
+        let weakest = 'N/A';
+        let radarData = [];
+
+        try {
+            const topicRes = await medicoRepository.getTopicAnalysis(userId, topicFilter, params, timeFilter, areas);
+            if (topicRes.length > 0) {
+                // Normalizar y consolidar subtemas para evitar duplicados por casing
+                const consolidatedMap = new Map();
+                topicRes.forEach(row => {
+                    const normSubject = normalizeHealthAreaName(row.subtema);
+                    const correctAnswers = parseInt(row.correct_answers || 0, 10);
+                    const totalAnswers = parseInt(row.total_answers || 0, 10);
+
+                    if (!consolidatedMap.has(normSubject)) {
+                        consolidatedMap.set(normSubject, { subject: normSubject, correct: 0, total: 0 });
+                    }
+                    const entry = consolidatedMap.get(normSubject);
+                    entry.correct += correctAnswers;
+                    entry.total += totalAnswers;
+                });
+
+                const consolidatedList = Array.from(consolidatedMap.values()).map(entry => ({
+                    subject: entry.subject,
+                    accuracy: entry.total > 0 ? Math.round((entry.correct / entry.total) * 100) : 0,
+                    correct: entry.correct,
+                    total: entry.total
+                }));
+
+                consolidatedList.sort((a, b) => b.accuracy - a.accuracy);
+
+                if (consolidatedList.length > 0) {
+                    strongest = consolidatedList[0].subject;
+                    weakest = consolidatedList[consolidatedList.length - 1].subject;
+                    radarData = consolidatedList;
+                }
+            }
+        } catch (e) {
+            console.warn("⚠️ No se pudo procesar area_stats JSONB en Medico.", e.message);
+            const topicRes = await medicoRepository.getTopicAnalysisFallback(userId, topicFilter, params);
+            if (topicRes.length > 0) {
+                strongest = topicRes[0].topic;
+                weakest = topicRes[topicRes.length - 1].topic;
+            }
+        }
+
+        let deckId = null;
+
+        return {
+            avg_score: avgScore20.toFixed(1),
+            accuracy: Math.round(accuracy),
+            total_correct: totalCorrect,
+            total_incorrect: totalIncorrect,
+            mastered_cards: mastered,
+            strongest_topic: strongest,
+            weakest_topic: weakest,
+            radar_data: radarData,
+            system_deck_id: deckId
+        };
+    }
+
+    /**
+     * Empaqueta de forma atómica e indivisible casuísticas (preguntas hermanas) y reactivos individuales
+     * garantizando que ninguna casuística sea cortada a la mitad y alcanzando con exactitud el límite solicitado.
+     */
+    packExamQuestions(rawBankQuestions, limit, activeAreas = [], isDefault = true) {
+        if (!rawBankQuestions || rawBankQuestions.length === 0) return [];
+        if (rawBankQuestions.length <= limit) {
+            return rawBankQuestions;
+        }
+
+        // 1. Mapeo de casos completos
+        const casesMap = new Map();
+        rawBankQuestions.forEach(q => {
+            if (q.case_id) {
+                if (!casesMap.has(q.case_id)) casesMap.set(q.case_id, []);
+                casesMap.get(q.case_id).push(q);
+            }
+        });
+
+        // Ordenar las preguntas dentro de cada casuística por case_order ASC
+        casesMap.forEach(siblings => {
+            siblings.sort((a, b) => (a.case_order || 1) - (b.case_order || 1));
+        });
+
+        // 2. Clasificar en bloques de casos y preguntas sueltas agrupadas por área
+        const caseUnitsByArea = new Map();
+        const soloQuestionsByArea = new Map();
+        const registeredCaseIds = new Set();
+
+        rawBankQuestions.forEach(q => {
+            const topicKey = q.topic ? q.topic.toUpperCase() : 'GENERAL';
+            if (q.case_id) {
+                if (!registeredCaseIds.has(q.case_id)) {
+                    registeredCaseIds.add(q.case_id);
+                    const fullCase = casesMap.get(q.case_id);
+                    if (!caseUnitsByArea.has(topicKey)) caseUnitsByArea.set(topicKey, []);
+                    caseUnitsByArea.get(topicKey).push(fullCase);
+                }
+            } else {
+                if (!soloQuestionsByArea.has(topicKey)) soloQuestionsByArea.set(topicKey, []);
+                soloQuestionsByArea.get(topicKey).push(q);
+            }
+        });
+
+        const packedUnits = [];
+        let currentCount = 0;
+        const areasList = activeAreas.length > 0
+            ? activeAreas
+            : Array.from(new Set([...soloQuestionsByArea.keys(), ...caseUnitsByArea.keys()]));
+
+        // 3. Selección balanceada de casos completos (solo si caben enteros en el cupo restante)
+        let hasCasesToProcess = true;
+        while (hasCasesToProcess && currentCount < limit) {
+            let addedAnyCaseInRound = false;
+            for (const area of areasList) {
+                const spaceLeft = limit - currentCount;
+                if (spaceLeft <= 0) break;
+
+                const areaCases = caseUnitsByArea.get(area);
+                if (areaCases && areaCases.length > 0) {
+                    const fittingCaseIdx = areaCases.findIndex(c => c.length <= spaceLeft);
+                    if (fittingCaseIdx !== -1) {
+                        const [fittingCase] = areaCases.splice(fittingCaseIdx, 1);
+                        packedUnits.push(fittingCase);
+                        currentCount += fittingCase.length;
+                        addedAnyCaseInRound = true;
+                    }
+                }
+            }
+            if (!addedAnyCaseInRound) {
+                hasCasesToProcess = false;
+            }
+        }
+
+        // 4. Completar el espacio restante con Preguntas Sueltas (size 1) de forma balanceada
+        let hasSoloToProcess = true;
+        while (hasSoloToProcess && currentCount < limit) {
+            let addedAnySoloInRound = false;
+            for (const area of areasList) {
+                const spaceLeft = limit - currentCount;
+                if (spaceLeft <= 0) break;
+
+                const soloList = soloQuestionsByArea.get(area);
+                if (soloList && soloList.length > 0) {
+                    packedUnits.push([soloList.shift()]);
+                    currentCount += 1;
+                    addedAnySoloInRound = true;
+                }
+            }
+            if (!addedAnySoloInRound) {
+                hasSoloToProcess = false;
+            }
+        }
+
+        // 5. Salvaguarda: Si aún faltara completar cupo y quedan solos en cualquier área
+        if (currentCount < limit) {
+            for (const soloList of soloQuestionsByArea.values()) {
+                while (soloList.length > 0 && currentCount < limit) {
+                    packedUnits.push([soloList.shift()]);
+                    currentCount += 1;
+                }
+            }
+        }
+
+
+        // 6. Mezclar de forma balanceada los bloques para que los casos no queden siempre agrupados al principio,
+        // garantizando que las preguntas de cada casuística se mantengan siempre contiguas y en su orden oficial
+        const shuffledUnits = packedUnits.sort(() => 0.5 - Math.random());
+        return shuffledUnits.flat();
+    }
+
+    async getLeaderboard() {
+        return await medicoRepository.getLeaderboard();
+    }
+}
+
+module.exports = new MedicoService();

@@ -1,0 +1,1085 @@
+/* --- Estilos para la sección de Exploración --- */
+.browse-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.15rem;
+    /* Reduced from 0.25rem */
+    padding-bottom: 0;
+    /* Removed padding */
+    margin-top: 0.5rem;
+    /* Ensure tight top spacing */
+}
+
+/* Estilo Premium para botón "Ver Todos" */
+.view-all-btn {
+    background: transparent;
+    border: none;
+    color: var(--primary-light);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-all-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+    transform: translateX(4px);
+}
+
+.view-all-btn i {
+    transition: transform 0.2s;
+}
+
+.view-all-btn:hover i {
+    transform: translateX(2px);
+}
+
+/* ==========================================================================
+   🎨 UNIFIED GRID SYSTEM (Standardized)
+   ========================================================================== */
+
+:root {
+    /* 📱 Mobile: Minimal for 3 columns on small screens */
+    --card-width-mobile: 100px;
+
+    /* 🔄 Mobile Carousel: 140px */
+    --card-width-mobile-carousel: 140px;
+
+    /* 💻 Desktop: 140px (Allows ~7 columns for Manta Webtoon density) */
+    --card-width-desktop: 140px;
+
+    /* 📐 Aspect Ratio Universal Manta Poster */
+    --card-aspect-ratio: 2 / 3;
+}
+
+/* Base Grid Mixin */
+.courses-grid,
+.careers-grid,
+.browse-grid,
+.manta-content-grid,
+.books-grid {
+    display: grid;
+    width: 100%;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+/* 📱 MOBILE LAYOUT (2 Columnas ergonómicas para títulos y portadas) */
+.courses-grid,
+.careers-grid,
+.browse-grid,
+.manta-content-grid,
+.books-grid {
+    /* Exactamente 2 columnas en móvil para apreciar títulos y portadas */
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.85rem !important;
+}
+
+/* 💻 TABLET & DESKTOP LAYOUT (Responsive) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .courses-grid,
+    .careers-grid,
+    .browse-grid,
+    .manta-content-grid,
+    .books-grid {
+        gap: 1rem !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    .courses-grid,
+    .careers-grid,
+    .browse-grid,
+    .manta-content-grid,
+    .books-grid {
+        gap: 1.25rem !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Card Base */
+.browse-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    /* Enforce Manta poster shape */
+    aspect-ratio: var(--card-aspect-ratio);
+    height: auto;
+    position: relative;
+    text-decoration: none;
+    color: var(--text-main);
+    box-shadow: var(--shadow-sm);
+}
+
+.browse-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg), 0 0 20px var(--primary-glow);
+    border-color: var(--border-hover);
+}
+
+/* Card Icon Area */
+.browse-card-icon {
+    width: 100%;
+    /* Flexible height to fill available space after content */
+    flex: 1;
+    min-height: 80px;
+    /* Reduced from 120px to prevent overflow on small aspect-ratio cards */
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+    transition: color 0.2s;
+}
+
+/* Estilos para imágenes de portada de cursos/carreras */
+.browse-card-image-container {
+    width: 100%;
+    /* Flex 1 to allow image container to push down content when filling vertical poster */
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-tertiary);
+}
+
+.browse-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.browse-card:hover .browse-card-image {
+    transform: scale(1.05);
+}
+
+.browse-card:hover .browse-card-icon {
+    color: var(--primary-light);
+}
+
+/* Card Content */
+.browse-card-content {
+    padding: 0.75rem;
+    /* Reduced from 1rem */
+    /* Content takes only what it needs, Icon takes the rest */
+    flex-grow: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    /* Reduced from 0.25rem */
+}
+
+.browse-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.course-card-code {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    align-self: flex-start;
+}
+
+.course-card-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+/* Variant: Career Card */
+.career-card .browse-card-icon {
+    background: linear-gradient(to bottom right, var(--bg-tertiary), var(--bg-secondary));
+    /* Fixed: Removed hardcoded height (140px) which broke aspect ratio on small screens */
+    flex: 1;
+    /* Allow it to grow/shrink filling space */
+    min-height: 60px;
+    /* Minimum ensure icon visibility but allow text room */
+    font-size: 2.5rem;
+    /* Slightly smaller icon to fit */
+}
+
+/* Variant: Course Card */
+.course-card .browse-card-icon {
+    background: var(--bg-secondary);
+    /* Safe overrides similar to career-card to prevent overflow */
+    flex: 1;
+    min-height: 60px;
+    font-size: 2.5rem;
+}
+
+/* Bookmarks ribbon */
+.card-bookmark-ribbon {
+    position: absolute;
+    top: 0;
+    right: 12px;
+    color: var(--warning);
+    font-size: 1.25rem;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+
+.browse-card-cta {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    color: var(--primary-light);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s;
+}
+
+.browse-card:hover .browse-card-cta {
+    color: var(--primary);
+}
+
+/* Area Section (for grouping) */
+.area-section {
+    /* Margin handled by .section-spacer */
+    margin-bottom: 0;
+}
+
+/* FULL IMAGE CARD (TIPO NETFLIX/POSTER) */
+.full-image-card {
+    position: relative;
+    border: none !important;
+    aspect-ratio: 5/4;
+    background: #000;
+}
+
+.browse-card-image-full {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+    z-index: 0;
+}
+
+.full-image-card:hover .browse-card-image-full {
+    transform: scale(1.1);
+}
+
+.browse-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom,
+            rgba(0, 0, 0, 0.1) 0%,
+            rgba(0, 0, 0, 0.2) 40%,
+            rgba(0, 0, 0, 0.8) 80%,
+            rgba(0, 0, 0, 0.95) 100%);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.overlay-content {
+    padding: 1.25rem;
+    position: relative;
+    z-index: 2;
+    padding-bottom: 0.5rem;
+}
+
+.overlay-cta {
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+    color: rgba(255, 255, 255, 0.9) !important;
+    z-index: 2;
+}
+
+.full-image-card:hover .overlay-cta {
+    background: rgba(var(--primary-rgb), 0.2);
+    color: #fff !important;
+}
+
+.full-image-card .browse-card-title,
+.text-white {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+    font-size: 1.1rem;
+}
+
+/* Ajuste para el código/badge en modo oscuro */
+.full-image-card .course-card-code {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.area-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+/* =========================================
+   LIBRARY / ACTIONS STYLES (Restored)
+   ========================================= */
+
+.card-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    z-index: 20;
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+@media (hover: hover) {
+    .card-actions {
+        opacity: 0;
+        transform: translateY(-5px);
+        pointer-events: none;
+    }
+
+    .browse-card:hover .card-actions,
+    .full-image-card:hover .card-actions,
+    .course-card:hover .card-actions {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
+    color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.1);
+}
+
+.action-btn i {
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+
+.action-btn.active.save-btn i {
+    color: #FFD700;
+    font-weight: 900;
+}
+
+.action-btn.active.fav-btn i {
+    color: #FF4757;
+    font-weight: 900;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+}
+
+/* =========================================
+   CAROUSEL / SLIDER STYLES
+   ========================================= */
+.carousel-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: 0;
+    /* Removed bottom padding */
+    margin-bottom: 0.5rem;
+    /* Tighter margin for next section (was implicit or larger) */
+}
+
+.carousel-track-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 0.25rem;
+}
+
+.carousel-track-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* Botones de navegación del carrusel */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.carousel-container:hover .carousel-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.carousel-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-btn.prev {
+    left: 0;
+}
+
+.carousel-btn.next {
+    right: 0;
+}
+
+@media (max-width: 768px) {
+    .carousel-btn {
+        display: none;
+    }
+}
+
+/* Ajuste para las cards dentro del carrusel */
+.carousel-item {
+    flex: 0 0 auto;
+    width: 260px;
+}
+
+.carousel-item.book-item {
+    width: 160px;
+}
+
+.carousel-item.course-item,
+.carousel-item.career-item {
+    width: var(--card-width-mobile-carousel);
+    /* 240px */
+}
+
+/* Desktop Overrides */
+@media (min-width: 768px) {
+
+    .carousel-item.course-item,
+    .carousel-item.career-item {
+        width: var(--card-width-desktop);
+        /* 280px */
+    }
+}
+
+.carousel-item .browse-card {
+    height: 100%;
+    width: 100%;
+}
+
+/* =========================================
+   GAME PROMO BANNER (MID-PAGE)
+   ========================================= */
+.game-promo-banner {
+    position: relative;
+    width: 100%;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin: 0;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    display: flex;
+    align-items: center;
+    min-height: 320px;
+}
+
+.game-promo-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.game-promo-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.game-promo-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right,
+            rgba(10, 10, 10, 0.95) 0%,
+            rgba(10, 10, 10, 0.8) 40%,
+            rgba(10, 10, 10, 0) 100%);
+    z-index: 2;
+}
+
+.game-promo-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    padding: 3rem;
+    display: flex;
+    align-items: center;
+}
+
+.game-promo-text {
+    max-width: 50%;
+    text-align: left;
+}
+
+.game-promo-badge {
+    display: inline-block;
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    color: #c4b5fd;
+    padding: 0.35rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    backdrop-filter: blur(4px);
+}
+
+.game-promo-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 0.75rem;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.game-promo-description {
+    font-size: 1.1rem;
+    color: #94a3b8;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+/* Responsive Logic */
+@media (max-width: 768px) {
+    .game-promo-banner {
+        min-height: 480px;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .game-promo-overlay {
+        background: linear-gradient(to top,
+                rgba(10, 10, 10, 0.8) 0%,
+                rgba(10, 10, 10, 0.8) 40%,
+                rgba(10, 10, 10, 0.8) 100%);
+    }
+
+    .game-promo-content {
+        padding: 2rem 1.5rem;
+        align-items: center;
+    }
+
+    .game-promo-text {
+        max-width: 100%;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .game-promo-title {
+        font-size: 2rem;
+    }
+}
+
+/* Standardized spacing for sections */
+.section-spacer {
+    margin: 1rem 0;
+    /* Reduced 3/4 from previous for subtle breath */
+    width: 100%;
+    height: 1px;
+    opacity: 0.1;
+    /* Even more subtle line */
+}
+
+@media (max-width: 768px) {
+    .section-spacer {
+        height: 1px;
+        margin: 0.75rem 0;
+        /* Subtle gap for mobile */
+        display: block;
+        opacity: 0.1;
+    }
+
+    /* 🔥 Ultra-Compact Grid for Mobile */
+    .books-grid,
+    .courses-grid,
+    .careers-grid,
+    .browse-grid {
+        gap: 0.5rem !important;
+        /* Slightly more breathing room than 0.25rem but still compact */
+        row-gap: 0.5rem !important;
+    }
+
+    /* 🔥 Ultra-Compact Content */
+    .browse-card-content {
+        padding: 0.4rem !important;
+        /* Slightly more room */
+        gap: 0.2rem !important;
+    }
+
+    .browse-card-title {
+        font-size: 0.8rem !important;
+        /* Smaller text for 3-column fit */
+        line-height: 1.2 !important;
+        font-weight: 500 !important;
+        /* Manta truncates cleanly */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .course-card-description {
+        display: none !important;
+    }
+
+    /* 🔥 Compact Carousel Vertical Padding */
+    .carousel-container {
+        padding-bottom: 0;
+        margin-bottom: 0.5rem;
+        /* Minimal margin after carousel */
+    }
+
+    /* 🔥 Compact Section Headers */
+    .section-header h2.browse-title {
+        margin-bottom: 0.1rem;
+        /* Tighter on mobile */
+        padding-bottom: 0;
+        font-size: 1.1rem;
+        margin-top: 0.25rem;
+        /* Reduced top margin even further for mobile */
+    }
+
+    /* Target the container of the title specifically if it differs */
+    .browse-title {
+        font-size: 1.15rem;
+        margin-bottom: 0.1rem;
+        /* Tighter */
+        padding-bottom: 0;
+        margin-top: 0.25rem;
+    }
+
+    /* Reduce space around the "Ver todos" button if present in header */
+    /* ✅ SUBTLE Section Headers for Mobile */
+    .section-header {
+        margin-top: 0.8rem !important;
+        /* Reduced from 1.5rem */
+        margin-bottom: 0.3rem;
+        align-items: center;
+    }
+
+    .area-section {
+        margin-bottom: 0.1rem;
+        /* Minimal spacing */
+    }
+
+    /* Remove extra padding from the main content container on mobile to maximize width */
+    .main-container {
+        padding-top: 10px;
+        /* Adjust as needed based on header height */
+    }
+
+    /* Specific fix for "Libros Destacados" usually at the top */
+    #browse-container>.area-section:first-child .browse-title {
+        margin-top: 0;
+    }
+}
+
+/* ==========================================================================
+   🌟 SÚPER PARCHE: RENDIMIENTO, IMÁGENES Y MINIMALISMO MÓVIL
+   ========================================================================== */
+
+/* --- 1. ENCUADRE INTELIGENTE DE IMÁGENES (LETTERBOXING) --- */
+.unified-resource-card.has-bg-image .urc-visual-zone {
+    background-color: rgba(10, 10, 10, 0.8) !important;
+    /* Fondo oscuro elegante */
+}
+
+.unified-resource-card .urc-image {
+    object-fit: contain !important;
+    /* Muestra todo el libro/poster sin recortar */
+    width: 100%;
+    height: 100%;
+}
+
+/* --- 2. OPTIMIZACIÓN EXTREMA Y MINIMALISMO EN CELULARES --- */
+@media (max-width: 768px) {
+
+    /* Anti-Lag (Aceleración por GPU y limpieza de transiciones pesadas) */
+    .unified-resource-card,
+    .browse-card {
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        will-change: transform;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    /* Matar el Backdrop-Filter que quema la batería y laguea el scroll */
+    .urc-action-btn,
+    .urc-badge,
+    .urc-author {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* Ajuste de fondo para los botones sin blur */
+    .urc-action-btn {
+        background: rgba(10, 10, 10, 0.8) !important;
+    }
+
+    /* Textos e interiores equilibrados para layout de 2 columnas en móviles */
+    .unified-resource-card .urc-info-zone {
+        padding: 0.65rem 0.6rem !important;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem !important;
+    }
+
+    .unified-resource-card .urc-meta {
+        margin-bottom: 0.1rem !important;
+    }
+
+    .unified-resource-card .urc-badge {
+        font-size: 0.65rem !important;
+        padding: 0.2rem 0.45rem !important;
+        letter-spacing: 0.3px;
+    }
+
+    .unified-resource-card .urc-title {
+        font-size: 0.85rem !important;
+        line-height: 1.35 !important;
+        font-weight: 600 !important;
+        margin: 0.15rem 0 !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .unified-resource-card .urc-author,
+    .unified-resource-card .urc-size {
+        font-size: 0.72rem !important;
+        margin-top: 0 !important;
+        color: rgba(255, 255, 255, 0.75) !important;
+    }
+
+    /* Reducir ligeramente los botones superiores para ganar aire visual */
+    .urc-library-actions {
+        transform: scale(0.85);
+        transform-origin: top right;
+        top: 5px !important;
+        right: 5px !important;
+    }
+}
+
+/* ==========================================
+   WIDGET EXCLUSIVO DE NOVEDADES (NEWS BULLETIN)
+   ========================================== */
+/* ==========================================================================
+   📰 BOLETÍN DE NOVEDADES (ARQUITECTURA LIMPIA, UNIFICADA Y SIN ANIDACIONES)
+   ========================================================================== */
+
+/* Contenedor plano en la biblioteca (sin doble marco ni fondos punteados) */
+.news-bulletin-container,
+.news-widget-wrapper {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    box-sizing: border-box;
+    margin-top: 0.5rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.25rem;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.news-bulletin-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    margin: 1rem 0;
+}
+
+.news-empty-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.news-empty-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* 1. Grilla Homogénea de Novedades (Misma Estructura para Todas las Publicaciones) */
+.news-grid,
+.news-secondary-grid,
+.news-sec-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+}
+
+/* 🌟 Resaltado Dorado para Novedades Principales */
+.news-item-card.news-card-featured {
+    border: 1.5px solid rgba(245, 158, 11, 0.65);
+    box-shadow: 0 4px 18px rgba(245, 158, 11, 0.12);
+}
+
+[data-theme="light"] .news-item-card.news-card-featured {
+    border-color: rgba(217, 119, 6, 0.7);
+    box-shadow: 0 4px 18px rgba(217, 119, 6, 0.14);
+}
+
+.news-item-card.news-card-featured:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 8px 26px rgba(245, 158, 11, 0.22);
+    transform: translateY(-4px);
+}
+
+.news-card-featured .news-item-kicker {
+    color: #d97706;
+    font-weight: 700;
+}
+
+[data-theme="dark"] .news-card-featured .news-item-kicker {
+    color: #fbbf24;
+}
+
+.news-card-featured .news-item-link {
+    color: #d97706;
+}
+
+[data-theme="dark"] .news-card-featured .news-item-link {
+    color: #fbbf24;
+}
+
+
+
+.news-item-card,
+.news-secondary-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+}
+
+.news-item-card:hover,
+.news-secondary-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+}
+
+.news-item-media,
+.news-sec-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto !important;
+    overflow: hidden;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.news-item-img,
+.news-sec-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    transition: transform 0.4s ease;
+}
+
+.news-item-card:hover .news-item-img,
+.news-secondary-card:hover .news-sec-img {
+    transform: scale(1.04);
+}
+
+.news-item-body,
+.news-sec-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.news-item-kicker {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+}
+
+.news-item-title,
+.news-sec-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.4;
+    margin: 0 0 0.4rem 0;
+    height: auto;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.7em;
+}
+
+.news-item-meta,
+.news-sec-author {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.news-item-summary,
+.news-sec-snippet {
+    font-size: 0.83rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 1rem 0;
+    height: auto;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+}
+
+.news-item-footer,
+.news-sec-footer {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.news-item-link,
+.news-sec-link {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+
+.news-item-card:hover .news-item-link,
+.news-secondary-card:hover .news-sec-link {
+    color: var(--primary);
+}
+
+/* Responsividad de Novedades */
+@media (max-width: 992px) {
+    .news-grid,
+    .news-secondary-grid,
+    .news-sec-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .news-grid,
+    .news-secondary-grid,
+    .news-sec-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+

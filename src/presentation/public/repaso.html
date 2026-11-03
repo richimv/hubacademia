@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Repaso Espaciado y Flashcards SM-2 | Hub Academia</title>
+    
+    <!-- ✅ Metadatos SEO Primarios -->
+    <meta name="description" content="Acelera tu retención y memoria a largo plazo con el algoritmo SuperMemo-2 (SM-2). Crea mazos de flashcards, importa desde Excel y potencia tu estudio con IA.">
+    <meta name="keywords" content="repaso espaciado peru, flashcards online minedu, tarjetas de estudio sm2, memorizar temario nombramiento docente, flashcards serums medicina">
+    <meta name="author" content="Hub Academia">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <link rel="canonical" href="https://www.hubacademia.com/repaso">
+
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/assets/logo.png">
+
+    <!-- ✅ Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Hub Academia">
+    <meta property="og:title" content="Centro de Repaso Espaciado y Flashcards SM-2 | Hub Academia">
+    <meta property="og:description" content="Domina cualquier temario con repasos inteligentes basados en ciencia cognitiva (SM-2), mazos personalizados y Tutoría IA.">
+    <meta property="og:url" content="https://www.hubacademia.com/repaso">
+    <meta property="og:image" content="https://www.hubacademia.com/assets/logo.png">
+    <meta property="og:locale" content="es_PE">
+
+    <!-- ✅ Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Centro de Repaso Espaciado y Flashcards SM-2 | Hub Academia">
+    <meta name="twitter:description" content="Memoriza más rápido y combate la curva del olvido con repetición espaciada SM-2 y flashcards con IA.">
+    <meta name="twitter:image" content="https://www.hubacademia.com/assets/logo.png">
+
+    <!-- ✅ Preconnect y Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Excel Parsing Library -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="/css/theme.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/base.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/header.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/footer.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/dashboard.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/repaso.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/modal.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/sidebar.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/components.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="/js/config.js?v=5ca6b7db3040"></script>
+    <script src="/js/utils/themeManager.js?v=5ca6b7db3040"></script>
+
+    <!-- ✅ Schema.org / JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Módulo de Repaso Espaciado SM-2 - Hub Academia",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "url": "https://www.hubacademia.com/repaso",
+      "description": "Sistema de entrenamiento con tarjetas mnemotécnicas (flashcards) y repetición espaciada SuperMemo-2 para retención del temario oficial docente y médico.",
+      "provider": {
+        "@type": "EducationalOrganization",
+        "name": "Hub Academia",
+        "url": "https://www.hubacademia.com"
+      }
+    }
+    </script>
+
+    <!-- Rich Text Editor (Mini-Word) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+    <style>
+        /* Estilos para tablas pegadas de Excel/Word */
+        #deck-guide-content table {
+            width: 100% !important;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        #deck-guide-content th,
+        #deck-guide-content td {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        #deck-guide-content th {
+            background: var(--primary-glow);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* Fix para TinyMCE */
+        .tox-tinymce {
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+        }
+
+        /* Formateo de Contenido de Guía (TinyMCE Output) */
+        #deck-guide-content {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: var(--text-main);
+        }
+
+        #deck-guide-content p {
+            margin-bottom: 1.2rem;
+            color: var(--text-main);
+        }
+
+        #deck-guide-content ul,
+        #deck-guide-content ol {
+            margin-bottom: 1.2rem;
+            padding-left: 2rem;
+        }
+
+        #deck-guide-content li {
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        #deck-guide-content h1,
+        #deck-guide-content h2,
+        #deck-guide-content h3 {
+            color: var(--text-main);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        #deck-guide-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 1px solid var(--border-color);
+        }
+
+        #deck-guide-content blockquote {
+            border-left: 4px solid var(--primary);
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Estilo para selectores de categoría e idioma personalizados */
+        select.form-input-premium {
+            background: var(--input-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--input-text) !important;
+            border-radius: 12px !important;
+            padding: 0.65rem 1rem !important;
+            font-size: 0.88rem !important;
+            outline: none !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            appearance: none !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f97316'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 0.75rem center !important;
+            background-size: 1rem !important;
+            padding-right: 2.5rem !important;
+        }
+
+        select.form-input-premium:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px var(--primary-glow) !important;
+        }
+
+        select.form-input-premium option {
+            background: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            padding: 10px !important;
+        }
+    </style>
+</head>
+
+<body class="hero-hidden">
+    <!-- Header with Nav -->
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Hub Academia</span>
+            </a>
+        </div>
+        <div class="header-nav">
+            <div id="user-session-controls">
+                <!-- Injected via NavLoader -->
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+
+        <!-- Main Content -->
+        <div id="loading" class="loading">
+            <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+        </div>
+
+        <!-- NEW: Explorer Layout -->
+        <div id="main-content" style="display: none; padding-bottom: 4rem;">
+
+            <div class="explorer-container">
+
+                <!-- SIDEBAR: Tree View -->
+                <aside class="explorer-sidebar" id="explorer-sidebar">
+                    <div class="explorer-sidebar-header">
+                        <h3 class="explorer-sidebar-title">Explorador</h3>
+                        <div class="explorer-sidebar-actions">
+                            <button onclick="DeckExplorer.openCreateModal()" title="Nuevo Mazo" class="explorer-action-btn" id="btn-explorer-create">
+                                <i class="fas fa-folder-plus"></i>
+                            </button>
+                            <button id="btn-toggle-explorer" onclick="window.repasoManager?.explorer?.toggleCollapseSidebar()" title="Contraer Explorador" class="explorer-action-btn explorer-toggle-btn">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="deck-tree">
+                        <!-- JS Injected Tree -->
+                    </div>
+                </aside>
+
+                <!-- MAIN AREA: Dynamic Content -->
+                <main id="deck-content-area">
+                    <!-- Default View: Dashboard / Simulators -->
+                    <div id="dashboard-view">
+                        <!-- Injected by JS -->
+                    </div>
+
+                    <!-- Folder View: Subdecks + Flashcards -->
+                    <div id="folder-view" style="display: none;">
+                        <!-- Header -->
+                        <div class="deck-header" id="folder-header">
+                            <!-- Injected -->
+                        </div>
+
+                        <!-- Sub-decks Grid -->
+                        <div id="subdecks-container" style="margin-bottom: 3rem;"></div>
+
+                        <!-- Cards List -->
+                        <div id="cards-container"></div>
+                    </div>
+
+                    <!-- Community View: Public Decks -->
+                    <div id="community-view" style="display: none;">
+                        <!-- Injected by JS -->
+                    </div>
+                </main>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODALS (Consolidated) -->
+
+    <!-- Create Deck Modal -->
+    <div class="modal-overlay" id="create-deck-modal">
+        <div class="modal-content" style="max-width: 520px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2 style="margin:0; font-size: 1.25rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.6rem;">
+                    <i class="fas fa-folder-plus" style="color: #f97316;"></i> <span id="modal-deck-title">Crear Nuevo Mazo</span>
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="DeckExplorer.closeCreateModal()">&times;</button>
+            </div>
+            <form id="create-deck-form" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Nombre</label>
+                        <input type="text" class="form-input" id="new-deck-name" required placeholder="Ej: Histología">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Guía de Estudio</label>
+                        <input type="hidden" id="new-deck-description">
+                        <div style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); border-radius: 12px; padding: 0.85rem 1rem;">
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+                                <i class="fas fa-info-circle" style="margin-right: 6px; color: #f97316;"></i> 
+                                Puedes añadir una <b>Guía de Estudio enriquecida</b> (con tablas, imágenes y formato) en cualquier momento desde el botón "Guía" que aparece al entrar en este mazo.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Categoría / Área Temática</label>
+                        <select class="form-input-premium" id="new-deck-category" style="width:100%;">
+                            <option value="General">General</option>
+                            <option value="Medicina">Medicina</option>
+                            <option value="Educación">Educación</option>
+                            <option value="Idiomas">Idiomas</option>
+                        </select>
+                    </div>
+
+                    <!-- Icon Picker -->
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.88rem;">Icono</label>
+                        <input type="hidden" id="new-deck-icon" value="fas fa-layer-group">
+                        <div id="icon-picker-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:0.5rem;">
+                        </div>
+                    </div>
+
+                    <!-- Hidden IDs -->
+                    <input type="hidden" id="new-deck-id">
+                    <input type="hidden" id="new-deck-parent">
+                    <input type="hidden" id="new-deck-color" value="">
+                </div>
+
+                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" class="btn-action btn-secondary-action"
+                        onclick="DeckExplorer.closeCreateModal()">Cancelar</button>
+                    <button type="submit" id="btn-save-deck" class="btn-action"
+                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: none; border-radius: 10px; color: white; font-weight: 700; padding: 0.6rem 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Preview Deck Modal -->
+    <div class="modal-overlay" id="preview-deck-modal"
+        onclick="if(event.target === this) window.repasoManager.closePreviewModal()">
+        <div class="modal-content"
+            style="max-width: 600px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;"
+            onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-eye" style="color: #f97316;"></i> <span id="preview-deck-title">Previsualizar Mazo</span>
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="window.repasoManager.closePreviewModal()">&times;</button>
+            </div>
+
+            <div id="preview-deck-content" class="modal-body"
+                style="overflow-y: auto; flex: 1; padding: 1.5rem;">
+                <div style="text-align:center; padding:2rem;"><i class="fas fa-circle-notch fa-spin fa-2x"
+                        style="color:#f97316"></i></div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-action btn-secondary-action" onclick="window.repasoManager.closePreviewModal()">Cerrar</button>
+                <button type="button" id="btn-preview-clone" class="btn-action"
+                    style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; border-radius: 10px; height: 42px; padding: 0 1.5rem; font-weight: 700; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">
+                    <i class="fas fa-clone"></i> Clonar a Mis Mazos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deck Guide Modal -->
+    <div class="modal-overlay" id="deck-guide-modal">
+        <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-book-reader" style="color: #f97316;"></i> <span id="deck-guide-title">Guía de Estudio</span>
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="DeckExplorer.closeGuideModal()">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; flex: 1;">
+                <!-- View Mode -->
+                <div id="deck-guide-view-mode">
+                    <div id="deck-guide-content"
+                        style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); min-height: 120px; color: var(--text-main); line-height: 1.6; white-space: normal;">
+                        <!-- Content goes here -->
+                    </div>
+                </div>
+
+                <!-- Edit Mode -->
+                <div id="deck-guide-edit-mode" style="display: none;">
+                    <textarea id="deck-guide-textarea" class="form-input" rows="9"
+                        style="resize: vertical; font-family: monospace; padding: 1rem; line-height: 1.5;"
+                        placeholder="Escribe aquí la guía de estudio..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" id="deck-guide-footer">
+                <div id="deck-guide-view-footer" style="display: flex; gap: 0.75rem; justify-content: flex-end; width: 100%;">
+                    <button type="button" class="btn-action btn-secondary-action" onclick="DeckExplorer.closeGuideModal()">Cerrar</button>
+                    <button type="button" class="btn-action" id="deck-guide-edit-btn"
+                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; border-radius: 10px; font-weight: 700; height: 42px; padding: 0 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);"
+                        onclick="DeckExplorer.editGuideMode()">
+                        <i class="fas fa-edit"></i> Editar Guía
+                    </button>
+                </div>
+                <div id="deck-guide-edit-footer" style="display: none; gap: 0.75rem; justify-content: flex-end; width: 100%;">
+                    <button type="button" class="btn-action btn-secondary-action" onclick="DeckExplorer.cancelEditGuide()">Cancelar</button>
+                    <button type="button" class="btn-action" id="btn-save-guide" style="background: #10b981 !important; color: white; border: none; border-radius: 10px; font-weight: 700; height: 42px; padding: 0 1.5rem;"
+                        onclick="DeckExplorer.saveGuide()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="delete-confirm-modal">
+        <div class="modal-content" style="max-width:440px; width: 95%; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Eliminar Mazo</h2>
+                <button type="button" class="modal-close-btn" onclick="document.getElementById('btn-cancel-delete')?.click()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem; text-align: center; display: flex; flex-direction: column; gap: 0.5rem;">
+                <p style="color: var(--text-secondary); margin: 0;">¿Estás seguro de que deseas eliminar el mazo</p>
+                <p style="color: var(--text-main); font-weight: 700; font-size: 1.1rem; margin: 0.25rem 0;">"<span id="delete-deck-name"></span>"?</p>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.4;">Esta acción eliminará todas las tarjetas y submazos contenidos y no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button id="btn-cancel-delete" class="btn-action btn-secondary-action">Cancelar</button>
+                <button id="btn-confirm-delete" class="btn-action"
+                    style="background:#ef4444 !important; color:white; border:none; border-radius: 10px; font-weight: 700; height: 42px; padding: 0 1.5rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);">
+                    <i class="fas fa-trash-alt"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Modal (Add & Edit) -->
+    <div class="modal-overlay" id="card-modal">
+        <div class="modal-content" style="max-width: 720px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2 id="modal-title">
+                    <i class="fas fa-layer-group" style="color: #f97316;"></i> <span>Añadir Tarjeta</span>
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="window.repasoManager.closeCardModal()">&times;</button>
+            </div>
+
+            <form id="card-form" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <input type="hidden" id="card-deck-id">
+                <input type="hidden" id="card-id">
+
+                <div class="modal-body" style="padding: 1.25rem 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Tab System -->
+                    <div id="card-modal-tabs" class="library-tabs"
+                        style="margin-bottom: 0.25rem; background: var(--bg-tertiary); border-radius: 12px; padding: 4px; border: 1px solid var(--border-color); display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                        <button type="button" class="library-tab active" id="tab-card-individual"
+                            onclick="window.repasoManager.switchCardMode('individual')" style="padding: 0.55rem; border: none; font-size: 0.88rem;">
+                            <i class="fas fa-user-edit" style="margin-right: 6px;"></i> Individual
+                        </button>
+                        <button type="button" class="library-tab" id="tab-card-bulk"
+                            onclick="window.repasoManager.switchCardMode('bulk')" style="padding: 0.55rem; border: none; font-size: 0.88rem;">
+                            <i class="fas fa-file-excel" style="margin-right: 6px;"></i> Carga Masiva
+                        </button>
+                    </div>
+
+                    <!-- SECCIÓN INDIVIDUAL -->
+                    <div id="section-card-individual" class="card-mode-section active" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                        <!-- CARA FRONTAL (ANVERSO) -->
+                        <div class="modal-card-face face-front">
+                            <div class="modal-card-face-header">
+                                <span class="modal-card-face-title"><i class="fas fa-question-circle"></i> Frente (Pregunta)</span>
+                                <span class="modal-card-face-subtitle">Texto y/o Imagen</span>
+                            </div>
+                            
+                            <textarea class="form-input card-modal-textarea" id="card-front" placeholder="Ej: ¿Cuáles son las características de...?"
+                                style="min-height: 110px; resize: vertical; margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5;"></textarea>
+
+                            <!-- Upload Anverso -->
+                            <div class="card-upload-area" style="margin-top: 0.8rem;">
+                                <input type="file" id="card-image-input-front" accept="image/*" style="display: none;"
+                                    onchange="window.repasoManager.handleImageUpload(this, 'front')">
+                                <input type="hidden" id="card-image-url-front">
+                                <div id="preview-front" class="image-preview-box" style="display: none; margin-bottom: 0.5rem;">
+                                    <img id="img-front" src=""
+                                        style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
+                                    <button type="button" onclick="window.repasoManager.removeImage('front')"
+                                        class="btn-remove-img"><i class="fas fa-times"></i></button>
+                                </div>
+                                <button type="button" id="btn-trigger-front"
+                                    onclick="document.getElementById('card-image-input-front').click()"
+                                    class="btn-upload-minimal" style="width: 100%;">
+                                    <i class="fas fa-image"></i> <span>Añadir Imagen al Frente</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CARA TRASERA (REVERSO) -->
+                        <div class="modal-card-face face-back">
+                            <div class="modal-card-face-header">
+                                <span class="modal-card-face-title"><i class="fas fa-check-circle"></i> Dorso (Respuesta)</span>
+                                <span class="modal-card-face-subtitle">Texto y/o Imagen</span>
+                            </div>
+                            
+                            <textarea class="form-input card-modal-textarea" id="card-back" placeholder="Ej: 1. Criterio principal&#10;2. Criterio secundario..."
+                                style="min-height: 110px; resize: vertical; margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5;"></textarea>
+
+                            <!-- Upload Reverso -->
+                            <div class="card-upload-area" style="margin-top: 0.8rem;">
+                                <input type="file" id="card-image-input-back" accept="image/*" style="display: none;"
+                                    onchange="window.repasoManager.handleImageUpload(this, 'back')">
+                                <input type="hidden" id="card-image-url-back">
+                                <div id="preview-back" class="image-preview-box" style="display: none; margin-bottom: 0.5rem;">
+                                    <img id="img-back" src=""
+                                        style="width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">
+                                    <button type="button" onclick="window.repasoManager.removeImage('back')"
+                                        class="btn-remove-img"><i class="fas fa-times"></i></button>
+                                </div>
+                                <button type="button" id="btn-trigger-back"
+                                    onclick="document.getElementById('card-image-input-back').click()"
+                                    class="btn-upload-minimal" style="width: 100%;">
+                                    <i class="fas fa-image"></i> <span>Añadir Imagen al Dorso</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN CARGA MASIVA -->
+                    <div id="section-card-bulk" class="card-mode-section" style="display: none; padding: 0.5rem 0;">
+                        <div
+                            style="background: rgba(249, 115, 22, 0.06); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem;">
+                            <h4 style="margin-bottom: 0.4rem; font-size: 0.95rem; color: #f97316;"><i
+                                    class="fas fa-info-circle"></i> Instrucciones</h4>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+                                Sube un archivo Excel con las columnas <b>Frente</b> y <b>Dorso</b>.<br>
+                                • Hasta <b>1,000 caracteres</b> por cara.<br>
+                                • Límite por archivo Excel: <b>100 tarjetas</b>.
+                            </p>
+                        </div>
+
+                        <div class="bulk-actions-wrapper">
+                            <button type="button" class="btn-bulk-template"
+                                onclick="window.repasoManager.downloadFlashcardTemplate()">
+                                <i class="fas fa-download"></i> <span>Plantilla Excel</span>
+                            </button>
+
+                            <label class="btn-bulk-upload">
+                                <i class="fas fa-file-upload"></i>
+                                <span id="bulk-file-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; min-width: 0;">Seleccionar Archivo</span>
+                                <input type="file" id="bulk-flashcard-input" accept=".xlsx, .xls, .csv"
+                                    style="display: none;" onchange="window.repasoManager.handleBulkFlashcardUpload(this)">
+                            </label>
+                        </div>
+
+                        <div id="bulk-upload-preview"
+                            style="display: none; margin-top: 1rem; font-size: 0.85rem; color: #34d399; text-align: center; background: rgba(16, 185, 129, 0.05); padding: 0.8rem; border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.3);">
+                            <i class="fas fa-check-circle"></i> <span id="bulk-count-text">0 tarjetas detectadas</span>
+                        </div>
+                    </div>
+
+                    <div id="card-upload-spinner"
+                        style="display: none; text-align: center; margin-bottom: 0.5rem; background: rgba(249,115,22,0.1); padding: 0.8rem; border-radius: 8px;">
+                        <i class="fas fa-circle-notch fa-spin" style="color: #f97316;"></i>
+                        <span style="margin-left: 8px; color: var(--text-secondary); font-size: 0.85rem;">Procesando...</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-action btn-secondary-action"
+                        onclick="window.repasoManager.closeCardModal()">Cancelar</button>
+                    <button type="submit" id="btn-save-card-submit" class="btn-action"
+                        style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; border-radius: 10px; font-weight: 700; height: 42px; padding: 0 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">
+                        <i class="fas fa-save" style="margin-right: 6px;"></i> Guardar Tarjeta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Stats -->
+    <div class="modal-overlay" id="stats-modal">
+        <div class="modal-content" style="max-width: 520px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 0.6rem;">
+                    <i class="fas fa-chart-pie" style="color: #f97316;"></i> Estadísticas del Mazo
+                </h2>
+                <button type="button" class="modal-close-btn" onclick="window.repasoManager.closeStatsModal()">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent;">
+                <!-- KPI Cards -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 14px; text-align: center;">
+                        <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-main);" id="modal-total">0</div>
+                        <div style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; margin-top: 4px;">Total Tarjetas</div>
+                    </div>
+                    <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 14px; text-align: center;">
+                        <div style="font-size: 2.2rem; font-weight: 800; color: #10b981;" id="modal-mastered">0</div>
+                        <div style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; margin-top: 4px;">Dominadas</div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Dona -->
+                <div style="max-width: 200px; height: 180px; margin: 0 auto 1.5rem auto; position: relative;">
+                    <canvas id="deck-stats-chart"></canvas>
+                </div>
+
+                <!-- Explicación de Leyenda SRS -->
+                <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.85rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; flex-shrink: 0; margin-top: 4px;"></div>
+                        <div><b style="color: var(--text-main);">Nuevas / Aprendiendo:</b> Tarjetas recién creadas o en proceso de estudio inicial.</div>
+                    </div>
+                    <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #f87171; flex-shrink: 0; margin-top: 4px;"></div>
+                        <div><b style="color: var(--text-main);">Por Repasar (Due):</b> Tarjetas pendientes para repasar hoy según el algoritmo SRS.</div>
+                    </div>
+                    <div style="display: flex; gap: 0.6rem; align-items: flex-start;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; flex-shrink: 0; margin-top: 4px;"></div>
+                        <div><b style="color: var(--text-main);">Dominadas:</b> Tarjetas de sólido recuerdo (más de 21 días de intervalo o aciertos continuos).</div>
+                    </div>
+                </div>
+
+                <!-- Activity Heatmap Container -->
+                <div id="activity-heatmap" class="heatmap-container" style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.2rem; height: auto;"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-action btn-secondary-action" style="width: 100%; justify-content: center; height: 42px; border-radius: 10px;" onclick="window.repasoManager.closeStatsModal()">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Injection -->
+        <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Plataforma</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="/library" class="footer-link">Mi Biblioteca</a></li>
+                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Soporte</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="/terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto y Ayuda</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="/js/utils/markdown-renderer.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/networkService.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/authApiService.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/analyticsApiService.js?v=5ca6b7db3040"></script>
+    <script src="/js/sessionManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/uiManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/tooltipManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/components.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/sidebar.js?v=5ca6b7db3040"></script>
+    <script src="/js/app.js?v=5ca6b7db3040"></script>
+
+    <!-- Polyfill for Mobile Drag and Drop -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
+    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            MobileDragDrop.polyfill({
+                dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride,
+                holdToDrag: 150 // Leve retraso mitigador para scrolls accidentales
+            });
+            window.addEventListener('touchmove', function () { }, { passive: false });
+        });
+    </script>
+
+    <script src="/js/heatmap.js?v=5ca6b7db3040"></script> <!-- Optional for Stats -->
+    <script src="/js/deck-explorer.js?v=5ca6b7db3040"></script> <!-- NEW -->
+    <script src="/js/repaso.js?v=5ca6b7db3040"></script>
+</body>
+
+</html>

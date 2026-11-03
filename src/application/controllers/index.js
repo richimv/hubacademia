@@ -1,0 +1,49 @@
+// Este archivo centraliza la creación de instancias de todos los controladores.
+// Esto asegura que toda la aplicación use la misma instancia (singleton) para cada controlador,
+// evitando problemas de contexto y servicios no inicializados.
+
+// --- 1. Importar las CLASES de los servicios y controladores ---
+const AuthService = require('../../domain/services/authService');
+const UserRepository = require('../../domain/repositories/userRepository'); // ✅ 1. Importar la CLASE del repositorio.
+const ChatService = require('../../domain/services/chatService');
+const AnalyticsService = require('../../domain/services/analyticsService');
+const adminServiceSingleton = require('../../domain/services/adminService');
+const SearchService = require('../../domain/services/searchService');
+const UsageService = require('../../domain/services/usageService'); // ✅ NUEVO
+
+const AuthController = require('./authController');
+const ChatController = require('./chatController');
+const AnalyticsController = require('./analyticsController');
+const CoursesController = require('./coursesController');
+const UsageController = require('./usageController'); // ✅ NUEVO
+const AdminController = require('./adminController'); // Importar la CLASE del controlador
+// Removed QuizController require
+const UserPreferencesController = require('./userPreferencesController'); // Importar la CLASE del controlador
+const LibraryController = require('./libraryController'); // ✅ NUEVO: Importar la CLASE del controlador
+
+// --- 2. Crear una ÚNICA instancia de cada SERVICIO ---
+const userRepository = new UserRepository(); // ✅ 2. Crear una ÚNICA instancia del repositorio.
+const analyticsService = new AnalyticsService();
+const chatService = new ChatService();
+const adminService = adminServiceSingleton;
+const searchService = new SearchService();
+const usageService = new UsageService(userRepository); // ✅ NUEVO: Servicio singleton
+const authService = new AuthService(userRepository, usageService); // ✅ Inyectar dependencias.
+
+
+
+// --- 3. Inyectar los servicios en los controladores al crearlos ---
+module.exports = {
+    authController: new AuthController(authService), // Ahora authService tiene su repositorio.
+    chatController: new ChatController(chatService, analyticsService, usageService), // ✅ Nuevo: Inyectar usageService
+    analyticsController: new AnalyticsController(analyticsService, userRepository), // ✅ 3. Inyectar el repositorio.
+    coursesController: new CoursesController(searchService, adminService),
+    usageController: new UsageController(usageService), // ✅ NUEVO
+    adminController: require('./adminController'), // ✅ NUEVO: Importar la instancia singleton directamente
+    medicoController: require('./medicoController'),
+    docenteController: require('./docenteController'),
+    flashcardController: require('./flashcardController'),
+    userPreferencesController: require('./userPreferencesController'), // ✅ NUEVO: Multi-Domain Simulator
+    mediaController: require('./mediaController'), // ✅ NUEVO: Proxy de imágenes GCS
+    speechController: require('./speechController') // ✅ NUEVO: Motor de Voz (ES, EN, IT)
+};

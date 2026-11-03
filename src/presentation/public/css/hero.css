@@ -1,0 +1,317 @@
+/* ============================================================
+   HERO SECTION — HUB ACADEMIA v3.5 (PURE VECTOR DUAL-THEME)
+   Refined Centered Architecture matching Design Reference
+   ============================================================ */
+
+.hero-wrapper {
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--bg-main);
+    transition: background-color 0.3s ease;
+}
+
+.hub-hero-container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 2;
+}
+
+/* ── Ambient Background Glow & High-Tech Grid ── */
+.hero-ambient-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background-image: 
+        radial-gradient(circle at 50% 18%, rgba(59, 130, 246, 0.2) 0%, transparent 55%),
+        radial-gradient(circle at 85% 25%, rgba(139, 92, 246, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 15% 35%, rgba(236, 72, 153, 0.1) 0%, transparent 45%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 42px 42px, 42px 42px;
+    mask-image: radial-gradient(ellipse at 50% 45%, black 45%, transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 45%, black 45%, transparent 85%);
+}
+
+[data-theme="light"] .hero-ambient-glow {
+    background-image: 
+        radial-gradient(circle at 50% 15%, rgba(37, 99, 235, 0.14) 0%, transparent 60%),
+        radial-gradient(circle at 88% 28%, rgba(124, 58, 237, 0.09) 0%, transparent 50%),
+        radial-gradient(circle at 12% 38%, rgba(14, 165, 233, 0.09) 0%, transparent 50%),
+        linear-gradient(to right, rgba(15, 23, 42, 0.075) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(15, 23, 42, 0.075) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 42px 42px, 42px 42px;
+    mask-image: radial-gradient(ellipse at 50% 45%, black 50%, transparent 90%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 45%, black 50%, transparent 90%);
+}
+
+.hero-center-content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    animation: heroFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes heroFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Top Category Pills ── */
+.hero-ecosystem-pills {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+}
+
+.ecosystem-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1.15rem;
+    border-radius: 50px;
+    font-size: 0.825rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+}
+
+.ecosystem-pill i {
+    font-size: 0.9rem;
+    transition: transform 0.25s ease;
+}
+
+.ecosystem-pill.pill-salud i {
+    color: #14b8a6;
+}
+
+.ecosystem-pill.pill-educacion i {
+    color: #2563eb;
+}
+
+.ecosystem-pill:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+    color: var(--text-main);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.ecosystem-pill:hover i {
+    transform: scale(1.15);
+}
+
+/* ── Main Typography ── */
+.hero-main-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--text-main);
+    margin: 0 0 1.25rem 0;
+    font-family: var(--font-main);
+}
+
+.hero-gradient-text {
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+[data-theme="light"] .hero-gradient-text {
+    background: linear-gradient(135deg, #2563eb 0%, #6366f1 50%, #db2777 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-main-subtitle {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    max-width: 680px;
+    margin: 0 auto 2.25rem auto;
+    font-weight: 400;
+}
+
+/* ── Primary CTA Button ── */
+.hero-cta-wrapper {
+    margin-bottom: 3.5rem;
+}
+
+.hero-primary-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    padding: 0.85rem 2.25rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-primary-cta:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(59, 130, 246, 0.55);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.hero-primary-cta:active {
+    transform: translateY(-1px) scale(0.99);
+}
+
+.cta-arrow {
+    font-size: 0.85rem;
+    transition: transform 0.25s ease;
+}
+
+.hero-primary-cta:hover .cta-arrow {
+    transform: translateY(3px);
+}
+
+/* ── 4 Bento Metric Cards ── */
+.hero-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    width: 100%;
+    max-width: 950px;
+    margin: 0 auto;
+}
+
+.hero-metric-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.hero-metric-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-lg), 0 0 20px var(--primary-glow);
+}
+
+.hero-metric-card:hover::before {
+    opacity: 1;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1;
+    margin-bottom: 0.45rem;
+    letter-spacing: -0.02em;
+    font-family: var(--font-main);
+}
+
+.metric-label {
+    font-size: 0.825rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+
+/* ── Responsive Breakpoints ── */
+@media (max-width: 900px) {
+    .hero-main-title {
+        font-size: 2.75rem;
+    }
+    .hero-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .hub-hero-container {
+        padding: 2.5rem 1rem 3rem;
+    }
+    .hero-main-title {
+        font-size: 2.15rem;
+    }
+    .hero-main-subtitle {
+        font-size: 0.95rem;
+        margin-bottom: 1.75rem;
+    }
+    .hero-cta-wrapper {
+        margin-bottom: 2.5rem;
+    }
+    .hero-primary-cta {
+        width: 100%;
+        max-width: 280px;
+        padding: 0.75rem 1.75rem;
+        font-size: 0.95rem;
+    }
+    .hero-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    .hero-metric-card {
+        padding: 1.15rem 0.75rem;
+        border-radius: 14px;
+    }
+    .metric-value {
+        font-size: 1.5rem;
+    }
+    .metric-label {
+        font-size: 0.75rem;
+    }
+}

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repaso Inteligente - Hub Academia</title>
+    <!-- ✅ PÁGINA PRIVADA/SESIÓN: Deshabilitar indexación en motores de búsqueda -->
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Fuentes & Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Centralized Design System Tokens -->
+    <link rel="stylesheet" href="/css/theme.css?v=5ca6b7db3040">
+
+    <!-- Estilos Pure Dark v3 (Fix Grid overflow 9:16) -->
+    <link rel="stylesheet" href="/css/flashcards.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/modal.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/sidebar.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/components.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/tutor.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=5ca6b7db3040"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="/js/config.js?v=5ca6b7db3040"></script>
+    <script src="/js/utils/themeManager.js?v=5ca6b7db3040"></script>
+</head>
+
+<body>
+
+    <div id="app-root">
+
+        <!-- HEADER / STATS -->
+        <header class="study-header">
+            <button id="btn-progress" class="back-nav" title="Volver">
+                <i class="fas fa-arrow-left"></i> 
+                <span class="nav-text">Volver a Mazos</span>
+            </button>
+
+            <div class="fc-stats-badge">
+                <span class="label">Pendientes</span>
+                <span class="count" id="pending-count">--</span>
+            </div>
+        </header>
+
+        <!-- VIEW: LOADING -->
+        <div id="view-loading" class="view-section active">
+            <i class="fas fa-circle-notch fa-spin loading-spinner"></i>
+            <p>Cargando tu sesión de repaso...</p>
+        </div>
+
+        <!-- VIEW: EMPTY STATE -->
+        <div id="view-empty" class="view-section">
+            <div class="empty-content">
+                <i class="fas fa-check-circle"
+                    style="font-size: 4rem; color: var(--success-color); margin-bottom: 1.5rem;"></i>
+                <h2>¡Todo al día!</h2>
+                <p style="color: var(--text-secondary); margin: 1rem 0 2rem;">
+                    Has completado todos tus repasos pendientes por hoy.
+                </p>
+                <div class="empty-actions">
+                    <button id="btn-back-deck" class="btn-action btn-secondary" style="border: none; cursor: pointer;">
+                        <i class="fas fa-arrow-left"></i> Volver al Mazo
+                    </button>
+                    <button onclick="FlashcardManager.init()" class="btn-action btn-primary">
+                        <i class="fas fa-sync-alt"></i> Verificar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: ACTIVE CARD -->
+        <div id="view-card" class="view-section">
+
+            <div class="scene">
+                <div class="card" id="flashcard">
+
+                    <!-- FRONT -->
+                    <div class="fc-card-face fc-card-face--front">
+                        <div class="fc-badge-container">
+                            <span class="fc-badge" id="card-topic">ANATOMÍA</span>
+                        </div>
+                        <div class="fc-content-area">
+                            <div id="front-image-container" class="card-image-container"></div>
+                            <div class="content-text markdown-content" id="front-text">...</div>
+                        </div>
+                        <div class="fc-hint-container">
+                            <div class="tap-hint"><i class="fas fa-hand-pointer"></i> Toca para ver respuesta</div>
+                        </div>
+                    </div>
+
+                    <!-- BACK -->
+                    <div class="fc-card-face fc-card-face--back">
+                        <div class="fc-badge-container">
+                            <span class="fc-badge">RESPUESTA</span>
+                        </div>
+                        <div class="fc-content-area">
+                            <div id="back-image-container" class="card-image-container"></div>
+                            <div class="content-text markdown-content" id="back-text">...</div>
+                        </div>
+                        <div class="fc-hint-container">
+                            <!-- Hint opcional o vacío -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CONTROLS -->
+            <div class="controls" id="controls">
+                <button class="control-btn btn-again" onclick="event.stopPropagation(); FlashcardManager.rate(0)">
+                    <i class="fas fa-times"></i> Olvidé
+                    <span class="sub-label">&lt; 1 min</span>
+                </button>
+                <button class="control-btn btn-hard" onclick="event.stopPropagation(); FlashcardManager.rate(3)">
+                    <i class="fas fa-exclamation"></i> Difícil
+                    <span class="sub-label">Mañana</span>
+                </button>
+                <button class="control-btn btn-good" onclick="event.stopPropagation(); FlashcardManager.rate(4)">
+                    <i class="fas fa-check"></i> Bien
+                    <span class="sub-label">3 días</span>
+                </button>
+                <button class="control-btn btn-easy" onclick="event.stopPropagation(); FlashcardManager.rate(5)">
+                    <i class="fas fa-grin-stars"></i> Fácil
+                    <span class="sub-label">7 días</span>
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/services/networkService.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/authApiService.js?v=5ca6b7db3040"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="/js/utils/markdown-renderer.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/analyticsApiService.js?v=5ca6b7db3040"></script>
+    <script src="/js/sessionManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/uiManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/sidebar.js?v=5ca6b7db3040"></script>
+    <script src="/js/app.js?v=5ca6b7db3040"></script>
+    <script src="/js/flashcards.js?v=5ca6b7db3040"></script>
+    <script src="/js/tutor-chat.js?v=5ca6b7db3040"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,398 @@
+/* Base resource layout styles */
+.resource-container {
+    max-width: var(--max-width, 1440px);
+    margin: 0 auto;
+    padding: 2rem var(--page-padding-x);
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 40px;
+    min-height: 60vh;
+}
+
+.resource-hero {
+    position: sticky;
+    top: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Wrapper que contiene la portada + botón overlay */
+.resource-cover-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.resource-cover {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2/3;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.resource-cover-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(20,20,20,0.8), rgba(0,0,0,0.9));
+}
+
+.resource-cover-fallback i {
+    font-size: 5rem;
+    opacity: 0.6;
+}
+
+/* Botón "Ver Recurso" superpuesto sobre la portada */
+.resource-cover-overlay-btn {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    z-index: 10;
+}
+
+.resource-info h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.resource-info p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.resource-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.resource-hero .btn-view, 
+.resource-hero .btn-download, 
+.resource-hero .btn-save,
+.resource-actions .btn-save,
+.resource-actions .btn-quiz-premium {
+    padding: 10px 16px !important; /* Forzar minimalismo */
+    border-radius: 10px !important;
+    font-size: 0.9rem !important; /* Elegancia constante */
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: none;
+    width: 100% !important;
+    max-width: 280px !important; /* Tamaño homogéneo */
+    margin: 0 auto; /* Centrados */
+}
+
+.btn-view, .btn-save {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-view:hover, .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-quiz-premium {
+    background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4) !important;
+}
+
+.btn-quiz-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6) !important;
+}
+
+.btn-download {
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-download:hover {
+    background: var(--surface-3);
+}
+
+.resource-body {
+    background: transparent;
+    padding: 0;
+    min-width: 0; /* Crucial: permite que el contenido flex/grid se reduzca en vez de expandirse */
+}
+
+.resource-content {
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* ✅ FIX: Allow TinyMCE tools (colors, backgrounds) by removing !important from the reset */
+.resource-content * {
+    background-color: transparent;
+    color: inherit;
+}
+
+.resource-content h2, .resource-content h3, .resource-content h4 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.resource-content h2 { font-size: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+.resource-content h3 { font-size: 1.25rem; }
+.resource-content h4 { font-size: 1.1rem; }
+
+.resource-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin: 2rem 0;
+    box-shadow: var(--shadow-md);
+    cursor: zoom-in; /* NEW: Señal interactiva */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.resource-content img:hover {
+    transform: scale(1.01);
+    box-shadow: var(--shadow-lg);
+    filter: brightness(1.05); /* Efecto sutil de iluminación */
+}
+
+.table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 20px 0;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.resource-content table {
+    width: 100%;
+    min-width: 800px; /* Asegura que las tablas anchas mantengan legibilidad al forzar scroll */
+    border-collapse: collapse;
+}
+
+.resource-content th, .resource-content td {
+    border: 1px solid var(--border-color) !important;
+    padding: 12px;
+    text-align: left;
+    min-width: 120px; /* Evita que las columnas se aplasten demasiado */
+    color: var(--text-main) !important;
+}
+
+.resource-content th {
+    background-color: var(--bg-tertiary) !important;
+    font-weight: bold;
+    color: var(--primary) !important;
+}
+
+/* Typography & Flow Balance */
+.resource-content p {
+    margin-bottom: 1.25rem;
+    color: var(--text-main);
+    text-align: justify; /* Academic look */
+}
+
+.resource-content ul, .resource-content ol {
+    margin-bottom: 1.25rem;
+    padding-left: 1.5rem;
+}
+
+.resource-content ul {
+    list-style-type: disc;
+}
+
+.resource-content ol {
+    list-style-type: decimal;
+}
+
+.resource-content li {
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+}
+
+.resource-content li > ul, .resource-content li > ol {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.resource-content blockquote {
+    border-left: 4px solid var(--primary);
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+/* REMOVED: Redundant override that blocked TinyMCE color tools */
+.resource-content span {
+    color: inherit;
+}
+
+/* Optimización móvil y diseño minimalista */
+@media (max-width: 900px) {
+    .resource-container {
+        grid-template-columns: 1fr;
+        margin: 20px auto;
+        gap: 20px;
+    }
+    .resource-hero {
+        position: static;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+    }
+    /* Limitar ancho de la portada Y su wrapper para que el botón overlay
+       no se desborde visualmente más allá del bloque de color */
+    .resource-cover-wrapper {
+        max-width: 250px;
+        margin: 0 auto; /* Centrar el bloque completo */
+    }
+    .resource-cover {
+        max-width: 100%; /* Hereda el constraint del wrapper */
+    }
+    .resource-info h1 {
+        font-size: 1.2rem;
+        margin-bottom: 4px;
+    }
+    .resource-info p {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    .resource-actions {
+        margin-top: 5px;
+        gap: 8px;
+    }
+    .resource-body {
+        padding: 0;
+    }
+    .resource-content {
+        font-size: 0.95rem;
+    }
+    .btn-view, .btn-save, .btn-download {
+        padding: 10px 14px;
+        font-size: 0.85rem;
+        max-width: none; /* En móvil que ocupen el ancho disponible del contenedor */
+    }
+
+    .resource-cover-fallback i {
+        font-size: 3.5rem;
+    }
+}
+
+/* --- MODERN VIDEO POSTER CARD (Hub Academia Style) --- */
+.video-poster-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-color: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    margin: 2.5rem 0;
+    cursor: pointer;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.video-poster-card:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    border-color: var(--primary);
+}
+
+.video-poster-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.6s ease, filter 0.4s ease;
+    filter: brightness(0.8);
+}
+
+.video-poster-card:hover .video-poster-image {
+    transform: scale(1.05);
+    filter: brightness(0.9);
+}
+
+.video-poster-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+    z-index: 2;
+}
+
+.video-poster-play-btn {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.8rem;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+}
+
+.video-poster-play-btn i {
+    margin-left: 6px; /* Ajuste visual del icono Play */
+}
+
+.video-poster-card:hover .video-poster-play-btn {
+    background: var(--primary);
+    transform: scale(1.15);
+    border-color: #fff;
+    box-shadow: 0 0 50px rgba(59, 130, 246, 0.6);
+}
+
+.video-poster-hint {
+    margin-top: 15px;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.video-poster-card:hover .video-poster-hint {
+    opacity: 1;
+}
+
+/* Fallback for old iframes just in case */
+.resource-content iframe {
+    width: 100% !important;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    border: none;
+}

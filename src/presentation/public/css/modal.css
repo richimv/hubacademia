@@ -1,0 +1,900 @@
+/* Bloqueo Global de Scroll cuando hay modales abiertos */
+body.modal-open {
+    overflow: hidden !important;
+    height: 100vh;
+}
+
+.modal, .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--modal-overlay-bg) !important;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000000;
+    backdrop-filter: blur(12px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+    overscroll-behavior: contain; /* 🛡️ ANTI-SCROLL LEAK */
+}
+
+/* Estado Activo: Mostrar modal */
+.modal.active, 
+.modal-overlay.active,
+.modal.visible,
+.modal-overlay.visible,
+.modal.open,
+.modal-overlay.open {
+    display: flex !important;
+}
+
+/* Fix para que los menús de TinyMCE se vean sobre el modal */
+.tox-tinymce-aux {
+    z-index: 2147483647 !important;
+}
+
+/* --- REDISEÑO COMPLETO DE MODALES (Tokens Centralizados) --- */
+.modal-content {
+    background: var(--modal-bg) !important;
+    border-radius: 20px !important;
+    width: 90%;
+    max-width: 550px;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow: hidden;
+    margin: 10px;
+}
+
+/* Optimización móvil para modales */
+@media screen and (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        max-width: none !important;
+        margin: 5px;
+    }
+}
+
+.modal-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: transparent;
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.35rem 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close-btn:hover {
+    color: var(--text-main);
+    background: var(--surface-hover);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain; /* 🛡️ BLOQUEO DE SCROLL EN EL CUERPO */
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    background: transparent;
+}
+
+/* Scrollbar para Webkit en Modales */
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Asegurar que el formulario participe en el layout flexible */
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    /* Evita que el contenido del formulario desborde el contenedor flex */
+}
+
+.modal-body fieldset {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.modal-body legend {
+    padding: 0 0.5rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label,
+.form-label {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.88rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select,
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-main);
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus,
+.form-input:focus {
+    border-color: var(--primary);
+    background: var(--input-bg);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: transparent;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    border-radius: 0 0 20px 20px;
+}
+
+/* ✅ Normalizar tamaño de botones en el footer del modal */
+.modal-footer button,
+.modal-footer .btn-action {
+    height: 42px;
+    min-width: 105px;
+    padding: 0 1.25rem;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.modal-footer .btn-secondary-action {
+    background: var(--bg-tertiary) !important;
+    border: 1.5px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+}
+
+.modal-footer .btn-secondary-action:hover {
+    background: var(--surface-hover) !important;
+    border-color: var(--border-hover) !important;
+    transform: translateY(-1px);
+}
+
+.modal-footer .btn-action:not(.btn-secondary-action) {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+}
+
+.modal-footer .btn-action:not(.btn-secondary-action):hover {
+    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.45) !important;
+    transform: translateY(-1px);
+}
+
+.modal-footer .btn-action.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35) !important;
+    border: none !important;
+}
+
+.modal-footer .btn-action.btn-primary:hover {
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5) !important;
+    transform: translateY(-1px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* === MODAL FLOTANTE UNIVERSAL (Single Source of Truth) === */
+.auth-prompt-modal {
+    display: none;
+    /* Flex cuando activo */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2147483647 !important;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.premium-glass-dark {
+    background: var(--modal-bg) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+}
+
+.auth-prompt-modal .modal-content {
+    background: var(--modal-bg) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+    width: 92% !important;
+    max-width: 420px !important;
+    border-radius: 24px !important;
+    font-family: 'Inter', sans-serif !important;
+    position: relative !important;
+    overflow: hidden !important;
+    color: var(--text-main) !important;
+}
+
+/* Variante premium (retrocompatibilidad) */
+.auth-prompt-modal .modal-content.premium-variant {
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+}
+
+/* ==========================================================================
+   MODAL PAYWALL MODERNO (Design System v3.5)
+   Dual-Theme Engine: Dark Mode Matte Black / Light Mode Clean Slate
+   ========================================================================== */
+.auth-prompt-modal.paywall-overlay {
+    background: var(--modal-overlay-bg) !important;
+    backdrop-filter: blur(12px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+}
+
+.modal-content.paywall-modal-content {
+    background: var(--modal-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 20px !important;
+    box-shadow: var(--shadow-xl) !important;
+    width: 92% !important;
+    max-width: 420px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+    animation: modalScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.paywall-glow {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.paywall-header {
+    position: relative;
+    z-index: 1;
+    padding: 1.35rem 1.4rem 0.25rem 1.4rem;
+}
+
+.paywall-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.paywall-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    color: var(--primary);
+}
+
+.paywall-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main) !important;
+    margin: 0;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+
+.paywall-body {
+    position: relative;
+    z-index: 1;
+    padding: 0.4rem 1.4rem 1.1rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.paywall-description {
+    font-size: 0.88rem;
+    color: var(--text-secondary) !important;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.paywall-features-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin: 0.15rem 0;
+}
+
+.paywall-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    font-size: 0.86rem;
+    color: var(--text-main);
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+[data-theme="light"] .paywall-feature-item {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.paywall-feature-icon {
+    color: #10b981;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.paywall-footer {
+    position: relative;
+    z-index: 1;
+    padding: 0 1.4rem 1.4rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn-paywall-primary {
+    width: 100%;
+    background: linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%);
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 13px 20px;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-paywall-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+.btn-paywall-secondary {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px;
+    text-align: center;
+    transition: color 0.2s ease;
+}
+
+.btn-paywall-secondary:hover {
+    color: var(--text-main);
+}
+
+.auth-prompt-modal .modal-header {
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 18px 20px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: transparent !important;
+}
+
+.auth-prompt-modal .modal-header h2 {
+    color: var(--text-main);
+    font-weight: 800;
+    font-size: 1.2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.auth-prompt-modal .modal-close-btn {
+    color: #64748b;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.auth-prompt-modal .modal-body {
+    padding: 30px 20px !important;
+    text-align: center !important;
+    background: transparent !important;
+    /* Force no separate background */
+}
+
+.auth-prompt-modal .modal-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    padding: 0 20px 30px 20px !important;
+    background: transparent !important;
+    /* Force no separate background */
+    border-top: none !important;
+}
+
+/* Animaciones */
+@keyframes modalScaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.auth-prompt-modal .modal-content {
+    animation: modalScaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* --- Estilos para el Modal de Filtros (Móvil) --- */
+.filter-modal .modal-content {
+    max-width: 400px;
+    /* Más angosto para filtros */
+}
+
+.filter-modal .modal-body {
+    padding: 0;
+    /* Quitamos el padding para que el contenido se ajuste */
+}
+
+.filter-modal .filter-sidebar {
+    display: block;
+    /* Hacemos visible el contenido del sidebar dentro del modal */
+    border: none;
+    background: none;
+    border-radius: 0;
+    padding: 1.5rem;
+}
+
+.filter-modal .modal-footer {
+    display: none;
+}
+
+/* No necesitamos footer en este modal */
+
+/* --- VIDEO PLAYER MODAL (GLOBAL UX) --- */
+.video-modal-overlay {
+    z-index: 9999999 !important; /* Cinematic Fullscreen z-index */
+    background: rgba(0, 0, 0, 0.96) !important; /* Deep cinematic background */
+    backdrop-filter: blur(12px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem; /* Margen de seguridad global */
+    overflow-y: auto;
+}
+
+.video-modal-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 1000px !important;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Evitar que el cuerpo del modal de video actúe como un muelle que estira el iframe 100vh */
+#video-player-modal .modal-body {
+    flex: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+}
+
+/* El botón de cerrar ahora es global y seguro en móviles */
+.video-modal-close-wrapper {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10002;
+}
+
+.video-modal-close-wrapper .modal-close-btn {
+    font-size: 2.5rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.video-modal-close-wrapper .modal-close-btn:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.1);
+}
+
+.video-modal-title {
+    color: #f1f5f9;
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    opacity: 0.95;
+}
+
+.video-container-responsive {
+    position: relative;
+    width: 100%;
+    /* 🔥 HACK INFALIBLE: aspecto 16:9 bloqueando flex-stretch en móviles */
+    padding-bottom: 56.25%;
+    height: 0;
+    max-height: calc(100vh - 100px); /* Previene desbordes verticales extraños */
+    background: black;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.video-container-responsive iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.video-modal-title {
+    color: white;
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-align: center;
+    opacity: 0.9;
+}
+
+/* --- MOBILE LANDSCAPE OPTIMIZATION --- */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    #video-player-modal .modal-content {
+        width: 100%;
+        max-width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        background: black;
+        border-radius: 0;
+    }
+
+    #video-player-modal .modal-header {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 20;
+        padding: 10px;
+    }
+
+    .video-container-responsive {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+        aspect-ratio: auto; /* Liberar ratio en landscape total */
+    }
+
+    .video-modal-title {
+        display: none;
+        /* Hide title to save space */
+    }
+}
+
+/* 📌 Estilos Premium para Confirmation Modal (Design System) */
+#confirmation-modal .modal-content {
+    background: var(--modal-bg) !important;
+    border: 1px solid var(--border-glow) !important;
+    border-radius: 24px !important;
+    box-shadow: var(--shadow-xl) !important;
+    font-family: var(--font-main) !important;
+    color: var(--text-main) !important;
+}
+
+.confirmation-modal-card {
+    max-width: 440px !important;
+    padding: 1.5rem !important;
+    position: relative;
+    border-radius: 18px !important;
+}
+
+.confirmation-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: none !important;
+    padding: 0 0 1rem 0 !important;
+}
+
+.confirmation-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.confirmation-modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+#confirmation-modal-title {
+    margin: 0 !important;
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    color: var(--text-main) !important;
+    letter-spacing: -0.02em;
+}
+
+.confirmation-modal-body {
+    padding: 0.25rem 0 1.5rem 0 !important;
+    border: none !important;
+}
+
+#confirmation-modal-message {
+    margin: 0 !important;
+    color: var(--text-secondary) !important;
+    font-size: 0.98rem !important;
+    line-height: 1.6 !important;
+}
+
+.confirmation-modal-footer {
+    display: flex !important;
+    gap: 0.75rem !important;
+    justify-content: flex-end !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+#confirmation-modal-confirm {
+    background: var(--primary) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.65rem 1.4rem !important;
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 12px var(--primary-glow) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#confirmation-modal-confirm:hover {
+    background: var(--primary-hover) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 18px var(--primary-glow) !important;
+}
+
+#confirmation-modal-cancel {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 10px !important;
+    padding: 0.65rem 1.25rem !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#confirmation-modal-cancel:hover {
+    background: var(--surface-hover) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-hover) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ============================================================
+   🔔 GLOBAL TOAST NOTIFICATION SYSTEM (DUAL-THEME GLASSMORPHISM)
+   ============================================================ */
+.hub-toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483647;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.hub-toast {
+    background: var(--card-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-xl);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 0.75rem 1.4rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hub-toast.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.hub-toast-icon {
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hub-toast.toast-success .hub-toast-icon { color: var(--success); }
+.hub-toast.toast-error .hub-toast-icon { color: var(--danger); }
+.hub-toast.toast-warning .hub-toast-icon { color: var(--warning); }
+.hub-toast.toast-info .hub-toast-icon { color: var(--primary); }
+.hub-toast.toast-life .hub-toast-icon { color: #f59e0b; }
+
+[data-theme="light"] .hub-toast {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(203, 213, 225, 0.8);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}

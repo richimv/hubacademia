@@ -1,0 +1,143 @@
+const UserRepository = require('../../src/domain/repositories/userRepository');
+const db = require('../../src/infrastructure/database/db');
+
+// Mock database
+jest.mock('../../src/infrastructure/database/db');
+
+describe('UserRepository', () => {
+    let userRepository;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        userRepository = new UserRepository();
+    });
+
+    describe('findById', () => {
+        it('should map database row to User model correctly including new limit usage fields', async () => {
+            const mockRow = {
+                id: 'user-123',
+                email: 'test@example.com',
+                password_hash: 'hash123',
+                role: 'student',
+                name: 'Test Student',
+                subscription_status: 'active',
+                payment_id: 'pay-456',
+                usage_count: 5,
+                max_free_limit: 10,
+                subscription_tier: 'basic',
+                subscription_expires_at: '2026-12-31',
+                daily_simulator_usage: 2,
+                daily_ai_usage: 10,
+                daily_arena_usage: 3,
+                last_usage_reset: '2026-06-02',
+                last_name_change_at: null,
+                monthly_flashcards_usage: 4,
+                daily_import_usage: 1,
+                last_free_renewal: '2026-06-12T12:00:00Z'
+            };
+
+            db.query.mockResolvedValue({ rows: [mockRow] });
+
+            const result = await userRepository.findById('user-123');
+
+            expect(db.query).toHaveBeenCalledWith(
+                'SELECT * FROM users WHERE id = $1',
+                ['user-123']
+            );
+            expect(result.id).toBe('user-123');
+            expect(result.email).toBe('test@example.com');
+            expect(result.monthlyFlashcardsUsage).toBe(4);
+            expect(result.dailyImportUsage).toBe(1);
+            expect(result.lastFreeRenewal).toBe('2026-06-12T12:00:00Z');
+        });
+    });
+
+    describe('update', () => {
+        it('should generate SQL containing new usage fields and execute query', async () => {
+            const mockRow = { id: 'user-123', name: 'Updated Name' };
+            db.query.mockResolvedValue({ rows: [mockRow] });
+
+            await userRepository.update('user-123', {
+                name: 'Updated Name',
+                monthlyFlashcardsUsage: 5,
+                dailyImportUsage: 2
+            });
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('monthly_flashcards_usage = $'),
+                expect.any(Array)
+            );
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('daily_import_usage = $'),
+                expect.any(Array)
+            );
+        });
+    });
+
+    describe('renewFreeLivesIfNeeded and renewWeeklyLivesIfNeeded', () => {
+        it('should execute the atomic 30-day renewal and report whether a row changed', async () => {
+            db.query.mockResolvedValue({ rowCount: 1 });
+
+            await expect(userRepository.renewFreeLivesIfNeeded('user-123')).resolves.toBe(true);
+
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('INTERVAL \'30 days\''),
+                ['user-123', 10]
+            );
+        });
+
+        it('should support renewWeeklyLivesIfNeeded as backward-compatible alias', async () => {
+            db.query.mockResolvedValue({ rowCount: 1 });
+
+            await expect(userRepository.renewWeeklyLivesIfNeeded('user-123')).resolves.toBe(true);
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('INTERVAL \'30 days\''),
+                ['user-123', 10]
+            );
+        });
+
+        it('should return false when the user does not need renewal', async () => {
+            db.query.mockResolvedValue({ rowCount: 0 });
+
+            await expect(userRepository.renewFreeLivesIfNeeded('user-123')).resolves.toBe(false);
+        });
+    });
+
+    describe('delete', () => {
+        it('should perform cascade deletion using connection pool transaction', async () => {
+            const mockClient = {
+                query: jest.fn().mockResolvedValue({ rowCount: 1 }),
+                release: jest.fn()
+            };
+            db.pool = jest.fn().mockReturnValue({
+                connect: jest.fn().mockResolvedValue(mockClient)
+            });
+
+            const result = await userRepository.delete('user-to-delete');
+
+            expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
+            expect(mockClient.query).toHaveBeenCalledWith('DELETE FROM user_flashcards WHERE user_id = $1', ['user-to-delete']);
+            expect(mockClient.query).toHaveBeenCalledWith('DELETE FROM users WHERE id = $1', ['user-to-delete']);
+            expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+            expect(mockClient.release).toHaveBeenCalled();
+            expect(result).toEqual({ success: true });
+        });
+
+        it('should fallback to direct queries if pool is not available', async () => {
+            db.pool = undefined;
+            db.query.mockResolvedValue({ rowCount: 1 });
+
+            const result = await userRepository.delete('user-fallback-delete');
+
+            expect(db.query).toHaveBeenCalledWith('DELETE FROM users WHERE id = $1', ['user-fallback-delete']);
+            expect(result).toEqual({ success: true });
+        });
+
+        it('should throw an error if user is not found on deletion', async () => {
+            db.pool = undefined;
+            db.query.mockResolvedValue({ rowCount: 0 });
+
+            await expect(userRepository.delete('user-missing')).rejects.toThrow('Usuario no encontrado.');
+        });
+    });
+});

@@ -1,0 +1,384 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const resourceId = urlParams.get('id');
+    const wrapper = document.getElementById('resource-wrapper');
+    let stateResourceId = null;
+
+    if (!resourceId) {
+        wrapper.innerHTML = '<div class="error-state">No se especificó un recurso (Falta ID).</div>';
+        return;
+    }
+
+    try {
+        const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/resources/${resourceId}`);
+        if (!response.ok) throw new Error('Recurso no encontrado');
+
+        const resource = await response.json();
+        renderResource(resource);
+    } catch (error) {
+        console.error('Error fetching resource:', error);
+        wrapper.textContent = 'No se pudo cargar la información del recurso.';
+        wrapper.className = 'error-state';
+    }
+
+    function renderResource(resource) {
+        const escape = value => window.escapeHtml ? window.escapeHtml(value ?? '') : String(value ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const safeId = escape(resource.id);
+        const safeTitle = escape(resource.title || 'Recurso sin título');
+        const safeAuthor = escape(resource.author || 'Autor Anónimo');
+        const safeType = escape(resource.resource_type || 'other');
+
+        document.title = `${resource.title} - Hub Academia`;
+
+        // Determine cover logic
+        const rType = resource.resource_type || 'other';
+        let coverImage = window.resolveImageUrl(resource.image_url, rType);
+
+        const isVideo = resource.resource_type === 'video' || (window.uiManager && window.uiManager.isVideo(resource.url));
+        if (isVideo && resource.url && resource.url.includes('youtu') && (!resource.image_url || resource.image_url.includes('unsplash'))) {
+            const match = resource.url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+            const videoId = (match && match[2].length === 11) ? match[2] : null;
+            if (videoId) {
+                coverImage = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            }
+        }
+
+        // Definir clases e iconos basados en el tipo de recurso
+        const typeConfigs = {
+            'book': { icon: 'fa-book', colorClass: 'urc-color-book' },
+            'guia': { icon: 'fa-file-medical', colorClass: 'urc-color-guia' },
+            'norma': { icon: 'fa-file-signature', colorClass: 'urc-color-norma' },
+            'paper': { icon: 'fa-file-alt', colorClass: 'urc-color-paper' },
+            'video': { icon: 'fa-play-circle', colorClass: 'urc-color-other' },
+            'other': { icon: 'fa-image', colorClass: 'urc-color-other' }
+        };
+        const config = typeConfigs[rType] || typeConfigs['other'];
+        const fallbackImg = window.getDefaultResourceImage(rType);
+
+        // Usar la imagen resuelta con fallback a la imagen artística por defecto
+        let visualHTML = `<img src="${escape(coverImage)}" alt="Portada de ${safeTitle}" class="resource-cover" onerror="this.src='${escape(fallbackImg)}'">`;
+
+        if (isVideo) {
+            visualHTML = `
+                <div style="position: relative;">
+                    ${visualHTML}
+                    <div style="position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); 
+                                width: 60px; height: 60px; background: rgba(0,0,0,0.6); border-radius: 50%;
+                                display: flex; align-items: center; justify-content: center; color: white;
+                                font-size: 24px; cursor: pointer; pointer-events: none; border: 2px solid rgba(255,255,255,0.8);">
+                        <i class="fas fa-play" style="margin-left: 4px;"></i>
+                    </div>
+                </div>
+            `;
+        }
+
+        const isInternalGCS = resource.url && (resource.url.includes('storage.googleapis.com') || resource.url.startsWith('/') || resource.url.includes('hubacademia.com'));
+
+        const defaultContent = `<div style="text-align:center; padding: 40px; color: var(--text-secondary);">
+            <i class="fas fa-info-circle fa-3x" style="margin-bottom:15px; opacity:0.5;"></i>
+            <p>Este recurso no tiene un resumen detallado aún.</p>
+        </div>`;
+
+        // INTERCEPTOR DE RENDIMIENTO Y ESCAPE DE VERCEL (DOM PARSER):
+        // En lugar de usar Regex (que es frágil ante diferentes codificaciones HTML de TinyMCE),
+        // parseamos el HTML real y reescribimos los sources explícitamente para saltarnos Vercel.
+        let safeHTML = resource.content_html || defaultContent;
+        if (safeHTML !== defaultContent) {
+            safeHTML = convertYoutubeLinksToEmbeds(safeHTML);
+        }
+        if (window.MarkdownRenderer && safeHTML !== defaultContent) {
+            safeHTML = window.MarkdownRenderer.render(safeHTML);
+        }
+        if (window.AppConfig && window.AppConfig.API_URL && safeHTML !== defaultContent) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(safeHTML, 'text/html');
+                const images = doc.querySelectorAll('img');
+
+                images.forEach(img => {
+                    const src = img.getAttribute('src');
+                    if (src && src.includes('/api/media/')) {
+                        // Extraemos solo la parte del endpoint (ej. /api/media/gcs?path=...)
+                        const endpointMatch = src.match(/\/api\/media\/.*/);
+                        if (endpointMatch) {
+                            // Inyectar forzosamente el dominio directo de Render (Saltando Vercel y sus cache/404s)
+                            img.setAttribute('src', window.AppConfig.API_URL + endpointMatch[0]);
+                        }
+                    }
+                });
+                safeHTML = doc.body.innerHTML;
+            } catch (e) {
+                console.error("Error al interceptar imágenes del recurso:", e);
+            }
+        }
+
+        // Configurar la URL en el uiManager
+        if (window.uiManager && resource.url) {
+            window.uiManager.registerMaterial(resource.id, resource.url);
+        }
+
+        wrapper.innerHTML = `
+            <div class="resource-hero">
+                <div class="resource-cover-wrapper">
+                        ${visualHTML}
+                    
+                    <div class="resource-cover-overlay-btn">
+                        <button data-open-resource="true" class="btn-view" style="box-shadow: 0 8px 25px rgba(0,0,0,0.5);">
+                            <i class="fas fa-external-link-alt"></i> Ver Recurso
+                        </button>
+                    </div>
+                </div>
+                <div class="resource-info">
+                    <h1>${safeTitle}</h1>
+                    <p><i class="fas fa-user-edit"></i> ${safeAuthor}</p>
+                    <div style="margin-top: 10px;">
+                        ${resource.is_premium ? '<span class="badge premium"><i class="fas fa-crown"></i> PRO</span>' : ''}
+                    </div>
+                </div>
+                
+                <div class="resource-actions">
+                    <!-- Integración con Mi Biblioteca / LibraryUI -->
+                    <button class="btn-save btn-primary js-library-btn action-save" data-id="${safeId}" data-type="book" data-action="save">
+                        <i class="far fa-bookmark"></i> Agregar a mi Biblioteca
+                    </button>
+                    <button class="btn-save btn-primary js-library-btn action-fav" data-id="${safeId}" data-type="book" data-action="favorite">
+                        <i class="far fa-heart"></i> Favorito
+                    </button>
+                </div>
+            </div>
+
+            <div class="resource-body">
+                <div class="resource-content markdown-content" id="resource-content-body">
+                    ${safeHTML}
+                </div>
+            </div>
+        `;
+
+        const openResourceButton = wrapper.querySelector('[data-open-resource="true"]');
+        if (openResourceButton) {
+            openResourceButton.addEventListener('click', () => {
+                openResourceLink(resource.id, resource.url || '', Boolean(resource.is_premium), resource.resource_type || 'book');
+            });
+        }
+
+        // MEJORA PROFESIONAL: Envolver todas las tablas en un contenedor responsivo dinámicamente
+        // Esto evita que las tablas de 10+ columnas rompan el layout sin usar el hack de 'display: block' en la tabla.
+        setTimeout(() => {
+            // ✅ Notificar al AudioAssistant que el contenido ya está en el DOM
+            if (window.audioAssistant) window.audioAssistant.refreshContext();
+
+            const contentBody = document.getElementById('resource-content-body');
+            if (contentBody) {
+                // MEJORA 1: Tablas Responsivas
+                const tables = contentBody.querySelectorAll('table');
+                tables.forEach(table => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-responsive-wrapper';
+                    table.parentNode.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
+                });
+
+                // MEJORA 2: Visor de Imágenes (Lightbox)
+                const images = contentBody.querySelectorAll('img');
+                images.forEach(img => {
+                    img.style.cursor = 'zoom-in';
+                    img.title = 'Hacer clic para ampliar';
+                    img.addEventListener('click', () => {
+                        if (window.uiManager && window.uiManager.showMediaViewer) {
+                            window.uiManager.showMediaViewer(img.src, resource.title);
+                        } else {
+                            window.open(img.src, '_blank');
+                        }
+                    });
+                });
+
+                // MEJORA 3: Lazy-Loading de Videos (Poster + Modal)
+                // Reemplazar iframes pesados por carátulas interactivas
+                const iframes = contentBody.querySelectorAll('iframe[src*="youtube.com"], iframe[src*="youtu.be"]');
+                iframes.forEach(iframe => {
+                    const src = iframe.src;
+                    const videoId = _extractYoutubeId(src);
+                    if (!videoId) return;
+
+                    const posterWrapper = document.createElement('div');
+                    posterWrapper.className = 'video-poster-card';
+                    posterWrapper.innerHTML = `
+                        <div class="video-poster-image" style="background-image: url('https://img.youtube.com/vi/${videoId}/maxresdefault.jpg')"></div>
+                        <div class="video-poster-overlay">
+                            <div class="video-poster-play-btn">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <span class="video-poster-hint">Hacer clic para reproducir</span>
+                        </div>
+                    `;
+
+                    // Al hacer clic, abrir el modal inmersivo oficial
+                    posterWrapper.addEventListener('click', () => {
+                        if (window.uiManager && window.uiManager.openVideoModal) {
+                            window.uiManager.openVideoModal(src, resource.title);
+                        } else {
+                            window.open(src, '_blank');
+                        }
+                    });
+
+                    // Reemplazar el iframe original
+                    iframe.parentNode.replaceChild(posterWrapper, iframe);
+                });
+            }
+        }, 0);
+    }
+
+    /**
+     * Convierte enlaces y URLs de YouTube en iframes
+     */
+    function convertYoutubeLinksToEmbeds(html) {
+        if (!html) return '';
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // 1. Convertir todas las etiquetas <a> que apunten a YouTube
+            const anchors = doc.querySelectorAll('a');
+            anchors.forEach(a => {
+                const href = a.getAttribute('href') || '';
+                const videoId = _extractYoutubeId(href);
+                if (videoId) {
+                    const iframe = doc.createElement('iframe');
+                    iframe.setAttribute('src', `https://www.youtube.com/embed/${videoId}`);
+                    iframe.setAttribute('width', '100%');
+                    iframe.setAttribute('height', '360');
+                    iframe.setAttribute('frameborder', '0');
+                    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                    iframe.setAttribute('allowfullscreen', 'true');
+                    
+                    const parent = a.parentNode;
+                    if (parent && parent.tagName.toLowerCase() === 'p' && parent.children.length === 1 && parent.textContent.trim() === a.textContent.trim()) {
+                        parent.parentNode.replaceChild(iframe, parent);
+                    } else {
+                        a.parentNode.replaceChild(iframe, a);
+                    }
+                }
+            });
+
+            // 2. Escanear nodos de texto buscando URLs de YouTube sueltas
+            const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+            let node;
+            while (node = walker.nextNode()) {
+                const text = node.nodeValue || '';
+                const youtubeRegex = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)[a-zA-Z0-9_-]{11})/g;
+                if (youtubeRegex.test(text)) {
+                    const parentTag = node.parentNode ? node.parentNode.tagName.toLowerCase() : '';
+                    if (parentTag !== 'a' && parentTag !== 'script' && parentTag !== 'style' && parentTag !== 'iframe') {
+                        nodesToReplace.push(node);
+                    }
+                }
+            }
+
+            nodesToReplace.forEach(textNode => {
+                const text = textNode.nodeValue || '';
+                const youtubeRegex = /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)[a-zA-Z0-9_-]{11})/g;
+                const parts = text.split(youtubeRegex);
+                const parent = textNode.parentNode;
+                if (!parent) return;
+
+                const fragment = doc.createDocumentFragment();
+                parts.forEach(part => {
+                    if (youtubeRegex.test(part)) {
+                        const videoId = _extractYoutubeId(part);
+                        if (videoId) {
+                            const iframe = doc.createElement('iframe');
+                            iframe.setAttribute('src', `https://www.youtube.com/embed/${videoId}`);
+                            iframe.setAttribute('width', '100%');
+                            iframe.setAttribute('height', '360');
+                            iframe.setAttribute('frameborder', '0');
+                            iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                            iframe.setAttribute('allowfullscreen', 'true');
+                            fragment.appendChild(iframe);
+                        } else {
+                            fragment.appendChild(doc.createTextNode(part));
+                        }
+                    } else {
+                        fragment.appendChild(doc.createTextNode(part));
+                    }
+                });
+                parent.replaceChild(fragment, textNode);
+            });
+
+            return doc.body.innerHTML;
+        } catch (e) {
+            console.error('Error al convertir enlaces de YouTube:', e);
+            return html;
+        }
+    }
+
+    /**
+     * Ayudante para extraer el ID de video de YouTube desde diversas URLs
+     */
+    function _extractYoutubeId(url) {
+        if (!url) return null;
+        try {
+            const urlObj = new URL(url);
+            if (urlObj.hostname.includes('youtube.com')) {
+                const v = urlObj.searchParams.get('v');
+                if (v) return v;
+                if (urlObj.pathname.includes('/embed/')) {
+                    return urlObj.pathname.split('/embed/')[1].split('?')[0];
+                }
+            } else if (urlObj.hostname.includes('youtu.be')) {
+                return urlObj.pathname.slice(1).split('?')[0];
+            }
+        } catch (e) {
+            // Si no es una URL válida, intentar regex simple
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+        return null;
+    }
+
+    window.openResourceLink = function (id, url, isPremium, type = 'book') {
+        if (!url) return;
+        if (window.uiManager) {
+            window.uiManager.registerMaterial(id, url);
+            window.uiManager.unlockResource(id, type, isPremium, `Recurso ${id}`);
+        } else {
+            window.open(url, '_blank');
+        }
+    }
+
+    // Mock function for saving resources (Library integration)
+    async function saveResource(id, btn) {
+        if (!window.LibraryService) {
+            if (window.uiManager) window.uiManager.showToast("El servicio de biblioteca no está disponible o requiere inicio de sesión.", "warning");
+            else alert("El servicio de biblioteca no está disponible o requiere inicio de sesión.");
+            return;
+        }
+        const isSaved = btn.classList.contains('saved');
+        try {
+            if (isSaved) {
+                await window.LibraryService.removeResource(id);
+                btn.classList.remove('saved');
+                btn.innerHTML = '<i class="far fa-bookmark"></i> Guardar a Biblioteca';
+                if (window.uiManager) window.uiManager.showToast("Recurso eliminado de tu biblioteca", "info");
+            } else {
+                await window.LibraryService.saveResource(id);
+                btn.classList.add('saved');
+                btn.innerHTML = '<i class="fas fa-bookmark" style="color:var(--primary-color)"></i> Guardado';
+                if (window.uiManager) window.uiManager.showToast("Recurso guardado en tu biblioteca", "success");
+            }
+        } catch (err) {
+            console.error(err);
+            if (window.uiManager) window.uiManager.showToast("Error al guardar en la biblioteca.", "error");
+        }
+    }
+
+
+
+    // Exponer funciones globales
+    window.openResourceLink = openResourceLink;
+    window.saveResource = saveResource;
+
+});

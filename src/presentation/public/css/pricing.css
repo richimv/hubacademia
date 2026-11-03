@@ -1,0 +1,910 @@
+/* ==========================================================================
+   PRICING PAGE STYLES - Premium Cyber-Minimalist Dark Mode
+   ========================================================================== */
+
+/* 1. Global Setup & Background Glows */
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    font-family: var(--font-main);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 10% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* 2. Container Layout */
+.pricing-container {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 6rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+    text-align: center;
+}
+
+/* 3. Header Section */
+.pricing-header {
+    margin: 0 auto 1rem auto;
+    max-width: 700px;
+}
+
+.pricing-header h1 {
+    font-size: 2.75rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.03em;
+    color: var(--text-main);
+}
+
+.pricing-header p {
+    color: var(--text-muted);
+    font-size: 1.15rem;
+    line-height: 1.6;
+}
+
+.pricing-header p strong {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* 4. Pricing Cards Grid */
+.pricing-cards-container {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    align-items: stretch;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+/* 5. Base Card Styles */
+.plan-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 24px;
+    padding: 3.5rem 2.5rem;
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+    min-width: 300px;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-md);
+}
+
+.plan-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-xl);
+}
+
+/* Basic Plan top border */
+.plan-card:not(.highlighted-plan)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--text-muted);
+    opacity: 0.3;
+}
+
+/* 6. Highlighted Plan (Advanced) */
+.highlighted-plan {
+    border: 1.5px solid var(--primary);
+    background: var(--card-bg);
+    box-shadow: 0 16px 40px var(--primary-glow), var(--shadow-lg);
+}
+
+.highlighted-plan::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+}
+
+.highlighted-plan:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 40px 80px rgba(59, 130, 246, 0.12), 0 40px 80px rgba(0, 0, 0, 0.65);
+}
+
+/* Recommended badge: Minimalist Pill */
+.recommended-badge {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
+    color: white;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 50px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+/* 7. Card Content Elements */
+.plan-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.plan-price {
+    font-size: 3.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.1;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.plan-price span {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 0.25rem;
+}
+
+/* List of benefits */
+.plan-benefits {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    flex-grow: 1; /* Aligns buttons at the bottom */
+    align-self: stretch;
+    text-align: left;
+}
+
+.plan-benefits li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.plan-benefits li i {
+    color: var(--primary-light); /* Sleek light blue check */
+    margin-top: 3px;
+    font-size: 0.95rem;
+    opacity: 0.85;
+}
+
+/* 8. Call to Action Button */
+.btn-pay {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#btn-plan-basic {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+#btn-plan-basic:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+}
+
+#btn-plan-advanced {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.25);
+}
+
+#btn-plan-advanced:hover {
+    background: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 100%);
+    box-shadow: 0 12px 28px rgba(20, 184, 166, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Disabled/Active States styling */
+.btn-pay:disabled,
+.btn-pay.upgrade-btn:disabled {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+    pointer-events: none !important;
+}
+
+/* Upgrade Button (Mejorar a Advanced) */
+.btn-pay.upgrade-btn {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
+    color: white;
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.2);
+}
+
+.btn-pay.upgrade-btn:hover {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent-purple) 100%);
+    box-shadow: 0 12px 28px rgba(139, 92, 246, 0.35);
+    transform: translateY(-2px);
+}
+
+/* 9. Trust Badges */
+.trust-badges {
+    margin-top: 2.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.secure-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.secure-text i {
+    color: var(--primary-light);
+}
+
+.payment-logos {
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.payment-logos:hover {
+    opacity: 0.7;
+}
+
+.payment-logos i {
+    font-size: 1.5rem;
+    color: var(--text-main);
+}
+
+/* 10. Logout Link & Premium Success View */
+.logout-link {
+    margin-top: 2.5rem;
+    display: inline-block;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+    padding-bottom: 2px;
+}
+
+.logout-link:hover {
+    color: var(--text-main);
+    border-bottom-style: solid;
+    border-bottom-color: var(--text-main);
+}
+
+#pricing-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+#premium-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+/* 11. Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(5, 5, 5, 0.92);
+    backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001; /* Higher than main header */
+    color: var(--text-main);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+}
+
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.05);
+    border-left-color: var(--primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 12. Responsiveness & Breakpoints */
+@media (max-width: 768px) {
+    body {
+        padding-top: calc(var(--header-height-mobile) + var(--trial-bar-height)) !important;
+    }
+
+    .pricing-container {
+        padding: 2.5rem 1rem 4rem 1rem;
+        gap: 2rem;
+    }
+
+    .pricing-header h1 {
+        font-size: 2.1rem;
+    }
+
+    .pricing-header p {
+        font-size: 1rem;
+    }
+
+    .pricing-cards-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .plan-card {
+        width: 100%;
+        max-width: 100%;
+        padding: 2.5rem 1.75rem;
+    }
+
+    .plan-price {
+        font-size: 2.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .plan-benefits {
+        margin-bottom: 2rem;
+    }
+
+    .recommended-badge {
+        position: relative;
+        top: auto;
+        right: auto;
+        display: inline-block;
+        margin-bottom: 1rem;
+        width: fit-content;
+    }
+}
+
+/* ==========================================================================
+   ALTERNATIVE YAPE/PLIN PAYMENT STYLES
+   ========================================================================== */
+
+.yape-alternative-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 2.5rem auto 0 auto;
+}
+
+.yape-alt-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    text-align: left;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-sm);
+}
+
+.yape-alt-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+}
+
+.yape-alt-brands {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.brand-logo-img {
+    width: 65px;
+    height: 65px;
+    border-radius: 16px;
+    object-fit: contain;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease;
+}
+
+.brand-logo-img:hover {
+    transform: scale(1.05);
+}
+
+.modal-brand-logo {
+    height: 28px;
+    width: 28px;
+    border-radius: 8px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+.yape-alt-info {
+    flex-grow: 1;
+}
+
+.yape-alt-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.yape-alt-info p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.btn-yape-trigger {
+    background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+}
+
+.btn-yape-trigger:hover {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+}
+
+/* Modal Manual Custom Styling */
+.manual-payment-modal .modal-content {
+    max-width: 500px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-xl);
+    color: var(--text-main);
+}
+
+.modal-intro {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    margin-bottom: 1.15rem;
+    text-align: center;
+}
+
+.payment-tabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    background: var(--bg-tertiary);
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+}
+
+.payment-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.payment-tab:hover:not(.active) {
+    background: var(--surface-hover);
+}
+
+.payment-tab .tab-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.payment-tab .tab-price {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 2px 0;
+}
+
+.payment-tab .tab-duration {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.payment-tab.active {
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(124, 58, 237, 0.35);
+}
+
+.payment-tab.active .tab-title {
+    color: #8b5cf6;
+}
+
+.payment-tab.active .tab-price {
+    color: var(--text-main);
+}
+
+/* ==========================================================================
+   YAPE & PLIN MANUAL PAYMENT MODAL (Dual-Theme & Responsive)
+   ========================================================================== */
+
+.modal-header-wa-icon {
+    color: #25d366;
+    margin-right: 4px;
+}
+
+.yape-card-container {
+    display: flex;
+    justify-content: center;
+    margin: 0.75rem 0 1.15rem 0;
+    width: 100%;
+}
+
+.yape-premium-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 0.75rem 1.25rem;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+[data-theme="dark"] .yape-premium-card {
+    background: linear-gradient(145deg, rgba(124, 58, 237, 0.08) 0%, rgba(15, 23, 42, 0.5) 100%), var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .yape-premium-card {
+    background: linear-gradient(145deg, rgba(124, 58, 237, 0.03) 0%, rgba(241, 245, 249, 0.8) 100%), var(--bg-tertiary);
+    border-color: var(--border-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.yape-card-brands {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.payment-brand-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.45rem 1.15rem;
+    border-radius: 9999px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.payment-brand-pill:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modal-brand-logo {
+    height: 28px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+.payment-brand-pill .brand-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.pill-yape .brand-name {
+    color: #6b21a8;
+}
+
+[data-theme="dark"] .pill-yape .brand-name {
+    color: #c084fc;
+}
+
+.pill-plin .brand-name {
+    color: #0284c7;
+}
+
+[data-theme="dark"] .pill-plin .brand-name {
+    color: #38bdf8;
+}
+
+.brand-divider {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: lowercase;
+}
+
+.payment-instructions {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    text-align: left;
+}
+
+.payment-instructions h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.payment-instructions h4 i {
+    color: var(--primary);
+}
+
+.payment-instructions ol {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    line-height: 1.55;
+}
+
+.payment-instructions ol li strong {
+    color: var(--text-main);
+}
+
+#instruction-amount {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.user-email-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    padding: 8px 14px;
+    border-radius: 12px;
+    margin-top: 0.5rem;
+}
+
+.user-email-indicator span {
+    color: var(--text-main);
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 1.25rem;
+}
+
+.btn-whatsapp-confirm {
+    background: #25d366;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 11px 20px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+}
+
+.btn-whatsapp-confirm:hover {
+    background: #20ba5a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
+    color: #ffffff;
+}
+
+.btn-cancel {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 11px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+    color: var(--text-main);
+}
+
+@media (max-width: 540px) {
+    .manual-payment-modal .modal-content {
+        margin: 0.75rem;
+        padding: 1.25rem;
+        border-radius: 18px;
+    }
+
+    .modal-footer {
+        flex-direction: column-reverse;
+        gap: 0.6rem;
+    }
+
+    .modal-footer .btn-cancel,
+    .modal-footer .btn-whatsapp-confirm {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .payment-tabs {
+        gap: 0.5rem;
+        padding: 4px;
+    }
+
+    .payment-tab {
+        padding: 8px 4px;
+    }
+
+    .payment-tab .tab-price {
+        font-size: 1.15rem;
+    }
+
+    .yape-premium-card {
+        padding: 0.65rem 0.85rem;
+    }
+
+    .payment-brand-pill {
+        padding: 0.45rem 0.95rem;
+    }
+
+    .modal-brand-logo {
+        height: 24px;
+    }
+}
+
+/* Responsividad para Yape Alternative */
+@media (max-width: 768px) {
+    .yape-alt-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 1.5rem;
+        gap: 1.25rem;
+    }
+    
+    .yape-alt-brands {
+        margin-bottom: 0.5rem;
+    }
+    
+    .brand-logo-img {
+        width: 55px;
+        height: 55px;
+        border-radius: 12px;
+    }
+    
+    .btn-yape-trigger {
+        width: 100%;
+        justify-content: center;
+    }
+}
+

@@ -1,0 +1,644 @@
+const SearchService = require('../../domain/services/searchService');
+const AdminService = require('../../domain/services/adminService'); // Importar el nuevo servicio
+const GeminiService = require('../../domain/services/mlService'); // ✅ RENOMBRADO: Para evitar conflictos.
+const mediaController = require('./mediaController'); // ✅ NUEVO: Para subida centralizada a GCS
+const DriveService = require('../../domain/services/driveService'); // ✅ NUEVO: Para extracción de miniaturas
+const fs = require('fs');
+const path = require('path');
+
+class CoursesController {
+    constructor(searchService, adminService) {
+        this.searchService = searchService;
+        this.adminService = adminService;
+
+        // ✅ SOLUCIÓN: Bindeo explícito de todos los métodos para mantener el contexto 'this'.
+        this.getAllCourses = this.getAllCourses.bind(this);
+        this.searchCourses = this.searchCourses.bind(this);
+        this.getCareers = this.getCareers.bind(this);
+        this.getCourses = this.getCourses.bind(this);
+
+        this.getStudents = this.getStudents.bind(this);
+        this.getTopics = this.getTopics.bind(this);
+        this.getBooks = this.getBooks.bind(this);
+        this.getMedicalBooks = this.getMedicalBooks.bind(this); // ✅ NUEVO
+        this.getCourseDescription = this.getCourseDescription.bind(this);
+        // this.getTopicDescription = this.getTopicDescription.bind(this); // ❌ REMOVED: Feature deprecated
+        this.createEntity = this.createEntity.bind(this);
+        this.updateEntity = this.updateEntity.bind(this);
+        this.deleteEntity = this.deleteEntity.bind(this);
+        this.getDataForML = this.getDataForML.bind(this);
+
+        // ✅ FIX: Bind new detail methods
+        this.getCareerById = this.getCareerById.bind(this);
+        this.getCourseById = this.getCourseById.bind(this);
+        this.getTopicById = this.getTopicById.bind(this);
+        this.getResourceById = this.getResourceById.bind(this); // ✅ NUEVO
+    }
+    async getAllCourses(req, res) {
+        // Este método sigue siendo útil para obtener la lista completa sin formato de búsqueda
+        try {
+            const courses = await this.searchService.getAllCourses();
+            res.json(courses);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener los cursos' });
+        }
+    }
+
+    async searchCourses(req, res) {
+        try {
+            const query = req.query.q;
+            if (!query) {
+                return res.status(400).json({ error: 'El parámetro de búsqueda "q" es requerido.' });
+            }
+
+            // ✅ PASAR EL USUARIO AL SERVICIO DE BÚSQUEDA
+            // El servicio de búsqueda ahora orquesta todo: búsqueda, analytics y recomendaciones.
+            const finalResponse = await this.searchService.searchCourses(query, req.user);
+            res.json(finalResponse);
+        } catch (error) {
+            console.error('❌ Controlador Error búsqueda:', error);
+            res.status(500).json({ error: 'Error al buscar cursos' });
+        }
+    }
+
+    async getCareers(req, res) {
+        try {
+            const { domain } = req.query;
+            const careers = await this.adminService.getAll('career', { domain });
+            res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+            res.json(careers);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener las carreras' });
+        }
+    }
+
+    async getCourses(req, res) {
+        try {
+            const { domain } = req.query;
+            const courses = await this.adminService.getAll('course', { domain });
+            res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+            res.json(courses);
+        } catch (error) {
+            if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
+                console.warn('⚠️ Fallo de conexión al obtener cursos: Red inestable.');
+            } else {
+                console.error('Error in getCourses:', error);
+            }
+            res.status(500).json({ error: `Error al obtener los cursos base: ${error.message}` });
+        }
+    }
+
+
+
+    // ✅ NUEVO: Controlador para obtener alumnos.
+    async getStudents(req, res) {
+        try {
+            const students = await this.adminService.getAll('student');
+            res.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+            res.json(students);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener los alumnos' });
+        }
+    }
+
+    async getTopics(req, res) {
+        try {
+            const topics = await this.adminService.getAll('topic');
+            res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+            res.json(topics);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener los temas' });
+        }
+    }
+
+    // ✅ NUEVO: Métodos para obtener entidades por ID (para páginas de detalle)
+
+
+    async getCareerById(req, res) {
+        try {
+            const id = parseInt(req.params.id, 10);
+            const career = await this.adminService.getById('career', id);
+
+            if (!career) return res.status(404).json({ error: 'Carrera no encontrada' });
+
+            // ✅ FIX: Fetch courses related to this career
+            // We use the search service or directly the repository to find courses by career name
+            // Since we have searchService, let's use it or adminService's repo if accessible.
+            // Accessing repo directly via adminService (a bit hacky but efficient for now)
+            const courseRepo = this.adminService._getRepository('course');
+
+            // We need a method to find by career. Using explicit ID search now.
+            const courses = await courseRepo.findByCareerId(career.id);
+
+            career.courses = courses;
+
+            res.json(career);
+        } catch (error) {
+            console.error('Error in getCareerById:', error);
+            res.status(500).json({ error: `Error al obtener la carrera: ${error.message}` });
+        }
+    }
+
+    async getCourseById(req, res) {
+        try {
+            const id = parseInt(req.params.id, 10);
+
+            // 1. Obtener curso con temas y materiales (gracias al nuevo repositorio)
+            const course = await this.adminService.getById('course', id);
+
+            if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
+
+
+
+            res.json(course);
+        } catch (error) {
+            console.error('Error in getCourseById:', error);
+            res.status(500).json({ error: `Error al obtener el curso: ${error.message}` });
+        }
+    }
+
+    async getResourceById(req, res) {
+        try {
+            const id = parseInt(req.params.id, 10);
+            const resource = await this.adminService.getById('book', id);
+            if (!resource) return res.status(404).json({ error: 'Recurso no encontrado' });
+            res.json(resource);
+        } catch (error) {
+            console.error('Error in getResourceById:', error);
+            res.status(500).json({ error: `Error al obtener el recurso: ${error.message}` });
+        }
+    }
+
+    async getTopicById(req, res) {
+        try {
+            const id = parseInt(req.params.id, 10);
+            const topic = await this.adminService.getById('topic', id);
+            if (!topic) return res.status(404).json({ error: 'Tema no encontrado' });
+            res.json(topic);
+        } catch (error) {
+            console.error('Error in getTopicById:', error);
+            res.status(500).json({ error: `Error al obtener el tema: ${error.message}` });
+        }
+    }
+
+    async getBooks(req, res) {
+        try {
+            const { type, domain, includeHidden } = req.query; // ✅ Soporte para filtrado por tipo y dominio
+            const isHiddenIncluded = includeHidden === 'true' && Boolean(req.user && req.user.role === 'admin');
+            const books = await this.adminService.getAll('book', { type, domain, includeHidden: isHiddenIncluded });
+            
+            if (isHiddenIncluded) {
+                res.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+            } else {
+                res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+            }
+            res.json(books);
+        } catch (error) {
+            if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
+                console.warn('⚠️ Fallo de conexión al obtener libros: Red inestable.');
+            } else {
+                console.error('❌ Error al obtener los libros:', error);
+            }
+            res.status(500).json({ message: 'Error al obtener los libros' });
+        }
+    }
+
+    async getMedicalBooks(req, res) {
+        try {
+            const bookRepo = this.adminService._getRepository('book');
+            const areaKeywords = ['Ciencias de la Salud'];
+            const books = await bookRepo.findByArea(areaKeywords, 100);
+            res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+            res.json(books);
+        } catch (error) {
+            console.error('❌ Error al obtener libros de medicina:', error);
+            res.status(500).json({ message: 'Error al obtener libros de medicina' });
+        }
+    }
+
+    async getCourseDescription(req, res) {
+        try {
+            // ✅ CORRECCIÓN: Convertir el ID de string a número.
+            const courseId = parseInt(req.params.id, 10);
+            // Usamos adminService que ya está instanciado y es consistente con getTopicDescription
+            const course = await this.adminService.getById('course', courseId);
+            if (!course) {
+                return res.status(404).json({ error: 'Curso no encontrado' });
+            }
+            // Llamamos al servicio de ML para generar la descripción
+            const description = await GeminiService.generateCourseDescription(course.name);
+            res.json({ description });
+        } catch (error) {
+            res.status(500).json({ error: 'Error al generar la descripción del curso' });
+        }
+    }
+
+    /*
+    async getTopicDescription(req, res) {
+       // ❌ DEPRECATED: Topic pages no longer exist.
+       res.status(404).json({ error: 'Endpoint deprecated' });
+    }
+    */
+
+    /**
+     * ✅ NUEVO: Procesa una URL para detectar si es de Drive y extraer su miniatura de forma persistente.
+     * @param {string} url - La URL del recurso.
+     * @param {string} currentImageUrl - La imagen actual o recién subida manualmente.
+     * @returns {Promise<string|null>} - La nueva URL de la imagen (GCS).
+     */
+    async _handleDriveThumbnail(url, currentImageUrl) {
+        // 1. Si ya se subió una imagen manual en este request, NO sobreescribir.
+        if (currentImageUrl) return currentImageUrl;
+        if (!url) return null;
+ 
+        // 2. Extraer ID de archivo de Drive
+        const fileId = DriveService.extractFileId(url);
+        if (!fileId) return null;
+ 
+        try {
+            console.log(`📡 [Drive] Detectado recurso de Drive (${fileId}). Intentando extraer miniatura...`);
+            const thumbData = await DriveService.downloadThumbnailBuffer(fileId);
+            
+            if (thumbData && thumbData.buffer) {
+                // Persistir en GCS (Optimizado a WebP)
+                const persistentUrl = await mediaController.uploadBuffer(
+                    thumbData.buffer,
+                    `${fileId}.jpg`,
+                    thumbData.mimeType,
+                    'thumbnails'
+                );
+                console.log(`✅ [Drive] Miniatura extraída y persistida: ${persistentUrl}`);
+                return persistentUrl;
+            }
+        } catch (error) {
+            console.warn(`⚠️ [Drive] Error extrayendo miniatura para ${fileId}:`, error.message);
+        }
+        return null;
+    }
+
+    /**
+     * ✅ NUEVO: Extrae todas las rutas de GCS de un bloque de HTML.
+     * Busca el patrón path=xxx en las URLs.
+     */
+    _extractGcsPaths(html) {
+        if (!html || typeof html !== 'string') return [];
+        const paths = [];
+        // ✅ MEJORA: Soporta tanto el parámetro nuevo 'file=' como el legacy 'path='
+        const regex = /(?:file|path)=([^"&>\s]+)/g;
+        let match;
+        while ((match = regex.exec(html)) !== null) {
+            paths.push(match[1]);
+        }
+        return [...new Set(paths)]; // Eliminar duplicados
+    }
+
+    /**
+     * ✅ NUEVO: Compara dos versiones de HTML y elimina las imágenes de GCS 
+     * que estaban en la vieja pero ya no en la nueva (huérfanos).
+     */
+    async _cleanupOrphanedImages(oldHtml, newHtml) {
+        try {
+            const oldPaths = this._extractGcsPaths(oldHtml);
+            const newPaths = this._extractGcsPaths(newHtml);
+
+            // Filtrar caminos que están en old pero NO en new
+            const orphanedPaths = oldPaths.filter(path => !newPaths.includes(path));
+
+            if (orphanedPaths.length > 0) {
+                console.log(`🗑️ Detectados ${orphanedPaths.length} archivos descatalogados en editor. Limpiando GCS...`);
+                for (const gcsPath of orphanedPaths) {
+                    await mediaController.deleteFile(gcsPath);
+                }
+            }
+        } catch (error) {
+            console.error('⚠️ Error en limpieza de imágenes de editor:', error);
+        }
+    }
+
+    /**
+     * ✅ Sanitizador Defensivo Backend:
+     * Extrae imágenes en Base64 pegadas en TinyMCE y las sube a GCS exclusivamente al momento de Guardar.
+     */
+    async _sanitizeHtmlImages(html, folder = 'recursos') {
+        if (!html || typeof html !== 'string') return html;
+
+        const base64ImgRegex = /<img[^>]+src=["'](data:image\/([a-zA-Z0-9+]+);base64,([^"']+))["'][^>]*>/gi;
+        let match;
+        const matches = [];
+        const backendDomain = (process.env.BACKEND_PUBLIC_URL || 'https://tutor-ia-backend.onrender.com').replace(/\/+$/, '');
+
+        while ((match = base64ImgRegex.exec(html)) !== null) {
+            matches.push({
+                fullTag: match[0],
+                dataUri: match[1],
+                format: (match[2] || 'png').toLowerCase(),
+                base64Data: match[3]
+            });
+        }
+
+        if (matches.length === 0) return html;
+
+        console.log(`🖼️ [Sanitizador Backend Recursos] Detectadas ${matches.length} imágenes Base64 en HTML. Convirtiendo a GCS (${folder})...`);
+        let sanitized = html;
+
+        for (let i = 0; i < matches.length; i++) {
+            const item = matches[i];
+            try {
+                const buffer = Buffer.from(item.base64Data, 'base64');
+                const ext = item.format === 'jpeg' ? 'jpg' : item.format;
+                const originalname = `editor_img_${Date.now()}_${i}.${ext}`;
+                const mimetype = `image/${item.format === 'jpg' ? 'jpeg' : item.format}`;
+
+                let location = '';
+                try {
+                    const gcsPath = await mediaController.uploadFile({ buffer, originalname, mimetype }, folder);
+                    location = `${backendDomain}/api/media/gcs?file=${gcsPath}`;
+                } catch (gcsErr) {
+                    console.warn('⚠️ Subida a GCS falló en sanitizador de recursos:', gcsErr.message);
+                    const localDir = path.join(__dirname, '../../presentation/public/assets/recursos');
+                    if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
+                    const localFileName = `${Date.now()}_${originalname}`;
+                    fs.writeFileSync(path.join(localDir, localFileName), buffer);
+                    location = `/assets/recursos/${localFileName}`;
+                }
+
+                sanitized = sanitized.replace(item.dataUri, location);
+                console.log(`🖼️ [Sanitizador Backend Recursos] Imagen convertida a URL: ${location}`);
+            } catch (err) {
+                console.error('❌ Error sanitizando imagen Base64 en recursos:', err);
+            }
+        }
+
+        return sanitized;
+    }
+ 
+    // --- Métodos CRUD Genéricos para el Panel de Administración ---
+
+    async createEntity(req, res, entityType) {
+        try {
+            // ✅ LÓGICA MEJORADA: Si se crea un usuario (alumno/admin), devolver la contraseña temporal.
+            if (['student', 'admin'].includes(entityType)) {
+                return this.createUserEntity(req, res, entityType);
+            }
+
+            // ✅ LÓGICA REHECHA: La creación de una entidad ahora solo se encarga de crearla.
+            // Se ha eliminado por completo la llamada a GeminiService desde aquí, ya que era incorrecta.
+
+            // ✅ MANEJO DE ARCHIVOS: SUBIDA CENTRALIZADA A GCS
+            if (req.file) {
+                const folderMap = {
+                    'book': 'recursos',
+                    'course': 'cursos',
+                    'career': 'carreras',
+                    'resource': 'recursos',
+                    'other': 'recursos'
+                };
+                const subFolder = folderMap[entityType] || 'recursos';
+
+                if (['book', 'course', 'career', 'resource', 'other'].includes(entityType)) {
+                    try {
+                        // Usar el controlador de medios para subir a Google Cloud Storage
+                        req.body.image_url = await mediaController.uploadFile(req.file, subFolder);
+                    } catch (err) {
+                        console.error('❌ Error subiendo a GCS en creación:', err);
+                        // No bloqueamos la creación por una imagen, pero informamos en consola
+                    }
+                }
+            }
+
+            // ✅ CRITICAL BUGFIX: Parsear arrays enviados corre FormData (strings JSON)
+            if (typeof req.body.bookIds === 'string') {
+                try { req.body.bookIds = JSON.parse(req.body.bookIds); } catch (e) { req.body.bookIds = []; }
+            }
+            if (typeof req.body.careerIds === 'string') {
+                try { req.body.careerIds = JSON.parse(req.body.careerIds); } catch (e) { req.body.careerIds = []; }
+            }
+            // ✅ NUEVO: Parsear topicIds (usado para recursos)
+            if (typeof req.body.topicIds === 'string') {
+                try { req.body.topicIds = JSON.parse(req.body.topicIds); } catch (e) { req.body.topicIds = []; }
+            }
+            // ✅ NUEVO: Parsear courseIds (usado para recursos)
+            if (typeof req.body.courseIds === 'string') {
+                try { req.body.courseIds = JSON.parse(req.body.courseIds); } catch (e) { req.body.courseIds = []; }
+            }
+            // ✅ NUEVO: Parsear is_premium (FormData envía strings)
+            if (req.body.is_premium !== undefined) {
+                req.body.is_premium = req.body.is_premium === 'true';
+            }
+            // ✅ NUEVO: Parsear visible (FormData envía strings)
+            if (req.body.visible !== undefined) {
+                req.body.visible = req.body.visible === 'true';
+            }
+            // ✅ NUEVO: Parsear open_directly (FormData envía strings)
+            if (req.body.open_directly !== undefined) {
+                req.body.open_directly = req.body.open_directly === 'true';
+            }
+            
+            // ✅ NUEVO: Fallback para recursos visuales (infografías)
+            // Si no hay URL pero hay imagen, la imagen ES el recurso.
+            if (entityType === 'book' && (!req.body.url || req.body.url.trim() === '')) {
+                if (req.body.image_url) {
+                    req.body.url = req.body.image_url;
+                }
+            }
+ 
+            // ✅ Sanitizar imágenes Base64 pegadas en TinyMCE -> subir a GCS exclusivamente al momento de guardar
+            if (req.body.content_html) {
+                req.body.content_html = await this._sanitizeHtmlImages(req.body.content_html, 'recursos');
+            }
+
+            const newItem = await this.adminService.create(entityType, req.body);
+            res.status(201).json(newItem);
+        } catch (error) {
+            // Si adminService.create falla, se salta directamente a este bloque, evitando la llamada a la IA.
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // ✅ NUEVO: Método específico para manejar la creación de usuarios y la contraseña temporal.
+    async createUserEntity(req, res, role) {
+        try {
+            const newUser = await this.adminService.create(role, req.body);
+            res.status(201).json(newUser);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // ✅ NUEVO: Endpoint para proveer datos consolidados al servicio de ML.
+    async getDataForML(req, res) {
+        try {
+            // Usamos Promise.all para cargar todo en paralelo.
+            const [courses, topics] = await Promise.all([
+                this.adminService.getAll('course'),
+                this.adminService.getAll('topic')
+            ]);
+            res.json({ courses, topics });
+        } catch (error) {
+            console.error('❌ Error al obtener datos para el servicio de ML:', error);
+            res.status(500).json({ error: 'No se pudieron obtener los datos para ML.' });
+        }
+    }
+
+    async updateEntity(req, res, entityType) {
+        try {
+            // ✅ SOLUCIÓN: El ID es un UUID para usuarios (admin/alumnos) pero un número para otras entidades.
+            const entityId = (['student', 'admin'].includes(entityType))
+                ? req.params.id
+                : parseInt(req.params.id, 10);
+
+            // ✅ MANEJO DE ARCHIVOS: SUBIDA CENTRALIZADA A GCS (Update)
+            // ✅ GESTIÓN DE IMÁGENES GCS (si existe archivo o se mandó borrar)
+            const shouldDelete = req.body.deleteImage === 'true' || (req.body.image_url === '' && req.method === 'PUT');
+
+            if (req.file || shouldDelete) {
+                // 1. Obtener item actual para limpieza
+                const oldItem = await this.adminService.getById(entityType, entityId);
+                const currentImg = oldItem?.image_url;
+
+                if (req.file) {
+                    try {
+                        // Borrar antigua si existe
+                        if (currentImg) await mediaController.deleteFile(currentImg);
+                        
+                        // Subir nueva versión a GCS (Auto-optimizada a WebP)
+                        const folderMap = {
+                            'book': 'recursos',
+                            'course': 'cursos',
+                            'career': 'carreras',
+                            'resource': 'recursos'
+                        };
+                        const subFolder = folderMap[entityType] || 'recursos';
+                        req.body.image_url = await mediaController.uploadFile(req.file, subFolder);
+                    } catch (err) {
+                        console.error('❌ Error gestionando imagen GCS en actualización:', err);
+                    }
+                } else if (shouldDelete) {
+                    // CASO: Borrado explícito o flag vacío
+                    if (currentImg) await mediaController.deleteFile(currentImg);
+                    req.body.image_url = null;
+                }
+            }
+
+            // ✅ CRITICAL BUGFIX: Cuando `FormData` envía arrays, los convierte en Strings JSON (e.g. "[1,2]").
+            // Hay que parsearlos de vuelta a Array para que el servicio/ repositorio no falle (Error 500).
+            if (typeof req.body.bookIds === 'string') {
+                try {
+                    req.body.bookIds = JSON.parse(req.body.bookIds);
+                } catch (e) {
+                    console.error('Error parsing bookIds:', e);
+                    req.body.bookIds = []; // Fallback seguro
+                }
+            }
+            if (typeof req.body.careerIds === 'string') {
+                try {
+                    req.body.careerIds = JSON.parse(req.body.careerIds);
+                } catch (e) {
+                    console.error('Error parsing careerIds:', e);
+                    req.body.careerIds = []; // Fallback seguro
+                }
+            }
+            // ✅ NUEVO: Parsear topicIds
+            if (typeof req.body.topicIds === 'string') {
+                try {
+                    req.body.topicIds = JSON.parse(req.body.topicIds);
+                } catch (e) {
+                    console.error('Error parsing topicIds:', e);
+                    req.body.topicIds = []; // Fallback seguro
+                }
+            }
+            // ✅ NUEVO: Parsear courseIds
+            if (typeof req.body.courseIds === 'string') {
+                try {
+                    req.body.courseIds = JSON.parse(req.body.courseIds);
+                } catch (e) {
+                    console.error('Error parsing courseIds:', e);
+                    req.body.courseIds = []; // Fallback seguro
+                }
+            }
+            // ✅ NUEVO: Parsear is_premium (FormData envía strings)
+            if (req.body.is_premium !== undefined) {
+                req.body.is_premium = req.body.is_premium === 'true';
+            }
+            // ✅ NUEVO: Parsear visible (FormData envía strings)
+            if (req.body.visible !== undefined) {
+                req.body.visible = req.body.visible === 'true';
+            }
+            // ✅ NUEVO: Parsear open_directly (FormData envía strings)
+            if (req.body.open_directly !== undefined) {
+                req.body.open_directly = req.body.open_directly === 'true';
+            }
+
+            // ✅ NUEVO: Fallback para recursos visuales (infografías) en UPDATE
+            if (entityType === 'book' && (!req.body.url || req.body.url.trim() === '')) {
+                if (req.body.image_url) {
+                    req.body.url = req.body.image_url;
+                }
+            }
+ 
+            // ✅ NUEVO: EXTRACCIÓN AUTOMÁTICA DE MINIATURA (Drive Update)
+            if (entityType === 'book' && req.body.url) {
+                const driveThumb = await this._handleDriveThumbnail(req.body.url, req.body.image_url);
+                if (driveThumb) req.body.image_url = driveThumb;
+            }
+
+            // --- NUEVO: GESTIÓN DE IMÁGENES DENTRO DEL EDITOR (TinyMCE) ---
+            if (entityType === 'book' || entityType === 'course') {
+                const oldItem = await this.adminService.getById(entityType, entityId);
+                const oldContent = oldItem?.content_html || '';
+
+                // ✅ Sanitizar imágenes Base64 pegadas en TinyMCE -> subir a GCS exclusivamente al momento de guardar
+                if (req.body.content_html) {
+                    req.body.content_html = await this._sanitizeHtmlImages(req.body.content_html, 'recursos');
+                }
+                const newContent = req.body.content_html || '';
+
+                if (oldContent !== newContent) {
+                    // Acción asíncrona (no bloqueante para el Admin) para limpiar huérfanos
+                    this._cleanupOrphanedImages(oldContent, newContent);
+                }
+            }
+ 
+            const updatedItem = await this.adminService.update(entityType, entityId, req.body);
+            res.json(updatedItem);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    async deleteEntity(req, res, entityType) {
+        try {
+            // ✅ SOLUCIÓN: El ID es un UUID para usuarios (admin/alumno) pero un número para otras entidades.
+            const entityId = (['student', 'admin'].includes(entityType))
+                ? req.params.id
+                : parseInt(req.params.id, 10);
+
+            // ✅ CLEANUP: Borrar imagen de GCS si existe
+            const oldItem = await this.adminService.getById(entityType, entityId);
+            if (oldItem) {
+                // 1. Borrar portada (Cover)
+                if (oldItem.image_url) {
+                    try { await mediaController.deleteFile(oldItem.image_url); } 
+                    catch (err) { console.error('Error deleting cover image:', err); }
+                }
+
+                // 2. Borrar todas las imágenes internas del editor (TinyMCE)
+                if (oldItem.content_html) {
+                    try {
+                        const contentPaths = this._extractGcsPaths(oldItem.content_html);
+                        for (const gcsPath of contentPaths) {
+                            await mediaController.deleteFile(gcsPath);
+                        }
+                    } catch (err) { console.error('Error deleting editor images:', err); }
+                }
+            }
+
+            await this.adminService.delete(entityType, entityId);
+            res.status(204).send(); // 204 No Content
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+}
+
+module.exports = CoursesController;

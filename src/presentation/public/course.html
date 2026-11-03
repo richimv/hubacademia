@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curso - Hub Academia</title>
+    <!-- ✅ PÁGINA PRIVADA/DRAFT: Deshabilitar indexación en motores de búsqueda -->
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/theme.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/base.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/header.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/search.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/browse.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/course.css?v=5ca6b7db3040"> <!-- ✅ ADDED: Specific styles for this page -->
+    <link rel="stylesheet" href="/css/chat.css?v=5ca6b7db3040"> <!-- ✅ ADDED: Chatbot Styles -->
+    <link rel="stylesheet" href="/css/components.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/sidebar.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/modal.css?v=5ca6b7db3040"> <!-- ✅ ADDED: Modal system -->
+    <link rel="stylesheet" href="/css/footer.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=5ca6b7db3040"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <script src="/js/config.js?v=5ca6b7db3040"></script>
+    <script src="/js/utils/themeManager.js?v=5ca6b7db3040"></script>
+</head>
+
+<body class="hero-hidden">
+
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Hub Academia</span>
+            </a>
+        </div>
+        <div class="header-nav">
+            
+            <div id="user-session-controls">
+                <span class="loading-user">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sticky Search -->
+    <section class="search-section sticky">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Buscar por curso, temas y libro...">
+            <button id="searchButton" class="btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path
+                        d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                </svg>
+                Buscar
+            </button>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <div id="course-content" class="course-view">
+            <div class="loading-state">Cargando curso...</div>
+        </div>
+    </main>
+
+    <!-- Footer Injection -->
+        <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Plataforma</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="/library" class="footer-link">Mi Biblioteca</a></li>
+                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Soporte</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="/terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto y Ayuda</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/services/networkService.js?v=5ca6b7db3040"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="/js/utils/markdown-renderer.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/authApiService.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/analyticsApiService.js?v=5ca6b7db3040"></script>
+    <script src="/js/sessionManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/uiManager.js?v=5ca6b7db3040"></script> <!-- ✅ NUEVO -->
+    <script src="/js/ui/components.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/confirmationModal.js?v=5ca6b7db3040"></script> <!-- ✅ NUEVO: Modal de confirmación -->
+    <!-- Citation Manager ELIMINADO -->
+
+    <script src="/js/services/libraryService.js?v=5ca6b7db3040"></script> <!-- ✅ NUEVO: Servicio de Estado -->
+    <script src="/js/ui/libraryUI.js?v=5ca6b7db3040"></script> <!-- ✅ NUEVO: UI Binder -->
+    <script src="/js/chat.js?v=5ca6b7db3040"></script> <!-- ✅ ADDED: Chatbot Logic -->
+    <script src="/js/course.js?v=5ca6b7db3040"></script> <!-- Specific JS -->
+    <script src="/js/security.js?v=5ca6b7db3040"></script> <!-- ✅ NUEVO -->
+    <script src="/js/ui/sidebar.js?v=5ca6b7db3040"></script>
+    <script src="/js/app.js?v=5ca6b7db3040"></script> <!-- Main App Logic (Header, etc) -->
+</body>
+
+</html>
+

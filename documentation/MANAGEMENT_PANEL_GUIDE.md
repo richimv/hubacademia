@@ -1,0 +1,205 @@
+# 🛠️ Guía Técnica: Panel de Gestión - Hub Academia
+
+Este documento detalla el funcionamiento técnico, flujos de datos y lógica de negocio de los módulos que componen el Panel de Administración de Hub Academia. Toda la información ha sido auditada directamente del código fuente.
+
+---
+
+## 1. 📊 Dashboard y Análisis de Tendencias
+El Dashboard es el centro de control donde se visualiza la salud de la plataforma.
+
+*   **KPIs de Tráfico:** 
+    *   **Visitas en Vivo:** Rastrea usuarios activos en tiempo real (Socket/Analytics).
+    *   **Visitas Únicas (Hoy):** Cuenta usuarios distintos que han accedido en las últimas 24 horas.
+*   **Ranking de Recursos:** 
+    *   Se calcula mediante el conteo de clics/vistas (`recordView`).
+    *   **Audiencia:** Registra métricas de dos perfiles:
+        1.  **Usuarios Registrados:** Conteo vinculado a su `user_id` para historiales personalizados.
+        2.  **Visitantes (Invitados):** Conteo basado en `session_id` persistente para medir el interés del tráfico orgánico.
+    *   **Alcance:** El ranking de "Top Recursos" diferencia tipos automáticamente (PDFs, Guías, Videos, Libros) permitiendo identificar qué formato genera más engagement.
+*   **IA de Tendencias:** 
+    *   **Funcionamiento Local:** El sistema exporta la base de datos a CSV y ejecuta un script en Python (`run_batch.py`) de forma local para predecir temas en tendencia y libros recomendados.
+    *   **Seguridad:** Toda la data se procesa en el servidor local (`data_dump/`), protegiendo la privacidad del usuario.
+
+---
+
+## 2. 📑 Módulo de Recursos (Multimedia y Documentación)
+El sistema ha evolucionado de una "Biblioteca de Libros" a un repositorio multimedia versátil.
+
+### Tipos de Contenido Soportados:
+1.  **Videos (YouTube/Vimeo):**
+    *   **Detección:** El sistema extrae automáticamente el ID de los enlaces de YouTube.
+    *   **Visualización:** Se abren en un **Modal de Video** personalizado con soporte `autoplay` e interfaz cinematográfica.
+    *   **Interfaz Premium:** Las tarjetas de video cuentan con un diseño distintivo, etiquetas de "Premium" (coroncica) y estados de bloqueo sugerentes (desenfoque ligero) que incitan a la suscripción sin ocultar el valor.
+    *   **Móvil:** Diseño responsivo que optimiza el tamaño del reproductor y asegura que los controles de YouTube (adelantar/retroceder) sean siempre accesibles mediante un "Safe Area" inferior.
+    *   **Tipos de Recursos:** Se clasifican específicamente en *Normas Técnicas*, *Guías de Práctica Clínica*, *Papers/Artículos*, *Libros Históricos*, *Videos Explicativos*, e *Infografías/Otros*.
+3.  **Seguridad y Acceso:**
+    *   **Ofuscación:** Las URLs reales no se exponen en el HTML; se gestionan mediante un registro seguro en `uiManager.js`.
+    *   **Pases (Vidas):** Los recursos marcados como **Premium** descuentan pases a usuarios gratuitos cada vez que se desbloquean.
+    *   **Interceptación Directa (UI):** Para los recursos con página web dedicada (`/resource.html`), el candado Premium actúa directamente al intentar hacer clic en la tarjeta (`components.js`). Si el usuario es visitante o agotó sus vidas, el sistema levanta nativamente el **Modal de Autenticación** o el **Paywall Modal** bloqueando el acceso a la vista dedicada sin consumos de base de datos innecesarios ni filtraciones de links.
+
+### Administración de Recursos:
+*   **Editor Pro (TinyMCE 6):** Migración completa de Quill.js a **TinyMCE 6** (Mini-Word) para la gestión de resúmenes enriquecidos.
+    *   **Tablas de Datos:** Soporte nativo para crear y editar tablas complejas (estilo Excel) con control de celdas, bordes y alineación.
+    *   **Estética Pro:** Selector de colores de fuente/fondo, encabezados jerárquicos y formato de listas avanzadas.
+    *   **Modo Oscuro Editorial:** Configuración `oxide-dark` que garantiza que el texto sea perfectamente legible (blanco) durante el proceso de edición, eliminando el problema del texto invisible.
+    *   **Espacio de Trabajo:** El modal de edición se ha ampliado a **1100px** de ancho y **95vh** de alto para maximizar el área de redacción científica.
+*   **Buscador con Filtro Dual:** El panel `admin.js` ahora incorpora filtrado en tiempo real por el tipo exacto (`book`, `paper`, `guia`, `norma`, `video`, `other`), combinándose instantáneamente con la barra de texto (`admin-search-input`) permitiendo curar catálogos sin latencias de red.
+*   **Mejoras de Visualización UI/UX en Recursos:**
+    *   **Diseño Expandido de Ancho Completo:** La interfaz del panel se ha rediseñado para aprovechar casi todo el ancho de la pantalla, alineándose con la estética general del sitio web y optimizando la distribución espacial de la información.
+    *   **Mini-Imagen de Portada (Mini-thumbnail):** Cada recurso muestra una pequeña previsualización circular/cuadrada en la parte exterior izquierda de la tarjeta, permitiendo validar rápidamente si el recurso cuenta con una imagen asignada en GCS o local.
+    *   **Indicadores Rápidos (Semáforo de Tres Puntos):** Se añadieron indicadores visuales dinámicos en forma de tres puntos de color:
+        *   **Punto Dorado (Premium):** Indica si el recurso es de pago o consume vidas/pases.
+        *   **Punto Verde (Visible):** Indica si el recurso está activo y es visible públicamente para los estudiantes.
+        *   **Punto Azul (Apertura Inmersiva):** Indica si el recurso omite la página de detalles y abre directamente el visor de PDF/contenido.
+
+---
+
+## 3. 🧠 Módulo de Preguntas e IA (Multi-Dominio)
+Es el core académico de la plataforma, diseñado para simular exámenes de alto nivel tanto en **Ciencias de la Salud** (Medicina, Enfermería, Obstetricia) como en **Educación** (Docente Pro).
+
+### 3.1 Soporte de Dominios
+El panel detecta el contexto y ajusta los formularios automáticamente:
+*   **Medicina:** Targets como ENAM, SERUMS, RESIDENTADO. Áreas clínicas (Medicina Interna, Pediatría, etc.).
+*   **Educación:** Targets como NOMBRAMIENTO, ASCENSO, ACCESO A CARGOS. Áreas pedagógicas (Comprensión Lectora, Currículo Nacional, Evaluación Formativa).
+
+### 3.2 Generador RAG (Retrieval-Augmented Generation)
+*   **Fuentes de Medicina:** Bibliografía de élite (Harrison, CTO) y Normas Técnicas MINSA.
+*   **Fuentes de Educación:** Currículo Nacional (CNEB), Marco del Buen Desempeño Docente y Resoluciones Viceministeriales del MINEDU.
+*   **Control de Calidad:** 
+    *   **Anti-duplicidad:** Escaneo de los últimos 25 registros antes de inyectar.
+    *   **Enfoque Constructivista:** Para el dominio educativo, la IA tiene prohibido generar respuestas conductistas o puramente memorísticas.
+*   **Inyección Masiva (3 Botones):**
+    1.  **Importar:** Permite subir archivos Excel/CSV con el campo `domain` definido para clasificar preguntas automáticamente.
+    2.  **Generar IA:** Motor basado en **Gemini 2.5 Flash Lite**. Permite seleccionar el dominio y las áreas de estudio específicas para generar lotes de 5 preguntas de alta fidelidad.
+    3.  **Nueva:** Formulario manual que cambia sus opciones de target y carrera según el dominio seleccionado en tiempo real.
+
+### 3.3 Optimización Masiva de Ingesta y Paginación (Agosto 2026)
+*   **Ingesta por Lotes (Bulk Batch Insert):** `saveBulkQuestionBankAdmin` procesa la carga masiva en bloques de 50 preguntas por instrucción SQL `INSERT INTO question_bank ... VALUES (...)`, reduciendo los viajes de red en un **90%** (de 500 consultas a solo 10).
+*   **Paginación Eficiente:** `getAllQuestions` soporta los parámetros `page` y `limit` para evitar transferencias innecesarias de payloads pesados.
+*   **Índices Compuestos:** Búsquedas optimizadas mediante `idx_question_bank_created_at`, `idx_question_bank_domain_topic_sub` y `idx_question_bank_career`.
+
+### 3.4 Gestión de Casuísticas Agrupadas y Encadenamiento de Preguntas (Agosto 2026)
+*   **Concepto de Casuística (Case Scenario):** Permite agrupar reactivos del examen oficial MINEDU / MINSA donde varias preguntas se presentan de forma consecutiva o comparten un contexto común.
+*   **Enunciado y Título Opcionales con Fallback al Código:** Si el docente no digita un título explícito al crear una casuística, el sistema adopta como título directamente el **código del caso** (`code`), garantizando que nunca se use un fragmento o extracto del enunciado como título.
+*   **Topic Desacoplado ('General'):** Las casuísticas pueden agrupar preguntas pertenecientes a múltiples y diversas áreas temáticas. Por tanto, su columna `topic` se estandariza en `'General'` a nivel de base de datos, API, parser y plantillas descargables de Excel, evitando que un caso herede incorrectamente el tópico restrictivo de una pregunta individual.
+*   **Integración Completa con TinyMCE 6:** El campo de situación del caso cuenta con el editor profesional **TinyMCE** en modo oscuro, permitiendo:
+    1.  **Tablas Visuales:** Creación de tablas complejas y pegado directo desde Microsoft Word o Excel (`Ctrl+V`), eliminando la necesidad de textareas HTML manuales.
+    2.  **Imágenes y Gráficos:** Carga automática y pegado de imágenes en el cuerpo del texto con almacenamiento seguro en Google Cloud Storage (GCS).
+*   **Tabla `case_scenarios` (Seguridad RLS):** Almacena `id`, `code` (único autogenerado si no se ingresa), `title`, `description_text` (opcional con soporte TinyMCE para tablas e imágenes), `image_url`, `domain`, `target`, `topic` (por defecto `'General'`).
+*   **Encadenamiento Visual desde el Panel:**
+    1.  El administrador selecciona 2 o más preguntas desde los checkboxes de la pestaña *Preguntas*.
+    2.  Aparece el botón flotante **"🔗 Encadenar en Caso (# seleccionadas)"**.
+    3.  Se abre el modal `link-case` donde se puede asignar o crear un caso y definir el orden relativo de cada pregunta (`case_order`: 1, 2, 3...).
+    4.  Al guardar, las preguntas quedan vinculadas a `case_id` de forma atómica en una transacción PostgreSQL.
+*   **Clustering Contiguo en Simulacros:** Los simulacros solicitan preguntas en lotes de 10. Si una pregunta pertenece a una casuística, el repositorio agrupa y trae todas sus preguntas hermanas juntas de manera contigua y ordenada, respetando la secuencia del caso.
+
+---
+
+## 4. 🎓 Módulo de Carreras y Cursos
+Gestión de la malla curricular y su relación con el material de estudio.
+
+*   **Carreras:** Clasificadas por Áreas (Salud, Ingeniería, etc.) con portadas personalizadas.
+*   **Cursos:** 
+    *   **Gestor de Unidades:** Permite estructurar el contenido en Unidades (I, II, III).
+    *   **Asociación Inteligente:** Un curso se vincula a múltiples carreras y temas específicos.
+*   **Temas:** Actúan como el "puente" que vincula los cursos con los recursos bibliográficos.
+
+---
+
+## 5. 👥 Módulo de Alumnos
+Administración de la base de usuarios de la plataforma y control administrativo de membresías.
+
+*   **Registro Admin y Autenticación Segura (Google OAuth):** Permite dar de alta alumnos manualmente vinculando su correo electrónico. Dado que la plataforma opera bajo una arquitectura de autenticación exclusiva mediante **Google OAuth**, el estudiante accede de forma instantánea y segura haciendo clic en *"Continuar con Google"*; no se requieren contraseñas locales ni links de reseteo manual.
+*   **Buscador Rápido por Nombre y Correo Electrónico:** La barra de búsqueda (`admin-search-input`) cuenta con placeholder contextual (*"Buscar por nombre o correo..."*) y evalúa en tiempo real `data-name`, `data-email` y el contenido textual para localizar estudiantes instantáneamente sin recarga de página.
+*   **Gestión Manual de Suscripciones (Campos de Plan y Fechas):** Al crear o editar a cualquier estudiante desde el modal del panel, el administrador puede modificar:
+    *   **Nivel de Membresía:** `Gratuito (Free)`, `Plan Básico` o `Plan Avanzado`.
+    *   **Estado de Suscripción:** `Inactivo`, `Activo` o `Expirado`.
+    *   **Fecha de Expiración:** Selector tipo `date` para asignar el término exacto de la membresía.
+*   **Cálculo Dinámico e Interactividad (Frontend):** 
+    *   Al seleccionar **Plan Básico**, el sistema cambia automáticamente el estado a **Activo** y calcula el término sumando exactamente **2 meses** a la fecha actual.
+    *   Al seleccionar **Plan Avanzado**, el sistema cambia automáticamente el estado a **Activo** y calcula el término sumando exactamente **4 meses** a la fecha actual (alineado con la política oficial de tarifas de 4 meses).
+    *   Al seleccionar **Gratuito (Free)**, el sistema cambia automáticamente el estado a **Inactivo / Pending** y borra el campo de fecha de expiración.
+    *   Si se cambia manualmente el estado de suscripción a **Expirado** o **Inactivo/Pending**, el sistema degrada automáticamente el Nivel de Membresía a **Gratuito (Free)** y borra la fecha de expiración.
+*   **Reglas de Consistencia Blindadas (Backend):**
+    *   Como red de seguridad, el backend (`adminService.js`) re-valida y fuerza la integridad de los datos: no se permiten estados inconsistentes (como un plan Premium con estado `pending` o un plan Free con estado `active`).
+    *   Si el tier es Premium y no se proporciona fecha de expiración, el backend la calcula automáticamente (+2 meses para Básico y +4 meses para Avanzado).
+*   **Auditoría Visual (Badges Dinámicos):** Cada tarjeta de alumno en la lista muestra badges distintivos:
+    *   *Plan:* Gris para `FREE`, azul para `BASIC`, morado para `ADVANCED`.
+    *   *Estado:* Verde para `ACTIVE`, rojo para `EXPIRED`, amarillo para `PENDING`.
+    *   *Fecha:* Muestra la fecha exacta formateada en `es-ES` (ej: `📅 Expira: 25/12/2026`).
+*   **Lógica de Fidelización (Reseteo Automático):** Cuando el administrador activa el estado de la suscripción a `'active'`, el backend (`adminService.js`) automáticamente restablece a `0` todas las vidas y cuotas de consumo diario/mensual del estudiante (`usageCount`, `dailyAiUsage`, `dailyRagUsage`, `dailySimulatorUsage`, `monthlyFlashcardsUsage`) e inicializa su última renovación para que inicie su membresía con el pool de recursos libre y limpio.
+
+---
+
+## 6. 🔄 Sincronización Masiva (Google Drive)
+Optimización de la carga de bibliografía y guías clínicas mediante el escaneo de carpetas de Drive.
+
+*   **Funcionamiento:** 
+    *   Permite importar decenas de archivos (PDFs, Videos, Documentos) en un solo paso.
+    *   **Identificador de Carpeta:** Se obtiene de la URL de Drive (ej: `https://drive.google.com/drive/folders/ID_AQUI`).
+    *   **Lógica de Actualización:** Si agregas archivos nuevos a una carpeta ya sincronizada, el sistema los detecta e inserta sin duplicar los existentes (Upsert).
+*   **Controles de Lote Pre-Sincronización (Switches iOS Modernos) 👑👁️⚡:**
+    *   **Acceso Premium:** Configura todo el lote importado como contenido Premium con descuento de pases/vidas para usuarios gratuitos.
+    *   **Visible al Público:** Permite activar o desactivar la visibilidad de todo el lote en los buscadores y catálogos de estudiantes al instante.
+    *   **Apertura Inmersiva:** Si se activa, todos los archivos del lote sincronizado se configurarán para omitir la página de detalles y abrirse instantáneamente al hacer un clic en el visor modal.
+*   **Persistencia de Miniaturas (GCS):** 
+    *   **Generación Automática:** Durante el escaneo, el sistema descarga la miniatura de alta resolución de Drive.
+    *   **Optimización WebP:** La imagen se procesa con Sharp para reducir su peso y se sube permanentemente al Bucket de Google Cloud Storage (`/thumbnails`).
+    *   **Estabilidad:** Al estar guardadas en GCS, las miniaturas ya no dependen de la API de Drive para visualizarse, eliminando errores de carga (404) en el frontend.
+*   **Atribución de Autor:** Permite definir un autor universal (ej: "MINSA", "AMIR") para todo el lote sincronizado.
+
+---
+
+## 7. 🛠️ Reglas de Operación (Resumen Técnico)
+*   **Imágenes:** Portadas y miniaturas se optimizan a WebP y se guardan permanentemente en Google Cloud Storage (GCS) mediante `mediaController.js`. La carpeta local `assets/` del servidor solo almacena portadas y contenedores de la página principal estáticos por defecto (usados como fallback).
+*   **KPI Financiero:** El panel estima ganancias basándose en la suscripción activa (s/ 9.90 mensual).
+*   **Ofuscación de Enlaces:** Implementada para proteger la integridad de los recursos compartidos.
+
+---
+
+## 8. 🗑️ Acciones Masivas y Persistencia de Filtros (Blindaje Arquitectónico Septiembre 2026)
+Para acelerar la curaduría y administración de recursos con máxima seguridad operativa y cero borrado accidental:
+
+*   **Borrado Masivo Blindado (Bulk Delete):**
+    *   **Casillas de Selección:** Cada tarjeta de recurso (en todas las pestañas: Carreras, Cursos, Alumnos, Temas, Recursos, Preguntas) incluye un checkbox `.admin-item-checkbox`.
+    *   **Barra de Acciones Flotante:** Al seleccionar uno o más elementos, aparece la barra inferior `#admin-bulk-actions-bar` con el conteo exacto de elementos seleccionados, botón para **"Seleccionar visibles"**, botón para **"Desmarcar"** y botón para **"Eliminar seleccionados"**.
+    *   **Modal de Confirmación Transparente e Itemizado:** Antes de ejecutar el borrado, el modal lista explícitamente los títulos de los elementos a eliminar (hasta 8 elementos con viñetas + conteo de adicionales restantes), indicando el tipo amigable del recurso y advirtiendo sobre la irreversibilidad y purga de imágenes asociadas.
+    *   **Limpieza de GCS en Cascada:** Al eliminar masivamente recursos o preguntas, el backend purga automáticamente tanto sus archivos de portada/miniatura en el bucket de Google Cloud Storage (GCS) como cualquier imagen embebida dentro de su contenido HTML guardado por TinyMCE.
+*   **Soporte de Selección en Rango Blindado (Shift + Clic sobre Elementos Visibles):**
+    *   La selección con Shift + Clic opera **estrictamente sobre elementos visibles** (`style.display !== 'none'`). Si se filtra la vista (por ejemplo, mostrando solo "Papers"), los elementos ocultos (Normas, Guías, etc.) son omitidos al 100%, garantizando que nunca se seleccionen ni se borren recursos fuera del filtro actual.
+*   **Auto-Reset de Selección ante Cambios de Filtro o Búsqueda:**
+    *   Al escribir en el buscador (`admin-search-input`), cambiar el tipo (`admin-type-filter`), cambiar el dominio (`admin-domain-filter`), alterar el ordenamiento (`tab-sort-select`) o cambiar de pestaña (`switchTab`), se invoca de inmediato `this.clearBulkSelection()` para prevenir selecciones residuales invisibles.
+*   **Filtros Multidominio (Salud y Educación) y Búsqueda Avanzada:**
+    *   **Recursos (`tab-books`):** Selector `.admin-domain-filter` para filtrar concurrentemente por dominio (*Todos*, *Salud / Medicina*, *Educación Docente*), tipo de recurso (*Papers*, *Guías*, *Libros*, etc.) y texto libre. Las tarjetas incorporan badges semánticos de dominio (`Salud` en verde esmeralda `.admin-badge-green`, `Educación` en azul cobalto `.admin-badge-blue`).
+    *   **Preguntas (`tab-questions`):** Filtro de vinculación a casos (*Todas*, *Vinculadas a Caso*, *Preguntas Sueltas/Independientes*) y filtro por dominios/targets.
+    *   **Casos (`tab-cases`):** Filtrado dinámico por dominio y carrera, preservando la búsqueda activa.
+*   **Arquitectura de Cabecera en Dos Filas Responsiva (Cero Colapso UI/UX):**
+    *   **Fila Superior (`.tab-top-row`):** Aloja los selectores de filtro (`.admin-filters-group`) a la izquierda y los botones de acción (`.action-buttons`) a la derecha con margen automático.
+    *   **Fila Inferior (`.tab-search-row`):** Ubica la barra de búsqueda (`.search-bar-container`) a lo ancho completo justo debajo de los botones y filtros, evitando que los controles se aplasten o se quiebren de forma asimétrica al reducir la resolución en PC, tabletas o celulares.
+    *   **Erradicación de Código Muerto:** Eliminación de elementos huérfanos e inactivos (como `#bulk-link-case-btn`).
+
+## 9. 🎨 Sistema Visual Dual-Theme y Badges Semánticos de Alto Contraste (Agosto 2026)
+Para asegurar legibilidad óptima tanto en **Modo Oscuro (Dark Matte)** como en **Modo Claro (Light Slate)**:
+*   **Contraste y Nitidez en Modo Claro:** Se rediseñó el sistema de etiquetas (*pills*) `.admin-badge`, reemplazando colores pastel pálidos por tokens de contraste estricto (azul cobalto `#1d4ed8`, esmeralda `#047857`, índigo profundo `#4338ca`, violeta `#6d28d9`, cian `#0e7490` y carmesí `#b91c1c` en fondo claro; y sus variantes luminosas `#60a5fa`, `#34d399`, `#a5b4fc`, `#c084fc`, `#67e8f9` y `#f87171` en fondo oscuro).
+*   **Diseño Tipográfico Limpio (Sin Sobrecarga de Iconos):** Siguiendo `DESIGN_SYSTEM.md`, se eliminaron iconos innecesarios dentro de cada badge para reducir la fatiga visual.
+*   **Interruptor de Tema Global:** Integración de `#theme-toggle-btn` en el encabezado del panel de administración para alternar entre ambos modos al instante.
+*   **Jerarquía en el Modal de Preguntas:** El bloque de asignación de **Casuística Agrupada / Caso Clínico (Opcional)** se ubica en la parte superior del formulario antes del cuerpo de la pregunta, permitiendo definir primero el contexto padre y el orden del ítem (`case_order`) de manera lógica y natural.
+
+## 10. 🖼️ Arquitectura de Renderizado de Modales y Cero Parpadeo (Flash Eradication)
+*   **Dimensionamiento Estático y Síncrono:** Para eliminar el parpadeo donde el modal se abría brevemente a 500px antes de expandirse a 1100px:
+    *   **CSS Primario (`admin.css`):** `#generic-modal .modal-content` cuenta con `width: 95%; max-width: 1100px; max-height: 92vh;` estático por defecto, asegurando que el primer fotograma de renderizado ya tenga las dimensiones correctas.
+    *   **Ejecución Síncrona (`admin.js`):** El ajuste responsivo por JavaScript (`window.innerWidth <= 768`) se calcula y asigna sincrónicamente de forma inmediata **antes** de conmutar `this.genericModal.style.display = 'flex'`, erradicando por completo el uso de `setTimeout` asíncrono para el tamaño de ventana modal.
+
+## 11. 🔄 Sincronización Masiva de Google Drive con Temas y Recursos de Referencia (Septiembre 2026)
+*   **Asignación Masiva de Temas en Modal Drive Sync:**
+    *   El modal de importación de Google Drive (`case 'drive-sync'`) integra nativamente la lista de selección múltiple `Temas / Categorías Asociadas` (`generic-topics`).
+    *   Al ejecutar la sincronización, los IDs de temas seleccionados (`topicIds`) se transmiten al backend (`POST /api/admin/drive/sync-folder`) y se persisten de forma atómica e idempotente en la tabla relacional `topic_resources (resource_id, topic_id) VALUES (...) ON CONFLICT DO NOTHING`.
+    *   Tanto la creación como la actualización de recursos desde Drive invalidan de inmediato la caché en memoria del catálogo (`BookRepository.clearCache()`), reflejando las nuevas categorías instantáneamente.
+*   **Pestaña de Temas: "Recursos de Referencia" y Orden Cronológico:**
+    *   En el modal de creación y edición de temas (`case 'topic'`), la lista desplegable ha sido renombrada a **"Recursos de Referencia"** (sustituyendo "Libros de Referencia").
+    *   Los recursos en dicha lista se ordenan cronológicamente en orden descendente por fecha de modificación (`updated_at`), fecha de creación (`created_at`) o ID (`b.id - a.id`), asegurando que los materiales subidos o editados recientemente aparezcan en primer lugar para facilitar su asignación.
+
+---
+> [!IMPORTANT]
+> Esta guía ha sido verificada contra el código fuente al 11 de septiembre de 2026. Toda la arquitectura se mantiene desacoplada, modular y validada en la suite completa de 57 tests unitarios (477 tests pasando al 100%).
+

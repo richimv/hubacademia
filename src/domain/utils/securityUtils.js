@@ -1,0 +1,170 @@
+/**
+ * Hub Academia - Utilidades de Seguridad y Sanitización
+ * Protege contra SQL Injection en consultas manuales y Prompt Injections en la IA.
+ */
+
+// Límite de longitud por tipo de input para prevenir DoS y payloads masivos
+const LIMITS = {
+    WORD: 80,
+    TOPIC: 150,
+    SHORT_TEXT: 500,
+    LONG_TEXT: 2000,
+    CONTEXT_TEXT: 12000
+};
+
+/**
+ * Sanitiza una cadena de texto para enviarla de forma segura a los modelos de IA.
+ * Remueve caracteres de control, limita longitud y mitiga directivas de jailbreak/inyección.
+ */
+function sanitizeInputForAI(text, maxLength = LIMITS.CONTEXT_TEXT) {
+    if (!text || typeof text !== 'string') return '';
+    
+    // Limitar longitud
+    let sanitized = text.substring(0, maxLength).trim();
+    
+    // Eliminar posibles etiquetas HTML/Script
+    sanitized = sanitized.replace(/<[^>]*>/gi, '');
+    
+    // Neutralizar intentos de Prompt Injection comunes (OWASP LLM01 / LLM02)
+    const jailbreakPatterns = [
+        /ignore\s+(all\s+)?(previous\s+)?instructions/gi,
+        /olvida\s+las\s+instrucciones\s+(anteriores)?/gi,
+        /system\s+instruction/gi,
+        /you\s+are\s+now\s+a/gi,
+        /act\s+as\s+a/gi,
+        /eres\s+ahora\s+un/gi,
+        /nueva\s+instrucción/gi,
+        /ignora\s+las\s+reglas/gi,
+        /developer\s+mode/gi,
+        /dan\s+mode/gi,
+        /jailbreak/gi,
+        /reveal\s+(your\s+)?(system\s+)?prompt/gi,
+        /muestra\s+(tu\s+)?prompt\s+del\s+sistema/gi,
+        /bypass\s+(the\s+)?filter/gi,
+        /simula\s+que\s+no\s+tienes\s+restricciones/gi,
+        /disregard\s+(all\s+)?instructions/gi
+    ];
+    
+    jailbreakPatterns.forEach(pattern => {
+        sanitized = sanitized.replace(pattern, '[REMOVED_SUSPICIOUS_DIRECTIVE]');
+    });
+    
+    return sanitized;
+}
+
+/**
+ * Valida si un objeto de estadísticas para diagnóstico de IA es legítimo y seguro.
+ */
+function validateDiagnosticStats(stats) {
+    if (!stats || typeof stats !== 'object') {
+        throw new Error('INVALID_STATS_OBJECT');
+    }
+    
+    const avg_score = parseFloat(stats.avg_score);
+    const accuracy = parseFloat(stats.accuracy);
+    const mastered_cards = parseInt(stats.mastered_cards, 10);
+    
+    if (isNaN(avg_score) || isNaN(accuracy) || isNaN(mastered_cards)) {
+        throw new Error('INVALID_STATS_NUMBERS');
+    }
+    
+    // Validar y sanitizar radar_data (Soporta Array de objetos o Mapa de pares clave-valor)
+    let cleanRadarData;
+    if (Array.isArray(stats.radar_data)) {
+        cleanRadarData = stats.radar_data
+            .map(item => {
+                if (!item || typeof item !== 'object') return null;
+                const subject = typeof item.subject === 'string'
+                    ? item.subject.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').replace(/<[^>]*>/gi, '').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_,]/g, '').replace(/\s+/g, ' ').substring(0, 70).trim()
+                    : '';
+                const itemAcc = parseFloat(item.accuracy || 0);
+                const itemTotal = parseInt(item.total || 0, 10);
+                const itemCorrect = parseInt(item.correct || 0, 10);
+                if (!subject) return null;
+                return {
+                    subject,
+                    accuracy: isNaN(itemAcc) ? 0 : Math.min(Math.max(itemAcc, 0), 100),
+                    correct: isNaN(itemCorrect) ? 0 : Math.max(itemCorrect, 0),
+                    total: isNaN(itemTotal) ? 0 : Math.max(itemTotal, 0)
+                };
+            })
+            .filter(Boolean);
+    } else if (stats.radar_data && typeof stats.radar_data === 'object') {
+        cleanRadarData = {};
+        for (const [key, val] of Object.entries(stats.radar_data)) {
+            // Clave: solo letras, números, acentos y espacios, máx 60 carac
+            const cleanKey = key.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').replace(/<[^>]*>/gi, '').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-_,]/g, '').replace(/\s+/g, ' ').substring(0, 60).trim();
+            const cleanVal = parseFloat(val);
+            if (cleanKey && !isNaN(cleanVal)) {
+                cleanRadarData[cleanKey] = Math.min(Math.max(cleanVal, 0), 100);
+            }
+        }
+    } else {
+        cleanRadarData = [];
+    }
+    
+    return {
+        avg_score: Math.min(Math.max(avg_score, 0), 20), // 0 a 20
+        accuracy: Math.min(Math.max(accuracy, 0), 100), // 0 to 100
+        mastered_cards: Math.max(mastered_cards, 0),
+        radar_data: cleanRadarData,
+        targetScale: stats.targetScale ? Math.min(Math.max(parseInt(stats.targetScale, 10) || 2, 2), 8) : undefined,
+        target: typeof stats.target === 'string' ? stats.target.replace(/[^a-zA-Z0-9_\-\s]/g, '').substring(0, 30).trim() : undefined,
+        minedu_score: (stats.minedu_score !== undefined && !isNaN(parseFloat(stats.minedu_score))) ? Math.min(Math.max(parseFloat(stats.minedu_score), 0), 90) : undefined
+    };
+}
+
+/**
+ * Valida nombres de tabla y columnas en la exportación a CSV contra una lista blanca (White-list).
+ */
+const ALLOWED_EXPORT_TABLES = ['search_history', 'courses', 'resources'];
+const ALLOWED_EXPORT_COLUMNS = ['query, created_at', 'id, name', 'id, title', '*'];
+
+function validateCSVExportParams(tableName, columns = '*') {
+    if (!ALLOWED_EXPORT_TABLES.includes(tableName)) {
+        throw new Error(`Unauthorized export table: ${tableName}`);
+    }
+    if (!ALLOWED_EXPORT_COLUMNS.includes(columns.trim())) {
+        throw new Error(`Unauthorized export columns: ${columns}`);
+    }
+    return true;
+}
+
+/**
+ * Sanitiza una celda para exportación segura a CSV/Excel (Mitigación CWE-1236: Formula Injection).
+ * Si la celda inicia con =, +, -, @, \t, \r, antepone un apóstrofo (') para forzar interpretación como texto.
+ */
+function sanitizeCSVCell(val) {
+    if (val === null || val === undefined) return '';
+    if (val instanceof Date) return val.toISOString();
+    let str = String(val);
+    if (/^[=+\-@\t\r]/.test(str)) {
+        str = "'" + str;
+    }
+    return str.replace(/"/g, '""').replace(/\n/g, ' ');
+}
+
+/**
+ * Lista blanca de columnas de consumo dinámico permitidas para actualización en DB (OWASP A03).
+ */
+const ALLOWED_USAGE_COLUMNS = new Set([
+    'daily_ai_usage',
+    'usage_count',
+    'monthly_flashcards_usage',
+    'daily_import_usage',
+    'daily_simulator_usage'
+]);
+
+function isValidUsageColumn(column) {
+    return typeof column === 'string' && ALLOWED_USAGE_COLUMNS.has(column.trim());
+}
+
+module.exports = {
+    LIMITS,
+    ALLOWED_USAGE_COLUMNS,
+    sanitizeInputForAI,
+    validateDiagnosticStats,
+    validateCSVExportParams,
+    sanitizeCSVCell,
+    isValidUsageColumn
+};

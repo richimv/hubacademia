@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Exámenes MINEDU y MINSA con IA | Hub Academia</title>
+    
+    <!-- ✅ Metadatos SEO Primarios -->
+    <meta name="description" content="Prepárate para Ascenso Magisterial, Nombramiento Docente, SERUMS y ENAM con simulacros interactivos, cronómetro oficial y retroalimentación sustentada por IA.">
+    <meta name="keywords" content="simulador ascenso magisterial minedu, simulacro nombramiento docente 2026, simulador serums medicina enfermeria, examen enam banco de preguntas, casuisticas minedu resueltas">
+    <meta name="author" content="Hub Academia">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <link rel="canonical" href="https://www.hubacademia.com/simulator-dashboard">
+
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/assets/logo.png">
+
+    <!-- ✅ Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Hub Academia">
+    <meta property="og:title" content="Simulador de Exámenes MINEDU y MINSA con IA | Hub Academia">
+    <meta property="og:description" content="Entrena con simulacros cronometrados, casuísticas oficiales y tutoría basada en evidencia para evaluaciones docentes y médicas en Perú.">
+    <meta property="og:url" content="https://www.hubacademia.com/simulator-dashboard">
+    <meta property="og:image" content="https://www.hubacademia.com/assets/logo.png">
+    <meta property="og:locale" content="es_PE">
+
+    <!-- ✅ Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Simulador de Exámenes MINEDU y MINSA con IA | Hub Academia">
+    <meta name="twitter:description" content="Simulacros oficiales interactivos para Nombramiento Docente, Ascenso Magisterial, SERUMS y ENAM.">
+    <meta name="twitter:image" content="https://www.hubacademia.com/assets/logo.png">
+
+    <!-- ✅ Preconnect y Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/theme.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/base.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/header.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/footer.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/dashboard.css?v=5ca6b7db3040">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/css/modal.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/sidebar.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/components.css?v=5ca6b7db3040">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=5ca6b7db3040"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link rel="stylesheet" href="/css/quiz.css?v=5ca6b7db3040">
+    <script src="/js/config.js?v=5ca6b7db3040"></script>
+    <script src="/js/utils/themeManager.js?v=5ca6b7db3040"></script>
+
+    <!-- ✅ Schema.org / JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalApplication",
+      "name": "Panel de Simuladores Oficiales Hub Academia",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "url": "https://www.hubacademia.com/simulator-dashboard",
+      "description": "Simuladores cronometrados oficiales alineados a los marcos de evaluación del MINEDU y MINSA con sustento normativo y pedagógico.",
+      "provider": {
+        "@type": "EducationalOrganization",
+        "name": "Hub Academia",
+        "url": "https://www.hubacademia.com"
+      }
+    }
+    </script>
+</head>
+
+<body class="hero-hidden">
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-start">
+            <a href="/" class="logo">
+                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
+                <span class="logo-text">Hub Academia</span>
+            </a>
+        </div>
+        <div class="header-nav">
+
+            <div id="user-session-controls">
+                <span class="loading-user">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+
+        <!-- Loading -->
+        <div id="loading" style="text-align: center; padding: 4rem;">
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #3b82f6;"></i>
+        </div>
+        <!-- Content -->
+        <div id="dashboard-content" style="display: none;">
+
+            <!-- Context Hero Card -->
+            <section class="context-hero-card">
+                <div class="context-hero-glow" id="bannerGlow"></div>
+                <div class="context-hero-content">
+                    <div class="context-hero-info">
+                        <div class="context-hero-tag" id="areaCategoryTag">
+                            <i class="fas fa-layer-group"></i>
+                            <span id="ctx-tag-label">Área Profesional Activa</span>
+                        </div>
+                        <h1 id="ctx-title" class="context-hero-title">Ciencias de la Salud</h1>
+                        <p id="ctx-subtitle" class="context-hero-subtitle">
+                            Entrenamiento técnico adaptado a especificaciones sanitarias oficiales MINSA & ENCAPS.
+                        </p>
+                    </div>
+
+                    <div class="context-hero-actions">
+                        <!-- Active config summary -->
+                        <div id="active-config-summary" class="context-config-summary">
+                            <!-- Filled via JS -->
+                        </div>
+                        <div class="context-hero-buttons-row">
+                            <button id="btn-show-guide" class="btn-guide-hero" data-tooltip="Ver guía rápida del simulador" aria-label="Guía rápida">
+                                <i class="fas fa-circle-question"></i>
+                                <span>Guía</span>
+                            </button>
+                            <button id="btn-start-config" class="btn-config-hero">
+                                <i class="fas fa-sliders-h"></i>
+                                <span>Configurar Examen</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div id="sim-dashboard-sections">
+
+                <!-- 1. Training Modes -->
+                <section class="dashboard-section">
+                    <div class="section-header-row">
+                        <div>
+                            <h3 class="section-title">
+                                <i class="fas fa-bolt-lightning" style="color: #f59e0b;"></i> Modos de Entrenamiento
+                            </h3>
+                            <p class="section-subtitle">Selecciona el tipo de simulación para iniciar la prueba interactiva</p>
+                        </div>
+                    </div>
+
+                    <div class="modes-grid">
+                        <!-- Simulacro Rápido -->
+                        <a href="#" id="btn-mode-arcade" class="mode-card mode-card--arcade">
+                            <div class="mode-card-top">
+                                <div class="mode-icon-badge"><i class="fas fa-bolt-lightning"></i></div>
+                                <span class="mode-q-badge">10 Preguntas</span>
+                            </div>
+                            <div class="mode-card-body">
+                                <h4 class="mode-title">Simulacro Rápido</h4>
+                                <p class="mode-desc">Formato corto para repasos dinámicos. Ideal para medir agilidad y retención diaria de conceptos clave.</p>
+                            </div>
+                            <div class="mode-card-footer">
+                                <span class="mode-cta">Iniciar simulacro <i class="fas fa-arrow-right"></i></span>
+                            </div>
+                        </a>
+
+                        <!-- Modo Estudio -->
+                        <a href="#" id="btn-mode-study" class="mode-card mode-card--study">
+                            <div class="mode-card-top">
+                                <div class="mode-icon-badge"><i class="fas fa-book-open-reader"></i></div>
+                                <span class="mode-q-badge">20 Preguntas</span>
+                            </div>
+                            <div class="mode-card-body">
+                                <h4 class="mode-title">Modo Estudio</h4>
+                                <p class="mode-desc">Enfocado en el aprendizaje. Cada reactivo cuenta con sustento y justificación técnica/pedagógica detallada.</p>
+                            </div>
+                            <div class="mode-card-footer">
+                                <span class="mode-cta">Iniciar modo estudio <i class="fas fa-arrow-right"></i></span>
+                            </div>
+                        </a>
+
+                        <!-- Simulacro Real -->
+                        <a href="#" id="btn-mode-real" class="mode-card mode-card--real">
+                            <div class="mode-card-top">
+                                <div class="mode-icon-badge"><i class="fas fa-stopwatch"></i></div>
+                                <span class="mode-q-badge" id="real-questions-count-badge">100 Preguntas</span>
+                            </div>
+                            <div class="mode-card-body">
+                                <h4 class="mode-title">Simulacro Real (Oficial)</h4>
+                                <p class="mode-desc" id="real-mode-desc-text">Formato intensivo con número exacto de preguntas y temporizador estricto idéntico al examen oficial.</p>
+                            </div>
+                            <div class="mode-card-footer">
+                                <span class="mode-cta">Iniciar simulacro real <i class="fas fa-arrow-right"></i></span>
+                            </div>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- 2. KPIs & Analítica -->
+                <section class="dashboard-section">
+                    <div class="section-header-row" style="flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h3 class="section-title">
+                                <i class="fas fa-chart-line" id="analytics-section-icon" style="color: var(--primary);"></i> Panel de Control de Analítica
+                            </h3>
+                            <p class="section-subtitle">Métricas consolidadas de desempeño y volumen de práctica</p>
+                        </div>
+
+                        <!-- Filter Controls -->
+                        <div class="kpi-filters-container">
+                            <!-- Filter by Mode -->
+                            <div class="kpi-tabs-group" role="group" aria-label="Filtrar por modo de examen">
+                                <span class="kpi-filter-label"><i class="fas fa-filter"></i> Modo:</span>
+                                <button class="kpi-mode-tab active" data-mode="all">Todos</button>
+                                <button class="kpi-mode-tab" data-mode="10">Rápido (10q)</button>
+                                <button class="kpi-mode-tab" data-mode="20">Estudio (20q)</button>
+                                <button class="kpi-mode-tab" data-mode="real">Simulacro Real</button>
+                            </div>
+
+                            <!-- Filter by Time -->
+                            <div class="kpi-tabs-group" role="group" aria-label="Filtrar por rango de tiempo">
+                                <span class="kpi-filter-label"><i class="far fa-calendar"></i> Tiempo:</span>
+                                <button class="kpi-time-tab active" data-days="all">Histórico</button>
+                                <button class="kpi-time-tab" data-days="30">30 Días</button>
+                                <button class="kpi-time-tab" data-days="7">7 Días</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Overview Grid -->
+                    <div class="stats-overview">
+                        <!-- KPI 1: Score -->
+                        <div class="stat-box stat-box--score">
+                            <div class="stat-box-header">
+                                <span class="stat-label">Puntuación Promedio</span>
+                            </div>
+                            <div class="stat-value-row">
+                                <span class="stat-value" id="stat-score">--</span>
+                                <span class="stat-unit">/ 20</span>
+                            </div>
+                            <div class="stat-sub" id="stat-score-sub">Basado en tus últimos simulacros</div>
+                            <div class="stat-progress-track">
+                                <div class="stat-progress-bar stat-progress-bar--score" id="kpi-score-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- KPI 2: Accuracy -->
+                        <div class="stat-box stat-box--accuracy">
+                            <div class="stat-box-header">
+                                <span class="stat-label">Precisión Global</span>
+                            </div>
+                            <div class="stat-value-row">
+                                <span class="stat-value" id="stat-accuracy">--%</span>
+                                <span class="stat-unit">efectividad</span>
+                            </div>
+                            <div class="stat-sub">De todas tus respuestas</div>
+                            <div class="stat-progress-track">
+                                <div class="stat-progress-bar stat-progress-bar--accuracy" id="kpi-accuracy-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- KPI 3: Counts -->
+                        <div class="stat-box stat-box--counts">
+                            <div class="stat-box-header">
+                                <span class="stat-label">Volumen de Respuestas</span>
+                            </div>
+                            <div class="stat-value-row">
+                                <span class="stat-value" id="stat-counts-total">--</span>
+                                <span class="stat-unit">reactivos resueltos</span>
+                            </div>
+                            <div class="stat-sub stat-counts-breakdown" id="stat-counts-text">
+                                <span class="count-pill count-pill--correct" id="kpi-correct-pill"><i class="fas fa-check"></i> -- C</span>
+                                <span class="count-pill count-pill--incorrect" id="kpi-incorrect-pill"><i class="fas fa-xmark"></i> -- I</span>
+                            </div>
+                            <div class="stat-progress-track stat-progress-track--segmented">
+                                <div class="stat-progress-bar stat-progress-bar--correct" id="kpi-correct-bar" style="width: 0%;"></div>
+                                <div class="stat-progress-bar stat-progress-bar--incorrect" id="kpi-incorrect-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Análisis Visual y Diagnóstico -->
+                <section class="dashboard-section">
+                    <div class="section-header-row">
+                        <div>
+                            <h3 class="section-title">
+                                <i class="fas fa-chart-pie" style="color: #10b981;"></i> Análisis Visual y Diagnóstico
+                            </h3>
+                            <p class="section-subtitle">Desglose gráfico de tendencia, volumen por temas y porcentaje de dominio por disciplina</p>
+                        </div>
+                    </div>
+
+                    <div class="detailed-row" id="evolution-doughnut-row">
+                        <!-- Evolution Line Chart -->
+                        <div class="detail-card detail-card--evolution">
+                            <div class="detail-card-header">
+                                <div>
+                                    <h4 class="detail-card-title">
+                                        <i class="fas fa-arrow-trend-up" style="color: var(--primary);"></i> Evolución Cronológica de Puntajes
+                                    </h4>
+                                    <p class="detail-card-subtitle">Curva de aprendizaje comparando calificaciones (0-20) por sesión</p>
+                                </div>
+                                <div class="kpi-info-container">
+                                    <button type="button" class="kpi-info-btn" aria-label="Información del KPI">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                    <div class="kpi-tooltip-content">
+                                        <h5 id="evolution-tooltip-title">Tendencia Histórica</h5>
+                                        <p id="evolution-tooltip-desc">Muestra la evolución de tus puntuaciones a lo largo del tiempo para medir tu curva de aprendizaje.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-canvas-container">
+                                <div id="evolution-empty-state" class="chart-empty-state">
+                                    <div class="chart-empty-icon"><i class="fas fa-chart-line"></i></div>
+                                    <div class="chart-empty-text">
+                                        <div class="chart-empty-title">Sin datos aún</div>
+                                        <div class="chart-empty-desc">Completa tu primer simulacro para ver tu curva de aprendizaje.</div>
+                                    </div>
+                                </div>
+                                <canvas id="evolutionChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Doughnut Distribution Chart -->
+                        <div class="detail-card detail-card--distribution" id="doughnut-chart-card">
+                            <div class="detail-card-header">
+                                <div>
+                                    <h4 class="detail-card-title" id="doughnut-chart-title">
+                                        <i class="fas fa-chart-pie" style="color: #8b5cf6;"></i> Distribución por Áreas
+                                    </h4>
+                                    <p class="detail-card-subtitle">Proporción de volumen de preguntas practicadas</p>
+                                </div>
+                                <div class="kpi-info-container">
+                                    <button type="button" class="kpi-info-btn" aria-label="Información del KPI">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                    <div class="kpi-tooltip-content">
+                                        <h5 id="doughnut-tooltip-title">Distribución por Áreas</h5>
+                                        <p id="doughnut-tooltip-desc">Muestra la proporción de preguntas respondidas por cada área o tema de estudio.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="doughnut-canvas-container">
+                                <div id="doughnut-empty-state" class="chart-empty-state">
+                                    <div class="chart-empty-icon" style="color: #8b5cf6; background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.2);"><i class="fas fa-chart-pie"></i></div>
+                                    <div class="chart-empty-text">
+                                        <div class="chart-empty-title">Sin respuestas aún</div>
+                                        <div id="doughnut-empty-desc" class="chart-empty-desc">Completa simulacros para ver tu distribución por áreas.</div>
+                                    </div>
+                                </div>
+                                <div id="doughnut-wrapper" style="display:none;width:150px;height:150px;position:relative;">
+                                    <canvas id="topicDoughnutChart"></canvas>
+                                </div>
+                                <div id="doughnut-legend" class="doughnut-custom-legend"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Domain Mastery Bars Card -->
+                    <div class="detailed-row" style="grid-template-columns: 1fr; margin-top: 1.25rem;">
+                        <div class="detail-card detail-card--mastery">
+                            <div class="detail-card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+                                <div>
+                                    <h4 class="detail-card-title" id="bar-chart-title">
+                                        <i class="fas fa-chart-simple" style="color: #f59e0b;"></i> Dominio por Áreas (% Efectividad)
+                                    </h4>
+                                    <p class="detail-card-subtitle" id="bar-chart-sub">Desglose de porcentaje de aciertos por disciplina o bloque temático</p>
+                                </div>
+                                <div class="mastery-legend-tags">
+                                    <span class="mastery-tag mastery-tag--high"><span class="dot"></span> Alto (&gt;75%)</span>
+                                    <span class="mastery-tag mastery-tag--mid"><span class="dot"></span> Medio (50-74%)</span>
+                                    <span class="mastery-tag mastery-tag--low"><span class="dot"></span> Crítico (&lt;50%)</span>
+                                    <div class="kpi-info-container">
+                                        <button type="button" class="kpi-info-btn" aria-label="Información del KPI">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        <div class="kpi-tooltip-content">
+                                            <h5 id="bar-tooltip-title">Dominio Académico</h5>
+                                            <p id="bar-tooltip-desc">Muestra tu porcentaje de acierto en cada especialidad o área de estudio.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="bar-chart-container" style="min-height:200px;position:relative;margin-top:0.75rem;">
+                                <div id="radar-empty-state" class="chart-empty-state" style="min-height: 180px;">
+                                    <div class="chart-empty-icon" style="color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.2);"><i class="fas fa-tasks"></i></div>
+                                    <div class="chart-empty-text">
+                                        <div class="chart-empty-title">Sin datos por área</div>
+                                        <div id="bar-chart-empty-desc" class="chart-empty-desc">Completa simulacros variados para ver tu dominio por especialidad.</div>
+                                    </div>
+                                </div>
+                                <div id="native-bars-container" style="display:none;flex-direction:column;gap:1.25rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Diagnostic Card -->
+                    <div class="detailed-row" style="grid-template-columns: 1fr; margin-top: 1.25rem;">
+                        <div class="detail-card ai-diagnosis-card">
+                            <div class="ai-ambient-glow"></div>
+                            <div class="ai-card-header">
+                                <div class="ai-header-icon-box">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <div class="ai-header-title-box">
+                                    <h4 class="ai-card-title">
+                                        Diagnóstico Inteligente por IA (Patrones de Error)
+                                        <span class="ai-badge-pill">Advanced IA</span>
+                                    </h4>
+                                    <p class="ai-card-subtitle">Algoritmo de detección de brechas cognitivas, sesgos de razonamiento y recomendación personalizada.</p>
+                                </div>
+                            </div>
+
+                            <!-- Initial State -->
+                            <div id="ai-initial-state" class="ai-state-box ai-state-box--initial">
+                                <div class="ai-initial-icon"><i class="fas fa-robot"></i></div>
+                                <h5 class="ai-initial-heading">Análisis Inteligente Disponible</h5>
+                                <p class="ai-initial-desc">
+                                    Haz clic en "Extraer Insights IA" para procesar tu matriz histórica de respuestas, detectar temas con sesgo de error y obtener un plan de acción sugerido.
+                                </p>
+                                <button id="btn-analyze-ai" class="btn-ai-action">
+                                    <i class="fas fa-wand-magic-sparkles"></i>
+                                    <span>Extraer Insights IA</span>
+                                </button>
+                            </div>
+
+                            <!-- Loading State -->
+                            <div id="ai-loading-state" class="ai-state-box ai-state-box--loading" style="display:none;">
+                                <div class="ai-loading-spinner-box">
+                                    <i class="fas fa-circle-notch fa-spin"></i>
+                                    <i class="fas fa-microchip ai-chip-inner"></i>
+                                </div>
+                                <h5 class="ai-loading-title">Procesando matrices de respuesta...</h5>
+                                <p class="ai-loading-desc">Correlacionando errores con literatura oficial y normas técnicas.</p>
+                            </div>
+
+                            <!-- Results State -->
+                            <div id="ai-results-state" class="ai-state-box ai-state-box--results" style="display:none;">
+                                <!-- Readiness Index Banner -->
+                                <div id="ai-readiness-banner" class="ai-readiness-banner">
+                                    <div class="ai-readiness-left">
+                                        <div class="ai-readiness-score-ring">
+                                            <span id="ai-readiness-number" class="ai-readiness-number">--%</span>
+                                        </div>
+                                        <div class="ai-readiness-info">
+                                            <span class="ai-readiness-tag" id="ai-readiness-level">Nivel en Desarrollo</span>
+                                            <h5 class="ai-readiness-title" id="ai-readiness-title">Índice de Preparación para la Prueba Oficial</h5>
+                                            <p class="ai-readiness-desc" id="ai-readiness-desc">Basado en la correlación de tus aciertos con el peso ponderado del temario.</p>
+                                        </div>
+                                    </div>
+                                    <div class="ai-readiness-badge-tier" id="ai-tier-indicator">
+                                        <span class="ai-tier-badge"><i class="fas fa-microchip"></i> <span id="ai-tier-text">Diagnóstico Estático</span></span>
+                                    </div>
+                                </div>
+
+                                <!-- High-Yield Tip Banner (Advanced) -->
+                                <div id="ai-highyield-box" class="ai-highyield-box" style="display:none;">
+                                    <div class="ai-highyield-header">
+                                        <i class="fas fa-fire-flame-curved"></i>
+                                        <span>Píldora High-Yield (Examen Oficial)</span>
+                                    </div>
+                                    <p id="ai-highyield-text" class="ai-highyield-text">--</p>
+                                </div>
+
+                                <div class="ai-insights-grid">
+                                    <!-- Dominio Consolidado -->
+                                    <div class="ai-insight-panel ai-insight-panel--strengths">
+                                        <div class="ai-insight-header text-emerald">
+                                            <i class="fas fa-circle-check"></i>
+                                            <span>Dominio Consolidado (Fortalezas)</span>
+                                        </div>
+                                        <div id="ai-strengths" class="ai-insight-content">--</div>
+                                    </div>
+
+                                    <!-- Focos de Intervención -->
+                                    <div class="ai-insight-panel ai-insight-panel--weaknesses">
+                                        <div class="ai-insight-header text-amber">
+                                            <i class="fas fa-triangle-exclamation"></i>
+                                            <span>Focos de Intervención (Debilidades Prioritarias)</span>
+                                        </div>
+                                        <div id="ai-weaknesses" class="ai-insight-content">--</div>
+                                    </div>
+                                </div>
+
+                                <!-- Sprint Táctico en 3 Pasos -->
+                                <div class="ai-sprint-section">
+                                    <div class="ai-sprint-header">
+                                        <i class="fas fa-route"></i>
+                                        <span>Sprint Táctico Recomendado (3 Pasos de Alto Impacto)</span>
+                                    </div>
+                                    <div id="ai-sprint-grid" class="ai-sprint-grid">
+                                        <!-- Inyectado vía JS -->
+                                    </div>
+                                </div>
+
+                                <div class="ai-strategy-box">
+                                    <div class="ai-strategy-header">
+                                        <div class="ai-strategy-title">
+                                            <i class="fas fa-lightbulb"></i>
+                                            <span>Estrategia de Estudio y Recomendación de Mentoría</span>
+                                        </div>
+                                        <span class="ai-strategy-badge" id="ai-strategy-badge">Recomendación Estratégica</span>
+                                    </div>
+                                    <p class="ai-strategy-text" id="ai-strategy-text">
+                                        Concéntrate en resolver simulacros en los temas prioritarios para balancear tu dominio y maximizar tu nota en el examen oficial.
+                                    </p>
+                                </div>
+
+                                <div class="ai-results-footer">
+                                    <button id="btn-analyze-again" class="btn-ai-reanalyze">
+                                        <i class="fas fa-rotate-right"></i>
+                                        <span>Reanalizar Diagnóstico</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div> <!-- Close #sim-dashboard-sections -->
+
+        </div>
+    </div>
+
+    <div id="config-modal-overlay" class="modal-overlay">
+        <div class="config-modal">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-sliders-h"></i> Configurar Simulacro
+                </h3>
+                <button id="btn-close-config" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem 0;">
+                <!-- Examen Objetivo (Target) -->
+                <div class="config-section">
+                    <h4 class="modal-section-title">Examen Objetivo</h4>
+                    <div class="exam-target-grid">
+                        <label class="exam-target-option">
+                            <input type="radio" name="examTarget" value="ENAM" checked>
+                            <div class="target-card">ENAM</div>
+                        </label>
+                        <label class="exam-target-option">
+                            <input type="radio" name="examTarget" value="SERUMS">
+                            <div class="target-card">SERUMS</div>
+                        </label>
+                        <label class="exam-target-option">
+                            <input type="radio" name="examTarget" value="RESIDENTADO">
+                            <div class="target-card">
+                                RESIDENTADO
+                                <span style="display: block; font-size: 0.6rem; opacity: 0.7; font-weight: 400;">(Beta /
+                                    Trabajando)</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="serums-info-alert" class="info-alert" style="display:none;">
+                    <strong>Evaluación (ENCAPS) - MINSA:</strong> Las preguntas para esta evaluación están estrictamente
+                    calibradas en base a nuestras guías, normas técnicas y libros oficiales (RAG) para las profesiones
+                    de:
+                    medicina humana y enfermería.
+                </div>
+
+                <!-- Contenedor Carrera SERUMS -->
+                <div id="serums-career-container" style="display:none;">
+                    <h4 class="modal-section-title">Carrera Profesional (SERUMS)</h4>
+                    <select id="config-career">
+                        <option value="Medicina Humana">Medicina Humana</option>
+                        <option value="Enfermería">Enfermería</option>
+                    </select>
+                </div>
+
+                <!-- Contenedor Escala Magisterial Objetivo (Solo Educación - Ascenso) -->
+                <div id="educacion-scale-container" style="display:none; margin-top: 1rem;">
+                    <h4 class="modal-section-title">
+                        <i class="fas fa-layer-group" style="color: var(--primary); margin-right: 0.35rem;"></i>
+                        Escala Magisterial a la que postulas
+                    </h4>
+                    <select id="config-target-scale">
+                        <option value="2">2.ª Escala (Puntaje Mínimo: 54 pts / 36 aciertos)</option>
+                        <option value="3">3.ª Escala (Puntaje Mínimo: 57 pts / 38 aciertos)</option>
+                        <option value="4">4.ª Escala (Puntaje Mínimo: 60 pts / 40 aciertos)</option>
+                        <option value="5">5.ª Escala (Puntaje Mínimo: 63 pts / 42 aciertos)</option>
+                        <option value="6">6.ª Escala (Puntaje Mínimo: 66 pts / 44 aciertos)</option>
+                        <option value="7">7.ª Escala (Puntaje Mínimo: 69 pts / 46 aciertos)</option>
+                        <option value="8">8.ª Escala (Puntaje Mínimo: 69 pts / 46 aciertos)</option>
+                    </select>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.35;">
+                        La Prueba Nacional consta de 60 preguntas (1.5 pts c/u, total 90 pts). Tu línea de aprobación se calibrará según esta escala.
+                    </p>
+                </div>
+
+
+                <!-- Modo de Configuración (Examen Oficial vs Personalizado) -->
+                <div class="config-section" id="config-mode-selection-container">
+                    <h4 class="modal-section-title">Modo de Configuración</h4>
+                    <div class="config-mode-toggle">
+                        <label class="mode-toggle-option active">
+                            <input type="radio" name="configMode" value="default" checked style="display: none;">
+                            <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <i class="fas fa-graduation-cap" style="color: var(--primary);"></i> Modo Examen Oficial
+                            </span>
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.35;">Todas las áreas integradas de forma equilibrada según el examen real (Recomendado).</span>
+                        </label>
+                        <label class="mode-toggle-option">
+                            <input type="radio" name="configMode" value="custom" style="display: none;">
+                            <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <i class="fas fa-sliders-h"></i> Práctica Personalizada
+                            </span>
+                            <span style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.35;">Selecciona manualmente qué áreas específicas deseas practicar.</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Áreas Clínicas -->
+                <div id="areas-config-container">
+                    <h4 class="modal-section-title">Áreas de Estudio</h4>
+                    <div id="config-areas-grid" class="area-selection-grid">
+                        <!-- Rendered dynamically via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
+                <button id="btn-save-config">
+                    Aplicar Configuración
+                </button>
+            </div>
+        </div>
+    </div>
+
+        <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
+                    Hub Academia
+                </a>
+                <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Plataforma</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/" class="footer-link">Inicio</a></li>
+                    <li><a href="/library" class="footer-link">Mi Biblioteca</a></li>
+                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                </ul>
+            </div>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Legal y Soporte</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="/terms" class="footer-link">Términos y Condiciones</a></li>
+                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto y Ayuda</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
+        </div>
+    </footer>
+
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/services/networkService.js?v=5ca6b7db3040"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="/js/utils/markdown-renderer.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/authApiService.js?v=5ca6b7db3040"></script>
+    <script src="/js/services/analyticsApiService.js?v=5ca6b7db3040"></script>
+    <script src="/js/sessionManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/uiManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/tooltipManager.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/components.js?v=5ca6b7db3040"></script>
+    <script src="/js/ui/sidebar.js?v=5ca6b7db3040"></script>
+    <script src="/js/app.js?v=5ca6b7db3040"></script>
+
+    <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+
+    <script src="/js/simulator-dash.js?v=5ca6b7db3040"></script>
+</body>
+
+</html>

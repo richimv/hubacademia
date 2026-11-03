@@ -1,0 +1,860 @@
+/* Container rules moved completely to base.css unification */
+
+/* Hero section wrapper for positioning */
+.hero-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1.5rem;
+    transition: all 0.5s ease;
+}
+
+/* ✅ GLOBAL COMPACT: Remove hero gap when searching (Hero is hidden) */
+body.hero-hidden .hero-wrapper {
+    margin-bottom: 0 !important;
+}
+
+/* ✅ GLOBAL COMPACT: Main container padding reduction in search view */
+.main-container:has(.search-results-view),
+.main-container:has(.search-loading-container) {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+@media (max-width: 768px) {
+    .hero-wrapper {
+        margin-bottom: 2.5rem;
+        /* RELAXED: 30px (Hang) + 10px (Gap) = 40px */
+    }
+
+    body.hero-hidden .hero-wrapper {
+        margin-bottom: 1rem;
+        /* Reduced from 2rem */
+    }
+
+    /* Mobile constraints handled by base.css var(--page-padding-x) responsive rules now */
+
+    /* ALIGN: Search matches Mobile Header (42px) */
+    body.hero-hidden .search-section {
+        top: calc(42px + var(--trial-bar-height));
+    }
+}
+
+.hero {
+    height: 360px;
+    background: var(--bg-main);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 10%;
+    margin-bottom: 0;
+    transition: height 0.5s ease, opacity 0.5s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hero Video (Hidden on Mobile) */
+.hero-video {
+    display: none;
+}.hero-content {
+    max-width: 800px;
+    color: var(--text-main);
+    z-index: 2;
+    animation: slideInLeft 0.8s ease-out;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    color: var(--text-main);
+}
+
+.hero-title .highlight-text {
+    color: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    max-width: 90%;
+}
+
+.hero-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 1.5rem;
+}
+
+.hero-features li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    background: var(--bg-tertiary);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, background 0.2s;
+}
+
+.hero-features li:hover {
+    transform: translateY(-2px);
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+}
+
+.hero-features li i {
+    color: var(--accent);
+}
+
+/* Animation */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive adjustments */
+/* Responsive adjustments */
+.hero-features {
+    justify-content: flex-start;
+    /* FIX: Alinear con el texto a la izquierda */
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .hero {
+        height: auto;
+        /* FIX: Altura automática para evitar cortes */
+        min-height: 480px;
+        /* Altura mínima para asegurar espacio */
+        padding-top: 5rem;
+        /* Espacio para header */
+        padding-bottom: 5rem;
+        /* Espacio para buscador */
+        align-items: flex-start;
+        /* Alinear arriba */
+        justify-content: center;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        text-align: center;
+        /* Centrar texto móvil */
+    }
+
+    .hero-content {
+        text-align: center;
+        margin: 0 auto;
+    }
+
+    .hero-features {
+        justify-content: center;
+        gap: 0.5rem;
+        /* Gap más pequeño */
+    }
+
+    /* ✅ FIX: Badges más pequeños en móvil para que entren en línea */
+    .hero-features li {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        white-space: nowrap;
+        /* Evitar quiebres de texto internos */
+    }
+}
+
+/* ✅ Desktop: Show Video & Remove Image Background */
+@media (min-width: 768px) {
+    .hero {
+        /* Optional: We keep the gradient overlay on top of the video via a pseudoelement or keeping the bg-image as fallback behind the video. 
+           But to ensure video visibility, we rely on the video element z-index. */
+        background: none;
+        /* Remove static bg so video shines through */
+    }
+
+    /* Re-add the gradient overlay on top of video */
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg,
+                rgba(10, 10, 10, 0.8) 0%,
+                rgba(10, 10, 10, 0.8) 45%,
+                rgba(10, 10, 10, 0.8) 80%,
+                rgba(10, 10, 10, 0.8) 100%);
+        z-index: 1;
+    }
+
+    .hero-video {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 0;
+    }
+}
+
+/* --- Search Section --- */
+.search-section {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 800px;
+    z-index: 10;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.search-box {
+    background: var(--surface-alt);
+    padding: var(--spacing-md);
+    border-radius: 50px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    border: 1px solid var(--border);
+}
+
+.search-box input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    color: var(--text-main);
+}
+
+.search-box input:-webkit-autofill,
+.search-box input:-webkit-autofill:hover,
+.search-box input:-webkit-autofill:focus,
+.search-box input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px var(--surface-alt) inset !important;
+    -webkit-text-fill-color: var(--text-main) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+body.hero-hidden .search-box input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 30px var(--surface) inset !important;
+}
+
+.search-box button {
+    border-radius: 30px;
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+body.hero-hidden .search-section {
+    position: sticky;
+    top: calc(var(--header-height-desktop) + var(--trial-bar-height));
+    /* ✅ MATCHES DESKTOP HEADER HEIGHT + BAR */
+    z-index: 100;
+    bottom: auto;
+    left: 0;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0.5rem 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* ✅ CENTER: Vertical alignment fix */
+}
+
+body.hero-hidden .search-box {
+    width: 100%;
+    max-width: 800px;
+    border-radius: 8px;
+    box-shadow: none;
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+}
+
+body.hero-hidden .search-box input {
+    font-size: 1rem;
+}
+
+body.hero-hidden .search-box button {
+    padding: 0.5rem 1.5rem;
+    border-radius: 6px;
+}
+
+body.hero-hidden .hero {
+    display: none;
+}
+
+body.hero-hidden .search-section.sticky {
+    margin: 0;
+}
+
+.search-subtitle {
+    color: white;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+body.hero-hidden .search-subtitle {
+    display: none;
+}
+
+#searchInput:focus {
+    outline: none;
+}
+
+@media (max-width: 768px) {
+    .search-box {
+        flex-direction: row !important;
+        padding: 0.35rem 0.35rem 0.35rem 1rem !important;
+        border-radius: 50px !important;
+        gap: 5px !important;
+    }
+
+    .search-box input {
+        flex: 1 !important;
+        width: auto !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.95rem !important;
+        text-align: left !important;
+    }
+
+    .search-box button {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .search-box button span {
+        display: none !important;
+    }
+
+    .search-box button i {
+        margin: 0 !important;
+        font-size: 0.95rem !important;
+    }
+}
+
+@media (min-width: 640px) {
+    .search-box {
+        flex-direction: row;
+        align-items: center;
+        padding: 0.5rem 0.5rem 0.5rem 1.5rem;
+    }
+}
+
+/* Detail Views */
+.detail-view-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--accent);
+    line-height: 1.2;
+}
+
+.detail-view-subtitle {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+    .detail-view-title {
+        font-size: 1.5rem;
+        margin-top: 0.5rem;
+        /* Reduced top margin */
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.25rem;
+    }
+
+    /* ALIGN: Search matches Mobile Header (42px) */
+    body.hero-hidden .search-section {
+        top: calc(42px + var(--trial-bar-height));
+    }
+}
+
+/* =========================================
+   COMPACT SEARCH RESULTS
+   ========================================= */
+
+.search-results-view {
+    padding-top: 0;
+}
+
+.search-result-group {
+    margin-top: 1rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.search-result-group.first-group {
+    margin-top: 0.5rem;
+    /* Ajustado para estar cerca de la cuenta de resultados */
+}
+
+.search-section-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+}
+
+.search-section-header .browse-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.scroll-sentinel {
+    height: 1px;
+    /* Minimal height */
+    width: 100%;
+    margin-top: 5px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Hide sentinel completely if it doesn't contain a spinner */
+.scroll-sentinel.hidden {
+    display: none !important;
+}
+
+/* Reducir espacio interno de las grillas en búsqueda */
+.search-results-view .books-grid,
+.search-results-view .video-grid {
+    padding-bottom: 0.25rem !important;
+    gap: 1rem !important;
+}
+
+@media (max-width: 768px) {
+
+    .search-results-view .books-grid,
+    .search-results-view .video-grid {
+        gap: 0.5rem !important;
+    }
+}
+
+.search-result-group .video-grid {
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+
+/* =========================================
+   RECOMMENDATION CARDS (Updated for Search UI)
+   ========================================= */
+
+.recommendations-section {
+    width: 100%;
+    margin-top: 0;
+    padding-top: 0;
+    /* Eliminamos lineas divisorias y espacios */
+}
+
+/* NAVIGATION AREA (Sectors & Resources) */
+.manta-navigation-area {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.manta-sector-tabs-wrapper {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.manta-tabs-container.sector-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    border-bottom: none;
+}
+
+.manta-tab {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-main);
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+}
+
+.manta-tab.sector-tab {
+    padding: 12px;
+    border-radius: 8px;
+    text-transform: none;
+    letter-spacing: 0.5px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.manta-tab.sector-tab i {
+    font-size: 1.1rem;
+    opacity: 0.7;
+}
+
+.manta-tab.sector-tab.active {
+    background: var(--surface-hover);
+    color: var(--text-main);
+    box-shadow: var(--shadow-sm);
+}
+
+.manta-tab.sector-tab.active::after {
+    display: none; /* No line for sector tabs, use background */
+}
+
+/* HEALTH SECTOR ACTIVE STYLE */
+.manta-tab.sector-tab[data-sector="medicine"].active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.25) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: var(--text-main);
+}
+.manta-tab.sector-tab[data-sector="medicine"].active i {
+    color: #3b82f6;
+    opacity: 1;
+}
+
+/* EDUCATION SECTOR ACTIVE STYLE */
+.manta-tab.sector-tab[data-sector="educacion"].active {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.25) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: var(--text-main);
+}
+.manta-tab.sector-tab[data-sector="educacion"].active i {
+    color: #10b981;
+    opacity: 1;
+}
+
+/* RESOURCE TABS (Biblioteca / Cursos) */
+.manta-resource-tabs-wrapper {
+    padding: 0 0.5rem;
+}
+
+.manta-tabs-container.resource-tabs {
+    gap: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.manta-tab.resource-tab {
+    font-size: 1rem;
+    font-weight: 800;
+    padding-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    color: var(--text-secondary);
+}
+
+.manta-tab.resource-tab:hover {
+    color: var(--text-main);
+}
+
+.manta-tab.resource-tab.active {
+    color: var(--text-main);
+}
+
+.manta-tab.resource-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3.5px;
+    background: var(--primary);
+    border-radius: 2px;
+}
+
+/* FILTERS CONTAINER (PILLS MANTA STYLE) */
+.manta-filters-container {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    margin-bottom: 0;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+}
+
+.manta-filters-container::-webkit-scrollbar {
+    display: none;
+}
+
+.manta-filter-pill {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.5rem 1.25rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    letter-spacing: -0.01em;
+    box-shadow: var(--shadow-sm);
+}
+
+.manta-filter-pill:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+    color: var(--text-main) !important;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.manta-filter-pill.active {
+    background: var(--primary);
+    border: 1px solid var(--primary-hover);
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 18px var(--primary-glow);
+}
+
+.manta-filter-pill[data-filter-id*="Novedades"].active,
+.manta-filter-pill[data-filter-val="news"].active {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border: 1px solid #ea580c;
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
+}
+
+/* GROUP TITLES (SUBTÍTULOS ESTILO MANTA) */
+.manta-group-title {
+    width: 100%;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-top: 0.5rem;
+    margin-bottom: 0.15rem;
+    grid-column: 1 / -1;
+}
+
+.recommendations-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.recommendation-card {
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.recommendation-card:hover {
+    background: var(--surface-alt);
+    border-color: var(--accent);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.recommendation-card[data-type="course"] {
+    border-left: 4px solid var(--primary);
+}
+
+.recommendation-card[data-type="book"] {
+    border-left: 4px solid #f59e0b;
+}
+
+/* Icon Area */
+.recommendation-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+}
+
+.recommendation-card[data-type="course"] .recommendation-icon {
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.1);
+}
+
+.recommendation-card[data-type="book"] .recommendation-icon {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+/* Content Area */
+.recommendation-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.recommendation-type {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recommendation-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recommendation-author {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Match Badge */
+.ml-confidence-badge {
+    background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+    box-shadow: 0 2px 5px rgba(139, 92, 246, 0.3);
+    white-space: nowrap;
+}
+
+/* Arrow */
+.recommendation-arrow {
+    margin-left: 1rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.recommendation-card:hover .recommendation-arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+}
+
+/* ML Indicator Footer */
+.ml-powered-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.ml-powered-indicator i {
+    color: #8b5cf6;
+}
+
+@media (max-width: 768px) {
+    /* ✅ MOBILE FIX: Force correct sticky top position to override restart */
+    body.hero-hidden .search-section {
+        top: calc(var(--header-height-mobile) + var(--trial-bar-height)) !important;
+    }
+
+    .manta-tabs-container.resource-tabs {
+        gap: 1.25rem;
+        justify-content: flex-start;
+    }
+
+    .manta-tab.resource-tab {
+        font-size: 0.8rem;
+        flex: 1;
+        text-align: center;
+    }
+
+    .manta-tab.sector-tab {
+        font-size: 0.85rem;
+        padding: 10px 5px;
+    }
+
+    .manta-tab.sector-tab i {
+        font-size: 1rem;
+    }
+
+    /* Reducir aún más el espacio del header de resultados en móvil */
+    .search-results-view .results-header-container {
+        margin-bottom: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    .search-results-view .results-main-title {
+        font-size: 1.25rem;
+    }
+}
