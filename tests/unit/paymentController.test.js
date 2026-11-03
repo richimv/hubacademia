@@ -1,6 +1,8 @@
+const fs = require('fs');
+const path = require('path');
 const paymentController = require('../../src/application/controllers/paymentController');
 const pool = require('../../src/infrastructure/database/db');
-const { Payment } = require('mercadopago');
+const { Payment, Preference } = require('mercadopago');
 const crypto = require('crypto');
 
 // Mock dependencies
@@ -182,5 +184,37 @@ describe('PaymentController - handleWebhook', () => {
         expect(client.query).toHaveBeenCalledWith('COMMIT');
         expect(client.query).not.toHaveBeenCalledWith(expect.stringContaining('UPDATE users'), expect.anything());
         expect(client.release).toHaveBeenCalled();
+    });
+
+    it('should create Mercado Pago preference with Hub Academia corporate plan titles and enforce zero WhatsApp/Yape flows', async () => {
+        const mockCreate = jest.fn().mockResolvedValue({ init_point: 'https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=123' });
+        Preference.mockImplementation(() => ({ create: mockCreate }));
+
+        const orderReq = {
+            user: { id: 'user_999', email: 'docente@hubacademia.com', name: 'Docente Perú' },
+            body: { planId: 'advanced' }
+        };
+
+        await paymentController.createOrder(orderReq, mockRes);
+
+        expect(mockCreate).toHaveBeenCalledTimes(1);
+        const createdPayload = mockCreate.mock.calls[0][0].body;
+        expect(createdPayload.items[0].title).toBe('Plan Avanzado - Hub Academia');
+        expect(createdPayload.items[0].currency_id).toBe('PEN');
+        expect(mockRes.json).toHaveBeenCalledWith({
+            init_point: 'https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=123'
+        });
+
+        const root = path.resolve(__dirname, '../..');
+        const filesToCheck = [
+            'src/presentation/public/pricing.html',
+            'src/presentation/public/js/pricing.js',
+            'src/presentation/public/css/pricing.css',
+            'src/presentation/public/js/ui/sidebar.js'
+        ];
+        for (const rel of filesToCheck) {
+            const content = fs.readFileSync(path.join(root, rel), 'utf8');
+            expect(content).not.toMatch(/wa\.me|whatsapp|993869166|openManualPaymentModal|\byape\b|\bplin\b/i);
+        }
     });
 });

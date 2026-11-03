@@ -147,9 +147,6 @@ class GlobalSidebar {
                     <a href="https://www.facebook.com/profile.php?id=61593284876205" target="_blank" rel="noopener noreferrer" class="sidebar-social-btn sidebar-social-fb" title="Facebook">
                         <i class="fab fa-facebook-f"></i>
                     </a>
-                    <a href="https://wa.me/51993869166?text=Hola%2C%20deseo%20comunicarme%20con%20Hub%20Academia" target="_blank" rel="noopener noreferrer" class="sidebar-social-btn sidebar-social-wa" title="WhatsApp">
-                        <i class="fab fa-whatsapp"></i>
-                    </a>
                     <a href="https://www.tiktok.com/@hubacademia" target="_blank" rel="noopener noreferrer" class="sidebar-social-btn sidebar-social-tt" title="TikTok">
                         <i class="fab fa-tiktok"></i>
                     </a>

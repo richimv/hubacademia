@@ -10,8 +10,8 @@ const client = new MercadoPagoConfig({
 });
 
 const PLANS = {
-    basic: { price: 9.90, months: 2, title: 'Plan Básico - Entrenamiento Médico' },
-    advanced: { price: 24.90, months: 4, title: 'Plan Avanzado - Tutor IA Médica' }
+    basic: { price: 9.90, months: 2, title: 'Plan Básico - Hub Academia' },
+    advanced: { price: 24.90, months: 4, title: 'Plan Avanzado - Hub Academia' }
 };
 
 exports.createOrder = async (req, res) => {
