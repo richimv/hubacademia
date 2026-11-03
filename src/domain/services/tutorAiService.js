@@ -8,14 +8,17 @@ const securityUtils = require('../utils/securityUtils');
 const mediaController = require('../../application/controllers/mediaController');
 
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
+const {
+    getVertexCandidateModels,
+    buildVertexGenerationConfig,
+    extractModelResponsePayload
+} = require('../../infrastructure/config/vertexAiConfig');
 
 /**
- * 🎓 TUTOR AI SERVICE V6.2: El Cerebro del Chat y Tutoría.
- * - Routing inteligente por especialización (medicine, education, neutral, flashcard_tutor).
- * - RAG Semántico (Pinecone) para medicina y educación.
- * - Catálogo Visual (Postgres/GCS) para imágenes de recursos.
- * - Detección de idioma para TTS dinámico.
- * - JSON estructurado nativo (responseMimeType).
+ * 🎓 TUTOR AI SERVICE V7.0: El Cerebro del Chat y Tutoría.
+ * - Estándar oficial Vertex AI: gemini-3.6-flash-lite / gemini-3.6-flash (sin parámetros de muestreo depreciados).
+ * - Circulación obligatoria de Thought Signatures en sesiones multi-turno.
+ * - RAG Semántico (Pinecone) exclusivo para consulta normativa y clínica del Tutor.
  */
 class TutorAiService {
     constructor() {
@@ -24,21 +27,20 @@ class TutorAiService {
         const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
 
         try {
+            const candidateModels = getVertexCandidateModels();
             this.vertex_ai = new VertexAI({
                 project,
                 location,
                 ...(Object.keys(googleAuthOptions).length > 0 ? { googleAuthOptions } : {})
             });
             this.model = this.vertex_ai.getGenerativeModel({
-                model: 'gemini-2.5-flash-lite',
-                generationConfig: {
+                model: candidateModels[0],
+                generationConfig: buildVertexGenerationConfig({
                     maxOutputTokens: 8192,
-                    temperature: 0.8,
-                    topP: 0.9,
-                    responseMimeType: "application/json"
-                }
+                    responseMimeType: 'application/json'
+                })
             });
-            console.log("✅ TutorAiService: Motor de Tutoría inicializado.");
+            console.log(`✅ TutorAiService: Motor de Tutoría inicializado (${candidateModels[0]}).`);
         } catch (err) {
             console.warn("⚠️ TutorAiService: VertexAI no inicializado (Modo test o credenciales incompletas):", err.message);
             this.vertex_ai = null;
@@ -272,39 +274,37 @@ class TutorAiService {
 
     /**
      * Ejecuta una llamada resiliente exclusiva hacia Vertex AI (Google Enterprise AI)
-     * Erradica por completo Google AI Studio (Prepago) y aplica la cascada recomendada por Google:
-     * 1. gemini-3.5-flash-lite
-     * 2. gemini-3.1-flash-lite
-     * 3. gemini-2.5-flash-lite (Activo hoy hasta el 28 de enero de 2027)
-     * 4. gemini-2.5-flash
+     * Estándar oficial Gemini 3.6 (gemini-3.6-flash-lite -> gemini-3.6-flash) sin parámetros
+     * de muestreo depreciados (temperature, topP, topK) y preservando Thought Signatures.
      */
-    async _callModelResilient(contents, systemPrompt) {
+    async _callModelResilientWithMetadata(contents, systemPrompt, options = {}) {
         let lastError = null;
 
-        // Canal Exclusivo: Google Cloud Vertex AI (Gemini Enterprise Agent Platform)
         if (this.vertex_ai) {
-            const vertexCandidateModels = [
-                'gemini-3.5-flash-lite',
-                'gemini-3.1-flash-lite',
-                'gemini-2.5-flash-lite',
-                'gemini-2.5-flash'
-            ];
-            console.log(`📡 [VertexAI Tutor] Conectando a Vertex AI (GCP Enterprise)...`);
+            const vertexCandidateModels = getVertexCandidateModels();
+            const generationConfig = buildVertexGenerationConfig({
+                maxOutputTokens: options.maxOutputTokens || 8192,
+                responseMimeType: options.responseMimeType || 'application/json',
+                thinkingLevel: options.thinkingLevel || process.env.VERTEX_TUTOR_THINKING_LEVEL || null
+            });
+
+            console.log('📡 [VertexAI Tutor] Conectando a Vertex AI (GCP Enterprise)...');
             for (const modelName of vertexCandidateModels) {
                 try {
                     const vertexModel = this.vertex_ai.getGenerativeModel({
                         model: modelName,
-                        generationConfig: { maxOutputTokens: 8192, temperature: 0.8, topP: 0.9, responseMimeType: "application/json" }
+                        generationConfig
                     });
 
                     const result = await vertexModel.generateContent({
                         contents,
                         systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] }
                     });
-                    
-                    if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].content) {
+
+                    const payload = extractModelResponsePayload(result);
+                    if (payload && payload.text) {
                         console.log(`✅ [VertexAI Tutor Éxito] Respuesta generada con modelo: ${modelName}`);
-                        return result.response.candidates[0].content.parts[0].text;
+                        return payload;
                     }
                 } catch (err) {
                     lastError = err;
@@ -313,8 +313,13 @@ class TutorAiService {
             }
         }
 
-        console.error("❌ [TutorAiService] La llamada a Vertex AI falló con todos los modelos de la cascada.");
-        throw (lastError || new Error("VertexAI no está inicializado"));
+        console.error('❌ [TutorAiService] La llamada a Vertex AI falló con todos los modelos de la cascada.');
+        throw (lastError || new Error('VertexAI no está inicializado'));
+    }
+
+    async _callModelResilient(contents, systemPrompt, options = {}) {
+        const payload = await this._callModelResilientWithMetadata(contents, systemPrompt, options);
+        return payload.text;
     }
 
     /**
@@ -385,17 +390,20 @@ class TutorAiService {
                     console.log(`📚 [TutorAiService] Usando content_html de recurso directo (< 15k texto plano)`);
                     context = `--- CONTEXTO OFICIAL DEL RECURSO: "${resourceContext.title}" ---\n${plainText}\n\n[INSTRUCCIONES DE RESPUESTA]:\nResponde a la pregunta del usuario utilizando este material como tu base de verdad técnica primaria. Si la pregunta requiere profundizar o no está explícita aquí, usa tu experiencia clínica/pedagógica para dar una respuesta rica y veraz.`;
                 } else if (filters.useRag !== false) {
-                    console.log(`🔍 [TutorAiService] Usando RAG Semántico basado en el Título del Recurso: "${resourceContext.title}"`);
-                    const questionRagService = require('./questionRagService');
-                    
-                    // Buscamos semánticamente en Pinecone usando el título del recurso y la consulta
-                    context = await questionRagService.getStyleContextByKeywords(
-                        specialization,
-                        [`${resourceContext.title} ${mainSearchQuery}`],
+                    console.log(`🔍 [TutorAiService] Usando RAG Semántico Normativo basado en el Título del Recurso: "${resourceContext.title}"`);
+                    retrievedRagData = await RagService.searchContextSmart(
+                        `${resourceContext.title} ${mainSearchQuery}`,
                         8,
-                        null,
-                        resourceContext.title
+                        {
+                            mode: 'SEMANTIC',
+                            target,
+                            namespace,
+                            predefinedTerms: smartTopics
+                        }
                     );
+                    context = (retrievedRagData && typeof retrievedRagData === 'object' && retrievedRagData.contextText !== undefined)
+                        ? retrievedRagData.contextText
+                        : (retrievedRagData ? String(retrievedRagData) : '');
 
                     // Fallback Generativo Experto basado en el título (Si RAG falló por completo)
                     if (!context || context.trim() === '') {
@@ -456,12 +464,18 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
 
             let systemPrompt = chatPrompts.buildPrompt(specialization, target, contextConImagenes, { hasRagContext });
 
+            // Reconstruir historial multi-turno preservando intactas las firmas de pensamiento (thoughtSignature) de Gemini 3
             const contents = history.map(h => {
+                const role = (h.role === 'user' || h.sender === 'user') ? 'user' : 'model';
                 const text = h.content || '';
                 const cleanedText = text.replace(/data:(image\/[a-z0-9-+.]+);base64,([a-zA-Z0-9+/=\s\r\n]+?)(?=["'\s\)])/gi, '[Imagen]');
+                const part = { text: cleanedText };
+                if (role === 'model' && typeof h.thoughtSignature === 'string' && h.thoughtSignature.trim()) {
+                    part.thoughtSignature = h.thoughtSignature;
+                }
                 return {
-                    role: (h.role === 'user' || h.sender === 'user') ? 'user' : 'model',
-                    parts: [{ text: cleanedText }]
+                    role,
+                    parts: [part]
                 };
             });
             
@@ -473,8 +487,12 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
             }
             contents.push({ role: 'user', parts: userParts });
 
-            // 5. Generación de respuesta resiliente con reintentos y multicanal
-            const rawText = await this._callModelResilient(contents, systemPrompt);
+            // 5. Generación de respuesta resiliente en Vertex AI preservando Thought Signatures
+            const modelPayload = await this._callModelResilientWithMetadata(contents, systemPrompt, {
+                thinkingLevel: filters.thinkingLevel || null
+            });
+            const rawText = modelPayload.text;
+            const thoughtSignature = modelPayload.thoughtSignature || null;
 
             // 6. Parsear la respuesta JSON de forma ultra-resiliente sin truncamiento por comillas internas
             const parsed = this._parseAiResponse(rawText);
@@ -542,7 +560,8 @@ INSTRUCCIÓN CRÍTICA: El usuario te ha pedido resumir o responder una duda sobr
                 confianza: 0.9,
                 contextUsed: hasRagContext,
                 sources: ragSourcesSummary,
-                ragSources: hasRagContext ? (retrievedRagData?.sources || []) : []
+                ragSources: hasRagContext ? (retrievedRagData?.sources || []) : [],
+                thoughtSignature
             };
 
         } catch (error) {

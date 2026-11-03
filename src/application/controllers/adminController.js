@@ -4,7 +4,6 @@ const path = require('path');
 const { spawn } = require('child_process');
 // Removed trainingRepository import
 const AnalyticsService = require('../../domain/services/analyticsService');
-const adminAiService = require('../../domain/services/adminAiService');
 const adminService = require('../../domain/services/adminService'); // ✅ IMPORTANTE: Se inyecta capa de Negocio
 const mediaController = require('./mediaController');
 
@@ -181,35 +180,6 @@ class AdminController {
         } catch (error) {
             console.error('❌ Error en inyección masiva de casuísticas:', error);
             res.status(500).json({ error: 'Error del servidor procesando el lote de casuísticas.' });
-        }
-    }
-
-    async generateAiQuestions(req, res) {
-        try {
-            const { target, domain, studyAreas, career, difficulty } = req.body;
-            if (!target || !studyAreas) {
-                return res.status(400).json({ error: 'Faltan parámetros: target y studyAreas son requeridos.' });
-            }
-
-            const resolvedDifficulty = difficulty || 'Senior';
-            console.log(`🧠 Admin solicitó lote RAG: ${target}, ${resolvedDifficulty}, Áreas: ${studyAreas}, Domain: ${resolvedDomain}, Carrera: ${career || 'N/A'}`);
-
-            const generatedQuestions = await adminAiService.generateRAGQuestions(target, studyAreas, career, 5, false, resolvedDifficulty);
-
-            if (!generatedQuestions || !Array.isArray(generatedQuestions)) {
-                throw new Error("El formato devuelto por la IA no corresponde a un Array válido.");
-            }
-
-            const result = await adminService.saveBulkQuestionBankAdmin(generatedQuestions);
-
-            if (result.success) {
-                res.json({ success: true, message: `IA RAG ha Inyectado ${result.inserted} preguntas nuevas con éxito al Banco.`, count: result.inserted });
-            } else {
-                res.status(500).json({ error: 'Fallo al inyectar el lote generado por la IA en la BD.' });
-            }
-        } catch (error) {
-            console.error('❌ Error en generador RAG Masivo Admin:', error);
-            res.status(500).json({ error: error.message || 'Error del servidor procesando el RAG.' });
         }
     }
 
@@ -860,7 +830,6 @@ module.exports = {
     getDashboardStats: controller.getDashboardStats.bind(controller),
     runAiAnalysis: controller.runAiAnalysis.bind(controller),
     bulkInjectQuestions: controller.bulkInjectQuestions.bind(controller),
-    generateAiQuestions: controller.generateAiQuestions.bind(controller),
     getAllQuestions: controller.getAllQuestions.bind(controller),
     addSingleQuestion: controller.addSingleQuestion.bind(controller),
     updateSingleQuestion: controller.updateSingleQuestion.bind(controller),

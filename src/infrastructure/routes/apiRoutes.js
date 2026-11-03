@@ -42,8 +42,7 @@ const upload = multer({
 router.get('/admin/dashboard-stats', auth, adminOnly, adminController.getDashboardStats);
 
 router.post('/admin/run-ai', auth, adminOnly, adminController.runAiAnalysis);
-router.post('/admin/questions/bulk', auth, adminOnly, adminController.bulkInjectQuestions); // ✅ NUEVO: Inyección Masiva
-router.post('/admin/questions/generate-ai', auth, adminOnly, adminController.generateAiQuestions); // --- Gestión de Banco de Preguntas (Admin) ---
+router.post('/admin/questions/bulk', auth, adminOnly, adminController.bulkInjectQuestions); // ✅ Inyección Masiva de Bancos Curados
 router.get('/admin/questions', auth, adminOnly, adminController.getAllQuestions);
 router.post('/admin/question', auth, adminOnly, upload.fields([{ name: 'questionImage', maxCount: 1 }, { name: 'explanationImage', maxCount: 1 }]), adminController.addSingleQuestion);
 router.put('/admin/question/:id', auth, adminOnly, upload.fields([{ name: 'questionImage', maxCount: 1 }, { name: 'explanationImage', maxCount: 1 }]), adminController.updateSingleQuestion);

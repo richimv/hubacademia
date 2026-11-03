@@ -824,7 +824,8 @@ ${optionsMarkdown}`;
             // Extraer los últimos 10 turnos de conversación previa en memoria para mantener la hilación de sesión
             const historyToSend = this.messages.slice(0, -1).slice(-10).map(msg => ({
                 sender: msg.sender,
-                content: msg.content
+                content: msg.content,
+                ...(msg.thoughtSignature ? { thoughtSignature: msg.thoughtSignature } : {})
             }));
 
             const requestData = {

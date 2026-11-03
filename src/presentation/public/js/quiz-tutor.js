@@ -17,7 +17,7 @@ class QuizTutor {
         this._renderPanel();
         this._bindEvents();
         this.initialized = true;
-        console.log("🧠 QuizTutor IA Initialized (Gemini 2.5 Flash Lite + RAG Mode)");
+        console.log("🧠 QuizTutor IA Initialized (Gemini 3.6 Flash Lite + RAG Mode)");
     }
 
     _renderPanel() {
@@ -280,9 +280,13 @@ class QuizTutor {
             if (data.respuesta) {
                 this._addMessage(data.respuesta, 'bot', data.sugerencias, data.citas);
                 
-                // Agregar al historial de la sesión
+                // Agregar al historial de la sesión preservando thoughtSignature intacta (Gemini 3)
                 this.history.push({ sender: 'user', content: text });
-                this.history.push({ sender: 'bot', content: data.respuesta });
+                this.history.push({
+                    sender: 'bot',
+                    content: data.respuesta,
+                    ...(data.thoughtSignature ? { thoughtSignature: data.thoughtSignature } : {})
+                });
 
                 // Mantener límite de historial de la sesión para evitar payloads gigantes
                 if (this.history.length > 10) {

@@ -41,10 +41,6 @@ describe('Admin Panel - Modales Responsivas y Contraste Dual-Theme', () => {
             expect(adminCss).toContain('.image-upload-group {');
             expect(adminCss).toMatch(/\.image-upload-group\s*\{[^}]*background:\s*var\(--bg-tertiary\)/);
 
-            // Contenedor de árbol de dominios IA
-            expect(adminCss).toContain('#ai-domain-container {');
-            expect(adminCss).toMatch(/#ai-domain-container\s*\{[^}]*background:\s*var\(--bg-tertiary\)/);
-
             // Chips seleccionados tienen texto blanco de alto contraste
             expect(adminCss).toMatch(/\.selected-chip\s*\{[^}]*color:\s*#ffffff\s*!important/);
         });

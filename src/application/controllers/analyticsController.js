@@ -4,6 +4,11 @@ const { VertexAI } = require('@google-cloud/vertexai'); // ✅ NUEVO: Importar V
 const securityUtils = require('../../domain/utils/securityUtils');
 const mineduScoringService = require('../../domain/services/mineduScoringService');
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
+const {
+    getVertexCandidateModels,
+    buildVertexGenerationConfig,
+    extractModelResponsePayload
+} = require('../../infrastructure/config/vertexAiConfig');
 
 // CONFIGURACIÓN VERTEX AI
 const googleAuthOptions = resolveGoogleAuthOptions('AnalyticsController');
@@ -236,36 +241,27 @@ class AnalyticsController {
             throw new Error('VertexAI no está inicializado en AnalyticsController');
         }
 
-        // Canal Exclusivo: Google Cloud Vertex AI (GCP Enterprise)
-        // Erradica por completo Google AI Studio (Prepago) y aplica cascada recomendada:
-        // 1. gemini-3.5-flash-lite
-        // 2. gemini-3.1-flash-lite
-        // 3. gemini-2.5-flash-lite (Activo hoy hasta el 28 de enero de 2027)
-        // 4. gemini-2.5-flash
-        const vertexCandidateModels = [
-            'gemini-3.5-flash-lite',
-            'gemini-3.1-flash-lite',
-            'gemini-2.5-flash-lite',
-            'gemini-2.5-flash'
-        ];
-        console.log(`📡 [VertexAI Analytics] Conectando a Vertex AI SDK (GCP Enterprise)...`);
+        // Canal Exclusivo: Google Cloud Vertex AI (GCP Enterprise) — Estándar Gemini 3.6
+        const vertexCandidateModels = getVertexCandidateModels();
+        const generationConfig = buildVertexGenerationConfig({
+            maxOutputTokens: 2048,
+            responseMimeType: 'application/json',
+            thinkingLevel: process.env.VERTEX_DIAGNOSTIC_THINKING_LEVEL || null
+        });
+        console.log('📡 [VertexAI Analytics] Conectando a Vertex AI SDK (GCP Enterprise)...');
         let lastError = null;
 
         for (const modelName of vertexCandidateModels) {
             try {
                 const vertexModel = vertex_ai.getGenerativeModel({
                     model: modelName,
-                    generationConfig: {
-                        maxOutputTokens: 2048,
-                        temperature: 0.4,
-                        responseMimeType: 'application/json'
-                    }
+                    generationConfig
                 });
                 const result = await vertexModel.generateContent(prompt);
-                if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].content) {
-                    const rawText = result.response.candidates[0].content.parts[0].text;
+                const payload = extractModelResponsePayload(result);
+                if (payload && payload.text) {
                     console.log(`✅ [VertexAI Analytics Éxito] Diagnóstico generado con modelo: ${modelName}`);
-                    return rawText;
+                    return payload.text;
                 }
             } catch (err) {
                 lastError = err;

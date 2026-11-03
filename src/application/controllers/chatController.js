@@ -316,8 +316,8 @@ ${message}`;
 
     async enrichResponse(userMessage, llmResult) {
         // La respuesta principal ya viene del LLM.
-        // Esta función ahora propaga metadatos RAG (citas con página), fuentes y sugerencias.
-        const { intencion, confianza, respuesta, idioma_detectado, citas, sources, ragSources, contextUsed } = llmResult;
+        // Esta función ahora propaga metadatos RAG (citas con página), fuentes, sugerencias y thoughtSignature.
+        const { intencion, confianza, respuesta, idioma_detectado, citas, sources, ragSources, contextUsed, thoughtSignature } = llmResult;
         console.log('🎯 Generando respuesta contextual para:', intencion);
 
         let enrichedResponse = respuesta;
@@ -332,6 +332,7 @@ ${message}`;
             ragSources: isRagActive ? (Array.isArray(ragSources) ? ragSources : []) : [],
             contextUsed: isRagActive,
             idioma_detectado: idioma_detectado || 'es',
+            thoughtSignature: thoughtSignature || null,
             sugerencias: await this.generateChatSuggestions(intencion, llmResult)
         };
     }

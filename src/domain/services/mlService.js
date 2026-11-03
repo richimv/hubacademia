@@ -4,10 +4,7 @@ const { spawn } = require('child_process');
 /**
  * 🤖 ML SERVICE (PURIFICADO): Puente de Node.js hacia el motor de Machine Learning en Python.
  * Su propósito es EXCLUSIVAMENTE analítica predictiva, clasificación de tendencias y modelos de ML.
- * NO debe contener lógica de generación de texto (LLM), esa lógica se movió a:
- * - AdminAiService.js (Generación Admin)
- * - UserAiService.js (Generación Usuario)
- * - TutorAiService.js (Chat/Tutoría)
+ * La tutoría académica conversacional reside en TutorAiService.js (Vertex AI Gemini 3.6).
  */
 class MLService {
     constructor() {

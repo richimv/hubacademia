@@ -1,5 +1,4 @@
 const docenteRepository = require('../repositories/docenteRepository');
-const adminAiService = require('./adminAiService');
 
 const CANONICAL_SUBAREAS_MAP = {
     // ASCENSO - Enfoques y Principios del CNEB
@@ -200,61 +199,15 @@ class DocenteService {
             bankSampledAreas = areasWithStock.sort(() => 0.5 - Math.random()).slice(0, 5);
         }
 
-        let balancedBatch = this.packExamQuestions(rawBankQuestions, limit, bankSampledAreas, isDefault);
-
-        const bankCount = balancedBatch.length;
-        let batchIsHealthy = bankCount >= limit;
-        let source = 'BANK';
-        let sampledAreas = bankSampledAreas.map(a => areaMap.get(a) || a);
-
-        if (!batchIsHealthy) {
-            const neededCount = Math.max(1, limit - bankCount);
-            const rawSampled = normalizedAllAreas.length >= 5
-                ? normalizedAllAreas.sort(() => 0.5 - Math.random()).slice(0, 5)
-                : normalizedAllAreas;
-
-            sampledAreas = rawSampled.map(a => areaMap.get(a) || a);
-            const areaPrompt = sampledAreas.join(', ');
-
-            console.log(`🤖 [Docente-IA] Lote insuficiente (${bankCount}/${limit}). Activando RAG para ${sampledAreas.length} áreas (generando ${neededCount} items faltantes)...`);
-            source = bankCount > 0 ? 'HYBRID' : 'AI_REPOSITION';
-
-            if (limit >= 50 || categoryOptions.mode === 'real') {
-                return { questions: balancedBatch, source: 'BANK', topic: sampledAreas[0], areas: areas };
-            }
-
-            try {
-                let aiQuestions = await adminAiService.generateRAGQuestions(target, areaPrompt, career, neededCount, true, difficulty);
-
-                if (aiQuestions && aiQuestions.length > 0) {
-                    aiQuestions = aiQuestions.map(q => this.shuffleOptions(q));
-                    const newIds = await docenteRepository.saveQuestionBankBatch(aiQuestions, sampledAreas[0], target, career);
-                    if (newIds && newIds.length > 0) {
-                        aiQuestions.forEach((q, idx) => { if (newIds[idx]) q.id = newIds[idx]; });
-                    }
-                    balancedBatch = [...balancedBatch, ...aiQuestions].slice(0, limit);
-                } else if (bankCount === 0) {
-                    throw new Error("AI_GENERATION_EMPTY");
-                }
-            } catch (aiErr) {
-                console.error("❌ Error Crítico en Reposición IA (Docente):", aiErr);
-                if (balancedBatch && balancedBatch.length > 0) {
-                    console.log(`⚠️ [DocenteService] Retornando ${balancedBatch.length} preguntas disponibles del banco como fallback seguro.`);
-                    return {
-                        questions: balancedBatch.slice(0, limit),
-                        source: 'BANK',
-                        topic: sampledAreas[0],
-                        areas: areas
-                    };
-                }
-                throw new Error("AI_REPLENISHMENT_FAILED", { cause: aiErr });
-            }
-        }
+        const balancedBatch = this.packExamQuestions(rawBankQuestions, limit, bankSampledAreas, isDefault);
+        const sampledAreas = bankSampledAreas.length > 0
+            ? bankSampledAreas.map(a => areaMap.get(a) || a)
+            : normalizedAllAreas.map(a => areaMap.get(a) || a);
 
         return {
             questions: balancedBatch.slice(0, limit),
-            source: source,
-            topic: sampledAreas[0],
+            source: 'BANK',
+            topic: sampledAreas[0] || 'Conocimientos Pedagógicos',
             areas: areas
         };
     }

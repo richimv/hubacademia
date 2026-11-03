@@ -1,6 +1,11 @@
 const axios = require('axios');
 const { GoogleAuth } = require('google-auth-library');
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
+const {
+    getVertexCandidateModels,
+    buildVertexGenerationConfig,
+    extractModelResponsePayload
+} = require('../../infrastructure/config/vertexAiConfig');
 
 /**
  * 🚀 RAG SERVICE V6.2: Motor Vectorial Puro (Pinecone + Vertex AI)
@@ -47,12 +52,12 @@ class RagService {
                 ...(Object.keys(googleAuthOptions).length > 0 ? { googleAuthOptions } : {})
             });
 
-            const candidateModels = [
-                'gemini-3.5-flash-lite',
-                'gemini-3.1-flash-lite',
-                'gemini-2.5-flash-lite',
-                'gemini-2.5-flash'
-            ];
+            const candidateModels = getVertexCandidateModels();
+            const generationConfig = buildVertexGenerationConfig({
+                maxOutputTokens: 512,
+                responseMimeType: 'application/json',
+                thinkingLevel: 'minimal'
+            });
 
             const role = specialization === 'medicine'
                 ? 'indexador médico experto. Extrae términos clínicos (diagnósticos, síntomas, fármacos, normas NTS/GPC).'
@@ -63,21 +68,19 @@ class RagService {
             CONTEXTO/TARGET: ${target}
             Responde SOLO JSON: {"terms": ["término1", "término2", ...]}`;
 
-            let result = null;
+            let extractedPayload = null;
             for (const modelName of candidateModels) {
                 try {
                     const model = vertexAI.getGenerativeModel({
                         model: modelName,
-                        generationConfig: {
-                            temperature: 0.1,
-                            maxOutputTokens: 512,
-                            responseMimeType: "application/json"
-                        }
+                        generationConfig
                     });
-                    result = await model.generateContent({
-                        contents: [{ role: "user", parts: [{ text: prompt }] }]
+                    const result = await model.generateContent({
+                        contents: [{ role: 'user', parts: [{ text: prompt }] }]
                     });
-                    if (result && result.response && result.response.candidates && result.response.candidates[0]) {
+                    const payload = extractModelResponsePayload(result);
+                    if (payload && payload.text) {
+                        extractedPayload = payload;
                         break;
                     }
                 } catch (err) {
@@ -85,11 +88,11 @@ class RagService {
                 }
             }
 
-            if (!result || !result.response || !result.response.candidates || !result.response.candidates[0]) {
-                throw new Error("Ningún modelo de la cascada respondió en RagService");
+            if (!extractedPayload || !extractedPayload.text) {
+                throw new Error('Ningún modelo de la cascada respondió en RagService');
             }
 
-            const rawText = result.response.candidates[0].content.parts[0].text;
+            const rawText = extractedPayload.text;
             // Limpieza robusta de JSON
             const cleanJson = rawText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
             const parsed = JSON.parse(cleanJson);

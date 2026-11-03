@@ -1122,3 +1122,87 @@ CREATE INDEX idx_users_subscription_status ON public.users USING btree (subscrip
 CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email);
 CREATE INDEX idx_web_traffic_daily ON public.web_traffic USING btree (created_at);
 CREATE INDEX idx_web_traffic_pulse ON public.web_traffic USING btree (last_ping);
+
+-- ------------------------------------------------------------------------------
+-- 7. EXPLICIT DATA API GRANTS (SUPABASE PUBLIC SCHEMA GOVERNANCE — ACT-04)
+-- From October 30, 2026 onward, new tables in public no longer receive automatic
+-- grants for PostgREST / Data API. Every migration in public MUST pair strict RLS
+-- with explicit GRANT statements for anon, authenticated, and service_role.
+-- ------------------------------------------------------------------------------
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+-- Public read-only catalog tables (governed by RLS SELECT policies)
+GRANT SELECT ON TABLE
+    public.careers,
+    public.courses,
+    public.course_books,
+    public.course_careers,
+    public.course_topics,
+    public.resources,
+    public.topics,
+    public.topic_resources,
+    public.decks,
+    public.web_traffic
+TO anon;
+
+-- Authenticated user-scoped & catalog tables (governed by strict RLS auth.uid() = user_id / id)
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
+    public.careers,
+    public.courses,
+    public.course_books,
+    public.course_careers,
+    public.course_topics,
+    public.resources,
+    public.topics,
+    public.topic_resources,
+    public.decks,
+    public.page_views,
+    public.quiz_history,
+    public.search_history,
+    public.user_book_library,
+    public.user_course_library,
+    public.user_flashcards,
+    public.user_notes,
+    public.user_question_history,
+    public.user_simulator_preferences,
+    public.users,
+    public.web_traffic
+TO authenticated;
+
+-- Full backend/admin privileges for service_role across all public tables
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
+    public.careers,
+    public.case_scenarios,
+    public.courses,
+    public.course_books,
+    public.course_careers,
+    public.course_topics,
+    public.decks,
+    public.page_views,
+    public.payment_events,
+    public.question_bank,
+    public.quiz_history,
+    public.quiz_sessions,
+    public.quiz_session_questions,
+    public.resources,
+    public.search_history,
+    public.topics,
+    public.topic_resources,
+    public.user_book_library,
+    public.user_course_library,
+    public.user_flashcards,
+    public.user_notes,
+    public.user_question_history,
+    public.user_simulator_preferences,
+    public.users,
+    public.web_traffic
+TO service_role;
+
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated, service_role;
+
+-- Enforce server-only isolation on exam keys and payment ledgers (never exposed to PostgREST clients)
+REVOKE ALL ON TABLE public.question_bank FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.case_scenarios FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.payment_events FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.quiz_sessions FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.quiz_session_questions FROM PUBLIC, anon, authenticated;

@@ -219,9 +219,13 @@ class FlashcardTutor {
             if (data.respuesta) {
                 this._addMessage(data.respuesta, 'bot');
                 
-                // ✅ Guardamos en el historial para la próxima pregunta (usando 'sender' para match con backend)
+                // ✅ Guardamos en el historial preservando thoughtSignature (Gemini 3)
                 this.history.push({ sender: 'user', content: text });
-                this.history.push({ sender: 'bot', content: data.respuesta });
+                this.history.push({
+                    sender: 'bot',
+                    content: data.respuesta,
+                    ...(data.thoughtSignature ? { thoughtSignature: data.thoughtSignature } : {})
+                });
                 
                 // Limitar historial para no saturar el contexto (ej. últimos 10 mensajes)
                 if (this.history.length > 10) this.history.shift(); 
