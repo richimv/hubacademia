@@ -5,6 +5,7 @@ const mediaController = require('./mediaController'); // ✅ NUEVO: Para subida 
 const DriveService = require('../../domain/services/driveService'); // ✅ NUEVO: Para extracción de miniaturas
 const fs = require('fs');
 const path = require('path');
+const { resolvePublicBaseUrl } = require('../../infrastructure/config/publicUrl');
 
 class CoursesController {
     constructor(searchService, adminService) {
@@ -325,7 +326,7 @@ class CoursesController {
         const base64ImgRegex = /<img[^>]+src=["'](data:image\/([a-zA-Z0-9+]+);base64,([^"']+))["'][^>]*>/gi;
         let match;
         const matches = [];
-        const backendDomain = (process.env.BACKEND_PUBLIC_URL || 'https://tutor-ia-backend.onrender.com').replace(/\/+$/, '');
+        const backendDomain = resolvePublicBaseUrl();
 
         while ((match = base64ImgRegex.exec(html)) !== null) {
             matches.push({

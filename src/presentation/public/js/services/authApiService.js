@@ -1,11 +1,16 @@
 class AuthApiService {
 
-    // ✅ Obtener URL de forma segura usando la config global
+    // ✅ Obtener URL de forma segura usando la config global o el mismo origen (Vercel Serverless)
     static getApiUrl() {
-        if (window.AppConfig && window.AppConfig.API_URL) {
-            return window.AppConfig.API_URL;
+        if (typeof window !== 'undefined') {
+            if (window.AppConfig && window.AppConfig.API_URL) {
+                return window.AppConfig.API_URL.replace(/\/+$/, '');
+            }
+            if (window.location && window.location.origin && window.location.origin !== 'null') {
+                return window.location.origin;
+            }
         }
-        return 'https://tutor-ia-backend.onrender.com';
+        return 'https://www.hubacademia.com';
     }
 
     // ✅ Verificar si un token JWT está expirado localmente

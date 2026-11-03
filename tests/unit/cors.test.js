@@ -1,29 +1,17 @@
-describe('CORS Dynamic Origins Verification', () => {
-    const allowedOrigins = [
-        'http://localhost:3000',
-        'https://chatbot-tutor-uc.vercel.app',
-        'https://hubacademia.vercel.app',
-        'https://hubacademia.com',
-        'https://www.hubacademia.com'
-    ];
+const Server = require('../../src/infrastructure/config/server');
 
-    const verifyOrigin = (origin) => {
-        if (!origin) return true;
-        const isLocal = origin.startsWith('http://localhost:') || 
-                        origin.startsWith('http://127.0.0.1:') || 
-                        /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/.test(origin);
-                        
-        return isLocal || allowedOrigins.includes(origin);
-    };
+describe('CORS Dynamic Origins Verification', () => {
+    const verifyOrigin = (origin) => Server.isOriginAllowed(origin);
 
     test('should allow empty origin (native mobile apps)', () => {
         expect(verifyOrigin(null)).toBe(true);
         expect(verifyOrigin(undefined)).toBe(true);
     });
 
-    test('should allow production web domains', () => {
+    test('should allow production web domains and ecosystem subdomains', () => {
         expect(verifyOrigin('https://hubacademia.com')).toBe(true);
         expect(verifyOrigin('https://www.hubacademia.com')).toBe(true);
+        expect(verifyOrigin('https://docentes.hubacademia.com')).toBe(true);
         expect(verifyOrigin('https://hubacademia.vercel.app')).toBe(true);
         expect(verifyOrigin('https://chatbot-tutor-uc.vercel.app')).toBe(true);
     });

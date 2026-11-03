@@ -1,6 +1,13 @@
 {
     "version": 2,
+    "buildCommand": "npm run build",
+    "outputDirectory": "src/presentation/public",
     "cleanUrls": true,
+    "functions": {
+        "api/*.js": {
+            "maxDuration": 60
+        }
+    },
     "headers": [
         {
             "source": "/(.*)",
@@ -89,12 +96,16 @@
     ],
     "rewrites": [
         {
-            "source": "/api/:apiRoute*",
-            "destination": "https://tutor-ia-backend.onrender.com/api/:apiRoute*"
-        },
-        {
             "source": "/google9e7db62b59fd1348.html",
             "destination": "/api/google_verification"
+        },
+        {
+            "source": "/health",
+            "destination": "/api/index"
+        },
+        {
+            "source": "/api/:apiRoute*",
+            "destination": "/api/index"
         }
     ]
 }

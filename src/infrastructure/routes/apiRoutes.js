@@ -19,7 +19,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 12 * 1024 * 1024,
+        fileSize: 4 * 1024 * 1024, // <= 4 MB para respetar el límite Serverless de Vercel (4.5 MB)
         files: 2,
         fields: 50,
         parts: 52

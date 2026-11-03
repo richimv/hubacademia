@@ -2,9 +2,9 @@
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const pool = require('../../infrastructure/database/db');
 const crypto = require('crypto');
+const { resolvePublicBaseUrl } = require('../../infrastructure/config/publicUrl');
 
-// Configuración del cliente
-// IMPORTANTE: Asegúrate de que MP_ACCESS_TOKEN en Render sea el de PRODUCCIÓN (empieza con APP_USR-...)
+// Configuración del cliente Mercado Pago (Producción / Vercel Serverless)
 const client = new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN
 });
@@ -29,8 +29,8 @@ exports.createOrder = async (req, res) => {
         }
 
         const plan = PLANS[planId];
-        const backendUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || 'https://tutor-ia-backend.onrender.com';
-        const frontendUrl = process.env.FRONTEND_URL || 'https://www.hubacademia.com';
+        const backendUrl = resolvePublicBaseUrl();
+        const frontendUrl = (process.env.FRONTEND_URL || 'https://www.hubacademia.com').replace(/\/+$/, '');
 
         const preference = new Preference(client);
 

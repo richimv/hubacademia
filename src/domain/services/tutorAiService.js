@@ -19,12 +19,16 @@ const { resolveGoogleAuthOptions } = require('../../infrastructure/config/google
  */
 class TutorAiService {
     constructor() {
-        resolveGoogleAuthOptions('TutorAiService');
+        const googleAuthOptions = resolveGoogleAuthOptions('TutorAiService');
         const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
         const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
 
         try {
-            this.vertex_ai = new VertexAI({ project, location });
+            this.vertex_ai = new VertexAI({
+                project,
+                location,
+                ...(Object.keys(googleAuthOptions).length > 0 ? { googleAuthOptions } : {})
+            });
             this.model = this.vertex_ai.getGenerativeModel({
                 model: 'gemini-2.5-flash-lite',
                 generationConfig: {

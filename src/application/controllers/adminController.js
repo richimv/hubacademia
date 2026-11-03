@@ -8,19 +8,25 @@ const adminAiService = require('../../domain/services/adminAiService');
 const adminService = require('../../domain/services/adminService'); // ✅ IMPORTANTE: Se inyecta capa de Negocio
 const mediaController = require('./mediaController');
 
+const os = require('os');
+const { resolvePublicBaseUrl } = require('../../infrastructure/config/publicUrl');
+
 // ==========================================
 // 🛡️ CONFIGURACIÓN BLINDADA DE RUTAS
 // ==========================================
 const isWindows = process.platform === 'win32';
 const ROOT_DIR = process.cwd();
-const DATA_DIR = path.join(ROOT_DIR, 'data_dump');
+const DATA_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'data_dump') : path.join(ROOT_DIR, 'data_dump');
 const ML_SCRIPT = path.join(ROOT_DIR, 'ml_service', 'run_batch.py');
 const PREDICTIONS_FILE = path.join(DATA_DIR, 'ai_predictions.json');
 const PYTHON_PATH = isWindows ? 'C:/Python313/python.exe' : 'python3';
 
-if (!fs.existsSync(DATA_DIR)) {
-    console.log('📁 Creando carpeta data_dump en:', DATA_DIR);
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+    if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+} catch (dirError) {
+    console.warn('⚠️ [AdminController] No se pudo inicializar carpeta temporal data_dump:', dirError.message);
 }
 
 class AdminController {
@@ -678,11 +684,8 @@ class AdminController {
             // Subir a GCS en una carpeta dedicada para contenido del editor
             const gcsPath = await mediaController.uploadFile(req.file, 'editor-content');
 
-            // Construir la URL completa absoluta que usará el frontend para cargar la imagen
-            // NOTA CRÍTICA: Usamos la URL ABSOLUTA hacia el Backend (Render) en lugar de una ruta relativa "/api/media...".
-            // Esto evita que TinyMCE la interprete usando el dominio frontal (Vercel) y caiga en bloqueos de proxy,
-            // garantizando que todos los futuros artículos descarguen sus imágenes directamente del motor de máxima velocidad.
-            const backendDomain = process.env.API_URL || 'https://tutor-ia-backend.onrender.com';
+            // Construir la URL pública hacia el mismo dominio unificado en Vercel Serverless
+            const backendDomain = resolvePublicBaseUrl();
             const location = `${backendDomain}/api/media/gcs?file=${gcsPath}`;
 
             console.log(`🖼️ Imagen de editor subida con éxito (Absoluta): ${location}`);
@@ -703,7 +706,7 @@ class AdminController {
             return html;
         }
 
-        const backendDomain = process.env.API_URL || 'https://tutor-ia-backend.onrender.com';
+        const backendDomain = resolvePublicBaseUrl();
         let sanitized = html;
 
         // Limpiar etiquetas MSO/VML de Word

@@ -12,8 +12,11 @@ const { resolveGoogleAuthOptions } = require('../../infrastructure/config/google
 class RagService {
     constructor() {
         this._rewriterModel = null;
-        resolveGoogleAuthOptions('RagService');
-        this._auth = new GoogleAuth({ scopes: 'https://www.googleapis.com/auth/cloud-platform' });
+        const authOptions = resolveGoogleAuthOptions('RagService');
+        this._auth = new GoogleAuth({
+            scopes: 'https://www.googleapis.com/auth/cloud-platform',
+            ...authOptions
+        });
 
         this._pineconeHost = process.env.PINECONE_HOST;
         this._pineconeKey = process.env.PINECONE_API_KEY;
@@ -37,9 +40,11 @@ class RagService {
         try {
             const { VertexAI } = require('@google-cloud/vertexai');
             const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+            const googleAuthOptions = resolveGoogleAuthOptions('RagService');
             const vertexAI = new VertexAI({
                 project: process.env.GOOGLE_CLOUD_PROJECT,
-                location: location
+                location: location,
+                ...(Object.keys(googleAuthOptions).length > 0 ? { googleAuthOptions } : {})
             });
 
             const candidateModels = [

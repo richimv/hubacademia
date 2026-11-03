@@ -20,10 +20,10 @@
 
     console.log('🔄 Cargando Configuración...');
 
-    // 2. Definir URL del Backend (API)
+    // 2. Definir URL del Backend (API) — 100% unificado en el mismo origen (Vercel Serverless)
     const API_URL = isLocal
         ? 'http://localhost:3000'
-        : 'https://tutor-ia-backend.onrender.com';
+        : window.location.origin;
 
     // 3. Exponer configuración globalmente
     // Usamos var o window para asegurar que sea global

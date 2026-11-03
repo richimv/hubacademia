@@ -38,8 +38,8 @@ describe('TutorAiService - Multimodal Vision (Quiz & Flashcards)', () => {
         const context = {
             type: 'quiz_tutor',
             questionText: '¿Cuál es el significado de la obra?',
-            imageUrl: 'https://tutor-ia-backend.onrender.com/api/media/gcs?file=editor-content/pregunta1.webp',
-            caseImageUrl: 'https://tutor-ia-backend.onrender.com/api/media/gcs?file=editor-content/caso1.webp'
+            imageUrl: 'https://www.hubacademia.com/api/media/gcs?file=editor-content/pregunta1.webp',
+            caseImageUrl: 'https://www.hubacademia.com/api/media/gcs?file=editor-content/caso1.webp'
         };
 
         const result = await tutorAiService._extractMultimodalParts(rawText, context);
@@ -72,8 +72,8 @@ describe('TutorAiService - Multimodal Vision (Quiz & Flashcards)', () => {
         const rawText = 'Duda sobre la casuística';
         const context = {
             type: 'quiz_tutor',
-            caseDescription: '<p>Observa la siguiente pintura:</p><img src="https://tutor-ia-backend.onrender.com/api/media/gcs?file=editor-content/arte08.webp" />',
-            questionText: '<p>En la siguiente imagen:</p><img src="https://tutor-ia-backend.onrender.com/api/media/gcs?file=editor-content/arte08_detalle.png" />'
+            caseDescription: '<p>Observa la siguiente pintura:</p><img src="https://www.hubacademia.com/api/media/gcs?file=editor-content/arte08.webp" />',
+            questionText: '<p>En la siguiente imagen:</p><img src="https://www.hubacademia.com/api/media/gcs?file=editor-content/arte08_detalle.png" />'
         };
 
         const result = await tutorAiService._extractMultimodalParts(rawText, context);
@@ -88,7 +88,7 @@ describe('TutorAiService - Multimodal Vision (Quiz & Flashcards)', () => {
         const context = {
             type: 'quiz_tutor',
             imageUrl: 'editor-content/misma_foto.webp',
-            caseImageUrl: 'https://tutor-ia-backend.onrender.com/api/media/gcs?file=editor-content/misma_foto.webp'
+            caseImageUrl: 'https://www.hubacademia.com/api/media/gcs?file=editor-content/misma_foto.webp'
         };
 
         const result = await tutorAiService._extractMultimodalParts(rawText, context);

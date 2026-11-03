@@ -3,13 +3,19 @@ const UserRepository = require('../../domain/repositories/userRepository'); // 1
 const { VertexAI } = require('@google-cloud/vertexai'); // ✅ NUEVO: Importar Vertex para el Analizador
 const securityUtils = require('../../domain/utils/securityUtils');
 const mineduScoringService = require('../../domain/services/mineduScoringService');
+const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 
 // CONFIGURACIÓN VERTEX AI
+const googleAuthOptions = resolveGoogleAuthOptions('AnalyticsController');
 const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
 const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
 let vertex_ai = null;
 try {
-    vertex_ai = new VertexAI({ project: project, location: location });
+    vertex_ai = new VertexAI({
+        project: project,
+        location: location,
+        ...(Object.keys(googleAuthOptions).length > 0 ? { googleAuthOptions } : {})
+    });
 } catch (e) {
     console.warn('⚠️ AnalyticsController: VertexAI no inicializado (Modo test o sin credenciales).');
 }

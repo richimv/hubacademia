@@ -1,47 +1,96 @@
 const path = require('path');
 require('events').EventEmitter.defaultMaxListeners = 50;
-require('dotenv').config({ path: path.resolve(__dirname, '../../../.env'), override: true });
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 
+const ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'https://chatbot-tutor-uc.vercel.app',
+    'https://hubacademia.vercel.app',
+    'https://hubacademia.com',
+    'https://www.hubacademia.com',
+    'https://docentes.hubacademia.com'
+];
+
+function isServerlessRuntime() {
+    return Boolean(
+        process.env.VERCEL ||
+        process.env.VERCEL_ENV ||
+        process.env.AWS_LAMBDA_FUNCTION_NAME ||
+        process.env.SERVERLESS === 'true'
+    );
+}
+
+function isOriginAllowed(origin) {
+    if (!origin) return true;
+
+    const isLocal =
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:') ||
+        /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/.test(origin);
+
+    return isLocal || ALLOWED_ORIGINS.includes(origin);
+}
+
+let globalErrorHandlersRegistered = false;
+
 class Server {
     constructor() {
-        console.log('🚀 Inicializando Server (Restauración de Servicio)...');
-        // Restart Trigger: Heatmap Fix
+        console.log('🚀 Inicializando Server...');
         this.app = express();
         this.port = process.env.PORT || 3000;
+        this._setupPromise = null;
+        this._isConfigured = false;
     }
 
     async setup() {
-        this.setupGlobalErrorHandlers();
-        await this.testDBConnection();
-        this.configureMiddleware();
-        this.configureStaticFiles();
-        this.configureRoutes();
+        if (this._isConfigured) {
+            return this.app;
+        }
+        if (this._setupPromise) {
+            return this._setupPromise;
+        }
+
+        this._setupPromise = (async () => {
+            try {
+                this.setupGlobalErrorHandlers();
+                await this.testDBConnection();
+                this.configureMiddleware();
+                this.configureStaticFiles();
+                this.configureRoutes();
+                this._isConfigured = true;
+                return this.app;
+            } catch (error) {
+                this._setupPromise = null;
+                throw error;
+            }
+        })();
+
+        return this._setupPromise;
     }
 
     async testDBConnection() {
         try {
-            // ✅ CORRECCIÓN: Importar 'db' aquí para asegurar que .env se haya cargado.
             const db = require('../database/db');
-
-            // Producción usa ADC; el archivo local solo se admite en desarrollo/test.
             require('./googleCredentials').resolveGoogleAuthOptions('ServerAuth');
 
-            // Realizar una consulta simple para verificar la conexión
-            const client = await db.query('SELECT NOW()'); // query() ahora llama a getPool() internamente
-
-            // ✅ CORRECCIÓN: Ahora que db.query devuelve el objeto de resultado completo, volvemos a usar client.rows[0].now
+            const client = await db.query('SELECT NOW()');
             console.log('💾 PostgreSQL conectado exitosamente. Hora del servidor de BD:', client.rows[0].now);
         } catch (error) {
             console.error('❌ Error al conectar con la base de datos PostgreSQL:', error.message);
-            process.exit(1); // Detener la aplicación si no se puede conectar a la BD
+            if (isServerlessRuntime()) {
+                throw error;
+            }
+            process.exit(1);
         }
     }
 
     setupGlobalErrorHandlers() {
-        // ✅ CATCH GLOBAL PARA ERRORES NO MANEJADOS
+        if (globalErrorHandlersRegistered) return;
+        globalErrorHandlersRegistered = true;
+
         process.on('uncaughtException', (error) => {
             console.error('💥 UNCAUGHT EXCEPTION:', error);
             console.error('💥 Stack:', error.stack);
@@ -55,10 +104,7 @@ class Server {
     configureMiddleware() {
         console.log('🔧 Configurando middleware...');
 
-        // ✅ RENDIMIENTO Y SEO: Compresión Gzip/Deflate para respuestas rápidas y Core Web Vitals
         this.app.use(compression());
-
-        // ✅ FIX: Habilitar trust proxy para Render (necesario para rate-limit)
         this.app.set('trust proxy', 1);
         this.app.disable('x-powered-by');
 
@@ -90,45 +136,22 @@ class Server {
             next();
         });
 
-        // ✅ CORS CONFIGURADO PARA VERCEL, DOMINIO PROPIO Y PREVISUALIZACIONES MÓVILES (EXPO)
-        this.app.use(cors({
+        // ✅ CORS CONFIGURADO PARA VERCEL, DOMINIO PROPIO, SUBDOMINIO DOCENTES Y APPS MÓVILES
+        const corsOptions = {
             origin: (origin, callback) => {
-                const allowedOrigins = [
-                    'http://localhost:3000',
-                    'https://chatbot-tutor-uc.vercel.app',
-                    'https://hubacademia.vercel.app',
-                    'https://hubacademia.com',
-                    'https://www.hubacademia.com'
-                ];
-                
-                // Las peticiones sin origen (ej. apps móviles nativas, curl, postman) se permiten
-                if (!origin) return callback(null, true);
-                
-                // Permitir orígenes locales para desarrollo y pruebas (Expo, etc.)
-                const isLocal = origin.startsWith('http://localhost:') || 
-                                origin.startsWith('http://127.0.0.1:') || 
-                                /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/.test(origin);
-                                
-                if (isLocal || allowedOrigins.includes(origin)) {
-                    callback(null, true);
-                } else {
-                    callback(null, false);
-                }
+                callback(null, isOriginAllowed(origin));
             },
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
             allowedHeaders: ['Content-Type', 'Authorization', 'x-client-info', 'apikey', 'X-Requested-With', 'Accept', 'Origin']
-        }));
-        this.app.options('*', cors({
-            origin: (origin, callback) => callback(null, true),
-            credentials: true,
-            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-            allowedHeaders: ['Content-Type', 'Authorization', 'x-client-info', 'apikey', 'X-Requested-With', 'Accept', 'Origin']
-        }));
+        };
 
-        // ✅ EXPRESS.JSON Y URLENCODED CON LÍMITE HOLGADO
-        this.app.use(express.json({ limit: '10mb' }));
-        this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+        this.app.use(cors(corsOptions));
+        this.app.options('*', cors(corsOptions));
+
+        // ✅ Límite alineado con funciones Serverless de Vercel (4.5 MB máximo de payload)
+        this.app.use(express.json({ limit: '4.5mb' }));
+        this.app.use(express.urlencoded({ extended: true, limit: '4.5mb' }));
 
         // Logs de telemetría sin body, prompt, token ni rawBody.
         this.app.use((req, res, next) => {
@@ -140,10 +163,8 @@ class Server {
     }
 
     configureStaticFiles() {
-        // ✅ Servir archivos estáticos con CACHÉ agresivo para assets inmutables
         const publicPath = path.join(__dirname, '../../presentation/public');
 
-        // 1. Caché largo para recursos estáticos (CSS, JS, imágenes, fuentes) — 7 días
         this.app.use('/css', express.static(path.join(publicPath, 'css'), {
             maxAge: '7d',
             immutable: true
@@ -157,60 +178,42 @@ class Server {
             immutable: true
         }));
 
-        // ✅ SEO: Servir robots.txt con tipo de contenido exacto
         this.app.get('/robots.txt', (req, res) => {
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             res.setHeader('Cache-Control', 'public, max-age=86400');
             res.sendFile(path.join(publicPath, 'robots.txt'));
         });
 
-        // ✅ SEO: Servir sitemap.xml con tipo de contenido XML exacto
         this.app.get('/sitemap.xml', (req, res) => {
             res.setHeader('Content-Type', 'application/xml; charset=utf-8');
             res.setHeader('Cache-Control', 'public, max-age=3600');
             res.sendFile(path.join(publicPath, 'sitemap.xml'));
         });
 
-        // 2. Sin caché para HTML (siempre la versión más reciente)
         this.app.use(express.static(publicPath, {
             maxAge: 0,
             etag: true,
             lastModified: true
         }));
 
-        // ✅ Servir favicon.ico desde la raíz del proyecto
         this.app.get('/favicon.ico', (req, res) => {
-            res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 días
+            res.setHeader('Cache-Control', 'public, max-age=604800');
             res.sendFile(path.join(__dirname, '../../../favicon.ico'));
         });
     }
 
     configureRoutes() {
         console.log('🔧 Configurando rutas...');
-        // Importar y usar los enrutadores modulares
         const { globalApiLimiter } = require('./rateLimiters');
         const apiRoutes = require('../routes/apiRoutes');
 
-        // ✅ HEALTH CHECK (Anti Cold Start)
-        // Este endpoint es ultraligero y NO toca la base de datos.
-        // Se usa para mantener el servidor "despierto" o verificar que responde.
         this.app.get('/health', (req, res) => {
-            res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+            res.status(200).json({ status: 'ok', runtime: isServerlessRuntime() ? 'vercel-serverless' : 'node-server', timestamp: new Date().toISOString() });
         });
 
-        // ======================
-        // 🔗 RUTAS API
-        // ======================
-        // Aplicar el limitador global a todas las rutas que comiencen con /api
         this.app.use('/api', globalApiLimiter);
-        // ✅ REFACTORIZACIÓN: Registrar un único enrutador principal para /api.
-        // apiRoutes.js ahora se encarga de delegar a authRoutes y chatRoutes.
         this.app.use('/api', apiRoutes);
 
-        // ======================
-        // 🌐 RUTAS FRONTEND
-        // ======================
-        // ✅ MEJORA: Rutas con "Clean URLs" (sin .html)
         const pages = [
             'login', 'admin', 'chat', 'dashboard',
             'pricing', 'privacy', 'terms', 'quiz', 'course', 'career', 'category',
@@ -219,44 +222,48 @@ class Server {
         ];
 
         pages.forEach(page => {
-            // Ruta Limpia (ej. /pricing)
             this.app.get(`/${page}`, (req, res) => {
                 res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
                 res.sendFile(path.join(__dirname, `../../presentation/public/${page}.html`));
             });
-            // Soporte Legacy (ej. /pricing.html) - Opcional: Redirigir a limpia
             this.app.get(`/${page}.html`, (req, res) => {
                 res.redirect(301, `/${page}`);
             });
         });
 
-        // ✅ Ruta Raíz
         this.app.get('/', (req, res) => {
             res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
             res.sendFile(path.join(__dirname, '../../presentation/public/index.html'));
         });
 
-        // Manejar rutas no encontradas (DEBE IR AL FINAL)
         this.app.get('*', (req, res) => {
             res.status(404).json({ error: 'Ruta no encontrada' });
         });
     }
 
     start() {
-        this.app.listen(this.port, () => {
-            console.log('🚀 Servidor iniciado - DEBUG MODE');
+        return this.app.listen(this.port, () => {
+            console.log('🚀 Servidor iniciado');
             console.log(`📡 http://localhost:${this.port}`);
         });
     }
 }
 
+Server.ALLOWED_ORIGINS = ALLOWED_ORIGINS;
+Server.isOriginAllowed = isOriginAllowed;
+Server.isServerlessRuntime = isServerlessRuntime;
 
 module.exports = Server;
-// Iniciar servidor de forma asíncrona
+
 if (require.main === module) {
     (async () => {
-        const server = new Server();
-        await server.setup();
-        server.start();
+        try {
+            const server = new Server();
+            await server.setup();
+            server.start();
+        } catch (error) {
+            console.error('❌ Fallo fatal en el arranque del servidor:', error);
+            process.exit(1);
+        }
     })();
 }
