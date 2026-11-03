@@ -168,6 +168,8 @@ class RepasoManager {
 
         if (deckId) {
             this.loadFolder(deckId, false); // Deep link
+        } else if (viewParam === 'notes') {
+            this.loadNotes(false);
         } else if (viewParam === 'community' || categoryParam) {
             this.loadCommunity(false, categoryParam);
         } else if (viewParam === 'dashboard') {
@@ -181,6 +183,8 @@ class RepasoManager {
                 const savedView = localStorage.getItem('repaso_active_view');
                 if (savedView === 'community') {
                     this.loadCommunity(false, categoryParam);
+                } else if (savedView === 'notes') {
+                    this.loadNotes(false);
                 } else {
                     this.loadDashboard(false);
                 }
@@ -191,8 +195,9 @@ class RepasoManager {
         if (window.sessionManager) {
             window.sessionManager.onStateChange(() => {
                 this.updateGuestBanner();
-                // Si la vista actual es el Dashboard, lo refrescamos para mostrar/ocultar botones de creación
-                if (!this.currentDeck) {
+                if (this.activeTab === 'notas') {
+                    window.repasoNotesUI?.renderNotesBoard();
+                } else if (!this.currentDeck) {
                     this.renderRootDecks();
                 } else {
                     this.loadFolder(this.currentDeck.id, false);
@@ -274,14 +279,26 @@ class RepasoManager {
 
     // --- Views ---
 
+    _syncViewSwitcher(viewKey) {
+        const tabs = document.querySelectorAll('.repaso-view-tab');
+        tabs.forEach(tab => {
+            const isMatch = tab.getAttribute('data-repaso-view') === viewKey;
+            tab.classList.toggle('active', isMatch);
+            tab.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+        });
+    }
+
     loadDashboard(pushState = true) {
         document.getElementById('dashboard-view').style.display = 'block';
         document.getElementById('folder-view').style.display = 'none';
         const commView = document.getElementById('community-view');
         if (commView) commView.style.display = 'none';
+        const notesView = document.getElementById('notes-view');
+        if (notesView) notesView.style.display = 'none';
         this.currentDeck = null;
         this.activeTab = 'mis-mazos';
         this.explorer.setActive('ROOT');
+        this._syncViewSwitcher('dashboard');
         localStorage.setItem('repaso_active_view', 'dashboard');
 
         // Sync URL: If we go to Dashboard, clear deckId
@@ -304,8 +321,11 @@ class RepasoManager {
         document.getElementById('folder-view').style.display = 'block';
         const commView = document.getElementById('community-view');
         if (commView) commView.style.display = 'none';
+        const notesView = document.getElementById('notes-view');
+        if (notesView) notesView.style.display = 'none';
         this.activeTab = 'folder';
         this.explorer.setActive(deckId);
+        this._syncViewSwitcher('dashboard');
         localStorage.setItem('repaso_active_view', 'folder');
 
         // --- 1. INTENTAR CARGAR DESDE CACHÉ (INSTANTÁNEO) ---
@@ -396,15 +416,45 @@ class RepasoManager {
         }
     }
 
+    loadNotes(pushState = true) {
+        document.getElementById('dashboard-view').style.display = 'none';
+        document.getElementById('folder-view').style.display = 'none';
+        const commView = document.getElementById('community-view');
+        if (commView) commView.style.display = 'none';
+        const notesView = document.getElementById('notes-view');
+        if (notesView) notesView.style.display = 'block';
+
+        this.currentDeck = null;
+        this.activeTab = 'notas';
+        this.explorer.setActive('NOTES');
+        this._syncViewSwitcher('notes');
+        localStorage.setItem('repaso_active_view', 'notes');
+
+        if (pushState && window.history.pushState) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('view', 'notes');
+            url.searchParams.delete('deckId');
+            url.searchParams.delete('category');
+            window.history.pushState({ view: 'notes' }, 'Mis Notas', url.toString());
+        }
+
+        if (window.repasoNotesUI) {
+            window.repasoNotesUI.renderNotesBoard();
+        }
+    }
+
     loadCommunity(pushState = true, category = null) {
         document.getElementById('dashboard-view').style.display = 'none';
         document.getElementById('folder-view').style.display = 'none';
+        const notesView = document.getElementById('notes-view');
+        if (notesView) notesView.style.display = 'none';
         const commView = document.getElementById('community-view');
         if (commView) commView.style.display = 'block';
 
         this.currentDeck = null;
         this.activeTab = 'comunidad';
         this.explorer.setActive('COMMUNITY');
+        this._syncViewSwitcher('community');
         localStorage.setItem('repaso_active_view', 'community');
 
         const targetCat = category || this.currentCommunityCategory || localStorage.getItem('repaso_community_category') || 'ALL';
@@ -438,7 +488,7 @@ class RepasoManager {
             container.innerHTML = `
                 <div class="repaso-dashboard-header">
                     <div class="repaso-header-top-row">
-                        <h2 class="repaso-header-title">Centro de Repaso</h2>
+                        <h1 class="repaso-header-title">Mis Mazos de Repaso</h1>
                         <button id="btn-repaso-guide" class="btn-guide-hero" data-tooltip="Ver guía rápida de repaso" aria-label="Guía rápida">
                             <i class="fas fa-circle-question"></i>
                             <span>Guía</span>
@@ -1566,6 +1616,8 @@ class RepasoManager {
             if (!this.currentDeck || String(this.currentDeck.id) !== String(deckId)) {
                 this.loadFolder(deckId, false);
             }
+        } else if (view === 'notes' || (!view && this.activeTab === 'notas')) {
+            this.loadNotes(false);
         } else if (view === 'community' || (!view && this.activeTab === 'comunidad')) {
             const grid = document.getElementById('community-decks-grid');
             if (grid && grid.children.length > 0 && this.activeTab === 'comunidad' && !grid.querySelector('.fa-spin')) {

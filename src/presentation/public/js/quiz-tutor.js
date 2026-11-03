@@ -422,7 +422,7 @@ class QuizTutor {
                     const pagStr = rawPag ? (String(rawPag).toLowerCase().includes('pág') ? rawPag : `Pág. ${rawPag}`) : 'Consultada';
                     return `• ${fuente} (${pagStr})`;
                 }).join('\n');
-                textToCopy += `\n\n📚 Fuentes Oficiales Consultadas (RAG):\n${formattedCitas}`;
+                textToCopy += `\n\nFuentes Oficiales Consultadas:\n${formattedCitas}`;
             }
 
             await navigator.clipboard.writeText(textToCopy);
@@ -452,7 +452,7 @@ class QuizTutor {
                     const pagStr = rawPag ? (String(rawPag).toLowerCase().includes('pág') ? rawPag : `Pág. ${rawPag}`) : 'Consultada';
                     return `- ${fuente} (${pagStr})`;
                 }).join('\n');
-                contentToSave += `\n\n### 📚 Fuentes Oficiales Consultadas (RAG):\n${formattedCitas}`;
+                contentToSave += `\n\n### Fuentes Oficiales Consultadas:\n${formattedCitas}`;
             }
 
             const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/library/notes`, {
@@ -466,10 +466,13 @@ class QuizTutor {
 
             if (!response.ok) throw new Error("Error al guardar nota");
 
-            // Feedback visual exitoso con animación y estado "Nota Guardada"
-            btn.innerHTML = '<i class="fas fa-check"></i> Nota Guardada';
-            btn.style.color = '#f59e0b'; // Amarillo dorado
+            // Feedback visual exitoso apuntando a Repaso y Notas (/repaso?view=notes)
+            btn.innerHTML = '<i class="fas fa-check"></i> Guardada en Repaso y Notas';
+            btn.title = 'Abrir Mis Notas en Repaso';
+            btn.style.color = '#f59e0b';
             btn.classList.add('saved');
+            btn.disabled = false;
+            btn.onclick = () => { window.location.href = '/repaso?view=notes'; };
 
             if (window.libraryService && typeof window.libraryService.loadFullLibrary === 'function') {
                 window.libraryService.loadFullLibrary();

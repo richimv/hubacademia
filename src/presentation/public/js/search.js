@@ -22,10 +22,10 @@ class SearchComponent {
         this.viewStack = []; 
         this.currentView = { name: 'home', args: [] }; 
 
-        // MANTA TABS STATE (Sector-Based Taxonomy)
-        this.activeSector = 'medicine'; // 'medicine' (Salud) | 'education' (Educación)
-        this.activeTab = 'salud'; // 'salud' | 'educacion'
-        this.activeFilter = '🔥 Novedades'; 
+        // Sector-Based Taxonomy (Educación primero, Salud vertical secundaria)
+        this.activeSector = 'education'; // 'education' (Educación) | 'medicine' (Salud)
+        this.activeTab = 'educacion'; // 'educacion' | 'salud'
+        this.activeFilter = null;
 
         this.init();
 
@@ -796,7 +796,7 @@ class SearchComponent {
         this.browseContainer.innerHTML = /*html*/`
             <div class="detail-view-container">
                 <div class="course-main-header">
-                    <div class="course-header-icon" style="background: linear-gradient(to bottom right, #10b981, #059669);">
+                    <div class="course-header-icon" style="background: var(--bg-tertiary); border: 1px solid var(--border-color);">
                         <i class="fas fa-book"></i>
                     </div>
                     <div class="course-header-title">
@@ -939,7 +939,7 @@ class SearchComponent {
         this.browseContainer.innerHTML = /*html*/`
             <div class="detail-view-container">
                  <div class="course-main-header">
-                    <div class="course-header-icon" style="background: linear-gradient(to bottom right, #3b82f6, #2563eb);">
+                    <div class="course-header-icon" style="background: var(--bg-tertiary); border: 1px solid var(--border-color);">
                         <i class="fas fa-graduation-cap"></i>
                     </div>
                     <div class="course-header-title">
@@ -1030,44 +1030,39 @@ class SearchComponent {
         this.resultsContainer.classList.add('hidden');
         this.browseContainer.classList.remove('hidden');
 
-        // ✅ REFACTORIZACIÓN ROBUSTA: El SearchComponent gestiona su propia navegación
-        // Evitamos depender de elementos estáticos en index.html que causaban errores de 'null'.
+        // Consulta directa sin barras de sub-filtros: selector limpio Educación | Salud
         this.browseContainer.innerHTML = `
             <div id="manta-navigation" class="manta-navigation-area">
                 <div class="manta-resource-tabs-wrapper">
-                    <div class="manta-tabs-container resource-tabs" id="manta-resource-tabs">
-                        <button class="manta-tab resource-tab ${this.activeTab === 'salud' ? 'active' : ''}" data-tab="salud">SALUD</button>
-                        <span class="manta-tab-divider" aria-hidden="true">|</span>
-                        <button class="manta-tab resource-tab ${this.activeTab === 'educacion' ? 'active' : ''}" data-tab="educacion">EDUCACIÓN</button>
+                    <div class="manta-tabs-container resource-tabs" id="manta-resource-tabs" role="tablist" aria-label="Sector documental">
+                        <button type="button" role="tab" aria-selected="${this.activeTab === 'educacion'}" class="manta-tab resource-tab ${this.activeTab === 'educacion' ? 'active' : ''}" data-tab="educacion">Educación</button>
+                        <button type="button" role="tab" aria-selected="${this.activeTab === 'salud'}" class="manta-tab resource-tab ${this.activeTab === 'salud' ? 'active' : ''}" data-tab="salud">Salud</button>
                     </div>
                 </div>
-                <div class="manta-filters-container" id="manta-filters"></div>
+                <span id="library-catalog-count" class="library-catalog-count"></span>
             </div>
             <div id="manta-grid-container" class="manta-content-grid" style="margin-top: 0.5rem;"></div>
         `;
 
-        // Ocultar navegación estática de index.html para evitar duplicidad
+        // Ocultar navegación estática heredada si existiera
         const staticNav = document.getElementById('manta-navigation');
         if (staticNav && staticNav.parentElement === document.getElementById('content-container')) {
             staticNav.classList.add('hidden');
         }
 
-        // TABS LISTENERS
+        // Selector de sector
         this.browseContainer.querySelectorAll('.resource-tab').forEach(tabBtn => {
             tabBtn.addEventListener('click', (e) => {
-                this.browseContainer.querySelectorAll('.resource-tab').forEach(t => t.classList.remove('active'));
+                this.browseContainer.querySelectorAll('.resource-tab').forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                });
                 e.currentTarget.classList.add('active');
-                
+                e.currentTarget.setAttribute('aria-selected', 'true');
+
                 const tab = e.currentTarget.dataset.tab;
                 this.activeTab = tab;
-
-                if (tab === 'salud') {
-                    this.activeSector = 'medicine';
-                    this.activeFilter = '🔥 Novedades';
-                } else if (tab === 'educacion') {
-                    this.activeSector = 'education';
-                    this.activeFilter = '🔥 Novedades';
-                }
+                this.activeSector = tab === 'salud' ? 'medicine' : 'education';
 
                 this.renderTabContent();
             });
@@ -1077,107 +1072,42 @@ class SearchComponent {
     }
 
     async renderTabContent() {
-        const filtersContainer = this.browseContainer.querySelector('#manta-filters');
+        const countEl = this.browseContainer.querySelector('#library-catalog-count');
         const gridContainer = this.browseContainer.querySelector('#manta-grid-container');
+        if (!gridContainer) return;
 
         gridContainer.innerHTML = Array(6).fill('<div class="course-card">' + createSkeletonCardHTML('Grid') + '</div>').join('');
+        if (countEl) countEl.textContent = 'Cargando documentos...';
 
-        if (this.activeTab === 'salud' || this.activeTab === 'educacion') {
-            let data = [];
-            const biblioFilters = [
-                { id: '🔥 Novedades', val: 'news' },
-                { id: 'Libros y Manuales', val: 'book' },
-                { id: 'Papers Científicos', val: 'paper' },
-                { id: 'Normas y Directivas', val: 'norma' },
-                { id: 'Guías Técnicas', val: 'guia' },
-                { id: 'Otros Recursos', val: 'other' }
-            ];
-
-            filtersContainer.innerHTML = biblioFilters.map(f => `
-                <button class="manta-filter-pill ${this.activeFilter === f.id ? 'active' : ''}" data-filter-id="${f.id}" data-filter-val="${f.val}">
-                    ${f.id}
-                </button>
-            `).join('');
-
-            this._attachFilterListeners(filtersContainer, async (valStr) => {
-                let data = [];
-                try {
-                    const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?type=${valStr}&domain=${this.activeSector}`);
-                    if (res.ok) data = await res.json();
-                } catch (e) { console.error('Error fetching library type', e); }
-
-                this._renderResourceGrid(data, gridContainer, valStr === 'news');
-            });
-
-            // Auto-load active pill
-            const activePill = biblioFilters.find(f => f.id === this.activeFilter) || biblioFilters[0];
-            if (activePill) {
-                try {
-                    const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?type=${activePill.val}&domain=${this.activeSector}`);
-                    if (res.ok) data = await res.json();
-                } catch (e) { }
-                this._renderResourceGrid(data, gridContainer, activePill.val === 'news');
+        let data = [];
+        try {
+            const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?domain=${encodeURIComponent(this.activeSector)}`);
+            if (res.ok) {
+                data = await res.json();
             }
-
-        } else if (this.activeTab === 'cursos') {
-            // Filtrar carreras por sector
-            const filteredCareers = this.allData.careers.filter(c => c.domain === this.activeSector);
-            const areas = [...new Set(filteredCareers.map(c => c.area || 'Otras Áreas'))].sort();
-
-            if (areas.length === 0) {
-                filtersContainer.innerHTML = '';
-                gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay cursos disponibles para este sector.</p>';
-                return;
-            }
-
-            filtersContainer.innerHTML = areas.map(a => `
-                <button class="manta-filter-pill ${this.activeFilter === a ? 'active' : ''}" data-filter-id="${a}">
-                    ${a}
-                </button>
-            `).join('');
-
-            const renderCoursesByCareer = (careersInArea) => {
-                if (!careersInArea || careersInArea.length === 0) {
-                    return '<p class="empty-state" style="grid-column: 1 / -1;">No hay carreras en esta área.</p>';
-                }
-                let html = '';
-                careersInArea.forEach(career => {
-                    const courses = (this.allData.courses || []).filter(c => c.career_id === career.id);
-                    if (courses.length > 0) {
-                        html += `<div class="manta-group-title" style="grid-column: 1/-1;">${career.name}</div>`;
-                        courses.forEach(course => {
-                            html += createUnifiedResourceCardHTML({ ...course, type: 'course' });
-                        });
-                    }
-                });
-                return html || '<p class="empty-state" style="grid-column: 1 / -1;">No hay cursos registrados para estas carreras.</p>';
-            };
-
-            this._attachFilterListeners(filtersContainer, (areaName) => {
-                const careersInArea = filteredCareers.filter(c => (c.area || 'Otras Áreas') === areaName);
-                const rawHTML = renderCoursesByCareer(careersInArea);
-                this._renderPaginatedGrid(rawHTML, gridContainer, 15);
-            });
-
-            // Auto-load
-            const careersInActiveArea = filteredCareers.filter(c => (c.area || 'Otras Áreas') === this.activeFilter);
-            const rawHTMLActive = renderCoursesByCareer(careersInActiveArea);
-            this._renderPaginatedGrid(rawHTMLActive, gridContainer, 15);
+        } catch (e) {
+            console.error('Error fetching library catalog:', e);
         }
+
+        const totalDocs = Array.isArray(data) ? data.length : 0;
+        if (countEl) {
+            countEl.textContent = totalDocs === 1 ? '1 documento disponible' : `${totalDocs} documentos disponibles`;
+        }
+
+        this._renderResourceGrid(data, gridContainer, false);
     }
 
-    // New Helper: Render Resource Grid with Grouping and Pagination
+    // Renderizado agrupado y paginado de recursos para consulta directa
     _renderResourceGrid(data, gridContainer, isNews = false) {
-        if (isNews || this.activeFilter === '🔥 Novedades') {
+        if (isNews) {
             gridContainer.style.display = 'block';
             gridContainer.innerHTML = createNewsBulletinWidgetHTML(data || [], this.activeSector);
-            if (window.libraryManager) window.libraryManager.updateButtons();
             return;
         }
 
-        gridContainer.style.display = ''; // Restore default 6 column grid layout
+        gridContainer.style.display = '';
         if (!data || data.length === 0) {
-            gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay recursos en esta categoría.</p>';
+            gridContainer.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">No hay documentos disponibles en este sector.</p>';
             return;
         }
 
@@ -1288,7 +1218,7 @@ class SearchComponent {
         this.browseContainer.innerHTML = /*html*/`
             <div class="detail-view-container">
                 <div class="course-main-header">
-                    <div class="course-header-icon" style="background: linear-gradient(to bottom right, #ef4444, #b91c1c);">
+                    <div class="course-header-icon" style="background: var(--bg-tertiary); border: 1px solid var(--border-color);">
                         <i class="fas fa-book-medical"></i>
                     </div>
                     <div class="course-header-title">

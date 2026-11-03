@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Biblioteca de Recursos y Balotarios Oficiales | Hub Academia</title>
-    
-    <!-- ✅ Metadatos SEO Primarios -->
-    <meta name="description" content="Accede a la biblioteca digital de balotarios resueltos, marcos normativos MINEDU, guías clínicas MINSA y material de estudio oficial.">
-    <meta name="keywords" content="biblioteca hub academia, balotarios nombramiento docente, normas tecnicas salud minsa, guias de estudio magisterio peru, recursos educativos oficiales">
+    <title>Biblioteca de Consulta Oficial | Hub Academia</title>
+
+    <!-- Metadatos SEO Primarios -->
+    <meta name="description" content="Consulta directa de documentos normativos MINEDU, currículos nacionales, guías técnicas de salud y material oficial en Hub Academia.">
+    <meta name="keywords" content="biblioteca hub academia, documentos normativos minedu, curriculo nacional cneb, normas tecnicas salud minsa, recursos educativos peru">
     <meta name="author" content="Hub Academia">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <link rel="canonical" href="https://www.hubacademia.com/library">
@@ -17,56 +17,68 @@
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="/assets/logo.png">
 
-    <!-- ✅ Open Graph -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Hub Academia">
-    <meta property="og:title" content="Mi Biblioteca de Recursos y Balotarios Oficiales | Hub Academia">
-    <meta property="og:description" content="Repositorio digital de recursos oficiales, balotarios resueltos y marcos normativos para docentes y profesionales de la salud.">
+    <meta property="og:title" content="Biblioteca de Consulta Oficial | Hub Academia">
+    <meta property="og:description" content="Acceso directo sin fricción a documentos normativos, guías técnicas y bibliografía oficial para docentes y profesionales en el Perú.">
     <meta property="og:url" content="https://www.hubacademia.com/library">
     <meta property="og:image" content="https://www.hubacademia.com/assets/logo.png">
     <meta property="og:locale" content="es_PE">
 
-    <!-- ✅ Twitter Cards -->
+    <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Mi Biblioteca de Recursos y Balotarios Oficiales | Hub Academia">
-    <meta name="twitter:description" content="Repositorio digital de recursos oficiales y balotarios resueltos MINEDU y MINSA.">
+    <meta property="twitter:title" content="Biblioteca de Consulta Oficial | Hub Academia">
+    <meta name="twitter:description" content="Consulta directa de marcos normativos MINEDU y guías oficiales en Hub Academia.">
     <meta name="twitter:image" content="https://www.hubacademia.com/assets/logo.png">
 
-    <!-- ✅ Preconnect y Fuentes -->
+    <!-- Redirección inmediata de enlaces heredados ?tab=notes hacia /repaso?view=notes -->
+    <script>
+        (function () {
+            try {
+                var params = new URLSearchParams(window.location.search);
+                if (params.get('tab') === 'notes') {
+                    window.location.replace('/repaso?view=notes');
+                }
+            } catch (_) { /* ignore */ }
+        })();
+    </script>
+
+    <!-- Preconnect y Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/base.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/header.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/footer.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/dashboard.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/components.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/modal.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/sidebar.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/search.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/browse.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/results.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/course.css?v=3caed1c843dd">
+    <link rel="stylesheet" href="/css/theme.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/base.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/header.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/footer.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/dashboard.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/components.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/modal.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/sidebar.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/search.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/browse.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/results.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/course.css?v=66c8a43b81c7">
 
     <!-- Global scripts -->
-    <script src="/js/config.js?v=3caed1c843dd"></script>
-    <script src="/js/utils/themeManager.js?v=3caed1c843dd"></script>
+    <script src="/js/config.js?v=66c8a43b81c7"></script>
+    <script src="/js/utils/themeManager.js?v=66c8a43b81c7"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=3caed1c843dd"></script>
+    <script src="/js/utils/markdown-renderer.js?v=66c8a43b81c7"></script>
 
-    <!-- ✅ Schema.org / JSON-LD -->
+    <!-- Schema.org / JSON-LD -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "name": "Mi Biblioteca de Recursos y Balotarios Hub Academia",
+      "name": "Biblioteca de Consulta Hub Academia",
       "url": "https://www.hubacademia.com/library",
-      "description": "Repositorio académico con balotarios oficiales, leyes magisteriales y protocolos de salud.",
+      "description": "Repositorio documental con marcos normativos MINEDU, currículos oficiales y guías técnicas de salud.",
       "provider": {
         "@type": "EducationalOrganization",
         "name": "Hub Academia",
@@ -76,222 +88,91 @@
     </script>
 
     <style>
-        /* =========================================================
-           LIBRARY PAGE LAYOUT & HEADER (MANTA DESIGN SYSTEM V3.0)
-           ========================================================= */
-
         #library-page-container {
-            padding: 0 !important;
-            border: none !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            width: 100% !important;
+            padding: 0;
+            border: none;
+            background: transparent;
+            width: 100%;
         }
 
-        /* 1. Encabezado "Mi Biblioteca" Hero */
         .library-hero-header {
-            margin-bottom: 1rem;
-            text-align: left;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding-bottom: 1rem;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .library-hero-title {
-            font-size: 2rem !important;
-            font-weight: 800 !important;
-            color: var(--text-main) !important;
-            margin: 0 !important;
-            letter-spacing: -0.02em !important;
-        }
-
-        /* 2. Pestañas Superiores (Biblioteca de Recursos, Guardados, Favoritos, Notas) */
-        .library-tabs {
-            display: flex !important;
-            align-items: center !important;
-            gap: 0.75rem !important;
-            border-bottom: 1px solid var(--border-color) !important;
-            padding-bottom: 0.75rem !important;
-            margin-bottom: 1.5rem !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-        }
-
-        .library-tabs:not(.guest-mode) {
-            display: grid !important;
-            grid-template-columns: repeat(4, 1fr) !important;
-        }
-
-        .library-tabs.guest-mode {
-            display: block !important;
-        }
-
-        .library-tab {
-            background: var(--bg-tertiary) !important;
-            border: 1px solid var(--border-color) !important;
-            color: var(--text-secondary) !important;
-            padding: 0.75rem 1rem !important;
-            border-radius: 12px !important;
-            font-size: 0.9rem !important;
-            font-weight: 600 !important;
-            cursor: pointer !important;
-            white-space: nowrap !important;
-            transition: all 0.2s ease !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            text-align: center !important;
-            box-shadow: var(--shadow-sm) !important;
-            width: 100% !important;
-            max-width: none !important;
-            box-sizing: border-box !important;
-        }
-
-        .library-tab.hidden,
-        .library-tab[style*="display: none"] {
-            display: none !important;
-        }
-
-        .library-tab:hover {
-            background: var(--surface-hover) !important;
-            color: var(--text-main) !important;
-            border-color: var(--border-hover) !important;
-            transform: translateY(-1px);
-        }
-
-        .library-tab.active {
-            background: var(--primary) !important;
-            color: #ffffff !important;
-            border: 1px solid var(--primary) !important;
-            box-shadow: 0 4px 12px var(--primary-glow) !important;
-        }
-
-        .library-tab.active i {
-            color: #ffffff !important;
-        }
-
-        @media (max-width: 650px) {
-            .library-tabs {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 0.5rem !important;
-            }
-        }
-
-        /* 2.5 Estados Vacíos Enriquecidos */
-        .library-empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 3.5rem 1.5rem;
-            background: var(--bg-tertiary);
-            border: 1px dashed var(--border-color);
-            border-radius: 16px;
-            margin: 1rem 0;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .library-empty-state .empty-icon-circle {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: var(--surface-hover);
-            border: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.75rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .library-empty-state h3 {
-            font-size: 1.15rem;
+            font-size: 1.65rem;
             font-weight: 700;
             color: var(--text-main);
-            margin: 0 0 0.4rem 0;
+            margin: 0;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
         }
 
-        .library-empty-state p {
-            font-size: 0.88rem;
+        .library-hero-subtitle {
+            margin: 0.35rem 0 0 0;
+            font-size: 0.9rem;
             color: var(--text-secondary);
-            max-width: 420px;
-            margin: 0 0 1.25rem 0;
-            line-height: 1.5;
+            max-width: 62ch;
+            line-height: 1.45;
         }
 
-        .library-empty-state .btn-primary {
-            padding: 0.6rem 1.25rem;
-            border-radius: 10px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* 3. Sección de Búsqueda Normal (Flujo relativo, SIN solapamiento) */
         #panel-resources .search-section {
-            position: relative !important;
-            top: auto !important;
-            bottom: auto !important;
-            left: auto !important;
-            right: auto !important;
-            transform: none !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 0 1.25rem 0 !important;
-            padding: 0 !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            border: none !important;
-            display: block !important;
-            z-index: 1 !important;
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            margin: 0 0 1.25rem 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+            display: block;
+            z-index: 1;
         }
 
-        .notes-search-wrapper {
+        .library-search-wrapper {
             position: relative;
-            flex: 1;
             width: 100%;
-            min-width: 250px;
             box-sizing: border-box;
         }
 
-        .notes-search-wrapper .search-icon {
+        .library-search-wrapper .search-icon {
             position: absolute;
-            left: 16px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-muted);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             pointer-events: none;
         }
 
-        .notes-search-wrapper input {
+        .library-search-wrapper input {
             width: 100%;
             height: 44px;
-            padding: 0 2.5rem 0 2.6rem;
-            background: var(--bg-tertiary) !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: 30px;
-            color: var(--text-main) !important;
+            padding: 0 2.5rem 0 2.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-main);
             font-size: 0.92rem;
             outline: none;
-            transition: all 0.2s;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
             box-sizing: border-box;
-            box-shadow: var(--shadow-sm);
         }
 
-        .notes-search-wrapper input:focus {
-            border-color: var(--primary) !important;
-            background: var(--surface-hover) !important;
-            box-shadow: 0 0 0 3px var(--primary-glow) !important;
+        .library-search-wrapper input:focus {
+            border-color: var(--primary);
+            background: var(--surface-hover);
         }
 
-        .notes-search-wrapper .search-clear-btn {
+        .library-search-wrapper .search-clear-btn {
             position: absolute;
-            right: 14px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
@@ -303,43 +184,79 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
-            transition: all 0.2s;
+            border-radius: 6px;
+            transition: color 0.15s ease, background-color 0.15s ease;
         }
 
-        .notes-search-wrapper .search-clear-btn:hover {
+        .library-search-wrapper .search-clear-btn:hover {
             color: var(--text-main);
             background: var(--surface-hover);
         }
 
-        #chatbot-toggle, #chatbot-window, .chatbot-widget, #ai-chat-widget {
+        #chatbot-toggle,
+        #chatbot-window,
+        .chatbot-widget,
+        #ai-chat-widget {
             display: none !important;
         }
 
-        /* 4. Separador elegante entre Pestañas SALUD y EDUCACIÓN */
-        .resource-tabs, #manta-resource-tabs {
-            display: flex !important;
-            gap: 0.75rem !important;
-            align-items: center !important;
+        /* Selector limpio de sector (Educación | Salud) */
+        .manta-navigation-area {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
         }
 
-        .manta-tab-divider {
-            color: var(--border-color) !important;
-            font-size: 1.1rem !important;
-            font-weight: 300 !important;
-            user-select: none !important;
-            margin: 0 0.25rem !important;
-            align-self: center !important;
+        .resource-tabs,
+        #manta-resource-tabs {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
         }
 
-        /* Grid de recursos estandarizado: 5 columnas en escritorio, 3 en tablet, 2 en móviles */
+        .manta-tab.resource-tab {
+            appearance: none;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.45rem 0.95rem;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .manta-tab.resource-tab:hover {
+            color: var(--text-main);
+        }
+
+        .manta-tab.resource-tab.active {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border-color: var(--border-color);
+        }
+
+        .library-catalog-count {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Grilla estandarizada de recursos */
         .books-grid,
         .courses-grid,
         .careers-grid,
         .browse-grid,
         .manta-content-grid,
         .results-list,
-        .library-list,
         .documents-grid-premium,
         .medical-books-grid,
         .ml-grid,
@@ -357,7 +274,6 @@
             .browse-grid,
             .manta-content-grid,
             .results-list,
-            .library-list,
             .documents-grid-premium,
             .medical-books-grid,
             .ml-grid,
@@ -367,7 +283,6 @@
             }
         }
 
-        /* Responsividad de contenedores y textos en biblioteca */
         @media (max-width: 768px) {
             .dashboard-container,
             #library-page-container,
@@ -380,62 +295,27 @@
                 width: 100% !important;
                 box-sizing: border-box !important;
             }
-            
+
             .dashboard-container {
-                padding: 1rem 0.5rem !important;
-            }
-            #library-page-container {
-                padding: 1rem !important;
-                border-radius: 12px !important;
-            }
-            .library-header-page h1 {
-                font-size: 1.6rem !important;
-            }
-            .library-header-page p {
-                font-size: 0.85rem !important;
+                padding: 1rem 0.85rem !important;
             }
 
-            /* Scroll horizontal premium en tabs de biblioteca */
-            .library-tabs {
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important;
-                padding: 0.4rem !important;
-                gap: 0.5rem !important;
-                scrollbar-width: none !important;
-                background: rgba(255, 255, 255, 0.02) !important;
-                border-radius: 12px !important;
-                margin-bottom: 1.5rem !important;
-                width: 100% !important;
-                max-width: 100% !important;
-            }
-            .library-tabs::-webkit-scrollbar {
-                display: none !important;
-            }
-            .library-tab {
-                flex: 0 0 auto !important;
-                white-space: nowrap !important;
-                padding: 0.5rem 1rem !important;
-                font-size: 0.85rem !important;
+            .library-hero-title {
+                font-size: 1.4rem;
             }
 
-            /* Grid responsivo exacto: 2 recursos por fila en celulares para apreciar portadas y títulos */
             .books-grid,
             .courses-grid,
             .careers-grid,
             .browse-grid,
             .manta-content-grid,
             .results-list,
-            .library-list,
             .documents-grid-premium,
             .medical-books-grid,
             .ml-grid,
             .general-grid {
-                display: grid !important;
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
                 gap: 0.85rem !important;
-                width: 100% !important;
             }
 
             .unified-resource-card {
@@ -443,312 +323,6 @@
                 max-width: 100% !important;
                 box-sizing: border-box !important;
             }
-
-            /* Barra de búsqueda compacta horizontal */
-            #panel-resources .search-section {
-                margin: 1rem auto 1.5rem auto !important;
-                width: 100% !important;
-                max-width: 100% !important;
-            }
-            #panel-resources .search-box {
-                flex-direction: row !important;
-                padding: 0.35rem 0.35rem 0.35rem 1rem !important;
-                border-radius: 50px !important;
-                gap: 5px !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            #panel-resources .search-box input {
-                font-size: 0.95rem !important;
-                padding: 0.25rem 0.5rem !important;
-                width: auto !important;
-                flex: 1 !important;
-            }
-            #panel-resources .search-box button {
-                width: 36px !important;
-                height: 36px !important;
-                min-width: 36px !important;
-                max-width: 36px !important;
-                padding: 0 !important;
-                border-radius: 50% !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                flex-shrink: 0 !important;
-            }
-            #panel-resources .search-box button .search-btn-text {
-                display: none !important;
-            }
-            #panel-resources .search-box button i {
-                margin: 0 !important;
-                font-size: 0.95rem !important;
-            }
-
-            /* Prevent filter pills from shrinking, enabling horizontal scroll */
-            .manta-filter-pill,
-            .library-cat-btn {
-                flex-shrink: 0 !important;
-                white-space: nowrap !important;
-            }
-
-            /* Forzar que el contenedor de filtros sea scrollable horizontalmente en móviles */
-            .manta-filters-container,
-            .library-category-filters {
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important;
-                gap: 0.5rem !important;
-            }
-            .manta-filters-container::-webkit-scrollbar,
-            .library-category-filters::-webkit-scrollbar {
-                display: none !important;
-            }
-        } /* Fin de @media (max-width: 768px) */
-            
-        /* Estilos modernos para el tablón de Notas (UI/UX Premium - Globales para PC y Mobile) */
-        #panel-notes .library-list {
-            display: grid !important;
-            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-            gap: 1.25rem !important;
-            width: 100% !important;
-        }
-
-        @media (max-width: 1200px) {
-            #panel-notes .library-list {
-                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-            }
-        }
-
-        @media (max-width: 900px) {
-            #panel-notes .library-list {
-                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-            }
-        }
-
-        @media (max-width: 600px) {
-            #panel-notes .library-list {
-                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-                gap: 0.75rem !important;
-            }
-        }
-
-        .note-card {
-            position: relative;
-            background: var(--card-bg) !important;
-            backdrop-filter: blur(12px) !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: 16px !important;
-            padding: 1.25rem !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            height: 210px !important;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            box-sizing: border-box !important;
-            overflow: hidden !important;
-            margin-bottom: 0 !important;
-            text-align: left !important;
-            box-shadow: var(--shadow-sm) !important;
-        }
-
-        .note-card:hover {
-            transform: translateY(-5px) !important;
-            background: var(--surface-hover) !important;
-            border-color: var(--note-color, #3b82f6) !important;
-            box-shadow: var(--shadow-md) !important;
-        }
-
-        .note-card-accent {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--note-color);
-            border-radius: 16px 16px 0 0;
-        }
-
-        .note-card-actions {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            display: flex;
-            gap: 6px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            z-index: 2;
-        }
-
-        .note-card:hover .note-card-actions {
-            opacity: 1;
-        }
-
-        .note-card-action-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 1px solid var(--border-color);
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .note-card-action-btn:hover {
-            color: var(--text-main);
-            background: var(--surface-hover);
-            transform: scale(1.1);
-        }
-
-        .note-card-action-btn.delete:hover {
-            color: #f43f5e;
-            border-color: rgba(244, 63, 94, 0.4);
-        }
-
-        .note-card-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-
-        .note-card-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-main);
-            margin: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding-right: 44px; /* Evita que choque con los botones flotantes */
-        }
-
-        .note-card-preview {
-            font-size: 0.825rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            margin: 0;
-            display: -webkit-box;
-            -webkit-line-clamp: 4;
-            line-clamp: 4;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            opacity: 0.85;
-        }
-
-        .note-card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 12px;
-            font-size: 0.7rem;
-            border-top: 1px solid var(--border-color);
-            padding-top: 8px;
-        }
-
-        .note-card-badge {
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.65rem;
-            letter-spacing: 0.3px;
-        }
-
-        .note-card-date {
-            color: var(--text-secondary);
-            opacity: 0.7;
-        }
-
-        /* Botón para añadir notas en grilla */
-        #panel-notes .library-add-note-btn {
-            height: 210px !important;
-            background: var(--bg-tertiary) !important;
-            border: 2px dashed var(--border-color) !important;
-            color: var(--text-secondary) !important;
-            border-radius: 16px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 12px !important;
-            cursor: pointer !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            margin-bottom: 0 !important;
-            box-shadow: var(--shadow-sm) !important;
-        }
-
-        #panel-notes .library-add-note-btn:hover {
-            background: var(--surface-hover) !important;
-            border-color: var(--primary) !important;
-            color: var(--primary) !important;
-            transform: translateY(-5px) !important;
-            box-shadow: var(--shadow-md) !important;
-        }
-
-        #panel-notes .library-add-note-btn i {
-            font-size: 1.8rem !important;
-            color: var(--primary) !important;
-            transition: transform 0.25s ease !important;
-        }
-
-        #panel-notes .library-add-note-btn:hover i {
-            transform: scale(1.15) rotate(90deg) !important;
-        }
-
-        /* Barra de herramientas para buscar/ordenar notas */
-        .notes-toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .notes-sort-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .notes-sort-wrapper label {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .notes-sort-wrapper select {
-            background: var(--bg-tertiary) !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: 12px !important;
-            color: var(--text-main) !important;
-            padding: 0.55rem 2.2rem 0.55rem 0.85rem !important;
-            font-size: 0.85rem;
-            font-weight: 600;
-            outline: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: var(--shadow-sm);
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg fill='%2364748b' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>") !important;
-            background-repeat: no-repeat !important;
-            background-position: right 8px center !important;
-            background-size: 18px !important;
-        }
-
-        .notes-sort-wrapper select:focus {
-            border-color: var(--primary) !important;
-            box-shadow: 0 0 10px var(--primary-glow) !important;
         }
     </style>
 </head>
@@ -770,27 +344,20 @@
     </header>
 
     <!-- Main Container -->
-    <div class="dashboard-container" style="max-width: 1400px; margin: 0 auto; padding: 1.5rem 2rem; width: 100%; box-sizing: border-box;">
-        <!-- Dedicated Library Page Container -->
+    <div class="dashboard-container" style="max-width: 1360px; margin: 0 auto; padding: 1.5rem 2rem; width: 100%; box-sizing: border-box;">
         <div id="library-page-container">
-            <!-- Hero Header -->
             <div class="library-hero-header">
-                <h1 class="library-hero-title">Mi Biblioteca</h1>
+                <div>
+                    <h1 class="library-hero-title">Biblioteca de Consulta</h1>
+                    <p class="library-hero-subtitle">Consulta directa de normativas MINEDU, documentos curriculares, guías técnicas y bibliografía oficial.</p>
+                </div>
             </div>
 
-            <div class="library-tabs guest-mode">
-                <button class="library-tab active" data-tab="resources" onclick="window.libraryUI.switchTab('resources')"><i class="fas fa-compass"></i> Catálogo de Recursos</button>
-                <button class="library-tab hidden" data-tab="saved" id="tab-btn-saved" onclick="window.libraryUI.switchTab('saved')" style="display: none !important;"><i class="far fa-bookmark"></i> Guardados</button>
-                <button class="library-tab hidden" data-tab="favorites" id="tab-btn-favorites" onclick="window.libraryUI.switchTab('favorites')" style="display: none !important;"><i class="far fa-heart"></i> Favoritos</button>
-                <button class="library-tab hidden" data-tab="notes" id="tab-btn-notes" onclick="window.libraryUI.switchTab('notes')" style="display: none !important;"><i class="far fa-sticky-note"></i> Notas</button>
-            </div>
-
-            <!-- Panel 1: Biblioteca de Recursos (General Catalog & Search) -->
             <div id="panel-resources" class="library-panel active">
                 <section class="search-section">
-                    <div class="notes-search-wrapper">
+                    <div class="library-search-wrapper">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="searchInput" placeholder="Busca tu recurso académico (libros, papers, normas)...">
+                        <input type="text" id="searchInput" placeholder="Buscar por título, norma, autor o tema...">
                         <button type="button" id="searchClearButton" class="search-clear-btn" style="display: none;" onclick="window.searchComponent?.resetSearchToBrowse()" aria-label="Limpiar búsqueda">
                             <i class="fas fa-times"></i>
                         </button>
@@ -802,54 +369,25 @@
                     <div id="results-container" class="hidden"></div>
                 </div>
             </div>
-
-            <!-- Panel 2: Guardados -->
-            <div id="panel-saved" class="library-panel" style="display: none;">
-                <div class="library-category-filters" id="saved-category-filters"></div>
-                <div class="library-content">
-                    <div class="library-list" id="saved-list-container">
-                        <div class="empty-state"><i class="far fa-bookmark"></i><p>No tienes recursos guardados.</p></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Panel 3: Favoritos -->
-            <div id="panel-favorites" class="library-panel" style="display: none;">
-                <div class="library-category-filters" id="favorites-category-filters"></div>
-                <div class="library-content">
-                    <div class="library-list" id="favorites-list-container">
-                        <div class="empty-state"><i class="far fa-heart"></i><p>No tienes favoritos.</p></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Panel 4: Notas -->
-            <div id="panel-notes" class="library-panel" style="display: none;">
-                <div class="library-content">
-                    <div class="library-list" id="notes-list-container">
-                        <!-- Custom add note btn + notes list -->
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
     <!-- Footer -->
-        <footer class="main-footer">
+    <footer class="main-footer">
         <div class="footer-container">
             <div class="footer-brand">
                 <a href="/" class="footer-logo">
                     <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
                     Hub Academia
                 </a>
-                <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
+                <p class="footer-slogan">Ecosistema peruano de Inteligencia Artificial y herramientas de evaluación y estudio activo para docentes y profesionales.</p>
             </div>
             <div class="footer-links-col">
-                <h4 class="footer-heading">Plataforma</h4>
+                <h4 class="footer-heading">Herramientas</h4>
                 <ul class="footer-links-list">
-                    <li><a href="/" class="footer-link">Inicio</a></li>
-                    <li><a href="/library" class="footer-link">Mi Biblioteca</a></li>
+                    <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial</a></li>
+                    <li><a href="/simulator-dashboard" class="footer-link">Simuladores de Exámenes</a></li>
+                    <li><a href="/repaso" class="footer-link">Repaso y Notas</a></li>
                     <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
                 </ul>
             </div>
@@ -870,21 +408,20 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=3caed1c843dd"></script>
-    <script src="/js/services/authApiService.js?v=3caed1c843dd"></script>
-    <script src="/js/services/analyticsApiService.js?v=3caed1c843dd"></script>
-    <script src="/js/sessionManager.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/uiManager.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/tooltipManager.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/components.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/confirmationModal.js?v=3caed1c843dd"></script>
-    <script src="/js/services/searchService.js?v=3caed1c843dd"></script>
-    <script type="module" src="/js/search.js?v=3caed1c843dd"></script>
-    <script src="/js/services/libraryService.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/libraryUI.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/sidebar.js?v=3caed1c843dd"></script>
-    <script src="/js/security.js?v=3caed1c843dd"></script>
-    <script src="/js/app.js?v=3caed1c843dd"></script>
+    <script src="/js/services/networkService.js?v=66c8a43b81c7"></script>
+    <script src="/js/services/authApiService.js?v=66c8a43b81c7"></script>
+    <script src="/js/services/analyticsApiService.js?v=66c8a43b81c7"></script>
+    <script src="/js/sessionManager.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/uiManager.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/tooltipManager.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/components.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/confirmationModal.js?v=66c8a43b81c7"></script>
+    <script src="/js/services/searchService.js?v=66c8a43b81c7"></script>
+    <script type="module" src="/js/search.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/libraryUI.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/sidebar.js?v=66c8a43b81c7"></script>
+    <script src="/js/security.js?v=66c8a43b81c7"></script>
+    <script src="/js/app.js?v=66c8a43b81c7"></script>
 </body>
 
 </html>

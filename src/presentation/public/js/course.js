@@ -188,7 +188,7 @@ function setupSearch() {
     const searchButton = document.getElementById('searchButton');
     const performSearch = () => {
         const query = searchInput.value.trim();
-        if (query) window.location.href = `/?q=${encodeURIComponent(query)}`;
+        if (query) window.location.href = `/library?q=${encodeURIComponent(query)}`;
     };
     searchButton.addEventListener('click', performSearch);
     searchInput.addEventListener('keypress', (e) => {

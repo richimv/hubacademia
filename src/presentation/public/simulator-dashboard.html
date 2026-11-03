@@ -40,21 +40,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/base.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/header.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/footer.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/dashboard.css?v=3caed1c843dd">
+    <link rel="stylesheet" href="/css/theme.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/base.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/header.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/footer.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/dashboard.css?v=66c8a43b81c7">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/modal.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/sidebar.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/components.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=3caed1c843dd"> <!-- ✅ Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="/css/modal.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/sidebar.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/components.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=66c8a43b81c7"> <!-- Formato unificado de Markdown IA -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <link rel="stylesheet" href="/css/quiz.css?v=3caed1c843dd">
-    <script src="/js/config.js?v=3caed1c843dd"></script>
-    <script src="/js/utils/themeManager.js?v=3caed1c843dd"></script>
+    <link rel="stylesheet" href="/css/quiz.css?v=66c8a43b81c7">
+    <script src="/js/config.js?v=66c8a43b81c7"></script>
+    <script src="/js/utils/themeManager.js?v=66c8a43b81c7"></script>
 
     <!-- ✅ Schema.org / JSON-LD -->
     <script type="application/ld+json">
@@ -106,13 +106,13 @@
                 <div class="context-hero-glow" id="bannerGlow"></div>
                 <div class="context-hero-content">
                     <div class="context-hero-info">
-                        <div class="context-hero-tag" id="areaCategoryTag">
-                            <i class="fas fa-layer-group"></i>
-                            <span id="ctx-tag-label">Área Profesional Activa</span>
+                        <div class="sim-domain-switcher" id="sim-domain-switcher" role="tablist" aria-label="Seleccionar vertical de simulación">
+                            <button type="button" class="sim-domain-tab active" data-context="EDUCACION" role="tab" aria-selected="true">Educación (MINEDU)</button>
+                            <button type="button" class="sim-domain-tab" data-context="MEDICINA" role="tab" aria-selected="false">Salud (SERUMS)</button>
                         </div>
-                        <h1 id="ctx-title" class="context-hero-title">Ciencias de la Salud</h1>
+                        <h1 id="ctx-title" class="context-hero-title">Preparación Magisterial</h1>
                         <p id="ctx-subtitle" class="context-hero-subtitle">
-                            Entrenamiento técnico adaptado a especificaciones sanitarias oficiales MINSA & ENCAPS.
+                            Evaluación de casuística pedagógica basada en el CNEB y Marco de Buen Desempeño Docente.
                         </p>
                     </div>
 
@@ -328,7 +328,7 @@
                             <div class="detail-card-header">
                                 <div>
                                     <h4 class="detail-card-title" id="doughnut-chart-title">
-                                        <i class="fas fa-chart-pie" style="color: #8b5cf6;"></i> Distribución por Áreas
+                                        <i class="fas fa-chart-pie" style="color: var(--primary);"></i> Distribución por Áreas
                                     </h4>
                                     <p class="detail-card-subtitle">Proporción de volumen de preguntas practicadas</p>
                                 </div>
@@ -344,7 +344,7 @@
                             </div>
                             <div class="doughnut-canvas-container">
                                 <div id="doughnut-empty-state" class="chart-empty-state">
-                                    <div class="chart-empty-icon" style="color: #8b5cf6; background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.2);"><i class="fas fa-chart-pie"></i></div>
+                                    <div class="chart-empty-icon"><i class="fas fa-chart-pie"></i></div>
                                     <div class="chart-empty-text">
                                         <div class="chart-empty-title">Sin respuestas aún</div>
                                         <div id="doughnut-empty-desc" class="chart-empty-desc">Completa simulacros para ver tu distribución por áreas.</div>
@@ -560,7 +560,7 @@
 
                 <div id="serums-info-alert" class="info-alert" style="display:none;">
                     <strong>Evaluación (ENCAPS) - MINSA:</strong> Las preguntas para esta evaluación están estrictamente
-                    calibradas en base a nuestras guías, normas técnicas y libros oficiales (RAG) para las profesiones
+                    calibradas en base a guías clínicas, normas técnicas y bibliografía oficial para las profesiones
                     de:
                     medicina humana y enfermería.
                 </div>
@@ -643,10 +643,11 @@
                 <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
             </div>
             <div class="footer-links-col">
-                <h4 class="footer-heading">Plataforma</h4>
+                <h4 class="footer-heading">Herramientas</h4>
                 <ul class="footer-links-list">
-                    <li><a href="/" class="footer-link">Inicio</a></li>
-                    <li><a href="/library" class="footer-link">Mi Biblioteca</a></li>
+                    <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial</a></li>
+                    <li><a href="/repaso" class="footer-link">Repaso y Notas</a></li>
+                    <li><a href="/library" class="footer-link">Biblioteca</a></li>
                     <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
                 </ul>
             </div>
@@ -667,23 +668,23 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=3caed1c843dd"></script>
+    <script src="/js/services/networkService.js?v=66c8a43b81c7"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=3caed1c843dd"></script>
-    <script src="/js/services/authApiService.js?v=3caed1c843dd"></script>
-    <script src="/js/services/analyticsApiService.js?v=3caed1c843dd"></script>
-    <script src="/js/sessionManager.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/uiManager.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/tooltipManager.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/components.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/sidebar.js?v=3caed1c843dd"></script>
-    <script src="/js/app.js?v=3caed1c843dd"></script>
+    <script src="/js/utils/markdown-renderer.js?v=66c8a43b81c7"></script>
+    <script src="/js/services/authApiService.js?v=66c8a43b81c7"></script>
+    <script src="/js/services/analyticsApiService.js?v=66c8a43b81c7"></script>
+    <script src="/js/sessionManager.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/uiManager.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/tooltipManager.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/components.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/sidebar.js?v=66c8a43b81c7"></script>
+    <script src="/js/app.js?v=66c8a43b81c7"></script>
 
     <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 
-    <script src="/js/simulator-dash.js?v=3caed1c843dd"></script>
+    <script src="/js/simulator-dash.js?v=66c8a43b81c7"></script>
 </body>
 
 </html>

@@ -1079,7 +1079,7 @@ ${optionsMarkdown}`;
                     // ✅ FIX: Redirigir a la página real de curso (MPA).
                     functionCall = `window.location.href = 'course?id=${numericId}'`;
                 } else if (type === 'topic') {
-                    functionCall = `window.location.href = '/?q=tema:${numericId}'`;
+                    functionCall = `window.location.href = '/library?q=tema:${numericId}'`;
                 }
 
                 return `<button class="chat-nav-button" onclick="${functionCall}">${trimmedText}</button>`;

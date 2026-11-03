@@ -142,7 +142,9 @@ class UIManager {
                             modal.style.display = '';
                         }
                     } else if (modalId === 'note-modal-overlay') {
-                        if (window.libraryUI) {
+                        if (window.repasoNotesUI && typeof window.repasoNotesUI.closeNoteModal === 'function') {
+                            window.repasoNotesUI.closeNoteModal();
+                        } else if (window.libraryUI && typeof window.libraryUI.closeNoteModal === 'function') {
                             window.libraryUI.closeNoteModal();
                         } else {
                             modal.classList.remove('open');

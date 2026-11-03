@@ -250,7 +250,7 @@ describe('Login & Verification Flow', () => {
             const html = fs.readFileSync(profileHtmlPath, 'utf8');
 
             expect(html).not.toContain('historial de chats');
-            expect(html).toContain('favoritos, progreso de estudio y suscripciones');
+            expect(html).toContain('notas, progreso de estudio y suscripciones');
 
             // Verificar que otp-modal está cerrado antes de change-password-modal
             const otpIdx = html.indexOf('id="otp-modal"');

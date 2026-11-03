@@ -47,4 +47,22 @@ describe('Simulador & Sidebar - Truncado de Áreas Extensas y Scrollbar Cross-Br
             expect(sidebarCss).toMatch(/body\.sidebar-collapsed\s+\.sidebar-menu\s*\{[\s\S]*?scrollbar-width:\s*none\s*!important/);
             expect(sidebarCss).toMatch(/body\.sidebar-collapsed\s+\.sidebar-menu::-webkit-scrollbar\s*\{[\s\S]*?display:\s*none\s*!important/);
         });
+
+    describe('3. Taxonomía de Herramientas y Prioridad Docente (Fase 4)', () => {
+        test('sidebar.js agrupa el ecosistema bajo Herramientas e integra docentes.hubacademia.com', () => {
+            const sidebarJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/sidebar.js'), 'utf8');
+            expect(sidebarJs).toContain('<span class="sidebar-section-title">Herramientas</span>');
+            expect(sidebarJs).toContain('https://docentes.hubacademia.com/');
+            expect(sidebarJs).toContain('Simuladores de Exámenes');
+            expect(sidebarJs).toContain('Repaso y Notas');
+            expect(sidebarJs).toContain('<span class="sidebar-item-label">Biblioteca</span>');
+        });
+
+        test('simulator-dash.js prioriza EDUCACION por defecto y simulatorsHub.js no expone generadores pedagógicos futuros', () => {
+            expect(simJs).toContain("|| 'EDUCACION'");
+            const simHubJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/simulatorsHub.js'), 'utf8');
+            expect(simHubJs).not.toContain('Creador de Sesiones');
+            expect(simHubJs).not.toContain('Generador de Rúbricas');
+        });
+    });
 });

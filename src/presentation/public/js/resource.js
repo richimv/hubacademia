@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         // Extraemos solo la parte del endpoint (ej. /api/media/gcs?path=...)
                         const endpointMatch = src.match(/\/api\/media\/.*/);
                         if (endpointMatch) {
-                            // Inyectar forzosamente el dominio directo de Render (Saltando Vercel y sus cache/404s)
+                            // Resolver sobre el mismo origen API configurado en Vercel
                             img.setAttribute('src', window.AppConfig.API_URL + endpointMatch[0]);
                         }
                     }
@@ -136,16 +136,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div style="margin-top: 10px;">
                         ${resource.is_premium ? '<span class="badge premium"><i class="fas fa-crown"></i> PRO</span>' : ''}
                     </div>
-                </div>
-                
-                <div class="resource-actions">
-                    <!-- Integración con Mi Biblioteca / LibraryUI -->
-                    <button class="btn-save btn-primary js-library-btn action-save" data-id="${safeId}" data-type="book" data-action="save">
-                        <i class="far fa-bookmark"></i> Agregar a mi Biblioteca
-                    </button>
-                    <button class="btn-save btn-primary js-library-btn action-fav" data-id="${safeId}" data-type="book" data-action="favorite">
-                        <i class="far fa-heart"></i> Favorito
-                    </button>
                 </div>
             </div>
 
@@ -349,36 +339,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Mock function for saving resources (Library integration)
-    async function saveResource(id, btn) {
-        if (!window.LibraryService) {
-            if (window.uiManager) window.uiManager.showToast("El servicio de biblioteca no está disponible o requiere inicio de sesión.", "warning");
-            else alert("El servicio de biblioteca no está disponible o requiere inicio de sesión.");
-            return;
-        }
-        const isSaved = btn.classList.contains('saved');
-        try {
-            if (isSaved) {
-                await window.LibraryService.removeResource(id);
-                btn.classList.remove('saved');
-                btn.innerHTML = '<i class="far fa-bookmark"></i> Guardar a Biblioteca';
-                if (window.uiManager) window.uiManager.showToast("Recurso eliminado de tu biblioteca", "info");
-            } else {
-                await window.LibraryService.saveResource(id);
-                btn.classList.add('saved');
-                btn.innerHTML = '<i class="fas fa-bookmark" style="color:var(--primary-color)"></i> Guardado';
-                if (window.uiManager) window.uiManager.showToast("Recurso guardado en tu biblioteca", "success");
-            }
-        } catch (err) {
-            console.error(err);
-            if (window.uiManager) window.uiManager.showToast("Error al guardar en la biblioteca.", "error");
-        }
-    }
-
-
-
-    // Exponer funciones globales
+    // Exponer función global
     window.openResourceLink = openResourceLink;
-    window.saveResource = saveResource;
 
 });

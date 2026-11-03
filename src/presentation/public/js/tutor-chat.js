@@ -339,10 +339,13 @@ class FlashcardTutor {
 
             if (!response.ok) throw new Error("Error al guardar nota");
 
-            // Feedback visual exitoso con animación y estado "Nota Guardada"
-            btn.innerHTML = '<i class="fas fa-check"></i> Nota Guardada';
-            btn.style.color = '#f59e0b'; // Amarillo dorado
+            // Feedback visual exitoso apuntando a Repaso y Notas (/repaso?view=notes)
+            btn.innerHTML = '<i class="fas fa-check"></i> Guardada en Repaso y Notas';
+            btn.title = 'Abrir Mis Notas en Repaso';
+            btn.style.color = '#f59e0b';
             btn.classList.add('saved');
+            btn.disabled = false;
+            btn.onclick = () => { window.location.href = '/repaso?view=notes'; };
             
             if (window.libraryService && typeof window.libraryService.loadFullLibrary === 'function') {
                 window.libraryService.loadFullLibrary();

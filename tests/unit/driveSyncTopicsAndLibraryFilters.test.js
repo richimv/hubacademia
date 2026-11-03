@@ -65,10 +65,12 @@ describe('Drive Sync Topics, Topic Modal Sorting, and Library Filters', () => {
             expect(componentsCss).toMatch(/\.unified-resource-card\.has-bg-image\s+\.urc-visual-overlay\s*\{[^}]*background:\s*linear-gradient\(to top,\s*rgba\(0,\s*0,\s*0,\s*0\.8\)\s*0%,\s*rgba\(0,\s*0,\s*0,\s*0\.35\)\s*35%,\s*transparent\s*65%\)/);
         });
 
-        test('search.js includes Guías Técnicas and Otros Recursos in Education tab', () => {
-            const biblioSection = searchJs.substring(searchJs.indexOf('biblioFilters = ['), searchJs.indexOf('filtersContainer.innerHTML = biblioFilters.map'));
-            expect(biblioSection).toContain("id: 'Guías Técnicas', val: 'guia'");
-            expect(biblioSection).toContain("id: 'Otros Recursos', val: 'other'");
+        test('search.js defaults to Educación-first direct catalog consultation without category filter pills', () => {
+            expect(searchJs).toContain("this.activeSector = 'education'");
+            expect(searchJs).toContain("this.activeTab = 'educacion'");
+            expect(searchJs).not.toContain('biblioFilters = [');
+            expect(searchJs).not.toContain('id="manta-filters"');
+            expect(searchJs).toContain('/api/books?domain=');
         });
     });
 });

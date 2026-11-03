@@ -190,17 +190,10 @@ function createBrowseCardHTML(item, type) {
         `;
     }
 
-    // Card para Cursos (DISEÑO TIPO POSTER/NETFLIX SI HAY IMAGEN)
+    // Card para Cursos (DISEÑO TIPO POSTER SI HAY IMAGEN)
     if (type === 'course') {
         const safeCode = safeHtmlValue(item.code || '');
         const codeHTML = item.code ? `<span class="course-card-code">${safeCode}</span>` : '';
-
-        const actionButtons = `
-            <div class="card-actions">
-                <button class="action-btn save-btn js-library-btn" data-id="${safeId}" data-type="course" data-action="save" title="Guardar"><i class="far fa-bookmark"></i></button>
-                <button class="action-btn fav-btn js-library-btn" data-id="${safeId}" data-type="course" data-action="favorite" title="Favorito"><i class="far fa-heart"></i></button>
-            </div>
-        `;
 
         // Si hay imagen, usamos el diseño "Full Cover"
         if (item.image_url) {
@@ -208,8 +201,6 @@ function createBrowseCardHTML(item, type) {
             return `
                 <div class="browse-card course-card full-image-card" data-type="course" data-id="${safeId}" style="cursor: pointer;">
                     <img src="${safeHtmlValue(finalImage)}" alt="${safeName}" class="browse-card-image-full" loading="lazy" decoding="async" onerror="this.style.display='none'; this.parentElement.classList.remove('full-image-card'); this.parentElement.innerHTML = 'Recarga la página para vista estándar';">
-                    
-                    ${actionButtons}
 
                     <div class="browse-card-overlay">
                          <div class="browse-card-content overlay-content">
@@ -234,7 +225,6 @@ function createBrowseCardHTML(item, type) {
 
         return `
             <div class="browse-card course-card" data-type="course" data-id="${safeId}" style="cursor: pointer;">
-                ${actionButtons}
                 ${iconOrImage}
                 <div class="browse-card-content">
                     <div class="course-card-header">
@@ -768,19 +758,9 @@ function createUnifiedResourceCardHTML(item) {
         </div>
     `;
 
-    // 6. Ensamblaje del Componente Universal
+    // 6. Ensamblaje del Componente Universal (consulta directa sin botones de Guardados/Favoritos)
     return `
         <div class="unified-resource-card ${displayImage ? 'has-bg-image' : ''}" data-resource-type="${safeType}" data-resource-id="${safeId}" data-is-premium="${isPremium}" data-open-directly="${openDirectly}">
-            
-            <!-- Zona de Acciones Flotantes (Librería) -->
-            <div class="urc-library-actions">
-                <button class="urc-action-btn js-library-btn action-save" data-id="${safeId}" data-type="${type === 'course' ? 'course' : 'book'}" data-action="save" title="Guardar">
-                    <i class="far fa-bookmark"></i>
-                </button>
-                <button class="urc-action-btn js-library-btn action-fav" data-id="${safeId}" data-type="${type === 'course' ? 'course' : 'book'}" data-action="favorite" title="Favorito">
-                    <i class="far fa-heart"></i>
-                </button>
-            </div>
 
             <!-- Zona Superior: Visual (Clicable) -->
             <div class="urc-visual-zone" role="button" tabindex="0" title="Ver detalles de ${safeTitle}">

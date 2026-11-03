@@ -122,6 +122,8 @@ class DeckExplorer {
 
         // 1. "Inicio" / All
         fragment.appendChild(this.createTreeItem({ id: 'ROOT', name: 'Mis Mazos', icon: 'fas fa-home', children_count: 0 }, 0, true));
+        // 1.2 "Mis Notas" / Apuntes personales
+        fragment.appendChild(this.createTreeItem({ id: 'NOTES', name: 'Mis Notas', icon: 'fas fa-sticky-note', children_count: 0 }, 0, true));
         // 1.5 "Comunidad" / Explorador Público
         fragment.appendChild(this.createTreeItem({ id: 'COMMUNITY', name: 'Comunidad', icon: 'fas fa-globe', children_count: 0 }, 0, true));
 
@@ -208,6 +210,8 @@ class DeckExplorer {
             if (isRootLink) {
                 if (deck.id === 'COMMUNITY') {
                     this.manager.loadCommunity();
+                } else if (deck.id === 'NOTES') {
+                    this.manager.loadNotes();
                 } else {
                     this.manager.loadDashboard();
                 }

@@ -83,7 +83,7 @@ const SimulatorDash = (() => {
         }
     };
 
-    let currentContext = 'MEDICINA';
+    let currentContext = 'EDUCACION';
     let activeConfig = null;
     let activeMode = null;
     let activeDays = null;
@@ -374,7 +374,23 @@ const SimulatorDash = (() => {
             window.speechSynthesis.getVoices();
         }
         const urlParams = new URLSearchParams(window.location.search);
-        currentContext = (urlParams.get('context') || 'MEDICINA').toUpperCase();
+        const requestedContext = (urlParams.get('context') || localStorage.getItem('simLastContext') || 'EDUCACION').toUpperCase();
+        currentContext = requestedContext === 'MEDICINA' ? 'MEDICINA' : 'EDUCACION';
+        localStorage.setItem('simLastContext', currentContext);
+
+        // Sincronizar conmutador de dominio en cabecera (Educación primero, Salud vertical disponible)
+        const domainTabs = document.querySelectorAll('.sim-domain-tab');
+        domainTabs.forEach(tab => {
+            const tabCtx = (tab.getAttribute('data-context') || '').toUpperCase();
+            tab.classList.toggle('active', tabCtx === currentContext);
+            tab.setAttribute('aria-selected', tabCtx === currentContext ? 'true' : 'false');
+            tab.onclick = () => {
+                if (tabCtx && tabCtx !== currentContext) {
+                    localStorage.setItem('simLastContext', tabCtx);
+                    window.location.href = `/simulator-dashboard?context=${encodeURIComponent(tabCtx)}`;
+                }
+            };
+        });
 
         // 🎨 Asignación Cromática Contextual (Salud = Verde/Esmeralda, Educación = Azul/Índigo)
         document.documentElement.setAttribute('data-simulator-context', currentContext.toLowerCase());
@@ -393,7 +409,7 @@ const SimulatorDash = (() => {
         }
 
         // 0. Initialize Context-Aware Data Structures
-        const ctxConfig = contexts[currentContext] || contexts['MEDICINA'];
+        const ctxConfig = contexts[currentContext] || contexts['EDUCACION'];
         examAreasGrouped = ctxConfig.areas || [];
         areaToGroupMap = {};
         examAreasGrouped.forEach((g, gIndex) => {
@@ -1225,7 +1241,7 @@ const SimulatorDash = (() => {
                 }
 
                 // Trigger initial render safely
-                const ctxConfig = contexts[currentContext] || contexts['MEDICINA'];
+                const ctxConfig = contexts[currentContext] || contexts['EDUCACION'];
 
                 // Show/hide SERUMS-specific UI (only for medicine)
                 const careerBox = document.getElementById('serums-career-container');

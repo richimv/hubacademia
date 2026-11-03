@@ -10,15 +10,15 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/base.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/auth.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/header.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/footer.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/modal.css?v=3caed1c843dd">
-    <link rel="stylesheet" href="/css/sidebar.css?v=3caed1c843dd">
-    <script src="/js/config.js?v=3caed1c843dd"></script>
-    <script src="/js/utils/themeManager.js?v=3caed1c843dd"></script>
+    <link rel="stylesheet" href="/css/theme.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/base.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/auth.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/header.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/footer.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/modal.css?v=66c8a43b81c7">
+    <link rel="stylesheet" href="/css/sidebar.css?v=66c8a43b81c7">
+    <script src="/js/config.js?v=66c8a43b81c7"></script>
+    <script src="/js/utils/themeManager.js?v=66c8a43b81c7"></script>
     <style>
         /* Stylized & Professional Design System for User Profile - Dual Theme */
         body {
@@ -51,23 +51,21 @@
             }
         }
 
-        /* Hero Header Card */
+        /* Hero Header Card (--app flat surface) */
         .profile-header-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 2rem 2.25rem;
+            border-radius: 14px;
+            padding: 1.75rem 2rem;
             display: flex;
             align-items: center;
-            gap: 2rem;
+            gap: 1.75rem;
             position: relative;
-            box-shadow: var(--shadow-sm);
-            transition: border-color 0.25s ease, box-shadow 0.25s ease;
+            transition: border-color 0.2s ease;
         }
 
         .profile-header-card:hover {
             border-color: var(--border-hover);
-            box-shadow: var(--shadow-md);
         }
 
         .profile-avatar-container {
@@ -76,16 +74,15 @@
         }
 
         .profile-avatar {
-            width: 96px;
-            height: 96px;
+            width: 88px;
+            height: 88px;
             border-radius: 50%;
             background: var(--bg-tertiary);
-            border: 2px solid var(--border-hover);
+            border: 1px solid var(--border-hover);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            box-shadow: var(--shadow-sm);
         }
 
         .profile-avatar i {
@@ -177,14 +174,13 @@
         }
 
         .badge-premium {
-            background: var(--manta-pill-gradient);
+            background: var(--primary);
             color: #ffffff;
             font-weight: 700;
             padding: 4px 12px;
             border-radius: 50px;
             font-size: 0.75rem;
-            letter-spacing: 0.3px;
-            box-shadow: var(--manta-pill-glow);
+            letter-spacing: 0.2px;
             display: inline-flex;
             align-items: center;
             gap: 5px;
@@ -225,22 +221,20 @@
             }
         }
 
-        /* Settings Cards General */
+        /* Settings Cards General (--app flat borders) */
         .settings-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 1.75rem;
+            border-radius: 14px;
+            padding: 1.5rem 1.75rem;
             display: flex;
             flex-direction: column;
-            gap: 1.2rem;
-            transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
-            box-shadow: var(--shadow-sm);
+            gap: 1.15rem;
+            transition: border-color 0.2s ease;
         }
 
         .settings-card:hover {
             border-color: var(--border-hover);
-            box-shadow: var(--shadow-md);
         }
 
         .card-header-row {
@@ -375,20 +369,17 @@
         .usage-item {
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 1.25rem 1.35rem;
+            border-radius: 12px;
+            padding: 1.2rem 1.3rem;
             display: flex;
             flex-direction: column;
             gap: 0.85rem;
-            transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
-            box-shadow: var(--shadow-sm);
+            transition: border-color 0.2s ease, background-color 0.2s ease;
         }
 
         .usage-item:hover {
             border-color: var(--border-hover);
             background: var(--surface-hover);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
         }
 
         .usage-item-header {
@@ -437,10 +428,11 @@
 
         .usage-count-val {
             font-size: 1.2rem;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: -0.4px;
             white-space: nowrap;
             flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
         }
 
         .usage-progress-bg {
@@ -465,6 +457,7 @@
             font-size: 0.78rem;
             color: var(--text-muted);
             gap: 0.5rem;
+            font-variant-numeric: tabular-nums;
         }
 
         .usage-footer-left {
@@ -481,27 +474,25 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0.75rem 1.85rem;
-            border-radius: 50px;
-            font-weight: 700;
+            padding: 0.7rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
             font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
             text-decoration: none;
             gap: 8px;
-            border: none;
+            border: 1px solid transparent;
             box-sizing: border-box;
         }
 
         .btn-primary {
-            background: var(--manta-pill-gradient);
+            background: var(--primary);
             color: #ffffff;
-            box-shadow: var(--manta-pill-glow);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px) scale(1.01);
-            box-shadow: 0 6px 22px rgba(59, 130, 246, 0.45), 0 0 15px rgba(6, 182, 212, 0.35);
+            background: var(--primary-hover);
             color: #ffffff;
         }
 
@@ -551,14 +542,14 @@
             border: 1px solid var(--danger-border);
             color: var(--danger);
             font-weight: 600;
-            padding: 0.7rem 1.35rem;
-            border-radius: 50px;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
             font-size: 0.875rem;
             align-self: flex-start;
         }
@@ -566,30 +557,26 @@
         .btn-danger-glow:hover {
             background: var(--danger);
             color: #ffffff;
-            box-shadow: 0 4px 18px rgba(239, 68, 68, 0.35);
             border-color: var(--danger);
         }
 
         .btn-danger-pill {
             background: var(--danger);
             color: #ffffff !important;
-            font-weight: 700;
-            padding: 0.7rem 1.5rem;
-            border-radius: 50px;
+            font-weight: 600;
+            padding: 0.65rem 1.35rem;
+            border-radius: 10px;
             border: none;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: background-color 0.2s ease;
             font-size: 0.875rem;
         }
 
         .btn-danger-pill:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
             background: var(--danger-hover);
         }
 
@@ -633,15 +620,14 @@
 
         /* Unconfirmed Email Warning Banner */
         .unverified-alert-banner {
-            background: rgba(245, 158, 11, 0.12);
+            background: rgba(245, 158, 11, 0.1);
             border: 1px solid rgba(245, 158, 11, 0.35);
-            border-radius: 16px;
-            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            padding: 1.15rem 1.35rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 1.25rem;
-            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
             animation: fadeIn 0.3s ease;
         }
 
@@ -680,26 +666,24 @@
         }
 
         .btn-banner-verify {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            background: #d97706;
             color: #ffffff;
             border: none;
             padding: 0.65rem 1.25rem;
             border-radius: 10px;
             font-size: 0.85rem;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 6px;
             white-space: nowrap;
             flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-            transition: all 0.2s ease;
+            transition: background-color 0.2s ease;
         }
 
         .btn-banner-verify:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
+            background: #b45309;
         }
 
         .badge-status-unverified {
@@ -902,7 +886,7 @@
             <div class="modal-body" style="padding: 1.5rem; gap: 1.25rem;">
                 <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: 12px; padding: 1rem; color: var(--danger); font-size: 0.875rem; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;">
                     <i class="fas fa-info-circle" style="margin-top: 2px; flex-shrink: 0;"></i>
-                    <span>Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta, favoritos, progreso de estudio y suscripciones.</span>
+                    <span>Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta, notas, progreso de estudio y suscripciones.</span>
                 </div>
                 <div class="form-group" style="margin-top: 0.5rem; text-align: left;">
                     <label for="delete-password" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-main); font-size: 0.875rem;">
@@ -935,7 +919,7 @@
                 <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0;">Puedes actualizar tu nombre de visualización dentro de la plataforma (permitido 1 vez por semana).</p>
                 <div class="form-group" style="text-align: left;">
                     <label for="new-name-input" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-main); font-size: 0.875rem;">Nuevo Nombre:</label>
-                    <input type="text" id="new-name-input" class="auth-input" placeholder="Ej: Dr. House" maxlength="50" style="width: 100%; padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-main); font-size: 0.9rem;">
+                    <input type="text" id="new-name-input" class="auth-input" placeholder="Ej: Lic. María Torres" maxlength="50" style="width: 100%; padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-main); font-size: 0.9rem;">
                     <div id="edit-name-error" style="color: var(--danger); font-size: 0.8rem; margin-top: 0.5rem; display: none;"><i class="fas fa-exclamation-circle"></i></div>
                 </div>
             </div>
@@ -1075,15 +1059,15 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=3caed1c843dd"></script>
-    <script src="/js/utils/authValidation.js?v=3caed1c843dd"></script>
-    <script src="/js/services/networkService.js?v=3caed1c843dd"></script>
-    <script src="/js/services/authApiService.js?v=3caed1c843dd"></script>
-    <script src="/js/sessionManager.js?v=3caed1c843dd"></script>
-    <script src="/js/app.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/uiManager.js?v=3caed1c843dd"></script>
-    <script src="/js/ui/sidebar.js?v=3caed1c843dd"></script>
-    <script src="/js/profile.js?v=3caed1c843dd"></script>
+    <script src="/js/config.js?v=66c8a43b81c7"></script>
+    <script src="/js/utils/authValidation.js?v=66c8a43b81c7"></script>
+    <script src="/js/services/networkService.js?v=66c8a43b81c7"></script>
+    <script src="/js/services/authApiService.js?v=66c8a43b81c7"></script>
+    <script src="/js/sessionManager.js?v=66c8a43b81c7"></script>
+    <script src="/js/app.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/uiManager.js?v=66c8a43b81c7"></script>
+    <script src="/js/ui/sidebar.js?v=66c8a43b81c7"></script>
+    <script src="/js/profile.js?v=66c8a43b81c7"></script>
 
 </body>
 

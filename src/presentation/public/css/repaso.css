@@ -45,54 +45,30 @@
 .subdecks-line {
     flex-grow: 1;
     height: 1px;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+    background: var(--border-color);
 }
 
-/* --- Ultra-Premium Matte Deck Cards with Refined Neon Orange Rim Glow --- */
+/* --- Flat --app Deck Cards (No Neon Rim Glow) --- */
 .deck-card {
     position: relative;
     background: var(--card-bg);
-    border-radius: 18px;
+    border-radius: 12px;
     padding: 1.25rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 230px;
+    min-height: 220px;
     box-sizing: border-box;
     cursor: pointer;
     overflow: hidden;
-    border: 1.5px solid rgba(249, 115, 22, 0.4);
-    box-shadow: 
-        var(--shadow-md), 
-        0 0 12px rgba(249, 115, 22, 0.12);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
-/* Destello de luz neón delimitado únicamente a la esquina superior derecha */
-.deck-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 60px;
-    height: 60px;
-    background: radial-gradient(circle at 100% 0%, rgba(251, 146, 60, 0.35) 0%, rgba(249, 115, 22, 0.1) 45%, transparent 70%);
-    border-radius: 0 18px 0 60px;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    opacity: 0.7;
-    z-index: 1;
-}
-
-/* Biselado suave interior */
+.deck-card::before,
 .deck-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    pointer-events: none;
-    z-index: 1;
+    display: none;
 }
 
 .deck-card > * {
@@ -108,21 +84,14 @@
 }
 
 .deck-card:hover {
-    transform: translateY(-5px);
-    border-color: rgba(251, 146, 60, 0.75);
-    box-shadow: 
-        var(--shadow-lg), 
-        0 0 16px rgba(249, 115, 22, 0.25);
-}
-
-.deck-card:hover::before {
-    opacity: 1;
+    border-color: var(--border-hover, var(--primary));
+    background: var(--surface-hover, var(--card-bg));
 }
 
 /* Estilo del botón Clonar Mazo */
 .btn-clone-deck {
     width: 100%;
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(234, 88, 12, 0.18) 100%);
+    background: rgba(249, 115, 22, 0.12);
     color: #ea580c;
     border: 1px solid rgba(249, 115, 22, 0.35);
     border-radius: 10px;
@@ -134,20 +103,18 @@
     justify-content: center;
     gap: 0.5rem;
     cursor: pointer;
-    transition: all 0.25s ease;
-    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.1);
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 [data-theme="dark"] .btn-clone-deck {
     color: #ffedd5;
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(234, 88, 12, 0.35) 100%);
+    background: rgba(249, 115, 22, 0.2);
 }
 
 .btn-clone-deck:hover {
     background: #ea580c;
     color: #ffffff !important;
     border-color: #ea580c;
-    box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
 }
 
 /* Título de Tarjetas de Mazo (Legible y Adaptativo) */
@@ -162,10 +129,10 @@
 /* --- Banner de Comunidad Responsivo --- */
 .community-banner {
     margin-bottom: 1.5rem;
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(234, 88, 12, 0.03));
-    padding: 1.5rem 1.75rem;
-    border-radius: 16px;
-    border: 1px solid rgba(249, 115, 22, 0.15);
+    background: rgba(249, 115, 22, 0.06);
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(249, 115, 22, 0.2);
     box-sizing: border-box;
     width: 100%;
     max-width: 100%;
@@ -235,10 +202,9 @@
 }
 
 .category-pill.active {
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(234, 88, 12, 0.15));
+    background: rgba(249, 115, 22, 0.16);
     color: #ea580c;
     border-color: #ea580c;
-    box-shadow: 0 4px 14px rgba(249, 115, 22, 0.2);
     font-weight: 700;
 }
 
@@ -256,22 +222,14 @@
     font-weight: 600;
 }
 
-.btn-clone-deck:hover {
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.4) 0%, rgba(234, 88, 12, 0.5) 100%);
-    border-color: #fb923c;
-    color: #ffffff;
-    box-shadow: 0 6px 18px rgba(249, 115, 22, 0.35);
-    transform: translateY(-1px);
-}
-
-/* --- Premium Repaso Tabs --- */
+/* --- Repaso Tabs --- */
 .repaso-tabs {
     display: flex;
     gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-tertiary);
     padding: 0.35rem;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
     width: fit-content;
 }
 
@@ -281,33 +239,27 @@
     gap: 0.5rem;
     background: transparent;
     border: none;
-    color: #94a3b8;
-    padding: 0.6rem 1.2rem;
-    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding: 0.55rem 1.1rem;
+    font-size: 0.88rem;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: 7px;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .repaso-tab-btn i {
-    font-size: 1rem;
-    transition: transform 0.2s ease;
+    font-size: 0.95rem;
 }
 
 .repaso-tab-btn:hover {
-    color: #f8fafc;
-    background: rgba(255, 255, 255, 0.02);
-}
-
-.repaso-tab-btn:hover i {
-    transform: scale(1.1);
+    color: var(--text-main);
+    background: var(--surface-hover);
 }
 
 .repaso-tab-btn.active {
     color: #ffffff;
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
+    background: #ea580c;
 }
 
 @media (max-width: 640px) {
@@ -416,7 +368,7 @@
 
 .progress-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #f97316 0%, #fb923c 100%);
+    background: var(--primary);
     border-radius: 3px;
     transition: width 0.5s ease;
 }
@@ -568,16 +520,13 @@
 
 /* Botón Play (Estudiar): Alto contraste naranja siempre nítido */
 .deck-action-btn.btn-act-play {
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+    background: #ea580c !important;
     border: 1px solid #ea580c !important;
     color: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
 }
 
 .deck-action-btn.btn-act-play:hover {
-    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.5);
-    transform: translateY(-1px) scale(1.05);
+    background: #c2410c !important;
 }
 
 .deck-action-btn.btn-act-edit:hover {
@@ -660,9 +609,8 @@
 
 .deck-mastery-fill {
     height: 100%;
-    background: linear-gradient(90deg, #f97316, #fb923c);
+    background: #ea580c;
     border-radius: 3px;
-    box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
     transition: width 0.4s ease;
 }
 
@@ -802,23 +750,23 @@
 }
 
 .srs-status-forgot {
-    border-left-color: #ef4444; /* Brighter Red */
-    background: linear-gradient(90deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.01) 100%);
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.04);
 }
 
 .srs-status-hard {
-    border-left-color: #f97316; /* Brighter Orange */
-    background: linear-gradient(90deg, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.01) 100%);
+    border-left-color: #f97316;
+    background: rgba(249, 115, 22, 0.04);
 }
 
 .srs-status-good {
-    border-left-color: #3b82f6; /* Brighter Blue */
-    background: linear-gradient(90deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.01) 100%);
+    border-left-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.04);
 }
 
 .srs-status-easy {
-    border-left-color: #10b981; /* Brighter Green */
-    background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.01) 100%);
+    border-left-color: #10b981;
+    background: rgba(16, 185, 129, 0.04);
 }
 
 .badge-mastered {
@@ -887,46 +835,39 @@
 }
 
 .btn-premium-primary {
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background: #ea580c;
     color: #ffffff !important;
     border: none;
-    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35);
 }
 
 .btn-premium-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
+    background: #c2410c;
 }
 
 .btn-premium-secondary {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     color: var(--text-main) !important;
-    box-shadow: var(--shadow-sm);
 }
 
 .btn-premium-secondary:hover {
     background: var(--surface-hover);
     border-color: var(--border-hover);
     color: var(--text-main) !important;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
 }
 
 .btn-premium-ia {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
-    border: 1px solid rgba(168, 85, 247, 0.35);
-    color: #a855f7;
+    background: rgba(2, 132, 199, 0.12);
+    border: 1px solid rgba(2, 132, 199, 0.35);
+    color: var(--primary);
     font-weight: 700;
     gap: 0.35rem;
 }
 
 .btn-premium-ia:hover {
-    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    background: var(--primary);
     border-color: transparent;
     color: #ffffff !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.35);
 }
 
 /* Consolidated in SRS status section above */
@@ -980,8 +921,8 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #f97316 0%, #fb923c 50%, transparent 100%);
-    opacity: 0.8;
+    background: #ea580c;
+    opacity: 0.85;
 }
 
 .deck-header-top {
@@ -1426,7 +1367,7 @@
     color: #ff9f43;
 }
 .modal-card-face.face-back .face-label {
-    color: #c084fc;
+    color: var(--primary);
 }
 
 .modal-card-face-header {
@@ -1453,7 +1394,7 @@
 }
 
 .modal-card-face.face-back .modal-card-face-title {
-    color: #c084fc;
+    color: var(--primary);
 }
 
 .modal-card-face-subtitle {
@@ -1530,7 +1471,7 @@
 }
 
 .modal-card-face.face-back .settings-lang-select:focus {
-    border-color: #a855f7;
+    border-color: var(--primary);
 }
 
 /* Textarea espacioso y cómodo en modal de tarjetas */
@@ -1555,8 +1496,7 @@
 }
 
 .modal-card-face.face-back .card-modal-textarea:focus {
-    border-color: #a855f7 !important;
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15) !important;
+    border-color: var(--primary) !important;
 }
 
 /* Header de Repaso Dashboard con Botón Guía en la Fila Superior */
@@ -1645,4 +1585,345 @@
     .deck-meta-pill .meta-label {
         display: inline-block;
     }
+}
+
+/* ==========================================================================
+   CONMUTADOR DE VISTAS Y GESTOR DE NOTAS INTEGRADO (--app Flat Design)
+   ========================================================================== */
+.repaso-view-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 1.5rem;
+}
+
+.repaso-view-tab {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    padding: 0.4rem 0.95rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.repaso-view-tab:hover {
+    color: var(--text-main);
+}
+
+.repaso-view-tab.active {
+    background: var(--card-bg);
+    color: var(--text-main);
+    border-color: var(--border-color);
+}
+
+@media (max-width: 520px) {
+    .repaso-view-switcher {
+        display: flex;
+        width: 100%;
+    }
+    .repaso-view-tab {
+        flex: 1;
+        text-align: center;
+        padding: 0.45rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+.notes-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.25rem 0 1.5rem;
+    flex-wrap: wrap;
+}
+
+.notes-search-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 240px;
+    max-width: 420px;
+}
+
+.notes-search-wrapper .search-icon {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+.notes-search-wrapper input {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.55rem 0.85rem 0.55rem 2.3rem;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.86rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.notes-search-wrapper input:focus {
+    border-color: var(--primary);
+}
+
+.notes-sort-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notes-sort-wrapper label {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.notes-sort-wrapper select {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-main);
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+}
+
+.notes-sort-wrapper select:focus {
+    border-color: var(--primary);
+}
+
+.notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    width: 100%;
+}
+
+.note-card {
+    position: relative;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 195px;
+    cursor: pointer;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-align: left;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.note-card:hover {
+    background: var(--surface-hover, var(--card-bg));
+    border-color: var(--note-color, var(--primary));
+}
+
+.note-card-accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--note-color, var(--primary));
+}
+
+.note-card-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 2;
+}
+
+.note-card:hover .note-card-actions,
+.note-card:focus-within .note-card-actions {
+    opacity: 1;
+}
+
+.note-card-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.note-card-action-btn:hover {
+    color: var(--text-main);
+    background: var(--surface-hover);
+}
+
+.note-card-action-btn.delete:hover {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.note-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-top: 0.35rem;
+    overflow: hidden;
+}
+
+.note-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 52px;
+}
+
+.note-card-preview {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.note-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.85rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.74rem;
+}
+
+.note-card-badge {
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+.note-card-date {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.library-add-note-btn {
+    min-height: 195px;
+    background: var(--bg-tertiary);
+    border: 1px dashed var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 1rem;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.library-add-note-btn:hover {
+    background: var(--surface-hover, var(--card-bg));
+    border-color: var(--primary);
+    color: var(--text-main);
+}
+
+.library-add-note-btn .add-icon-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+
+.library-add-note-btn .add-note-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.library-add-note-btn .add-note-sub {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+}
+
+.notes-empty-inline,
+.notes-guest-empty {
+    grid-column: 2 / -1;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+    .notes-empty-inline {
+        grid-column: 1 / -1;
+    }
+}
+
+.notes-empty-inline h4,
+.notes-guest-empty h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.notes-empty-inline p,
+.notes-guest-empty p {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    max-width: 520px;
 }

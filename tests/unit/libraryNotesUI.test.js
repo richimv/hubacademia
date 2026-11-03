@@ -1,46 +1,67 @@
 const fs = require('fs');
 const path = require('path');
 
-describe('Library UI - Gestión de Notas Manuales y openNoteModal', () => {
+describe('Repaso y Notas Unificados + Simplificación de Biblioteca', () => {
+    let repasoNotesJs;
+    let repasoHtml;
     let libraryJs;
     let libraryHtml;
 
     beforeAll(() => {
+        repasoNotesJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/repasoNotesUI.js'), 'utf8');
+        repasoHtml = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/repaso.html'), 'utf8');
         libraryJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/libraryUI.js'), 'utf8');
         libraryHtml = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/library.html'), 'utf8');
     });
 
-    test('El archivo libraryUI.js debe definir explícitamente el método openNoteModal en la clase LibraryUI', () => {
-        expect(libraryJs).toContain('openNoteModal(noteId = null)');
+    test('repaso.html integra la vista unificada de Mis Notas y carga repasoNotesUI.js', () => {
+        expect(repasoHtml).toContain('id="notes-view"');
+        expect(repasoHtml).toContain('data-repaso-view="notes"');
+        expect(repasoHtml).toContain('/js/ui/repasoNotesUI.js');
+    });
+
+    test('library.html elimina Guardados, Favoritos y Notas, y redirige ?tab=notes a /repaso?view=notes', () => {
+        expect(libraryHtml).not.toContain('id="panel-saved"');
+        expect(libraryHtml).not.toContain('id="panel-favorites"');
+        expect(libraryHtml).not.toContain('id="panel-notes"');
+        expect(libraryHtml).not.toContain('class="library-tabs');
+        expect(libraryHtml).toContain('/repaso?view=notes');
+        expect(libraryJs).toContain('/repaso?view=notes');
+    });
+
+    test('El archivo repasoNotesUI.js debe definir explícitamente el método openNoteModal en la clase RepasoNotesUI', () => {
+        expect(repasoNotesJs).toContain('openNoteModal(noteId = null)');
     });
 
     test('openNoteModal debe delegar la ejecución directamente a openNoteEditor', () => {
-        expect(libraryJs).toMatch(/openNoteModal\s*\(\s*noteId\s*=\s*null\s*\)\s*\{\s*this\.openNoteEditor\(noteId\);\s*\}/);
+        expect(repasoNotesJs).toMatch(/openNoteModal\s*\(\s*noteId\s*=\s*null\s*\)\s*\{\s*this\.openNoteEditor\(noteId\);\s*\}/);
     });
 
-    test('Los botones de creación de nota en libraryUI.js deben invocar window.libraryUI.openNoteModal() sin errores', () => {
-        expect(libraryJs).toContain('onclick="window.libraryUI.openNoteModal()"');
+    test('Los botones de creación de nota en repasoNotesUI.js deben invocar window.repasoNotesUI.openNoteModal() sin errores', () => {
+        expect(repasoNotesJs).toContain('onclick="window.repasoNotesUI.openNoteModal()"');
     });
 
     test('El método openNoteEditor debe inicializar el estado en modo edición cuando se llama sin noteId', () => {
-        // Mocking class execution in pure Node context
+        const { RepasoNotesUI } = require('../../src/presentation/public/js/ui/repasoNotesUI');
+
         const dummyDocument = {
-            getElementById: jest.fn((id) => {
-                return {
-                    id,
-                    value: 'test',
-                    style: {},
-                    classList: { add: jest.fn(), remove: jest.fn(), contains: jest.fn().mockReturnValue(true) },
-                    innerHTML: ''
-                };
-            }),
+            getElementById: jest.fn((id) => ({
+                id,
+                value: 'test',
+                style: {},
+                classList: { add: jest.fn(), remove: jest.fn(), contains: jest.fn().mockReturnValue(true) },
+                innerHTML: '',
+                addEventListener: jest.fn(),
+                focus: jest.fn()
+            })),
             body: {
                 classList: { add: jest.fn(), remove: jest.fn() },
                 appendChild: jest.fn()
             },
             querySelector: jest.fn().mockReturnValue(null),
             querySelectorAll: jest.fn().mockReturnValue([]),
-            addEventListener: jest.fn()
+            addEventListener: jest.fn(),
+            createElement: jest.fn(() => ({ innerHTML: '', firstElementChild: {} }))
         };
 
         global.document = dummyDocument;
@@ -51,16 +72,10 @@ describe('Library UI - Gestión de Notas Manuales y openNoteModal', () => {
             NetworkService: { fetch: jest.fn() }
         };
 
-        // Extract class from libraryJs
-        const scriptWithoutAutoInit = libraryJs.replace(/document\.addEventListener\('DOMContentLoaded'[\s\S]*?\);?\s*$/, '');
-        const fn = new Function('window', 'document', `${scriptWithoutAutoInit}; return LibraryUI;`);
-        const LibraryUIClass = fn(global.window, global.document);
-
-        const instance = new LibraryUIClass();
+        const instance = new RepasoNotesUI();
         expect(typeof instance.openNoteModal).toBe('function');
         expect(typeof instance.openNoteEditor).toBe('function');
 
-        // Spy on openNoteEditor
         const editorSpy = jest.spyOn(instance, 'openNoteEditor').mockImplementation(() => {});
         instance.openNoteModal();
         expect(editorSpy).toHaveBeenCalledWith(null);
@@ -69,33 +84,30 @@ describe('Library UI - Gestión de Notas Manuales y openNoteModal', () => {
         expect(editorSpy).toHaveBeenCalledWith('note-123');
     });
 
-    test('La modal de notas debe cumplir con el Estándar Universal (Sección 3.17 DESIGN_SYSTEM)', () => {
-        expect(libraryJs).toContain('modal-overlay note-modal-overlay');
-        expect(libraryJs).toContain('modal-content note-modal');
-        expect(libraryJs).toContain('modal-header note-modal-header');
-        expect(libraryJs).toContain('modal-body note-modal-body');
-        expect(libraryJs).toContain('modal-footer note-modal-footer');
-        expect(libraryJs).toContain('modal-close-btn note-modal-close');
+    test('La modal de notas debe cumplir con el Estándar Universal (4 capas)', () => {
+        expect(repasoNotesJs).toContain('modal-overlay note-modal-overlay');
+        expect(repasoNotesJs).toContain('modal-content note-modal');
+        expect(repasoNotesJs).toContain('modal-header note-modal-header');
+        expect(repasoNotesJs).toContain('modal-body note-modal-body');
+        expect(repasoNotesJs).toContain('modal-footer note-modal-footer');
+        expect(repasoNotesJs).toContain('modal-close-btn note-modal-close');
     });
 
     test('El footer de la modal de notas NO debe contener botones sueltos fuera de los grupos de acción', () => {
-        // Extraer el footer de _renderNoteModal
-        const footerMatch = libraryJs.match(/<div class="modal-footer note-modal-footer">([\s\S]*?)<\/div>\s*<\/div>\s*`;/);
+        const footerMatch = repasoNotesJs.match(/<div class="modal-footer note-modal-footer">([\s\S]*?)<\/div>\s*<\/div>\s*`;/);
         expect(footerMatch).not.toBeNull();
         const footerContent = footerMatch[1];
 
-        // Remover los grupos controlados #note-view-actions y #note-edit-actions
         const withoutGroups = footerContent
             .replace(/<div id="note-view-actions"[\s\S]*?<\/div>/, '')
             .replace(/<div id="note-edit-actions"[\s\S]*?<\/div>/, '')
             .trim();
 
-        // No debe quedar ningún elemento <button> huérfano fuera de los grupos
         expect(withoutGroups).not.toContain('<button');
     });
 
     test('El grupo de edición debe contener exactamente Cancelar y Guardar con clases estándar', () => {
-        const editActionsMatch = libraryJs.match(/<div id="note-edit-actions"[\s\S]*?>([\s\S]*?)<\/div>/);
+        const editActionsMatch = repasoNotesJs.match(/<div id="note-edit-actions"[\s\S]*?>([\s\S]*?)<\/div>/);
         expect(editActionsMatch).not.toBeNull();
         const editActionsHtml = editActionsMatch[1];
 
@@ -107,22 +119,16 @@ describe('Library UI - Gestión de Notas Manuales y openNoteModal', () => {
         expect(editActionsHtml).toContain('saveNote()');
         expect(editActionsHtml).toContain('Guardar');
 
-        // No debe contener "Cerrar" en el grupo de edición
         expect(editActionsHtml).not.toContain('Cerrar');
     });
 
     test('El CSS de componentes debe consumir tokens semánticos dinámicos para el textarea y título de notas', () => {
         const componentsCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/components.css'), 'utf8');
-        
-        // No debe tener hardcoded slate oscuro en el textarea
+
         expect(componentsCss).not.toContain('rgba(15, 23, 42, 0.4)');
         expect(componentsCss).not.toContain('rgba(15, 23, 42, 0.6)');
-
-        // Debe usar var(--input-bg)
         expect(componentsCss).toMatch(/\.note-editor-textarea\s*\{[\s\S]*?background:\s*var\(--input-bg\)/);
         expect(componentsCss).toMatch(/\.note-editor-textarea\s*\{[\s\S]*?border:\s*1\.5px\s*solid\s*var\(--border-color\)/);
-
-        // No debe tener reglas destructivas que anulen el fondo de botones en el footer
         expect(componentsCss).not.toMatch(/\.note-modal-footer\s+button\s*\{/);
     });
 
@@ -133,21 +139,19 @@ describe('Library UI - Gestión de Notas Manuales y openNoteModal', () => {
     });
 
     test('saveNote y deleteNote deben implementar la regla CRUD obligatoria de spinner y deshabilitación', () => {
-        // Validación estática del código fuente
-        expect(libraryJs).toContain("saveBtn.disabled = true;");
-        expect(libraryJs).toContain("cancelBtn.disabled = true;");
-        expect(libraryJs).toContain("saveBtn.innerHTML = '<i class=\"fas fa-spinner fa-spin\"></i> Guardando...';");
-        expect(libraryJs).toContain("saveBtn.disabled = false;");
-        expect(libraryJs).toContain("cancelBtn.disabled = false;");
+        expect(repasoNotesJs).toContain('saveBtn.disabled = true;');
+        expect(repasoNotesJs).toContain('cancelBtn.disabled = true;');
+        expect(repasoNotesJs).toContain('saveBtn.innerHTML = \'<i class="fas fa-spinner fa-spin"></i> Guardando...\';');
+        expect(repasoNotesJs).toContain('saveBtn.disabled = false;');
+        expect(repasoNotesJs).toContain('cancelBtn.disabled = false;');
 
-        expect(libraryJs).toContain("targetBtn.disabled = true;");
-        expect(libraryJs).toContain("targetBtn.innerHTML = deleteBtn ? '<i class=\"fas fa-spinner fa-spin\"></i> Eliminando...' : '<i class=\"fas fa-spinner fa-spin\"></i>';");
-        expect(libraryJs).toContain("targetBtn.disabled = false;");
+        expect(repasoNotesJs).toContain('targetBtn.disabled = true;');
+        expect(repasoNotesJs).toContain('targetBtn.innerHTML = deleteBtn ? \'<i class="fas fa-spinner fa-spin"></i> Eliminando...\' : \'<i class="fas fa-spinner fa-spin"></i>\';');
+        expect(repasoNotesJs).toContain('targetBtn.disabled = false;');
     });
 
     test('saveNote deshabilita botones, muestra spinner y restaura el estado original al finalizar', async () => {
-        const scriptWithoutAutoInit = libraryJs.replace(/document\.addEventListener\('DOMContentLoaded'[\s\S]*?\);?\s*$/, '');
-        const fn = new Function('window', 'document', `${scriptWithoutAutoInit}; return LibraryUI;`);
+        const { RepasoNotesUI } = require('../../src/presentation/public/js/ui/repasoNotesUI');
 
         const saveBtn = { id: 'note-modal-save', disabled: false, innerHTML: 'Guardar' };
         const cancelBtn = { id: 'note-modal-cancel', disabled: false, innerHTML: 'Cancelar' };
@@ -162,17 +166,17 @@ describe('Library UI - Gestión de Notas Manuales y openNoteModal', () => {
             'note-modal-overlay': { classList: { remove: jest.fn() } }
         };
 
-        const mockDocument = {
+        global.document = {
             getElementById: jest.fn(id => elements[id] || null),
             querySelector: jest.fn().mockReturnValue(null),
             querySelectorAll: jest.fn().mockReturnValue([]),
-            body: { classList: { remove: jest.fn(), add: jest.fn() } }
+            body: { classList: { remove: jest.fn(), add: jest.fn() }, appendChild: jest.fn() }
         };
 
         let capturedDisabledDuringFetch = null;
         let capturedHtmlDuringFetch = null;
 
-        const mockWindow = {
+        global.window = {
             AppConfig: { API_URL: 'http://test' },
             NetworkService: {
                 fetch: jest.fn().mockImplementation(async () => {
@@ -188,26 +192,22 @@ describe('Library UI - Gestión de Notas Manuales y openNoteModal', () => {
             escapeHtml: s => s
         };
 
-        const LibraryUIClass = fn(mockWindow, mockDocument);
-        const instance = new LibraryUIClass();
-        instance.service = { loadFullLibrary: jest.fn().mockResolvedValue({}) };
+        const instance = new RepasoNotesUI();
+        instance.service = { loadFullLibrary: jest.fn().mockResolvedValue({ notes: [] }), getLibraryData: () => ({ notes: [] }) };
 
         await instance.saveNote();
 
-        // Comprobamos que durante el fetch estuvo deshabilitado y con spinner
         expect(capturedDisabledDuringFetch).toBe(true);
         expect(capturedHtmlDuringFetch).toContain('fa-spinner');
         expect(capturedHtmlDuringFetch).toContain('Guardando...');
 
-        // Comprobamos que al terminar (bloque finally) se restauró
         expect(saveBtn.disabled).toBe(false);
         expect(saveBtn.innerHTML).toBe('Guardar');
         expect(cancelBtn.disabled).toBe(false);
     });
 
     test('deleteNote deshabilita el botón, muestra spinner y restaura el estado original al finalizar', async () => {
-        const scriptWithoutAutoInit = libraryJs.replace(/document\.addEventListener\('DOMContentLoaded'[\s\S]*?\);?\s*$/, '');
-        const fn = new Function('window', 'document', `${scriptWithoutAutoInit}; return LibraryUI;`);
+        const { RepasoNotesUI } = require('../../src/presentation/public/js/ui/repasoNotesUI');
 
         const deleteBtn = { id: 'note-modal-delete', disabled: false, innerHTML: 'Eliminar' };
         const elements = {
@@ -215,17 +215,17 @@ describe('Library UI - Gestión de Notas Manuales y openNoteModal', () => {
             'note-modal-overlay': { classList: { remove: jest.fn() } }
         };
 
-        const mockDocument = {
+        global.document = {
             getElementById: jest.fn(id => elements[id] || null),
             querySelector: jest.fn().mockReturnValue(null),
             querySelectorAll: jest.fn().mockReturnValue([]),
-            body: { classList: { remove: jest.fn(), add: jest.fn() } }
+            body: { classList: { remove: jest.fn(), add: jest.fn() }, appendChild: jest.fn() }
         };
 
         let capturedDisabledDuringFetch = null;
         let capturedHtmlDuringFetch = null;
 
-        const mockWindow = {
+        global.window = {
             AppConfig: { API_URL: 'http://test' },
             confirmationModal: {
                 show: jest.fn().mockResolvedValue(true)
@@ -244,20 +244,16 @@ describe('Library UI - Gestión de Notas Manuales y openNoteModal', () => {
             escapeHtml: s => s
         };
 
-        const LibraryUIClass = fn(mockWindow, mockDocument);
-        const instance = new LibraryUIClass();
-        instance.service = { loadFullLibrary: jest.fn().mockResolvedValue({}) };
+        const instance = new RepasoNotesUI();
+        instance.service = { loadFullLibrary: jest.fn().mockResolvedValue({ notes: [] }), getLibraryData: () => ({ notes: [] }) };
 
         await instance.deleteNote('note-123');
 
-        // Comprobamos que durante el fetch estuvo deshabilitado y con spinner
         expect(capturedDisabledDuringFetch).toBe(true);
         expect(capturedHtmlDuringFetch).toContain('fa-spinner');
         expect(capturedHtmlDuringFetch).toContain('Eliminando...');
 
-        // Comprobamos que al terminar (bloque finally) se restauró
         expect(deleteBtn.disabled).toBe(false);
         expect(deleteBtn.innerHTML).toBe('Eliminar');
     });
 });
-
