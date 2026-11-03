@@ -1,17 +1,20 @@
-# 🧠 Specs Técnicas: Módulo de Repaso (Flashcards)
+# 🧠 Specs Técnicas: Módulo de Repaso y Notas (Hub Academia)
 
 ## 1. Visión General
-El **Módulo de Repaso** es el sistema de memorización a largo plazo de Hub Academia. Utiliza tarjetas de aprendizaje dinámicas (Flashcards) organizadas en mazos (Decks) y un algoritmo de repetición espaciada para optimizar la retención de conocimientos médicos.
+El **Módulo de Repaso y Notas** (`/repaso`) es el entorno integrado de estudio activo y retención a largo plazo de **Hub Academia**. Bajo la reestructuración corporativa de la plataforma, unifica:
+1. **Mis Mazos (Flashcards con Algoritmo SM-2):** Tarjetas dinámicas organizadas por especialidad (Educación y Salud) y gobernadas por el algoritmo SuperMemo-2.
+2. **Mis Notas Personales:** Libreta digital activa de apuntes y resúmenes, enriquecida directamente por las interacciones socráticas del Tutor IA.
+3. **Comunidad:** Muro colaborativo para descubrir mazos y recursos recomendados.
 
-## Estado de Implementación (Abril 2026)
+## Estado de Implementación (Noviembre 2026 - Fase 4 y 5)
 
-### ✅ Finalizado: Edición Visual de Tarjetas
-- **Persistencia**: Se ha extendido el backend (`flashcardRepository`, `deckService`, `deckController`) para soportar el campo `image_url` en flashcards de usuario.
-- **Carga de Medios**: Integración con GCS mediante el proxy `/api/media/gcs`. Implementación de carga directa desde el modal de edición con optimización visual.
-- **UI/UX**: 
-  - Las tarjetas en la lista de repaso ahora muestran una miniatura si contienen imagen.
-  - El modal de edición incluye previsualización en tiempo real y gestión de archivos.
-  - El modo estudio (`flashcards.html`) renderiza correctamente las imágenes en el anverso.
+### ✅ Consolidación de "Mis Notas" dentro de `/repaso`
+- **Conmutación Limpia de Vistas:** Mediante la barra de navegación `.repaso-tab-btn`, el usuario conmuta instantáneamente entre `decks` (Mazos SM-2), `notes` (Mis Notas) y `community` (Comunidad), manteniendo el estado mediante el parámetro URL `?view=notes`.
+- **Gestión de Notas Personales (`repasoNotesUI.js`):**
+  - CRUD completo de notas (título, contenido Markdown, selección de color y etiquetas temáticas).
+  - Búsqueda en tiempo real de notas personales.
+  - Consumo directo del endpoint seguro `/api/library/notes` respaldado por políticas RLS en Supabase.
+- **Flujo Directo desde el Tutor IA:** Al pulsar *"Guardar como Nota"* en cualquier sesión con el Tutor IA (`quiz-tutor.js`, `tutor-chat.js`), el apunte se almacena y se encuentra disponible de inmediato en `/repaso?view=notes`.
 
 ### ✅ Corrección de Errores y Refactorización
 - **Bug de Navegación**: Se corrigió el error donde editar un mazo (nombre/icono) redirigía al usuario a la raíz (`loadDashboard`). Ahora el sistema refresca la vista actual (`loadFolder`) manteniendo el contexto.

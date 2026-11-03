@@ -51,19 +51,21 @@ Todas las páginas públicas cuentan con:
 
 ## 4. 🧬 Datos Estructurados Schema.org (JSON-LD)
 
-Se han integrado esquemas validados para rich snippets en Google:
+Se han integrado esquemas validados para rich snippets en Google conforme a las actualizaciones técnicas ACT-05 y ACT-06:
 
 ### 4.1 Index (`index.html`)
 - `EducationalOrganization`: Entidad legal corporativa, logotipo, mercado atendido (`Peru`).
 - `WebSite`: Sitio web con declaración idiomática (`es-PE`).
-- `SoftwareApplication`: Aplicación educativa con categoría `EducationalApplication` y oferta base de S/ 9.90 PEN.
+- `Product` (Planes Básico y Avanzado):
+  - **ACT-05 (Merchant Listings):** Campos mandatorios `hasMerchantReturnPolicy` (política de reembolso a 7 días sin costo) y `shippingDetails` (costo S/ 0.00, entrega digital instantánea en Perú `addressCountry: "PE"`).
+  - **ACT-06 (Product Snippets):** Métricas reales de `aggregateRating` (4.9/5 estrellas) y array de `review` con testimonio oficial de profesionales peruanos.
 
 ### 4.2 Precios (`pricing.html`)
-- `Product` + `OfferCatalog`: Desglose formal de planes en Soles (PEN) para aparecer en Google Merchant y resultados comerciales.
+- `Product` + `OfferCatalog`: Desglose formal de planes en Soles (PEN) para aparecer en Google Merchant y resultados comerciales, con `hasMerchantReturnPolicy` y `shippingDetails`.
 - `FAQPage`: Esquema de preguntas frecuentes para desplegar acordeones interactivos en los resultados de búsqueda de Google.
 
-### 4.3 Repaso (`repaso.html`) y Simuladores (`simulator-dashboard.html`, `simulators.html`)
-- `WebApplication` / `EducationalApplication` / `CollectionPage`: Mapeo de herramientas de software educativo para enriquecimiento visual en SERPs.
+### 4.3 Repaso (`repaso.html`) y Simuladores (`simulator-dashboard.html`)
+- `WebApplication` / `EducationalApplication`: Mapeo de herramientas de software educativo para enriquecimiento visual en SERPs.
 
 ---
 

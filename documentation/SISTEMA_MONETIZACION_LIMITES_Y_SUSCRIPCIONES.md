@@ -45,13 +45,10 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
     *   Resetea todos los consumos a cero (`0`).
     *   Actualiza la fecha de caducidad en formato UTC: `subscription_expires_at = NOW() + INTERVAL '4 months'` (ó 2 meses).
 
-### Fase 2.3.1: Pago Manual vía Yape/Plin (Contacto Oficial WhatsApp)
-*   **Interfaz pricing.html y Apps Móviles**: Ofrece un banner destacado que abre un modal con el canal de atención oficial de WhatsApp asistido. Se erradicó cualquier exposición de número de teléfono en la UI (tarjetas o botones) para prevenir confusiones sobre transferencias directas a ese número; en su lugar, se presentan cápsulas de marca oficiales (`.payment-brand-pill`) para **Yape** y **Plin**, y se guía al usuario a contactar por WhatsApp para recibir las instrucciones personalizadas de pago y activar su cuenta al instante.
-*   **Diseño Dual-Theme y Responsivo (`pricing.css`)**: Implementa un contenedor con tokens CSS dinámicos de `DESIGN_SYSTEM.md` (`var(--bg-tertiary)`, `var(--card-bg)`, `var(--border-color)`), microinteracciones hover y adaptación responsiva fluida tanto para escritorio como para dispositivos móviles (`max-width: 540px`).
-*   **Pestañas de Planes**: Permite seleccionar dinámicamente el plan básico (S/ 9.90 por 2 meses) o el plan avanzado (S/ 24.90 por 4 meses) y actualiza automáticamente los montos e instrucciones en tiempo real.
-*   **Redirección Dinámica**: Mediante `pricing.js` y el gestor de sesión, se captura el email registrado del usuario para pre-llenar un mensaje de WhatsApp personalizado al hacer clic en el botón "Contactar por WhatsApp" (redirigiendo en segundo plano al canal oficial).
-*   **Canales Sociales en Navegación Global (`sidebar.js` / `sidebar.css`)**: El menú lateral integra los canales oficiales verificados: Facebook (`https://www.facebook.com/profile.php?id=61593284876205`), WhatsApp (`https://wa.me/51993869166...`, sustituyendo a Instagram) y TikTok (`https://www.tiktok.com/@hubacademia`), con estilos adaptativos en modos claro y oscuro.
-*   **Activación y Consistencia Interactiva en el Panel de Gestión (`admin.js`)**: El administrador puede editar el registro de cualquier estudiante desde el Panel de Gestión. El sistema automatiza y restringe los valores en el cliente en tiempo real:
+### Fase 2.3.1: Exclusividad Transaccional de Mercado Pago (Cero Canales Manuales de WhatsApp)
+*   **Automatización Total y Cero WhatsApp:** Se erradicó al 100% cualquier flujo de pago manual por WhatsApp, transferencias a cuentas personales o comprobantes por chat. Toda transacción se canaliza exclusivamente mediante la pasarela segura de Mercado Pago Perú con confirmación asíncrona por webhook.
+*   **Transparencia de Tarifas:** Precios fijos en Soles (PEN) sin cobros recurrentes sorpresivos ni renovaciones automáticas (modalidad pago único por 60 o 120 días).
+*   **Activación y Consistencia Interactiva en el Panel de Gestión (`admin.js`)**: El administrador puede auditar el registro de cualquier estudiante desde el Panel de Gestión. El sistema automatiza y restringe los valores en el cliente en tiempo real:
 *   Si selecciona `basic`, el estado cambia a `active` y se calcula la fecha actual + 2 meses.
 *   Si selecciona `advanced`, el estado cambia a `active` y se calcula la fecha actual + 4 meses.
 *   Si selecciona `free`, el estado cambia a `pending`/`expired` y se limpia la fecha.
@@ -76,7 +73,7 @@ El viaje de un usuario dentro de la plataforma se gestiona de forma secuencial:
 ### 3.1 Módulo: El Simulador (Training Service)
 *   **Usuarios Premium:** Las cuotas diarias de exámenes se descuentan únicamente al **culminar y enviar** el examen (`submitScore`).
 *   **Usuarios Free:** Consumen vidas de prueba al **iniciar** la Ronda 1.
-*   **Reposición por IA ("Banco Infinito")**: Si el stock local del banco es menor a 5 preguntas, se activa la generación de emergencia balanceada por áreas para completar el lote sin interrumpir el flujo.
+*   **Banco 100% Oficial:** Todas las preguntas provienen de bancos oficiales reales auditados en base de datos. Se eliminó la generación sintética de preguntas por RAG.
 
 ### 3.2 Módulo: Tutor IA (Quiz Tutor & Repaso Tutor)
 *   **Control Unificado de Consumos (`checkLimitsMiddleware`)**:

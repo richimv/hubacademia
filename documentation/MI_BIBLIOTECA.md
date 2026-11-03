@@ -1,52 +1,61 @@
-# 📚 Documentación Consolidada: Mi Biblioteca (Hub Academia)
+# 📚 Documentación Consolidada: Biblioteca de Consulta (Hub Academia)
 
 ## 1. 🌟 Visión General y Filosofía de Diseño
-**Mi Biblioteca** (`/library`) es el centro de conocimiento, investigación y aprendizaje personalizado de **Hub Academia**. Ha sido diseñada bajo una arquitectura **EdTech Senior, Minimalista y Responsiva**, integrando en un solo espacio:
-- **Descubrimiento de Conocimiento:** Catálogo unificado de recursos para los sectores de **Salud (Medicina)** y **Educación**.
-- **Boletín de Novedades (Mensual / 30 Días):** Curación periódica e ingesta en vivo de noticias gubernamentales oficiales, normas técnicas, guías clínicas e investigaciones científicas traducidas al español.
-- **Buscador Inteligente Senior:** Búsqueda en caliente con auto-reset, botón de limpieza rápida `X`, soporte para tecla `Escape` y lupa responsiva en celulares.
-- **Suite de Estudio Personal:** Gestión de recursos guardados, favoritos y tablón de notas vinculado al Tutor IA.
-- **Visor Inmersivo Universal:** Lectura y estudio de documentos sin salir del dominio de la plataforma.
+La **Biblioteca de Consulta** (`/library`) es el centro ágil de búsqueda y acceso documental de **Hub Academia**. Bajo la reestructuración corporativa de la plataforma, ha sido optimizada para ofrecer:
+- **Consulta Directa y sin Fricción:** Búsqueda inmediata de marcos curriculares (CNEB, RVM 094-2020-MINEDU), leyes magisteriales y normas técnicas del MINSA sin laberintos de filtros.
+- **Buscador Inteligente Senior:** Búsqueda reactiva por palabra clave con auto-reset, botón de limpieza rápida `X`, soporte para tecla `Escape` y lupa responsiva en celulares.
+- **Visor Inmersivo Universal:** Lectura y estudio de documentos normativos sin salir del dominio de la plataforma.
+- **Migración de Notas a `/repaso`:** Las Notas Personales fueron unificadas con el Módulo de Repaso Espaciado SM-2 (`/repaso?view=notes`), consolidando en un solo entorno el estudio activo y los apuntes del Tutor IA.
+- **Preparación para el Boletín de Noticias en IA:** Estructura modular preparada para evolucionar hacia el portal informativo sobre avances de la IA en educación, medicina y sociedad en el Perú y el mundo.
 
 ---
 
-## 2. 📂 Clasificación de Recursos Educativos
-La plataforma clasifica automáticamente cada publicación y material en su sector correspondiente (**Salud** o **Educación**):
+## 2. 📂 Clasificación y Acceso a Recursos Normativos
+La plataforma clasifica cada material en su sector correspondiente (**Salud** o **Educación**):
 
 | Tipo de Recurso | Identificador | Descripción | Distintivo Visual (UI) |
 | :--- | :--- | :--- | :--- |
-| **Noticia Oficial** | `noticia` | Comunicados de prensa y noticias oficiales del MINEDU y MINSA. | Badge Morado + Glow Púrpura |
-| **Paper Científico** | `paper` | Artículos clínicos e investigaciones peer-reviewed (PubMed, PMC, SciELO, Redalyc, Dialnet). | Badge Azul + Glow Azul |
-| **Norma Técnica / Legal** | `norma` | Normas Técnicas de Salud (NTS), leyes y directivas oficiales. | Badge Ámbar + Glow Dorado |
-| **Guía Clínica / Técnica**| `guia` | Guías de Práctica Clínica (GPC) y manuales técnicos. | Badge Esmeralda + Glow Verde |
-| **Libro / Manual** | `book` | Bibliografía académica y textos de consulta histórica. | Tarjeta Estándar / Poster |
-| **Video / Multimedia** | `video` | Clases grabadas, ponencias y recursos audiovisuales. | Tarjeta Multimedia |
+| **Noticia Oficial** | `noticia` | Comunicados y avances ministeriales de MINEDU y MINSA. | Badge Morado |
+| **Paper Científico** | `paper` | Artículos clínicos e investigaciones peer-reviewed. | Badge Azul |
+| **Norma Técnica / Legal** | `norma` | Normas Técnicas de Salud (NTS), leyes y resoluciones pedagógicas. | Badge Ámbar |
+| **Guía Clínica / Técnica**| `guia` | Guías de Práctica Clínica (GPC) y manuales curriculares. | Badge Esmeralda |
+| **Libro / Manual** | `book` | Bibliografía académica y textos de consulta histórica. | Tarjeta Estándar |
 
 ---
 
-## 3. 🖥️ Arquitectura UI/UX y Experiencia de Navegación
+## 3. 🖥️ Arquitectura UI/UX Simplificada
 
-### A. Layout Elevado de Pantalla Completa (`library.html`)
-- **Espacio Vertical Maximizado:** Se eliminó el título estático redundante "Mi Biblioteca" y textos secundarios, elevando la barra de pestañas `.library-tabs` directamente al tope del contenedor principal.
-- **Divisor Académico:** Alternancia fluida entre sectores mediante el selector **SALUD | EDUCACIÓN**.
+### A. Layout Despejado de Consulta Directa (`library.html`)
+- **Espacio Vertical Optimizado:** Se retiraron las pestañas obsoletas de *Guardados*, *Favoritos* y *Notas*. La vista opera directamente sobre el catálogo general público.
+- **Búsqueda Focada:** Una barra de búsqueda limpia con soporte de teclado y limpieza instantánea.
 
 ```
 +-----------------------------------------------------------------------------------+
-|  [Biblioteca de Recursos]    (Guardados)    (Favoritos)    (Notas)                 |  <- Tabs Elevadas al Tope
+|  [ 🔍 Busca por norma, resolución ministerial, casuística...    [x] [ 🔍 Buscar ] ]|
 +-----------------------------------------------------------------------------------+
-|  [ 🔍 Busca tu recurso académico...                           [x]  [ 🔍 Buscar ] ]|  <- Buscador Compacto con Clear 'X' y Lupa Mobile
+|  SALUD  |  EDUCACIÓN                                                              |
 +-----------------------------------------------------------------------------------+
-|  SALUD  |  EDUCACIÓN                                                              |  <- Divisor de Sectores Académicos
-|  [🔥 Novedades] [Libros y Manuales] [Papers Científicos] [Normas] [Guías] [Otros] |  <- Píldoras de Filtro
-+-----------------------------------------------------------------------------------+
-|  📰 WIDGET DE NOVEDADES Y BOLETÍN RECIENTE (ÚLTIMOS 30 DÍAS / MENSUAL)            |
-|  +-----------------------------------------------------------------------------+  |
-|  | [HERO CARD] Badge Resplandeciente + Título + Resumen + [Portada] + [Leer]  |  |  <- Layout con Soporte de Portada/Imagen
-|  +-----------------------------------------------------------------------------+  |
-|  | [GRILLA SECUNDARIA DE NOVEDADES] (Portadas + Badges + Metadatos)             |  |
-|  +-----------------------------------------------------------------------------+  |
+|  📰 CATÁLOGO Y BOLETÍN DE RECURSOS NORMATIVOS DIRECTOS                            |
 +-----------------------------------------------------------------------------------+
 ```
+
+---
+
+## 4. 🔄 Unificación de Notas en el Módulo de Repaso (`/repaso`)
+
+En cumplimiento de la directriz de coherencia funcional:
+*   Las notas personales ya no residen en `/library`.
+*   El acceso a la libreta de apuntes se realiza ahora a través de la ruta `/repaso?view=notes`.
+*   Los botones *"Guardar en Notas"* del Tutor IA (`quiz-tutor.js` y `tutor-chat.js`) dirigen automáticamente a la libreta sincronizada en Repaso.
+
+---
+
+## 5. 🚀 Proyección Estratégica: Futuro Boletín de Noticias sobre Inteligencia Artificial
+
+Conforme a la visión empresarial de Hub Academia, esta sección evolucionará hacia un **Boletín Especializado de Inteligencia Artificial**:
+1.  **Avances de la IA en Educación:** Análisis de herramientas generativas, evaluación formativa asistida y experiencias pedagógicas en aulas peruanas.
+2.  **Innovaciones de la IA en Medicina y Salud:** Telemedicina, diagnóstico por imágenes y protocolos asistidos en atención primaria.
+3.  **Marco Regulatorio y Ético en el Perú:** Seguimiento de la aplicación de la Ley N.° 31814 y directrices de la Secretaría de Gobierno y Transformación Digital (PCM).
 
 ### B. Buscador Inteligente Senior (`search.js`)
 - **Auto-Reset en Tiempo Real (`input` listener):** Si el usuario busca y posteriormente borra todo el texto ingresado en la barra, el sistema ejecuta `resetSearchToBrowse()` restaurando el widget de Novedades y el catálogo original sin necesidad de recargar la página.

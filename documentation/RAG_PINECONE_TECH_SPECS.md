@@ -1,4 +1,7 @@
-# 🌲 Specs Técnicas: RAG con Pinecone (V6.5 - Inmersive)
+# 🌲 Specs Técnicas: RAG con Pinecone (V7.0 - Inmersive & Tutor Retrieval Only)
+
+> [!NOTE]
+> **Alcance Operativo V7.0:** El motor vectorial Pinecone opera exclusivamente como fuente de consulta y citación bibliográfica/normativa para el **Tutor IA (`TutorAiService`)**. La generación automática o sintética de reactivos de examen mediante RAG ha sido completamente retirada del sistema; los simuladores operan únicamente con preguntas oficiales históricas auditadas.
 
 ## 🛠️ Stack Tecnológico
 - **Base de Datos Vectorial**: Pinecone (Serverless).

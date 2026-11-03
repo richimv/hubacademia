@@ -1,4 +1,8 @@
-# Sniper-RAG: Motor de Generación Pedagógica de Grado Industrial
+# Sniper-RAG: Motor de Generación Pedagógica (Documento Histórico - Retirado)
+
+> [!CAUTION]
+> ### DOCUMENTO HISTÓRICO / SERVICIO RETIRADO Y OBSOLETO (V7.0)
+> Conforme a la reestructuración corporativa de Hub Academia y el mandato de suprimir por completo el sistema RAG de generación sintética de preguntas, el pipeline denominado **Sniper-RAG** ha sido **retirado definitivamente del sistema activo**. Todos los simuladores de la plataforma operan al 100% con reactivos reales de pruebas oficiales auditadas en base de datos. Este documento se conserva únicamente para fines de trazabilidad de arquitectura histórica.
 
 Este documento describe el motor de inteligencia artificial diseñado para la creación de bancos de preguntas de alta fidelidad, asegurando validez psicométrica, variedad temática y rigor académico.
 

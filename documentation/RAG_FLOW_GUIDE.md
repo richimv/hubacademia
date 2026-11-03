@@ -1,6 +1,10 @@
-# 🌲 Guía Maestro: Arquitectura RAG Vectorial (V6.5)
+# 🌲 Guía Maestro: Arquitectura RAG Vectorial (V7.0)
 
-Este documento define el funcionamiento del motor de Inteligencia Artificial de **Hub Academia**. Detalla cómo el sistema utiliza la búsqueda semántica en la nube para garantizar que cada respuesta y cada pregunta generada tenga un sustento técnico irrefutable (Médico o Pedagógico).
+> [!CAUTION]
+> ### ESTADO DEL SERVICIO: GENERACIÓN SINTÉTICA DE PREGUNTAS RETIRADA (V7.0)
+> Conforme al mandato corporativo de calidad psicométrica de Hub Academia, el pipeline de generación sintética de preguntas de examen (`AdminAiService` / Sniper-RAG) ha sido **retirado y descontinuado de forma definitiva**. Todos los simuladores operan al 100% con reactivos oficiales reales auditados en PostgreSQL. El motor de consulta RAG se mantiene reservado exclusivamente para la fundamentación y tutoría socrática en `TutorAiService`.
+
+Este documento define el funcionamiento del motor de Inteligencia Artificial de **Hub Academia**. Detalla cómo el sistema utiliza la búsqueda semántica en la nube para garantizar que cada respuesta de tutoría tenga un sustento técnico irrefutable (Médico o Pedagógico).
 
 ---
 
