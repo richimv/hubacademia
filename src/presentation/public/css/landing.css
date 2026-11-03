@@ -1,0 +1,1491 @@
+/* ==========================================================================
+   HUB ACADEMIA — CORPORATE LANDING STYLESHEET (landing.css)
+   Identity: Pure Matte Black (#050505 / #0a0a0a / #121212) & Studio Slate (#f8fafc / #ffffff)
+   Zero Blue Surfaces on Dark Mode. Unified Inter Typography. Dense, Zero-Void Layout.
+   Direction: The Product Performs (seed 1420058396)
+   House Rules: Flat surfaces, zero gradients, zero resting shadows, zero hairlines,
+   equal outer margins, <= 2-line headlines, >= 16px body text.
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+    /* Brand Type System — Pure Inter */
+    --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+    --land-font: 'Inter', system-ui, -apple-system, sans-serif;
+
+    /* Strict 5-Step Typographic Scale */
+    --step-small: clamp(0.85rem, 0.82rem + 0.12vw, 0.92rem);
+    --step-body: clamp(1rem, 0.96rem + 0.2vw, 1.08rem);
+    --step-lead: clamp(1.15rem, 1.06rem + 0.4vw, 1.3rem);
+    --step-h2: clamp(1.75rem, 1.35rem + 1.8vw, 2.45rem);
+    --step-h1: clamp(1.95rem, 1.35rem + 1.8vw, 2.65rem);
+
+    /* Motion Tokens (references/motion.md) */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+    --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+    --t-press: 140ms;
+    --t-hover: 180ms;
+    --t-ui: 240ms;
+    --t-reveal: 800ms;
+    --stagger-line: 90ms;
+
+    /* Pure Neutral Matte Black System — ZERO blue/navy surfaces */
+    --land-bg-a: #050505;
+    --land-bg-b: #0c0c0c;
+    --land-surface: #121212;
+    --land-surface-elevated: #181818;
+    --land-surface-subtle: rgba(255, 255, 255, 0.04);
+    --land-border: rgba(255, 255, 255, 0.08);
+    --land-border-hover: rgba(255, 255, 255, 0.18);
+    --land-border-subtle: rgba(255, 255, 255, 0.05);
+
+    --land-ink: #fafafa;
+    --land-ink-secondary: #d4d4d8;
+    --land-ink-muted: #a1a1aa;
+
+    /* Functional Primary Accent (Button fills & action links only) */
+    --land-accent: #2563eb;
+    --land-accent-hover: #1d4ed8;
+    --land-accent-ink: #ffffff;
+    --land-accent-link: #60a5fa;
+
+    /* Dimensions & Geometry */
+    --land-radius-sm: 6px;
+    --land-radius-md: 10px;
+    --land-radius-lg: 14px;
+    --land-container: min(1320px, calc(100% - 48px));
+    --land-gutter: 24px;
+}
+
+[data-theme="light"] {
+    /* Studio Light System — Clean Slate */
+    --land-bg-a: #f8fafc;
+    --land-bg-b: #f1f5f9;
+    --land-surface: #ffffff;
+    --land-surface-elevated: #f8fafc;
+    --land-surface-subtle: rgba(0, 0, 0, 0.03);
+    --land-border: rgba(15, 23, 42, 0.09);
+    --land-border-hover: rgba(15, 23, 42, 0.22);
+    --land-border-subtle: rgba(15, 23, 42, 0.06);
+
+    --land-ink: #09090b;
+    --land-ink-secondary: #27272a;
+    --land-ink-muted: #52525b;
+
+    --land-accent: #2563eb;
+    --land-accent-hover: #1d4ed8;
+    --land-accent-ink: #ffffff;
+    --land-accent-link: #2563eb;
+}
+
+/* ==========================================================================
+   GLOBAL FRAME RESET FOR CORPORATE PAGES
+   ========================================================================== */
+
+body.corporate-page {
+    padding-left: 0 !important;
+    padding-top: 72px !important;
+    margin: 0;
+    background-color: var(--land-bg-a);
+    color: var(--land-ink-secondary);
+    font-family: var(--land-font);
+    font-size: var(--step-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+}
+
+body.corporate-page::before,
+body.corporate-page::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Accessible focus ring */
+body.corporate-page a:focus-visible,
+body.corporate-page button:focus-visible {
+    outline: 2px solid var(--land-accent);
+    outline-offset: 3px;
+}
+
+/* Container Utility */
+.land-container {
+    width: var(--land-container);
+    margin-inline: auto;
+}
+
+/* ==========================================================================
+   EXECUTIVE HEADER
+   ========================================================================== */
+
+.exec-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 72px;
+    z-index: 100;
+    background-color: var(--land-bg-a);
+    border-bottom: 1px solid var(--land-border); /* taste-skill-ignore: sticky bar chrome */
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.exec-header-bar {
+    width: var(--land-container);
+    height: 100%;
+    margin-inline: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.exec-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--land-ink);
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-decoration: none !important;
+}
+
+.exec-brand-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    display: block;
+}
+
+.exec-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+}
+
+.exec-nav-link {
+    color: var(--land-ink-secondary);
+    font-size: var(--step-small);
+    font-weight: 500;
+    text-decoration: none !important;
+    transition: color var(--t-hover) ease;
+}
+
+.exec-nav-link:hover {
+    color: var(--land-ink);
+}
+
+.exec-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Theme toggle button inside header */
+.theme-toggle-btn {
+    background-color: var(--land-surface-subtle);
+    border: 1px solid var(--land-border);
+    color: var(--land-ink);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--land-radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color var(--t-hover) ease, border-color var(--t-hover) ease;
+}
+
+.theme-toggle-btn:hover {
+    background-color: var(--land-surface);
+    border-color: var(--land-border-hover);
+}
+
+.exec-login-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--land-accent);
+    color: var(--land-accent-ink) !important;
+    padding: 0.5rem 1.15rem;
+    border-radius: var(--land-radius-md);
+    font-size: var(--step-small);
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    white-space: nowrap;
+}
+
+.exec-login-btn:hover {
+    background-color: var(--land-accent-hover);
+    transform: translateY(-1px);
+}
+
+.exec-login-btn:active {
+    transform: scale(0.98);
+}
+
+.exec-menu-toggle {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--land-border);
+    color: var(--land-ink);
+    padding: 0.45rem 0.85rem;
+    border-radius: var(--land-radius-sm);
+    font-size: var(--step-small);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Mobile drawer navigation */
+.exec-mobile-drawer {
+    display: none;
+}
+
+/* ==========================================================================
+   BUTTONS & CONTROLS (House Style — Flat, No Gradients, No Resting Shadows)
+   ========================================================================== */
+
+.btn-land-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: var(--land-accent);
+    color: var(--land-accent-ink) !important;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--land-radius-md);
+    border: none;
+    font-size: var(--step-body);
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+}
+
+.btn-land-primary:hover {
+    background-color: var(--land-accent-hover);
+    transform: translateY(-1px);
+}
+
+.btn-land-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-land-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: var(--land-surface);
+    color: var(--land-ink) !important;
+    padding: 0.75rem 1.4rem;
+    border-radius: var(--land-radius-md);
+    border: 1px solid var(--land-border);
+    font-size: var(--step-body);
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: background-color var(--t-hover) ease, border-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+}
+
+.btn-land-secondary:hover {
+    background-color: var(--land-surface-elevated);
+    border-color: var(--land-border-hover);
+    transform: translateY(-1px);
+}
+
+.btn-land-secondary:active {
+    transform: scale(0.98);
+}
+
+.land-text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--land-accent-link);
+    font-size: var(--step-body);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 0.22em;
+    transition: opacity var(--t-hover) ease;
+}
+
+.land-text-link:hover {
+    opacity: 0.85;
+}
+
+/* ==========================================================================
+   SHARED SECTION HEADERS
+   ========================================================================== */
+
+.section-head {
+    margin-bottom: 2.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.section-title {
+    margin: 0;
+    font-size: var(--step-h2);
+    font-weight: 800;
+    color: var(--land-ink);
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+}
+
+.section-desc {
+    margin: 0;
+    font-size: var(--step-lead);
+    color: var(--land-ink-secondary);
+    max-width: 65ch;
+    line-height: 1.5;
+}
+
+/* ==========================================================================
+   SECTION 1: HERO (#hero-section)
+   Blueprint: Column on one line + Live Casuística Fragment
+   Separated by tone step without hairline dividers.
+   ========================================================================== */
+
+.section-hero {
+    background-color: var(--land-bg-a);
+    padding-block: clamp(56px, 7vw, 96px);
+}
+
+.hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5.5fr) minmax(0, 6.5fr);
+    gap: clamp(28px, 4vw, 56px);
+    align-items: center;
+}
+
+.hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.hero-title {
+    margin: 0;
+    font-size: var(--step-h1);
+    font-weight: 800;
+    color: var(--land-ink);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+/* Masked line rise animation (motion.md) */
+.lines .line {
+    display: block;
+    overflow: hidden;
+    padding-bottom: 0.08em;
+    margin-bottom: -0.08em;
+}
+
+.lines [data-line] {
+    display: block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .js .lines [data-line] {
+        transform: translateY(105%);
+        animation: hero-line-up 850ms var(--ease-expo) forwards;
+        animation-delay: calc(var(--i) * var(--stagger-line) + 80ms);
+    }
+}
+
+@keyframes hero-line-up {
+    to {
+        transform: none;
+    }
+}
+
+.hero-lead {
+    margin: 0;
+    font-size: var(--step-lead);
+    color: var(--land-ink-secondary);
+    line-height: 1.5;
+    max-width: 46ch;
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.hero-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 0.75rem;
+}
+
+.hero-strip-tag {
+    background-color: var(--land-surface);
+    border: 1px solid var(--land-border);
+    color: var(--land-ink-muted);
+    font-size: var(--step-small);
+    font-weight: 500;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--land-radius-sm);
+}
+
+/* Live Casuística Interactive Fragment [data-ui] */
+.hero-workbench {
+    width: 100%;
+}
+
+.live-eval-card {
+    background-color: var(--land-surface);
+    border: none;
+    border-radius: var(--land-radius-lg);
+    padding: clamp(1.25rem, 2.5vw, 1.85rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+[data-ui] .live-eval-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--land-border-subtle);
+    padding-bottom: 0.85rem;
+}
+
+.live-eval-source {
+    font-size: var(--step-small);
+    font-weight: 600;
+    color: var(--land-ink-muted);
+    letter-spacing: -0.01em;
+}
+
+.live-eval-tabs {
+    display: inline-flex;
+    background-color: var(--land-bg-a);
+    border: 1px solid var(--land-border);
+    border-radius: var(--land-radius-sm);
+    padding: 3px;
+    gap: 3px;
+}
+
+.live-domain-btn {
+    background: transparent;
+    border: none;
+    color: var(--land-ink-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color var(--t-hover) ease, color var(--t-hover) ease;
+}
+
+.live-domain-btn.is-active {
+    background-color: var(--land-surface-elevated);
+    color: var(--land-ink);
+}
+
+.live-eval-stem {
+    margin: 0;
+    font-size: var(--step-body);
+    font-weight: 600;
+    color: var(--land-ink);
+    line-height: 1.5;
+}
+
+.live-eval-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.live-opt-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    text-align: left;
+    background-color: var(--land-bg-a);
+    border: 1px solid var(--land-border);
+    color: var(--land-ink-secondary);
+    padding: 0.7rem 0.95rem;
+    border-radius: var(--land-radius-md);
+    font-size: var(--step-body);
+    line-height: 1.45;
+    cursor: pointer;
+    transition: background-color var(--t-hover) ease, border-color var(--t-hover) ease;
+}
+
+.live-opt-btn:hover {
+    background-color: var(--land-surface-elevated);
+    border-color: var(--land-border-hover);
+    color: var(--land-ink);
+}
+
+.live-opt-btn.is-correct {
+    border-color: #10b981;
+    background-color: rgba(16, 185, 129, 0.08);
+    color: var(--land-ink);
+}
+
+.live-opt-btn.is-wrong {
+    border-color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.08);
+    color: var(--land-ink);
+}
+
+.live-opt-letter {
+    font-weight: 700;
+    color: var(--land-ink);
+    flex-shrink: 0;
+}
+
+.live-tutor-box {
+    background-color: var(--land-bg-a);
+    border-left: 3px solid var(--land-accent);
+    padding: 0.9rem 1.1rem;
+    border-radius: 0 var(--land-radius-md) var(--land-radius-md) 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.live-tutor-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--step-small);
+    font-weight: 700;
+    color: var(--land-ink);
+}
+
+.live-tutor-text {
+    margin: 0;
+    font-size: var(--step-small);
+    color: var(--land-ink-secondary);
+    line-height: 1.5;
+}
+
+[data-ui] .live-eval-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    border-top: 1px solid var(--land-border-subtle);
+    padding-top: 0.85rem;
+}
+
+.live-sm2-status {
+    font-size: var(--step-small);
+    color: var(--land-ink-muted);
+}
+
+.live-sm2-btn {
+    background-color: var(--land-surface-elevated);
+    border: 1px solid var(--land-border);
+    color: var(--land-ink);
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--land-radius-sm);
+    font-size: var(--step-small);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--t-hover) ease, border-color var(--t-hover) ease;
+}
+
+.live-sm2-btn:hover {
+    background-color: var(--land-accent);
+    border-color: var(--land-accent);
+    color: var(--land-accent-ink);
+}
+
+/* ==========================================================================
+   SECTION 2: HERRAMIENTAS OPERATIVAS (#herramientas-section)
+   Blueprint: Fixed Output, Live Controls (Split 5fr / 7fr)
+   Dense, Zero Voids, Zero Empty Vertical Slivers.
+   ========================================================================== */
+
+.section-tools {
+    background-color: var(--land-bg-b);
+    padding-block: clamp(64px, 8vw, 112px);
+}
+
+.tools-split {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(24px, 3.5vw, 48px);
+    align-items: start;
+}
+
+.tools-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.tool-selector-btn {
+    width: 100%;
+    text-align: left;
+    background-color: var(--land-surface);
+    border: none;
+    border-radius: var(--land-radius-md);
+    padding: 1.25rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    cursor: pointer;
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+}
+
+.tool-selector-btn:hover {
+    background-color: var(--land-surface-elevated);
+    transform: translateY(-1px);
+}
+
+.tool-selector-btn.is-active {
+    background-color: var(--land-surface-elevated);
+    position: relative;
+}
+
+.tool-selector-btn.is-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10%;
+    bottom: 10%;
+    width: 4px;
+    background-color: var(--land-accent);
+    border-radius: 0 4px 4px 0;
+}
+
+.tool-btn-title {
+    font-size: var(--step-lead);
+    font-weight: 700;
+    color: var(--land-ink);
+    letter-spacing: -0.015em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tool-btn-tag {
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--land-radius-sm);
+    background-color: var(--land-surface-subtle);
+    color: var(--land-ink-muted);
+}
+
+.tool-btn-desc {
+    font-size: var(--step-small);
+    color: var(--land-ink-secondary);
+    line-height: 1.45;
+}
+
+/* Live Tool Workbench Stage [data-ui] */
+.tools-live-stage {
+    background-color: var(--land-surface);
+    border: none;
+    border-radius: var(--land-radius-lg);
+    padding: clamp(1.4rem, 2.5vw, 2.2rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+    min-height: 440px;
+    justify-content: space-between;
+}
+
+.tool-stage-panel {
+    display: none;
+    flex-direction: column;
+    gap: 1.25rem;
+    animation: stageFadeIn 280ms var(--ease-out) forwards;
+}
+
+.tool-stage-panel.is-active {
+    display: flex;
+}
+
+@keyframes stageFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+[data-ui] .tool-stage-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--land-border-subtle);
+    padding-bottom: 1rem;
+}
+
+.tool-stage-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tool-stage-badge {
+    display: inline-block;
+    font-size: var(--step-small);
+    font-weight: 700;
+    color: var(--land-accent-link);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.tool-stage-name {
+    margin: 0;
+    font-size: var(--step-h2);
+    font-weight: 800;
+    color: var(--land-ink);
+    letter-spacing: -0.02em;
+}
+
+.tool-stage-copy {
+    margin: 0;
+    font-size: var(--step-body);
+    color: var(--land-ink-secondary);
+    line-height: 1.5;
+}
+
+/* Feature Specific Snippets inside Stage */
+.exam-metric-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.exam-metric-card {
+    background-color: var(--land-bg-a);
+    border: none;
+    padding: 0.9rem;
+    border-radius: var(--land-radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.exam-metric-val {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--land-ink);
+}
+
+.exam-metric-lbl {
+    font-size: var(--step-small);
+    color: var(--land-ink-muted);
+}
+
+.stage-card-preview {
+    background-color: var(--land-bg-a);
+    border: none;
+    border-radius: var(--land-radius-md);
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.stage-card-title {
+    font-size: var(--step-body);
+    font-weight: 700;
+    color: var(--land-ink);
+}
+
+.stage-card-text {
+    font-size: var(--step-small);
+    color: var(--land-ink-secondary);
+    line-height: 1.5;
+}
+
+.stage-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.stage-pill {
+    background-color: var(--land-surface-elevated);
+    border: none;
+    color: var(--land-ink-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+}
+
+[data-ui] .stage-actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    border-top: 1px solid var(--land-border-subtle);
+    padding-top: 1rem;
+    margin-top: auto;
+}
+
+/* ==========================================================================
+   SECTION 3: EDUCACIÓN INICIAL Y FOTOGRAFÍA PERUANA (#inicial-section)
+   Showcase of docentes.hubacademia.com + 2x2 Architectural Photo Grid
+   Guarantees all 4 verified photos visible with zero gaps!
+   ========================================================================== */
+
+.section-inicial {
+    background-color: var(--land-bg-a);
+    padding-block: clamp(64px, 8vw, 112px);
+}
+
+.inicial-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(28px, 4vw, 56px);
+    align-items: center;
+}
+
+.inicial-card {
+    background-color: var(--land-surface);
+    border: none;
+    border-radius: var(--land-radius-lg);
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.inicial-title {
+    margin: 0;
+    font-size: var(--step-h2);
+    font-weight: 800;
+    color: var(--land-ink);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.inicial-copy {
+    margin: 0;
+    font-size: var(--step-body);
+    color: var(--land-ink-secondary);
+    line-height: 1.55;
+}
+
+.inicial-pillars {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.inicial-pillar-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    font-size: var(--step-body);
+    color: var(--land-ink);
+    font-weight: 500;
+}
+
+.inicial-pillar-item::before {
+    content: '•';
+    color: #10b981;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+/* 2x2 Documentary Photo Grid (Guarantees >= 4 real pictures) */
+.docu-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem;
+}
+
+.docu-photo-figure {
+    margin: 0;
+    background-color: var(--land-surface);
+    border: none;
+    border-radius: var(--land-radius-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--t-ui) var(--ease-out);
+}
+
+.docu-photo-figure:hover {
+    transform: translateY(-2px);
+}
+
+.docu-photo-thumb {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    display: block;
+}
+
+.docu-photo-caption {
+    padding: 0.75rem 0.95rem;
+    background-color: var(--land-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.docu-photo-caption strong {
+    font-size: var(--step-small);
+    font-weight: 700;
+    color: var(--land-ink);
+    line-height: 1.35;
+}
+
+.docu-photo-caption span {
+    font-size: 0.82rem;
+    color: var(--land-ink-muted);
+    line-height: 1.35;
+}
+
+/* ==========================================================================
+   SECTION 4: SUSTENTO NORMATIVO & TUTOR IA (#tutor-section)
+   Blueprint: Split Stage with Multi-Turn Tutor Dialogue [data-ui]
+   ========================================================================== */
+
+.section-tutor {
+    background-color: var(--land-bg-b);
+    padding-block: clamp(64px, 8vw, 112px);
+}
+
+.tutor-split {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(28px, 4vw, 56px);
+    align-items: start;
+}
+
+.tutor-pillars-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.norm-card {
+    background-color: var(--land-surface);
+    border: none;
+    border-radius: var(--land-radius-md);
+    padding: 1.25rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.norm-card-tag {
+    font-size: var(--step-small);
+    font-weight: 700;
+    color: var(--land-accent-link);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.norm-card-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--land-ink);
+    letter-spacing: -0.015em;
+}
+
+.norm-card-copy {
+    margin: 0;
+    font-size: var(--step-body);
+    color: var(--land-ink-secondary);
+    line-height: 1.5;
+}
+
+/* Interactive Multi-Turn Tutor Dialogue [data-ui] */
+.tutor-demo-card {
+    background-color: var(--land-surface);
+    border: none;
+    border-radius: var(--land-radius-lg);
+    padding: clamp(1.25rem, 2.5vw, 1.85rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+[data-ui] .tutor-demo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--land-border-subtle);
+    padding-bottom: 0.85rem;
+}
+
+.tutor-bot-id {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--land-ink);
+    font-weight: 700;
+    font-size: var(--step-body);
+}
+
+.tutor-bot-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: contain;
+}
+
+.tutor-demo-switch {
+    display: inline-flex;
+    background-color: var(--land-bg-a);
+    border: 1px solid var(--land-border);
+    border-radius: var(--land-radius-sm);
+    padding: 2px;
+}
+
+.tutor-switch-btn {
+    background: transparent;
+    border: none;
+    color: var(--land-ink-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color var(--t-hover) ease, color var(--t-hover) ease;
+}
+
+.tutor-switch-btn.is-active {
+    background-color: var(--land-surface-elevated);
+    color: var(--land-ink);
+}
+
+.tutor-dialogue-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.tutor-bubble-user {
+    align-self: flex-end;
+    background-color: var(--land-accent);
+    color: var(--land-accent-ink);
+    padding: 0.75rem 1.15rem;
+    border-radius: var(--land-radius-md) var(--land-radius-md) 0 var(--land-radius-md);
+    max-width: 85%;
+    font-size: var(--step-body);
+    line-height: 1.45;
+}
+
+.tutor-bubble-bot {
+    align-self: flex-start;
+    background-color: var(--land-bg-a);
+    border: 1px solid var(--land-border);
+    color: var(--land-ink-secondary);
+    padding: 0.9rem 1.15rem;
+    border-radius: 0 var(--land-radius-md) var(--land-radius-md) var(--land-radius-md);
+    max-width: 95%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    font-size: var(--step-body);
+    line-height: 1.5;
+}
+
+.tutor-bubble-bot strong {
+    color: var(--land-ink);
+}
+
+.tutor-cite-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: var(--land-surface-elevated);
+    border: 1px solid var(--land-border);
+    color: var(--land-accent-link);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.25rem 0.55rem;
+    border-radius: var(--land-radius-sm);
+    width: fit-content;
+}
+
+/* ==========================================================================
+   SECTION 5: HACIA DÓNDE VAMOS (#vision-section)
+   Blueprint: 3 Equal-Height Horizon Cards
+   Replaces Awkward Columns:2 & Mark Elements with Clean Architecture!
+   ========================================================================== */
+
+.section-vision {
+    background-color: var(--land-bg-a);
+    padding-block: clamp(64px, 8vw, 112px);
+}
+
+.horizon-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(20px, 2.5vw, 32px);
+    align-items: stretch;
+}
+
+.horizon-card {
+    background-color: var(--land-surface);
+    border: none;
+    border-radius: var(--land-radius-lg);
+    padding: clamp(1.4rem, 2.5vw, 2rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: transform var(--t-ui) var(--ease-out);
+}
+
+.horizon-card:hover {
+    transform: translateY(-2px);
+}
+
+.horizon-card-phase {
+    display: inline-block;
+    font-size: var(--step-small);
+    font-weight: 700;
+    color: var(--land-accent-link);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.horizon-card-title {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--land-ink);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+}
+
+.horizon-card-copy {
+    margin: 0;
+    font-size: var(--step-body);
+    color: var(--land-ink-secondary);
+    line-height: 1.55;
+    flex-grow: 1;
+}
+
+.horizon-card-items {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.horizon-item {
+    font-size: var(--step-small);
+    color: var(--land-ink-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.horizon-item::before {
+    content: '•';
+    color: var(--land-accent-link);
+    font-weight: 800;
+}
+
+/* ==========================================================================
+   SECTION 6: PLANES Y ACCESO DIRECTO (#planes-section)
+   Blueprint: Stepped / Equal-Height Corporate Tiles (Exclusive Mercado Pago)
+   ========================================================================== */
+
+.section-planes {
+    background-color: var(--land-bg-b);
+    padding-block: clamp(64px, 8vw, 112px);
+}
+
+.planes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(20px, 2.5vw, 32px);
+    align-items: stretch;
+}
+
+.plan-tile {
+    background-color: var(--land-surface);
+    border: none;
+    border-radius: var(--land-radius-lg);
+    padding: clamp(1.4rem, 2.5vw, 2.2rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.5rem;
+    transition: transform var(--t-ui) var(--ease-out);
+}
+
+.plan-tile:hover {
+    transform: translateY(-3px);
+}
+
+.plan-tile--featured {
+    background-color: var(--land-surface-elevated);
+    position: relative;
+}
+
+.plan-tile--featured::before {
+    content: 'Recomendado';
+    position: absolute;
+    top: -12px;
+    right: 24px;
+    background-color: var(--land-accent);
+    color: var(--land-accent-ink);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+}
+
+.plan-tile-top {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.plan-tile-name {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--land-ink);
+    letter-spacing: -0.015em;
+}
+
+.plan-tile-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+}
+
+.plan-tile-currency {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--land-ink);
+}
+
+.plan-tile-amount {
+    font-size: clamp(2.4rem, 2rem + 1.2vw, 3.2rem);
+    font-weight: 800;
+    color: var(--land-ink);
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.plan-tile-period {
+    font-size: var(--step-small);
+    color: var(--land-ink-muted);
+}
+
+.plan-tile-features {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.plan-feature-item {
+    font-size: var(--step-body);
+    color: var(--land-ink-secondary);
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    line-height: 1.45;
+}
+
+.plan-feature-item::before {
+    content: '•';
+    color: var(--land-accent-link);
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.plan-tile-btn {
+    width: 100%;
+}
+
+.plan-tile-guarantee {
+    font-size: 0.82rem;
+    color: var(--land-ink-muted);
+    text-align: center;
+    margin: 0;
+}
+
+/* ==========================================================================
+   MOTION LAYER (references/motion.md — Staggered Reveals >= 16 elements)
+   ========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+    .js [data-reveal] {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity var(--t-reveal) var(--ease-expo), transform var(--t-reveal) var(--ease-expo);
+    }
+
+    .js [data-reveal].is-in {
+        opacity: 1;
+        transform: none;
+    }
+
+    .js [data-load] {
+        opacity: 0;
+        transform: translateY(12px);
+        animation: hero-fade-up 600ms var(--ease-out) forwards;
+        animation-delay: var(--d, 200ms);
+    }
+}
+
+@keyframes hero-fade-up {
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Subtle photo drift on scroll */
+@supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+        .photo-drift img {
+            animation: subtle-drift linear both;
+            animation-timeline: view();
+            animation-range: entry 0% exit 100%;
+        }
+
+        @keyframes subtle-drift {
+            from {
+                transform: translateY(-2%);
+            }
+            to {
+                transform: translateY(2%);
+            }
+        }
+    }
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS (Tablets & Mobile Viewports)
+   ========================================================================== */
+
+@media (max-width: 960px) {
+    .hero-grid,
+    .tools-split,
+    .inicial-grid,
+    .tutor-split {
+        grid-template-columns: 1fr;
+        gap: 2.25rem;
+    }
+
+    .horizon-cards-grid,
+    .planes-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .docu-photo-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .exec-nav,
+    .exec-login-btn {
+        display: none;
+    }
+
+    .exec-menu-toggle {
+        display: inline-flex;
+    }
+
+    .exec-mobile-drawer {
+        display: none;
+        position: fixed;
+        top: 72px;
+        left: 0;
+        width: 100%;
+        background-color: var(--land-bg-a);
+        border-bottom: 1px solid var(--land-border); /* taste-skill-ignore: mobile drawer chrome */
+        padding: 1.5rem var(--land-container);
+        z-index: 99;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .exec-mobile-drawer.is-open {
+        display: flex;
+    }
+
+    .exec-mobile-drawer a {
+        color: var(--land-ink);
+        font-size: var(--step-body);
+        font-weight: 600;
+        padding-block: 0.5rem;
+        text-decoration: none !important;
+        border-bottom: 1px solid var(--land-border-subtle); /* taste-skill-ignore: mobile drawer dividers */
+    }
+}
+
+@media (max-width: 640px) {
+    :root {
+        --land-container: calc(100% - 40px);
+    }
+
+    .hero-title {
+        font-size: clamp(1.75rem, 1.45rem + 1.5vw, 2.15rem);
+    }
+
+    body.corporate-page {
+        padding-top: 64px !important;
+    }
+
+    .exec-header {
+        height: 64px;
+    }
+
+    .docu-photo-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .exam-metric-row {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hero-actions .btn-land-primary,
+    .hero-actions .btn-land-secondary {
+        width: 100%;
+    }
+}

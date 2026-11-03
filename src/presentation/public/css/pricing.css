@@ -1,446 +1,200 @@
 /* ==========================================================================
-   PRICING PAGE STYLES - Premium Cyber-Minimalist Dark Mode
+   HUB ACADEMIA — CORPORATE PRICING STYLESHEET (pricing.css)
+   Identity: Pure Matte Black (#050505 / #0a0a0a / #121212) & Studio Slate (#f8fafc / #ffffff)
+   Zero Blue Surfaces on Dark Mode. Unified Inter Typography.
+   Zero thin rules, zero resting shadows, tabular-nums.
    ========================================================================== */
 
-/* 1. Global Setup & Background Glows */
-body {
-    background-color: var(--bg-main);
-    color: var(--text-main);
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    font-family: var(--font-main);
-    min-height: 100vh;
-    position: relative;
-    overflow-x: hidden;
+.section-pricing-hero {
+    background-color: var(--land-bg-a);
+    padding-block: clamp(56px, 7vw, 96px);
 }
 
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
-                radial-gradient(circle at 10% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 40%);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* 2. Container Layout */
-.pricing-container {
-    width: 100%;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 4rem 1.5rem 6rem 1.5rem;
-    display: flex;
-    flex-direction: column;
+.pricing-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+    gap: clamp(24px, 4vw, 56px);
     align-items: center;
-    gap: 3rem;
-    text-align: center;
+    margin-bottom: 40px;
 }
 
-/* 3. Header Section */
 .pricing-header {
-    margin: 0 auto 1rem auto;
-    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .pricing-header h1 {
-    font-size: 2.75rem;
+    margin: 0;
+    font-size: var(--step-h1);
     font-weight: 800;
-    margin-bottom: 0.75rem;
+    color: var(--land-ink);
     letter-spacing: -0.03em;
-    color: var(--text-main);
+    line-height: 1.1;
 }
 
 .pricing-header p {
-    color: var(--text-muted);
+    margin: 0;
+    font-size: var(--step-lead);
+    line-height: 1.5;
+    color: var(--land-ink-secondary);
+    max-width: 48ch;
+}
+
+.pricing-guarantee-note {
+    background-color: var(--land-surface);
+    border: 1px solid var(--land-border);
+    border-radius: var(--land-radius-lg);
+    padding: 24px 28px;
+    color: var(--land-ink-secondary);
+    font-size: var(--step-body);
+    line-height: 1.5;
+}
+
+.pricing-guarantee-note strong {
+    display: block;
+    color: var(--land-ink);
     font-size: 1.15rem;
-    line-height: 1.6;
-}
-
-.pricing-header p strong {
-    color: var(--text-main);
-    font-weight: 600;
-}
-
-/* 4. Pricing Cards Grid */
-.pricing-cards-container {
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    align-items: stretch;
-    flex-wrap: wrap;
-    width: 100%;
-    margin-top: 1rem;
-}
-
-/* 5. Base Card Styles */
-.plan-card {
-    background: var(--card-bg);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-radius: 24px;
-    padding: 3.5rem 2.5rem;
-    border: 1px solid var(--border-color);
-    position: relative;
-    overflow: hidden;
-    flex: 1;
-    min-width: 300px;
-    max-width: 440px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: var(--shadow-md);
-}
-
-.plan-card:hover {
-    transform: translateY(-6px);
-    border-color: var(--border-hover);
-    box-shadow: var(--shadow-xl);
-}
-
-/* Basic Plan top border */
-.plan-card:not(.highlighted-plan)::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: var(--text-muted);
-    opacity: 0.3;
-}
-
-/* 6. Highlighted Plan (Advanced) */
-.highlighted-plan {
-    border: 1.5px solid var(--primary);
-    background: var(--card-bg);
-    box-shadow: 0 16px 40px var(--primary-glow), var(--shadow-lg);
-}
-
-.highlighted-plan::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary), var(--primary-light));
-}
-
-.highlighted-plan:hover {
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 40px 80px rgba(59, 130, 246, 0.12), 0 40px 80px rgba(0, 0, 0, 0.65);
-}
-
-/* Recommended badge: Minimalist Pill */
-.recommended-badge {
-    position: absolute;
-    top: 24px;
-    right: 24px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
-    color: white;
-    padding: 6px 14px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    border-radius: 50px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-}
-
-/* 7. Card Content Elements */
-.plan-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-main);
-    margin-bottom: 0.75rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
-.plan-price {
-    font-size: 3.25rem;
     font-weight: 800;
-    color: var(--text-main);
-    line-height: 1.1;
-    margin-bottom: 2rem;
+    margin-bottom: 6px;
+}
+
+/* Account linkage badge injected by pricing.js */
+.pricing-account-badge {
+    margin-bottom: 28px;
+}
+
+.pricing-account-inner {
+    background-color: var(--land-surface);
+    border: 1px solid var(--land-border);
+    border-radius: var(--land-radius-md);
+    padding: 14px 20px;
+    color: var(--land-ink-secondary);
+    font-size: var(--step-small);
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 10px 16px;
 }
 
-.plan-price span {
-    font-size: 0.95rem;
-    color: var(--text-muted);
-    font-weight: 400;
-    margin-top: 0.25rem;
+.pricing-account-inner strong {
+    color: var(--land-ink);
 }
 
-/* List of benefits */
-.plan-benefits {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 2.5rem 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    flex-grow: 1; /* Aligns buttons at the bottom */
-    align-self: stretch;
-    text-align: left;
-}
-
-.plan-benefits li {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    line-height: 1.4;
-}
-
-.plan-benefits li i {
-    color: var(--primary-light); /* Sleek light blue check */
-    margin-top: 3px;
-    font-size: 0.95rem;
-    opacity: 0.85;
-}
-
-/* 8. Call to Action Button */
-.btn-pay {
-    width: 100%;
-    padding: 1rem;
-    border-radius: 12px;
-    font-size: 1rem;
+.pricing-account-inner a {
+    color: var(--land-accent-link);
     font-weight: 600;
-    border: 1px solid transparent;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: underline;
 }
 
-#btn-plan-basic {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    color: var(--text-main);
+.pricing-account-warn {
+    width: 100%;
+    color: #f87171;
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+/* Active plan state set by pricing.js */
+.plan-tile.is-current-plan {
+    border-color: #f59e0b;
+    outline: 2px solid #f59e0b;
+    outline-offset: -2px;
+}
+
+.current-plan-flag {
+    display: inline-block;
+    background-color: #b45309;
+    color: #ffffff;
+    font-size: 0.78rem;
     font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--land-radius-sm);
+    width: fit-content;
+    margin-bottom: 8px;
 }
 
-#btn-plan-basic:hover {
-    background: var(--surface-hover);
-    border-color: var(--border-hover);
-    transform: translateY(-2px);
-}
-
-#btn-plan-advanced {
-    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.25);
-}
-
-#btn-plan-advanced:hover {
-    background: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 100%);
-    box-shadow: 0 12px 28px rgba(20, 184, 166, 0.4);
-    transform: translateY(-2px);
-}
-
-/* Disabled/Active States styling */
 .btn-pay:disabled,
 .btn-pay.upgrade-btn:disabled {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: var(--text-muted) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background-color: var(--land-surface-elevated) !important;
+    color: var(--land-ink-muted) !important;
     cursor: not-allowed !important;
-    box-shadow: none !important;
-    transform: none !important;
     pointer-events: none !important;
+    transform: none !important;
 }
 
-/* Upgrade Button (Mejorar a Advanced) */
 .btn-pay.upgrade-btn {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
-    color: white;
-    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.2);
+    background-color: #0f766e !important;
+    color: #ffffff !important;
 }
 
 .btn-pay.upgrade-btn:hover {
-    background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent-purple) 100%);
-    box-shadow: 0 12px 28px rgba(139, 92, 246, 0.35);
-    transform: translateY(-2px);
+    background-color: #115e59 !important;
 }
 
-/* 9. Trust Badges */
-.trust-badges {
-    margin-top: 2.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    padding-top: 1.5rem;
+/* Pricing Scope & Peruvian Photographic Context */
+.section-pricing-scope {
+    background-color: var(--land-bg-b);
+    padding-block: clamp(64px, 8vw, 112px);
+}
+
+.scope-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(24px, 4vw, 56px);
+    align-items: end;
+    margin-bottom: 40px;
+}
+
+.scope-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.scope-figure {
+    margin: 0;
+    background-color: var(--land-surface);
+    border: 1px solid var(--land-border);
+    border-radius: var(--land-radius-md);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
+}
+
+.scope-figure img {
+    display: block;
     width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
 }
 
-.secure-text {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-}
-
-.secure-text i {
-    color: var(--primary-light);
-}
-
-.payment-logos {
-    display: flex;
-    justify-content: center;
-    gap: 1.25rem;
-    opacity: 0.3;
-    transition: opacity 0.3s ease;
-}
-
-.payment-logos:hover {
-    opacity: 0.7;
-}
-
-.payment-logos i {
-    font-size: 1.5rem;
-    color: var(--text-main);
-}
-
-/* 10. Logout Link & Premium Success View */
-.logout-link {
-    margin-top: 2.5rem;
-    display: inline-block;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    text-decoration: none;
-    transition: color 0.2s ease;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
-    padding-bottom: 2px;
-}
-
-.logout-link:hover {
-    color: var(--text-main);
-    border-bottom-style: solid;
-    border-bottom-color: var(--text-main);
-}
-
-#pricing-content {
+.scope-caption {
+    padding: 14px 18px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 100%;
+    gap: 4px;
 }
 
-#premium-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+.scope-caption strong {
+    font-size: var(--step-small);
+    font-weight: 700;
+    color: var(--land-ink);
 }
 
-/* 11. Loading Overlay */
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(5, 5, 5, 0.92);
-    backdrop-filter: blur(12px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10001; /* Higher than main header */
-    color: var(--text-main);
-    opacity: 1;
-    transition: opacity 0.3s ease;
+.scope-caption span {
+    font-size: 0.82rem;
+    color: var(--land-ink-muted);
 }
 
-.loading-overlay.hidden {
-    opacity: 0;
-    pointer-events: none;
-    display: none;
-}
-
-.spinner {
-    border: 3px solid rgba(255, 255, 255, 0.05);
-    border-left-color: var(--primary);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 1rem;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* 12. Responsiveness & Breakpoints */
-@media (max-width: 768px) {
-    body {
-        padding-top: calc(var(--header-height-mobile) + var(--trial-bar-height)) !important;
+@media (max-width: 960px) {
+    .pricing-hero-grid,
+    .scope-intro {
+        grid-template-columns: 1fr;
+        gap: 28px;
     }
 
-    .pricing-container {
-        padding: 2.5rem 1rem 4rem 1rem;
-        gap: 2rem;
-    }
-
-    .pricing-header h1 {
-        font-size: 2.1rem;
-    }
-
-    .pricing-header p {
-        font-size: 1rem;
-    }
-
-    .pricing-cards-container {
-        flex-direction: column;
-        align-items: center;
-        gap: 1.5rem;
-    }
-
-    .plan-card {
-        width: 100%;
-        max-width: 100%;
-        padding: 2.5rem 1.75rem;
-    }
-
-    .plan-price {
-        font-size: 2.75rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .plan-benefits {
-        margin-bottom: 2rem;
-    }
-
-    .recommended-badge {
-        position: relative;
-        top: auto;
-        right: auto;
-        display: inline-block;
-        margin-bottom: 1rem;
-        width: fit-content;
+    .scope-gallery {
+        grid-template-columns: 1fr;
     }
 }
-
-

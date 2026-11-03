@@ -5,19 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planes y Precios Premium | Hub Academia Perú</title>
-    
-    <!-- ✅ Metadatos SEO Primarios -->
+
+    <!-- Metadatos SEO Primarios -->
     <meta name="description" content="Accede a las herramientas de Hub Academia: simulacros oficiales MINEDU y SERUMS, Repaso Espaciado SM-2, Notas y Tutoría con IA. Planes desde S/ 9.90 vía Mercado Pago.">
     <meta name="keywords" content="precios hub academia, plan premium simulacros minedu, ascenso docente peru, membresia serums, mercado pago hub academia">
     <meta name="author" content="Hub Academia">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <link rel="canonical" href="https://www.hubacademia.com/pricing">
 
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#050505">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="/assets/logo.png">
 
-    <!-- ✅ Open Graph -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Hub Academia">
     <meta property="og:title" content="Planes y Precios Premium | Hub Academia Perú">
@@ -26,32 +26,35 @@
     <meta property="og:image" content="https://www.hubacademia.com/assets/logo.png">
     <meta property="og:locale" content="es_PE">
 
-    <!-- ✅ Twitter Cards -->
+    <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Planes y Precios Premium | Hub Academia Perú">
     <meta name="twitter:description" content="Acceso Premium a herramientas con IA, simuladores curados y Repaso Espaciado SM-2. Planes desde S/ 9.90.">
     <meta name="twitter:image" content="https://www.hubacademia.com/assets/logo.png">
 
-    <!-- ✅ Preconnect y Fuentes -->
+    <!-- Progressive Enhancement Gate -->
+    <script>document.documentElement.classList.add('js');</script>
+
+    <!-- Tipografía Institucional Unificada: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- taste-skill-ignore: official brand typeface per DESIGN_SYSTEM.md -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><!-- taste-skill-ignore -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- ✅ CSS Base -->
-    <link rel="stylesheet" href="/css/theme.css?v=66c8a43b81c7">
-    <link rel="stylesheet" href="/css/base.css?v=66c8a43b81c7">
-    <link rel="stylesheet" href="/css/header.css?v=66c8a43b81c7">
-    <link rel="stylesheet" href="/css/modal.css?v=66c8a43b81c7">
-    <link rel="stylesheet" href="/css/components.css?v=66c8a43b81c7">
-    <link rel="stylesheet" href="/css/footer.css?v=66c8a43b81c7">
-    <link rel="stylesheet" href="/css/sidebar.css?v=66c8a43b81c7">
-    <link rel="stylesheet" href="/css/pricing.css?v=66c8a43b81c7">
-    <script src="/js/config.js?v=66c8a43b81c7"></script>
-    <script src="/js/utils/themeManager.js?v=66c8a43b81c7"></script>
+    <!-- CSS Corporativo Centralizado -->
+    <link rel="stylesheet" href="/css/theme.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/base.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/modal.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/footer.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/landing.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/pricing.css?v=7110047d648f">
 
-    <!-- ✅ Schema.org / JSON-LD (ACT-05 & ACT-06 Merchant Listings + Product Snippets) -->
+    <script src="/js/config.js?v=7110047d648f"></script>
+    <script src="/js/utils/themeManager.js?v=7110047d648f"></script>
+
+    <!-- Schema.org / JSON-LD (ACT-05 & ACT-06 Merchant Listings + Product Snippets) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -210,110 +213,284 @@
     </script>
 </head>
 
-<body>
-    <!-- Header with Nav -->
-    <header class="main-header">
-        <div class="header-start">
-            <a href="/" class="logo">
-                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
-                <span class="logo-text">Hub Academia</span>
+<body class="corporate-page">
+    <!-- Header Ejecutivo Fijo -->
+    <header class="exec-header">
+        <div class="exec-header-bar">
+            <a href="/" class="exec-brand" aria-label="Ir al inicio de Hub Academia">
+                <img src="/assets/logo.png" alt="Hub Academia" class="exec-brand-logo" width="32" height="32">
+                <span>Hub Academia</span>
             </a>
-        </div>
-        <div class="header-nav">
-            <div id="user-session-controls">
-                <!-- Injected via NavLoader -->
+
+            <nav class="exec-nav" aria-label="Navegación principal">
+                <a href="/#herramientas-section" class="exec-nav-link">Herramientas</a>
+                <a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="exec-nav-link">Docentes Inicial ↗</a>
+                <a href="/simulator-dashboard?context=EDUCACION" class="exec-nav-link">Simuladores</a>
+                <a href="/repaso" class="exec-nav-link">Repaso y Notas</a>
+                <a href="/library" class="exec-nav-link">Biblioteca</a>
+                <a href="/pricing" class="exec-nav-link">Precios</a>
+            </nav>
+
+            <div class="exec-header-actions">
+                <button type="button" id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Cambiar tema">
+                    <i class="fas fa-sun" aria-hidden="true"></i>
+                </button>
+
+                <div id="user-session-controls" class="user-session-controls">
+                    <a href="/login?redirect=pricing" id="open-login-modal" class="exec-login-btn">
+                        Acceder
+                    </a>
+                </div>
+
+                <button type="button" id="exec-mobile-menu-btn" class="exec-menu-toggle" aria-expanded="false" aria-controls="exec-mobile-drawer">
+                    Menú
+                </button>
             </div>
         </div>
     </header>
 
-    <div id="pricing-wrapper" class="pricing-container">
-        <div id="pricing-content">
-            <div class="pricing-header">
-                <h1>Activa tu Acceso Premium</h1>
-                <p>Elige el tiempo de acceso que mejor se adapte a tu ritmo de estudio. <strong>Pago único</strong> procesado automáticamente con Mercado Pago, sin renovaciones automáticas.</p>
+    <!-- Menú Móvil Desplegable -->
+    <div id="exec-mobile-drawer" class="exec-mobile-drawer" aria-label="Navegación móvil">
+        <a href="/#herramientas-section">Herramientas</a>
+        <a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer">Docentes Inicial ↗</a>
+        <a href="/simulator-dashboard?context=EDUCACION">Simuladores</a>
+        <a href="/repaso">Repaso y Notas</a>
+        <a href="/library">Biblioteca</a>
+        <a href="/pricing">Planes y Precios</a>
+    </div>
+
+    <main id="main-content">
+        <!-- SECCIÓN 1: HERO DE PRECIOS -->
+        <section id="pricing-wrapper" class="section-pricing-hero" aria-labelledby="pricing-main-title">
+            <div id="pricing-content" class="land-container">
+                <div class="pricing-hero-grid">
+                    <div class="pricing-header">
+                        <h1 id="pricing-main-title" class="lines">
+                            <span class="line"><span data-line style="--i:0">Planes de acceso</span></span>
+                            <span class="line"><span data-line style="--i:1">sin suscripción.</span></span>
+                        </h1>
+                        <p data-load style="--d:280ms">
+                            Elige el tiempo de acceso que mejor acompañe tu preparación. <strong>Pago único</strong> con activación automática vía <strong>Mercado Pago</strong>, sin cobros recurrentes ni renovaciones sorpresa.
+                        </p>
+                    </div>
+
+                    <div class="pricing-guarantee-note" data-load style="--d:360ms">
+                        <strong>Activación inmediata y transparente</strong>
+                        Procesamos todos los pagos de forma exclusiva mediante la pasarela oficial de Mercado Pago en soles peruanos (PEN), vinculando los beneficios al instante a tu cuenta.
+                    </div>
+                </div>
+
+                <div class="planes-grid">
+                    <!-- Plan Gratuito -->
+                    <div id="plan-card-free" class="plan-tile" data-load style="--d:380ms">
+                        <div class="plan-tile-top">
+                            <h2 class="plan-tile-name">Plan Gratuito</h2>
+                            <div class="plan-tile-price-row">
+                                <span class="plan-tile-currency">S/</span>
+                                <span class="plan-tile-amount">0</span>
+                                <span class="plan-tile-period">/ acceso libre</span>
+                            </div>
+                            <ul class="plan-tile-features">
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>10 créditos de prueba mensuales</span>
+                                </li>
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>Acceso a Biblioteca de consulta directa</span>
+                                </li>
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>Exploración de mazos comunitarios SM-2</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <a href="/simulator-dashboard?context=EDUCACION" class="btn-land-secondary plan-tile-btn">
+                            Comenzar gratis
+                        </a>
+                        <p class="plan-tile-guarantee">Registro inmediato con Google</p>
+                    </div>
+
+                    <!-- Plan Básico -->
+                    <div id="plan-card-basic" class="plan-tile" data-load style="--d:450ms">
+                        <div class="plan-tile-top">
+                            <h2 class="plan-tile-name">Plan Básico</h2>
+                            <div class="plan-tile-price-row">
+                                <span class="plan-tile-currency">S/</span>
+                                <span class="plan-tile-amount">9.90</span>
+                                <span class="plan-tile-period">/ 60 días (pago único)</span>
+                            </div>
+                            <ul class="plan-tile-features">
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>15 Simulacros oficiales por día</span>
+                                </li>
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>Repaso SM-2 ilimitado y Mis Notas</span>
+                                </li>
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>Carga Excel (3 archivos/día)</span>
+                                </li>
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>Tutor IA estándar y diagnóstico</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <button type="button" id="btn-plan-basic" class="btn-land-primary plan-tile-btn btn-pay plan-select-btn" data-plan="basic">
+                            Pagar con Mercado Pago
+                        </button>
+                        <p class="plan-tile-guarantee">Sin cobros automáticos posteriores</p>
+                    </div>
+
+                    <!-- Plan Avanzado -->
+                    <div id="plan-card-advanced" class="plan-tile plan-tile--featured" data-load style="--d:520ms">
+                        <div class="plan-tile-top">
+                            <h2 class="plan-tile-name">Plan Avanzado</h2>
+                            <div class="plan-tile-price-row">
+                                <span class="plan-tile-currency">S/</span>
+                                <span class="plan-tile-amount">24.90</span>
+                                <span class="plan-tile-period">/ 120 días (pago único)</span>
+                            </div>
+                            <ul class="plan-tile-features">
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>50 Simulacros oficiales por día</span>
+                                </li>
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>Repaso SM-2 ilimitado y Mis Notas</span>
+                                </li>
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>Carga masiva Excel (10 archivos/día)</span>
+                                </li>
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>Tutor IA con razonamiento profundo</span>
+                                </li>
+                                <li class="plan-feature-item">
+                                    <i class="fas fa-check" aria-hidden="true"></i>
+                                    <span>Diagnóstico analítico por subprueba</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <button type="button" id="btn-plan-advanced" class="btn-land-primary plan-tile-btn btn-pay plan-select-btn" data-plan="advanced">
+                            Pagar con Mercado Pago
+                        </button>
+                        <p class="plan-tile-guarantee">Activación instantánea por 4 meses</p>
+                    </div>
+                </div>
             </div>
+        </section>
 
-            <div class="pricing-cards-container">
-                <!-- Plan Básico -->
-                <div id="plan-card-basic" class="plan-card">
-                    <h3 class="plan-title">Plan Básico</h3>
-                    <div class="plan-price">S/ 9.90 <span>/ Acceso 2 meses</span></div>
-
-                    <ul class="plan-benefits">
-                        <li><i class="fas fa-check-circle"></i> <span>15 Simulacros Oficiales Curados/Día</span></li>
-                        <li><i class="fas fa-check-circle"></i> <span>Flashcards ilimitadas y Carga Excel (3 archivos/día)</span></li>
-                        <li><i class="fas fa-check-circle"></i> <span>Tutor Académico Estándar</span></li>
-                        <li><i class="fas fa-check-circle"></i> <span>Diagnóstico Estadístico (Estático)</span></li>
-                    </ul>
-
-                    <button id="btn-plan-basic" class="btn-pay plan-select-btn" data-plan="basic">
-                        Pagar con Mercado Pago
-                    </button>
+        <!-- SECCIÓN 2: COBERTURA DEL ECOSISTEMA Y FOTOGRAFÍA PERUANA -->
+        <section class="section-pricing-scope" aria-labelledby="scope-heading">
+            <div class="land-container">
+                <div class="scope-intro" data-reveal>
+                    <header class="section-head">
+                        <h2 id="scope-heading" class="section-title">Todo en una cuenta institucional</h2>
+                        <p class="section-desc">
+                            Tu plan desbloquea cuotas ampliadas y asistencia de IA transversalmente en la evaluación docente, vertical clínica SERUMS, memoria SM-2 con Notas y consulta de acervo.
+                        </p>
+                    </header>
                 </div>
 
-                <!-- Plan Avanzado -->
-                <div id="plan-card-advanced" class="plan-card highlighted-plan">
-                    <div class="recommended-badge">Recomendado</div>
-                    <h3 class="plan-title">Plan Avanzado</h3>
-                    <div class="plan-price">S/ 24.90 <span>/ Acceso 4 meses</span></div>
+                <div class="scope-gallery photo-drift" data-reveal>
+                    <figure class="scope-figure">
+                        <img src="/assets/editorial/emblematico-colegio-guadalupe-de-lima-2.jpg" width="1920" height="1440" alt="Fachada del Colegio Nacional Nuestra Señora de Guadalupe en Lima, Perú" loading="lazy">
+                        <figcaption class="scope-caption">
+                            <strong>Magisterio Nacional y Educación Inicial</strong>
+                            <span>Simuladores oficiales MINEDU (Base 90) y conexión directa con docentes.hubacademia.com.</span>
+                        </figcaption>
+                    </figure>
 
-                    <ul class="plan-benefits">
-                        <li><i class="fas fa-check-circle"></i> <span>50 Simulacros Oficiales Curados/Día</span></li>
-                        <li><i class="fas fa-check-circle"></i> <span>Flashcards ilimitadas Personalizadas y Carga Masiva Excel (10 archivos/día)</span></li>
-                        <li><i class="fas fa-check-circle"></i> <span>Tutor Académico Inteligente con Razonamiento profundo</span></li>
-                        <li><i class="fas fa-check-circle"></i> <span>Diagnóstico Estadístico (Avanzado)</span></li>
-                    </ul>
+                    <figure class="scope-figure">
+                        <img src="/assets/editorial/medical-school-of-peru-lima-peru-miraflores.jpg" width="1920" height="1285" alt="Sede del Colegio Médico del Perú en Miraflores, Lima" loading="lazy">
+                        <figcaption class="scope-caption">
+                            <strong>Vertical Especializada Salud SERUMS</strong>
+                            <span>Entrenamiento clínico sobre bancos oficiales del MINSA y Guías de Práctica Clínica.</span>
+                        </figcaption>
+                    </figure>
 
-                    <button id="btn-plan-advanced" class="btn-pay plan-select-btn" data-plan="advanced">
-                        Pagar con Mercado Pago
-                    </button>
+                    <figure class="scope-figure">
+                        <img src="/assets/editorial/entrada-a-la-biblioteca-nacional-del-peru.jpg" width="1920" height="1440" alt="Ingreso público a la Biblioteca Nacional del Perú en San Borja, Lima" loading="lazy">
+                        <figcaption class="scope-caption">
+                            <strong>Biblioteca de Consulta Directa</strong>
+                            <span>Acceso ágil a documentos normativos, resoluciones y bibliografía técnica sin barreras.</span>
+                        </figcaption>
+                    </figure>
+
+                    <figure class="scope-figure">
+                        <img src="/assets/editorial/patio-de-letras-casona-de-san-marcos.jpg" width="1920" height="1440" alt="Patio de Letras de la Casona de San Marcos en Lima, Perú" loading="lazy">
+                        <figcaption class="scope-caption">
+                            <strong>Repaso SM-2, Notas y Tutor IA</strong>
+                            <span>Retención científica de largo plazo unificada con tus apuntes personales y explicaciones normativas.</span>
+                        </figcaption>
+                    </figure>
                 </div>
             </div>
+        </section>
 
-            <div class="trust-badges" style="margin-top: 2rem;">
-                <div class="secure-text">
-                    <i class="fas fa-lock"></i> Pago único y activación automática procesados exclusivamente por Mercado Pago
+        <!-- SECCIÓN 3: PREGUNTAS FRECUENTES -->
+        <section class="section-pricing-hero" aria-labelledby="faq-heading">
+            <div class="land-container">
+                <header class="section-head" data-reveal>
+                    <h2 id="faq-heading" class="section-title">Preguntas frecuentes</h2>
+                    <p class="section-desc">
+                        Claridad total sobre el modelo de pago único, activación y cobertura de las herramientas.
+                    </p>
+                </header>
+
+                <div class="horizon-cards-grid">
+                    <article class="horizon-card" data-reveal>
+                        <h3 class="horizon-card-title">¿El cobro es recurrente?</h3>
+                        <p class="horizon-card-copy">
+                            No. Todos nuestros planes operan bajo modalidad de pago único por el periodo elegido (2 o 4 meses). No realizamos débitos automáticos ni renovaciones sorpresivas.
+                        </p>
+                    </article>
+
+                    <article class="horizon-card" data-reveal>
+                        <h3 class="horizon-card-title">¿Cómo se procesa el pago?</h3>
+                        <p class="horizon-card-copy">
+                            De manera exclusiva, segura y automatizada mediante la pasarela oficial de Mercado Pago (tarjetas de crédito, débito y transferencias autorizadas en el Perú), con activación inmediata.
+                        </p>
+                    </article>
+
+                    <article class="horizon-card" data-reveal>
+                        <h3 class="horizon-card-title">¿Qué incluye mi acceso?</h3>
+                        <p class="horizon-card-copy">
+                            Desbloquea cuotas ilimitadas de simuladores con bancos oficiales curados, repetición espaciada SuperMemo-2 (SM-2) unificada con Notas y tutoría pedagógica con Inteligencia Artificial.
+                        </p>
+                    </article>
                 </div>
-                <div class="payment-logos">
-                    <i class="fab fa-cc-visa" title="Visa"></i>
-                    <i class="fab fa-cc-mastercard" title="Mastercard"></i>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Global de Confirmación -->
+    <div id="confirmation-modal" class="modal modal-overlay" style="display: none; z-index: 2147483647;">
+        <div class="modal-content confirmation-modal-card" style="max-width: 440px;">
+            <div class="modal-header confirmation-modal-header">
+                <div class="confirmation-title-wrap">
+                    <div id="confirmation-modal-icon-container" class="confirmation-modal-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <h2 id="confirmation-modal-title">Confirmación</h2>
                 </div>
+                <button class="modal-close-btn modal-close" aria-label="Cerrar modal">×</button>
+            </div>
+            <div class="modal-body confirmation-modal-body">
+                <p id="confirmation-modal-message">¿Estás seguro de realizar esta acción?</p>
+            </div>
+            <div class="modal-footer confirmation-modal-footer">
+                <button id="confirmation-modal-cancel" class="btn-secondary">Cancelar</button>
+                <button id="confirmation-modal-confirm" class="btn-primary">Confirmar</button>
             </div>
         </div>
     </div>
-
-    <footer class="main-footer">
-        <div class="footer-container">
-            <div class="footer-brand">
-                <a href="/" class="footer-logo">
-                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
-                    Hub Academia
-                </a>
-                <p class="footer-slogan">Ecosistema peruano de soluciones y herramientas impulsadas por Inteligencia Artificial para educación y evaluación profesional.</p>
-            </div>
-            <div class="footer-links-col">
-                <h4 class="footer-heading">Herramientas</h4>
-                <ul class="footer-links-list">
-                    <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial</a></li>
-                    <li><a href="/simulator-dashboard" class="footer-link">Simuladores de Exámenes</a></li>
-                    <li><a href="/repaso" class="footer-link">Repaso y Notas</a></li>
-                    <li><a href="/library" class="footer-link">Biblioteca</a></li>
-                </ul>
-            </div>
-            <div class="footer-links-col">
-                <h4 class="footer-heading">Legal y Soporte</h4>
-                <ul class="footer-links-list">
-                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
-                    <li><a href="/privacy" class="footer-link">Política de Privacidad</a></li>
-                    <li><a href="/terms" class="footer-link">Términos y Condiciones</a></li>
-                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">soporte@hubacademia.com</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
-        </div>
-    </footer>
 
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay hidden">
@@ -321,15 +498,73 @@
         <p>Conectando de forma segura con Mercado Pago...</p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=66c8a43b81c7"></script>
-    <script src="/js/services/authApiService.js?v=66c8a43b81c7"></script>
-    <script src="/js/sessionManager.js?v=66c8a43b81c7"></script>
-    <script src="/js/ui/uiManager.js?v=66c8a43b81c7"></script>
-    <script src="/js/ui/sidebar.js?v=66c8a43b81c7"></script>
-    <script src="/js/app.js?v=66c8a43b81c7"></script>
+    <!-- Pie de Página Institucional Centralizado -->
+    <footer class="main-footer" role="contentinfo">
+        <div class="footer-container footer-container--four">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo" aria-label="Hub Academia">
+                    <img src="/assets/logo.png" alt="Hub Academia" width="32" height="32">
+                    <span>Hub Academia</span>
+                </a>
+                <p class="footer-slogan">
+                    Ecosistema peruano de soluciones e Inteligencia Artificial aplicada para la docencia y la evaluación profesional rigurosa.
+                </p>
+            </div>
 
-    <script src="/js/pricing.js?v=66c8a43b81c7"></script>
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Herramientas</h4>
+                <ul class="footer-links-list">
+                    <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial ↗</a></li>
+                    <li><a href="/simulator-dashboard?context=EDUCACION" class="footer-link">Simulador MINEDU</a></li>
+                    <li><a href="/simulator-dashboard?context=MEDICINA" class="footer-link">Simulador SERUMS</a></li>
+                    <li><a href="/repaso" class="footer-link">Repaso y Notas</a></li>
+                    <li><a href="/library" class="footer-link">Biblioteca</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Institucional y Legal</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                    <li><a href="/privacy" class="footer-link">Política de Privacidad</a></li>
+                    <li><a href="/terms" class="footer-link">Términos y Condiciones</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Contacto y Soporte</h4>
+                <ul class="footer-links-list">
+                    <li>
+                        <a href="mailto:soporte@hubacademia.com" class="footer-mail-link">
+                            <i class="fas fa-envelope" aria-hidden="true"></i>
+                            soporte@hubacademia.com
+                        </a>
+                    </li>
+                    <li><span class="footer-link">Lima · Perú</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-bottom-row">
+                <span>&copy; 2026 Hub Academia. Todos los derechos reservados.</span>
+                <span>Pagos automatizados exclusivamente vía Mercado Pago</span>
+            </div>
+            <p class="footer-credits">
+                Fotografía documental abierta: "Emblemático Colegio Guadalupe de Lima 2" por Pilar, CC BY-SA 4.0; "Entrada a la Biblioteca Nacional del Perú" por Biblog Teca, CC BY-SA 2.0; "Patio de Letras-Casona de San Marcos 2" por Yhhue91, CC BY-SA 4.0; "Medical School of Peru - Lima Peru, Miraflores" por HBarrison, CC BY-SA 2.0, vía Wikimedia Commons.
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/services/networkService.js?v=7110047d648f"></script>
+    <script src="/js/services/authApiService.js?v=7110047d648f"></script>
+    <script src="/js/sessionManager.js?v=7110047d648f"></script>
+    <script src="/js/ui/uiManager.js?v=7110047d648f"></script>
+    <script src="/js/ui/confirmationModal.js?v=7110047d648f"></script>
+    <script src="/js/home-animations.js?v=7110047d648f"></script>
+    <script src="/js/app.js?v=7110047d648f"></script>
+    <script src="/js/pricing.js?v=7110047d648f"></script>
 </body>
 
 </html>

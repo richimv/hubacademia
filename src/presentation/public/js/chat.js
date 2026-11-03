@@ -283,23 +283,23 @@ class ChatComponent {
             const user = window.sessionManager ? window.sessionManager.getUser() : null;
             const isRegistered = !!(user && (user.id || user.email));
 
-            let optionsMarkdown = `1. **🚀 Servicios y Simuladores**\n2. **💳 Planes y Precios**\n3. **💡 Sustento Oficial y Ventajas**`;
+            let optionsMarkdown = `1. **Herramientas y Ecosistema**\n2. **Planes y Mercado Pago**\n3. **Sustento Oficial y Ventajas**`;
             let defaultSuggestions = [
-                "1. 🚀 Servicios y Simuladores",
-                "2. 💳 Planes y Precios",
-                "3. 💡 Sustento Oficial y Ventajas"
+                "1. Herramientas y Ecosistema",
+                "2. Planes y Mercado Pago",
+                "3. Sustento Oficial y Ventajas"
             ];
 
             // Si el usuario NO está registrado (es visitante), se añade la 4ta opción al final
             if (!isRegistered) {
-                optionsMarkdown += `\n4. **🔑 ¿Cómo registrarme?**`;
-                defaultSuggestions.push("4. 🔑 ¿Cómo registrarme?");
+                optionsMarkdown += `\n4. **¿Cómo registrarme?**`;
+                defaultSuggestions.push("4. ¿Cómo registrarme?");
             }
 
-            const welcomeText = `**¡Hola! Soy tu guía de Hub Academia.**
-Te doy la bienvenida. Estoy aquí para orientarte sobre la plataforma.
+            const welcomeText = `**Hola, soy el Asistente Guía de Hub Academia.**
+Te doy la bienvenida a nuestro ecosistema de herramientas e Inteligencia Artificial aplicada.
 
-**Ingrese el número de su consulta en la caja de texto inferior:**
+**Selecciona o ingresa el número de tu consulta:**
 
 ${optionsMarkdown}`;
 

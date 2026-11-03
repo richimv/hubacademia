@@ -1,23 +1,23 @@
 /**
  * ASISTENTE GUÍA KNOWLEDGE BASE (Hub Academia)
- * Módulo de respuestas estáticas de alta velocidad (0ms latencia, 0 costo IA).
- * Funciona al 100% como centro de orientación efímero para todos los usuarios.
- * Especialidades oficiales: SERUMS (Salud/Medicina) y ASCENSO (Educación Magisterial).
+ * Módulo de respuestas estáticas de alta velocidad (0 ms latencia, 0 costo IA).
+ * Orienta a visitantes y usuarios sobre el ecosistema de Inteligencia Artificial
+ * y herramientas operativas de Hub Academia en el Perú.
  */
 
 class AsistenteGuiaKnowledge {
     constructor() {
         const visitorPills = [
-            "1. 🚀 Servicios y Simuladores",
-            "2. 💳 Planes y Precios",
-            "3. 💡 Sustento Oficial y Ventajas",
-            "4. 🔑 ¿Cómo registrarme?"
+            "1. Herramientas y Ecosistema",
+            "2. Planes y Mercado Pago",
+            "3. Sustento Oficial y Ventajas",
+            "4. ¿Cómo registrarme?"
         ];
 
         const registeredPills = [
-            "1. 🚀 Servicios y Simuladores",
-            "2. 💳 Planes y Precios",
-            "3. 💡 Sustento Oficial y Ventajas"
+            "1. Herramientas y Ecosistema",
+            "2. Planes y Mercado Pago",
+            "3. Sustento Oficial y Ventajas"
         ];
 
         this.pills = {
@@ -28,88 +28,85 @@ class AsistenteGuiaKnowledge {
         this.responses = {
             servicios: {
                 intencion: "informacion_servicios",
-                respuesta: `### Servicios y Simuladores en Hub Academia
+                respuesta: `### Herramientas Operativas en Hub Academia
 
-En **Hub Academia** acompañamos tu preparación profesional enfocándonos exclusivamente en **dos grandes pilares oficiales en el Perú**:
+**Hub Academia** es un ecosistema peruano de soluciones e **Inteligencia Artificial aplicada**, con foco prioritario en el magisterio nacional y herramientas especializadas de evaluación profesional:
 
-1. **Medicina y Salud — SERUMS**
-   - **Simuladores de Examen**: Banco de preguntas oficiales fundamentadas en las **Normas Técnicas de Salud (NTS) del MINSA** y Guías de Práctica Clínica (GPC).
-   - **Modos de Evaluación**: Modo Rápido (10q), Modo Estudio con explicación técnica (20q) y Simulacro Real con temporizador (100q).
-   - 👉 [Ver simulador de SERUMS](/simulator-dashboard?context=MEDICINA)
+1. **Plataforma Docente Inicial (\`docentes.hubacademia.com\`)**
+   - Entorno especializado del ecosistema diseñado para docentes de **Educación Inicial** en el Perú.
+   - [Abrir Docentes Inicial](https://docentes.hubacademia.com/)
 
-2. **Educación Magisterial — ASCENSO Docente**
-   - **Simuladores de Didáctica y Casuística**: Evaluaciones basadas en el **Currículo Nacional (CNEB)**, el **Marco del Buen Desempeño Docente** y la **RVM 094-2020-MINEDU**.
-   - **Especialidades**: Inicial, Primaria, Secundaria y áreas pedagógicas.
-   - 👉 [Ver simulador de ASCENSO](/simulator-dashboard?context=EDUCACION)
+2. **Simuladores de Exámenes Oficiales**
+   - **Educación Magisterial (MINEDU)**: Entrenamiento para **Ascenso Docente (Base 90)** con bancos oficiales auditados bajo el **CNEB**, el **Marco del Buen Desempeño Docente** y la **RVM 094-2020-MINEDU**.
+   - **Vertical Salud (SERUMS)**: Herramienta especializada con bancos oficiales del **MINSA**, Normas Técnicas de Salud (NTS) y Guías de Práctica Clínica (GPC) en modos Rápido (10q), Estudio (20q) y Real (100q).
+   - [Ir a Simuladores de Exámenes](/simulator-dashboard?context=EDUCACION)
 
-3. **Módulo Repaso (Flashcards Inteligentes)**
-   - **Memorización Activa y Algoritmo SM-2**: Afianza conceptos clave evaluando tu retención (*Olvidé*, *Difícil*, *Bien*, *Fácil*) para optimizar tus intervalos de estudio.
-   - **Creación de mazos y tarjetas**: Crea tus propios mazos de flashcards y tarjetas.
-   - **Tutor IA Contextual**: Resuelve dudas específicas directamente en cada tarjeta de repaso.
-   - 👉 [Ir a Módulo Repaso](/repaso)
+3. **Repaso Espaciado (SM-2) y Notas Unificadas**
+   - **Flashcards con Algoritmo SuperMemo-2**: Optimiza tu retención evaluando cada tarjeta (*Olvidé*, *Difícil*, *Bien*, *Fácil*).
+   - **Mis Notas Integradas**: Crea apuntes personales y conserva explicaciones guardadas directamente desde el Tutor IA en un solo lugar.
+   - [Ir a Repaso y Notas](/repaso)
 
-4. **Mi Biblioteca (Centro de Recursos, Apuntes y Noticias)**
-   - **Gestión Unificada de Notas**: Almacena, organiza y repasa tus apuntes guardados durante los simulacros o sesiones de chat con la IA.
-   - **Noticias Oficiales y Novedades Normativas**: Consulta información en tiempo real sobre convocatorias, cronogramas, resoluciones del **MINSA (Salud)** y del **MINEDU (Educación)**.
-   - 👉 [Ir a Mi Biblioteca](/library)`,
+4. **Biblioteca de Consulta**
+   - Búsqueda y lectura directa de normas técnicas, guías oficiales, libros y documentos clave de Educación y Salud.
+   - [Ir a Biblioteca](/library)`,
                 sugerencias: this.pills.visitor
             },
 
             precios: {
                 intencion: "informacion_precios",
-                respuesta: `### 💳 Planes y Precios Transparentes
+                respuesta: `### Planes Transparentes y Pago Exclusivo con Mercado Pago
 
-Contamos con opciones flexibles diseñadas a tu medida para tu preparación hacia el **SERUMS** o el **ASCENSO**:
+Todos nuestros planes de pago son de **pago único**, sin cargos recurrentes ni renovaciones automáticas, procesados al 100% de forma segura y con activación inmediata vía **Mercado Pago**:
 
-* **Plan Free (Prueba Gratuita)**:
-  - **10 Vidas de prueba gratis** renovadas automáticamente cada 30 días.
+* **Plan Gratuito (Inicio)**:
+  - **10 vidas mensuales** renovadas automáticamente cada 30 días para explorar simulacros oficiales.
 
-* **Plan Basic (Acceso Estándar)**:
-  - **Simuladores ilimitados** para tu especialidad (SERUMS o ASCENSO).
-  - Diagnóstico de rendimiento por áreas temáticas y gráficos de evolución.
+* **Plan Básico — S/ 9.90 (Acceso por 2 meses)**:
+  - **15 Simulacros Oficiales Curados/Día**.
+  - Flashcards ilimitadas, Mis Notas y carga Excel (3 archivos/día).
+  - Tutor Académico Estándar y diagnóstico estadístico.
 
-* **Plan Advanced (Experiencia Total + IA)**:
-  - **Acceso Ilimitado Total** a simuladores de examen y banco de preguntas.
-  - **Tutor IA Contextual con RAG Semántico** en cada pregunta de simulacro y tarjeta de repaso.
-  - **Flashcards Ilustradas con Imágenes** y carga masiva extendida (10 archivos Excel/día).
+* **Plan Avanzado — S/ 24.90 (Acceso por 4 meses)**:
+  - **50 Simulacros Oficiales Curados/Día**.
+  - Flashcards ilimitadas personalizadas y carga masiva Excel (10 archivos/día).
+  - **Tutor Académico Inteligente** con razonamiento profundo sobre normativa oficial en cada pregunta y tarjeta.
+  - Diagnóstico estadístico avanzado por áreas.
 
-👉 [Ver Tabla de Planes y Precios](/pricing)`,
+[Ver Planes y Activar con Mercado Pago](/pricing)`,
                 sugerencias: this.pills.visitor
             },
 
             acceso: {
                 intencion: "informacion_acceso",
-                respuesta: `### 🔑 ¿Cómo registrarme?
+                respuesta: `### ¿Cómo registrarme en Hub Academia?
 
-Registrarte en la plataforma es **instantáneo y 100% gratuito**, sin formularios extensos:
+El registro es **instantáneo y gratuito**:
 
-1. **Paso 1**: Haz clic en el botón **"Acceder"** ubicado en la barra superior.
-2. **Paso 2**: Selecciona tu cuenta de **Google** (vía selección de correos o Google One Tap).
-3. **Paso 3**: ¡Listo! Tu acceso se activará en 1 clic y recibirás automáticamente **10 vidas de prueba gratis** para rendir simulacros oficiales de **SERUMS** o **ASCENSO**.`,
+1. Haz clic en el botón **Acceder** ubicado en la barra superior.
+2. Ingresa en **1 clic con tu cuenta de Google** (o mediante tu correo electrónico).
+3. Tu cuenta quedará activa al instante con **10 vidas gratuitas** para probar nuestras herramientas y simuladores oficiales.`,
                 sugerencias: this.pills.visitor
             },
 
             ventajas: {
                 intencion: "informacion_ventajas",
-                respuesta: `### Sustento Oficial y Ventajas Exclusivas
+                respuesta: `### Sustento Oficial y Rigor de nuestro Ecosistema IA
 
-* **Rigor y Sustento Oficial**: Nuestras respuestas y explicaciones no son genéricas; están fundamentadas rigurosamente en la normativa peruana vigente (**NTS MINSA / GPC** para Salud y **CNEB / RVM 094-2020-MINEDU** para Educación).
-* **Especialización Exclusiva**: Nos dedicamos al 100% a los dos procesos con mayor demanda profesional en el Perú: **SERUMS** y **ASCENSO**.
-* **Analítica y Diagnóstico de Fortalezas**: Mide tu evolución por áreas pedagógicas y médicas antes del examen real.
-* **Tutor IA Contextual con RAG**: En nuestro Plan Advanced, el Tutor IA fundamenta cada duda citando la norma o manual oficial correspondiente.`,
+* **Bancos 100% Oficiales Auditados**: Nuestros simulacros operan exclusivamente sobre preguntas reales y curadas en base de datos, sin preguntas sintéticas improvisadas.
+* **Tutoría IA Fundamentada en Normativa Peruana**: El Tutor IA explica cada alternativa citando documentos vigentes del **MINEDU (CNEB / MBDD / RVM 094-2020)** y del **MINSA (NTS / GPC)**.
+* **Ecosistema Conectado**: Integra la plataforma especializada **Docentes Inicial** (\`docentes.hubacademia.com\`), simuladores oficiales, memoria científica **SM-2 + Notas** y biblioteca normativa.
+* **Activación Inmediata**: Pagos procesados de manera exclusiva y automatizada mediante **Mercado Pago**.`,
                 sugerencias: this.pills.visitor
             },
 
             invalida: {
                 intencion: "opcion_invalida",
-                respuesta: `⚠️ **Opción no válida.**
+                respuesta: `**Selecciona una consulta disponible para orientarte de inmediato:**
 
-Por favor, ingresa una opción correcta:
-
-1. **🚀 Servicios y Simuladores**
-2. **💳 Planes y Precios**
-3. **💡 Sustento Oficial y Ventajas**
-4. **🔑 ¿Cómo registrarme?**`,
+1. **Herramientas y Ecosistema**
+2. **Planes y Mercado Pago**
+3. **Sustento Oficial y Ventajas**
+4. **¿Cómo registrarme?**`,
                 sugerencias: this.pills.visitor
             }
         };
@@ -149,12 +146,17 @@ Por favor, ingresa una opción correcta:
 
         // 2. Coincidencias por palabras clave
         if (
+            normalized.includes('herramienta') ||
+            normalized.includes('ecosistema') ||
             normalized.includes('servicio') ||
             normalized.includes('simulador') ||
-            normalized.includes('serums') ||
+            normalized.includes('inicial') ||
+            normalized.includes('docente') ||
             normalized.includes('ascenso') ||
+            normalized.includes('serums') ||
             normalized.includes('biblioteca') ||
             normalized.includes('repaso') ||
+            normalized.includes('nota') ||
             normalized.includes('que ofrece') ||
             normalized.includes('que tienen')
         ) {
@@ -166,9 +168,14 @@ Por favor, ingresa una opción correcta:
             normalized.includes('plan') ||
             normalized.includes('costo') ||
             normalized.includes('cuanto cuesta') ||
+            normalized.includes('mercado pago') ||
+            normalized.includes('mercadopago') ||
+            normalized.includes('pago') ||
             normalized.includes('suscripcion') ||
             normalized.includes('basic') ||
-            normalized.includes('advanced')
+            normalized.includes('basico') ||
+            normalized.includes('advanced') ||
+            normalized.includes('avanzado')
         ) {
             return this.responses.precios;
         }
@@ -193,8 +200,9 @@ Por favor, ingresa una opción correcta:
             normalized.includes('sustento') ||
             normalized.includes('por que') ||
             normalized.includes('oficial') ||
-            normalized.includes('minsa') ||
-            normalized.includes('minedu')
+            normalized.includes('inteligencia artificial') ||
+            normalized.includes('minedu') ||
+            normalized.includes('minsa')
         ) {
             return this.responses.ventajas;
         }
@@ -204,4 +212,6 @@ Por favor, ingresa una opción correcta:
     }
 }
 
-module.exports = new AsistenteGuiaKnowledge();
+const instance = new AsistenteGuiaKnowledge();
+instance.AsistenteGuiaKnowledge = AsistenteGuiaKnowledge;
+module.exports = instance;

@@ -23,10 +23,22 @@ Este documento define las reglas visuales, estándares de componentes interactiv
 13. [🖥️ Arquitectura y Estándar Visual del Panel de Gestión / Administración & Subcontenedores Avanzados](#13-️-arquitectura-y-estándar-visual-del-panel-de-gestión--administración-admin-panel--subcontenedores-avanzados-de-modales)
 14. [📚 Insignias de Fuentes y Citación RAG con Número de Página](#14--insignias-de-fuentes-y-citación-rag-con-número-de-página-tutor-citations-container-y-tutor-citation-pill)
 15. [☀️ Estándar de Contraste Tipográfico y Legibilidad en Modo Claro para Interfaces de Chat IA](#15-️-estándar-de-contraste-tipográfico-y-legibilidad-en-modo-claro-light-mode-para-interfaces-de-chat-ia-quiz-tutor-repaso-tutor-y-chat-general)
+16. [🛡️ Salud de Código, Centralización CSS y Rediseño de Portada Corporativa (Fase 5)](#16-️-salud-de-código-centralización-css-y-rediseño-de-portada-corporativa-fase-5)
 
 ---
 
 ## 1. 🌈 Paleta de Colores y Tokens Dinámicos (Dark 🌙 / Light ☀️)
+
+> [!CAUTION]
+> ### Invariante Mandatorio: Prohibición Absoluta de Fondos Azules o Navy en Dark Mode
+> La identidad visual de **Hub Academia** en Modo Oscuro es estrictamente **Matte Black y Grafito Neutro**:
+> * Fondo de página base: `#050505` (Deep Neutral Black).
+> * Superficies de sección y fondo alterno: `#0a0a0a` / `#0c0c0c` (Matte Charcoal).
+> * Superficies de tarjetas, paneles y modales: `#121212` (Flat Graphite Surface).
+> * Superficies elevadas y estado hover: `#181818`.
+> * Bordes divisorios perimetrales: `rgba(255, 255, 255, 0.08)`.
+> 
+> **Queda terminantemente prohibido utilizar tonalidades azules o azul marino (`#0b1120`, `#131c2e`, `#192438`, `#0f172a`, `#163056`, etc.) como fondos de sección, contenedores o tarjetas en Dark Mode.** El color azul (`#2563eb` / `#3b82f6`) queda reservado única y exclusivamente como acento funcional interactivo (relleno de botones principales de acción y enlaces activos).
 
 La plataforma cuenta con un motor de temas centralizado gobernado por el atributo `data-theme="dark"` y `data-theme="light"` en la etiqueta raíz `<html>`. Queda estrictamente prohibido el uso de valores hexadecimales hardcodeados en hojas de componentes; todo elemento debe consumir tokens CSS de `theme.css`.
 
@@ -772,3 +784,33 @@ Los encabezados y estilos de énfasis en modo claro aplican los siguientes token
 - **Cabeceras de Ventana (`.tutor-header-title`, `.chatbot-title h3`, `.chatbot-title-heading`):** Color sólido `#0f172a` (Slate 900) con peso 700, eliminando tonos grisáceos apagados.
 - **Cuerpo de Mensaje del Bot (`.tutor-message-bot`, `.message.bot .message-body`):** Fondo `#f8fafc` (Slate 50), texto base `#0f172a` (Slate 900, contraste > 14:1) y borde suave `1px solid rgba(15, 23, 42, 0.08)`.
 - **Botones de Acción y Sugerencias:** Bordes adaptativos `rgba(15, 23, 42, 0.12)`, fondos claros en reposo y hover con realce sutil.
+
+---
+
+## 16. 🛡️ Salud de Código, Centralización CSS y Rediseño de Portada Corporativa (Fase 5)
+
+En cumplimiento de `.agents/rules/code-health-rules.md`, las directrices globales de desarrollo y el principio de sobriedad visual (`AGENTS.md`), la arquitectura visual y los stylesheets públicos de Hub Academia fueron saneados y centralizados:
+
+### 16.1. Eliminación y Fusión de Hojas de Estilo Obsoletas
+Para evitar colisiones de especificidad, herencia no controlada y peso innecesario en la red:
+* **Eliminados:**
+  - `src/presentation/public/css/hero.css`: Obsoleto y superpuesto con la nueva arquitectura del hero interactivo.
+  - `src/presentation/public/css/modules.css`: Clases legadas en desuso con nombres genéricos que colisionaban con componentes del simulador.
+  - `src/presentation/public/css/privacy.css` y `src/presentation/public/css/terms.css`: Hojas duplicadas con reglas idénticas.
+* **Creado / Centralizado:**
+  - `src/presentation/public/css/legal.css`: Hoja única modular y limpia que rige las vistas legales e institucionales (`privacy.html` y `terms.html`).
+  - `src/presentation/public/css/footer.css`: Componente institucional compartido en 4 columnas, con resguardo de espacio para el botón flotante Hubi y créditos documentales abiertos CC BY.
+  - `src/presentation/public/css/landing.css`: Hoja centralizada para la portada corporativa bajo el estándar **The Product Performs** (seed `1420058396`), construida con variables neutrales Matte Black, transiciones de aceleración y soporte de reducción de movimiento (`prefers-reduced-motion`).
+
+### 16.2. Invariantes Arquitectónicos de la Portada (`landing.css`)
+1. **Cero Huecos Verticales o Franjas Azules:**
+   - La sección de herramientas (`#herramientas-section`) adopta una mesa de trabajo dividida (*split 5fr / 7fr*): selectores a la izquierda y escenario interactivo en vivo a la derecha con métricas oficiales y acciones directas.
+2. **Fotografía Documental Abierta de la Realidad Peruana:**
+   - Se integraron 4 fotografías reales de dominio público/CC con atribución legal rigurosa en el pie de página: *Colegio Guadalupe*, *Casona de San Marcos*, *Biblioteca Nacional del Perú* y *Facultad de Medicina de San Fernando*.
+3. **Sección "Hacia Dónde Vamos" (#vision-section):**
+   - Se sustituyeron las dos columnas desbalanceadas y las etiquetas `<mark>` por 3 tarjetas horizontales de igual altura que comunican con sobriedad la evolución: *Etapa 01 (Presente Activo - Suite de Herramientas)*, *Etapa 02 (Próximo Escalado - Formación Asíncrona en Video)* y *Etapa 03 (Futuro Empresarial - Divulgación y Consultoría en IA)*.
+4. **Planes y Precios (#planes-section):**
+   - 3 tarjetas corporativas escalonadas con tarifas transparentes (S/ 0 Libre, S/ 9.90 Bimestral y S/ 24.90 Cuatrimestral), asociadas exclusivamente al pasarela de Mercado Pago (cero WhatsApp).
+5. **Racionalización de Iconos (AGENTS.md):**
+   - Prohibido el uso de iconos redundantes de check (`fas fa-check`) dentro de cada elemento de lista de planes o pilares. Se emplean viñetas tipográficas CSS limpias (`content: '•'`) para eliminar el ruido cognitivo.
+
