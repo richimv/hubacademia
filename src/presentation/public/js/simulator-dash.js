@@ -8,21 +8,14 @@ const SimulatorDash = (() => {
     // Configuración Extendida de Dominios (v3.0)
     const contexts = {
         'MEDICINA': {
-            title: 'Preparación Médico',
-            heroTitle: 'Preparación Médico',
+            title: 'Simulador médico',
             subtitle: 'Entrenamiento técnico adaptado a especificaciones sanitarias oficiales MINSA & ENCAPS.',
             quizParams: '', // Eliminado el fallback automático. Ahora se fuerza la configuración.
-            studyDesc: '20 preguntas con explicación y sustento clínico detallado.',
+            studyDesc: '20 preguntas con explicación clínica y Tutor IA después de responder.',
             realDesc: '100 preguntas integradas con temporizador oficial estricto (2 horas).',
             realQuestions: 100,
-            sectionIcon: 'fa-stethoscope',
             barChartTitle: 'Dominio por Áreas Clínicas',
             barChartEmptyDesc: 'Completa simulacros variados para ver tu dominio clínico por especialidad.',
-            images: {
-                study: '/assets/Modo Estudio.webp',
-                flashcards: '/assets/Flashcards.webp',
-                real: '/assets/Simulacro Real.webp'
-            },
             targets: [
                 { value: 'ENAM', label: 'ENAM', disabled: true, subtitle: '(Próximamente)' },
                 { value: 'SERUMS', label: 'SERUMS', checked: true },
@@ -37,21 +30,14 @@ const SimulatorDash = (() => {
             ]
         },
         'EDUCACION': {
-            title: 'Preparación Magisterial',
-            heroTitle: 'Preparación Magisterial',
+            title: 'Simulador docente',
             subtitle: 'Evaluación de casuística pedagógica basada en el CNEB y Marco de Buen Desempeño Docente.',
             quizParams: '', // Eliminado el fallback automático.
-            studyDesc: '20 preguntas con retroalimentación y sustento pedagógico CNEB.',
+            studyDesc: '20 preguntas con explicación pedagógica y Tutor IA después de responder.',
             realDesc: '60 preguntas integradas con temporizador oficial estricto (3 horas).',
             realQuestions: 60,
-            sectionIcon: 'fa-chalkboard-teacher',
             barChartTitle: 'Dominio por Áreas Pedagógicas',
             barChartEmptyDesc: 'Completa simulacros variados para ver tu dominio pedagógico por especialidad.',
-            images: {
-                study: '/assets/Modo Estudio-v2.webp',
-                flashcards: '/assets/Flashcards-v2.webp',
-                real: '/assets/Simulacro Real-v2.webp'
-            },
             targets: [
                 { value: 'NOMBRAMIENTO', label: 'NOMBRAMIENTO', disabled: true, subtitle: '(Próximamente)' },
                 { value: 'ASCENSO', label: 'ASCENSO', checked: true, subtitle: 'Escala Magisterial' },
@@ -88,19 +74,14 @@ const SimulatorDash = (() => {
     let activeMode = null;
     let activeDays = null;
     let lineChartInst = null;
-    let radarChartInst = null;
     let doughnutChartInst = null;
 
 
     // Se inicializará dinámicamente según el contexto
     let examAreasGrouped = [];
     let areaToGroupMap = {};
-    let selectedVocabIds = [];
 
     function renderBarChart(cleanRadarMap) {
-        // Obsolete Chart.js fallback support (just in case)
-        if (radarChartInst) { radarChartInst.destroy(); radarChartInst = null; }
-
         const emptyState = document.getElementById('radar-empty-state');
         const container = document.getElementById('native-bars-container');
         if (!container) return;
@@ -392,21 +373,9 @@ const SimulatorDash = (() => {
             };
         });
 
-        // 🎨 Asignación Cromática Contextual (Salud = Verde/Esmeralda, Educación = Azul/Índigo)
+        // Presentation tokens are shared with the quiz in workspace.css.
         document.documentElement.setAttribute('data-simulator-context', currentContext.toLowerCase());
-        if (currentContext === 'MEDICINA') {
-            document.documentElement.style.setProperty('--primary', '#0d9488');
-            document.documentElement.style.setProperty('--primary-dark', '#0f766e');
-            document.documentElement.style.setProperty('--primary-light', '#2dd4bf');
-            document.documentElement.style.setProperty('--primary-glow', 'rgba(13, 148, 136, 0.25)');
-            document.documentElement.style.setProperty('--primary-glow-sm', 'rgba(13, 148, 136, 0.12)');
-        } else if (currentContext === 'EDUCACION') {
-            document.documentElement.style.setProperty('--primary', '#3b82f6');
-            document.documentElement.style.setProperty('--primary-dark', '#2563eb');
-            document.documentElement.style.setProperty('--primary-light', '#60a5fa');
-            document.documentElement.style.setProperty('--primary-glow', 'rgba(59, 130, 246, 0.25)');
-            document.documentElement.style.setProperty('--primary-glow-sm', 'rgba(59, 130, 246, 0.12)');
-        }
+        document.body.dataset.studyContext = currentContext.toLowerCase();
 
         // 0. Initialize Context-Aware Data Structures
         const ctxConfig = contexts[currentContext] || contexts['EDUCACION'];
@@ -426,7 +395,6 @@ const SimulatorDash = (() => {
         // 1. Setup UI Context
         const titleEl = document.getElementById('ctx-title');
         const subtitleEl = document.getElementById('ctx-subtitle');
-        const iconEl = document.getElementById('ctx-icon');
 
         if (titleEl) titleEl.textContent = ctxConfig.title;
         if (subtitleEl && ctxConfig.subtitle) subtitleEl.textContent = ctxConfig.subtitle;
@@ -434,7 +402,7 @@ const SimulatorDash = (() => {
 
         const realCountBadge = document.getElementById('real-questions-count-badge');
         if (realCountBadge && ctxConfig.realQuestions) {
-            realCountBadge.textContent = `${ctxConfig.realQuestions} Preguntas`;
+            realCountBadge.textContent = `${ctxConfig.realQuestions} preguntas`;
         }
 
         // Dynamic Bar Chart Labels based on Context
@@ -464,28 +432,11 @@ const SimulatorDash = (() => {
             barTooltipTitle.textContent = ctxConfig.barChartTitle;
         }
         if (barTooltipDesc) {
-            if (ctxConfig.title === 'Docente Pro' || window.location.search.includes('educacion')) {
+            if (currentContext === 'EDUCACION') {
                 barTooltipDesc.textContent = 'Muestra tu porcentaje de acierto en cada área pedagógica. Sirve para detectar de manera precisa tus fortalezas y debilidades de cara a la evaluación docente.';
             } else {
                 barTooltipDesc.textContent = 'Muestra tu porcentaje de acierto en cada especialidad o área clínica. Sirve para detectar de manera precisa tus fortalezas y tus puntos débiles específicos para priorizar tus repasos.';
             }
-        }
-
-        // Update analytics section icon based on domain
-        const sectionHeading = document.querySelector('.section-heading');
-        if (sectionHeading && ctxConfig.sectionIcon) {
-            const icon = sectionHeading.querySelector('i');
-            if (icon) {
-                icon.className = `fas ${ctxConfig.sectionIcon}`;
-            }
-        }
-
-        if (ctxConfig.images) {
-            const studyImg = document.querySelector('#btn-mode-study img');
-            const realImg = document.querySelector('#btn-mode-real img');
-
-            if (studyImg && ctxConfig.images.study) studyImg.src = ctxConfig.images.study;
-            if (realImg && ctxConfig.images.real) realImg.src = ctxConfig.images.real;
         }
 
         // Dynamically render exam target radio buttons

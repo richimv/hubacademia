@@ -10,13 +10,14 @@ const mediaController = require('../../application/controllers/mediaController')
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 const {
     getVertexCandidateModels,
+    getVertexGenerativeEndpoint,
     buildVertexGenerationConfig,
     extractModelResponsePayload
 } = require('../../infrastructure/config/vertexAiConfig');
 
 /**
  * 🎓 TUTOR AI SERVICE V7.0: El Cerebro del Chat y Tutoría.
- * - Estándar oficial Vertex AI: gemini-3.6-flash-lite / gemini-3.6-flash (sin parámetros de muestreo depreciados).
+ * - Estándar oficial Vertex AI: modelos definidos en vertexAiConfig (sin parámetros de muestreo depreciados).
  * - Circulación obligatoria de Thought Signatures en sesiones multi-turno.
  * - RAG Semántico (Pinecone) exclusivo para consulta normativa y clínica del Tutor.
  */
@@ -24,13 +25,12 @@ class TutorAiService {
     constructor() {
         const googleAuthOptions = resolveGoogleAuthOptions('TutorAiService');
         const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
-        const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
 
         try {
             const candidateModels = getVertexCandidateModels();
             this.vertex_ai = new VertexAI({
                 project,
-                location,
+                ...getVertexGenerativeEndpoint(),
                 ...(Object.keys(googleAuthOptions).length > 0 ? { googleAuthOptions } : {})
             });
             this.model = this.vertex_ai.getGenerativeModel({

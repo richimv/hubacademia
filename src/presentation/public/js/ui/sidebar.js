@@ -88,7 +88,7 @@ class GlobalSidebar {
 
                     <a href="/library" class="sidebar-item" data-page="library">
                         <i class="fas fa-book-open"></i>
-                        <span class="sidebar-item-label">Biblioteca</span>
+                        <span class="sidebar-item-label">Boletín IA</span>
                     </a>
                 </div>
 

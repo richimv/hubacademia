@@ -1,122 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor de Mazos - Hub Academia</title>
-    <!-- ✅ PÁGINA PRIVADA: Deshabilitar indexación en motores de búsqueda -->
     <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" type="image/png" href="/assets/logo.png">
-
-    <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Shared CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/base.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/header.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/footer.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/dashboard.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/deck-editor.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/modal.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/sidebar.css?v=7110047d648f">
-    <script src="/js/config.js?v=7110047d648f"></script>
-    <script src="/js/utils/themeManager.js?v=7110047d648f"></script>
+    <meta http-equiv="refresh" content="0;url=/repaso">
+    <link rel="canonical" href="https://www.hubacademia.com/repaso">
+    <title>Editor de mazos | Hub Academia</title>
 </head>
-
-<body class="hero-hidden">
-    <!-- Header -->
-    <header class="main-header">
-        <div class="header-start">
-            <a href="/" class="logo">
-                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
-                <span class="logo-text">Hub Academia</span>
-            </a>
-        </div>
-        <div class="header-nav">
-
-            <div id="user-session-controls">
-                <span class="loading-user">Cargando...</span>
-            </div>
-        </div>
-    </header>
-
-    <div class="dashboard-container">
-        <form id="deck-form">
-
-            <div class="form-group">
-                <label class="form-label">Nombre del Mazo</label>
-                <input type="text" id="deck-name" class="form-input"
-                    placeholder="Ej: Inglés Básico, Fórmulas Físicas..." required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Icono</label>
-                <div class="icon-grid" id="icon-selector">
-                    <div class="icon-option selected" data-icon="📚">📚</div>
-                    <div class="icon-option" data-icon="🧠">🧠</div>
-                    <div class="icon-option" data-icon="🗣️">🗣️</div>
-                    <div class="icon-option" data-icon="💻">💻</div>
-                    <div class="icon-option" data-icon="⚡">⚡</div>
-                    <div class="icon-option" data-icon="🧪">🧪</div>
-                    <div class="icon-option" data-icon="🎵">🎵</div>
-                    <div class="icon-option" data-icon="🌎">🌎</div>
-                </div>
-                <input type="hidden" id="deck-icon" value="📚">
-            </div>
-
-            <button type="submit" class="btn-submit">
-                <i class="fas fa-save"></i> Crear Mazo
-            </button>
-
-        </form>
-    </div>
-    </div>
-
-    <!-- Footer Injection -->
-        <footer class="main-footer">
-        <div class="footer-container">
-            <div class="footer-brand">
-                <a href="/" class="footer-logo">
-                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
-                    Hub Academia
-                </a>
-                <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
-            </div>
-            <div class="footer-links-col">
-                <h4 class="footer-heading">Plataforma</h4>
-                <ul class="footer-links-list">
-                    <li><a href="/" class="footer-link">Inicio</a></li>
-                    <li><a href="/library" class="footer-link">Mi Biblioteca</a></li>
-                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
-                </ul>
-            </div>
-            <div class="footer-links-col">
-                <h4 class="footer-heading">Legal y Soporte</h4>
-                <ul class="footer-links-list">
-                    <li><a href="/privacy" class="footer-link">Política de Privacidad</a></li>
-                    <li><a href="/terms" class="footer-link">Términos y Condiciones</a></li>
-                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto y Ayuda</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
-        </div>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=7110047d648f"></script>
-    <script src="/js/services/authApiService.js?v=7110047d648f"></script>
-    <script src="/js/services/analyticsApiService.js?v=7110047d648f"></script>
-    <script src="/js/sessionManager.js?v=7110047d648f"></script>
-    <script src="/js/ui/uiManager.js?v=7110047d648f"></script>
-    <script src="/js/ui/components.js?v=7110047d648f"></script>
-    <script src="/js/ui/sidebar.js?v=7110047d648f"></script>
-    <script src="/js/app.js?v=7110047d648f"></script>
-    <script src="/js/deck-editor.js?v=7110047d648f"></script>
+<body>
+    <main><h1>Editor de mazos</h1><p>La creación y edición de mazos se realiza en <a href="/repaso">Repaso y Notas</a>.</p></main>
 </body>
-
 </html>
+

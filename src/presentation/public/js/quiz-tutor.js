@@ -21,40 +21,11 @@ class QuizTutor {
     }
 
     _renderPanel() {
-        // Prevent duplicate panels
-        let panel = document.getElementById('quiz-tutor-panel');
-        if (panel) {
-            panel.remove();
-        }
-
-        panel = document.createElement('div');
-        panel.id = 'quiz-tutor-panel';
-        panel.className = 'tutor-chat-panel'; // Reutiliza la clase del panel lateral
-        panel.innerHTML = `
-            <div class="tutor-chat-header">
-                <div class="tutor-header-title">
-                    <img src="/assets/hubifrente.png" alt="Hubi" class="tutor-header-avatar-img">
-                    <span>Tutor de Apoyo IA</span>
-                </div>
-                <div class="tutor-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
-                    <button id="quiz-tutor-expand" class="tutor-expand-btn" aria-label="Pantalla completa" title="Pantalla completa">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                    <button id="quiz-tutor-close" class="tutor-close-btn" aria-label="Cerrar">&times;</button>
-                </div>
-            </div>
-            <div id="quiz-tutor-messages" class="tutor-messages-area">
-                <!-- Mensajes inyectados dinámicamente -->
-            </div>
-            <div class="tutor-input-area">
-                <textarea id="quiz-tutor-input" class="tutor-input-field" placeholder="Escribe tu duda aquí..." rows="1"></textarea>
-                <button id="quiz-tutor-send" class="tutor-send-btn" aria-label="Enviar mensaje">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-            <div class="tutor-disclaimer-text">El Tutor IA puede cometer errores. Verifica información importante.</div>
-        `;
-        document.body.appendChild(panel);
+        const panel = window.StudyTutorView.mount({
+            id: 'quiz-tutor-panel',
+            prefix: 'quiz-tutor',
+            contextLabel: 'Sobre la pregunta actual'
+        });
 
         this.dom = {
             panel: panel,
@@ -64,6 +35,7 @@ class QuizTutor {
             expand: document.getElementById('quiz-tutor-expand'),
             close: document.getElementById('quiz-tutor-close')
         };
+        window.StudyTutorView.bindLifecycle(panel, () => this.toggle(false));
     }
 
     _bindEvents() {
@@ -107,29 +79,9 @@ class QuizTutor {
     }
 
     toggleFullScreen() {
+        if (!this.dom.panel || !this.dom.expand) return;
         this.isFullScreen = !this.isFullScreen;
-        const panel = this.dom.panel;
-        const expandBtn = this.dom.expand;
-        if (!panel || !expandBtn) return;
-        const icon = expandBtn.querySelector('i');
-
-        if (this.isFullScreen) {
-            panel.classList.add('chat-fullscreen');
-            if (icon) {
-                icon.classList.remove('fa-expand');
-                icon.classList.add('fa-compress');
-            }
-            document.body.style.overflow = 'hidden';
-            expandBtn.setAttribute('title', 'Restaurar ventana');
-        } else {
-            panel.classList.remove('chat-fullscreen');
-            if (icon) {
-                icon.classList.remove('fa-compress');
-                icon.classList.add('fa-expand');
-            }
-            document.body.style.overflow = '';
-            expandBtn.setAttribute('title', 'Pantalla completa');
-        }
+        window.StudyTutorView.setExpanded(this.dom.panel, this.dom.expand, this.isFullScreen);
     }
 
     getSpecialization() {
@@ -148,19 +100,22 @@ class QuizTutor {
 
         this.isOpen = forceState !== undefined ? forceState : !this.isOpen;
         this.dom.panel.classList.toggle('active', this.isOpen);
+        if (!this.isOpen && this.isFullScreen) this.toggleFullScreen();
+        window.StudyTutorView.setOpen(this.dom.panel, this.isOpen);
 
         if (this.isOpen) {
             // Actualizar siempre el contexto si se provee uno nuevo
             if (questionContext) {
                 const isDifferentQuestion = !this.questionContext || this.questionContext.id !== questionContext.id;
                 this.questionContext = questionContext;
+                window.StudyTutorView.setContext(this.dom.panel, questionContext.topic || 'Sobre la pregunta actual');
                 if (isDifferentQuestion) {
                     this.clearChat();
                     this._addWelcomeMessage();
                 }
             }
             setTimeout(() => {
-                if (this.dom.input) this.dom.input.focus();
+                if (this.isOpen && this.dom.input) this.dom.input.focus();
             }, 300);
         }
     }
@@ -469,7 +424,6 @@ class QuizTutor {
             // Feedback visual exitoso apuntando a Repaso y Notas (/repaso?view=notes)
             btn.innerHTML = '<i class="fas fa-check"></i> Guardada en Repaso y Notas';
             btn.title = 'Abrir Mis Notas en Repaso';
-            btn.style.color = '#f59e0b';
             btn.classList.add('saved');
             btn.disabled = false;
             btn.onclick = () => { window.location.href = '/repaso?view=notes'; };
@@ -480,11 +434,11 @@ class QuizTutor {
         } catch (error) {
             console.error("Error saving note:", error);
             btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error al guardar';
-            btn.style.color = '#ef4444';
+            btn.classList.add('note-save-error');
             setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
-                btn.style.color = '';
+                btn.classList.remove('note-save-error');
             }, 2500);
         }
     }

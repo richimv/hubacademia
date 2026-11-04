@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblioteca de Consulta Oficial | Hub Academia</title>
+    <title>Boletín de Inteligencia Artificial | Hub Academia</title>
 
     <!-- Metadatos SEO Primarios -->
-    <meta name="description" content="Consulta directa de documentos normativos MINEDU, currículos nacionales, guías técnicas de salud y material oficial en Hub Academia.">
-    <meta name="keywords" content="biblioteca hub academia, documentos normativos minedu, curriculo nacional cneb, normas tecnicas salud minsa, recursos educativos peru">
+    <meta name="description" content="Boletín de Inteligencia Artificial de Hub Academia: fuentes sobre IA en el Perú y el mundo, educación e investigación, con acceso al archivo documental de consulta.">
+    <meta name="keywords" content="boletin inteligencia artificial peru, noticias ia, educacion inteligencia artificial, investigacion ia, hub academia">
     <meta name="author" content="Hub Academia">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <link rel="canonical" href="https://www.hubacademia.com/library">
@@ -20,16 +20,16 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Hub Academia">
-    <meta property="og:title" content="Biblioteca de Consulta Oficial | Hub Academia">
-    <meta property="og:description" content="Acceso directo sin fricción a documentos normativos, guías técnicas y bibliografía oficial para docentes y profesionales en el Perú.">
+    <meta property="og:title" content="Boletín de Inteligencia Artificial | Hub Academia">
+    <meta property="og:description" content="Fuentes y lecturas sobre inteligencia artificial en el Perú y el mundo, educación e investigación.">
     <meta property="og:url" content="https://www.hubacademia.com/library">
     <meta property="og:image" content="https://www.hubacademia.com/assets/logo.png">
     <meta property="og:locale" content="es_PE">
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="Biblioteca de Consulta Oficial | Hub Academia">
-    <meta name="twitter:description" content="Consulta directa de marcos normativos MINEDU y guías oficiales en Hub Academia.">
+    <meta property="twitter:title" content="Boletín de Inteligencia Artificial | Hub Academia">
+    <meta name="twitter:description" content="Fuentes y lecturas para comprender la inteligencia artificial y su aplicación profesional.">
     <meta name="twitter:image" content="https://www.hubacademia.com/assets/logo.png">
 
     <!-- Redirección inmediata de enlaces heredados ?tab=notes hacia /repaso?view=notes -->
@@ -64,6 +64,7 @@
     <link rel="stylesheet" href="/css/browse.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/results.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/course.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/bulletin.css?v=landing-v4">
 
     <!-- Global scripts -->
     <script src="/js/config.js?v=7110047d648f"></script>
@@ -76,9 +77,9 @@
     {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "name": "Biblioteca de Consulta Hub Academia",
+      "name": "Boletín de Inteligencia Artificial Hub Academia",
       "url": "https://www.hubacademia.com/library",
-      "description": "Repositorio documental con marcos normativos MINEDU, currículos oficiales y guías técnicas de salud.",
+      "description": "Selección de fuentes sobre IA en el Perú y el mundo, con archivo documental de consulta.",
       "provider": {
         "@type": "EducationalOrganization",
         "name": "Hub Academia",
@@ -87,254 +88,17 @@
     }
     </script>
 
-    <style>
-        #library-page-container {
-            padding: 0;
-            border: none;
-            background: transparent;
-            width: 100%;
-        }
-
-        .library-hero-header {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-            padding-bottom: 1rem;
-            margin-bottom: 1.25rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .library-hero-title {
-            font-size: 1.65rem;
-            font-weight: 700;
-            color: var(--text-main);
-            margin: 0;
-            letter-spacing: -0.02em;
-            line-height: 1.2;
-        }
-
-        .library-hero-subtitle {
-            margin: 0.35rem 0 0 0;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            max-width: 62ch;
-            line-height: 1.45;
-        }
-
-        #panel-resources .search-section {
-            position: relative;
-            width: 100%;
-            max-width: 100%;
-            margin: 0 0 1.25rem 0;
-            padding: 0;
-            background: transparent;
-            border: none;
-            display: block;
-            z-index: 1;
-        }
-
-        .library-search-wrapper {
-            position: relative;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .library-search-wrapper .search-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            pointer-events: none;
-        }
-
-        .library-search-wrapper input {
-            width: 100%;
-            height: 44px;
-            padding: 0 2.5rem 0 2.5rem;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            color: var(--text-main);
-            font-size: 0.92rem;
-            outline: none;
-            transition: border-color 0.15s ease, background-color 0.15s ease;
-            box-sizing: border-box;
-        }
-
-        .library-search-wrapper input:focus {
-            border-color: var(--primary);
-            background: var(--surface-hover);
-        }
-
-        .library-search-wrapper .search-clear-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            transition: color 0.15s ease, background-color 0.15s ease;
-        }
-
-        .library-search-wrapper .search-clear-btn:hover {
-            color: var(--text-main);
-            background: var(--surface-hover);
-        }
-
-        #chatbot-toggle,
-        #chatbot-window,
-        .chatbot-widget,
-        #ai-chat-widget {
-            display: none !important;
-        }
-
-        /* Selector limpio de sector (Educación | Salud) */
-        .manta-navigation-area {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.25rem;
-        }
-
-        .resource-tabs,
-        #manta-resource-tabs {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-        }
-
-        .manta-tab.resource-tab {
-            appearance: none;
-            border: 1px solid transparent;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 0.45rem 0.95rem;
-            border-radius: 7px;
-            cursor: pointer;
-            transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
-        }
-
-        .manta-tab.resource-tab:hover {
-            color: var(--text-main);
-        }
-
-        .manta-tab.resource-tab.active {
-            background: var(--card-bg);
-            color: var(--text-main);
-            border-color: var(--border-color);
-        }
-
-        .library-catalog-count {
-            font-size: 0.82rem;
-            color: var(--text-muted);
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* Grilla estandarizada de recursos */
-        .books-grid,
-        .courses-grid,
-        .careers-grid,
-        .browse-grid,
-        .manta-content-grid,
-        .results-list,
-        .documents-grid-premium,
-        .medical-books-grid,
-        .ml-grid,
-        .general-grid {
-            display: grid !important;
-            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-            gap: 1.25rem !important;
-            width: 100% !important;
-        }
-
-        @media (max-width: 1024px) {
-            .books-grid,
-            .courses-grid,
-            .careers-grid,
-            .browse-grid,
-            .manta-content-grid,
-            .results-list,
-            .documents-grid-premium,
-            .medical-books-grid,
-            .ml-grid,
-            .general-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-                gap: 1rem !important;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-container,
-            #library-page-container,
-            #panel-resources,
-            #content-container,
-            #browse-container,
-            .manta-content-grid {
-                min-width: 0 !important;
-                max-width: 100% !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-
-            .dashboard-container {
-                padding: 1rem 0.85rem !important;
-            }
-
-            .library-hero-title {
-                font-size: 1.4rem;
-            }
-
-            .books-grid,
-            .courses-grid,
-            .careers-grid,
-            .browse-grid,
-            .manta-content-grid,
-            .results-list,
-            .documents-grid-premium,
-            .medical-books-grid,
-            .ml-grid,
-            .general-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-                gap: 0.85rem !important;
-            }
-
-            .unified-resource-card {
-                width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/library-layout.css?v=workspace-v1">
+    <!-- Shared working-screen design; page sheets retain their state/layout mechanics. -->
+    <link rel="stylesheet" href="/css/workspace.css?v=workspace-v1">
+    <link rel="stylesheet" href="/css/brand.css">
 </head>
 
-<body class="hero-hidden">
+<body class="hero-hidden bulletin-page workspace-page" data-workspace="library">
     <!-- Header -->
     <header class="main-header">
         <div class="header-start">
-            <a href="/" class="logo">
-                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
-                <span class="logo-text">Hub Academia</span>
-            </a>
+            <a href="/" class="logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
         </div>
         <div class="header-nav">
             <div id="user-session-controls">
@@ -344,20 +108,30 @@
     </header>
 
     <!-- Main Container -->
-    <div class="dashboard-container" style="max-width: 1360px; margin: 0 auto; padding: 1.5rem 2rem; width: 100%; box-sizing: border-box;">
+    <div class="dashboard-container">
         <div id="library-page-container">
             <div class="library-hero-header">
                 <div>
-                    <h1 class="library-hero-title">Biblioteca de Consulta</h1>
-                    <p class="library-hero-subtitle">Consulta directa de normativas MINEDU, documentos curriculares, guías técnicas y bibliografía oficial.</p>
+                    <h1 class="library-hero-title">Boletín de Inteligencia Artificial</h1>
+                    <p class="library-hero-subtitle">Actualidad, investigación y lecturas sobre IA en el Perú y el mundo. Una selección de fuentes para seguir los avances con criterio.</p>
                 </div>
             </div>
 
+            <section class="bulletin-source-section" aria-labelledby="bulletin-sources-title">
+                <h2 id="bulletin-sources-title">Fuentes para seguir la IA</h2>
+                <div class="bulletin-source-grid">
+                    <a class="bulletin-source" href="https://www.gob.pe/institucion/pcm/informes-publicaciones/8408055-estrategia-nacional-de-inteligencia-artificial-2026-2030" target="_blank" rel="noopener noreferrer"><span>Perú · PCM</span><h3>IA y políticas públicas</h3><p>Consulta la publicación oficial de la Estrategia Nacional de Inteligencia Artificial 2026–2030.</p><span class="bulletin-source-link">Leer en la fuente ↗</span></a>
+                    <a class="bulletin-source" href="https://www.unesco.org/en/digital-education/artificial-intelligence" target="_blank" rel="noopener noreferrer"><span>Educación · UNESCO</span><h3>IA en la educación</h3><p>Recursos para comprender su aplicación educativa, sus oportunidades y sus desafíos.</p><span class="bulletin-source-link">Explorar recursos ↗</span></a>
+                    <a class="bulletin-source" href="https://deepmind.google/blog/" target="_blank" rel="noopener noreferrer"><span>Investigación · Google DeepMind</span><h3>Avances de investigación</h3><p>Publicaciones del equipo investigador sobre modelos, ciencia y aplicaciones de inteligencia artificial.</p><span class="bulletin-source-link">Leer publicaciones ↗</span></a>
+                </div>
+            </section>
             <div id="panel-resources" class="library-panel active">
+                <h2 class="bulletin-archive-title">Archivo de consulta</h2>
+                <p class="bulletin-archive-description">También puedes explorar los documentos de Educación y Salud del catálogo existente.</p>
                 <section class="search-section">
                     <div class="library-search-wrapper">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="searchInput" placeholder="Buscar por título, norma, autor o tema...">
+                        <input type="text" id="searchInput" placeholder="Buscar por título, norma, autor o tema..." aria-label="Buscar en el archivo de consulta">
                         <button type="button" id="searchClearButton" class="search-clear-btn" style="display: none;" onclick="window.searchComponent?.resetSearchToBrowse()" aria-label="Limpiar búsqueda">
                             <i class="fas fa-times"></i>
                         </button>
@@ -376,10 +150,7 @@
     <footer class="main-footer">
         <div class="footer-container">
             <div class="footer-brand">
-                <a href="/" class="footer-logo">
-                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
-                    Hub Academia
-                </a>
+                <a href="/" class="footer-logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
                 <p class="footer-slogan">Ecosistema peruano de Inteligencia Artificial y herramientas de evaluación y estudio activo para docentes y profesionales.</p>
             </div>
             <div class="footer-links-col">
@@ -388,7 +159,7 @@
                     <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial</a></li>
                     <li><a href="/simulator-dashboard" class="footer-link">Simuladores de Exámenes</a></li>
                     <li><a href="/repaso" class="footer-link">Repaso y Notas</a></li>
-                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                    <li><a href="/pricing" class="footer-link">Pases de acceso</a></li>
                 </ul>
             </div>
             <div class="footer-links-col">
@@ -422,6 +193,7 @@
     <script src="/js/ui/sidebar.js?v=7110047d648f"></script>
     <script src="/js/security.js?v=7110047d648f"></script>
     <script src="/js/app.js?v=7110047d648f"></script>
+    <script src="/js/ui/workspace-shell.js?v=workspace-v1" defer></script>
 </body>
 
 </html>

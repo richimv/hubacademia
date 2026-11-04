@@ -77,125 +77,18 @@
 
     <!-- Rich Text Editor (Mini-Word) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
-    <style>
-        /* Estilos para tablas pegadas de Excel/Word */
-        #deck-guide-content table {
-            width: 100% !important;
-            border-collapse: collapse;
-            margin: 1rem 0;
-            background: var(--card-bg);
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-        }
-
-        #deck-guide-content th,
-        #deck-guide-content td {
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-        }
-
-        #deck-guide-content th {
-            background: var(--primary-glow);
-            color: var(--primary);
-            font-weight: 700;
-        }
-
-        /* Fix para TinyMCE */
-        .tox-tinymce {
-            border: 1px solid var(--border-color) !important;
-            border-radius: 8px !important;
-        }
-
-        /* Formateo de Contenido de Guía (TinyMCE Output) */
-        #deck-guide-content {
-            font-size: 1.05rem;
-            line-height: 1.7;
-            color: var(--text-main);
-        }
-
-        #deck-guide-content p {
-            margin-bottom: 1.2rem;
-            color: var(--text-main);
-        }
-
-        #deck-guide-content ul,
-        #deck-guide-content ol {
-            margin-bottom: 1.2rem;
-            padding-left: 2rem;
-        }
-
-        #deck-guide-content li {
-            margin-bottom: 0.5rem;
-            color: var(--text-main);
-        }
-
-        #deck-guide-content h1,
-        #deck-guide-content h2,
-        #deck-guide-content h3 {
-            color: var(--text-main);
-            font-weight: 700;
-            margin-top: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        #deck-guide-content img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin: 1rem 0;
-            border: 1px solid var(--border-color);
-        }
-
-        #deck-guide-content blockquote {
-            border-left: 4px solid var(--primary);
-            padding-left: 1rem;
-            margin: 1rem 0;
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        /* Estilo para selectores de categoría e idioma personalizados */
-        select.form-input-premium {
-            background: var(--input-bg) !important;
-            border: 1px solid var(--border-color) !important;
-            color: var(--input-text) !important;
-            border-radius: 12px !important;
-            padding: 0.65rem 1rem !important;
-            font-size: 0.88rem !important;
-            outline: none !important;
-            cursor: pointer !important;
-            transition: all 0.2s ease !important;
-            appearance: none !important;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f97316'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
-            background-repeat: no-repeat !important;
-            background-position: right 0.75rem center !important;
-            background-size: 1rem !important;
-            padding-right: 2.5rem !important;
-        }
-
-        select.form-input-premium:focus {
-            border-color: var(--primary) !important;
-            box-shadow: 0 0 0 3px var(--primary-glow) !important;
-        }
-
-        select.form-input-premium option {
-            background: var(--card-bg) !important;
-            color: var(--text-main) !important;
-            padding: 10px !important;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/repaso-page.css?v=workspace-v1">
+    <!-- Shared working-screen design; page sheets retain their state/layout mechanics. -->
+    <link rel="stylesheet" href="/css/workspace.css?v=workspace-v1">
+    <link rel="stylesheet" href="/css/workspace-repaso.css?v=workspace-v1">
+    <link rel="stylesheet" href="/css/brand.css">
 </head>
 
-<body class="hero-hidden">
+<body class="hero-hidden workspace-page" data-workspace="repaso">
     <!-- Header with Nav -->
     <header class="main-header">
         <div class="header-start">
-            <a href="/" class="logo">
-                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
-                <span class="logo-text">Hub Academia</span>
-            </a>
+            <a href="/" class="logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
         </div>
         <div class="header-nav">
             <div id="user-session-controls">
@@ -641,11 +534,8 @@
         <footer class="main-footer">
         <div class="footer-container">
             <div class="footer-brand">
-                <a href="/" class="footer-logo">
-                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
-                    Hub Academia
-                </a>
-                <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
+                <a href="/" class="footer-logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
+                <p class="footer-slogan">Inteligencia artificial aplicada al conocimiento profesional. Soluciones creadas en Perú para aprender, evaluar y trabajar mejor.</p>
             </div>
             <div class="footer-links-col">
                 <h4 class="footer-heading">Herramientas</h4>
@@ -653,7 +543,7 @@
                     <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial</a></li>
                     <li><a href="/simulator-dashboard" class="footer-link">Simuladores de Exámenes</a></li>
                     <li><a href="/library" class="footer-link">Biblioteca</a></li>
-                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                    <li><a href="/pricing" class="footer-link">Pases de acceso</a></li>
                 </ul>
             </div>
             <div class="footer-links-col">
@@ -704,9 +594,10 @@
     <script src="/js/heatmap.js?v=7110047d648f"></script> <!-- Optional for Stats -->
     <script src="/js/ui/confirmationModal.js?v=7110047d648f"></script>
     <script src="/js/services/libraryService.js?v=7110047d648f"></script>
-    <script src="/js/ui/repasoNotesUI.js?v=7110047d648f"></script>
+    <script src="/js/ui/repasoNotesUI.js?v=workspace-v1"></script>
     <script src="/js/deck-explorer.js?v=7110047d648f"></script> <!-- NEW -->
-    <script src="/js/repaso.js?v=7110047d648f"></script>
+    <script src="/js/repaso.js?v=workspace-v1"></script>
+    <script src="/js/ui/workspace-shell.js?v=workspace-v1" defer></script>
 </body>
 
 </html>

@@ -265,7 +265,6 @@ class SearchComponent {
 
         // LÓGICA DE VISIBILIDAD DEL HERO
         const searchSection = document.querySelector('.search-section');
-        const heroSlider = document.getElementById('hero-slider'); // NUEVO: Referencia directa al slider
         const trainingModules = document.getElementById('training-modules'); // NUEVO: Controle Módulos
 
         if (viewName === 'home') {
@@ -273,11 +272,9 @@ class SearchComponent {
                 document.body.classList.remove('hero-hidden');
             }
             if (searchSection) searchSection.classList.remove('sticky');
-            if (heroSlider) heroSlider.style.display = 'block'; // Mostrar slider en Home
             if (trainingModules) trainingModules.style.display = 'block';
         } else {
             document.body.classList.add('hero-hidden');
-            if (heroSlider) heroSlider.style.display = 'none'; // Ocultar slider en otras vistas (Resultados, Cursos, etc.)
             if (trainingModules) trainingModules.style.display = 'none';
         }
 

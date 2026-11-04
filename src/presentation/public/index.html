@@ -1,1013 +1,864 @@
 <!DOCTYPE html>
 <html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hub Academia | Inteligencia Artificial Aplicada, Educación Docente y Simuladores en Perú</title>
-
-    <!-- Metadatos SEO Primarios -->
-    <meta name="description" content="Hub Academia: ecosistema peruano de Inteligencia Artificial aplicada y herramientas de evaluación oficial para docentes (MINEDU, Educación Inicial) y salud (SERUMS), Repaso SM-2 con Notas y Biblioteca.">
-    <meta name="keywords" content="hub academia peru, inteligencia artificial educacion peru, ascenso docente minedu, docentes inicial peru, simulacro serums minsa, repeticion espaciada sm-2, tutor ia">
-    <meta name="author" content="Hub Academia">
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <link rel="canonical" href="https://www.hubacademia.com/">
-
-    <!-- Verificacion Google Search Console -->
-    <meta name="google-site-verification" content="google9e7db62b59fd1348">
-    <meta name="theme-color" content="#050505">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-    <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Hub Academia">
-    <meta property="og:title" content="Hub Academia | Inteligencia Artificial y Herramientas para Docentes en Perú">
-    <meta property="og:description" content="Ecosistema peruano de soluciones con Inteligencia Artificial: plataforma para Educación Inicial, simuladores oficiales curados MINEDU y SERUMS, Repaso SM-2 con Notas y Biblioteca.">
-    <meta property="og:url" content="https://www.hubacademia.com/">
-    <meta property="og:image" content="https://www.hubacademia.com/assets/logo.png">
-    <meta property="og:image:width" content="512">
-    <meta property="og:image:height" content="512">
-    <meta property="og:locale" content="es_PE">
-
-    <!-- Twitter Cards -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Hub Academia | Inteligencia Artificial y Herramientas para Docentes en Perú">
-    <meta name="twitter:description" content="Suite de herramientas con IA aplicada: Docentes Inicial, Simuladores oficiales MINEDU y SERUMS, Repaso SM-2 unificado con Notas y Biblioteca.">
-    <meta name="twitter:image" content="https://www.hubacademia.com/assets/logo.png">
-
-    <!-- Progressive Enhancement Gate -->
-    <script>document.documentElement.classList.add('js');</script>
-
-    <!-- Tipografía Institucional Unificada: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-    <!-- taste-skill-ignore: official brand typeface per DESIGN_SYSTEM.md -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><!-- taste-skill-ignore -->
-
-    <!-- Hojas de Estilos Centralizadas -->
-    <link rel="stylesheet" href="/css/theme.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/base.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/modal.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/chat.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/footer.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=7110047d648f">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/landing.css?v=7110047d648f">
-
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" href="/assets/logo.png">
-
-    <!-- Google Identity Services (One Tap) -->
-    <script src="https://accounts.google.com/gsi/client" async defer onload="window.initGoogleOneTap && window.initGoogleOneTap()"></script>
-
-    <!-- Utilidades Globales -->
-    <script src="/js/config.js?v=7110047d648f"></script>
-    <script src="/js/utils/themeManager.js?v=7110047d648f"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=7110047d648f"></script>
-
-    <!-- Schema.org / Datos Estructurados JSON-LD (ACT-05 & ACT-06) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "EducationalOrganization",
-          "@id": "https://www.hubacademia.com/#organization",
-          "name": "Hub Academia",
-          "url": "https://www.hubacademia.com",
-          "logo": {
-            "@type": "ImageObject",
-            "url": "https://www.hubacademia.com/assets/logo.png"
-          },
-          "description": "Empresa y ecosistema peruano de soluciones e Inteligencia Artificial aplicada a la educación docente y herramientas de evaluación profesional.",
-          "areaServed": {
-            "@type": "Country",
-            "name": "Peru"
-          }
-        },
-        {
-          "@type": "WebSite",
-          "@id": "https://www.hubacademia.com/#website",
-          "url": "https://www.hubacademia.com",
-          "name": "Hub Academia",
-          "publisher": {
-            "@id": "https://www.hubacademia.com/#organization"
-          },
-          "inLanguage": "es-PE"
-        },
-        {
-          "@type": "Product",
-          "@id": "https://www.hubacademia.com/#plan-basico",
-          "name": "Plan Básico — Acceso Bimestral",
-          "description": "Acceso por 60 días a simuladores de exámenes MINEDU y SERUMS, Repaso SM-2 con Notas y Biblioteca de consulta con pago único vía Mercado Pago.",
-          "image": "https://www.hubacademia.com/assets/logo.png",
-          "brand": {
-            "@type": "Brand",
-            "name": "Hub Academia"
-          },
-          "offers": {
-            "@type": "Offer",
-            "url": "https://www.hubacademia.com/pricing",
-            "priceCurrency": "PEN",
-            "price": "9.90",
-            "priceValidUntil": "2027-12-31",
-            "availability": "https://schema.org/InStock",
-            "hasMerchantReturnPolicy": {
-              "@type": "MerchantReturnPolicy",
-              "applicableCountry": "PE",
-              "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-              "merchantReturnDays": 7,
-              "returnMethod": "https://schema.org/ReturnByMail",
-              "returnFees": "https://schema.org/FreeReturn"
-            },
-            "shippingDetails": {
-              "@type": "OfferShippingDetails",
-              "shippingRate": {
-                "@type": "MonetaryAmount",
-                "value": "0.00",
-                "currency": "PEN"
-              },
-              "shippingDestination": {
-                "@type": "DefinedRegion",
-                "addressCountry": "PE"
-              },
-              "deliveryTime": {
-                "@type": "ShippingDeliveryTime",
-                "handlingTime": {
-                  "@type": "QuantitativeValue",
-                  "minValue": 0,
-                  "maxValue": 0,
-                  "unitCode": "DAY"
-                },
-                "transitTime": {
-                  "@type": "QuantitativeValue",
-                  "minValue": 0,
-                  "maxValue": 0,
-                  "unitCode": "DAY"
-                }
-              }
-            }
-          },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.9",
-            "reviewCount": "128",
-            "bestRating": "5",
-            "worstRating": "1"
-          },
-          "review": [
-            {
-              "@type": "Review",
-              "author": {
-                "@type": "Person",
-                "name": "Docente Evaluado MINEDU"
-              },
-              "datePublished": "2026-08-15",
-              "reviewBody": "Excelente plataforma de entrenamiento con casuísticas oficiales sustentadas y repetición espaciada.",
-              "reviewRating": {
-                "@type": "Rating",
-                "ratingValue": "5",
-                "bestRating": "5"
-              }
-            }
-          ]
-        },
-        {
-          "@type": "Product",
-          "@id": "https://www.hubacademia.com/#plan-avanzado",
-          "name": "Plan Avanzado — Acceso Cuatrimestral",
-          "description": "Acceso integral por 120 días a simuladores de exámenes, tutor pedagógico con IA, notas ilimitadas y módulos de repaso con pago único vía Mercado Pago.",
-          "image": "https://www.hubacademia.com/assets/logo.png",
-          "brand": {
-            "@type": "Brand",
-            "name": "Hub Academia"
-          },
-          "offers": {
-            "@type": "Offer",
-            "url": "https://www.hubacademia.com/pricing",
-            "priceCurrency": "PEN",
-            "price": "24.90",
-            "priceValidUntil": "2027-12-31",
-            "availability": "https://schema.org/InStock",
-            "hasMerchantReturnPolicy": {
-              "@type": "MerchantReturnPolicy",
-              "applicableCountry": "PE",
-              "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-              "merchantReturnDays": 7,
-              "returnMethod": "https://schema.org/ReturnByMail",
-              "returnFees": "https://schema.org/FreeReturn"
-            },
-            "shippingDetails": {
-              "@type": "OfferShippingDetails",
-              "shippingRate": {
-                "@type": "MonetaryAmount",
-                "value": "0.00",
-                "currency": "PEN"
-              },
-              "shippingDestination": {
-                "@type": "DefinedRegion",
-                "addressCountry": "PE"
-              },
-              "deliveryTime": {
-                "@type": "ShippingDeliveryTime",
-                "handlingTime": {
-                  "@type": "QuantitativeValue",
-                  "minValue": 0,
-                  "maxValue": 0,
-                  "unitCode": "DAY"
-                },
-                "transitTime": {
-                  "@type": "QuantitativeValue",
-                  "minValue": 0,
-                  "maxValue": 0,
-                  "unitCode": "DAY"
-                }
-              }
-            }
-          },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "5.0",
-            "reviewCount": "210",
-            "bestRating": "5",
-            "worstRating": "1"
-          },
-          "review": [
-            {
-              "@type": "Review",
-              "author": {
-                "@type": "Person",
-                "name": "Profesional Egresado"
-              },
-              "datePublished": "2026-09-02",
-              "reviewBody": "La integración del Tutor IA con marcos normativos oficiales peruanos permite un aprendizaje autónomo riguroso.",
-              "reviewRating": {
-                "@type": "Rating",
-                "ratingValue": "5",
-                "bestRating": "5"
-              }
-            }
-          ]
-        }
-      ]
-    }
-    </script>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>
+            Hub Academia | Inteligencia Artificial aplicada en el Perú
+        </title>
+        <meta name="description" content="Empresa peruana de inteligencia artificial aplicada al conocimiento profesional. Educación Inicial, simuladores MINEDU y SERUMS, repaso y un espacio para comprender la IA.">
+        <meta name="author" content="Hub Academia">
+        <meta name="robots" content="index, follow, max-image-preview:large">
+        <meta name="google-site-verification" content="google9e7db62b59fd1348">
+        <meta name="theme-color" content="#050505">
+        <link rel="canonical" href="https://www.hubacademia.com/">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="Hub Academia">
+        <meta property="og:title" content="Hub Academia | IA aplicada. Impacto real.">
+        <meta property="og:description" content="Soluciones de inteligencia artificial para la práctica docente y el aprendizaje profesional en el Perú.">
+        <meta property="og:url" content="https://www.hubacademia.com/">
+        <meta property="og:image" content="https://www.hubacademia.com/assets/landing/images/v5/hero-desktop-1920.webp">
+        <meta property="og:locale" content="es_PE">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Hub Academia | Inteligencia Artificial aplicada">
+        <meta name="twitter:description" content="Tecnología peruana al servicio del conocimiento profesional.">
+        <meta name="twitter:image" content="https://www.hubacademia.com/assets/landing/images/v5/hero-desktop-1920.webp">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="apple-touch-icon" href="/assets/logo.png">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="/css/theme.css?v=7110047d648f">
+        <link rel="stylesheet" href="/css/base.css?v=7110047d648f">
+        <link rel="stylesheet" href="/css/header.css?v=7110047d648f">
+        <link rel="stylesheet" href="/css/modal.css?v=7110047d648f">
+        <link rel="stylesheet" href="/css/chat.css?v=guide-v1">
+        <link rel="stylesheet" href="/css/footer.css?v=7110047d648f">
+        <link rel="stylesheet" href="/css/markdown-content.css?v=7110047d648f">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="/css/public-shell.css?v=landing-v6">
+        <link rel="stylesheet" href="/css/landing-home.css?v=landing-v6">
+        <script src="/js/config.js?v=7110047d648f"></script>
+        <script src="/js/utils/themeManager.js?v=7110047d648f"></script>
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" defer></script>
+        <script src="/js/utils/markdown-renderer.js?v=7110047d648f" defer></script>
+        <script type="application/ld+json">
+        {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.hubacademia.com/#organization","name":"Hub Academia","url":"https://www.hubacademia.com/","logo":"https://www.hubacademia.com/assets/logo.png","description":"Empresa peruana de inteligencia artificial aplicada al conocimiento profesional.","areaServed":{"@type":"Country","name":"Perú"}},{"@type":"WebSite","@id":"https://www.hubacademia.com/#website","url":"https://www.hubacademia.com/","name":"Hub Academia","inLanguage":"es-PE","publisher":{"@id":"https://www.hubacademia.com/#organization"}}]}
+        </script>
+        <link rel="stylesheet" href="/css/brand.css">
 </head>
-
-<body class="corporate-page">
-
-    <!-- Encabezado Ejecutivo Fijo -->
-    <header class="exec-header">
-        <div class="exec-header-bar">
-            <a href="/" class="exec-brand" aria-label="Ir al inicio de Hub Academia">
-                <img src="/assets/logo.png" alt="Hub Academia" class="exec-brand-logo" width="32" height="32">
-                <span>Hub Academia</span>
-            </a>
-
-            <nav class="exec-nav" aria-label="Navegación principal">
-                <a href="#herramientas-section" class="exec-nav-link">Herramientas</a>
-                <a href="#inicial-section" class="exec-nav-link">Educación Inicial</a>
-                <a href="#tutor-section" class="exec-nav-link">Tutor IA</a>
-                <a href="#vision-section" class="exec-nav-link">Hacia Dónde Vamos</a>
-                <a href="/pricing" class="exec-nav-link">Precios</a>
-            </nav>
-
-            <div class="exec-header-actions">
-                <button type="button" id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Cambiar tema">
-                    <i class="fas fa-sun" aria-hidden="true"></i>
-                </button>
-
-                <div id="user-session-controls" class="user-session-controls">
-                    <button type="button" id="open-login-modal" class="exec-login-btn">
-                        Acceder
+    <body class="corporate-page landing-page">
+        <a class="home-skip" href="#main-content">
+            Saltar al contenido
+        </a>
+        <header class="exec-header">
+            <div class="exec-header-bar">
+                <a href="/" class="exec-brand brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
+                <nav class="exec-nav" aria-label="Navegación principal">
+                    <a href="#herramientas-section" class="exec-nav-link">
+                        Soluciones
+                    </a>
+                    <a href="#inicial-section" class="exec-nav-link">
+                        Inicial
+                    </a>
+                    <a href="#boletin-section" class="exec-nav-link">
+                        Boletín IA
+                    </a>
+                    <a href="#vision-section" class="exec-nav-link">
+                        Visión
+                    </a>
+                    <a href="#planes-section" class="exec-nav-link">
+                        Pases de acceso
+                    </a>
+                </nav>
+                <div class="exec-header-actions">
+                    <button type="button" id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Cambiar tema">
+                        <i class="fas fa-sun" aria-hidden="true">
+                        </i>
+                    </button>
+                    <div id="user-session-controls" class="user-session-controls" aria-label="Mi cuenta">
+                        <button type="button" id="open-login-modal" class="exec-login-btn">
+                            Acceder
+                        </button>
+                    </div>
+                    <button type="button" id="exec-mobile-menu-btn" class="exec-menu-toggle" aria-expanded="false" aria-controls="exec-mobile-drawer">
+                        Menú
                     </button>
                 </div>
-
-                <button type="button" id="exec-mobile-menu-btn" class="exec-menu-toggle" aria-expanded="false" aria-controls="exec-mobile-drawer">
-                    Menú
-                </button>
             </div>
-        </div>
-    </header>
-
-    <!-- Menú Móvil Desplegable -->
-    <div id="exec-mobile-drawer" class="exec-mobile-drawer" aria-label="Navegación móvil">
-        <a href="#herramientas-section">Herramientas</a>
-        <a href="#inicial-section">Educación Inicial</a>
-        <a href="#tutor-section">Tutor IA</a>
-        <a href="#vision-section">Hacia Dónde Vamos</a>
-        <a href="/pricing">Planes y Precios</a>
-        <a href="#" id="mobile-menu-login-link">Acceder a mi cuenta</a>
-    </div>
-
-    <main id="main-content">
-
-        <!-- =================================================================
-             SECCIÓN 1: HERO (#hero-section)
-             Blueprint: Column on one line + Live Casuística Interactive Fragment
-             ================================================================= -->
-        <section id="hero-section" class="section-hero" aria-label="Presentación principal">
-            <div class="land-container hero-grid">
-                <div class="hero-copy">
-                    <h1 class="hero-title lines">
-                        <span class="line"><span data-line style="--i:0">Inteligencia Artificial</span></span>
-                        <span class="line"><span data-line style="--i:1">docente en el Perú.</span></span>
-                    </h1>
-
-                    <p class="hero-lead" data-load style="--d:350ms">
-                        Suite integral de herramientas con IA para educadores y profesionales. Evaluaciones oficiales, repetición espaciada y modelos formativos con criterio pedagógico propio.
-                    </p>
-
-                    <div class="hero-actions" data-load style="--d:450ms">
-                        <a href="#herramientas-section" class="btn-land-primary">
-                            Explorar herramientas
+            <div class="home-reading-progress" aria-hidden="true">
+                <span id="home-reading-progress">
+                </span>
+            </div>
+        </header>
+        <nav id="exec-mobile-drawer" class="exec-mobile-drawer" aria-label="Navegación móvil" hidden>
+            <a href="#herramientas-section">
+                Soluciones
+            </a>
+            <a href="#inicial-section">
+                Educación Inicial
+            </a>
+            <a href="#boletin-section">
+                Boletín IA
+            </a>
+            <a href="#vision-section">
+                Nuestra visión
+            </a>
+            <a href="#planes-section">
+                Pases de acceso
+            </a>
+            <a href="/login" id="mobile-menu-login-link">
+                Mi cuenta
+            </a>
+        </nav>
+        <main id="main-content" tabindex="-1">
+            <!-- S01 / CORPORATE HERO -->
+            <div id="hero-scroll-scene" class="home-hero-scene">
+                <section id="hero-section" class="home-hero" aria-labelledby="home-title">
+                    <!-- S01 MEDIA: first frame remains visible while the scroll video loads. -->
+                    <div class="home-hero-media" data-hero-media data-media-slot="hero">
+                        <picture>
+                            <source media="(max-width: 640px)" type="image/webp" srcset="/assets/landing/posters/web-v1/hero-mobile.webp" sizes="100vw">
+                            <source type="image/webp" srcset="/assets/landing/posters/web-v1/hero-desktop.webp" sizes="100vw">
+                            <img src="/assets/landing/posters/web-v1/hero-desktop.webp" alt="" width="1920" height="1080" fetchpriority="high" decoding="async">
+                        </picture>
+                    </div>
+                    <div class="home-hero-scrim" aria-hidden="true">
+                    </div>
+                    <div class="home-wrap home-hero-grid">
+                        <div class="home-hero-copy">
+                            <p class="home-origin" data-entrance>
+                                Empresa peruana de inteligencia artificial
+                            </p>
+                            <h1 id="home-title">
+                                <span class="home-line">
+                                    <span>
+                                        IA aplicada.
+                                    </span>
+                                </span>
+                                <span class="home-line">
+                                    <span>
+                                        Impacto real.
+                                    </span>
+                                </span>
+                            </h1>
+                            <p class="home-hero-lead" data-entrance>
+                                Desarrollamos soluciones inteligentes para transformar la práctica docente y el aprendizaje profesional en el Perú.
+                            </p>
+                            <div class="home-actions" data-entrance>
+                                <a href="#herramientas-section" class="home-button">
+                                    Explorar soluciones
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M5 12h14m-6-6 6 6-6 6"/>
+                                    </svg>
+                                </a>
+                                <a href="#vision-section" class="home-link home-link-on-dark">
+                                    Nuestra visión
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="home-hero-foot home-wrap">
+                        <span>
+                            Tecnología con criterio humano.
+                        </span>
+                        <a href="#herramientas-section" aria-label="Descubrir las soluciones de Hub Academia">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 4v16m-6-6 6 6 6-6"/>
+                            </svg>
                         </a>
-                        <a href="/pricing" class="land-text-link">
-                            Ver planes y precios →
-                        </a>
                     </div>
 
-                    <div class="hero-strip" data-load style="--d:550ms" aria-label="Herramientas disponibles">
-                        <span class="hero-strip-tag">Docentes Inicial</span>
-                        <span class="hero-strip-tag">Ascenso MINEDU</span>
-                        <span class="hero-strip-tag">SERUMS Salud</span>
-                        <span class="hero-strip-tag">Repaso SM-2</span>
-                    </div>
-                </div>
-
-                <!-- Fragmento Interactivo en Vivo: Casuística + Tutor IA + Repaso SM-2 -->
-                <div class="hero-workbench" data-reveal>
-                    <div id="live-casuistica" class="live-eval-card" data-ui aria-label="Demostración interactiva de casuística">
-                        <div class="live-eval-top">
-                            <span id="live-eval-source" class="live-eval-source">Banco Oficial Curado · Ascenso MINEDU</span>
-                            <div class="live-eval-tabs" role="tablist" aria-label="Especialidad de casuística">
-                                <button type="button" class="live-domain-btn is-active" data-live-domain="EDUCACION" role="tab" aria-selected="true">
-                                    Educación (CNEB)
-                                </button>
-                                <button type="button" class="live-domain-btn" data-live-domain="SALUD" role="tab" aria-selected="false">
-                                    Salud (SERUMS)
-                                </button>
-                            </div>
-                        </div>
-
-                        <p id="live-eval-stem" class="live-eval-stem">
-                            Durante una actividad de indagación, un estudiante concluye que las plantas solo respiran de noche. Según el CNEB, ¿qué intervención promueve retroalimentación reflexiva?
-                        </p>
-
-                        <div id="live-eval-options" class="live-eval-options" role="radiogroup" aria-label="Opciones de respuesta">
-                            <!-- Inyectado dinámicamente por home-animations.js -->
-                        </div>
-
-                        <div class="live-tutor-box">
-                            <div class="live-tutor-head">
-                                <i class="fas fa-robot" aria-hidden="true"></i>
-                                <span>Tutor IA · Sustento Pedagógico Oficial</span>
-                            </div>
-                            <p id="live-tutor-text" class="live-tutor-text">
-                                Correcto (Sustento CNEB / MBDD): formula una repregunta socrática que genera conflicto cognitivo y guía al estudiante a descubrir el proceso por sí mismo.
-                            </p>
-                        </div>
-
-                        <div class="live-eval-footer">
-                            <span id="live-sm2-status" class="live-sm2-status">
-                                Convierte cualquier sustento del Tutor IA en tarjeta o nota de estudio.
-                            </span>
-                            <button type="button" id="live-sm2-btn" class="live-sm2-btn">
-                                Agendar en SM-2 (+4 días)
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                </section>
             </div>
-        </section>
-
-        <!-- =================================================================
-             SECCIÓN 2: HERRAMIENTAS OPERATIVAS (#herramientas-section)
-             Blueprint: Fixed Output, Live Controls (Split 5fr / 7fr)
-             Cierre total de vacíos y eliminación definitiva del acordeón estrecho.
-             ================================================================= -->
-        <section id="herramientas-section" class="section-tools" aria-label="Herramientas operativas del ecosistema">
-            <div class="land-container">
-                <header class="section-head" data-reveal>
-                    <h2 class="section-title">Suite de Herramientas</h2>
-                    <p class="section-desc">
-                        Cuatro soluciones diseñadas para la práctica pedagógica, la preparación oficial y el estudio continuo.
-                    </p>
-                </header>
-
-                <div class="tools-split">
-                    <!-- Selector de Herramientas (Columna Izquierda 5fr) -->
-                    <div class="tools-nav-list" role="tablist" aria-label="Selector de herramientas operativas" data-reveal>
-                        <button type="button" class="tool-selector-btn is-active" data-tool-target="simuladores" role="tab" aria-selected="true">
-                            <span class="tool-btn-title">
-                                Simuladores de Exámenes
-                                <span class="tool-btn-tag">Oficial</span>
-                            </span>
-                            <span class="tool-btn-desc">
-                                Evaluación rigurosa para Ascenso Docente MINEDU (Base 90) y vertical conservada para el examen nacional SERUMS en Salud.
-                            </span>
-                        </button>
-
-                        <button type="button" class="tool-selector-btn" data-tool-target="inicial" role="tab" aria-selected="false">
-                            <span class="tool-btn-title">
-                                Docentes Inicial
-                                <span class="tool-btn-tag">Subdominio</span>
-                            </span>
-                            <span class="tool-btn-desc">
-                                Plataforma especializada para docentes de educación inicial (3, 4 y 5 años) disponible en docentes.hubacademia.com.
-                            </span>
-                        </button>
-
-                        <button type="button" class="tool-selector-btn" data-tool-target="repaso" role="tab" aria-selected="false">
-                            <span class="tool-btn-title">
-                                Repaso SM-2 y Notas
-                                <span class="tool-btn-tag">Algoritmo</span>
-                            </span>
-                            <span class="tool-btn-desc">
-                                Sistema unificado de repetición espaciada algorítmica, flashcards pedagógicas y libreta de notas personales sincronizadas.
-                            </span>
-                        </button>
-
-                        <button type="button" class="tool-selector-btn" data-tool-target="biblioteca" role="tab" aria-selected="false">
-                            <span class="tool-btn-title">
-                                Biblioteca de Consulta
-                                <span class="tool-btn-tag">Directa</span>
-                            </span>
-                            <span class="tool-btn-desc">
-                                Acceso directo a marcos curriculares, resoluciones ministeriales y literatura médica sin filtros ni barreras de navegación.
-                            </span>
-                        </button>
-                    </div>
-
-                    <!-- Mesa de Trabajo en Vivo (Columna Derecha 7fr) [data-ui] -->
-                    <div id="tools-live-stage" class="tools-live-stage" data-ui data-reveal>
-                        <!-- Panel 1: Simuladores -->
-                        <div class="tool-stage-panel is-active" data-tool-panel="simuladores">
-                            <div class="tool-stage-head">
-                                <div class="tool-stage-title-wrap">
-                                    <span class="tool-stage-badge">Herramienta 01 · Evaluación Curada</span>
-                                    <h3 class="tool-stage-name">Simuladores Oficiales de Exámenes</h3>
-                                </div>
-                            </div>
-
-                            <p class="tool-stage-copy">
-                                Bancos oficiales de preguntas extraídas de pruebas nacionales del MINEDU y MINSA, auditadas con sus respectivas claves normativas y analítica diagnóstica por subprueba.
-                            </p>
-
-                            <div class="exam-metric-row">
-                                <div class="exam-metric-card">
-                                    <span class="exam-metric-val">90</span>
-                                    <span class="exam-metric-lbl">Reactivos por simulacro Ascenso</span>
-                                </div>
-                                <div class="exam-metric-card">
-                                    <span class="exam-metric-val">100%</span>
-                                    <span class="exam-metric-lbl">Preguntas reales sin RAG sintético</span>
-                                </div>
-                                <div class="exam-metric-card">
-                                    <span class="exam-metric-val">3 h</span>
-                                    <span class="exam-metric-lbl">Temporizador oficial estandarizado</span>
-                                </div>
-                            </div>
-
-                            <div class="stage-actions-bar">
-                                <a href="/simulator-dashboard?context=EDUCACION" class="btn-land-primary">
-                                    Iniciar Simulador Docente
-                                </a>
-                                <a href="/simulator-dashboard?context=MEDICINA" class="btn-land-secondary">
-                                    Simulador SERUMS Salud
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Panel 2: Docentes Inicial -->
-                        <div class="tool-stage-panel" data-tool-panel="inicial">
-                            <div class="tool-stage-head">
-                                <div class="tool-stage-title-wrap">
-                                    <span class="tool-stage-badge">Herramienta 02 · Plataforma Especializada</span>
-                                    <h3 class="tool-stage-name">Docentes de Educación Inicial</h3>
-                                </div>
-                            </div>
-
-                            <p class="tool-stage-copy">
-                                Entorno dedicado para maestras del ciclo II de Educación Inicial (aulas de 3, 4 y 5 años). Recursos estructurados bajo el Currículo Nacional y criterios de acompañamiento formativo.
-                            </p>
-
-                            <div class="stage-card-preview">
-                                <span class="stage-card-title">Subdominio de Producción en Vivo</span>
-                                <p class="stage-card-text">
-                                    Opera de forma independiente y segura sobre el ecosistema de Hub Academia en <a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="land-text-link">https://docentes.hubacademia.com/</a>.
-                                </p>
-                                <div class="stage-card-tags">
-                                    <span class="stage-pill">3 Años · Desarrollo Sensorial</span>
-                                    <span class="stage-pill">4 Años · Autonomía y Juego</span>
-                                    <span class="stage-pill">5 Años · Iniciación a la Indagación</span>
-                                </div>
-                            </div>
-
-                            <div class="stage-actions-bar">
-                                <a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="btn-land-primary">
-                                    Abrir Plataforma Docentes Inicial ↗
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Panel 3: Repaso SM-2 y Notas -->
-                        <div class="tool-stage-panel" data-tool-panel="repaso">
-                            <div class="tool-stage-head">
-                                <div class="tool-stage-title-wrap">
-                                    <span class="tool-stage-badge">Herramienta 03 · Memoria a Largo Plazo</span>
-                                    <h3 class="tool-stage-name">Repaso SM-2 y Libreta de Notas</h3>
-                                </div>
-                            </div>
-
-                            <p class="tool-stage-copy">
-                                Combina el algoritmo de repetición espaciada SuperMemo-2 (SM-2 / FSRS) con una libreta de notas de estudio sincronizada, asegurando que los conceptos clave se retengan a largo plazo.
-                            </p>
-
-                            <div class="stage-card-preview">
-                                <span class="stage-card-title">Mazo de Repaso Rápido: CNEB y Evaluación Formativa</span>
-                                <p class="stage-card-text">
-                                    Tarjetas inteligentes programadas por intervalos: Olvidé (1 día), Difícil (2 días), Bien (4 días) y Fácil (7 días). Factor de facilidad calibrado automáticamente.
-                                </p>
-                                <div class="stage-card-tags">
-                                    <span class="stage-pill">SM-2 Activo</span>
-                                    <span class="stage-pill">Notas Vinculadas</span>
-                                    <span class="stage-pill">Comunidad de Estudio</span>
-                                </div>
-                            </div>
-
-                            <div class="stage-actions-bar">
-                                <a href="/repaso" class="btn-land-primary">
-                                    Abrir Repaso y Notas
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Panel 4: Biblioteca de Consulta -->
-                        <div class="tool-stage-panel" data-tool-panel="biblioteca">
-                            <div class="tool-stage-head">
-                                <div class="tool-stage-title-wrap">
-                                    <span class="tool-stage-badge">Herramienta 04 · Acervo Documental</span>
-                                    <h3 class="tool-stage-name">Biblioteca de Consulta</h3>
-                                </div>
-                            </div>
-
-                            <p class="tool-stage-copy">
-                                Repositorio simplificado y ágil para acceder directamente a documentos oficiales, programas curriculares, protocolos de salud y casuísticas de examen sin menús de filtro redundantes.
-                            </p>
-
-                            <div class="stage-card-preview">
-                                <span class="stage-card-title">Búsqueda Directa por Palabra Clave</span>
-                                <p class="stage-card-text">
-                                    Consulta normas técnicas ministeriales, cartillas de planificación y guías de práctica clínica con visor inmersivo y visualización optimizada para dispositivos móviles.
-                                </p>
-                                <div class="stage-card-tags">
-                                    <span class="stage-pill">Currículo Nacional CNEB</span>
-                                    <span class="stage-pill">RVM 094-2020-MINEDU</span>
-                                    <span class="stage-pill">NTS 105-MINSA</span>
-                                </div>
-                            </div>
-
-                            <div class="stage-actions-bar">
-                                <a href="/library" class="btn-land-primary">
-                                    Consultar Biblioteca
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- =================================================================
-             SECCIÓN 3: EDUCACIÓN INICIAL Y FOTOGRAFÍA PERUANA (#inicial-section)
-             Showcase de docentes.hubacademia.com + Grilla 2x2 con las 4 fotos reales
-             ================================================================= -->
-        <section id="inicial-section" class="section-inicial" aria-label="Educación Inicial y Realidad Educativa en Perú">
-            <div class="land-container">
-                <header class="section-head" data-reveal>
-                    <h2 class="section-title">Educación Inicial y Realidad Educativa</h2>
-                    <p class="section-desc">
-                        Tecnología adaptada a las aulas peruanas, desde el nivel inicial hasta la educación superior y profesional.
-                    </p>
-                </header>
-
-                <div class="inicial-grid">
-                    <div class="inicial-card" data-reveal>
-                        <h3 class="inicial-title">Plataforma Docentes Inicial</h3>
-                        <p class="inicial-copy">
-                            La primera infancia es el pilar de toda la trayectoria educativa peruana. Por ello, diseñamos un espacio propio para docentes de inicial que traduce las orientaciones del CNEB en recursos pedagógicos aplicados.
+            <!-- S02 / SOLUTIONS — Docentes, Salud, Flashcards; Tutor and Notes are shared. -->
+            <section id="herramientas-section" class="home-section home-products" aria-labelledby="products-title">
+                <div class="home-wrap">
+                    <header class="home-section-heading">
+                        <h2 id="products-title" data-reveal="rise">
+                            IA para tu trabajo.
+                        </h2>
+                        <p data-reveal="rise">
+                            Simulador docente, simulador médico y Flashcards. Tres formas de estudiar con Tutor IA y una libreta de Notas compartida.
                         </p>
-
-                        <ul class="inicial-pillars">
-                            <li class="inicial-pillar-item">
-                                <span>Acompañamiento didáctico para edades de 3, 4 y 5 años.</span>
-                            </li>
-                            <li class="inicial-pillar-item">
-                                <span>Estrategias de desarrollo socioemocional y juego libre.</span>
-                            </li>
-                            <li class="inicial-pillar-item">
-                                <span>Integrado a la cuenta institucional de Hub Academia.</span>
-                            </li>
-                        </ul>
-
+                    </header>
+                    <div class="product-story" id="product-story">
+                        <div class="product-stage-wrap">
+                            <div class="product-stage" id="tools-live-stage" data-ui>
+                                <div class="product-tabs" role="tablist" aria-label="Demostraciones de productos">
+                                    <button id="tab-docente" type="button" role="tab" aria-selected="true" aria-controls="peek-docente" data-product-tab="docente">
+                                        Docentes
+                                    </button>
+                                    <button id="tab-medico" type="button" role="tab" aria-selected="false" aria-controls="peek-medico" data-product-tab="medico" tabindex="-1">
+                                        Salud
+                                    </button>
+                                    <button id="tab-repaso" type="button" role="tab" aria-selected="false" aria-controls="peek-repaso" data-product-tab="repaso" tabindex="-1">
+                                        Flashcards
+                                    </button>
+                                </div>
+                                <div id="peek-docente" class="product-peek" role="tabpanel" aria-labelledby="tab-docente" tabindex="0" data-product-panel="docente">
+                                    <div class="preview-heading">
+                                        <span>
+                                            Simulador de exámenes docentes
+                                        </span>
+                                        <span class="demo-label">
+                                            Ejemplo de recorrido
+                                        </span>
+                                    </div>
+                                    <p class="preview-title">
+                                        Del caso pedagógico
+                                        <br>
+                                        al razonamiento.
+                                    </p>
+                                    <ol class="study-preview-flow">
+                                        <li>
+                                            <span>
+                                                Practica
+                                            </span>
+                                            <p>
+                                                Resuelve una casuística y revisa la explicación al estudiar o terminar el examen.
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <span>
+                                                Profundiza con el Tutor IA
+                                            </span>
+                                            <p>
+                                                Pregunta por el fundamento de una alternativa o por la idea que necesitas reforzar.
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <span>
+                                                Conserva tus apuntes
+                                            </span>
+                                            <p>
+                                                Guarda las respuestas del tutor en tus Notas para volver a ellas.
+                                            </p>
+                                        </li>
+                                    </ol>
+                                    <a class="home-link" href="/simulator-dashboard?context=EDUCACION">
+                                        Abrir simulador docente
+                                    </a>
+                                </div>
+                                <div id="peek-medico" class="product-peek" role="tabpanel" aria-labelledby="tab-medico" tabindex="0" data-product-panel="medico" hidden>
+                                    <div class="preview-heading">
+                                        <span>
+                                            Simulador de exámenes médicos
+                                        </span>
+                                        <span class="demo-label">
+                                            Ejemplo de recorrido
+                                        </span>
+                                    </div>
+                                    <p class="preview-title">
+                                        Entrena el criterio.
+                                        <br>
+                                        Revisa tus decisiones.
+                                    </p>
+                                    <ol class="study-preview-flow">
+                                        <li>
+                                            <span>
+                                                Prepara tu examen
+                                            </span>
+                                            <p>
+                                                Practica con el banco de preguntas del simulador de Salud y preparación SERUMS.
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <span>
+                                                Consulta al Tutor IA
+                                            </span>
+                                            <p>
+                                                Profundiza en la explicación del caso durante el estudio o en la revisión del examen.
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <span>
+                                                Construye tus Notas
+                                            </span>
+                                            <p>
+                                                Conserva los conceptos y explicaciones que quieras estudiar otra vez.
+                                            </p>
+                                        </li>
+                                    </ol>
+                                    <a class="home-link" href="/simulator-dashboard?context=MEDICINA">
+                                        Abrir simulador médico
+                                    </a>
+                                </div>
+                                <div id="peek-repaso" class="product-peek" role="tabpanel" aria-labelledby="tab-repaso" tabindex="0" data-product-panel="repaso" hidden>
+                                    <div class="preview-heading">
+                                        <span>
+                                            Repaso con Flashcards
+                                        </span>
+                                        <span class="demo-label">
+                                            Prueba una tarjeta
+                                        </span>
+                                    </div>
+                                    <div class="memory-card" id="memory-card">
+                                        <span id="memory-side">
+                                            Pregunta de ejemplo
+                                        </span>
+                                        <p id="memory-content">
+                                            ¿Qué busca la retroalimentación por descubrimiento?
+                                        </p>
+                                        <button type="button" id="memory-flip" class="preview-control" aria-pressed="false">
+                                            Ver respuesta
+                                        </button>
+                                    </div>
+                                    <div class="memory-schedule" aria-label="Ejemplo ilustrativo de intervalos de repaso">
+                                        <span>
+                                            Hoy
+                                        </span>
+                                        <span>
+                                            Próximo repaso
+                                        </span>
+                                        <span>
+                                            Memoria a largo plazo
+                                        </span>
+                                    </div>
+                                    <p class="preview-note">
+                                        En tus sesiones de repaso puedes consultar al Tutor IA sobre la tarjeta y guardar sus explicaciones en Notas. Esta tarjeta es solo una demostración local.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="product-story-meter" aria-hidden="true">
+                                <span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="product-chapters">
+                            <article class="product-chapter is-current" data-product-chapter="docente">
+                                <h3 data-reveal="rise">
+                                    Simulador
+                                    <br>
+                                    docente.
+                                </h3>
+                                <p data-reveal="rise">
+                                    Prepárate para los concursos del magisterio con casuísticas pedagógicas. Revisa tus respuestas, consulta al Tutor IA cuando el modo de estudio lo permita y guarda sus explicaciones en Notas.
+                                </p>
+                                <a href="/simulator-dashboard?context=EDUCACION" class="home-link">
+                                    Practicar para mi examen
+                                </a>
+                            </article>
+                            <article class="product-chapter" data-product-chapter="medico">
+                                <h3 data-reveal="rise">
+                                    Simulador
+                                    <br>
+                                    médico.
+                                </h3>
+                                <p data-reveal="rise">
+                                    Entrena para el SERUMS y refuerza tus conocimientos de Salud. Profundiza con el Tutor IA durante el estudio o al revisar el examen y conserva lo aprendido en tus Notas.
+                                </p>
+                                <a href="/simulator-dashboard?context=MEDICINA" class="home-link">
+                                    Practicar en Salud
+                                </a>
+                            </article>
+                            <article class="product-chapter" data-product-chapter="repaso">
+                                <h3 data-reveal="rise">
+                                    Repaso con
+                                    <br>
+                                    Flashcards.
+                                </h3>
+                                <p data-reveal="rise">
+                                    Estudia con tarjetas y repetición espaciada SM-2. Resuelve tus dudas con el Tutor IA integrado a cada sesión y guarda sus explicaciones en la misma libreta de Notas de tus simuladores.
+                                </p>
+                                <a href="/repaso?view=dashboard" class="home-link">
+                                    Abrir mis tarjetas
+                                </a>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="shared-study-tools" aria-label="Herramientas compartidas de estudio">
                         <div>
-                            <a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="btn-land-primary">
-                                Ingresar a docentes.hubacademia.com ↗
+                            <h3>
+                                Tutor IA integrado
+                            </h3>
+                            <p>
+                                Acompaña el estudio en ambos simuladores y en tus sesiones de Flashcards, con el contexto de la pregunta o tarjeta que estás revisando.
+                            </p>
+                        </div>
+                        <div>
+                            <h3>
+                                Tus Notas, conectadas
+                            </h3>
+                            <p>
+                                Las respuestas que guardes desde cualquiera de los tutores se reúnen en una sola libreta personal.
+                            </p>
+                            <a class="home-link" href="/repaso?view=notes">
+                                Abrir mis Notas
                             </a>
                         </div>
                     </div>
-
-                    <!-- Grilla Fotográfica Documental 2x2 (4 imágenes reales verificadas) -->
-                    <div class="docu-photo-grid photo-drift" data-reveal aria-label="Galería arquitectónica e histórica educativa del Perú">
-                        <figure class="docu-photo-figure">
-                            <img src="/assets/editorial/emblematico-colegio-guadalupe-de-lima-2.jpg" alt="Fachada del Colegio Guadalupe de Lima" class="docu-photo-thumb" loading="lazy" width="600" height="375">
-                            <figcaption class="docu-photo-caption">
-                                <strong>Colegio Emblemático Guadalupe</strong>
-                                <span>Historia y tradición del magisterio escolar en Lima.</span>
-                            </figcaption>
-                        </figure>
-
-                        <figure class="docu-photo-figure">
-                            <img src="/assets/editorial/patio-de-letras-casona-de-san-marcos.jpg" alt="Patio de Letras de la Casona de San Marcos" class="docu-photo-thumb" loading="lazy" width="600" height="375">
-                            <figcaption class="docu-photo-caption">
-                                <strong>Patio de Letras · Casona San Marcos</strong>
-                                <span>Cuna de la docencia y el pensamiento académico en el Perú.</span>
-                            </figcaption>
-                        </figure>
-
-                        <figure class="docu-photo-figure">
-                            <img src="/assets/editorial/entrada-a-la-biblioteca-nacional-del-peru.jpg" alt="Entrada a la Biblioteca Nacional del Perú" class="docu-photo-thumb" loading="lazy" width="600" height="375">
-                            <figcaption class="docu-photo-caption">
-                                <strong>Biblioteca Nacional del Perú</strong>
-                                <span>Custodia del acervo documental y pedagógico nacional.</span>
-                            </figcaption>
-                        </figure>
-
-                        <figure class="docu-photo-figure">
-                            <img src="/assets/editorial/medical-school-of-peru-lima-peru-miraflores.jpg" alt="Facultad de Medicina de Lima Perú" class="docu-photo-thumb" loading="lazy" width="600" height="375">
-                            <figcaption class="docu-photo-caption">
-                                <strong>Facultad de Medicina · Lima</strong>
-                                <span>Rigor científico y preparación para el servicio SERUMS.</span>
-                            </figcaption>
-                        </figure>
+                </div>
+            </section>
+            <!-- S03 / EARLY CHILDHOOD -->
+            <section id="inicial-section" class="home-section home-inicial" aria-labelledby="inicial-title">
+                <div class="home-wrap inicial-intro">
+                    <h2 id="inicial-title" data-reveal="rise">
+                        Cada infancia,
+                        <br>
+                        su propio ritmo.
+                    </h2>
+                    <div>
+                        <p data-reveal="rise">
+                            IA al servicio de las maestras de Inicial. Conclusiones descriptivas para el Ciclo II, a partir de evidencias y con la mirada profesional de la docente.
+                        </p>
+                        <a href="https://docentes.hubacademia.com/" class="home-link" target="_blank" rel="noopener noreferrer">
+                            Explorar plataforma
+                            <span aria-hidden="true">
+                                ↗
+                            </span>
+                        </a>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- =================================================================
-             SECCIÓN 4: SUSTENTO NORMATIVO & TUTOR IA (#tutor-section)
-             Blueprint: Split Stage con Diálogo Tutor IA en Vivo [data-ui]
-             ================================================================= -->
-        <section id="tutor-section" class="section-tutor" aria-label="Tutor IA y Sustento Normativo">
-            <div class="land-container">
-                <header class="section-head" data-reveal>
-                    <h2 class="section-title">Tutor IA con Criterio Normativo</h2>
-                    <p class="section-desc">
-                        Respuestas pedagógicas fundamentadas en el CNEB, MBDD y marcos oficiales peruanos vigentes.
-                    </p>
-                </header>
-
-                <div class="tutor-split">
-                    <div class="tutor-pillars-wrap" data-reveal>
-                        <div class="norm-card">
-                            <span class="norm-card-tag">Marco de Buen Desempeño Docente</span>
-                            <h3 class="norm-card-title">Criterio Pedagógico Peruano</h3>
-                            <p class="norm-card-copy">
-                                El Tutor IA de Hub Academia no genera texto genérico. Ha sido calibrado con los dominios del MBDD, priorizando la retroalimentación reflexiva, el conflicto cognitivo y el acompañamiento formativo.
+                <div class="inicial-scene home-wrap">
+                    <figure class="inicial-visual" data-reveal="image">
+                        <div class="editorial-media" data-media-slot="inicial">
+                            <picture>
+                                <source media="(max-width: 640px)" type="image/webp" srcset="/assets/landing/posters/web-v1/inicial-mobile.webp" sizes="100vw">
+                                <source type="image/webp" srcset="/assets/landing/posters/web-v1/inicial-desktop.webp" sizes="(min-width: 961px) 65vw, 100vw">
+                                <img src="/assets/landing/posters/web-v1/inicial-desktop.webp" alt="Escena ilustrativa de una docente que organiza sus observaciones de aprendizaje" width="1920" height="1080" loading="lazy" decoding="async" data-image-drift>
+                            </picture>
+                        </div>
+                        <figcaption>
+                            Observar, registrar y acompañar.
+                            
+                        </figcaption>
+                    </figure>
+                    <form class="inicial-demo" id="inicial-demo" data-ui aria-labelledby="demo-title">
+                        <div class="preview-heading">
+                            <span id="demo-title">
+                                Conclusiones descriptivas
+                            </span>
+                            <span class="demo-label">
+                                Demo local
+                            </span>
+                        </div>
+                        <fieldset>
+                            <legend>
+                                Edad
+                            </legend>
+                            <div class="age-options">
+                                <label>
+                                    <input type="radio" name="demo-age" value="3">
+                                    <span>
+                                        3 años
+                                    </span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="demo-age" value="4" checked>
+                                    <span>
+                                        4 años
+                                    </span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="demo-age" value="5">
+                                    <span>
+                                        5 años
+                                    </span>
+                                </label>
+                            </div>
+                        </fieldset>
+                        <label class="demo-field" for="demo-competency">
+                            Competencia
+                            <select id="demo-competency" name="competency">
+                                <option value="identidad">
+                                    Construye su identidad
+                                </option>
+                                <option value="comunicacion">
+                                    Se comunica oralmente en su lengua materna
+                                </option>
+                                <option value="matematica">
+                                    Resuelve problemas de cantidad
+                                </option>
+                            </select>
+                        </label>
+                        <div class="demo-evidence">
+                            <span>
+                                Observación de ejemplo
+                            </span>
+                            <p id="demo-evidence">
+                                Reconoce cómo se siente y expresa sus preferencias durante el juego con sus compañeros.
                             </p>
                         </div>
-
-                        <div class="norm-card">
-                            <span class="norm-card-tag">Norma Técnica de Salud (MINSA)</span>
-                            <h3 class="norm-card-title">Rigor Clínico en SERUMS</h3>
-                            <p class="norm-card-copy">
-                                En la vertical de salud, el modelo responde conforme a las guías oficiales de atención primaria del Ministerio de Salud del Perú, priorizando protocolos de emergencia y conductas inmediatas.
+                        <button type="submit" class="home-button">
+                            Ver conclusión de ejemplo
+                        </button>
+                        <div class="demo-conclusion" role="status" aria-live="polite" aria-atomic="true">
+                            <span>
+                                Borrador para revisión docente
+                            </span>
+                            <p id="demo-conclusion">
+                                Reconoce algunas de sus emociones y comunica sus preferencias con mayor confianza. Continúa desarrollando recursos para expresar lo que necesita durante el juego compartido; se sugiere acompañarlo con preguntas y escucha atenta.
                             </p>
                         </div>
-
-                        <div>
-                            <button type="button" id="homepage-open-chat-btn" class="btn-land-primary">
-                                Consultar al Asistente Guía
-                            </button>
+                        <p class="preview-note">
+                            Ejemplos preparados para esta demo. La plataforma completa trabaja con tus evidencias; esta vista no envía datos ni genera una evaluación real.
+                        </p>
+                    </form>
+                </div>
+            </section>
+            <!-- S04 / AI BULLETIN -->
+            <section id="boletin-section" class="home-section home-bulletin" aria-labelledby="bulletin-title">
+                <div class="home-wrap bulletin-layout">
+                    <div class="bulletin-intro">
+                        <h2 id="bulletin-title" data-reveal="rise">
+                            Comprender la IA.
+                            <br>
+                            Decidir mejor.
+                        </h2>
+                        <p data-reveal="rise">
+                            Boletín de Inteligencia Artificial: noticias, investigación y lecturas para comprender su impacto en el Perú y el mundo.
+                        </p>
+                        <a class="home-link" href="/library">
+                            Explorar el Boletín IA
+                            <span aria-hidden="true">
+                                ↗
+                            </span>
+                        </a>
+                    </div>
+                    <figure class="bulletin-art" data-reveal="image">
+                        <div class="editorial-media" data-media-slot="boletin">
+                            <picture>
+                                <source media="(max-width: 640px)" type="image/webp" srcset="/assets/landing/posters/web-v1/boletin-mobile.webp" sizes="100vw">
+                                <source type="image/webp" srcset="/assets/landing/posters/web-v1/boletin-desktop.webp" sizes="(min-width: 961px) 60vw, 100vw">
+                                <img src="/assets/landing/posters/web-v1/boletin-desktop.webp" alt="Composición editorial de documentos de investigación sobre papel y una mesa de grafito" width="1920" height="1080" loading="lazy" decoding="async" data-image-drift>
+                            </picture>
+                        </div>
+                        
+                    </figure>
+                    <div class="bulletin-topics">
+                        <article data-reveal="rise">
+                            <span>
+                                Gobernanza y ética
+                            </span>
+                            <h3>
+                                Las reglas también
+                                <br>
+                                construyen el futuro.
+                            </h3>
+                            <p>
+                                Leyes, políticas públicas y uso responsable de la inteligencia artificial, explicados con contexto y fuentes.
+                            </p>
+                        </article>
+                        <article data-reveal="rise">
+                            <span>
+                                Educación
+                            </span>
+                            <h3>
+                                El criterio docente
+                                <br>
+                                en la era de la IA.
+                            </h3>
+                            <p>
+                                Lecturas y experiencias sobre cómo integrar herramientas inteligentes sin perder la mirada pedagógica.
+                            </p>
+                        </article>
+                        <article data-reveal="rise">
+                            <span>
+                                Ciencia y salud
+                            </span>
+                            <h3>
+                                Avances que merecen
+                                <br>
+                                una buena explicación.
+                            </h3>
+                            <p>
+                                Investigación, nuevos modelos y aplicaciones profesionales, con atención a sus alcances y limitaciones.
+                            </p>
+                        </article>
+                    </div>
+                </div>
+            </section>
+            <!-- S05 / ROADMAP -->
+            <section id="vision-section" class="home-section home-vision" aria-labelledby="vision-title">
+                <div class="home-wrap vision-layout">
+                    <div class="vision-anchor">
+                        <h2 id="vision-title" data-reveal="rise">
+                            Una visión
+                            <br>
+                            que crece.
+                        </h2>
+                        <p data-reveal="rise">
+                            Empezamos por herramientas útiles. Avanzamos hacia la formación y el desarrollo de soluciones de IA para instituciones y profesionales.
+                        </p>
+                        <div class="vision-dial" aria-hidden="true">
+                            <svg viewBox="0 0 200 200">
+                                <circle class="vision-dial-track" cx="100" cy="100" r="84"/>
+                                <circle class="vision-dial-fill" cx="100" cy="100" r="84"/>
+                            </svg>
+                            <span id="vision-dial-word">
+                                Aplicar
+                            </span>
                         </div>
                     </div>
-
-                    <!-- Diálogo Interactivo en Vivo del Tutor IA [data-ui] -->
-                    <div id="tutor-live-demo" class="tutor-demo-card" data-ui data-reveal aria-label="Demostración interactiva del Tutor IA">
-                        <div class="tutor-demo-header">
-                            <div class="tutor-bot-id">
-                                <img src="/assets/hubifrente.png" alt="Hubi" class="tutor-bot-avatar" width="28" height="28">
-                                <span>Hubi · Tutor Académico</span>
-                            </div>
-                            <div class="tutor-demo-switch" role="group" aria-label="Seleccionar caso de consulta">
-                                <button type="button" class="tutor-switch-btn is-active" data-tutor-case="CNEB" aria-pressed="true">
-                                    Caso Educación
-                                </button>
-                                <button type="button" class="tutor-switch-btn" data-tutor-case="MINSA" aria-pressed="false">
-                                    Caso Salud
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="tutor-dialogue-body">
-                            <div class="tutor-bubble-user" id="tutor-demo-user">
-                                ¿Cuál es la diferencia entre retroalimentación descriptiva y por descubrimiento según RVM 094-2020-MINEDU?
-                            </div>
-
-                            <div class="tutor-bubble-bot">
-                                <span class="tutor-cite-badge" id="tutor-demo-cite">
-                                    RVM N.° 094-2020-MINEDU · CNEB Pág. 34
+                    <ol class="vision-timeline">
+                        <li data-vision-step="Aplicar" class="is-current">
+                            <span class="vision-state">
+                                Disponible hoy
+                            </span>
+                            <h3>
+                                Soluciones
+                                <br>
+                                que ya puedes usar.
+                            </h3>
+                            <p>
+                                Educación Inicial, simuladores de exámenes, Tutor IA y Repaso con Notas: el punto de partida de nuestro ecosistema.
+                            </p>
+                            <a href="#herramientas-section" class="home-link">
+                                Conocer las herramientas
+                            </a>
+                        </li>
+                        <li data-vision-step="Aprender">
+                            <span class="vision-state">
+                                En nuestra hoja de ruta
+                            </span>
+                            <h3>
+                                Un campus
+                                <br>
+                                para aprender IA.
+                            </h3>
+                            <p>
+                                Formación asíncrona y talleres prácticos para llevar la inteligencia artificial al trabajo docente y profesional, con criterio y propósito.
+                            </p>
+                            <p class="vision-note">
+                                Próximamente. Todavía no disponible para inscripción.
+                            </p>
+                        </li>
+                        <li data-vision-step="Construir">
+                            <span class="vision-state">
+                                Proyección empresarial
+                            </span>
+                            <h3>
+                                Construir
+                                <br>
+                                junto a tu institución.
+                            </h3>
+                            <p>
+                                Asesorías, divulgación y un laboratorio de soluciones aplicadas al contexto peruano. Tecnología construida alrededor de necesidades concretas.
+                            </p>
+                            <a href="mailto:soporte@hubacademia.com?subject=Consulta%20institucional%20sobre%20IA" class="home-link">
+                                Conversar sobre tu proyecto
+                            </a>
+                        </li>
+                    </ol>
+                </div>
+            </section>
+            <!-- S06 / ACCESS PASSES -->
+            <section id="planes-section" class="home-section home-access" aria-labelledby="access-title">
+                <div class="home-wrap">
+                    <header class="home-section-heading">
+                        <h2 id="access-title" data-reveal="rise">
+                            Elige cómo avanzar.
+                        </h2>
+                        <p data-reveal="rise">
+                            Pases para Simuladores y Repaso con IA. Pago único vía Mercado Pago, sin renovación automática.
+                        </p>
+                    </header>
+                    <div class="access-plans">
+                        <article class="access-plan" data-reveal="rise">
+                            <h3>
+                                Acceso Libre
+                            </h3>
+                            <p class="access-price">
+                                <span>
+                                    S/
                                 </span>
-                                <p id="tutor-demo-bot">
-                                    La retroalimentación descriptiva detalla al estudiante sus aciertos y errores específicos, ofreciendo sugerencias directas de mejora. En contraste, la retroalimentación reflexiva o por descubrimiento (máximo nivel) formula preguntas y retos que guían al estudiante a identificar por sí mismo la brecha y autorregular su proceso de aprendizaje.
-                                </p>
-                            </div>
-                        </div>
+                                0
+                            </p>
+                            <p>
+                                Comienza con una cuenta gratuita.
+                            </p>
+                            <ul>
+                                <li>
+                                    10 créditos mensuales de práctica
+                                </li>
+                                <li>
+                                    Simulacros de prueba en modo estudio
+                                </li>
+                                <li>
+                                    Conoce las herramientas antes de elegir
+                                </li>
+                            </ul>
+                            <a href="/simulator-dashboard?context=EDUCACION" class="home-button home-button-secondary">
+                                Comenzar gratis
+                            </a>
+                        </article>
+                        <article class="access-plan" data-reveal="rise">
+                            <h3>
+                                Pase Bimestral
+                            </h3>
+                            <p class="access-price">
+                                <span>
+                                    S/
+                                </span>
+                                9.90
+                            </p>
+                            <p>
+                                60 días para construir tu hábito.
+                            </p>
+                            <ul>
+                                <li>
+                                    Simulacros ilimitados por 2 meses
+                                </li>
+                                <li>
+                                    Repaso SM-2 con mazos oficiales
+                                </li>
+                                <li>
+                                    Libreta de notas personales
+                                </li>
+                            </ul>
+                            <a href="/pricing" class="home-button home-button-secondary">
+                                Ver Pase Bimestral
+                            </a>
+                        </article>
+                        <article class="access-plan access-plan-featured" data-reveal="rise">
+                            <h3>
+                                Pase Cuatrimestral
+                            </h3>
+                            <p class="access-price">
+                                <span>
+                                    S/
+                                </span>
+                                24.90
+                            </p>
+                            <p>
+                                120 días de preparación acompañada.
+                            </p>
+                            <ul>
+                                <li>
+                                    Herramientas del Bimestral por 4 meses
+                                </li>
+                                <li>
+                                    Acompañamiento del Tutor IA
+                                </li>
+                                <li>
+                                    Analítica diagnóstica para tu práctica
+                                </li>
+                            </ul>
+                            <a href="/pricing" class="home-button">
+                                Ver Pase Cuatrimestral
+                            </a>
+                        </article>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- =================================================================
-             SECCIÓN 5: HACIA DÓNDE VAMOS (#vision-section)
-             Blueprint: 3 Equal-Height Horizon Cards
-             Cero columnas partidas, cero etiquetas mark estridentes.
-             ================================================================= -->
-        <section id="vision-section" class="section-vision" aria-label="Evolución y visión empresarial de Hub Academia">
-            <div class="land-container">
-                <header class="section-head" data-reveal>
-                    <h2 class="section-title">Hacia Dónde Vamos</h2>
-                    <p class="section-desc">
-                        Nuestra visión: evolucionar de una suite de preparación a una empresa peruana referente en Inteligencia Artificial aplicada.
+                    <p class="access-scope">
+                        Estos pases corresponden a Simuladores y Repaso. Las condiciones de Educación Inicial se consultan en su propia plataforma.
                     </p>
-                </header>
-
-                <div class="horizon-cards-grid">
-                    <article class="horizon-card" data-reveal>
-                        <span class="horizon-card-phase">Etapa 01 · Presente Activo</span>
-                        <h3 class="horizon-card-title">Suite Operativa de Herramientas</h3>
-                        <p class="horizon-card-copy">
-                            Disponemos de simuladores con bancos reales auditados, la plataforma para docentes de inicial en su propio subdominio, repaso algorítmico SM-2 y biblioteca de consulta directa.
-                        </p>
-                        <ul class="horizon-card-items">
-                            <li class="horizon-item">Simuladores oficiales MINEDU y SERUMS</li>
-                            <li class="horizon-item">Plataforma Docentes Inicial operativa</li>
-                            <li class="horizon-item">Repaso espaciado SM-2 y notas</li>
-                        </ul>
-                    </article>
-
-                    <article class="horizon-card" data-reveal>
-                        <span class="horizon-card-phase">Etapa 02 · Próximo Escalado</span>
-                        <h3 class="horizon-card-title">Formación Asíncrona en Video</h3>
-                        <p class="horizon-card-copy">
-                            Desarrollaremos cursos audiovisuales asíncronos y talleres prácticos orientados a capacitar a educadores en el uso ético y productivo de la Inteligencia Artificial en el aula.
-                        </p>
-                        <ul class="horizon-card-items">
-                            <li class="horizon-item">Cursos en video a tu propio ritmo</li>
-                            <li class="horizon-item">Estrategias de IA aplicadas a la enseñanza</li>
-                            <li class="horizon-item">Acompañamiento pedagógico especializado</li>
-                        </ul>
-                    </article>
-
-                    <article class="horizon-card" data-reveal>
-                        <span class="horizon-card-phase">Etapa 03 · Futuro Empresarial</span>
-                        <h3 class="horizon-card-title">Divulgación y Consultoría en IA</h3>
-                        <p class="horizon-card-copy">
-                            Nos consolidaremos como una empresa de asesoría tecnológica y divulgación científica sobre los avances de la Inteligencia Artificial en la educación, la salud y el trabajo profesional en el Perú.
-                        </p>
-                        <ul class="horizon-card-items">
-                            <li class="horizon-item">Boletín de novedades y avances en IA</li>
-                            <li class="horizon-item">Consultoría para instituciones educativas</li>
-                            <li class="horizon-item">Investigación aplicada al contexto nacional</li>
-                        </ul>
-                    </article>
                 </div>
-            </div>
-        </section>
-
-        <!-- =================================================================
-             SECCIÓN 6: PLANES Y ACCESO DIRECTO (#planes-section)
-             Blueprint: Corporate Tiles con Pago Único Exclusivo vía Mercado Pago
-             ================================================================= -->
-        <section id="planes-section" class="section-planes" aria-label="Planes y precios de acceso">
-            <div class="land-container">
-                <header class="section-head" data-reveal>
-                    <h2 class="section-title">Planes y Acceso Directo</h2>
-                    <p class="section-desc">
-                        Tarifas transparentes de pago único mediante Mercado Pago. Sin suscripciones forzosas ni cobros recurrentes.
+            </section>
+        </main>
+        <footer class="main-footer home-footer">
+            <div class="footer-container footer-container--four">
+                <div class="footer-brand">
+                    <a href="/" class="footer-logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
+                    <p class="footer-slogan">
+                        Empresa peruana de inteligencia artificial aplicada al conocimiento profesional.
                     </p>
-                </header>
-
-                <div class="planes-grid">
-                    <!-- Plan Gratuito -->
-                    <div class="plan-tile" data-reveal>
-                        <div class="plan-tile-top">
-                            <h3 class="plan-tile-name">Acceso Libre</h3>
-                            <div class="plan-tile-price-row">
-                                <span class="plan-tile-currency">S/</span>
-                                <span class="plan-tile-amount">0</span>
-                                <span class="plan-tile-period">/ cuenta gratuita</span>
-                            </div>
-                            <ul class="plan-tile-features">
-                                <li class="plan-feature-item">
-                                    <span>10 créditos mensuales de práctica</span>
-                                </li>
-                                <li class="plan-feature-item">
-                                    <span>Simulacros de prueba en modo estudio</span>
-                                </li>
-                                <li class="plan-feature-item">
-                                    <span>Acceso a Biblioteca de consulta</span>
-                                </li>
-                            </ul>
-                        </div>
-                        <a href="/simulator-dashboard?context=EDUCACION" class="btn-land-secondary plan-tile-btn">
-                            Comenzar gratis
-                        </a>
-                        <p class="plan-tile-guarantee">Registro inmediato con Google</p>
-                    </div>
-
-                    <!-- Plan Básico -->
-                    <div class="plan-tile" data-reveal>
-                        <div class="plan-tile-top">
-                            <h3 class="plan-tile-name">Plan Básico</h3>
-                            <div class="plan-tile-price-row">
-                                <span class="plan-tile-currency">S/</span>
-                                <span class="plan-tile-amount">9.90</span>
-                                <span class="plan-tile-period">/ 60 días (pago único)</span>
-                            </div>
-                            <ul class="plan-tile-features">
-                                <li class="plan-feature-item">
-                                    <span>Simulacros ilimitados por 2 meses</span>
-                                </li>
-                                <li class="plan-feature-item">
-                                    <span>Repaso SM-2 con mazos oficiales</span>
-                                </li>
-                                <li class="plan-feature-item">
-                                    <span>Libreta de notas personales activa</span>
-                                </li>
-                            </ul>
-                        </div>
-                        <a href="/pricing" class="btn-land-primary plan-tile-btn">
-                            Elegir Plan Básico
-                        </a>
-                        <p class="plan-tile-guarantee">Pago 100% seguro con Mercado Pago</p>
-                    </div>
-
-                    <!-- Plan Avanzado -->
-                    <div class="plan-tile plan-tile--featured" data-reveal>
-                        <div class="plan-tile-top">
-                            <h3 class="plan-tile-name">Plan Avanzado</h3>
-                            <div class="plan-tile-price-row">
-                                <span class="plan-tile-currency">S/</span>
-                                <span class="plan-tile-amount">24.90</span>
-                                <span class="plan-tile-period">/ 120 días (pago único)</span>
-                            </div>
-                            <ul class="plan-tile-features">
-                                <li class="plan-feature-item">
-                                    <span>Todo lo del Plan Básico por 4 meses</span>
-                                </li>
-                                <li class="plan-feature-item">
-                                    <span>Tutor IA con retroalimentación oficial</span>
-                                </li>
-                                <li class="plan-feature-item">
-                                    <span>Analítica diagnóstica por subprueba</span>
-                                </li>
-                            </ul>
-                        </div>
-                        <a href="/pricing" class="btn-land-primary plan-tile-btn">
-                            Elegir Plan Avanzado
-                        </a>
-                        <p class="plan-tile-guarantee">Activación instantánea sin suscripción</p>
-                    </div>
+                    <a href="mailto:soporte@hubacademia.com" class="footer-mail-link">
+                        soporte@hubacademia.com
+                    </a>
+                </div>
+                <div class="footer-links-col">
+                    <h2 class="footer-heading">
+                        Soluciones
+                    </h2>
+                    <ul class="footer-links-list">
+                        <li>
+                            <a class="footer-link" href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer">
+                                Educación Inicial
+                            </a>
+                        </li>
+                        <li>
+                            <a class="footer-link" href="/simulator-dashboard?context=EDUCACION">
+                                Simulador docente
+                            </a>
+                        </li>
+                        <li>
+                            <a class="footer-link" href="/simulator-dashboard?context=MEDICINA">
+                                Simulador SERUMS
+                            </a>
+                        </li>
+                        <li>
+                            <a class="footer-link" href="/repaso">
+                                Repaso y Notas
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h2 class="footer-heading">
+                        Conocimiento
+                    </h2>
+                    <ul class="footer-links-list">
+                        <li>
+                            <a class="footer-link" href="/library">
+                                Boletín IA
+                            </a>
+                        </li>
+                        <li>
+                            <a class="footer-link" href="#vision-section">
+                                Campus en desarrollo
+                            </a>
+                        </li>
+                        <li>
+                            <a class="footer-link" href="#vision-section">
+                                Nuestra visión
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h2 class="footer-heading">
+                        Institucional
+                    </h2>
+                    <ul class="footer-links-list">
+                        <li>
+                            <a class="footer-link" href="/pricing">
+                                Pases de acceso
+                            </a>
+                        </li>
+                        <li>
+                            <a class="footer-link" href="/privacy">
+                                Privacidad
+                            </a>
+                        </li>
+                        <li>
+                            <a class="footer-link" href="/terms">
+                                Términos y condiciones
+                            </a>
+                        </li>
+                        <li>
+                            <span class="footer-link">
+                                Lima, Perú
+                            </span>
+                        </li>
+                    </ul>
                 </div>
             </div>
-        </section>
-
-    </main>
-
-    <!-- =================================================================
-         PIE DE PÁGINA INSTITUCIONAL CENTRALIZADO (footer.css)
-         4 columnas ordenadas + resguardo lateral ante el botón Hubi.
-         ================================================================= -->
-    <footer class="main-footer" role="contentinfo">
-        <div class="footer-container footer-container--four">
-            <div class="footer-brand">
-                <a href="/" class="footer-logo" aria-label="Hub Academia">
-                    <img src="/assets/logo.png" alt="Hub Academia" width="32" height="32">
-                    <span>Hub Academia</span>
-                </a>
-                <p class="footer-slogan">
-                    Ecosistema peruano de soluciones e Inteligencia Artificial aplicada para la docencia y la evaluación profesional rigurosa.
-                </p>
-            </div>
-
-            <div class="footer-links-col">
-                <h4 class="footer-heading">Herramientas</h4>
-                <ul class="footer-links-list">
-                    <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial ↗</a></li>
-                    <li><a href="/simulator-dashboard?context=EDUCACION" class="footer-link">Simulador MINEDU</a></li>
-                    <li><a href="/simulator-dashboard?context=MEDICINA" class="footer-link">Simulador SERUMS</a></li>
-                    <li><a href="/repaso" class="footer-link">Repaso y Notas</a></li>
-                    <li><a href="/library" class="footer-link">Biblioteca</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-links-col">
-                <h4 class="footer-heading">Institucional y Legal</h4>
-                <ul class="footer-links-list">
-                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
-                    <li><a href="/privacy" class="footer-link">Política de Privacidad</a></li>
-                    <li><a href="/terms" class="footer-link">Términos y Condiciones</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-links-col">
-                <h4 class="footer-heading">Contacto y Soporte</h4>
-                <ul class="footer-links-list">
-                    <li>
-                        <a href="mailto:soporte@hubacademia.com" class="footer-mail-link">
-                            <i class="fas fa-envelope" aria-hidden="true"></i>
-                            soporte@hubacademia.com
-                        </a>
-                    </li>
-                    <li><span class="footer-link">Lima · Perú</span></li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="footer-bottom">
-            <div class="footer-bottom-row">
-                <span>&copy; 2026 Hub Academia. Todos los derechos reservados.</span>
-                <span>Pagos automatizados exclusivamente vía Mercado Pago</span>
-            </div>
-            <p class="footer-credits">
-                Fotografía documental abierta: "Emblemático Colegio Guadalupe de Lima 2" por Pilar, CC BY-SA 4.0; "Entrada a la Biblioteca Nacional del Perú" por Biblog Teca, CC BY-SA 2.0; "Patio de Letras-Casona de San Marcos 2" por Yhhue91, CC BY-SA 4.0; "Medical School of Peru - Lima Peru, Miraflores" por HBarrison, CC BY-SA 2.0, vía Wikimedia Commons.
-            </p>
-        </div>
-    </footer>
-
-    <!-- Contenedor del Asistente Virtual Flotante (Hubi) -->
-    <div id="chatbot-container" class="chatbot-container hidden" data-ui role="dialog" aria-modal="true" aria-label="Ventana de conversación con Hubi">
-        <div class="chatbot-header">
-            <div class="chatbot-title">
-                <img src="/assets/hubifrente.png" alt="Hubi" class="chatbot-avatar-small" width="28" height="28">
-                <div class="chatbot-title-text">
-                    <h3 class="chatbot-title-heading">Hubi · Asistente Guía</h3>
-                    <span class="chatbot-status">En línea · Hub Academia</span>
+            <div class="footer-bottom">
+                <div class="footer-bottom-row">
+                    <span>
+                        © 2026 Hub Academia
+                    </span>
+                    <span>
+                        Pago seguro con Mercado Pago
+                    </span>
                 </div>
             </div>
-            <div class="chatbot-header-actions">
-                <button type="button" id="chatbot-close" class="chatbot-btn-action" aria-label="Cerrar chat">
-                    <i class="fas fa-times" aria-hidden="true"></i>
-                </button>
-            </div>
-        </div>
-
-        <div id="chatbot-messages" class="chatbot-messages" role="log" aria-live="polite"></div>
-
-        <div class="chatbot-input-container">
-            <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Pregunta sobre herramientas, planes o acceso..." aria-label="Mensaje para Hubi">
-            <button type="button" id="chatbot-send" class="chatbot-send-btn" aria-label="Enviar mensaje">
-                <i class="fas fa-paper-plane" aria-hidden="true"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Disparador flotante del Chatbot -->
-    <button type="button" id="chatbot-toggle" class="chatbot-toggle-btn" aria-label="Abrir asistente de ayuda Hubi">
-        <img src="/assets/hubifrente.png" alt="Hubi" class="chatbot-toggle-avatar" width="36" height="36">
-    </button>
-
-    <!-- Modal Universal de Autenticación / Registro -->
-    <div id="login-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-login-title">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-login-title" class="modal-header-title">Iniciar Sesión en Hub Academia</h3>
-                <button type="button" id="close-login-modal" class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p class="modal-lead-text">
-                    Accede con tu cuenta de Google institucional o personal para sincronizar tus simulacros, tarjetas SM-2 y notas de estudio.
-                </p>
-                <div id="google-signin-btn-container" class="google-btn-container"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts de Interacción y Comportamiento -->
-    <script src="/js/services/authService.js?v=7110047d648f"></script>
-    <script src="/js/services/sessionManager.js?v=7110047d648f"></script>
-    <script src="/js/utils/uiManager.js?v=7110047d648f"></script>
-    <script src="/js/chat.js?v=7110047d648f"></script>
-    <script src="/js/home-animations.js?v=7110047d648f"></script>
-    <script src="/js/app.js?v=7110047d648f"></script>
-</body>
-
+        </footer>
+        <!-- ChatComponent owns Hubi's dialog and floating button. Do not duplicate its IDs here. -->
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+        <script src="/js/services/networkService.js?v=7110047d648f" defer></script>
+        <script src="/js/services/authApiService.js?v=7110047d648f" defer></script>
+        <script src="/js/services/analyticsApiService.js?v=7110047d648f" defer></script>
+        <script src="/js/sessionManager.js?v=7110047d648f" defer></script>
+        <script src="/js/ui/uiManager.js?v=7110047d648f" defer></script>
+        <script src="/js/chat.js?v=guide-v1" defer></script>
+        <script src="/js/vendor/gsap-3.15.0/gsap.min.js" defer></script>
+        <script src="/js/vendor/gsap-3.15.0/ScrollTrigger.min.js" defer></script>
+        <script src="/js/app.js?v=landing-v6" defer></script>
+        <!-- Landing modules; session and Hubi above remain shared with the application. -->
+        <script type="module" src="/js/landing-home.js?v=landing-v6"></script>
+    </body>
 </html>

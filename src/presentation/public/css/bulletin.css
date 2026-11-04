@@ -1,0 +1,16 @@
+/* Editorial entry to /library; existing search and resource data stay intact. */
+.bulletin-page .library-hero-title { max-width: 26ch; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.15; text-wrap: balance; }
+.bulletin-page .library-hero-subtitle { max-width: 72ch; }
+.bulletin-source-section { margin-block: 36px 52px; }
+.bulletin-source-section > h2, .bulletin-archive-title { color: var(--text-main); font-size: 1.35rem; margin-bottom: 20px; }
+.bulletin-source-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.bulletin-source { display: flex; flex-direction: column; gap: 16px; padding: 28px; background: var(--bg-secondary); color: var(--text-main); border-radius: 6px; min-width: 0; }
+.bulletin-source > span { color: var(--text-muted); font-size: .8125rem; }
+.bulletin-source > h3 { font-size: 1.25rem; color: var(--text-main); line-height: 1.2; }
+.bulletin-source > p { color: var(--text-secondary); line-height: 1.6; font-size: 1rem; }
+.bulletin-source > .bulletin-source-link { margin-top: auto; padding-top: 8px; color: var(--primary-light); font-weight: 600; }
+.bulletin-source:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; }
+.bulletin-source:hover { background: var(--bg-tertiary); color: var(--text-main); }
+.bulletin-archive-description { margin-bottom: 24px; color: var(--text-secondary); max-width: 68ch; line-height: 1.6; }
+@media (max-width: 800px) { .bulletin-source-grid { grid-template-columns: 1fr; } .bulletin-source { padding: 24px; } }
+@media (max-width: 480px) { .bulletin-page .dashboard-container { padding-inline: 20px !important; } }

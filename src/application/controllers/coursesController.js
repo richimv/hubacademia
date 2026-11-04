@@ -3,8 +3,6 @@ const AdminService = require('../../domain/services/adminService'); // Importar 
 const GeminiService = require('../../domain/services/mlService'); // ✅ RENOMBRADO: Para evitar conflictos.
 const mediaController = require('./mediaController'); // ✅ NUEVO: Para subida centralizada a GCS
 const DriveService = require('../../domain/services/driveService'); // ✅ NUEVO: Para extracción de miniaturas
-const fs = require('fs');
-const path = require('path');
 const { resolvePublicBaseUrl } = require('../../infrastructure/config/publicUrl');
 
 class CoursesController {
@@ -294,29 +292,6 @@ class CoursesController {
     }
 
     /**
-     * ✅ NUEVO: Compara dos versiones de HTML y elimina las imágenes de GCS 
-     * que estaban en la vieja pero ya no en la nueva (huérfanos).
-     */
-    async _cleanupOrphanedImages(oldHtml, newHtml) {
-        try {
-            const oldPaths = this._extractGcsPaths(oldHtml);
-            const newPaths = this._extractGcsPaths(newHtml);
-
-            // Filtrar caminos que están en old pero NO en new
-            const orphanedPaths = oldPaths.filter(path => !newPaths.includes(path));
-
-            if (orphanedPaths.length > 0) {
-                console.log(`🗑️ Detectados ${orphanedPaths.length} archivos descatalogados en editor. Limpiando GCS...`);
-                for (const gcsPath of orphanedPaths) {
-                    await mediaController.deleteFile(gcsPath);
-                }
-            }
-        } catch (error) {
-            console.error('⚠️ Error en limpieza de imágenes de editor:', error);
-        }
-    }
-
-    /**
      * ✅ Sanitizador Defensivo Backend:
      * Extrae imágenes en Base64 pegadas en TinyMCE y las sube a GCS exclusivamente al momento de Guardar.
      */
@@ -329,6 +304,7 @@ class CoursesController {
         const backendDomain = resolvePublicBaseUrl();
 
         while ((match = base64ImgRegex.exec(html)) !== null) {
+            if (matches.some(item => item.dataUri === match[1])) continue;
             matches.push({
                 fullTag: match[0],
                 dataUri: match[1],
@@ -350,23 +326,14 @@ class CoursesController {
                 const originalname = `editor_img_${Date.now()}_${i}.${ext}`;
                 const mimetype = `image/${item.format === 'jpg' ? 'jpeg' : item.format}`;
 
-                let location = '';
-                try {
-                    const gcsPath = await mediaController.uploadFile({ buffer, originalname, mimetype }, folder);
-                    location = `${backendDomain}/api/media/gcs?file=${gcsPath}`;
-                } catch (gcsErr) {
-                    console.warn('⚠️ Subida a GCS falló en sanitizador de recursos:', gcsErr.message);
-                    const localDir = path.join(__dirname, '../../presentation/public/assets/recursos');
-                    if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
-                    const localFileName = `${Date.now()}_${originalname}`;
-                    fs.writeFileSync(path.join(localDir, localFileName), buffer);
-                    location = `/assets/recursos/${localFileName}`;
-                }
+                const gcsPath = await mediaController.uploadFile({ buffer, originalname, mimetype }, folder);
+                const location = `${backendDomain}/api/media/gcs?file=${encodeURIComponent(gcsPath)}`;
 
-                sanitized = sanitized.replace(item.dataUri, location);
+                sanitized = sanitized.split(item.dataUri).join(location);
                 console.log(`🖼️ [Sanitizador Backend Recursos] Imagen convertida a URL: ${location}`);
             } catch (err) {
-                console.error('❌ Error sanitizando imagen Base64 en recursos:', err);
+                console.error('[RESOURCE_IMAGE_UPLOAD_FAILED]', { code: err.code || 'UNKNOWN' });
+                throw new Error('No se pudo guardar la imagen en Google Cloud. El recurso no se guardó; vuelve a intentarlo.');
             }
         }
 
@@ -397,13 +364,7 @@ class CoursesController {
                 const subFolder = folderMap[entityType] || 'recursos';
 
                 if (['book', 'course', 'career', 'resource', 'other'].includes(entityType)) {
-                    try {
-                        // Usar el controlador de medios para subir a Google Cloud Storage
-                        req.body.image_url = await mediaController.uploadFile(req.file, subFolder);
-                    } catch (err) {
-                        console.error('❌ Error subiendo a GCS en creación:', err);
-                        // No bloqueamos la creación por una imagen, pero informamos en consola
-                    }
+                    req.body.image_url = await mediaController.uploadFile(req.file, subFolder);
                 }
             }
 
@@ -493,30 +454,10 @@ class CoursesController {
             const shouldDelete = req.body.deleteImage === 'true' || (req.body.image_url === '' && req.method === 'PUT');
 
             if (req.file || shouldDelete) {
-                // 1. Obtener item actual para limpieza
-                const oldItem = await this.adminService.getById(entityType, entityId);
-                const currentImg = oldItem?.image_url;
-
                 if (req.file) {
-                    try {
-                        // Borrar antigua si existe
-                        if (currentImg) await mediaController.deleteFile(currentImg);
-                        
-                        // Subir nueva versión a GCS (Auto-optimizada a WebP)
-                        const folderMap = {
-                            'book': 'recursos',
-                            'course': 'cursos',
-                            'career': 'carreras',
-                            'resource': 'recursos'
-                        };
-                        const subFolder = folderMap[entityType] || 'recursos';
-                        req.body.image_url = await mediaController.uploadFile(req.file, subFolder);
-                    } catch (err) {
-                        console.error('❌ Error gestionando imagen GCS en actualización:', err);
-                    }
+                    const folderMap = { book: 'recursos', course: 'cursos', career: 'carreras', resource: 'recursos' };
+                    req.body.image_url = await mediaController.uploadFile(req.file, folderMap[entityType] || 'recursos');
                 } else if (shouldDelete) {
-                    // CASO: Borrado explícito o flag vacío
-                    if (currentImg) await mediaController.deleteFile(currentImg);
                     req.body.image_url = null;
                 }
             }
@@ -585,19 +526,11 @@ class CoursesController {
 
             // --- NUEVO: GESTIÓN DE IMÁGENES DENTRO DEL EDITOR (TinyMCE) ---
             if (entityType === 'book' || entityType === 'course') {
-                const oldItem = await this.adminService.getById(entityType, entityId);
-                const oldContent = oldItem?.content_html || '';
-
-                // ✅ Sanitizar imágenes Base64 pegadas en TinyMCE -> subir a GCS exclusivamente al momento de guardar
                 if (req.body.content_html) {
                     req.body.content_html = await this._sanitizeHtmlImages(req.body.content_html, 'recursos');
                 }
-                const newContent = req.body.content_html || '';
-
-                if (oldContent !== newContent) {
-                    // Acción asíncrona (no bloqueante para el Admin) para limpiar huérfanos
-                    this._cleanupOrphanedImages(oldContent, newContent);
-                }
+                // Retain old shared assets; detaching editor content must not
+                // delete files still referenced by another entity or saved note.
             }
  
             const updatedItem = await this.adminService.update(entityType, entityId, req.body);

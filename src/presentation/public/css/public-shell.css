@@ -1,0 +1,180 @@
+/* PUBLIC SHELL — tokens and the corporate navigation only.
+* theme.css owns colour; header.css owns the shared account dropdown.
+* Landing, access passes and legal pages share this corporate shell.
+*/
+:root {
+    --land-font: var(--font-main);
+    --land-bg-a: var(--bg-main);
+    --land-bg-b: var(--bg-secondary);
+    --land-surface: var(--bg-tertiary);
+    --land-surface-elevated: var(--surface-hover);
+    --land-surface-subtle: var(--surface-hover);
+    --land-ink: var(--text-main);
+    --land-ink-secondary: var(--text-secondary);
+    --land-ink-muted: var(--text-muted);
+    --land-accent: var(--primary-hover);
+    --land-accent-hover: #1d4ed8;
+    --land-accent-link: var(--primary-light);
+    --ease-out: cubic-bezier(.22, 1, .36, 1);
+    --ease-expo: cubic-bezier(.16, 1, .3, 1);
+}
+body.corporate-page {
+    margin: 0;
+    padding: calc(72px + var(--trial-bar-height, 0px)) 0 0;
+    background: var(--land-bg-a);
+    color: var(--land-ink-secondary);
+    font-family: var(--land-font);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+}
+.exec-header {
+    position: fixed;
+    inset: var(--trial-bar-height, 0px) 0 auto;
+    height: 72px;
+    z-index: 100;
+    background: var(--land-bg-a);
+}
+.exec-header-bar {
+    width: min(1440px, calc(100% - 64px));
+    height: 100%;
+    margin-inline: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+.exec-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    color: var(--land-ink);
+    text-decoration: none;
+    font-weight: 700;
+}
+.exec-nav {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+.exec-nav-link {
+    color: var(--land-ink-secondary);
+    font-size: .875rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+.exec-nav-link:hover {
+    color: var(--land-ink);
+}
+.exec-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.exec-menu-toggle {
+    display: none;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--land-surface);
+    color: var(--land-ink);
+    font: 500 .8125rem var(--font-main);
+    cursor: pointer;
+}
+.exec-mobile-drawer {
+    display: none;
+}
+.exec-mobile-drawer.is-open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    inset: 100% 0 auto;
+    padding: 16px;
+    background: var(--land-bg-b);
+    box-shadow: var(--shadow-xl);
+}
+.exec-mobile-drawer a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 8px 16px;
+    color: var(--land-ink);
+    font-size: .9375rem;
+}
+.public-footer {
+    padding: 48px 32px;
+    margin-top: 64px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: .875rem;
+}
+.public-footer-inner {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 32px;
+    max-width: 1280px;
+    margin-inline: auto;
+}
+.public-footer p {
+    margin-block: 12px;
+}
+.public-footer nav {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.public-footer a {
+    color: var(--text-main);
+}
+.public-footer-location {
+    text-align: right;
+}
+@media (max-width: 960px) {
+    .exec-nav {
+        display: none;
+    }
+    .exec-menu-toggle {
+        display: inline-flex;
+    }
+}
+@media (max-width: 640px) {
+    body.corporate-page {
+        padding-top: calc(64px + var(--trial-bar-height, 0px));
+    }
+    .exec-header {
+        height: 64px;
+    }
+    .exec-header-bar {
+        width: calc(100% - 32px);
+        gap: 12px;
+    }
+    .exec-header-actions {
+        gap: 8px;
+    }
+    .exec-brand {
+        gap: 6px;
+        font-size: .8125rem;
+    }
+    .exec-brand span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .public-footer {
+        padding: 32px 20px;
+    }
+    .public-footer-inner {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    .public-footer-location {
+        text-align: left;
+    }
+}
+
+@media (min-width:641px) and (max-width:768px) {
+    .corporate-page .user-menu-dropdown { top: calc(72px + var(--trial-bar-height,0px) + 8px); }
+}

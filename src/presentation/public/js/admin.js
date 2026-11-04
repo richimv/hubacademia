@@ -933,11 +933,11 @@ class AdminManager {
 
                 fieldsHTML = `
                     <!-- Casuística Agrupada / Caso Clínico (Opcional) -->
-                    <fieldset style="border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                        <legend style="color: var(--text-secondary); font-size: 0.9em; padding: 0 5px;">
+                    <fieldset>
+                        <legend>
                             Casuística Agrupada / Caso Clínico (Opcional)
                         </legend>
-                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                        <div class="admin-form-grid admin-form-grid-wide">
                             <div>
                                 <label class="form-label" for="generic-case-id">Vincular a Casuística Padre</label>
                                 <select id="generic-case-id" class="form-input">
@@ -957,7 +957,7 @@ class AdminManager {
                     </fieldset>
 
                     ${this.createFormGroup('textarea', 'generic-question-text', 'Pregunta (*)', this.formatPlainTextToHtml(this.currentItem?.question_text || ''), true)}
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="admin-form-grid">
                         ${this.createSelect('generic-domain', 'Dominio (*)', domains, this.currentItem?.domain || 'medicine', false)}
                         <div id="generic-target-container" style="display: block;">
                             <label class="form-label" for="generic-target">Examen Objetivo (*)</label>
@@ -1021,13 +1021,13 @@ class AdminManager {
                             `}
                         </select>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div class="admin-form-grid admin-form-section">
                         ${this.createFormGroup('text', 'generic-topic', 'Área de Estudio (*)', this.currentItem?.topic || '', true)}
                         ${this.createFormGroup('text', 'generic-subtopic', 'Subtema (Opcional)', this.currentItem?.subtopic || '', false)}
                     </div>
-                    <fieldset style="border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                        <legend style="color: var(--text-secondary); font-size: 0.9em; padding: 0 5px;">Opciones y Respuesta</legend>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <fieldset>
+                        <legend>Opciones y Respuesta</legend>
+                        <div class="admin-form-grid">
                             ${this.createFormGroup('text', 'generic-opt0', 'Opción A (*)', optA, true)}
                             ${this.createFormGroup('text', 'generic-opt1', 'Opción B (*)', optB, true)}
                             ${this.createFormGroup('text', 'generic-opt2', 'Opción C (*)', optC, true)}
@@ -1038,7 +1038,7 @@ class AdminManager {
                                 ${this.createFormGroup('text', 'generic-opt4', 'Opción E (* Solo Residentado)', optE, false)}
                             </div>
                         </div>
-                        <div style="margin-top: 10px;">
+                        <div class="admin-form-section">
                             ${this.createSelect('generic-correct-ans', 'Definir Respuesta Correcta (*)', [
                     { id: 0, name: 'Opción A' }, { id: 1, name: 'Opción B' }, { id: 2, name: 'Opción C' }, { id: 3, name: 'Opción D' }, ...(this.currentItem?.target?.toUpperCase() === 'RESIDENTADO' ? [{ id: 4, name: 'Opción E' }] : [])
                 ], correctAns, false)}
@@ -1091,18 +1091,18 @@ class AdminManager {
                 ];
 
                 fieldsHTML = `
-                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px;">
+                    <div class="admin-form-grid admin-form-grid-reverse">
                         ${this.createFormGroup('text', 'generic-code', 'Código Único (*)', this.currentItem?.code || '', true)}
                         ${this.createFormGroup('text', 'generic-title', 'Título de la Casuística (Opcional)', this.currentItem?.title || '', false)}
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                    <div class="admin-form-grid admin-form-section">
                         ${this.createSelect('generic-domain', 'Dominio (*)', domains, this.currentItem?.domain || 'education', false)}
                         ${this.createFormGroup('text', 'generic-target', 'Examen / Target (Opcional)', this.currentItem?.target || '', false)}
                     </div>
-                    <div style="margin-top: 10px;">
+                    <div class="admin-form-section">
                         ${this.createFormGroup('textarea', 'generic-description', 'Enunciado Común / Situación / Caso Clínico (*)', this.formatPlainTextToHtml(this.currentItem?.description_text || ''), false)}
                     </div>
-                    <div style="margin-top: 10px;">
+                    <div class="admin-form-section">
                         ${this.createImageUploadGroup('generic-image', 'Imagen Adjunta (Opcional)', this.currentItem?.image_url || '')}
                     </div>
                 `;
@@ -1120,7 +1120,7 @@ class AdminManager {
                                 <span class="import-method-title">Editor JSON Directo</span>
                             </div>
                             <p class="import-method-desc">Copia y pega el array JSON generado por la IA o herramientas externas. Ideal para inyecciones rápidas sin archivos.</p>
-                            <textarea id="generic-bulk-json" class="form-input" placeholder='[{"question_text": "...", "options": [...], ...}]' style="min-height: 120px; font-family: monospace; font-size: 0.85rem; background: var(--bg-secondary); border: 1px solid var(--border-color);"></textarea>
+                            <textarea id="generic-bulk-json" class="form-input admin-json-input" placeholder='[{"question_text": "...", "options": [...], ...}]'></textarea>
                         </div>
 
                         <!-- Card 2: Excel Upload -->
@@ -1142,7 +1142,7 @@ class AdminManager {
                                     </button>
                                 </div>
                             </div>
-                            <small id="generic-bulk-file-info" style="display: block; margin-top: 10px; text-align: center; color: var(--text-muted); font-style: italic;"></small>
+                            <small id="generic-bulk-file-info" class="admin-file-info"></small>
                         </div>
                     </div>
                 `;
@@ -1162,7 +1162,7 @@ class AdminManager {
                                 <span class="import-method-title">Editor JSON Directo</span>
                             </div>
                             <p class="import-method-desc">Copia y pega un array JSON de casuísticas/casos clínicos para inyección directa.</p>
-                            <textarea id="generic-bulk-case-json" class="form-input" placeholder='[{"code": "CASO-01", "title": "CASO-01", "description_text": "...", "domain": "education", "target": "ASCENSO", "topic": "General"}]' style="min-height: 120px; font-family: monospace; font-size: 0.85rem; background: var(--bg-secondary); border: 1px solid var(--border-color);"></textarea>
+                            <textarea id="generic-bulk-case-json" class="form-input admin-json-input" placeholder='[{"code": "CASO-01", "title": "CASO-01", "description_text": "...", "domain": "education", "target": "ASCENSO", "topic": "General"}]'></textarea>
                         </div>
 
                         <!-- Card 2: Excel Upload -->
@@ -1184,7 +1184,7 @@ class AdminManager {
                                     </button>
                                 </div>
                             </div>
-                            <small id="generic-bulk-case-file-info" style="display: block; margin-top: 10px; text-align: center; color: var(--text-muted); font-style: italic;"></small>
+                            <small id="generic-bulk-case-file-info" class="admin-file-info"></small>
                         </div>
                     </div>
                 `;
@@ -1272,11 +1272,11 @@ class AdminManager {
 
                 fieldsHTML = this.createFormGroup('text', 'generic-name', 'Nombre del Alumno (*)', this.currentItem?.name || '', true) +
                     this.createFormGroup('email', 'generic-email', 'Email (*)', this.currentItem?.email || '', true) +
-                    `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                    `<div class="admin-form-grid admin-form-section">
                         ${this.createSelect('generic-subscription-tier', 'Nivel de Membresía', tiers, this.currentItem?.subscriptionTier || this.currentItem?.subscription_tier || 'free', false)}
                         ${this.createSelect('generic-subscription-status', 'Estado de Suscripción', statuses, this.currentItem?.subscriptionStatus || this.currentItem?.subscription_status || 'inactive', false)}
                     </div>` +
-                    `<div style="margin-top: 10px;">
+                    `<div class="admin-form-section">
                         ${this.createFormGroup('date', 'generic-subscription-expires-at', 'Fecha de Expiración', currentExpiresDate, false)}
                     </div>`;
                 break;
@@ -1304,13 +1304,13 @@ class AdminManager {
                 ];
 
                 fieldsHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div class="admin-form-grid admin-form-section">
                     ${this.createSelect('generic-type', 'Tipo de Recurso (*)', resourceTypes, this.currentItem?.resource_type || 'book', false)}
                     ${this.createSelect('generic-domain', 'Sector / Dominio (*)', domainsBook, this.currentItem?.domain || 'medicine', false)}
                 </div>
 
                 <!-- Switches de Control del Recurso (Premium / Visibilidad / Apertura Directa) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div class="admin-form-grid admin-form-grid-auto admin-form-section">
                     <div class="switch-container premium-switch" style="margin-bottom: 0;">
                         <label for="generic-is-premium" class="switch-label">
                             <i class="fas fa-crown"></i>
@@ -1355,7 +1355,7 @@ class AdminManager {
                 </div>
 
                 <!-- NUEVO: Asignación de Temas (Topics) al Recurso -->
-                <div style="margin-bottom: 15px;">
+                <div class="admin-form-section">
                     ${this.createCheckboxList('Temas / Categorías Asociadas', 'generic-topics', this.allTopics, this.currentItem?.topics?.map(t => t.id) || this.currentItem?.topicIds || [], 'topic')}
                 </div>
 
@@ -1365,11 +1365,11 @@ class AdminManager {
                     <small style="color:var(--text-muted); display:block; margin-top:4px;">Asigna directamente a la biblioteca de los cursos este material sin tener que navegar a editarlos.</small>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div style="grid-column: 1 / -1;">
+                <div class="admin-form-grid">
+                    <div class="admin-form-full">
                         ${this.createFormGroup('text', 'generic-title', 'Título (*)', this.currentItem?.title || '', true)}
                     </div>
-                    <div style="grid-column: 1 / -1;">
+                    <div class="admin-form-full">
                         <!-- UX MEJORA: Campo Autor Validado -->
                         <div class="form-group">
                             <label for="generic-author">Autor/Creador (*)</label>
@@ -1387,7 +1387,7 @@ class AdminManager {
                     </div>
 
                     <!-- NUEVO: Editor de Texto Enriquecido para el Resumen (TinyMCE - Mini Word) -->
-                    <div style="grid-column: 1 / -1; margin-top: 15px;">
+                    <div class="admin-form-full admin-form-section">
                         <label class="form-label" style="font-weight: 600;">Resumen del Recurso (Estilo Wikipedia, Opcional)</label>
                         <textarea id="generic-content-html" style="height: 350px;"></textarea>
                         <input type="hidden" id="hidden-content-html" name="generic-content-html" value="">
@@ -1429,7 +1429,7 @@ class AdminManager {
 
                     ${this.createFormGroup('text', 'generic-folder-id', 'ID de la Carpeta de Google Drive (*)', '', true)}
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px; margin-bottom: 20px;">
+                    <div class="admin-form-grid admin-form-grid-three admin-form-section">
                         ${this.createSelect('generic-resource-type', 'Tipo de Recurso (*)', resourceTypes, 'book', false)}
                         ${this.createSelect('generic-domain', 'Sector / Dominio (*)', [
                             { id: 'medicine', name: 'Sector Salud' },
@@ -1439,7 +1439,7 @@ class AdminManager {
                     </div>
 
                     <!-- Switches de Control del Recurso para Drive Sync (Premium / Visibilidad / Apertura Directa) -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="admin-form-grid admin-form-grid-auto admin-form-section">
                         <div class="switch-container premium-switch" style="margin-bottom: 0;">
                             <label for="generic-is-premium" class="switch-label">
                                 <i class="fas fa-crown"></i>
@@ -1484,7 +1484,7 @@ class AdminManager {
                     </div>
 
                     <!-- Asignación de Temas / Categorías Asociadas -->
-                    <div style="margin-bottom: 15px;">
+                    <div class="admin-form-section">
                         ${this.createCheckboxList('Temas / Categorías Asociadas', 'generic-topics', this.allTopics, [], 'topic')}
                     </div>
 
@@ -1806,24 +1806,7 @@ class AdminManager {
     }
 
     resolveHtmlImageUrls(html) {
-        if (!html || typeof html !== 'string') return '';
-        const apiUrl = (window.AppConfig && window.AppConfig.API_URL) ? window.AppConfig.API_URL.replace(/\/+$/, '') : '';
-        if (!apiUrl) return html;
-
-        return html.replace(/<img([^>]+)src=["']([^"']+)["']([^>]*)>/gi, (match, before, src, after) => {
-            let finalSrc = src;
-            if (src.startsWith('data:') || src.startsWith('blob:') || src.startsWith('http://') || src.startsWith('https://')) {
-                finalSrc = src;
-            } else if (src.startsWith('/assets/') || src.startsWith('assets/')) {
-                const cleanPath = src.startsWith('/') ? src : `/${src}`;
-                finalSrc = `${apiUrl}${cleanPath}`;
-            } else if (src.startsWith('/api/')) {
-                finalSrc = `${apiUrl}${src}`;
-            } else {
-                finalSrc = `${apiUrl}/api/media/gcs?file=${encodeURIComponent(src)}`;
-            }
-            return `<img${before}src="${finalSrc}"${after}>`;
-        });
+        return window.resolveHtmlMediaUrls(html);
     }
 
     formatPlainTextToHtml(text) {
@@ -1894,6 +1877,24 @@ class AdminManager {
             // como datos Base64/Data URI. NO se realiza ninguna subida a la red ni a GCS mientras el usuario esté editando,
             // cancelando o descartando cambios.
             automatic_uploads: false,
+            // Triggered explicitly on Save, one binary request per image.
+            // Keep Base64 payloads out of the question/case/resource request.
+            images_upload_handler: async (blobInfo) => {
+                const blob = blobInfo.blob();
+                if (blob.size > 4 * 1024 * 1024) {
+                    throw new Error('La imagen supera 4 MB. Reduce su tamaño antes de guardar.');
+                }
+                const form = new FormData();
+                form.append('file', blob, blobInfo.filename());
+                const response = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/admin/upload-editor`, {
+                    method: 'POST', body: form
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.location) {
+                    throw new Error(result.error || 'No se pudo subir la imagen. El contenido sigue en el editor.');
+                }
+                return result.location;
+            },
             paste_data_images: true, // ✅ Permite pegar imágenes directamente (Ctrl+V) en el canvas local
             file_picker_types: 'image',
             file_picker_callback: (callback, value, meta) => {
@@ -1916,7 +1917,7 @@ class AdminManager {
             },
             relative_urls: false,    // ✅ Mantiene la URL absoluta hacia el backend/GCS
             remove_script_host: false,
-            convert_urls: false,     // ✅ Evita alteraciones de URLs de Render/CDN
+            convert_urls: false,     // Keep the stable media URL returned by the API.
             placeholder: placeholder,
             content_style: `body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: ${bodyTextColor}; background-color: ${bodyBgColor}; padding: 10px; } table { border-collapse: collapse; width: 100%; margin-bottom: 10px; } table th, table td { border: 1px solid ${tableBorderColor}; padding: 8px; } table th { background-color: ${tableHeaderBg}; color: ${tableHeaderColor}; }`,
             setup: (editor) => {
@@ -1936,9 +1937,9 @@ class AdminManager {
         const escapedPreviewUrl = this.escapeHtml(safeExternalUrl || '');
 
         return `
-            <div class="form-group image-upload-group" data-image-upload-id="${this.escapeHtml(id)}" style="margin-bottom: 20px; border: 1.5px dashed var(--border-color); padding: 15px; border-radius: 12px; background: var(--bg-tertiary);">
-                <label for="${id}-url" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
-                    <i class="fas fa-image" style="color: var(--primary);"></i> ${label}
+            <div class="form-group image-upload-group" data-image-upload-id="${this.escapeHtml(id)}">
+                <label for="${id}-url">
+                    <i class="fas fa-image" aria-hidden="true"></i> ${label}
                 </label>
                 
                 <input type="hidden" id="${id}-delete-flag" value="false">
@@ -1946,7 +1947,6 @@ class AdminManager {
                 <div class="image-upload-actions">
                     <input type="text" id="${id}-url" name="${id}-url" value="${escapedValue}" 
                         placeholder="Ruta GCS o URL externa" 
-                        style="flex: 1;"
                         oninput="window.adminManager.updateLivePreview('${id}')">
                     
                     <button type="button" class="remove-img-btn" title="Eliminar Imagen" onclick="window.adminManager.removeImage('${id}')">
@@ -1960,15 +1960,14 @@ class AdminManager {
                 </div>
 
                 <!-- Contenedor de Previsualización -->
-                <div id="${id}-preview-container" style="display: ${safeExternalUrl ? 'block' : 'none'}; margin-top: 10px; text-align: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
-                    <small style="display: block; color: var(--text-muted); margin-bottom: 5px;">Vista Previa:</small>
-                    <img id="${id}-preview-img" src="${escapedPreviewUrl}" alt="Preview"
-                        style="max-width: 100%; max-height: 180px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
+                <div id="${id}-preview-container" class="admin-image-preview" style="display: ${safeExternalUrl ? 'block' : 'none'};">
+                    <small>Vista previa</small>
+                    <img id="${id}-preview-img" src="${escapedPreviewUrl}" alt="Vista previa de la imagen"
                         onerror="this.parentElement.style.display='none'">
                 </div>
 
-                <small id="${id}-file-info" style="display: block; margin-top: 8px; color: var(--text-muted); font-size: 0.85em; opacity: 0.8;">
-                    <i class="fas fa-info-circle"></i> <b>Tip:</b> Si subes un archivo local, este tendrá prioridad.
+                <small id="${id}-file-info" class="admin-file-info">
+                    Si subes un archivo local, este tendrá prioridad.
                 </small>
             </div>
         `;
@@ -2030,7 +2029,7 @@ class AdminManager {
         if (!value) return null;
         try {
             const url = new URL(value);
-            return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+            return ['http:', 'https:'].includes(url.protocol) ? window.resolveImageUrl(url.href) : null;
         } catch (error) {
             return null;
         }
@@ -2206,7 +2205,7 @@ class AdminManager {
                 <div class="form-group unit-manager-container">
                     <label>Contenido del Curso (Unidades y Temas)</label>
                     <div id="units-container">${unitsHTML}</div>
-                    <button type="button" id="add-unit-btn" class="btn-secondary btn-small" style="margin-top: 10px;">+ Añadir Unidad</button>
+                    <button type="button" id="add-unit-btn" class="btn-secondary btn-small admin-form-section">+ Añadir Unidad</button>
 
                     <!-- Template oculto para selector de temas CON BUSCADOR -->
                     <div id="topic-selector-template" style="display:none;">
@@ -2347,6 +2346,25 @@ class AdminManager {
         }
 
         try {
+            // Upload pasted images only when saving. A failure leaves the form
+            // open and prevents the database write; no existing image is lost.
+            const editorIds = {
+                question: ['generic-question-text', 'generic-explanation'],
+                case: ['generic-description'],
+                book: ['generic-content-html']
+            }[type] || [];
+            for (const editorId of editorIds) {
+                const editor = window.tinymce?.get(editorId);
+                if (!editor) continue;
+                const uploaded = await editor.uploadImages();
+                if (uploaded?.some(item => item.status === false) || /<img\b[^>]*\bsrc=["'](?:data:|blob:)/i.test(editor.getContent())) {
+                    throw new Error('Quedan imágenes sin subir. Revisa el editor antes de guardar.');
+                }
+                editor.save();
+                if (editorId === 'generic-content-html') {
+                    document.getElementById('hidden-content-html').value = editor.getContent();
+                }
+            }
             switch (type) {
                 case 'career':
                     // AHORA USA FORMDATA
@@ -2828,7 +2846,7 @@ class AdminManager {
                     const deleteImgFlag = document.getElementById('generic-image-delete-flag');
 
                     if (fileInput && fileInput.files[0]) {
-                        caseFormData.append('caseImage', fileInput.files[0]);
+                        caseFormData.append('coverImage', fileInput.files[0]);
                     } else if (urlInput && urlInput.value.trim()) {
                         caseFormData.append('image_url', urlInput.value.trim());
                     } else if (method === 'PUT' && deleteImgFlag && deleteImgFlag.value === 'true') {
@@ -2849,6 +2867,15 @@ class AdminManager {
             // (Si usamos FormData, no podemos mezclarlo con JSON body fácilmente aquí).
             if (method === 'PUT' && id && !(body instanceof FormData)) {
                 body.id = id;
+            }
+
+            // The platform limit applies to the whole request, including both
+            // attachments and text. Leave room for multipart headers below 4.5 MB.
+            const requestBytes = body instanceof FormData
+                ? Array.from(body.values()).reduce((sum, value) => sum + (value instanceof Blob ? value.size : new Blob([value]).size) + 1024, 0)
+                : new Blob([JSON.stringify(body)]).size;
+            if (requestBytes > 4 * 1024 * 1024) {
+                throw new Error('El formulario supera 4 MB. Reduce los archivos adjuntos o divide la importación. El contenido sigue disponible para editar.');
             }
 
             const response = await window.NetworkService.fetch(url, {

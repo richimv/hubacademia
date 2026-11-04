@@ -56,7 +56,7 @@ Hub Academia asume los principios rectores de dicha ley como mandatos de arquite
 El mercado global de la Inteligencia Artificial experimenta un cambio de paradigma:
 *   Los chatbots genéricos de consumo basados en prompts superficiales producen alucinaciones inaceptables en contextos educativos y clínicos de alta responsabilidad.
 *   El estándar contemporáneo exige **agentes especializados de razonamiento multi-paso (reasoning models)**, respaldados por firmas de pensamiento (*thought signatures*) que aseguran deducción lógica verificable en interacciones de múltiples turnos.
-*   En cumplimiento de nuestras directrices corporativas, Hub Academia opera exclusivamente sobre **Google Cloud Vertex AI (Gemini Enterprise Agent Platform)** con modelos de última generación (`Gemini 3.6 Flash Lite` y `Gemini 3.6 Flash`), prohibiendo de manera tajante el uso de cuentas de consumo o API keys prepago de Google AI Studio.
+*   Los tutores académicos mantienen **Google Cloud Vertex AI**. Por autorización expresa del 4 de noviembre de 2026, el asistente público Hubi usa **Google AI Studio** únicamente para atención sobre la empresa y sus productos, con contexto breve y clave del servidor. Detalle en [HUBI_SUPPORT_GUIDE.md](HUBI_SUPPORT_GUIDE.md).
 
 ### 3.2 Marco de Competencias de la UNESCO en IA para Docentes
 La UNESCO ha publicado los lineamientos mundiales sobre competencias en Inteligencia Artificial para educadores, estructurados en torno a la comprensión ética de los datos, el codiseño pedagógico con IA y la evaluación asistida con criterio humano. Hub Academia adopta este marco como brújula formativa para todos sus productos presentes y futuros.
@@ -88,7 +88,7 @@ Hoy, Hub Academia despliega una suite de cuatro soluciones operativas, diseñada
 Subdominio especializado y entorno dedicado a maestras y maestras del Ciclo II de Educación Inicial (aulas de 3, 4 y 5 años). Traduce las orientaciones pedagógicas del CNEB, los enfoques transversales y las pautas de juego libre y desarrollo socioemocional en recursos estructurados de alta aplicabilidad en el aula.
 
 ### 4.2 Herramienta 02: Simuladores Oficiales de Evaluación
-*   **Línea Principal (Educación):** Simuladores completos de Ascenso Docente (Base oficial de 90 preguntas por prueba, 3 horas cronometradas), con analítica de rendimiento por subprueba curricular y acompañamiento reflexivo del Tutor IA.
+*   **Línea Principal (Educación):** Simuladores completos de Ascenso Docente (60 preguntas por prueba, base de 90 puntos, 3 horas cronometradas), con analítica de rendimiento por subprueba curricular y acompañamiento reflexivo del Tutor IA.
 *   **Vertical Conservada (Salud):** Simulador de entrenamiento clínico para profesionales médicos y de enfermería postulantes al Examen Nacional SERUMS, calibrado con Normas Técnicas del Ministerio de Salud (MINSA).
 *   **Garantía de Calidad:** 100% preguntas reales de evaluaciones oficiales peruanas auditadas en base de datos PostgreSQL/Supabase. **Cero generación sintética de preguntas por RAG.**
 

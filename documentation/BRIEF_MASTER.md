@@ -19,7 +19,7 @@ La plataforma evoluciona desde un portal de simuladores hacia un **ecosistema in
 ### 1.3 Pilares Innegociables
 1.  **Soberanía Pedagógica:** La IA asiste y amplifica el criterio del educador; nunca lo sustituye ni genera automatizaciones que vulneren el enfoque por competencias.
 2.  **100% Reactivos Oficiales Auditados:** Erradicación total de preguntas sintéticas generadas por IA. Toda casuística proviene de exámenes nacionales oficiales del MINEDU y MINSA.
-3.  **Gobernanza Google Enterprise AI:** Operación exclusiva sobre Google Cloud Vertex AI (cuentas IAM corporativas). Prohibición absoluta de API keys o servicios prepago de Google AI Studio.
+3.  **Gobernanza de IA:** Los tutores académicos mantienen Google Cloud Vertex AI (IAM corporativo). Excepción autorizada el 4 de noviembre de 2026: Hubi de atención pública usa Google AI Studio con una clave exclusiva del servidor, contexto compacto y respaldo local; no utiliza datos académicos ni consume vidas.
 4.  **Transparencia Transaccional:** Pasarela de pago 100% automatizada vía Mercado Pago Perú en modalidad de pago único (cero suscripciones forzosas y cero cobros manuales por WhatsApp).
 
 ---
@@ -31,7 +31,7 @@ El sistema opera bajo un desacoplamiento estricto de responsabilidades, distribu
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                            1. PRESENTATION LAYER                            │
-│  - Frontend Vanilla JS (ES6+), HTML5 Semántico, CSS3 Modular (landing.css,  │
+│  - Frontend Vanilla JS (ES6+), HTML5 Semántico, CSS3 Modular (landing-home.css,  │
 │    base.css, footer.css, legal.css, pricing.css)                            │
 │  - Design System Dual-Theme: Matte Black (#050505/#121212) & Studio Slate   │
 │  - Prohibición Estricta de Superficies Azules en Dark Mode                  │
@@ -86,10 +86,10 @@ El proyecto descontinúa de manera definitiva el uso de servidores en Render (`o
 
 ## 4. 🤖 Gobernanza de Inteligencia Artificial (Google Enterprise AI / Vertex AI)
 
-Toda la infraestructura de IA opera y operará de forma obligatoria y exclusiva sobre **Google Cloud Vertex AI (Gemini Enterprise Agent Platform)**.
+Los tutores académicos operan sobre **Google Cloud Vertex AI (Gemini Enterprise Agent Platform)**. Hubi de atención al cliente tiene la excepción acotada descrita en [HUBI_SUPPORT_GUIDE.md](HUBI_SUPPORT_GUIDE.md).
 
-### 4.1 Prohibición Absoluta de Google AI Studio
-Está terminantemente prohibido utilizar, recomendar o integrar Google AI Studio (`generativelanguage.googleapis.com` o API keys prepago). AI Studio exige recargas manuales por tarjeta incompatibles con la arquitectura y facturación de producción empresarial.
+### 4.1 Separación de proveedores de IA
+Google AI Studio se autoriza exclusivamente para consultas públicas sobre Hub Academia, sus servicios y el uso de la plataforma. Los tutores de Quiz y Flashcards, RAG y analítica mantienen Vertex AI. Hubi no hace búsquedas externas, no consulta datos de cuenta, no recibe los documentos internos completos y no tiene respaldo automático hacia Vertex. Las cuotas gratuitas dependen de la configuración y disponibilidad del proyecto de Google.
 
 ### 4.2 Estándar de Modelos y Retiro de Gemini 2.5
 *   Los modelos de la familia 2.5 (`Gemini 2.5 Flash Lite`, `Gemini 2.5 Flash`, `Gemini 2.5 Pro`) entran en fase de retiro programado en Google Cloud (retirada pública: 20 de octubre de 2026; discontinuación: principios de 2027).

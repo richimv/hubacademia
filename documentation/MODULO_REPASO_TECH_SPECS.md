@@ -1,6 +1,14 @@
 # 🧠 Specs Técnicas: Módulo de Repaso y Notas (Hub Academia)
 
+## Interfaz web — 3 de noviembre de 2026
+
+Repaso y Notas adoptan `workspace.css` y `workspace-repaso.css`; Flashcards usa `workspace-study.css` y la cabecera común. El explorador y las tarjetas mantienen sus estados y handlers; las acciones de Notas permanecen visibles y los campos de edición/búsqueda tienen nombres accesibles. `_syncViewSwitcher` emite `repaso:view-changed` para sincronizar el módulo activo de la cabecera.
+
+El Tutor de tarjetas comparte `StudyTutorView` con el quiz y guarda respuestas en las mismas Notas (`sourceType: 'flashcard'`). Se conservan el giro 3D, imágenes del mazo, SM-2, límites y guardado actuales. Los estilos antes incrustados en `repaso.html` pasan a `repaso-page.css`. Véase [WORKSPACE_FRONTEND_GUIDE.md](WORKSPACE_FRONTEND_GUIDE.md). No se ejecutaron pruebas por indicación del usuario.
+
 ## 1. Visión General
+
+**Representación en la landing (noviembre de 2026):** Repaso se comunica como estudio con Flashcards y repetición espaciada SM-2. El Tutor IA contextual está disponible durante las sesiones; sus respuestas pueden guardarse en la misma libreta `/repaso?view=notes` que recibe apuntes de los simuladores docente y médico. Tutor y Notas son capacidades compartidas, no productos exclusivos de uno de los módulos. La portada no ofrece generación automática masiva de tarjetas, retirada de la web según se detalla más abajo.
 El **Módulo de Repaso y Notas** (`/repaso`) es el entorno integrado de estudio activo y retención a largo plazo de **Hub Academia**. Bajo la reestructuración corporativa de la plataforma, unifica:
 1. **Mis Mazos (Flashcards con Algoritmo SM-2):** Tarjetas dinámicas organizadas por especialidad (Educación y Salud) y gobernadas por el algoritmo SuperMemo-2.
 2. **Mis Notas Personales:** Libreta digital activa de apuntes y resúmenes, enriquecida directamente por las interacciones socráticas del Tutor IA.

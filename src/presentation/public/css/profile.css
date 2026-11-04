@@ -1,0 +1,343 @@
+/* Account settings. Behaviour and IDs remain owned by profile.js. */
+.profile-page .profile-container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 32px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.profile-page .profile-header-card {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding-block: 8px 24px;
+}
+.profile-page .profile-avatar {
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+}
+.profile-page .profile-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.profile-page .profile-info {
+    min-width: 0;
+    flex: 1;
+}
+.profile-page .profile-name-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.profile-page #user-name {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    overflow-wrap: anywhere;
+}
+.profile-page .profile-email-row {
+    margin-block: 8px 12px;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+.profile-page .profile-badges-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+.profile-page :is(.badge-status-active,.badge-premium,.badge-free,.badge-status-unverified,.usage-plan-tag,.usage-badge-tag) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 4px;
+    font-size: .75rem;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+}
+.profile-page .badge-status-unverified {
+    color: var(--warning);
+    background: var(--warning-bg);
+    cursor: pointer;
+}
+.profile-page .profile-sections-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+.profile-page .settings-card {
+    min-width: 0;
+    padding: 24px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+.profile-page .card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.profile-page .card-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-main);
+    font-size: 1rem;
+    font-weight: 600;
+}
+.profile-page :is(.card-subtitle,.card-desc) {
+    color: var(--text-secondary);
+    font-size: .875rem;
+    line-height: 1.65;
+}
+.profile-page .subscription-content-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.profile-page .profile-plan-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.profile-page .profile-plan-perks {
+    display: grid;
+    gap: 10px;
+    padding-left: 20px;
+    color: var(--text-secondary);
+    font-size: .875rem;
+}
+.profile-page .subscription-content-body > p {
+    color: var(--text-secondary);
+    font-size: .875rem;
+}
+.profile-page .renewal-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-size: .875rem;
+}
+.profile-page .security-content-body {
+    display: grid;
+    gap: 20px;
+}
+.profile-page .security-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+}
+.profile-page .security-row-label {
+    color: var(--text-secondary);
+    font-size: .875rem;
+}
+.profile-page .security-row-val {
+    color: var(--text-main);
+    font-size: .875rem;
+}
+.profile-page .usage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(230px,1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+.profile-page .usage-item {
+    padding: 20px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    min-width: 0;
+}
+.profile-page .usage-item-header, .profile-page .usage-title-group {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+.profile-page .usage-title {
+    color: var(--text-main);
+    font-size: .875rem;
+    font-weight: 500;
+}
+.profile-page .usage-count-val {
+    color: var(--text-main);
+    font-size: 1.25rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.profile-page .usage-progress-bg {
+    margin-top: 16px;
+    height: 5px;
+    background: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.profile-page .usage-progress-bar {
+    width: var(--usage-progress,0%);
+    height: 100%;
+    background: var(--primary);
+    border-radius: inherit;
+}
+.profile-page .usage-item[data-tone="danger"] :is(.usage-count-val,.usage-footer-right) {
+    color: var(--danger);
+}
+.profile-page .usage-item[data-tone="warning"] :is(.usage-count-val,.usage-footer-right) {
+    color: var(--warning);
+}
+.profile-page .usage-item[data-tone="danger"] .usage-progress-bar {
+    background: var(--danger);
+}
+.profile-page .usage-item[data-tone="warning"] .usage-progress-bar {
+    background: var(--warning);
+}
+.profile-page .usage-footer {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: .75rem;
+    color: var(--text-muted);
+}
+.profile-page :is(.btn-action,.btn-icon-edit,.btn-banner-verify,.btn-danger-pill) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-main);
+    font: 500 .875rem/1.4 var(--font-main);
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: none;
+}
+.profile-page .btn-action.btn-primary {
+    background: var(--primary-hover);
+    color: var(--on-primary);
+}
+.profile-page :is(.btn-action,.btn-icon-edit):hover {
+    background: var(--surface-hover);
+    color: var(--text-main);
+}
+.profile-page .btn-action.btn-primary:hover {
+    background: var(--primary);
+    color: var(--on-primary);
+}
+.profile-page :is(.btn-danger-glow,.btn-danger-pill) {
+    color: var(--danger);
+    background: var(--danger-bg);
+    box-shadow: none;
+}
+.profile-page :is(.btn-danger-glow,.btn-danger-pill):hover {
+    background: var(--danger);
+    color: var(--on-primary);
+}
+.profile-page .danger-zone-content {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+.profile-page .danger-zone-content p {
+    margin: 0;
+    max-width: 65ch;
+}
+.profile-page .danger-zone-content button {
+    flex-shrink: 0;
+}
+.profile-page .unverified-alert-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    padding: 20px 24px;
+    background: var(--warning-bg);
+    border-radius: 6px;
+}
+.profile-page .unverified-alert-content {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+.profile-page .unverified-alert-icon {
+    color: var(--warning);
+}
+.profile-page .unverified-alert-title {
+    font-size: .9375rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+.profile-page .unverified-alert-desc {
+    margin-top: 4px;
+    font-size: .875rem;
+    color: var(--text-secondary);
+}
+.profile-page .btn-banner-verify {
+    color: var(--text-main);
+    background: var(--bg-secondary);
+    flex-shrink: 0;
+}
+.profile-page :is(#delete-error,#edit-name-error) {
+    color: var(--danger);
+    margin-top: 8px;
+    font-size: .8125rem;
+}
+@media(max-width: 900px) {
+    .profile-page .profile-sections-grid {
+        grid-template-columns: 1fr;
+    }
+    .profile-page .danger-zone-content {
+        flex-direction: column;
+    }
+}
+@media(max-width: 600px) {
+    .profile-page .profile-container {
+        padding: 20px 16px 40px;
+        gap: 20px;
+    }
+    .profile-page .profile-header-card {
+        gap: 16px;
+        align-items: flex-start;
+    }
+    .profile-page .profile-avatar {
+        width: 56px;
+        height: 56px;
+    }
+    .profile-page .settings-card {
+        padding: 20px;
+    }
+    .profile-page .unverified-alert-banner {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 20px;
+    }
+    .profile-page .usage-grid {
+        grid-template-columns: 1fr;
+    }
+}

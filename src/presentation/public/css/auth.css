@@ -48,48 +48,7 @@ body.auth-page {
     background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
 }
 
-/* ── Top Bar Controls (Theme Toggle) ── */
-.top-controls {
-    position: fixed;
-    top: 1.25rem;
-    right: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    z-index: 100;
-}
-
-.theme-toggle-btn {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-main);
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.theme-toggle-btn:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    transform: scale(1.08);
-    box-shadow: 0 0 16px var(--primary-glow);
-}
-
-.theme-toggle-btn i {
-    font-size: 1.05rem;
-    color: var(--text-main);
-    transition: transform 0.3s ease, color 0.2s ease;
-}
-
-.theme-toggle-btn:hover i {
-    color: var(--primary);
-}
+/* Theme controls are shared with header.css. */
 
 /* ── Login Glass Card ── */
 .login-card {

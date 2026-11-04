@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="/css/search.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/browse.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/course.css?v=7110047d648f"> <!-- ✅ ADDED: Specific styles for this page -->
-    <link rel="stylesheet" href="/css/chat.css?v=7110047d648f"> <!-- ✅ ADDED: Chatbot Styles -->
+    <link rel="stylesheet" href="/css/chat.css?v=guide-v1"> <!-- ✅ ADDED: Chatbot Styles -->
     <link rel="stylesheet" href="/css/components.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/sidebar.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/modal.css?v=7110047d648f"> <!-- ✅ ADDED: Modal system -->
@@ -29,6 +29,7 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <script src="/js/config.js?v=7110047d648f"></script>
     <script src="/js/utils/themeManager.js?v=7110047d648f"></script>
+    <link rel="stylesheet" href="/css/brand.css">
 </head>
 
 <body class="hero-hidden">
@@ -36,10 +37,7 @@
     <!-- Header -->
     <header class="main-header">
         <div class="header-start">
-            <a href="/" class="logo">
-                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
-                <span class="logo-text">Hub Academia</span>
-            </a>
+            <a href="/" class="logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
         </div>
         <div class="header-nav">
             
@@ -74,18 +72,15 @@
         <footer class="main-footer">
         <div class="footer-container">
             <div class="footer-brand">
-                <a href="/" class="footer-logo">
-                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
-                    Hub Academia
-                </a>
-                <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
+                <a href="/" class="footer-logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
+                <p class="footer-slogan">Inteligencia artificial aplicada al conocimiento profesional. Soluciones creadas en Perú para aprender, evaluar y trabajar mejor.</p>
             </div>
             <div class="footer-links-col">
                 <h4 class="footer-heading">Plataforma</h4>
                 <ul class="footer-links-list">
                     <li><a href="/" class="footer-link">Inicio</a></li>
-                    <li><a href="/library" class="footer-link">Mi Biblioteca</a></li>
-                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                    <li><a href="/library" class="footer-link">Boletín IA</a></li>
+                    <li><a href="/pricing" class="footer-link">Pases de acceso</a></li>
                 </ul>
             </div>
             <div class="footer-links-col">
@@ -118,7 +113,7 @@
 
     <script src="/js/services/libraryService.js?v=7110047d648f"></script> <!-- ✅ NUEVO: Servicio de Estado -->
     <script src="/js/ui/libraryUI.js?v=7110047d648f"></script> <!-- ✅ NUEVO: UI Binder -->
-    <script src="/js/chat.js?v=7110047d648f"></script> <!-- ✅ ADDED: Chatbot Logic -->
+    <script src="/js/chat.js?v=guide-v1"></script> <!-- ✅ ADDED: Chatbot Logic -->
     <script src="/js/course.js?v=7110047d648f"></script> <!-- Specific JS -->
     <script src="/js/security.js?v=7110047d648f"></script> <!-- ✅ NUEVO -->
     <script src="/js/ui/sidebar.js?v=7110047d648f"></script>

@@ -1,0 +1,72 @@
+/* STUDY SURFACES — quiz reading, review, and the existing 3D flashcard engine. */
+.workspace-page .study-session-title { margin: 0 0 24px; font-size: 1.125rem; font-weight: 600; line-height: 1.4; }
+body.workspace-page.quiz-body { display: block; padding: calc(104px + var(--trial-bar-height, 0px)) 24px 48px; }
+.workspace-page.quiz-body .quiz-container { max-width: 960px; margin-inline: auto; padding: 32px 40px; background: var(--bg-secondary); border: 0; border-radius: 8px; box-shadow: none; backdrop-filter: none; }
+.workspace-page.quiz-body .question-header { border-color: var(--border-color); padding-bottom: 20px; gap: 20px; }
+.workspace-page.quiz-body .question-count-label { font-size: .875rem; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.workspace-page.quiz-body .question-text { font-size: 1.0625rem; line-height: 1.8; font-weight: 400; text-align: left; }
+.workspace-page.quiz-body :is(.question-text p, #explanationText p, .case-description-body p, .review-q-text p, .review-explanation-body p) { text-align: left; }
+.workspace-page.quiz-body :is(.question-text, #explanationText, .review-q-text) strong { color: inherit; font-weight: 600; }
+.workspace-page.quiz-body :is(.question-text, .option-text, .case-description-body, .feedback-explanation-text, .review-q-text, .review-case-body, .review-explanation-body) { color: var(--text-main); }
+.workspace-page.quiz-body .case-scenario-card { background: var(--bg-tertiary); border: 0; border-radius: 6px; box-shadow: none; padding: 24px; }
+.workspace-page.quiz-body .case-badge { background: none; border: 0; color: var(--text-secondary); }
+.workspace-page.quiz-body .options-grid { gap: 12px; margin-top: 28px; }
+.workspace-page.quiz-body .option-btn { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; box-shadow: none; padding: 18px 20px; min-height: 64px; gap: 16px; transform: none; }
+.workspace-page.quiz-body .option-btn:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--border-hover); box-shadow: none; transform: none; }
+.workspace-page.quiz-body .option-letter { flex-shrink: 0; width: 30px; height: 30px; border-radius: 4px; background: var(--bg-tertiary); border: 0; color: var(--text-secondary); box-shadow: none; font-weight: 600; }
+.workspace-page.quiz-body .option-text { font-size: .975rem; line-height: 1.65; }
+/* Keep the existing correct/wrong/selected semantics; never change scoring colours. */
+.workspace-page.quiz-body .option-btn.selected { border-color: var(--primary); }
+/* Legacy quiz states force their colours with !important; scope this bridge here. */
+.workspace-page.quiz-body .option-btn.correct { border-color: var(--primary) !important; background: var(--primary-glow) !important; box-shadow: none !important; }
+.workspace-page.quiz-body .option-btn.correct .option-letter { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; box-shadow: none; }
+.workspace-page.quiz-body .option-btn.wrong { border-color: var(--danger) !important; background: var(--danger-bg) !important; box-shadow: none !important; }
+.workspace-page.quiz-body .option-btn.wrong .option-letter { background: var(--danger) !important; box-shadow: none; }
+.workspace-page.quiz-body .feedback-box { background: var(--bg-tertiary); border: 0; border-radius: 6px; box-shadow: none; padding: 24px; }
+.workspace-page.quiz-body .feedback-box.error { border-left: 3px solid var(--danger); }
+.workspace-page.quiz-body .feedback-badge { border: 0; padding: 0; background: none; color: var(--text-main); text-transform: none; letter-spacing: 0; }
+.workspace-page.quiz-body .timer-badge { border-radius: 4px; box-shadow: none; font-variant-numeric: tabular-nums; }
+.workspace-page.quiz-body .next-btn-container { gap: 12px; flex-wrap: wrap; }
+.workspace-page.quiz-body .btn-tutor-ai-action { background: var(--bg-tertiary); color: var(--text-main); border: 1px solid var(--input-border); border-radius: 6px; box-shadow: none; min-height: 44px; }
+.workspace-page.quiz-body .results-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: none; padding: 32px; }
+.workspace-page.quiz-body .review-card { background: var(--bg-tertiary); border: 0; border-radius: 6px; box-shadow: none; }
+.workspace-page.quiz-body :is(.review-header, .results-card h2) { font-size: 1.25rem; }
+.workspace-page.quiz-body .review-opt { border-radius: 4px; box-shadow: none; }
+.workspace-page.quiz-body :is(.option-text, .option-text p, .review-opt-text p) { text-align: left; }
+.workspace-page.quiz-body :is(.q-image-container-premium, .q-explanation-image-container-premium, .review-q-image-container, .review-explanation-image-container, .table-wrapper) { border-radius: 6px; box-shadow: none; }
+.workspace-page.quiz-body .loading-overlay { background: var(--bg-main); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.workspace-page.quiz-body .loading-card { background: var(--bg-secondary); border: 0; border-radius: 8px; box-shadow: none; animation: none; }
+.workspace-page.quiz-body .loading-card-glow { display: none; }
+.workspace-page.quiz-body .spinner-center-icon { color: var(--primary); filter: none; animation: none; }
+.workspace-page.quiz-body .spinner-orbital-ring.ring-secondary { display: none; }
+.workspace-page.quiz-body .loading-mode-pill { background: var(--bg-tertiary); color: var(--text-secondary); border: 0; border-radius: 4px; text-transform: none; letter-spacing: 0; box-shadow: none; }
+.workspace-page.quiz-body .loading-title { color: var(--text-main); font-size: 1.5rem; font-weight: 600; }
+.workspace-page.quiz-body .loading-subtitle, .workspace-page.quiz-body .loading-tip-text { color: var(--text-secondary); }
+.workspace-page.quiz-body .loading-progress-bar { background: var(--primary); }
+.workspace-page.quiz-body .loading-tip-card { background: var(--bg-tertiary); border: 0; border-radius: 6px; box-shadow: none; }
+
+/* Preserve 3D transforms, scroll areas, image fitting and rating handlers. */
+body.workspace-page[data-workspace="flashcards"] { display: block; padding-top: calc(88px + var(--trial-bar-height, 0px)); }
+.workspace-page[data-workspace="flashcards"] #app-root { min-height: calc(100dvh - 88px); margin-inline: auto; max-width: 1120px; }
+.workspace-page[data-workspace="flashcards"] .study-header { width: 100%; border: 0; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+.workspace-page[data-workspace="flashcards"] .study-header .study-session-title { margin: 0; }
+.workspace-page[data-workspace="flashcards"] :is(.fc-card-face, .empty-content) { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: none; }
+.workspace-page[data-workspace="flashcards"] .content-text { color: var(--text-main); font-size: 1rem; line-height: 1.7; }
+.workspace-page[data-workspace="flashcards"] :is(.control-btn, .btn-action, .back-nav, .fc-stats-badge) { border-radius: 6px; box-shadow: none; }
+.workspace-page[data-workspace="flashcards"] .control-btn { background: var(--bg-secondary); min-height: 52px; }
+.workspace-page[data-workspace="flashcards"] .control-btn:hover { transform: none; box-shadow: none; background: var(--bg-tertiary); }
+.workspace-page[data-workspace="flashcards"] .fc-stats-badge { background: var(--bg-tertiary); border: 0; color: var(--text-main); }
+.workspace-page[data-workspace="flashcards"] .scene { border-radius: 8px; box-shadow: none; }
+.workspace-page[data-workspace="flashcards"] .fc-badge { border-radius: 4px; text-transform: none; font-weight: 500; }
+.workspace-page[data-workspace="flashcards"] .btn-action:hover { transform: none; box-shadow: none; }
+@media (max-width: 768px) {
+    body.workspace-page.quiz-body { padding: calc(84px + var(--trial-bar-height, 0px)) 12px 28px; }
+    body.workspace-page[data-workspace="flashcards"] { padding-top: calc(80px + var(--trial-bar-height, 0px)); }
+    .workspace-page.quiz-body .quiz-container { padding: 24px 16px; border-radius: 6px; }
+    .workspace-page.quiz-body .option-btn { padding: 16px; gap: 12px; }
+    .workspace-page.quiz-body .question-text { font-size: 1rem; }
+    .workspace-page.quiz-body .next-btn-container { position: static; padding-block: 16px; }
+    .workspace-page.quiz-body .next-btn-container button { flex: 1 1 auto; }
+    .workspace-page.quiz-body :is(.case-scenario-card, .feedback-box) { padding: 18px; }
+    .workspace-page[data-workspace="flashcards"] #app-root { padding-inline: 16px; }
+}

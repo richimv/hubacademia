@@ -1,85 +1,57 @@
-# Arquitectura de Almacenamiento Universal (GCS & Assets) 🏗️🛡️✨
+# Arquitectura de medios: GCS y Vercel
 
-Esta documentación detalla la implementación del sistema de gestión de medios (imágenes, infografías, esquemas) utilizando Google Cloud Storage (GCS) de forma integrada con los activos locales.
+Actualizado el 4 de noviembre de 2026, America/Lima. Implementación publicada en Production en el despliegue READY `dpl_4sV8LFQP8S3gH7kTbn1k1GQs29Fy`, con los dominios de Hub Academia asignados. Comprobación funcional por el usuario pendiente. Ver [MEDIA_DELIVERY_VERCEL.md](MEDIA_DELIVERY_VERCEL.md) para el inventario, la publicación, las limitaciones y el criterio de retirada de Render.
 
-## 1. Arquitectura de Acceso (Proxy Seguro) ⚙️
-Para evitar la exposición de buckets públicos y gestionar la autenticación, se utiliza un controlador proxy en el backend.
+## Persistencia y asociación
 
-- **Endpoint**: `/api/media/gcs`
-- **Controlador**: `mediaController.js`
-- **Seguridad**: Solo usuarios con JWT válido pueden solicitar imágenes.
-- **Optimización de Renderizado (Visualización vs Descarga)**: 
-  * Por defecto, el servidor envía la cabecera `Content-Disposition: inline` para asegurar que el navegador previsualice el archivo directamente en pantalla (ideal para el visor modal inmersivo).
-  * **Descarga Forzada**: Si se pasa el parámetro opcional `download=true` (ej: `/api/media/gcs?file=path.pdf&download=true`), el proxy intercepta la petición y cambia dinámicamente la cabecera a `Content-Disposition: attachment; filename="..."`. Esto fuerza una descarga nativa instantánea en la máquina del usuario o teléfono móvil sin redirigirlo ni requerir un "guardar como".
+- Los archivos multimedia se almacenan en el bucket privado de Google Cloud Storage; PostgreSQL/Supabase conserva referencias y contenido enriquecido.
+- TinyMCE guarda imágenes incrustadas en `question_bank.question_text`, `question_bank.explanation`, `case_scenarios.description_text` y `resources.content_html`.
+- Los campos dedicados `image_url` y `explanation_image_url` son opcionales y distintos de los `<img>` del HTML. No es necesario duplicar las imágenes de TinyMCE en estos campos.
+- `question_bank.case_id` mantiene el enunciado común del caso; `case_image_url` es un alias de `case_scenarios.image_url` en las consultas del quiz.
+- El inventario ampliado encontró 68 preguntas y 22 casos con imágenes incrustadas, además de diez imágenes de tarjetas: 99 objetos de GCS referenciados y existentes. Las referencias externas conservan su proveedor.
 
-## 2. Resolución Inteligente de URLs (Frontend) 🧠
-En `config.js`, la función `window.resolveImageUrl(path)` actúa como el orquestador universal:
+## Visualización
 
-- **Activos Locales (Legacy)**: Si el path comienza con `assets/`, la función devuelve la ruta relativa, sirviendo el archivo desde el servidor web local. Estos archivos aún existen para dar soporte a contenido antiguo.
-- **Activos en la Nube (Estándar)**: Si el path no es local ni una URL absoluta (http/https), se transforma automáticamente en una petición al proxy de GCS.
+1. `resolveImageUrl` en `js/config.js` interpreta rutas de GCS, assets locales, URLs externas y los endpoints históricos propios de Render.
+2. `resolveHtmlMediaUrls` normaliza los atributos de imágenes, TinyMCE, srcset y enlaces multimedia internos. El renderer común mantiene su sanitización independiente.
+3. Las imágenes raster usan la ruta estable `/api/media/gcs?file=...&delivery=direct`.
+4. El backend valida el prefijo y genera una firma V4 de lectura de una hora. Devuelve un 302 no cacheable; GCS entrega los bytes al navegador. La URL temporal no se almacena en la base.
+5. Si no se puede firmar, el controlador usa el proxy del origen actual. No depende del servidor de Render.
 
----
+El mismo recorrido cubre preguntas, enunciados comunes de casos, opciones, explicaciones, recursos, notas, tarjetas y el editor de guías. El panel administrativo ya no conserva sin normalizar los enlaces absolutos históricos de Render al abrir contenido.
 
-## 3. Flujo de Administración (Carga a la Nube) ☁️
-A partir de la actualización de Marzo 2026, el flujo de trabajo ha sido centralizado:
+## Rutas, acceso y caché
 
-### **Botón "Subir Local" (Icono 📤)**
-> [!IMPORTANT]
-> **Todo archivo cargado mediante este botón ahora se sube EXCLUSIVAMENTE a Google Cloud Storage**. El sistema ya no guarda archivos físicamente en la carpeta `/assets` del servidor, garantizando escalabilidad infinita y persistencia ante reinicios del cloud (Render/Vercel).
+- `/api/media/gcs`: lectura general con `optionalAuth` y validación de prefijos. No debe describirse como una ruta que exige JWT a cada etiqueta `<img>`.
+- `/api/media/preview`: requiere autenticación y rol de administración. Conserva la entrega binaria del mismo origen para clientes que usan `fetch().blob()`.
+- `file` es el parámetro recomendado; se conserva `path` por compatibilidad.
+- `download=true` fuerza descarga; SVG siempre se entrega como adjunto. Descargas y preview mantienen el proxy.
+- La entrega directa se aplica a GET de imágenes PNG/JPG/WebP/GIF/AVIF. El bucket no se hace público ni se cambia IAM.
+- Redirects firmados y errores usan `Cache-Control: no-store` y `Vercel-CDN-Cache-Control: no-store`.
+- El proxy admite caché de un día para imágenes de estudio; medios personales, descargas y preview usan caché privada/no-store.
+- Mostrar una imagen en `<img>` no requiere añadir CORS a GCS. Leer sus bytes por `fetch` o canvas a través del redirect sí requiere contemplar CORS; para esos consumidores se conserva el proxy sin `delivery=direct`.
 
-### **Asignación Manual**
-- Puedes escribir una ruta de GCS (ej: `my-internal-file.jpg`) o una URL externa.
-- **Legacy**: Aún es posible escribir `assets/imagen.png` si el archivo ya existe físicamente en el servidor, pero este método está **depreciado** para contenido nuevo.
+## Carga desde administración
 
-### **Extracción Automática de Miniaturas (Google Drive)**
-- **Sincronización Masiva & Individual:** Si el administrador ingresa o sincroniza recursos con un enlace de Google Drive (sin subir una portada local), el sistema extrae automáticamente la miniatura en alta resolución del archivo desde Drive, la procesa y la sube permanentemente a la carpeta `/thumbnails` de GCS, asociándola de forma transparente como portada del recurso.
+El editor conserva los datos localmente durante la redacción (`automatic_uploads: false`). Al pulsar Guardar, llama explícitamente `editor.uploadImages()`: cada imagen se envía por separado como binario a `/api/admin/upload-editor`. Solo cuando terminan las subidas se sincronizan los campos y se envía el formulario.
 
-### **Integración Automática con TinyMCE (Portapapeles)**
-- Si el administrador pega (`Ctrl+V`) una imagen directamente en el cuerpo del editor **TinyMCE**, el panel intercepta nativamente el archivo binario, lo sube automáticamente en segundo plano a Google Cloud Storage transformándolo en WebP de alta fidelidad, e incrusta de inmediato el enlace público (CDN) en el texto. Esto significa que **arrastrar, soltar o pegar capturas de pantalla funciona de la misma forma mágica que en Word**, pero subiendo a la nube de manera blindada.
+El formulario de casos usa `coverImage`, conforme al contrato de Multer. Se limita cada imagen a 4 MiB y se comprueba el tamaño total del formulario para dejar margen bajo los 4,5 MB admitidos por Vercel. Importaciones grandes y archivos mayores requieren división o un futuro flujo de subida directa a GCS; no se deben enviar como un único JSON Base64.
 
-## 4. Integración en Administración 🛠️
-El panel de control (`admin.js`) ha sido blindado para la integridad de datos:
-- **Protección de Datos**: Los campos como `career`, `subtopic` y las 5 opciones de Residentado están protegidos contra sobreescrituras accidentales con `null`.
-- **Selector Seguro**: El examen objetivo (Target) es ahora un selector fijo para evitar errores de tipeo que corrompan el banco de preguntas.
-- **Feedback Visual Inmediato**: Un check verde ✅ y el nombre del archivo confirman que la imagen está lista antes de guardar.
-- **Gestión Dual**: El banco de preguntas ahora soporta imágenes independientes para el Enunciado y la Explicación, ambas con gestión automatizada de GCS.
+El backend conserva un sanitizador Base64 defensivo para otros clientes. Una subida fallida interrumpe el guardado, tanto en preguntas/casos como en recursos. Se retiraron los respaldos en disco de `public/assets`: una Function no ofrece persistencia para esas escrituras.
 
-## 5. Optimización y Procesamiento WebP (High-Fidelity) 🖼️⚡
-Para garantizar un equilibrio entre rendimiento y calidad visual (crítica en contenido médico y educativo), el sistema procesa todas las imágenes cargadas mediante `sharp` usando una misma función centralizada (`_optimizeImage`):
+Sharp valida el formato real, aplica orientación, limita el ancho a 1.000 px sin ampliar y convierte a WebP con calidad 80. No se afirma conservación de metadatos que el código no realiza. Las nuevas versiones reciben nombres únicos.
 
-- **Formato**: Conversión forzada a **WebP**.
-- **Dimensiones**: Redimensionamiento inteligente con un ancho máximo de **1000px** (ajustado estratégicamente para prevenir errores de memoria *Out-Of-Memory* en el plan hosting gratuito del servidor).
-- **Calidad**: Factor del **80%** con *Smart Subsampling* (submuestreo croma optimizado que mantiene los bordes e infografías totalmente legibles y nítidos) y preservación de metadatos (`.withMetadata()`).
+## Integridad y versiones anteriores
 
-### 📊 Comparativa Técnica de Carga de Imágenes (GCS vs Google Drive)
-Ambos flujos están perfectamente homologados para garantizar la máxima coherencia estética y rendimiento en el frontend:
+Las carpetas compartidas `cases`, `questions`, `explanations`, `editor-content`, `recursos`, `cursos`, `carreras` y `thumbnails` se retienen aunque un formulario retire una referencia. Esa retirada no demuestra que ninguna otra entidad use el objeto.
 
-| Característica Técnica | 📤 Imagen Directa (Subida desde Panel / TinyMCE) | 📡 Miniatura Extraída de Google Drive |
-| :--- | :--- | :--- |
-| **Ruta en el Bucket** | Se almacena en carpetas temáticas (`recursos/`, `cursos/`, `editor-content/`) | Se almacena en la carpeta `/thumbnails` |
-| **Flujo en Código** | Pasa por `mediaController.uploadFile` | Pasa por `mediaController.uploadBuffer` |
-| **Motor de Procesamiento** | **Sharp** (Librería de alto rendimiento en NodeJS) | **Sharp** (El mismo motor optimizador) |
-| **Formato Final** | **WebP** (Compresión de última generación) | **WebP** (Conversión forzosa del búfer original) |
-| **Calidad de Compresión** | **80%** (Calidad de nivel editorial profesional) | **80%** (Calidad de nivel editorial profesional) |
-| **Dimensiones Máximas** | Redimensionamiento inteligente a un máximo de **1000px de ancho** (ajustado para evitar *Out-Of-Memory* en Render). | Redimensionamiento inteligente a un máximo de **1000px de ancho** (ajustado para evitar *Out-Of-Memory* en Render). |
-| **Submuestreo de Croma** | **Smart Subsampling Activado** (Garantiza bordes extremadamente nítidos y legibles en textos e infografías). | **Smart Subsampling Activado** (Garantiza la misma nitidez en las previsualizaciones de libros). |
-| **Metadatos** | **Preservados (`.withMetadata()`)** para no alterar los perfiles de color (sRGB) y mantener la rotación correcta. | **Preservados (`.withMetadata()`)** para mantener el perfil de color original de la miniatura de Google. |
+`deleteFile` solo permite borrar físicamente esos archivos mediante una operación interna explícita con `deleteSharedAsset: true`; los flujos habituales no pasan esa opción. Se necesita un análisis global de referencias antes de habilitar una recolección de versiones antiguas. No existe un endpoint nuevo que fuerce ese borrado. Las políticas de eliminación y propiedad de archivos personales siguen siendo independientes.
 
-### 🧠 Beneficios Clave del Diseño Homogéneo
-*   **Unificación Estética:** Todos los recursos gráficos, portadas y miniaturas se ven uniformes, con colores vivos y textos legibles en cualquier pantalla.
-*   **Máxima Velocidad:** Al estandarizar todo a WebP con calidad del 80%, las páginas cargan en milisegundos sin consumir megabytes innecesarios del plan de datos de los estudiantes.
+La consecuencia deliberada es conservar algunas versiones sin uso hasta contar con mantenimiento seguro, a cambio de proteger contenido compartido. La auditoría y las modificaciones actuales no borraron objetos ni cambiaron filas de la base de datos.
 
-## 6. Gestión del Ciclo de Vida y Limpieza Proactiva 🗑️🛡️
-El sistema implementa una política de "Zero-Orphan" para optimizar costos:
+## Entorno
 
-- **Borrado por Reemplazo**: Al actualizar una imagen, el archivo antiguo se elimina físicamente de GCS antes de subir el nuevo.
-- **Borrado Explícito (UI)**: Botones de papelera en la administración activan el borrado físico (`deleteImage: true`).
-- **Fail-Safe**: Si se vacea manualmente el campo de URL, el backend dispara la limpieza de GCS automáticamente.
-- **Cascada**: Al borrar una entidad, sus archivos asociados en GCS son eliminados de forma atómica.
+Vercel utiliza `GCS_BUCKET_NAME` y las credenciales en memoria de `GOOGLE_SERVICE_ACCOUNT_JSON` (JSON completo o Base64). La ruta de un Secret File de Render no es una credencial utilizable por sí sola en Vercel. El archivo local de cuenta de servicio y `.env` se excluyen del despliegue.
 
-## 7. Costos y Capa Gratuita (Free Tier) 📊💰
-- **Almacenamiento**: 5 GB gratis al mes.
-- **Operaciones**: 5,000 (A) y 50,000 (B) gratuitas. El sistema usa caché para minimizar transacciones.
+La presencia de variables no verifica por sí sola su contenido, permisos ni funcionamiento. Los detalles del proyecto y los pasos pendientes figuran en [VERCEL_ONLY_MEDIA_HANDOFF.md](VERCEL_ONLY_MEDIA_HANDOFF.md).
 
----
-*Estado del Sistema: Infraestructura de medios 100% profesional, optimizada y auto-limpiable.* 🚀✨

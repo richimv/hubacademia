@@ -3,6 +3,7 @@ const { GoogleAuth } = require('google-auth-library');
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 const {
     getVertexCandidateModels,
+    getVertexGenerativeEndpoint,
     buildVertexGenerationConfig,
     extractModelResponsePayload
 } = require('../../infrastructure/config/vertexAiConfig');
@@ -44,11 +45,10 @@ class RagService {
     async extractSmartTerms(message, specialization, target = '') {
         try {
             const { VertexAI } = require('@google-cloud/vertexai');
-            const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
             const googleAuthOptions = resolveGoogleAuthOptions('RagService');
             const vertexAI = new VertexAI({
                 project: process.env.GOOGLE_CLOUD_PROJECT,
-                location: location,
+                ...getVertexGenerativeEndpoint(),
                 ...(Object.keys(googleAuthOptions).length > 0 ? { googleAuthOptions } : {})
             });
 

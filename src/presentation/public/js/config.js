@@ -44,26 +44,89 @@
      * Detecta si una URL es una ruta relativa de GCS o assets y la redirige al proxy del backend.
      */
     window.resolveImageUrl = function (url, resourceType = 'other') {
-        if (!url || url.trim() === '') {
+        const raw = typeof url === 'string' ? url.trim().replace(/&amp;/gi, '&') : '';
+        if (!raw) {
             return window.getDefaultResourceImage(resourceType);
         }
 
-        if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
-            return url;
+        const apiUrl = (window.AppConfig && window.AppConfig.API_URL) ? window.AppConfig.API_URL.replace(/\/+$/, '') : '';
+        // The stable app URL stays in HTML. Only the server generates the
+        // short-lived GCS URL; image bytes can then bypass the Function.
+        const mediaUrl = (file, download = false) => {
+            const direct = !download && /\.(png|jpe?g|webp|gif|avif)$/i.test(file);
+            return `${apiUrl}/api/media/gcs?file=${encodeURIComponent(file)}` +
+                (download ? '&download=true' : direct ? '&delivery=direct' : '');
+        };
+
+        // Historical TinyMCE content contains absolute Render proxy URLs. Keep the
+        // saved content intact and resolve only our own media routes on this origin.
+        if (/^(https?:\/\/|\/\/|\/api\/)/i.test(raw)) {
+            try {
+                const parsed = new URL(raw, window.location.origin);
+                const internalHost = parsed.origin === window.location.origin ||
+                    parsed.origin === apiUrl || parsed.hostname === 'tutor-ia-backend.onrender.com' ||
+                    parsed.hostname === 'www.hubacademia.com' || parsed.hostname === 'hubacademia.com';
+                if (internalHost && /^\/api\/media\/(gcs|explanation|preview)\/?$/.test(parsed.pathname)) {
+                    const file = parsed.searchParams.get('file') || parsed.searchParams.get('path');
+                    if (file) {
+                        const download = ['true', '1'].includes(parsed.searchParams.get('download'));
+                        return mediaUrl(file, download);
+                    }
+                }
+                if (internalHost && parsed.hostname === 'tutor-ia-backend.onrender.com' && parsed.pathname.startsWith('/assets/')) {
+                    return apiUrl + parsed.pathname;
+                }
+            } catch { /* Invalid external references keep their original fallback. */ }
         }
 
-        const apiUrl = (window.AppConfig && window.AppConfig.API_URL) ? window.AppConfig.API_URL.replace(/\/+$/, '') : '';
+        if (/^(data:|blob:|https?:\/\/|\/\/)/i.test(raw)) return raw;
 
-        if (url.startsWith('/assets/') || url.startsWith('assets/')) {
-            const cleanPath = url.startsWith('/') ? url : `/${url}`;
+        if (raw.startsWith('/assets/') || raw.startsWith('assets/')) {
+            const cleanPath = raw.startsWith('/') ? raw : `/${raw}`;
             return apiUrl ? `${apiUrl}${cleanPath}` : cleanPath;
         }
 
-        if (url.startsWith('/api/')) {
-            return apiUrl ? `${apiUrl}${url}` : url;
+        if (raw.startsWith('/api/')) {
+            return apiUrl ? `${apiUrl}${raw}` : raw;
         }
 
-        return apiUrl ? `${apiUrl}/api/media/gcs?file=${encodeURIComponent(url)}` : `/api/media/gcs?file=${encodeURIComponent(url)}`;
+        return mediaUrl(raw);
+    };
+
+    /**
+     * Normalize media in TinyMCE HTML without changing the stored record.
+     * This is URL handling, not HTML sanitization; renderers keep their own
+     * sanitization. TinyMCE's data-mce-src and responsive srcset must agree
+     * with src, or the browser/editor can restore the old Render host.
+     */
+    window.resolveHtmlMediaUrls = function (html) {
+        if (typeof html !== 'string' || !html) return html || '';
+        const template = document.createElement('template');
+        template.innerHTML = html;
+        template.content.querySelectorAll('img, picture source').forEach(img => {
+            for (const attr of ['src', 'data-mce-src']) {
+                const value = img.getAttribute(attr);
+                if (value) img.setAttribute(attr, window.resolveImageUrl(value));
+            }
+            for (const attr of ['srcset', 'data-mce-srcset']) {
+                const value = img.getAttribute(attr);
+                if (!value || /data:/i.test(value)) continue;
+                img.setAttribute(attr, value.split(',').map(candidate => {
+                    const [url, ...descriptor] = candidate.trim().split(/\s+/);
+                    return [window.resolveImageUrl(url), ...descriptor].join(' ');
+                }).join(', '));
+            }
+        });
+        // Links to attachments and embedded media use the same stable route.
+        template.content.querySelectorAll('a[href], video[src], video[poster], audio[src], source[src]').forEach(node => {
+            for (const attr of ['href', 'data-mce-href', 'src', 'data-mce-src', 'poster', 'data-mce-poster']) {
+                const value = node.getAttribute(attr);
+                if (value && /(?:\/api\/media\/|tutor-ia-backend\.onrender\.com\/assets\/|^(?:cases|questions|explanations|editor-content|recursos|flashcards)\/)/i.test(value)) {
+                    node.setAttribute(attr, window.resolveImageUrl(value));
+                }
+            }
+        });
+        return template.innerHTML;
     };
 
     /**

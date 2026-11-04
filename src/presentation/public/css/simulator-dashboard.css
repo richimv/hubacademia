@@ -309,249 +309,7 @@
 @media (max-width: 600px) {
     .modes-grid { grid-template-columns: 1fr; }
 }
-
-.mode-card {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 18px;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    text-decoration: none;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-    box-shadow: var(--shadow-sm);
-    min-height: 200px;
-}
-
-.mode-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-    opacity: 0.85;
-    filter: brightness(0.9) saturate(0.92);
-    transition: opacity 0.3s ease, filter 0.3s ease;
-    pointer-events: none;
-    z-index: 1;
-}
-
-[data-theme="light"] .mode-card::before {
-    opacity: 0.88;
-    filter: brightness(0.98) saturate(0.9);
-}
-
-.mode-card:hover::before {
-    opacity: 0.98;
-    filter: brightness(0.95) saturate(1);
-}
-
-.mode-card-top,
-.mode-card-body,
-.mode-card-footer {
-    position: relative;
-    z-index: 2;
-}
-
-.mode-card--arcade {
-    --accent: #f59e0b;
-    --accent-rgb: 245, 158, 11;
-}
-.mode-card--arcade::before {
-    background-image: url('/assets/simulacro-rapido.webp');
-}
-
-.mode-card--study {
-    --accent: var(--primary);
-    --accent-rgb: 13, 148, 136;
-}
-/* Modo Estudio: Salud (Default) */
-.mode-card--study::before {
-    background-image: url('/assets/modo-estudio-salud.webp');
-}
-/* Modo Estudio: Educación */
-[data-simulator-context="educacion"] .mode-card--study::before,
-[data-context="educacion"] .mode-card--study::before,
-.context-educacion .mode-card--study::before {
-    background-image: url('/assets/modo-estudio-educacion.webp');
-}
-
-.mode-card--real {
-    --accent: #f43f5e;
-    --accent-rgb: 244, 63, 94;
-}
-.mode-card--real::before {
-    background-image: url('/assets/simulacro-real.webp');
-}
-
-/* Light Theme Backgrounds for Mode Cards */
-[data-theme="light"] .mode-card--arcade::before {
-    background-image: url('/assets/simulacro-rapido-claro.webp');
-}
-
-[data-theme="light"] .mode-card--study::before {
-    background-image: url('/assets/modo-estudio-salud-claro.webp');
-}
-
-[data-theme="light"][data-simulator-context="educacion"] .mode-card--study::before,
-[data-theme="light"][data-context="educacion"] .mode-card--study::before,
-[data-theme="light"] .context-educacion .mode-card--study::before {
-    background-image: url('/assets/modo-estudio-educacion-claro.webp');
-}
-
-[data-theme="light"] .mode-card--real::before {
-    background-image: url('/assets/simulacro-real-claro.webp');
-}
-
-.mode-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(var(--accent-rgb), 0.4);
-    box-shadow: 0 12px 30px rgba(var(--accent-rgb), 0.12), var(--shadow-md);
-}
-
-/* ==========================================================================
-   GUEST DAILY TRIAL PULSING HIGHLIGHT (10qs Mode Card)
-   ========================================================================== */
-.mode-card--trial-pulse {
-    position: relative;
-    border-color: #f59e0b !important;
-    animation: trialYellowPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
-}
-
-.mode-card--trial-pulse .mode-icon-badge {
-    background: rgba(245, 158, 11, 0.2) !important;
-    color: #f59e0b !important;
-    border-color: rgba(245, 158, 11, 0.5) !important;
-    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
-}
-
-.mode-card--trial-pulse .mode-q-badge {
-    background: rgba(245, 158, 11, 0.18) !important;
-    color: #fbbf24 !important;
-    border-color: rgba(245, 158, 11, 0.5) !important;
-}
-
-.mode-card--trial-pulse .mode-cta {
-    color: #fbbf24 !important;
-    background: rgba(245, 158, 11, 0.15) !important;
-    border-color: rgba(245, 158, 11, 0.4) !important;
-    font-weight: 700;
-}
-
-@keyframes trialYellowPulse {
-    0%, 100% {
-        border-color: rgba(245, 158, 11, 0.45);
-        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45), 0 4px 14px rgba(0, 0, 0, 0.2);
-    }
-    50% {
-        border-color: #f59e0b;
-        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.22), 0 0 25px rgba(245, 158, 11, 0.4);
-    }
-}
-
-/* Light mode support for trial pulse */
-[data-theme="light"] .mode-card--trial-pulse {
-    border-color: #d97706 !important;
-}
-[data-theme="light"] .mode-card--trial-pulse .mode-q-badge {
-    color: #b45309 !important;
-    background: rgba(245, 158, 11, 0.15) !important;
-    border-color: rgba(245, 158, 11, 0.4) !important;
-}
-[data-theme="light"] .mode-card--trial-pulse .mode-cta {
-    color: #b45309 !important;
-    background: rgba(245, 158, 11, 0.12) !important;
-    border-color: rgba(245, 158, 11, 0.35) !important;
-}
-[data-theme="light"] .mode-card--trial-pulse:hover .mode-cta {
-    background: #d97706 !important;
-    color: #ffffff !important;
-}
-
-.mode-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.mode-icon-badge {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    background: rgba(var(--accent-rgb), 0.1);
-    color: var(--accent);
-    border: 1px solid rgba(var(--accent-rgb), 0.25);
-    transition: transform 0.3s ease;
-}
-
-.mode-card:hover .mode-icon-badge {
-    transform: scale(1.1);
-}
-
-.mode-q-badge {
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.25rem 0.65rem;
-    border-radius: 20px;
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-}
-
-.mode-card-body {
-    flex: 1;
-}
-
-.mode-title {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin: 0 0 0.4rem 0;
-    line-height: 1.25;
-    letter-spacing: -0.01em;
-}
-
-.mode-desc {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    line-height: 1.45;
-    margin: 0 0 1.25rem 0;
-}
-
-.mode-card-footer {
-    margin-top: auto;
-}
-
-.mode-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.45rem 1rem;
-    border-radius: 10px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--accent);
-    background: rgba(var(--accent-rgb), 0.08);
-    border: 1px solid rgba(var(--accent-rgb), 0.25);
-    transition: all 0.2s ease;
-}
-
-.mode-card:hover .mode-cta {
-    background: var(--accent);
-    color: #ffffff !important;
-    border-color: var(--accent);
-    box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.35);
-}
-
+/* Exam mode presentation is owned by workspace-simulator.css. */
 .badge-soon {
     position: absolute;
     top: 1rem;
@@ -1695,7 +1453,7 @@
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
-.modal-header {
+.config-modal .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1705,7 +1463,7 @@
     border-bottom: 1px solid var(--border-color);
 }
 
-.modal-title {
+.config-modal .modal-title {
     margin: 0;
     color: var(--text-main) !important;
     display: flex;
@@ -1715,12 +1473,12 @@
     font-weight: 800;
 }
 
-.modal-title i {
+.config-modal .modal-title i {
     color: var(--primary);
     font-size: 1.1rem;
 }
 
-.modal-close {
+.config-modal .modal-close {
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
@@ -1734,7 +1492,7 @@
     transition: all 0.2s;
 }
 
-.modal-close:hover {
+.config-modal .modal-close:hover {
     background: var(--danger-bg);
     color: var(--danger);
     border-color: var(--danger-border);
@@ -2067,47 +1825,6 @@
         padding: 0.3rem 0.65rem !important;
         font-size: 0.7rem !important;
         white-space: nowrap !important;
-    }
-
-    /* Modes Cards Mobile */
-    .modes-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.85rem !important;
-    }
-
-    .mode-card {
-        padding: 1.15rem !important;
-        min-height: auto !important;
-        border-radius: 16px !important;
-    }
-
-    .mode-card-top {
-        margin-bottom: 0.65rem !important;
-    }
-
-    .mode-icon-badge {
-        width: 36px !important;
-        height: 36px !important;
-        font-size: 1rem !important;
-        border-radius: 10px !important;
-    }
-
-    .mode-title {
-        font-size: 1.05rem !important;
-    }
-
-    .mode-desc {
-        font-size: 0.78rem !important;
-        line-height: 1.4 !important;
-        margin-bottom: 0.85rem !important;
-    }
-
-    .mode-cta {
-        width: 100% !important;
-        justify-content: center !important;
-        padding: 0.55rem 1rem !important;
-        font-size: 0.75rem !important;
-        border-radius: 8px !important;
     }
 
     /* Stats KPI Overview Mobile */

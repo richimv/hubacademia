@@ -1,4 +1,16 @@
-# 📚 Documentación Consolidada: Biblioteca de Consulta (Hub Academia)
+# Boletín de Inteligencia Artificial y archivo de consulta (Hub Academia)
+
+La página `/library` comparte ahora cabecera y marco `workspace-page` con las pantallas de estudio. Sus estilos incrustados se separaron en `css/library-layout.css`, conservando el archivo, el buscador y las fuentes editoriales existentes. Las Notas de simuladores y flashcards siguen en `/repaso?view=notes`. Véase [WORKSPACE_FRONTEND_GUIDE.md](WORKSPACE_FRONTEND_GUIDE.md).
+
+## Estado vigente — 3 de noviembre de 2026
+
+La ruta pública `/library` conserva su URL y pasa a presentarse como **Boletín de Inteligencia Artificial**. La landing y la navegación lateral enlazan a ese destino. La página incluye una selección inicial de fuentes externas: PCM (Estrategia Nacional de IA), UNESCO (IA y educación) y Google DeepMind (publicaciones de investigación). Son enlaces a fuentes, no noticias generadas ni un feed automático.
+
+El buscador y los recursos existentes de Educación y Salud se conservan bajo **Archivo de consulta**. No se reclasificaron registros de base de datos ni se cambió la ingesta automática para hacerlos pasar por publicaciones de IA. Las secciones posteriores de este documento conservan detalles de la arquitectura histórica; no implican que las antiguas pestañas Guardados/Favoritos/Notas sigan disponibles en `/library`.
+
+**Notas personales:** pertenecen a `/repaso?view=notes`. Tanto el Tutor de Simuladores (`quiz-tutor.js`) como el Tutor de Flashcards (`tutor-chat.js`) guardan sus respuestas en esa libreta mediante `/api/library/notes`. Hubi es el asistente de orientación general, no el destino del Boletín.
+
+La siguiente etapa editorial y audiovisual se describe en `PLAN_LANDING_V4_Y_PRODUCCION_FLOW.md`. No se ejecutaron pruebas en esta iteración por indicación del usuario.
 
 ## 1. 🌟 Visión General y Filosofía de Diseño
 La **Biblioteca de Consulta** (`/library`) es el centro ágil de búsqueda y acceso documental de **Hub Academia**. Bajo la reestructuración corporativa de la plataforma, ha sido optimizada para ofrecer:

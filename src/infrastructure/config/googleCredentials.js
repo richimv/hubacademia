@@ -4,6 +4,7 @@ const path = require('path');
 const LOCAL_KEY_PATH = path.resolve(__dirname, '../../../service-account-key.json');
 
 function isLocalRuntime() {
+    if (process.env.VERCEL || process.env.VERCEL_ENV) return false;
     return !process.env.NODE_ENV || ['development', 'test'].includes(process.env.NODE_ENV);
 }
 
@@ -39,7 +40,8 @@ function parseInlineServiceAccount(rawValue, serviceName = 'GoogleCloud') {
             return options;
         }
     } catch (error) {
-        console.warn(`⚠️ [${serviceName}] No se pudo parsear credencial GCP en memoria: ${error.message}`);
+        // JSON.parse errors may quote fragments of the credential: never log them.
+        console.warn(`⚠️ [${serviceName}] Credencial GCP en memoria inválida; revise su formato JSON/Base64.`);
     }
 
     return null;

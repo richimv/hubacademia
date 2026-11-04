@@ -1,5 +1,19 @@
 # Arquitectura y Estándares del Sistema de Autenticación (Hub Academia)
 
+## Diseño de acceso — 3 de noviembre de 2026
+
+`login.html` añade el alcance `auth-redesign` y la hoja `auth-page.css`: cabecera de marca, presentación lateral en escritorio, formulario compacto en móvil y modales OTP/recuperación con geometría uniforme. `auth.css` conserva los componentes compartidos con Perfil. Los IDs y los flujos existentes de autenticación se mantienen. `login.js` añade selección ARIA y navegación por flechas/Inicio/Fin en los tabs y actualiza el título del formulario; se retiró una segunda carga de `config.js`.
+
+Detalle en [LANDING_VIDEO_INTEGRATION.md](LANDING_VIDEO_INTEGRATION.md). Implementación pendiente de validación del usuario; no se ejecutaron pruebas ni navegador.
+
+## Integración de la portada — 3 de noviembre de 2026
+
+`index.html` carga el SDK de Supabase seguido de `services/networkService.js`, `services/authApiService.js`, `services/analyticsApiService.js`, `sessionManager.js` y `ui/uiManager.js`. Se retiraron las referencias erróneas a `services/authService.js`, `services/sessionManager.js` y `utils/uiManager.js`. `header.css` aporta los estilos compartidos del avatar y desplegable de cuenta; `landing-home.css` adapta sus dimensiones a la portada y a móviles.
+
+La sesión continúa centralizada en `SessionManager`; `app.js` se suscribe a sus cambios para renderizar avatar, nombre, nivel y acciones de cuenta. No se creó un sistema de autenticación paralelo. El desplegable mantiene `aria-expanded`, cierre repetible al pulsar fuera y cierre con Escape devolviendo el foco. Se corrigió el listener que antes se retiraba después de un solo clic.
+
+Hubi se instancia exclusivamente mediante `new ChatComponent()` en `app.js`. La portada no declara a mano sus IDs de ventana o botón: hacerlo duplicaba los controles y enviaba eventos al primer elemento coincidente. Las pruebas funcionales de esta integración quedan a cargo del usuario, sin ejecución automática en esta entrega.
+
 Este documento detalla la arquitectura técnica integral, el flujo de vida de la sesión, los mecanismos de seguridad, la persistencia en base de datos, el renderizado optimista y la convivencia de los métodos de acceso implementados en el sistema de autenticación de **Hub Academia** y sus aplicaciones ecosistémicas (**HubDocenteApp** y **HubSaludApp**).
 
 ---
@@ -18,7 +32,7 @@ sequenceDiagram
     participant Frontend as Frontend (Vercel / Browser)
     participant Google as Google Identity / Accounts
     participant Supabase as Supabase Auth (OAuth IdP)
-    participant Backend as Backend API (Render)
+    participant Backend as Backend API (Vercel)
     participant Postgres as PostgreSQL (Supabase DB)
 
     Usuario->>Frontend: Clic en "Acceder" o CTA protegido
@@ -415,7 +429,7 @@ graph TD
 * **Directivas Estándar:** Se eliminó la directiva no estándar `font-src-elem` (que generaba alertas rojas en la consola de navegadores Chromium), consolidando las fuentes bajo `font-src 'self' https://fonts.gstatic.com data:`.
 
 ### Rate Limiting y Conexión (`rateLimiters.js`)
-* **`trust proxy = 1`:** Habilitado para interpretar con precisión las cabeceras `X-Forwarded-For` provistas por Vercel y Render.
+* **`trust proxy = 1`:** Habilitado para interpretar las cabeceras `X-Forwarded-For` del despliegue en Vercel.
 * **`authLimiter`:** Protege `/api/auth/sync` permitiendo hasta 100 solicitudes por IP cada 15 minutos, con exención automática (`skip`) para `localhost`, `127.0.0.1` y `::1`.
 * **Pooler de PostgreSQL:** Conexión mediante `aws-1-us-east-1.pooler.supabase.com:6543` (Modo Transacción) con TLS/SSL forzado.
 

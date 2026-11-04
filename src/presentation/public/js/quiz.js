@@ -411,9 +411,12 @@ async function init() {
     document.body.setAttribute('data-module', isEdu ? 'educacion' : 'salud');
     document.body.classList.remove('module-salud', 'module-educacion');
     document.body.classList.add(isEdu ? 'module-educacion' : 'module-salud');
+    document.body.dataset.studyContext = isEdu ? 'educacion' : 'medicina';
 
     const ctxTitle = isEdu ? 'Simulador Magisterial' : 'Simulador Médico';
     document.title = `${ctxTitle} | Hub Academia`;
+    const sessionHeading = document.querySelector('.study-session-title');
+    if (sessionHeading) sessionHeading.textContent = isEdu ? 'Simulador docente' : 'Simulador médico';
 
     // Configurar API_URL dinámicamente según contexto
     if (isEdu) {
@@ -1781,6 +1784,12 @@ function showNetworkRetryOverlay() {
 
 async function finishQuiz() {
     state.isFinished = true;
+    const headerExit = document.getElementById('btn-top-exit');
+    if (headerExit) {
+        headerExit.title = 'Volver a simuladores';
+        const exitLabel = headerExit.querySelector('span');
+        if (exitLabel) exitLabel.textContent = 'Volver';
+    }
     clearSession(); // ✅ Limpiar de inmediato cualquier sesión activa para evitar la modal de reanudación
     clearInterval(timerInterval);
     if (window.quizTutor) window.quizTutor.toggle(false);

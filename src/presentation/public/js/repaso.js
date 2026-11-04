@@ -286,6 +286,7 @@ class RepasoManager {
             tab.classList.toggle('active', isMatch);
             tab.setAttribute('aria-selected', isMatch ? 'true' : 'false');
         });
+        document.dispatchEvent(new CustomEvent('repaso:view-changed', { detail: { view: viewKey } }));
     }
 
     loadDashboard(pushState = true) {
@@ -494,7 +495,7 @@ class RepasoManager {
                             <span>Guía</span>
                         </button>
                     </div>
-                    <p class="repaso-header-subtitle">Gestiona y repasa tus mazos personales de flashcards con repetición espaciada.</p>
+                    <p class="repaso-header-subtitle">Estudia con repetición espaciada, resuelve tus dudas con el Tutor IA y guarda sus respuestas en las mismas Notas que usas en los simuladores.</p>
                 </div>
                 <div id="root-decks-grid" class="decks-grid">
                     <div class="deck-skeleton-card"></div>

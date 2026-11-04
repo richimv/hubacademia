@@ -1,6 +1,6 @@
 /**
  * ASISTENTE GUÍA KNOWLEDGE BASE (Hub Academia)
- * Módulo de respuestas estáticas de alta velocidad (0 ms latencia, 0 costo IA).
+ * Respuestas locales para opciones de menú y respaldo del servicio de atención Hubi.
  * Orienta a visitantes y usuarios sobre el ecosistema de Inteligencia Artificial
  * y herramientas operativas de Hub Academia en el Perú.
  */
@@ -46,9 +46,9 @@ class AsistenteGuiaKnowledge {
    - **Mis Notas Integradas**: Crea apuntes personales y conserva explicaciones guardadas directamente desde el Tutor IA en un solo lugar.
    - [Ir a Repaso y Notas](/repaso)
 
-4. **Biblioteca de Consulta**
-   - Búsqueda y lectura directa de normas técnicas, guías oficiales, libros y documentos clave de Educación y Salud.
-   - [Ir a Biblioteca](/library)`,
+4. **Boletín informativo de Inteligencia Artificial**
+   - Contenidos, novedades y divulgación sobre inteligencia artificial en el Perú y el mundo, con foco en educación, ciencia y trabajo profesional.
+   - [Explorar el Boletín IA](/library)`,
                 sugerencias: this.pills.visitor
             },
 
@@ -94,7 +94,7 @@ El registro es **instantáneo y gratuito**:
 
 * **Bancos 100% Oficiales Auditados**: Nuestros simulacros operan exclusivamente sobre preguntas reales y curadas en base de datos, sin preguntas sintéticas improvisadas.
 * **Tutoría IA Fundamentada en Normativa Peruana**: El Tutor IA explica cada alternativa citando documentos vigentes del **MINEDU (CNEB / MBDD / RVM 094-2020)** y del **MINSA (NTS / GPC)**.
-* **Ecosistema Conectado**: Integra la plataforma especializada **Docentes Inicial** (\`docentes.hubacademia.com\`), simuladores oficiales, memoria científica **SM-2 + Notas** y biblioteca normativa.
+* **Ecosistema Conectado**: Integra la plataforma especializada **Docentes Inicial** (\`docentes.hubacademia.com\`), simuladores oficiales, memoria científica **SM-2 + Notas** y el Boletín informativo de IA.
 * **Activación Inmediata**: Pagos procesados de manera exclusiva y automatizada mediante **Mercado Pago**.`,
                 sugerencias: this.pills.visitor
             },
@@ -155,6 +155,8 @@ El registro es **instantáneo y gratuito**:
             normalized.includes('ascenso') ||
             normalized.includes('serums') ||
             normalized.includes('biblioteca') ||
+            normalized.includes('boletin') ||
+            normalized.includes('noticia') ||
             normalized.includes('repaso') ||
             normalized.includes('nota') ||
             normalized.includes('que ofrece') ||

@@ -513,12 +513,12 @@ class DeckExplorer {
                 },
                 setup: (editor) => {
                     editor.on('init', () => {
-                        editor.setContent(description);
+                        editor.setContent(window.resolveHtmlMediaUrls(description));
                     });
                 }
             });
         } else {
-            window.tinymce.get('deck-guide-textarea').setContent(description);
+            window.tinymce.get('deck-guide-textarea').setContent(window.resolveHtmlMediaUrls(description));
         }
     }
 

@@ -1,0 +1,43 @@
+/* Complete brand artwork. The H symbol and wordmark are one supplied image. */
+a.brand-link {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+a.brand-link span.brand-wordmark {
+    display: block;
+    flex-shrink: 0;
+    width: 168px;
+    height: 44px;
+    line-height: 0;
+}
+a.brand-link span.brand-wordmark img.brand-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    border: 0;
+    border-radius: 0;
+}
+a.brand-link span.brand-wordmark img.brand-image--light {
+    display: none;
+}
+[data-theme="light"] a.brand-link span.brand-wordmark img.brand-image--dark {
+    display: none;
+}
+[data-theme="light"] a.brand-link span.brand-wordmark img.brand-image--light {
+    display: block;
+}
+.footer-logo.brand-link span.brand-wordmark,
+.public-footer .brand-link span.brand-wordmark {
+    width: 208px;
+    height: 54px;
+}
+@media (max-width: 640px) {
+    header a.brand-link span.brand-wordmark {
+        width: 124px;
+        height: 34px;
+    }
+}

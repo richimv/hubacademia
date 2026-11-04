@@ -15,28 +15,35 @@
 
     <!-- Centralized Design System Tokens -->
     <link rel="stylesheet" href="/css/theme.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/base.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/header.css?v=7110047d648f">
 
     <!-- Estilos Pure Dark v3 (Fix Grid overflow 9:16) -->
-    <link rel="stylesheet" href="/css/flashcards.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/flashcards.css?v=workspace-v1">
     <link rel="stylesheet" href="/css/modal.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/sidebar.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/components.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/tutor.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/tutor.css?v=workspace-v1">
     <link rel="stylesheet" href="/css/markdown-content.css?v=7110047d648f"> <!-- ✅ Formato unificado de Markdown IA -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="/js/config.js?v=7110047d648f"></script>
     <script src="/js/utils/themeManager.js?v=7110047d648f"></script>
+    <!-- Shared working-screen design; page sheets retain their state/layout mechanics. -->
+    <link rel="stylesheet" href="/css/workspace.css?v=workspace-v1">
+    <link rel="stylesheet" href="/css/workspace-study.css?v=workspace-v1">
+    <link rel="stylesheet" href="/css/brand.css">
 </head>
 
-<body>
+<body class="workspace-page" data-workspace="flashcards">
 
     <div id="app-root">
 
         <!-- HEADER / STATS -->
         <header class="study-header">
+            <h1 class="study-session-title">Repaso con flashcards</h1>
             <button id="btn-progress" class="back-nav" title="Volver">
                 <i class="fas fa-arrow-left"></i> 
-                <span class="nav-text">Volver a Mazos</span>
+                <span class="nav-text">Volver al mazo</span>
             </button>
 
             <div class="fc-stats-badge">
@@ -146,8 +153,10 @@
     <script src="/js/ui/sidebar.js?v=7110047d648f"></script>
     <script src="/js/app.js?v=7110047d648f"></script>
     <script src="/js/flashcards.js?v=7110047d648f"></script>
-    <script src="/js/tutor-chat.js?v=7110047d648f"></script>
+    <script src="/js/ui/studyTutorView.js?v=workspace-v1"></script>
+    <script src="/js/tutor-chat.js?v=workspace-v1"></script>
 
+    <script src="/js/ui/workspace-shell.js?v=workspace-v1" defer></script>
 </body>
 
 </html>

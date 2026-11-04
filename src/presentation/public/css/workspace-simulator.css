@@ -1,0 +1,409 @@
+/* SIMULATOR PRESENTATION — stable IDs and original exam/statistics logic retained.
+* S01 heading and configuration; S02 exam modes; S03 analytics and history.
+* Images are deliberately absent from analytical controls and question material.
+*/
+.workspace-page[data-workspace="simulator"] .context-hero-card {
+    margin-bottom: 24px;
+    padding: 24px 0 28px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+.workspace-page[data-workspace="simulator"] .context-hero-card:hover {
+    transform: none;
+}
+.workspace-page[data-workspace="simulator"] .context-hero-content {
+    gap: 24px;
+    align-items: flex-end;
+}
+.workspace-page[data-workspace="simulator"] .context-hero-info {
+    min-width: 0;
+}
+.workspace-page[data-workspace="simulator"] .context-hero-title {
+    color: var(--text-main);
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -.04em;
+    margin-block: 24px 12px;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+}
+.workspace-page[data-workspace="simulator"] .context-hero-subtitle {
+    font-size: .9375rem;
+    color: var(--text-secondary);
+    max-width: 58ch;
+    line-height: 1.6;
+}
+.workspace-page[data-workspace="simulator"] .context-hero-actions {
+    max-width: 440px;
+}
+.workspace-page[data-workspace="simulator"] .context-config-summary {
+    border: 0;
+    background: var(--bg-secondary);
+    box-shadow: none;
+    border-radius: 6px;
+    padding: 14px 16px;
+}
+.workspace-page[data-workspace="simulator"] .context-hero-buttons-row {
+    gap: 12px;
+}
+.workspace-page[data-workspace="simulator"] .sim-domain-switcher {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    gap: 8px;
+}
+.workspace-page[data-workspace="simulator"] .sim-domain-tab {
+    padding: 10px 16px;
+    color: var(--text-secondary);
+    font-size: .875rem;
+}
+.workspace-page[data-workspace="simulator"] .dashboard-section {
+    margin-bottom: 40px;
+}
+.workspace-page[data-workspace="simulator"] .section-header-row {
+    gap: 20px;
+    margin-bottom: 24px;
+}
+.workspace-page[data-workspace="simulator"] .section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+.workspace-page[data-workspace="simulator"] .section-title > i {
+    display: none;
+}
+.workspace-page[data-workspace="simulator"] .section-subtitle {
+    font-size: .875rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+/* Exam modes: the question count and purpose carry the visual hierarchy.
+* All states live here; the historical hover/glow rules were removed. */
+.workspace-page[data-workspace="simulator"] .modes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.workspace-page[data-workspace="simulator"] .mode-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 260px;
+    padding: 24px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    text-decoration: none;
+    box-shadow: none;
+    overflow: hidden;
+    transform: none;
+    transition: background-color .18s ease, border-color .18s ease;
+}
+.workspace-page[data-workspace="simulator"] .mode-card:is(:hover,:focus-visible) {
+    background: var(--surface-alt);
+    border-color: var(--primary);
+    transform: none;
+    box-shadow: none;
+}
+.workspace-page[data-workspace="simulator"] .mode-card--study {
+    background: var(--bg-tertiary);
+}
+.workspace-page[data-workspace="simulator"] .mode-card::before, .workspace-page[data-workspace="simulator"] .stat-box::before {
+    content: none;
+}
+.workspace-page[data-workspace="simulator"] .mode-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+}
+.workspace-page[data-workspace="simulator"] .mode-purpose {
+    font-size: .8125rem;
+    color: var(--text-muted);
+}
+.workspace-page[data-workspace="simulator"] .mode-q-badge {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-main);
+    font: 400 clamp(1.25rem, 2vw, 1.75rem)/1.2 var(--font-main);
+    letter-spacing: -.035em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.workspace-page[data-workspace="simulator"] .mode-title {
+    color: var(--text-main);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -.03em;
+    margin: 0 0 12px;
+}
+.workspace-page[data-workspace="simulator"] .mode-desc {
+    color: var(--text-secondary);
+    font-size: .9375rem;
+    line-height: 1.6;
+    margin: 0;
+}
+.workspace-page[data-workspace="simulator"] .mode-card-footer {
+    margin-top: auto;
+    padding-top: 8px;
+}
+.workspace-page[data-workspace="simulator"] .mode-cta, .workspace-page[data-workspace="simulator"] .mode-card:is(:hover,:focus-visible) .mode-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--primary-light);
+    font-size: .875rem;
+    font-weight: 600;
+    box-shadow: none;
+}
+.workspace-page[data-workspace="simulator"] .mode-cta i {
+    transition: transform .18s ease;
+}
+.workspace-page[data-workspace="simulator"] .mode-card:hover .mode-cta i {
+    transform: translateX(4px);
+}
+.workspace-page[data-workspace="simulator"] .mode-card--trial-pulse {
+    border-color: var(--primary);
+}
+.workspace-page[data-workspace="simulator"] .mode-card--disabled {
+    cursor: not-allowed;
+    opacity: .65;
+}
+/* Analytics: numbers carry hierarchy, semantic colour remains in the actual data. */
+.workspace-page[data-workspace="simulator"] .stats-overview {
+    gap: 0;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.workspace-page[data-workspace="simulator"] .stat-box {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 24px;
+}
+.workspace-page[data-workspace="simulator"] .stat-box + .stat-box {
+    border-left: 1px solid var(--border-color);
+}
+.workspace-page[data-workspace="simulator"] .stat-box:hover {
+    transform: none;
+    box-shadow: none;
+}
+.workspace-page[data-workspace="simulator"] .stat-label {
+    font-size: .8125rem;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+}
+.workspace-page[data-workspace="simulator"] .stat-value {
+    font-size: 2rem;
+    color: var(--text-main);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.04em;
+}
+.workspace-page[data-workspace="simulator"] .stat-sub, .workspace-page[data-workspace="simulator"] .stat-unit {
+    color: var(--text-muted);
+    font-size: .8125rem;
+}
+.workspace-page[data-workspace="simulator"] .stat-progress-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg-tertiary);
+}
+.workspace-page[data-workspace="simulator"] .stat-progress-bar {
+    border-radius: 2px;
+    box-shadow: none;
+}
+.workspace-page[data-workspace="simulator"] .kpi-filters-container {
+    gap: 12px;
+    align-items: flex-start;
+}
+.workspace-page[data-workspace="simulator"] .kpi-tabs-group {
+    background: var(--bg-secondary);
+    border: 0;
+    box-shadow: none;
+    border-radius: 6px;
+    padding: 4px;
+    flex-wrap: wrap;
+}
+.workspace-page[data-workspace="simulator"] .kpi-filter-label {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-muted);
+}
+.workspace-page[data-workspace="simulator"] .detail-card {
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    box-shadow: none;
+}
+.workspace-page[data-workspace="simulator"] .detail-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+.workspace-page[data-workspace="simulator"] .detail-card-subtitle {
+    font-size: .8125rem;
+    line-height: 1.6;
+}
+.workspace-page[data-workspace="simulator"] .chart-empty-icon {
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--text-muted);
+}
+.workspace-page[data-workspace="simulator"] :is(.ai-ambient-glow, .ai-badge-pill) {
+    display: none;
+}
+.workspace-page[data-workspace="simulator"] :is(.ai-header-icon-box, .ai-initial-icon) {
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--text-muted);
+}
+.workspace-page[data-workspace="simulator"] :is(.ai-card-title, .ai-card-title span, .ai-initial-heading) {
+    color: var(--text-main);
+    font-weight: 600;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+}
+.workspace-page[data-workspace="simulator"] :is(.btn-ai-action, #btn-save-config) {
+    min-height: 44px;
+    border: 0;
+    border-radius: 6px;
+    background: var(--primary);
+    color: #fff;
+    box-shadow: none;
+}
+.workspace-page[data-workspace="simulator"] .btn-ai-action:hover {
+    transform: none;
+    background: var(--primary-hover);
+    box-shadow: none;
+}
+.workspace-page[data-workspace="simulator"] :is(.config-modal, .target-card, .mode-toggle-option, .ai-insight-panel, .ai-strategy-box, .ai-step-card) {
+    border-radius: 6px;
+    box-shadow: none;
+}
+.workspace-page[data-workspace="simulator"] .config-modal {
+    background: var(--modal-bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.workspace-page[data-workspace="simulator"] .config-summary-pill {
+    border-radius: 4px;
+    font-weight: 500;
+}
+.workspace-page[data-workspace="simulator"] .html-bar-track {
+    height: 7px;
+    border: 0;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+}
+.workspace-page[data-workspace="simulator"] .html-bar-fill {
+    box-shadow: none;
+    border-radius: 3px;
+}
+.workspace-page[data-workspace="simulator"] .html-bar-fill::after {
+    content: none;
+}
+.workspace-page[data-workspace="simulator"] .html-chart-group-header {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-main);
+}
+.workspace-page[data-workspace="simulator"] .html-bar-label, .workspace-page[data-workspace="simulator"] .html-bar-value {
+    font-size: .8125rem;
+}
+.workspace-page[data-workspace="simulator"] .html-bar-value {
+    font-variant-numeric: tabular-nums;
+}
+@media (max-width: 1050px) {
+    .workspace-page[data-workspace="simulator"] .context-hero-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .workspace-page[data-workspace="simulator"] .context-hero-actions {
+        max-width: none;
+    }
+}
+@media (max-width: 768px) {
+    .workspace-page[data-workspace="simulator"] .context-hero-card {
+        padding-top: 8px;
+    }
+    .workspace-page[data-workspace="simulator"] .modes-grid {
+        grid-template-columns: 1fr;
+    }
+    .workspace-page[data-workspace="simulator"] .mode-card {
+        min-height: 0;
+        gap: 16px;
+        padding: 20px;
+    }
+    .workspace-page[data-workspace="simulator"] .stats-overview {
+        grid-template-columns: 1fr;
+    }
+    .workspace-page[data-workspace="simulator"] .stat-box + .stat-box {
+        border-left: 0;
+        border-top: 1px solid var(--border-color);
+    }
+    .workspace-page[data-workspace="simulator"] .kpi-filters-container {
+        width: 100%;
+    }
+    .workspace-page[data-workspace="simulator"] .kpi-tabs-group {
+        width: 100%;
+    }
+}
+/* The actual study sequence adds orientation without decorative dashboard imagery. */
+.workspace-page[data-workspace="simulator"] .study-support-copy {
+    flex: 1;
+    min-width: 0;
+}
+.workspace-page[data-workspace="simulator"] .study-support-copy > strong {
+    color: var(--text-main);
+    font-size: .9375rem;
+    font-weight: 600;
+}
+.workspace-page[data-workspace="simulator"] .study-support-copy > p {
+    margin-top: 12px;
+    font-size: .8125rem;
+    color: var(--text-muted);
+}
+.workspace-page[data-workspace="simulator"] .study-support-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin-top: 12px;
+    padding: 0;
+    list-style: none;
+    counter-reset: study-step;
+}
+.workspace-page[data-workspace="simulator"] .study-support-steps li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    counter-increment: study-step;
+    color: var(--text-secondary);
+    font-size: .875rem;
+}
+.workspace-page[data-workspace="simulator"] .study-support-steps li::before {
+    content: counter(study-step, decimal-leading-zero);
+    color: var(--primary-light);
+    font-variant-numeric: tabular-nums;
+    font-size: .75rem;
+}
+@media(max-width:768px) {
+    .workspace-page[data-workspace="simulator"] .study-support-steps {
+        flex-direction: column;
+        gap: 8px;
+    }
+}

@@ -491,24 +491,19 @@ class AnalyticsService {
 
         // 2. Cálculo de Nivel de Competencia y Readiness Index
         let readinessLevel = 'Nivel Inicial';
-        let readinessColor = '#f43f5e';
         let readinessIndex = 45;
 
         if (accuracy >= 80 || avgScore >= 16) {
             readinessLevel = 'Nivel Sobresaliente';
-            readinessColor = '#10b981';
             readinessIndex = Math.min(Math.round(accuracy * 0.6 + (avgScore / 20 * 100) * 0.4), 98);
         } else if (accuracy >= 65 || avgScore >= 13) {
             readinessLevel = 'Nivel Competente';
-            readinessColor = '#3b82f6';
             readinessIndex = Math.min(Math.round(accuracy * 0.6 + (avgScore / 20 * 100) * 0.4), 84);
         } else if (accuracy >= 45 || avgScore >= 9) {
             readinessLevel = 'Nivel en Desarrollo';
-            readinessColor = '#f59e0b';
             readinessIndex = Math.max(Math.round(accuracy * 0.6 + (avgScore / 20 * 100) * 0.4), 45);
         } else {
             readinessLevel = 'Nivel Inicial';
-            readinessColor = '#f43f5e';
             readinessIndex = Math.max(Math.round(accuracy * 0.6 + (avgScore / 20 * 100) * 0.4), 25);
         }
 

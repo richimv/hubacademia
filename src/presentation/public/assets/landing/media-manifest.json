@@ -1,0 +1,112 @@
+{
+  "version": 5,
+  "generatedAt": "2026-11-03",
+  "provider": "built-in image_gen",
+  "notes": "Originals are preserved. Start posters are used on the landing. Loop endings reuse the exact start image. Flow exports normalize resolution without regenerating content.",
+  "assets": [
+    {
+      "id": "hero-desktop-start",
+      "slot": "hero",
+      "orientation": "desktop",
+      "frame": "start",
+      "loopFinal": true,
+      "source": "source/v5/hero-desktop-start.png",
+      "flowDimensions": [
+        1920,
+        1080
+      ],
+      "prompt": "Use case: product-mockup. Asset: Hub Academia corporate landing hero and FIRST/FINAL FRAME for an eight-second brand film. Create ONE photorealistic, cinematic studio photograph, landscape 16:9, target 1920x1080. Input image is a BRAND SHAPE REFERENCE only: the existing isometric H symbol, NOT an edit target. Preserve the distinctive silhouette: two tall square-section pillars joined by the central lower angular crosspiece, top faces visible. Rebuild that exact geometric object as a substantial machined graphite sculpture, subtly brushed charcoal metal with narrow cobalt-blue inner faces. Dark matte physical stage with tiny natural material texture, very soft grounded shadow. Camera: restrained three-quarter view, 70mm product lens, sculpture large but fully visible, positioned in the RIGHT third of the frame; keep the entire left 48% nearly black, empty and low contrast for live webpage headline. Delicate cool studio rim light makes all critical geometry legible, a neutral grazing light reveals material; avoid coloured glow. Quiet precision, credible technology company, high-end industrial photography, natural optics. No text, no lettering beyond the reference symbol's shape, no wordmark, no hologram, no neon, no circuitry, no particles, no maps, no people, no floating UI, no extra objects, no watermark. Deliver a finished still suitable as a website background and a locked first frame for animation."
+    },
+    {
+      "id": "hero-mobile-start",
+      "slot": "hero",
+      "orientation": "mobile",
+      "frame": "start",
+      "loopFinal": true,
+      "source": "source/v5/hero-mobile-start.png",
+      "flowDimensions": [
+        1080,
+        1920
+      ],
+      "prompt": "Use case: product-mockup. Asset: vertical FIRST/FINAL FRAME and mobile poster for Hub Academia brand film. Create ONE portrait photograph, 9:16 aspect ratio, target 1080x1920. Input is the exact material, sculpture and lighting reference; preserve the same isometric geometric H, brushed graphite and dark cobalt inner faces. Recompose the SAME sculpture for a vertical mobile layout. Its full silhouette sits in the LOWER half, occupying about 46% of frame height and centered horizontally, on the same matte black studio floor. The upper 40% remains nearly black and completely empty for a live HTML headline. Premium realistic studio lens, slight three-quarter view, refined grazing light, natural material texture, grounded soft shadow. No words, no added symbols, no glow, no extra objects, no holograms, no particles. Keep the recognisable H crosspiece exactly as in the reference. A still frame of a physical object, not a website mockup or collage."
+    },
+    {
+      "id": "inicial-desktop-start",
+      "slot": "inicial",
+      "orientation": "desktop",
+      "frame": "start",
+      "loopFinal": false,
+      "source": "source/v5/inicial-desktop-start.png",
+      "flowDimensions": [
+        1920,
+        1080
+      ],
+      "prompt": "Use case: photorealistic-natural. Asset: editorial photograph and FIRST FRAME for a six-second Hub Academia early-childhood education film. ONE landscape 16:9 frame, target 1920x1080. Authentic contemporary Peruvian preschool teacher's workspace, photographed obliquely from above at intimate desk height. A Peruvian adult female educator is visible only through her naturally posed forearms, hands, sleeve and a small portion of shoulder at the LEFT edge. Her RIGHT hand holds one small ivory observation card just above an open textured notebook, about to set it down. Her left hand rests naturally near the notebook's lower-left corner. Notebook contains subtle pencil observation marks too small to be legible, not fake paragraphs. A few tactile early-childhood objects, natural wood counting pieces and one muted blue pencil rest neatly at the back of the table. Natural oak tabletop, soft woven cloth, out-of-focus quiet classroom shelves. Main meaningful action is in LEFT and CENTER portions of frame; reserve the right 30% as calm tabletop and soft background for adjacent live HTML. Light: soft coastal morning daylight from left, calm, thoughtful, credible, warm but not orange. True editorial photography, real skin texture, believable finger anatomy, restrained medium-format optics, crisp tactile materials, moderate depth of field. No children, no holograms, no glowing interfaces, no logos, no readable text, no watermark. The single card held above the notebook is essential for animating a simple action later."
+    },
+    {
+      "id": "inicial-desktop-end",
+      "slot": "inicial",
+      "orientation": "desktop",
+      "frame": "end",
+      "loopFinal": false,
+      "source": "source/v5/inicial-desktop-end.png",
+      "flowDimensions": [
+        1920,
+        1080
+      ],
+      "prompt": "Use case: precise-object-edit. Asset: optional FINAL FRAME of a six-second education film. Edit this reference photograph with one minimal physically plausible change: the teacher has placed the small ivory card flat on the notebook at exactly the spot directly beneath it, and her right hand now rests lightly on the card's upper-left edge. Her left hand stays where it is. Keep camera position, landscape 16:9 framing, lighting, tabletop, notebook, pencil, background, clothing, skin, all objects and their placement EXACTLY unchanged. Preserve five fingers and natural anatomy. The card stays blank. No new text, no additional objects, no effects, no watermark. This must look like the ending of a short fixed-camera action in the exact same real scene."
+    },
+    {
+      "id": "inicial-mobile-start",
+      "slot": "inicial",
+      "orientation": "mobile",
+      "frame": "start",
+      "loopFinal": false,
+      "source": "source/v5/inicial-mobile-start.png",
+      "flowDimensions": [
+        1080,
+        1920
+      ],
+      "prompt": "Use case: photorealistic-natural. Asset: portrait FIRST FRAME and mobile editorial photo for Hub Academia early-childhood section. Recompose the reference as ONE vertical 9:16 photograph, target 1080x1920. Preserve the exact adult educator's sleeve, real hands, oak desk, ivory card held just above the open grid notebook, blue pencil and natural wooden learning pieces. The notebook and hands are fully visible in the lower-middle area; softly blurred classroom materials in the upper background. Respect realistic anatomy and natural lighting. This is the same physical scene from the same gentle oblique overhead viewpoint but a true portrait composition with meaningful subject scale. No identifiable children, no added text or UI, no logos, no digital effects, no watermark. Calm editorial education photography, skin texture and tactile paper remain clear."
+    },
+    {
+      "id": "inicial-mobile-end",
+      "slot": "inicial",
+      "orientation": "mobile",
+      "frame": "end",
+      "loopFinal": false,
+      "source": "source/v5/inicial-mobile-end.png",
+      "flowDimensions": [
+        1080,
+        1920
+      ],
+      "prompt": "Use case: precise-object-edit. Asset: portrait FINAL FRAME for the same six-second teacher action. Edit ONLY the action state of the reference. The ivory card has been lowered onto the open notebook exactly beneath its original position. The right hand now rests gently on the upper-left edge of the card. Keep the left hand, camera, 9:16 portrait framing, teacher, sleeve, desk, blue pencil, wooden learning materials, background, light and all other details unchanged. Preserve real anatomy and the card's size and colour. No readable writing, no extra objects, no digital effects. The still must match the reference as the ending of one continuous fixed-camera shot."
+    },
+    {
+      "id": "boletin-desktop-start",
+      "slot": "boletin",
+      "orientation": "desktop",
+      "frame": "start",
+      "loopFinal": true,
+      "source": "source/v5/boletin-desktop-start.png",
+      "flowDimensions": [
+        1920,
+        1080
+      ],
+      "prompt": "Use case: photorealistic-natural. Asset: bespoke editorial still and optional FIRST/FINAL FRAME for the Hub Academia Artificial Intelligence Bulletin. ONE landscape 16:9 photograph, target 1920x1080. A refined publisher's worktable on charcoal-black unpolished stone: three carefully arranged large ivory research folios, one open to a clean abstract technical diagram made of thin printed graphite lines and a restrained blue highlight; another folded sheet showing an understated non-legible column structure, a third stacked as an angular paper plane. Printed matter is abstract visual texture, NOT a screenshot, NOT readable text, NOT a fake news article. One small cobalt-blue metal binder clip is the only intense colour. The paper itself and oblique shadows carry the composition. No open book, no laptop, no globe, no human, no glowing networks. Framing: slight overhead angle, strong editorial geometry, documents occupy center-right 70%, calmer dark area left, all essential forms comfortably inside frame. Rich paper fibres, subtle embossing, true optics, precise studio side lighting, agency-level art direction with clean negative space. Photorealistic physical still life, no logos, no words, no holograms, no illustrations floating above objects, no watermark. Suitable as a quiet static section image and a future locked-camera light movement film."
+    },
+    {
+      "id": "boletin-mobile-start",
+      "slot": "boletin",
+      "orientation": "mobile",
+      "frame": "start",
+      "loopFinal": true,
+      "source": "source/v5/boletin-mobile-start.png",
+      "flowDimensions": [
+        1080,
+        1920
+      ],
+      "prompt": "Use case: photorealistic-natural. Asset: portrait editorial FIRST/FINAL FRAME and mobile still for Hub Academia AI Bulletin. Recompose the provided physical paper still life as ONE vertical 9:16 photograph, target 1080x1920. Keep the same charcoal stone desk, thick ivory textured folios, graphite abstract printed circular diagram with a muted blue accent, folded paper edge and cobalt binder clip. Use a balanced portrait arrangement: diagram sheet in lower-middle, a second vertical research sheet behind it, dark negative space at top, all meaningful objects clearly visible. Same refined directional studio light, realistic shadows and paper fibres, physical editorial material rather than digital abstraction. No readable text, no new objects, no books, no holograms, no maps, no screens, no watermark. Preserve the material language of the reference without creating a web page or layout."
+    }
+  ]
+}

@@ -13,7 +13,7 @@ describe('Retired language-learning module boundaries', () => {
             'src/presentation/public/js/simulator-dash.js',
             'src/presentation/public/simulator-dashboard.html',
             'src/presentation/public/css/simulator-dashboard.css',
-            'src/presentation/public/css/simulators.css'
+            'src/presentation/public/css/workspace-simulator.css'
         ];
         const source = files.map(read).join('\n');
 

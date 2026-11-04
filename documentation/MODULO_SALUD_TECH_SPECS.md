@@ -1,5 +1,11 @@
 # 🩺 Specs Técnicas: Simulador Médico (Hub Academia)
 
+## Interfaz web vigente — 3 de noviembre de 2026
+
+Entrada actual: `/simulator-dashboard?context=MEDICINA`. La UI muestra «Simulador médico», con marco compartido `workspace-page`, superficies planas y acento teal local. El modo real conserva 100 preguntas y 2 horas; Rápido y Estudio conservan 10 y 20. SERUMS está disponible; ENAM y Residentado conservan sus opciones deshabilitadas en esta web.
+
+La presentación vigente sustituye la estética Sci-Fi y sus recursos temáticos descritos históricamente abajo. Métricas y gráficos conservan datos reales y lógica existente. Quiz y Tutor comparten componentes con Educación, y las respuestas del Tutor se guardan en `/repaso?view=notes`. Arquitectura en [WORKSPACE_FRONTEND_GUIDE.md](WORKSPACE_FRONTEND_GUIDE.md). No se ejecutaron pruebas por indicación del usuario.
+
 ## 1. Visión General
 El **Simulador Médico** es el motor de entrenamiento de alto rendimiento de Hub Academia. Permite realizar simulacros personalizados (ENAM, SERUMS, Residentado) con una mezcla de preguntas de banco y generación por IA (RAG) en tiempo real.
 

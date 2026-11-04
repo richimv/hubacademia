@@ -1,0 +1,323 @@
+/* Runtime overlays. Markup and interaction live in UIManager; no injected CSS. */
+.media-viewer-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 10, 10, 0.98);
+    z-index: 9999999;
+    justify-content: center;
+    align-items: center;
+    animation: fadeInMedia 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes fadeInMedia {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+.media-viewer-container {
+    width: 96%;
+    max-width: 1200px;
+    height: 94vh;
+    display: flex;
+    flex-direction: column;
+    background: rgba(20, 20, 20, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+}
+.media-viewer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #f1f5f9;
+    padding: 15px 24px;
+    background: rgba(10, 10, 10, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.media-viewer-title-text {
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50%;
+}
+.media-viewer-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.media-btn-action, .media-btn-download, .media-btn-close {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none;
+}
+.media-btn-action:hover, .media-btn-download:hover {
+    background: #3b82f6;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: none;
+}
+.media-btn-close {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+.media-btn-close:hover {
+    background: #ef4444;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: none;
+}
+.media-viewer-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #050505;
+    position: relative;
+}
+.media-viewer-body img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+    cursor: grab;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.media-viewer-body img.zoom-active {
+    cursor: grabbing;
+}
+.media-viewer-body iframe, .media-viewer-body video {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+}
+.media-loader {
+    position: absolute;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 10;
+}
+@media (max-width: 768px) {
+    .media-viewer-container {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        border: none;
+    }
+    .media-viewer-header {
+        padding: 10px 15px;
+    }
+    .media-viewer-title-text {
+        font-size: 1rem;
+        max-width: 40%;
+    }
+    .media-btn-action, .media-btn-download, .media-btn-close {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+}
+/* Connection notices are quiet, readable in both themes, and state driven. */
+.status-pill-container {
+    position: fixed;
+    top: calc(var(--header-height-mobile,64px) + var(--trial-bar-height,0px) + 8px);
+    left: 50%;
+    transform: translate(-50%,-160px);
+    z-index: 9999;
+    pointer-events: none;
+    transition: transform .2s ease;
+}
+.status-pill-container.active {
+    transform: translate(-50%,0);
+}
+.status-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--modal-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    font-size: .875rem;
+}
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+}
+.status-pill.offline .status-dot {
+    background: var(--danger);
+}
+.status-pill.online .status-dot {
+    background: var(--success);
+}
+.status-pill.syncing .status-dot {
+    background: var(--warning);
+}
+/* Credit status occupies its own 46px row above both header shells. */
+.freemium-status-bar {
+    display: none;
+    position: fixed;
+    inset: 0 0 auto;
+    height: 46px;
+    z-index: 1001;
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-color);
+}
+.freemium-status-bar.visible:not([hidden]) {
+    display: flex;
+}
+.status-content {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 20px;
+    width: min(1320px, 100%);
+    margin-inline: auto;
+    padding-inline: 16px;
+}
+.probation-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: .8125rem;
+}
+.usage-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-main);
+    font-size: .8125rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.usage-pill.low-lives {
+    color: var(--danger);
+}
+.usage-label-text {
+    color: var(--text-muted);
+    font-size: .75rem;
+}
+.upgrade-btn-small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--primary-light);
+    font: 600 .8125rem var(--font-main);
+    text-decoration: none;
+    cursor: pointer;
+}
+.upgrade-btn-small:hover {
+    background: var(--surface-hover);
+    color: var(--primary-light);
+}
+.freemium-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translate(-50%,16px);
+    opacity: 0;
+    max-width: calc(100vw - 32px);
+    padding: 16px;
+    background: var(--modal-bg);
+    color: var(--text-main);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    z-index: 9999;
+    pointer-events: none;
+    transition: opacity .2s ease,transform .2s ease;
+}
+.freemium-toast.show {
+    opacity: 1;
+    transform: translate(-50%,0);
+}
+.freemium-toast i {
+    color: var(--primary-light);
+}
+@media(max-width:600px) {
+    .status-content {
+        gap: 8px;
+        padding-inline: 8px;
+    }
+    .status-content .hide-mobile {
+        display: none;
+    }
+    .probation-text,.usage-pill {
+        font-size: .75rem;
+    }
+    .upgrade-btn-small {
+        padding-inline: 8px;
+        font-size: .75rem;
+    }
+}
+@media(prefers-reduced-motion:reduce) {
+    .media-viewer-overlay {
+        animation: none;
+    }
+    .status-pill-container,.freemium-toast {
+        transition: none;
+    }
+}
+/* Short labels keep the credit row on one line at narrow widths. */
+@media(max-width:600px) {
+    .freemium-status-bar .status-content {
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .freemium-status-bar .probation-text {
+        font-size: .6875rem;
+    }
+    .freemium-status-bar .usage-pill {
+        gap: 4px;
+        font-size: .75rem;
+    }
+    .freemium-status-bar .usage-label-text {
+        font-size: .6875rem;
+    }
+    .freemium-status-bar .upgrade-btn-small {
+        padding-inline: 0;
+        font-size: .75rem;
+    }
+}

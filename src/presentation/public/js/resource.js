@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const resourceId = urlParams.get('id');
     const wrapper = document.getElementById('resource-wrapper');
-    let stateResourceId = null;
 
     if (!resourceId) {
         wrapper.innerHTML = '<div class="error-state">No se especificó un recurso (Falta ID).</div>';
@@ -81,9 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <p>Este recurso no tiene un resumen detallado aún.</p>
         </div>`;
 
-        // INTERCEPTOR DE RENDIMIENTO Y ESCAPE DE VERCEL (DOM PARSER):
-        // En lugar de usar Regex (que es frágil ante diferentes codificaciones HTML de TinyMCE),
-        // parseamos el HTML real y reescribimos los sources explícitamente para saltarnos Vercel.
+        // Shared media normalization covers covers, inline images and attachments.
         let safeHTML = resource.content_html || defaultContent;
         if (safeHTML !== defaultContent) {
             safeHTML = convertYoutubeLinksToEmbeds(safeHTML);
@@ -91,28 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.MarkdownRenderer && safeHTML !== defaultContent) {
             safeHTML = window.MarkdownRenderer.render(safeHTML);
         }
-        if (window.AppConfig && window.AppConfig.API_URL && safeHTML !== defaultContent) {
-            try {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(safeHTML, 'text/html');
-                const images = doc.querySelectorAll('img');
-
-                images.forEach(img => {
-                    const src = img.getAttribute('src');
-                    if (src && src.includes('/api/media/')) {
-                        // Extraemos solo la parte del endpoint (ej. /api/media/gcs?path=...)
-                        const endpointMatch = src.match(/\/api\/media\/.*/);
-                        if (endpointMatch) {
-                            // Resolver sobre el mismo origen API configurado en Vercel
-                            img.setAttribute('src', window.AppConfig.API_URL + endpointMatch[0]);
-                        }
-                    }
-                });
-                safeHTML = doc.body.innerHTML;
-            } catch (e) {
-                console.error("Error al interceptar imágenes del recurso:", e);
-            }
-        }
+        if (safeHTML !== defaultContent) safeHTML = window.resolveHtmlMediaUrls(safeHTML);
 
         // Configurar la URL en el uiManager
         if (window.uiManager && resource.url) {

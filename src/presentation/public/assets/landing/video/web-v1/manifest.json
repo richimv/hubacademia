@@ -1,0 +1,82 @@
+{
+  "codec": "H.264",
+  "fps": 24,
+  "keyframeInterval": 6,
+  "audio": false,
+  "originalBytes": 63095519,
+  "webBytes": 15298090,
+  "videos": [
+    {
+      "id": "hero-desktop",
+      "source": "src/presentation/public/assets/landing/video/hero-desktop.mp4",
+      "web": "src/presentation/public/assets/landing/video/web-v1/hero-desktop.mp4",
+      "poster": "src/presentation/public/assets/landing/posters/web-v1/hero-desktop.webp",
+      "originalBytes": 3255115,
+      "webBytes": 1567725,
+      "reductionPercent": 51.8,
+      "duration": 7.83,
+      "width": 1440,
+      "height": 810
+    },
+    {
+      "id": "hero-mobile",
+      "source": "src/presentation/public/assets/landing/video/hero-mobile.mp4",
+      "web": "src/presentation/public/assets/landing/video/web-v1/hero-mobile.mp4",
+      "poster": "src/presentation/public/assets/landing/posters/web-v1/hero-mobile.webp",
+      "originalBytes": 4505332,
+      "webBytes": 1109753,
+      "reductionPercent": 75.4,
+      "duration": 7.83,
+      "width": 720,
+      "height": 1280
+    },
+    {
+      "id": "inicial-desktop",
+      "source": "src/presentation/public/assets/landing/video/inicial-deskto.mp4",
+      "web": "src/presentation/public/assets/landing/video/web-v1/inicial-desktop.mp4",
+      "poster": "src/presentation/public/assets/landing/posters/web-v1/inicial-desktop.webp",
+      "originalBytes": 4541412,
+      "webBytes": 3802139,
+      "reductionPercent": 16.3,
+      "duration": 7.83,
+      "width": 1440,
+      "height": 810
+    },
+    {
+      "id": "inicial-mobile",
+      "source": "src/presentation/public/assets/landing/video/inicial-mobile.mp4",
+      "web": "src/presentation/public/assets/landing/video/web-v1/inicial-mobile.mp4",
+      "poster": "src/presentation/public/assets/landing/posters/web-v1/inicial-mobile.webp",
+      "originalBytes": 5676006,
+      "webBytes": 2521487,
+      "reductionPercent": 55.6,
+      "duration": 7.83,
+      "width": 720,
+      "height": 1280
+    },
+    {
+      "id": "boletin-desktop",
+      "source": "src/presentation/public/assets/landing/video/boletin-desktop.mp4",
+      "web": "src/presentation/public/assets/landing/video/web-v1/boletin-desktop.mp4",
+      "poster": "src/presentation/public/assets/landing/posters/web-v1/boletin-desktop.webp",
+      "originalBytes": 32007261,
+      "webBytes": 3793842,
+      "reductionPercent": 88.1,
+      "duration": 7.83,
+      "width": 1440,
+      "height": 810
+    },
+    {
+      "id": "boletin-mobile",
+      "source": "src/presentation/public/assets/landing/video/boletin-mobile.mp4",
+      "web": "src/presentation/public/assets/landing/video/web-v1/boletin-mobile.mp4",
+      "poster": "src/presentation/public/assets/landing/posters/web-v1/boletin-mobile.webp",
+      "originalBytes": 13110393,
+      "webBytes": 2503144,
+      "reductionPercent": 80.9,
+      "duration": 7.83,
+      "width": 720,
+      "height": 1280
+    }
+  ]
+}

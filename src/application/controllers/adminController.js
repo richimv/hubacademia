@@ -231,11 +231,7 @@ class AdminController {
 
             let image_url = body.image_url && body.image_url.trim() !== '' ? body.image_url.trim() : null;
             if (req.file) {
-                try {
-                    image_url = await mediaController.uploadFile(req.file, 'thumbnails');
-                } catch (imgErr) {
-                    console.error('Error uploading case image:', imgErr);
-                }
+                image_url = await mediaController.uploadFile(req.file, 'thumbnails');
             }
 
             const domain = body.domain || 'education';
@@ -264,40 +260,21 @@ class AdminController {
         try {
             const { id } = req.params;
             const body = req.body || {};
-            let oldCase = null;
-            try {
-                oldCase = await adminService.getCaseById(id);
-            } catch (e) {}
+            const oldCase = await adminService.getCaseById(id);
+            if (!oldCase) return res.status(404).json({ error: 'Casuística no encontrada.' });
 
             let image_url = body.image_url !== undefined ? (body.image_url.trim() || null) : undefined;
             if (req.file) {
-                try {
-                    if (oldCase && oldCase.image_url) {
-                        await mediaController.deleteFile(oldCase.image_url);
-                    }
-                    image_url = await mediaController.uploadFile(req.file, 'thumbnails');
-                } catch (imgErr) {
-                    console.error('Error uploading case image:', imgErr);
-                }
+                image_url = await mediaController.uploadFile(req.file, 'thumbnails');
             } else if (body.deleteImage === 'true') {
-                if (oldCase && oldCase.image_url) {
-                    try { await mediaController.deleteFile(oldCase.image_url); } catch (e) {}
-                }
                 image_url = null;
             }
 
             const rawDescription = body.description_text !== undefined ? body.description_text.trim() : undefined;
             const sanitizedDescription = rawDescription ? await this._sanitizeHtmlImages(rawDescription, 'editor-content') : rawDescription;
 
-            // ✅ Eliminar del bucket imágenes que hayan sido quitadas del editor TinyMCE
-            if (oldCase && sanitizedDescription !== undefined) {
-                const oldPaths = this._extractGcsPaths(oldCase.description_text);
-                const newPaths = this._extractGcsPaths(sanitizedDescription);
-                const removedPaths = oldPaths.filter(p => !newPaths.includes(p));
-                for (const path of removedPaths) {
-                    try { await mediaController.deleteFile(path); } catch (e) { console.error('Error deleting removed case editor image:', e); }
-                }
-            }
+            // Shared/editor object versions are retained. Removing a reference
+            // here does not prove that another case/question no longer uses it.
 
             const payload = {
                 code: body.code !== undefined ? body.code.trim() : undefined,
@@ -310,6 +287,7 @@ class AdminController {
             };
 
             const updated = await adminService.updateCase(id, payload);
+            if (!updated) return res.status(404).json({ error: 'Casuística no encontrada.' });
             res.json({ success: true, case: updated });
         } catch (error) {
             console.error('Error updating case:', error);
@@ -395,13 +373,11 @@ class AdminController {
 
             if (req.files) {
                 if (req.files['questionImage'] && req.files['questionImage'][0]) {
-                    try { q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions'); }
-                    catch (err) { console.error('Error uploading question image:', err); }
+                    q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions');
                 }
 
                 if (req.files['explanationImage'] && req.files['explanationImage'][0]) {
-                    try { q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations'); }
-                    catch (err) { console.error('Error uploading explanation image:', err); }
+                    q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations');
                 }
             }
 
@@ -450,50 +426,27 @@ class AdminController {
             const currentQuestionImg = oldData?.image_url;
             const currentExplanationImg = oldData?.explanation_image_url;
 
-            // ✅ Eliminar del bucket imágenes que hayan sido quitadas del editor TinyMCE
-            if (oldData) {
-                if (q.question_text) {
-                    const oldQPaths = this._extractGcsPaths(oldData.question_text);
-                    const newQPaths = this._extractGcsPaths(q.question_text);
-                    const removedQPaths = oldQPaths.filter(p => !newQPaths.includes(p));
-                    for (const path of removedQPaths) {
-                        try { await mediaController.deleteFile(path); } catch (e) {}
-                    }
-                }
-                if (q.explanation) {
-                    const oldExpPaths = this._extractGcsPaths(oldData.explanation);
-                    const newExpPaths = this._extractGcsPaths(q.explanation);
-                    const removedExpPaths = oldExpPaths.filter(p => !newExpPaths.includes(p));
-                    for (const path of removedExpPaths) {
-                        try { await mediaController.deleteFile(path); } catch (e) {}
-                    }
-                }
+            if (!oldData) return res.status(404).json({ error: 'Pregunta no encontrada.' });
+            // Keep both previous references when a client only edits the text.
+            if (q.image_url === undefined) q.image_url = currentQuestionImg || null;
+            if (q.explanation_image_url === undefined) q.explanation_image_url = currentExplanationImg || null;
+
+            if (req.files?.questionImage?.[0]) {
+                q.image_url = await mediaController.uploadFile(req.files.questionImage[0], 'questions');
+            } else if (shouldDeleteQ) {
+                q.image_url = null;
             }
 
-            if (req.files || shouldDeleteQ || shouldDeleteE) {
-                if (req.files && req.files['questionImage'] && req.files['questionImage'][0]) {
-                    try {
-                        if (currentQuestionImg) await mediaController.deleteFile(currentQuestionImg);
-                        q.image_url = await mediaController.uploadFile(req.files['questionImage'][0], 'questions');
-                    } catch (err) { console.error('Error updating question image:', err); }
-                } else if (shouldDeleteQ) {
-                    if (currentQuestionImg) await mediaController.deleteFile(currentQuestionImg);
-                    q.image_url = null;
-                }
-
-                if (req.files && req.files['explanationImage'] && req.files['explanationImage'][0]) {
-                    try {
-                        if (currentExplanationImg) await mediaController.deleteFile(currentExplanationImg);
-                        q.explanation_image_url = await mediaController.uploadFile(req.files['explanationImage'][0], 'explanations');
-                    } catch (err) { console.error('Error updating explanation image:', err); }
-                } else if (shouldDeleteE) {
-                    if (currentExplanationImg) await mediaController.deleteFile(currentExplanationImg);
-                    q.explanation_image_url = null;
-                }
+            if (req.files?.explanationImage?.[0]) {
+                q.explanation_image_url = await mediaController.uploadFile(req.files.explanationImage[0], 'explanations');
+            } else if (shouldDeleteE) {
+                q.explanation_image_url = null;
             }
 
             const isUpdated = await adminService.updateSingleQuestion(id, q);
             if (!isUpdated) return res.status(404).json({ error: 'Pregunta no encontrada.' });
+
+            // Keep older objects: another question/case/note can reuse them.
 
             res.json({ success: true, message: 'Pregunta actualizada exitosamente.' });
         } catch (error) {
@@ -656,7 +609,7 @@ class AdminController {
 
             // Construir la URL pública hacia el mismo dominio unificado en Vercel Serverless
             const backendDomain = resolvePublicBaseUrl();
-            const location = `${backendDomain}/api/media/gcs?file=${gcsPath}`;
+            const location = `${backendDomain}/api/media/gcs?file=${encodeURIComponent(gcsPath)}`;
 
             console.log(`🖼️ Imagen de editor subida con éxito (Absoluta): ${location}`);
 
@@ -688,6 +641,7 @@ class AdminController {
         let match;
         const matches = [];
         while ((match = base64Regex.exec(sanitized)) !== null) {
+            if (matches.some(item => item.dataUri === match[1])) continue;
             matches.push({
                 fullMatch: match[0],
                 dataUri: match[1],
@@ -704,24 +658,14 @@ class AdminController {
                 const originalname = `editor_img_${Date.now()}_${i}.${ext}`;
                 const mimetype = `image/${item.format === 'jpg' ? 'jpeg' : item.format}`;
 
-                let location = '';
-                try {
-                    const gcsPath = await mediaController.uploadFile({ buffer, originalname, mimetype }, folder);
-                    location = `${backendDomain}/api/media/gcs?file=${gcsPath}`;
-                } catch (gcsErr) {
-                    console.warn('⚠️ Subida a GCS falló en sanitizador, usando guardado local de respaldo:', gcsErr.message);
-                    const localSubdir = folder === 'cases' ? 'cases' : 'questions';
-                    const localDir = path.join(ROOT_DIR, 'src/presentation/public/assets', localSubdir);
-                    if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
-                    const localFileName = `${Date.now()}_${originalname}`;
-                    fs.writeFileSync(path.join(localDir, localFileName), buffer);
-                    location = `/assets/${localSubdir}/${localFileName}`;
-                }
+                const gcsPath = await mediaController.uploadFile({ buffer, originalname, mimetype }, folder);
+                const location = `${backendDomain}/api/media/gcs?file=${encodeURIComponent(gcsPath)}`;
 
-                sanitized = sanitized.replace(item.dataUri, location);
+                sanitized = sanitized.split(item.dataUri).join(location);
                 console.log(`🖼️ [Sanitizador Backend] Imagen Base64 convertida automáticamente a URL: ${location}`);
             } catch (err) {
-                console.error('❌ Error sanitizando imagen Base64 en backend:', err);
+                console.error('[EDITOR_IMAGE_UPLOAD_FAILED]', { code: err.code || 'UNKNOWN' });
+                throw new Error('No se pudo guardar la imagen en Google Cloud. La pregunta no se guardó; vuelve a intentarlo.');
             }
         }
 

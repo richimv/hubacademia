@@ -81,22 +81,29 @@
     /**
      * Cambia entre pestaña Iniciar Sesión y Crear Cuenta
      */
-    function switchTab(mode) {
+    function switchTab(mode, focusForm = true) {
         hideAlert();
+        const registering = mode === 'register';
+        tabLoginBtn.setAttribute('aria-selected', String(!registering));
+        tabRegisterBtn.setAttribute('aria-selected', String(registering));
+        tabLoginBtn.tabIndex = registering ? -1 : 0;
+        tabRegisterBtn.tabIndex = registering ? 0 : -1;
+        const heading = document.getElementById('auth-page-title');
+        if (heading) heading.textContent = registering ? 'Crea tu cuenta' : 'Accede a tu espacio';
         if (mode === 'register') {
             tabLoginBtn.classList.remove('active');
             tabRegisterBtn.classList.add('active');
             loginForm.style.display = 'none';
             registerForm.style.display = 'flex';
             const nameInput = document.getElementById('register-name');
-            if (nameInput) nameInput.focus();
+            if (nameInput && focusForm) nameInput.focus();
         } else {
             tabRegisterBtn.classList.remove('active');
             tabLoginBtn.classList.add('active');
             registerForm.style.display = 'none';
             loginForm.style.display = 'flex';
             const emailInput = document.getElementById('login-email');
-            if (emailInput) emailInput.focus();
+            if (emailInput && focusForm) emailInput.focus();
         }
     }
 
@@ -1085,6 +1092,13 @@
             if (tabLoginBtn && tabRegisterBtn) {
                 tabLoginBtn.addEventListener('click', () => switchTab('login'));
                 tabRegisterBtn.addEventListener('click', () => switchTab('register'));
+                [tabLoginBtn, tabRegisterBtn].forEach((tab, index) => tab.addEventListener('keydown', (event) => {
+                    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                    event.preventDefault();
+                    const target = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - index;
+                    switchTab(target ? 'register' : 'login', false);
+                    [tabLoginBtn, tabRegisterBtn][target].focus();
+                }));
             }
 
             // Revisar si la URL pide registro por query param (?mode=register)

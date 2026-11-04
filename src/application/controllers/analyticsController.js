@@ -6,6 +6,7 @@ const mineduScoringService = require('../../domain/services/mineduScoringService
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 const {
     getVertexCandidateModels,
+    getVertexGenerativeEndpoint,
     buildVertexGenerationConfig,
     extractModelResponsePayload
 } = require('../../infrastructure/config/vertexAiConfig');
@@ -13,12 +14,11 @@ const {
 // CONFIGURACIÓN VERTEX AI
 const googleAuthOptions = resolveGoogleAuthOptions('AnalyticsController');
 const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
-const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
 let vertex_ai = null;
 try {
     vertex_ai = new VertexAI({
         project: project,
-        location: location,
+        ...getVertexGenerativeEndpoint(),
         ...(Object.keys(googleAuthOptions).length > 0 ? { googleAuthOptions } : {})
     });
 } catch (e) {

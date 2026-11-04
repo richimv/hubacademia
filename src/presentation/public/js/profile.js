@@ -48,11 +48,11 @@ if (typeof document !== 'undefined') {
         const tier = String(user.subscriptionTier || 'free').toLowerCase();
 
         if (user.role === 'admin') {
-            badgeContainer.innerHTML = '<span class="badge-premium" style="background: var(--primary);"><i class="fas fa-shield-alt"></i> Administrador Global</span>';
+            badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-shield-alt"></i> Administrador Global</span>';
         } else if (tier === 'advanced') {
-            badgeContainer.innerHTML = '<span class="badge-premium" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff;"><i class="fas fa-crown"></i> Plan Advanced</span>';
+            badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-crown"></i> Pase Avanzado</span>';
         } else if (tier === 'basic') {
-            badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-star"></i> Plan Basic</span>';
+            badgeContainer.innerHTML = '<span class="badge-premium"><i class="fas fa-star"></i> Pase Básico</span>';
         } else {
             badgeContainer.innerHTML = '<span class="badge-free">Plan Gratuito</span>';
         }
@@ -125,99 +125,22 @@ function getNextFreeRenewalInfo(user) {
 function renderSubscriptionDetails(user) {
     const container = document.getElementById('subscription-status-container');
     if (!container) return;
-
-    const rawTier = String(user.subscriptionTier || 'free').toLowerCase();
-    const tier = ['basic', 'advanced'].includes(rawTier) ? rawTier : 'free';
-    const expiresAt = user.subscriptionExpiresAt;
-    const status = user.subscriptionStatus || user.subscription_status;
-
-    const isPremium = tier !== 'free' && status === 'active';
-    const isAdmin = user.role === 'admin';
-
-    if (isAdmin) {
-        container.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">ROL ADMINISTRADOR</span>
-                    <span style="background: var(--primary-glow); color: var(--primary); border: 1px solid var(--border-hover); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">ILIMITADO</span>
-                </div>
-                <div style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">
-                    Posees acceso total y sin restricciones a todos los servicios de IA y administración de la plataforma.
-                </div>
-            </div>
-        `;
+    const tier = String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
+    const active = (user.subscriptionStatus || user.subscription_status) === 'active' && ['basic','advanced'].includes(tier);
+    if (user.role === 'admin') {
+        container.innerHTML = '<div class="profile-plan-summary"><strong>Acceso de administración</strong><span class="badge-status-active">Administrador</span></div><p>Gestión del contenido y acceso a las herramientas de la plataforma.</p>';
         return;
     }
-
-    if (isPremium) {
-        const dateStr = expiresAt ? new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Acceso Activo';
-        
-        let planPerks = '';
-        if (tier === 'basic') {
-            planPerks = `
-                <div style="display: flex; flex-direction: column; gap: 0.45rem; margin: 0.25rem 0; font-size: 0.85rem; color: var(--text-secondary);">
-                    <div>• 50 Consultas diarias al Tutor IA</div>
-                    <div>• 15 Simulacros completos por día</div>
-                    <div>• Flashcards Manuales Ilimitadas</div>
-                </div>
-            `;
-        } else {
-            planPerks = `
-                <div style="display: flex; flex-direction: column; gap: 0.45rem; margin: 0.25rem 0; font-size: 0.85rem; color: var(--text-secondary);">
-                    <div>• 100 Consultas diarias al Tutor IA</div>
-                    <div>• 25 Consultas diarias de Especialidad (RAG)</div>
-                    <div>• 50 Simulacros completos por día</div>
-                    <div>• 30 Generaciones de Flashcards con IA al mes</div>
-                </div>
-            `;
-        }
-
-        container.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">PLAN ${tier.toUpperCase()}</span>
-                    <span style="background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">ACTIVO</span>
-                </div>
-
-                ${planPerks}
-
-                <div style="color: var(--text-secondary); font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
-                    <i class="far fa-calendar-alt" style="color: var(--primary);"></i> Vence el: <strong style="color: var(--text-main);">${dateStr}</strong>
-                </div>
-
-                <a href="/pricing" class="btn-action btn-secondary" style="align-self: flex-start; margin-top: 0.25rem; text-decoration: none;">
-                    Administrar Suscripción
-                </a>
-            </div>
-        `;
-    } else {
-        const renewalInfo = getNextFreeRenewalInfo(user);
-
-        container.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">PLAN GRATUITO</span>
-                    <span style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); padding: 4px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;">10 VIDAS / MES</span>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem; color: var(--text-secondary);">
-                    <div>• <strong>10 Créditos mensuales</strong> para simuladores y tutorías</div>
-                    <div>• <strong>Recarga automática</strong> cada 30 días</div>
-                </div>
-
-                <div class="renewal-banner">
-                    <i class="far fa-calendar-check"></i>
-                    <div class="renewal-banner-text">
-                        Próxima recarga: <strong>${renewalInfo.formattedDate}</strong>
-                    </div>
-                </div>
-
-                <a href="/pricing" class="btn-action btn-primary" style="width: 100%; margin-top: 0.25rem; text-align: center; text-decoration: none;">
-                    Activar Plan Basic o Advanced
-                </a>
-            </div>
-        `;
+    if (active) {
+        const expiry = user.subscriptionExpiresAt || user.subscription_expires_at;
+        const date = expiry ? new Date(expiry) : null;
+        const dateLabel = date && Number.isFinite(date.getTime()) ? date.toLocaleDateString('es-PE', {day:'numeric',month:'long',year:'numeric'}) : 'Sin fecha disponible';
+        const features = tier === 'basic' ? ['50 consultas diarias al Tutor IA','15 simulacros al día','Tarjetas manuales y notas personales'] : ['100 consultas diarias al Tutor IA','25 consultas diarias con contexto de especialidad','50 simulacros al día','Tarjetas manuales y notas personales'];
+        container.innerHTML = `<div class="profile-plan-summary"><strong>Pase ${tier === 'basic' ? 'Básico' : 'Avanzado'}</strong><span class="badge-status-active">Activo</span></div><ul class="profile-plan-perks">${features.map(item=>'<li>'+item+'</li>').join('')}</ul><p>Vence el <strong>${dateLabel}</strong></p><a href="/pricing" class="btn-action btn-secondary">Ver pases de acceso</a>`;
+        return;
     }
+    const renewal = getNextFreeRenewalInfo(user);
+    container.innerHTML = `<div class="profile-plan-summary"><strong>Acceso gratuito</strong><span class="badge-free">10 créditos / 30 días</span></div><ul class="profile-plan-perks"><li>Créditos compartidos para simuladores y Tutor IA</li><li>Recarga automática cada 30 días</li></ul><div class="renewal-banner"><i class="far fa-calendar-check" aria-hidden="true"></i><div>Próxima recarga: <strong>${renewal.formattedDate}</strong></div></div><a href="/pricing" class="btn-action btn-primary">Elegir un pase</a>`;
 }
 
 /**
@@ -322,7 +245,7 @@ function openEditNameModal() {
                 if (editNameError) {
                     editNameError.innerHTML = `<i class="fas fa-clock"></i> Solo puedes cambiar tu nombre una vez por semana. Faltan ${remaining} día${remaining !== 1 ? 's' : ''}.`;
                     editNameError.style.display = 'block';
-                    editNameError.style.color = '#e67e22';
+                    editNameError.style.color = 'var(--warning)';
                 }
                 if (newNameInput) {
                     newNameInput.disabled = true;
@@ -372,6 +295,7 @@ async function submitNameChange() {
     }
 
     const btn = document.getElementById('confirm-edit-name-btn');
+    if (btn?.disabled) return;
     if (btn) {
         btn.textContent = 'Guardando...';
         btn.disabled = true;
@@ -456,27 +380,15 @@ function setupEditNameModal() {
 /**
  * Genera el componente HTML para una tarjeta de métrica de consumo
  */
-function createUsageCardHTML({ title, colorHex, badge, countVal, percentage, labelLeft, labelRight }) {
-    return `
-        <div class="usage-item">
-            <div class="usage-item-header">
-                <div class="usage-title-group">
-                    <div class="usage-title-text-wrap">
-                        <div class="usage-title">${title}</div>
-                        <span class="usage-badge-tag">${badge}</span>
-                    </div>
-                </div>
-                <div class="usage-count-val" style="color: ${colorHex};">${countVal}</div>
-            </div>
-            <div class="usage-progress-bg">
-                <div class="usage-progress-bar" style="width: ${percentage}%; background: ${colorHex};"></div>
-            </div>
-            <div class="usage-footer">
-                <span class="usage-footer-left">${labelLeft}</span>
-                <span class="usage-footer-right" style="color: ${colorHex}; font-weight: 600;">${labelRight}</span>
-            </div>
-        </div>
-    `;
+function createUsageCardHTML({ title, badge, countVal, percentage, labelLeft, labelRight, tone = 'normal' }) {
+    const value = Number(percentage);
+    const progress = Number.isFinite(value) ? Math.max(0,Math.min(100,value)) : 0;
+    const escape = window.escapeHtml;
+    return `<div class="usage-item" data-tone="${tone}" style="--usage-progress:${progress}%">
+        <div class="usage-item-header"><div class="usage-title-group"><div class="usage-title-text-wrap"><div class="usage-title">${escape(title)}</div><span class="usage-badge-tag">${escape(badge)}</span></div></div><div class="usage-count-val">${escape(countVal)}</div></div>
+        <div class="usage-progress-bg"><div class="usage-progress-bar"></div></div>
+        <div class="usage-footer"><span class="usage-footer-left">${escape(labelLeft)}</span><span class="usage-footer-right">${escape(labelRight)}</span></div>
+    </div>`;
 }
 
 /**
@@ -535,7 +447,6 @@ function renderUsageDetails(user) {
 
         cardsHTML += createUsageCardHTML({
             title: 'Tutor de IA Estándar',
-            colorHex: 'var(--primary)',
             badge: 'Diario',
             countVal: `${aiUsed} / ${aiLimit}`,
             percentage: aiPct,
@@ -552,7 +463,6 @@ function renderUsageDetails(user) {
 
             cardsHTML += createUsageCardHTML({
                 title: 'Consultas RAG Especializadas',
-                colorHex: 'var(--accent-teal)',
                 badge: 'Diario (Advanced)',
                 countVal: `${ragUsed} / ${ragLimit}`,
                 percentage: ragPct,
@@ -569,7 +479,6 @@ function renderUsageDetails(user) {
 
         cardsHTML += createUsageCardHTML({
             title: 'Simulacros y Exámenes',
-            colorHex: 'var(--accent-purple)',
             badge: 'Diario',
             countVal: `${simUsed} / ${simLimit}`,
             percentage: simPct,
@@ -586,7 +495,6 @@ function renderUsageDetails(user) {
 
             cardsHTML += createUsageCardHTML({
                 title: 'Generador de Flashcards',
-                colorHex: 'var(--warning)',
                 badge: 'Mensual (Advanced)',
                 countVal: `${fcUsed} / ${fcLimit}`,
                 percentage: fcPct,
@@ -607,40 +515,14 @@ function renderUsageDetails(user) {
         const remaining = isVerified ? Math.max(0, maxFreeLimit - usageCount) : 0;
         const pct = isVerified ? Math.min(100, (remaining / maxFreeLimit) * 100) : 0;
         
-        let colorHex = 'var(--success)';
-        if (!isVerified) {
-            colorHex = 'var(--warning)';
-        } else if (remaining <= 2 && remaining > 0) {
-            colorHex = 'var(--warning)';
-        } else if (remaining === 0) {
-            colorHex = 'var(--danger)';
-        }
+        const tone = !isVerified || (remaining > 0 && remaining <= 2) ? 'warning' : remaining === 0 ? 'danger' : 'normal';
 
         const countText = isVerified ? `${remaining} / ${maxFreeLimit}` : `0 / ${maxFreeLimit}`;
         const rightFooter = isVerified
             ? `Disponibles: ${remaining} vidas`
             : `Bloqueadas: Confirma tu correo`;
 
-        container.innerHTML = `
-            <div class="usage-item" style="grid-column: 1 / -1;">
-                <div class="usage-item-header">
-                    <div class="usage-title-group">
-                        <div class="usage-title-text-wrap">
-                            <div class="usage-title">Créditos de Exploración Disponibles</div>
-                            <span class="usage-badge-tag">${isVerified ? 'Recarga Mensual (10 Vidas)' : 'Cuenta No Confirmada (0 Vidas)'}</span>
-                        </div>
-                    </div>
-                    <div class="usage-count-val" style="color: ${colorHex}; font-size: 1.25rem; font-weight: 800;">${countText}</div>
-                </div>
-                <div class="usage-progress-bg">
-                    <div class="usage-progress-bar" style="width: ${pct}%; background: ${colorHex};"></div>
-                </div>
-                <div class="usage-footer">
-                    <span class="usage-footer-left">Consumidos este mes: ${usageCount}</span>
-                    <span class="usage-footer-right" style="color: ${colorHex}; font-weight: 600;">${rightFooter}</span>
-                </div>
-            </div>
-        `;
+        container.innerHTML = createUsageCardHTML({ title: 'Créditos disponibles', badge: isVerified ? 'Recarga cada 30 días' : 'Confirma tu correo', countVal: countText, percentage: pct, labelLeft: 'Consumidos: ' + usageCount, labelRight: rightFooter, tone });
     }
 }
 

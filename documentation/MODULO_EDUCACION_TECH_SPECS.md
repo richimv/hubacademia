@@ -1,5 +1,11 @@
 # Módulo Educación (Docente Pro) — Tech Specs
 
+## Interfaz web vigente — 3 de noviembre de 2026
+
+Entrada actual: `/simulator-dashboard?context=EDUCACION`. La UI muestra «Simulador docente» y comparte marco, cabecera, tipografía y controles con Medicina, Repaso y la identidad de la landing. El modo real conserva 60 preguntas y 3 horas; Rápido y Estudio conservan 10 y 20. En la configuración web actual, Ascenso está disponible; Nombramiento y Acceso a Cargos permanecen deshabilitados. Las referencias históricas siguientes describen capacidades del módulo y no deben interpretarse como habilitación de todos los objetivos.
+
+Se limpiaron referencias visuales sin consumidor y la descripción de dominio del gráfico. Quiz y Tutor se presentan mediante `workspace-study.css`, `tutor.css` y `StudyTutorView`, manteniendo evaluación, contexto y guardado de respuestas en Notas. Detalle en [WORKSPACE_FRONTEND_GUIDE.md](WORKSPACE_FRONTEND_GUIDE.md). Las pruebas quedan a cargo del usuario.
+
 > **Última actualización:** 2026-05-05  
 > **Estado:** ✅ Implementado (Frontend + Backend + Prompts)  
 > **Versión:** 3.0 — Multi-Dominio

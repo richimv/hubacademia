@@ -18,7 +18,6 @@
     --card-bg: var(--bg-secondary);
     --border-dim: var(--border-color);
     --text-primary: var(--text-main);
-    --text-secondary: var(--text-muted);
     --accent-color: var(--primary);
     --success-color: var(--success);
 }

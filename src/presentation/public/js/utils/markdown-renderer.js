@@ -45,6 +45,7 @@ window.MarkdownRenderer = {
         html = this.renderMarkdownTables(html);
 
         // 3. Post-procesamiento y Sanitización DOM (Tablas responsivas y Resolución de Imágenes)
+        if (typeof window.resolveHtmlMediaUrls === 'function') html = window.resolveHtmlMediaUrls(html);
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         this._sanitizeDom(tempDiv);

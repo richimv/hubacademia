@@ -1,5 +1,27 @@
 # 🤖 Specs Técnicas: Chat Tutor IA (V6.2 - Gemini 3.1 Flash Lite & Pinecone)
 
+## Atención pública de Hubi — 4 de noviembre de 2026
+
+Excepción autorizada por el usuario: Hubi utiliza Google AI Studio exclusivamente para atención sobre la empresa y sus servicios, con ficha compacta del negocio, historial acotado, clave del servidor y respaldo local. `/api/chat` separa ese flujo del control de cuotas académicas. Los tutores de Quiz y Flashcards, RAG y analítica mantienen Vertex AI. Esta sección sustituye la descripción histórica de Hubi como servicio exclusivamente estático y la exclusividad absoluta de Vertex que aparece abajo. Detalles, configuración, límites y privacidad en [HUBI_SUPPORT_GUIDE.md](HUBI_SUPPORT_GUIDE.md). No se ejecutaron inferencias, pruebas ni despliegues en esta entrega.
+
+## Configuración para Vercel — 3 de noviembre de 2026
+
+La configuración actual usa credenciales GCP JSON/Base64 en memoria. Los modelos por defecto pasan a `gemini-3.5-flash-lite` y `gemini-3.8-flash`, configurables por variables. `VERTEX_GENERATIVE_LOCATION=global` y `getVertexGenerativeEndpoint()` se aplican al Tutor, reescritura RAG y diagnóstico con el endpoint `aiplatform.googleapis.com`. Los embeddings y Pinecone conservan su región e índice. Esta especificación sustituye las referencias históricas de identificadores/regiones de generación que aparecen abajo.
+
+La configuración pública de Production quedó registrada; los secretos se cargarán manualmente y el despliegue del código actual queda pendiente. Detalles y fuentes oficiales en [VERCEL_ONLY_MEDIA_HANDOFF.md](VERCEL_ONLY_MEDIA_HANDOFF.md). No se realizaron inferencias ni pruebas de chat durante este trabajo.
+
+## Presentación de Hubi, asistente guía — 3 de noviembre de 2026
+
+La ventana principal de `chat.js` adopta superficies y dimensiones coherentes con los tutores de estudio mediante la nueva versión de `chat.css`. La invitación compacta se alinea con el lanzador de 56/52 px, con controles independientes para abrir y cerrar. Se retiraron estilos duplicados, brillos y selectores de paneles de historial/persona que el markup vivo no renderiza. Hubi mantiene su papel de guía de plataforma; los tutores contextuales permanecen en Quiz y Flashcards.
+
+El ciclo visual incorpora `inert`, Escape, restauración de foco/scroll y selección ARIA de pantalla completa. El cierre desde el botón y desde la X comparte el flujo de restauración silenciosa del historial. No se modificaron servicios, cuotas o persistencia. Detalles y alcance sin pruebas en [LANDING_VIDEO_INTEGRATION.md](LANDING_VIDEO_INTEGRATION.md).
+
+## Presentación web vigente — 3 de noviembre de 2026
+
+`quiz-tutor.js` y `tutor-chat.js` comparten la plantilla y el ciclo visual de `js/ui/studyTutorView.js` y una única hoja `css/tutor.css`. El componente muestra el tema de la pregunta/tarjeta, acceso a Mis Notas, controles accesibles y pantalla completa; el cierre restaura el foco y el desplazamiento previo. Los controladores conservan llamadas, cuotas, historial y persistencia. Los guardados siguen usando `/api/library/notes` con orígenes `quiz` y `flashcard`; el destino web de ambos es `/repaso?view=notes`.
+
+En Quiz, el Tutor respeta los bloqueos del modo de examen: Estudio permite profundizar después de responder; Rápido y Real lo ofrecen en revisión. No se cambió esa disponibilidad. Detalle de archivos y alcance en [WORKSPACE_FRONTEND_GUIDE.md](WORKSPACE_FRONTEND_GUIDE.md). Implementación pendiente de las pruebas del usuario, sin ejecución de pruebas en esta fase.
+
 ## 1. Visión General
 El Chat Tutor de Hub Academia es un motor conversacional multi-dominio diseñado para responder dudas especializadas en tiempo real, utilizando una arquitectura **RAG Semántica Pura**.
 

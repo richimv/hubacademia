@@ -73,16 +73,17 @@
       }
     }
     </script>
+    <!-- Shared working-screen design; page sheets retain their state/layout mechanics. -->
+    <link rel="stylesheet" href="/css/workspace.css?v=workspace-v1">
+    <link rel="stylesheet" href="/css/workspace-simulator.css?v=workspace-v1">
+    <link rel="stylesheet" href="/css/brand.css">
 </head>
 
-<body class="hero-hidden">
+<body class="hero-hidden workspace-page" data-workspace="simulator">
     <!-- Header -->
     <header class="main-header">
         <div class="header-start">
-            <a href="/" class="logo">
-                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
-                <span class="logo-text">Hub Academia</span>
-            </a>
+            <a href="/" class="logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
         </div>
         <div class="header-nav">
 
@@ -103,14 +104,13 @@
 
             <!-- Context Hero Card -->
             <section class="context-hero-card">
-                <div class="context-hero-glow" id="bannerGlow"></div>
                 <div class="context-hero-content">
                     <div class="context-hero-info">
                         <div class="sim-domain-switcher" id="sim-domain-switcher" role="tablist" aria-label="Seleccionar vertical de simulación">
                             <button type="button" class="sim-domain-tab active" data-context="EDUCACION" role="tab" aria-selected="true">Educación (MINEDU)</button>
                             <button type="button" class="sim-domain-tab" data-context="MEDICINA" role="tab" aria-selected="false">Salud (SERUMS)</button>
                         </div>
-                        <h1 id="ctx-title" class="context-hero-title">Preparación Magisterial</h1>
+                        <h1 id="ctx-title" class="context-hero-title">Simulador docente</h1>
                         <p id="ctx-subtitle" class="context-hero-subtitle">
                             Evaluación de casuística pedagógica basada en el CNEB y Marco de Buen Desempeño Docente.
                         </p>
@@ -128,12 +128,18 @@
                             </button>
                             <button id="btn-start-config" class="btn-config-hero">
                                 <i class="fas fa-sliders-h"></i>
-                                <span>Configurar Examen</span>
+                                <span>Configurar examen</span>
                             </button>
                         </div>
                     </div>
                 </div>
             </section>
+
+            <!-- Shared tools: availability during a quiz is enforced by the exam mode. -->
+            <aside class="study-support-strip" aria-label="Herramientas para tu estudio">
+                <div class="study-support-copy"><strong>Una práctica, más formas de aprender.</strong><ol class="study-support-steps"><li>Responde y revisa</li><li>Profundiza con el Tutor IA</li><li>Guarda lo aprendido en Notas</li></ol><p>El Tutor está disponible en modo estudio y durante la revisión. Tus notas también acompañan a tus flashcards.</p></div>
+                <a href="/repaso?view=notes">Abrir Mis Notas ↗</a>
+            </aside>
 
             <div id="sim-dashboard-sections">
 
@@ -152,12 +158,12 @@
                         <!-- Simulacro Rápido -->
                         <a href="#" id="btn-mode-arcade" class="mode-card mode-card--arcade">
                             <div class="mode-card-top">
-                                <div class="mode-icon-badge"><i class="fas fa-bolt-lightning"></i></div>
-                                <span class="mode-q-badge">10 Preguntas</span>
+                                <span class="mode-purpose">Práctica breve</span>
+                                <span class="mode-q-badge">10 preguntas</span>
                             </div>
                             <div class="mode-card-body">
                                 <h4 class="mode-title">Simulacro Rápido</h4>
-                                <p class="mode-desc">Formato corto para repasos dinámicos. Ideal para medir agilidad y retención diaria de conceptos clave.</p>
+                                <p class="mode-desc">10 preguntas con corrección inmediata. Consulta al Tutor IA durante la revisión final.</p>
                             </div>
                             <div class="mode-card-footer">
                                 <span class="mode-cta">Iniciar simulacro <i class="fas fa-arrow-right"></i></span>
@@ -167,12 +173,12 @@
                         <!-- Modo Estudio -->
                         <a href="#" id="btn-mode-study" class="mode-card mode-card--study">
                             <div class="mode-card-top">
-                                <div class="mode-icon-badge"><i class="fas fa-book-open-reader"></i></div>
-                                <span class="mode-q-badge">20 Preguntas</span>
+                                <span class="mode-purpose">Aprendizaje guiado</span>
+                                <span class="mode-q-badge">20 preguntas</span>
                             </div>
                             <div class="mode-card-body">
                                 <h4 class="mode-title">Modo Estudio</h4>
-                                <p class="mode-desc">Enfocado en el aprendizaje. Cada reactivo cuenta con sustento y justificación técnica/pedagógica detallada.</p>
+                                <p class="mode-desc">20 preguntas con explicación y Tutor IA para profundizar después de responder.</p>
                             </div>
                             <div class="mode-card-footer">
                                 <span class="mode-cta">Iniciar modo estudio <i class="fas fa-arrow-right"></i></span>
@@ -182,7 +188,7 @@
                         <!-- Simulacro Real -->
                         <a href="#" id="btn-mode-real" class="mode-card mode-card--real">
                             <div class="mode-card-top">
-                                <div class="mode-icon-badge"><i class="fas fa-stopwatch"></i></div>
+                                <span class="mode-purpose">Condiciones de examen</span>
                                 <span class="mode-q-badge" id="real-questions-count-badge">100 Preguntas</span>
                             </div>
                             <div class="mode-card-body">
@@ -636,11 +642,8 @@
         <footer class="main-footer">
         <div class="footer-container">
             <div class="footer-brand">
-                <a href="/" class="footer-logo">
-                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
-                    Hub Academia
-                </a>
-                <p class="footer-slogan">Tu plataforma EdTech de alta fidelidad. Simulacros oficiales MINEDU & MINSA, Repaso Espaciado SM-2 y Tutoría Inteligente con IA.</p>
+                <a href="/" class="footer-logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
+                <p class="footer-slogan">Inteligencia artificial aplicada al conocimiento profesional. Soluciones creadas en Perú para aprender, evaluar y trabajar mejor.</p>
             </div>
             <div class="footer-links-col">
                 <h4 class="footer-heading">Herramientas</h4>
@@ -648,7 +651,7 @@
                     <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial</a></li>
                     <li><a href="/repaso" class="footer-link">Repaso y Notas</a></li>
                     <li><a href="/library" class="footer-link">Biblioteca</a></li>
-                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                    <li><a href="/pricing" class="footer-link">Pases de acceso</a></li>
                 </ul>
             </div>
             <div class="footer-links-col">
@@ -684,7 +687,8 @@
     <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 
-    <script src="/js/simulator-dash.js?v=7110047d648f"></script>
+    <script src="/js/simulator-dash.js?v=workspace-v1"></script>
+    <script src="/js/ui/workspace-shell.js?v=workspace-v1" defer></script>
 </body>
 
 </html>

@@ -231,6 +231,8 @@ function updateHeaderUI(user) {
         console.log(`👤 Sesión Activa: ${user.email} | Rango: ${user.subscriptionTier} | Status: ${user.subscriptionStatus}`);
 
         const displayName = user.name || 'Estudiante';
+        const safeName = window.escapeHtml(displayName);
+        const safeEmail = window.escapeHtml(user.email || '');
         const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`;
         const avatarUrl = getSafeAvatarUrl(user);
         const { tierLabel, tierClass } = getTierBadgeConfig(user);
@@ -260,7 +262,7 @@ function updateHeaderUI(user) {
 
             const menuName = container.querySelector('.user-menu-name');
             if (menuName) {
-                menuName.innerHTML = `${displayName}`;
+                menuName.textContent = displayName;
             }
 
             const menuEmail = container.querySelector('.user-menu-email');
@@ -286,18 +288,18 @@ function updateHeaderUI(user) {
 
         container.innerHTML = `
             <div class="user-menu-container">
-                <button id="user-menu-toggle" class="user-menu-toggle" title="${displayName} (${tierLabel})">
+                <button type="button" id="user-menu-toggle" class="user-menu-toggle" aria-expanded="false" aria-controls="user-menu-dropdown" aria-label="Abrir menú de mi cuenta" title="${safeName} (${tierLabel})">
                     <img src="${avatarUrl}" class="user-avatar" alt="Avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${fallbackAvatar}';">
                     <div class="user-header-meta">
-                        <span class="user-header-name">${displayName}</span>
+                        <span class="user-header-name">${safeName}</span>
                         <span class="user-header-tier ${tierClass}">${tierLabel}</span>
                     </div>
                     <i class="fas fa-chevron-down user-header-chevron"></i>
                 </button>
                 <div id="user-menu-dropdown" class="user-menu-dropdown">
                     <div class="user-menu-header">
-                        <span class="user-menu-name">${displayName}</span>
-                        <span class="user-menu-email">${user.email || ''}</span>
+                        <span class="user-menu-name">${safeName}</span>
+                        <span class="user-menu-email">${safeEmail}</span>
                     </div>
                     
                     <div class="user-menu-group">
@@ -322,11 +324,29 @@ function updateHeaderUI(user) {
         if (toggle && dropdown) {
             toggle.onclick = (e) => {
                 e.stopPropagation();
-                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                const open = toggle.getAttribute('aria-expanded') !== 'true';
+                dropdown.style.display = open ? 'block' : 'none';
+                toggle.setAttribute('aria-expanded', String(open));
             };
-            document.addEventListener('click', (e) => {
-                if (!container.contains(e.target)) dropdown.style.display = 'none';
-            }, { once: true });
+            // Bind once to the stable session container, and resolve the current menu
+            // after login/logout re-renders. Outside-click must work on every opening.
+            if (!container._userMenuEventsBound) {
+                container._userMenuEventsBound = true;
+                const closeUserMenu = (restoreFocus = false) => {
+                    const activeToggle = container.querySelector('#user-menu-toggle');
+                    const activeDropdown = container.querySelector('#user-menu-dropdown');
+                    if (!activeToggle || activeToggle.getAttribute('aria-expanded') !== 'true') return;
+                    if (activeDropdown) activeDropdown.style.display = 'none';
+                    activeToggle.setAttribute('aria-expanded', 'false');
+                    if (restoreFocus) activeToggle.focus();
+                };
+                document.addEventListener('click', (event) => {
+                    if (!container.contains(event.target)) closeUserMenu();
+                });
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') closeUserMenu(true);
+                });
+            }
         }
 
         if (logout) {

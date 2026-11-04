@@ -1,638 +1,79 @@
-/* Variables de tema Tutor Premium */
-:root {
-    --tutor-bg: var(--card-bg);
-    --tutor-primary: #6366f1; /* Indigo (exclusivo para branding del robot) */
-    --tutor-secondary: var(--info); /* Cyan */
-    --tutor-accent: #818cf8;
-    --tutor-text: var(--text-main);
-    --tutor-text-muted: var(--text-muted);
-    --tutor-border: var(--border-color);
-}
+/* STUDY TUTOR — one presentation for quiz-tutor.js and tutor-chat.js.
+ * theme.css owns colours. StudyTutorView owns markup and accessibility.
+ * Message contents, citations, quota handling and Save Note remain in each tutor.
+ */
+:root { --tutor-bg: var(--bg-secondary); --tutor-text: var(--text-main); --tutor-text-muted: var(--text-muted); --tutor-border: var(--border-color); --tutor-primary: var(--primary); --tutor-accent: var(--primary-light); }
+.flashcard-tutor-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; grid-column: 1 / -1; width: fit-content; min-height: 44px; margin: 20px auto 10px; padding: 10px 20px; background: var(--bg-tertiary); border: 1px solid var(--input-border); border-radius: 6px; box-shadow: none; color: var(--text-main); font: 600 .9375rem var(--font-main); cursor: pointer; }
+.flashcard-tutor-btn:hover { background: var(--surface-hover); }
+.tutor-robot-icon { color: var(--primary); font-size: 1.125rem; }
+.tutor-btn-icon-img, .tutor-header-avatar-img, .btn-tutor-icon-img { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; vertical-align: middle; }
+.tutor-chat-panel { position: fixed; inset: calc(88px + var(--trial-bar-height, 0px)) 16px 16px auto; width: min(480px, calc(100vw - 32px)); height: calc(100dvh - 104px - var(--trial-bar-height, 0px)); max-height: calc(100dvh - 104px - var(--trial-bar-height, 0px)); background: var(--tutor-bg); color: var(--tutor-text); border: 1px solid var(--tutor-border); border-radius: 8px; display: flex; flex-direction: column; z-index: 2000; box-shadow: var(--shadow-xl); transform: translateX(calc(100% + 24px)); visibility: hidden; pointer-events: none; transition: transform 240ms cubic-bezier(.22,1,.36,1), visibility 240ms; overflow: hidden; font-family: var(--font-main); }
+.tutor-chat-panel.active { transform: none; visibility: visible; pointer-events: auto; }
+.tutor-chat-header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 16px; padding: 20px 24px; background: var(--tutor-bg); border-bottom: 1px solid var(--tutor-border); }
+.tutor-header-title { display: flex; align-items: center; gap: 12px; min-width: 0; color: var(--tutor-text); font-size: 1rem; font-weight: 600; letter-spacing: -.02em; }
+.tutor-header-title > div { min-width: 0; }
+.tutor-context-label { margin: 4px 0 0; font-size: .8125rem; font-weight: 400; color: var(--text-secondary); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tutor-header-actions { display: flex; align-items: center; gap: 8px; }
+.tutor-close-btn, .tutor-expand-btn { display: inline-grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: var(--tutor-text-muted); cursor: pointer; font: inherit; }
+.tutor-close-btn { font-size: 1.5rem; }
+.tutor-expand-btn { font-size: .875rem; }
+.tutor-close-btn:hover, .tutor-expand-btn:hover { background: var(--surface-hover); color: var(--tutor-text); }
+.tutor-notes-link { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 24px; background: var(--bg-tertiary); font-size: .75rem; color: var(--text-secondary); flex-shrink: 0; }
+.tutor-notes-link a { color: var(--primary-light); font-size: .8125rem; padding-block: 4px; text-decoration: underline; text-underline-offset: 4px; }
+.tutor-messages-area { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 24px; display: flex; flex-direction: column; gap: 20px; scrollbar-width: thin; scrollbar-color: var(--input-border) transparent; }
+.tutor-message-wrapper { display: flex; flex-direction: column; width: 100%; }
+.tutor-message-wrapper.user { align-items: flex-end; }
+.tutor-message-wrapper.bot { align-items: flex-start; }
+.tutor-message { max-width: 94%; padding: 16px 18px; border-radius: 6px; font-size: .9375rem; line-height: 1.7; overflow-wrap: anywhere; text-align: left; }
+.tutor-message-user { align-self: flex-end; background: var(--primary); color: #fff; }
+.tutor-message-bot { align-self: flex-start; background: var(--bg-tertiary); color: var(--text-main); border: 0; max-width: 100%; }
+.tutor-message strong { color: inherit; font-weight: 600; background: none; -webkit-text-fill-color: currentColor; }
+.tutor-message p { margin-block: 0 12px; }
+.tutor-message p:last-child { margin-bottom: 0; }
+.tutor-message img { max-width: 100%; height: auto; border-radius: 4px; }
+.tutor-message pre, .tutor-message table { max-width: 100%; overflow-x: auto; }
+.tutor-message-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; margin-top: 4px; }
+.tutor-message-actions.user-actions { justify-content: flex-end; }
+.tutor-save-note-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 12px; background: transparent; border: 1px solid var(--input-border); border-radius: 4px; color: var(--text-secondary); font: 500 .8125rem var(--font-main); cursor: pointer; }
+.tutor-save-note-btn:hover, .tutor-save-note-btn.saved { background: var(--bg-tertiary); color: var(--primary-light); border-color: var(--primary); }
+.tutor-save-note-btn:disabled { cursor: wait; }
+.tutor-save-note-btn.note-save-error { color: var(--danger); border-color: var(--danger-border); }
+.tutor-message :is(h1, h2, h3, h4, em) { color: inherit; border: 0; font-size: 1rem; }
+.tutor-input-area { display: flex; align-items: flex-end; gap: 12px; padding: 16px 20px 12px; background: var(--tutor-bg); border-top: 1px solid var(--tutor-border); flex-shrink: 0; }
+.tutor-input-field { flex: 1; min-width: 0; min-height: 48px; height: 48px; max-height: 130px; padding: 12px 14px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--input-bg); color: var(--input-text); font: .9375rem/22px var(--font-main); resize: none; overflow-y: auto; box-sizing: border-box; }
+.tutor-input-field::placeholder { color: var(--text-muted); opacity: 1; }
+.tutor-send-btn { display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 6px; background: var(--primary); color: #fff; cursor: pointer; font-size: 1rem; }
+.tutor-send-btn:disabled { opacity: .6; cursor: wait; }
+.tutor-disclaimer-text { margin: 0; padding: 0 20px 14px; background: var(--tutor-bg); color: var(--tutor-text-muted); font-size: .75rem; line-height: 1.5; text-align: left; flex-shrink: 0; }
+.tutor-chat-panel :is(button, a, textarea):focus-visible { outline: 2px solid var(--primary-light); outline-offset: 3px; }
+.tutor-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* Botón Hermoso del Robot (Manta Pill Signature Standard) */
-.flashcard-tutor-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin: 20px auto 10px;
-    padding: 0.65rem 1.4rem;
-    background: linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%) !important;
-    border: none !important;
-    border-radius: 9999px !important;
-    color: #ffffff !important;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    font-size: 0.92rem;
-    letter-spacing: -0.01em;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 18px rgba(59, 130, 246, 0.4), 0 0 12px rgba(6, 182, 212, 0.25);
-    z-index: 10;
-    
-    /* Centrado en Grid */
-    grid-column: 1 / -1;
-    width: fit-content;
-}
+/* References remain the real citations returned by the existing tutor services. */
+.tutor-citations-container { margin-block: 8px 4px; padding: 12px; background: var(--bg-tertiary); border: 1px solid var(--tutor-border); border-radius: 6px; display: flex; flex-direction: column; gap: 8px; max-width: 100%; box-sizing: border-box; }
+.tutor-citations-header { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: .8125rem; font-weight: 500; }
+.tutor-citations-badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tutor-citation-pill { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-main); font-size: .8125rem; line-height: 1.4; text-decoration: none; }
+.tutor-citation-source { font-weight: 500; overflow-wrap: anywhere; }
+.tutor-citation-page { color: var(--primary-light); font-weight: 600; font-size: .75rem; }
+.tutor-suggestions-container { display: flex; flex-wrap: wrap; gap: 8px; padding-block: 8px; width: 100%; }
+.tutor-suggestion-btn { min-height: 36px; max-width: 100%; padding: 6px 12px; border: 1px solid var(--input-border); border-radius: 4px; background: var(--bg-secondary); color: var(--text-secondary); font: .8125rem/1.4 var(--font-main); white-space: normal; text-align: left; cursor: pointer; }
+.tutor-suggestion-btn:hover { background: var(--surface-hover); color: var(--text-main); }
 
-.flashcard-tutor-btn:hover {
-    transform: translateY(-2px) scale(1.02) !important;
-    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6), 0 0 20px rgba(6, 182, 212, 0.35) !important;
-    color: #ffffff !important;
-}
-
-.flashcard-tutor-btn:hover::before {
-    opacity: 0.15;
-}
-
-.tutor-robot-icon {
-    font-size: 1.2rem;
-    background: linear-gradient(135deg, var(--tutor-primary), var(--tutor-secondary));
-    -webkit-background-clip: text;
-    background-clip: text; /* ✅ Propiedad estándar */
-    -webkit-text-fill-color: transparent;
-    animation: robot-pulse 2s infinite ease-in-out;
-}
-
-.tutor-btn-icon-img,
-.tutor-header-avatar-img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-    flex-shrink: 0;
-    margin-right: 8px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
-    vertical-align: middle;
-}
-
-.btn-tutor-icon-img {
-    width: 30px;
-    height: 30px;
-    object-fit: contain;
-    vertical-align: middle;
-    margin-right: 8px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-}
-
-@keyframes robot-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 0px transparent); }
-    50% { opacity: 0.85; transform: scale(1.15); filter: drop-shadow(0 0 5px rgba(99, 102, 241, 0.5)); }
-}
-
-/* Panel de Chat Exclusivo (Tutor) */
-.tutor-chat-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 380px;
-    height: 100%;
-    background: var(--card-bg);
-    border-left: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    z-index: 2000;
-    box-shadow: var(--shadow-xl);
-    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-    transform: translateX(100%);
-}
-
-.tutor-chat-panel.active {
-    transform: translateX(0);
-}
-
-.tutor-chat-header {
-    padding: 20px;
-    background: var(--card-bg);
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.tutor-header-title {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 700;
-    color: var(--tutor-text);
-    font-size: 1.1rem;
-    letter-spacing: -0.02em;
-}
-
-.tutor-header-title i {
-    color: var(--tutor-primary);
-    font-size: 1.3rem;
-}
-
-.tutor-close-btn {
-    background: transparent;
-    border: none;
-    color: var(--tutor-text-muted);
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.tutor-close-btn:hover {
-    color: var(--text-main);
-    background: var(--surface-hover);
-}
-
-.tutor-messages-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-color) transparent;
-}
-
-.tutor-message {
-    max-width: 85%;
-    padding: 12px 16px;
-    border-radius: 14px;
-    font-size: 0.95rem;
-    line-height: 1.6;
-    position: relative;
-    animation: message-in 0.3s ease-out forwards;
-    word-break: break-word;
-    text-align: left;
-}
-
-.tutor-message strong {
-    color: var(--text-main);
-    font-weight: 700;
-    background: linear-gradient(90deg, var(--tutor-primary), var(--tutor-secondary));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-@keyframes message-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.tutor-message-user {
-    align-self: flex-end;
-    background: var(--tutor-primary);
-    color: #ffffff;
-    border-bottom-right-radius: 4px;
-}
-
-.tutor-message-bot {
-    align-self: flex-start;
-    background: var(--bg-tertiary);
-    color: var(--text-main);
-    border-bottom-left-radius: 4px;
-    border: 1px solid var(--border-color);
-    max-width: 95%;
-}
-
-/* PANTALLA COMPLETA EN PC/DESKTOP PARA TUTOR IA (QUIZ Y REPASO) */
-.tutor-chat-panel.chat-fullscreen {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: none !important;
-    border-radius: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    z-index: 999999 !important;
-}
-
-.tutor-chat-panel.chat-fullscreen .tutor-message {
-    max-width: 92%;
-}
-
-.tutor-expand-btn {
-    background: transparent;
-    border: none;
-    color: var(--tutor-text-muted);
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-}
-
-.tutor-expand-btn:hover {
-    color: var(--primary);
-    background: var(--surface-hover);
-}
-
-/* Acciones de Mensaje (Guardar Nota) */
-.tutor-message-wrapper {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-.tutor-message-wrapper.user {
-    align-items: flex-end;
-}
-
-.tutor-message-wrapper.bot {
-    align-items: flex-start;
-}
-
-.tutor-message-actions {
-    margin-top: 8px;
-    display: flex;
-    gap: 8px;
-    padding-top: 6px;
-    border-top: 1px solid var(--border-color);
-}
-
-.tutor-message-actions.user-actions {
-    justify-content: flex-end;
-    opacity: 0.6;
-    border-top: none;
-}
-
-.tutor-message-actions.user-actions:hover {
-    opacity: 1;
-}
-
-.tutor-save-note-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 5px 12px;
-    color: var(--tutor-text-muted);
-    font-size: 0.75rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-}
-
-.tutor-save-note-btn:hover {
-    color: #f59e0b;
-    border-color: #f59e0b;
-    background: rgba(245, 158, 11, 0.08);
-}
-
-.tutor-save-note-btn.saved {
-    color: #f59e0b;
-    border-color: #f59e0b;
-    background: rgba(245, 158, 11, 0.12);
-}
-
-.tutor-input-area {
-    padding: 16px 20px;
-    background: var(--card-bg);
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.tutor-input-field {
-    flex: 1;
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 12px 16px;
-    color: var(--input-text);
-    font-family: inherit;
-    font-size: 0.95rem;
-    outline: none;
-    transition: all 0.2s ease;
-    resize: none;
-    max-height: 120px;
-    min-height: 48px;
-    height: 48px;
-    box-sizing: border-box;
-    line-height: 22px;
-    overflow-y: auto;
-}
-
-.tutor-input-field:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-glow);
-}
-
-.tutor-send-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.2s;
-}
-
-.tutor-send-btn:hover {
-    background: var(--tutor-accent);
-    transform: scale(1.05);
-}
-
-.tutor-send-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.tutor-disclaimer-text {
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    text-align: center;
-    margin: 0;
-    padding: 0 16px 10px;
-    background: var(--card-bg);
-    line-height: 1.35;
-    letter-spacing: -0.01em;
-    user-select: none;
-    opacity: 0.85;
-}
-
-/* Responsividad Celular (Bottom Sheet) */
+/* Expanded reading mode. This is a dialog, so a floating-surface shadow is valid. */
+.tutor-chat-panel.chat-fullscreen { inset: 0 !important; width: 100vw !important; height: 100dvh !important; max-width: none !important; max-height: none !important; border: 0; border-radius: 0; box-shadow: none; z-index: 999999 !important; }
+.tutor-chat-panel.chat-fullscreen .tutor-messages-area > * { width: min(100%, 960px); margin-inline: auto; }
+.tutor-chat-panel.chat-fullscreen .tutor-input-area { padding-inline: max(20px, calc((100vw - 960px) / 2)); }
 @media (max-width: 768px) {
-    .tutor-chat-panel {
-        width: 100%;
-        height: 65%;
-        top: auto;
-        bottom: 0;
-        border-left: none;
-        border-top: 1px solid var(--tutor-border);
-        transform: translateY(100%);
-        border-top-left-radius: 24px;
-        border-top-right-radius: 24px;
-    }
-
-    .tutor-chat-panel.active {
-        transform: translateY(0);
-    }
+    .tutor-chat-panel { inset: calc(72px + var(--trial-bar-height, 0px)) 8px 8px; width: calc(100vw - 16px); height: calc(100dvh - 80px - var(--trial-bar-height, 0px)); max-height: calc(100dvh - 80px - var(--trial-bar-height, 0px)); transform: translateY(calc(100% + 16px)); }
+    .tutor-input-field { font-size: 1rem; }
+    .tutor-chat-header { padding: 16px; gap: 8px; }
+    .tutor-header-title { gap: 8px; }
+    .tutor-context-label { max-width: 180px; }
+    .tutor-header-actions { gap: 4px; }
+    .tutor-close-btn, .tutor-expand-btn { width: 36px; height: 40px; }
+    .tutor-messages-area { padding: 18px 16px; gap: 16px; }
+    .tutor-notes-link { padding-inline: 16px; }
+    .tutor-input-area { padding-inline: 12px; gap: 8px; }
+    .tutor-message { padding: 14px; }
 }
-
-/* Suggestions under Tutor messages */
-.tutor-suggestions-container {
-    display: flex;
-    gap: 0.5rem;
-    padding: 0.5rem 0;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    scrollbar-width: none;
-    width: 100%;
-}
-
-.tutor-suggestions-container::-webkit-scrollbar {
-    display: none;
-}
-
-.tutor-suggestion-btn {
-    white-space: nowrap;
-    flex-shrink: 0;
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--tutor-border);
-    color: var(--tutor-text-muted);
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    border-radius: 9999px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: inherit;
-}
-
-.tutor-suggestion-btn:hover {
-    background-color: rgba(99, 102, 241, 0.1);
-    color: var(--tutor-accent);
-    border-color: var(--tutor-accent);
-}
-
-/* 📚 Contenedor de Fuentes Oficiales RAG (Libros / Normas y Páginas) */
-.tutor-citations-container {
-    margin-top: 8px;
-    margin-bottom: 4px;
-    padding: 8px 12px;
-    background: rgba(99, 102, 241, 0.06);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-width: 95%;
-    box-sizing: border-box;
-    animation: message-in 0.25s ease-out forwards;
-}
-
-[data-theme="light"] .tutor-citations-container {
-    background: rgba(59, 130, 246, 0.05);
-    border-color: rgba(59, 130, 246, 0.18);
-}
-
-.tutor-citations-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: var(--tutor-primary);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-[data-theme="light"] .tutor-citations-header {
-    color: #2563eb;
-}
-
-.tutor-citations-header i {
-    font-size: 0.8rem;
-}
-
-.tutor-citations-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-}
-
-.tutor-citation-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 9px;
-    background: var(--card-bg, #1e293b);
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
-    border-radius: 9999px;
-    font-size: 0.78rem;
-    color: var(--text-main, #f8fafc);
-    line-height: 1.3;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="light"] .tutor-citation-pill {
-    background: #ffffff;
-    border-color: rgba(0, 0, 0, 0.1);
-    color: #1e293b;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.tutor-citation-pill:hover {
-    border-color: var(--tutor-primary, #6366f1);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
-}
-
-.tutor-citation-pill i {
-    color: var(--warning, #f59e0b);
-    font-size: 0.76rem;
-}
-
-.tutor-citation-source {
-    font-weight: 600;
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.tutor-citation-page {
-    color: var(--info, #38bdf8);
-    font-weight: 700;
-    font-size: 0.74rem;
-}
-
-[data-theme="light"] .tutor-citation-page {
-    color: #0284c7;
-}
-
-/* ============================================================
-   LIGHT MODE ADAPTATION FOR TUTOR CHAT (QUIZ & REPASO)
-   ============================================================
-   Asegura alta legibilidad, contraste y saturación en modo claro
-   eliminando la opacidad en títulos, negritas y cabeceras.
-   ============================================================ */
-[data-theme="light"] {
-    --tutor-primary: #4f46e5; /* Indigo 600 */
-    --tutor-secondary: #0284c7; /* Sky 600 */
-    --tutor-accent: #4338ca;
-    --tutor-text: #0f172a;
-    --tutor-text-muted: #64748b;
-    --tutor-border: rgba(15, 23, 42, 0.1);
-}
-
-[data-theme="light"] .tutor-chat-panel {
-    background: #ffffff;
-    border-left-color: rgba(15, 23, 42, 0.1);
-    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.1);
-}
-
-[data-theme="light"] .tutor-chat-header {
-    background: #ffffff;
-    border-bottom-color: rgba(15, 23, 42, 0.08);
-}
-
-[data-theme="light"] .tutor-header-title {
-    color: #0f172a;
-    font-weight: 800;
-}
-
-[data-theme="light"] .tutor-header-title span {
-    color: #0f172a;
-    font-weight: 700;
-}
-
-[data-theme="light"] .tutor-header-title i {
-    color: #4f46e5;
-}
-
-[data-theme="light"] .tutor-close-btn,
-[data-theme="light"] .tutor-expand-btn {
-    color: #64748b;
-}
-
-[data-theme="light"] .tutor-close-btn:hover,
-[data-theme="light"] .tutor-expand-btn:hover {
-    color: #0f172a;
-    background: rgba(15, 23, 42, 0.06);
-}
-
-[data-theme="light"] .tutor-message-bot {
-    background: #f8fafc;
-    color: #0f172a;
-    border-color: rgba(15, 23, 42, 0.08);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-}
-
-[data-theme="light"] .tutor-message strong {
-    background: none !important;
-    -webkit-text-fill-color: initial !important;
-    color: #1e40af !important; /* Blue 800 para contraste óptico perfecto */
-    font-weight: 700;
-}
-
-[data-theme="light"] .tutor-input-area {
-    background: #ffffff;
-    border-top-color: rgba(15, 23, 42, 0.08);
-}
-
-[data-theme="light"] .tutor-input-field {
-    background: #f8fafc;
-    border-color: rgba(15, 23, 42, 0.15);
-    color: #0f172a;
-}
-
-[data-theme="light"] .tutor-input-field:focus {
-    background: #ffffff;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-}
-
-[data-theme="light"] .tutor-save-note-btn {
-    background: #ffffff;
-    border-color: rgba(15, 23, 42, 0.12);
-    color: #475569;
-}
-
-[data-theme="light"] .tutor-save-note-btn:hover {
-    background: #f1f5f9;
-    color: #1e40af;
-    border-color: #3b82f6;
-}
-
-[data-theme="light"] .tutor-suggestion-btn {
-    background-color: #ffffff;
-    border-color: rgba(15, 23, 42, 0.12);
-    color: #334155;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .tutor-suggestion-btn:hover {
-    background-color: rgba(79, 70, 229, 0.08);
-    color: #4338ca;
-    border-color: #4f46e5;
-}
-
-[data-theme="light"] .tutor-disclaimer-text {
-    background: #ffffff;
-    color: #64748b;
-}
-
+@media (prefers-reduced-motion: reduce) { .tutor-chat-panel { transition: none; } }

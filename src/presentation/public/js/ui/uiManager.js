@@ -1,5 +1,6 @@
 class UIManager {
     constructor() {
+        this.ensureStylesheets();
         this.modalId = 'auth-prompt-modal';
         this.injectModalHTML();
         // NUEVO: Inyectar Modal de Video
@@ -27,6 +28,17 @@ class UIManager {
         window.addEventListener('offline', () => this.handleConnectivityChange(false));
     }
 
+    /** Component styles load once, including on pages without the full workspace shell. */
+    ensureStylesheets() {
+        for (const file of ['modal', 'ui-overlays']) {
+            if (document.querySelector('link[href*="/css/' + file + '.css"]')) continue;
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '/css/' + file + '.css?v=' + (window.AppConfig?.VERSION || '1');
+            document.head.append(link);
+        }
+    }
+
     /**
      * Gestión de Resiliencia de Red
      */
@@ -35,8 +47,8 @@ class UIManager {
         const div = document.createElement('div');
         div.id = 'status-pill-container';
         div.className = 'status-pill-container';
-        // 🛡️ Estilos inline de seguridad: garantizan position:fixed incluso si components.css no está cargado
-        div.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-120px);z-index:9999;transition:transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);pointer-events:none;';
+        div.setAttribute('role', 'status');
+        div.setAttribute('aria-live', 'polite');
         div.innerHTML = `
             <div id="status-pill" class="status-pill">
                 <span class="status-dot"></span>
@@ -46,37 +58,30 @@ class UIManager {
         document.body.appendChild(div);
     }
 
-    handleConnectivityChange(isOnline, wasOffline = false) {
+    handleConnectivityChange(isOnline) {
         this.isOnline = isOnline;
+        clearTimeout(this._connectivityTimer);
         const container = document.getElementById('status-pill-container');
         const pill = document.getElementById('status-pill');
         const text = document.getElementById('status-text');
-
         if (!isOnline) {
             pill.className = 'status-pill offline';
             text.textContent = 'Sin conexión - Trabajando localmente';
-            // 🛡️ También aplicar estilo inline para páginas sin components.css
-            container.style.transform = 'translateX(-50%) translateY(0)';
+            container.classList.add('active');
             this._wasOffline = true;
-        } else {
-            // 🚨 FIX: Solo mostrar "Conectado" si se recuperó de un estado offline
-            // No mostrar en la carga inicial cuando ya hay conexión
-            if (this._wasOffline) {
-                pill.className = 'status-pill online';
-                text.textContent = 'Conectado';
-                container.style.transform = 'translateX(-50%) translateY(0)';
-                // Ocultar después de 3 segundos
-                setTimeout(() => {
-                    container.style.transform = 'translateX(-50%) translateY(-120px)';
-                    container.classList.remove('active');
-                    this._wasOffline = false;
-                }, 3000);
-            } else {
-                // Conexión inicial normal: mantener oculto silenciosamente
-                container.style.transform = 'translateX(-50%) translateY(-120px)';
-                container.classList.remove('active');
-            }
+            return;
         }
+        if (!this._wasOffline) {
+            container.classList.remove('active');
+            return;
+        }
+        pill.className = 'status-pill online';
+        text.textContent = 'Conectado';
+        container.classList.add('active');
+        this._connectivityTimer = setTimeout(() => {
+            container.classList.remove('active');
+            this._wasOffline = false;
+        }, 3000);
     }
 
     /**
@@ -204,77 +209,28 @@ class UIManager {
         }
     }
 
+    /** Payment returns are notices; entitlement is confirmed by the server webhook. */
     checkPaymentStatus() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const status = urlParams.get('payment');
-
-        if (status === 'success') {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            this.showPremiumSuccessModal();
-        } else if (status === 'failure') {
-            this.showToast('❌ Hubo un problema con el pago. Inténtalo de nuevo.');
-        }
-    }
-
-    showPremiumSuccessModal() {
-        const modalId = 'premium-success-modal';
-        if (document.getElementById(modalId)) return;
-
-        const modalHTML = `
-            <div id="${modalId}" class="auth-prompt-modal" style="display:flex;">
-                <div class="modal-content premium-variant">
-                    <div class="modal-body" style="padding-top: 40px;">
-                        <div class="auth-prompt-icon" style="margin-bottom: 20px;">
-                            <i class="fas fa-crown" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
-                        </div>
-                        
-                        <h2 style="
-                            background: linear-gradient(90deg, #fbbf24, #d97706); 
-                            -webkit-background-clip: text; 
-                            -webkit-text-fill-color: transparent; 
-                            font-weight: 800;
-                            font-size: 1.5rem;
-                            margin: 0 0 10px 0;
-                        ">
-                            ¡Suscripción Activada!
-                        </h2>
-                        
-                        <p style="color: var(--text-secondary); font-size: 1rem; line-height: 1.5; margin-bottom: 25px;">
-                            Gracias por unirte a la comunidad Premium. <br>
-                            Ahora tienes <strong>Acceso Ilimitado</strong> a todos los recursos y al Asistente.
-                        </p>
-
-                        <button onclick="document.getElementById('${modalId}').remove()" class="btn-primary" style="
-                            width: 100%; 
-                            background: linear-gradient(90deg, #f59e0b, #d97706); 
-                            color: #fff; 
-                            font-weight: 700; 
-                            border: none;
-                            padding: 12px 30px; 
-                            font-size: 1rem;
-                            border-radius: 50px;
-                            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-                        ">
-                            ¡Comenzar! 🚀
-                        </button>
-                    </div>
-                </div>
-            </div>`;
-
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        this.pushModalState(modalId);
-
-        // Interceptar cierre X
-        const realCloseBtn = document.querySelector(`#${modalId} .close-success`);
-        if (realCloseBtn) {
-            realCloseBtn.addEventListener('click', () => {
-                document.getElementById(modalId).remove();
-                this.popModalState(modalId);
-            });
-        }
-
-        // Confetti effect (simulated via toast for now, or just the modal is enough)
-        if (window.confetti) window.confetti();
+        const params = new URLSearchParams(window.location.search);
+        const state = params.get('payment') || params.get('status');
+        const notices = {
+            success: ['Recibimos el retorno de Mercado Pago. Tu pase se actualizará cuando el servidor confirme la aprobación del pago.', 'Estado del pago'],
+            approved: ['Mercado Pago ha devuelto un estado aprobado. El pase se actualizará al recibir la confirmación de la operación.', 'Estado del pago'],
+            failure: ['El pago no se pudo completar. Puedes volver a intentarlo desde Pases de acceso.', 'Pago no completado'],
+            pending: ['El pago está pendiente de acreditación. El pase se activará cuando Mercado Pago confirme su aprobación.', 'Pago pendiente']
+        };
+        if (!notices[state]) return;
+        params.delete('payment');
+        params.delete('status');
+        const query = params.toString();
+        window.history.replaceState({}, '', window.location.pathname + (query ? '?' + query : '') + window.location.hash);
+        const displayNotice = () => {
+            const [message, title] = notices[state];
+            if (window.confirmationModal) window.confirmationModal.showAlert(message, title);
+            else this.showToast(message, state === 'failure' ? 'error' : 'info', 6500);
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', displayNotice, { once: true });
+        else displayNotice();
     }
 
     /**
@@ -926,155 +882,7 @@ class UIManager {
                     </div>
                 </div>
             </div>
-            <style>
-                .media-viewer-overlay {
-                    display: none;
-                    position: fixed;
-                    top: 0; left: 0; width: 100vw; height: 100vh;
-                    background: rgba(10, 10, 10, 0.98);
-                    backdrop-filter: blur(20px);
-                    -webkit-backdrop-filter: blur(20px);
-                    z-index: 9999999;
-                    justify-content: center;
-                    align-items: center;
-                    animation: fadeInMedia 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-                }
-                @keyframes fadeInMedia {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                .media-viewer-container {
-                    width: 96%;
-                    max-width: 1200px;
-                    height: 94vh;
-                    display: flex;
-                    flex-direction: column;
-                    background: rgba(20, 20, 20, 0.5);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    border-radius: 20px;
-                    overflow: hidden;
-                    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8);
-                    backdrop-filter: blur(10px);
-                    -webkit-backdrop-filter: blur(10px);
-                }
-                .media-viewer-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    color: #f1f5f9;
-                    padding: 15px 24px;
-                    background: rgba(10, 10, 10, 0.6);
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-                    backdrop-filter: blur(5px);
-                }
-                .media-viewer-title-text {
-                    font-weight: 600;
-                    font-size: 1.15rem;
-                    color: #f8fafc;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    max-width: 50%;
-                }
-                .media-viewer-actions {
-                    display: flex;
-                    gap: 10px;
-                    align-items: center;
-                }
-                .media-btn-action, .media-btn-download, .media-btn-close {
-                    background: rgba(255, 255, 255, 0.06);
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    color: #e2e8f0;
-                    width: 38px;
-                    height: 38px;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 1.1rem;
-                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-                    text-decoration: none;
-                }
-                .media-btn-action:hover, .media-btn-download:hover {
-                    background: #3b82f6;
-                    color: #fff;
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-                }
-                .media-btn-close {
-                    background: rgba(239, 68, 68, 0.1);
-                    border: 1px solid rgba(239, 68, 68, 0.2);
-                    color: #f87171;
-                }
-                .media-btn-close:hover {
-                    background: #ef4444;
-                    color: #fff;
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-                }
-                .media-viewer-body {
-                    flex: 1;
-                    overflow: hidden;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    background: #050505;
-                    position: relative;
-                }
-                .media-viewer-body img {
-                    max-width: 100%;
-                    max-height: 100%;
-                    object-fit: contain;
-                    border-radius: 4px;
-                    cursor: grab;
-                    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-                    user-select: none;
-                    -webkit-user-drag: none;
-                }
-                .media-viewer-body img.zoom-active {
-                    cursor: grabbing;
-                }
-                .media-viewer-body iframe, .media-viewer-body video {
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                    outline: none;
-                    background: transparent;
-                }
-                .media-loader {
-                    position: absolute;
-                    color: #94a3b8;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 12px;
-                    font-size: 1rem;
-                    pointer-events: none;
-                    z-index: 10;
-                }
-                @media (max-width: 768px) {
-                    .media-viewer-container {
-                        width: 100%;
-                        height: 100%;
-                        border-radius: 0;
-                        border: none;
-                    }
-                    .media-viewer-header {
-                        padding: 10px 15px;
-                    }
-                    .media-viewer-title-text {
-                        font-size: 1rem;
-                        max-width: 40%;
-                    }
-                    .media-btn-action, .media-btn-download, .media-btn-close {
-                        width: 34px;
-                        height: 34px;
-                        font-size: 1rem;
-                    }
-                }
-            </style>
-        `;
+`;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
@@ -1305,14 +1113,14 @@ class UIManager {
             } else {
                 // Tier FREE o EXPIRED
                 config.title = '¡Desbloquea el Acceso Premium! 💎';
-                config.message = customMsg || 'Has consumido tus 10 vidas de prueba gratuitas. Suscríbete hoy para acceder a diagnósticos inteligentes con IA y simulacros ilimitados.';
+                config.message = customMsg || 'Has consumido tus 10 vidas de prueba gratuitas. Elige un pase para ampliar tus consultas al Tutor IA y tus simulacros diarios.';
                 config.btnText = 'Ver Planes Premium';
                 config.btnUrl = '/pricing';
                 config.icon = 'fa-crown';
                 config.badgeText = 'Acceso Premium';
                 config.badgeIcon = 'fa-crown';
                 features = [
-                    { icon: 'fa-check-circle', text: 'Simulacros ilimitados con banco oficial de preguntas' },
+                    { icon: 'fa-check-circle', text: 'Más simulacros diarios según tu pase' },
                     { icon: 'fa-check-circle', text: 'Diagnósticos inteligentes y retroalimentación IA' }
                 ];
             }
@@ -1378,13 +1186,13 @@ class UIManager {
                 config.badgeIcon = 'fa-medal';
                 features = [
                     { icon: 'fa-check-circle', text: 'Meta de práctica diaria completada al 100%' },
-                    { icon: 'fa-check-circle', text: 'Tu biblioteca y notas siguen disponibles' }
+                    { icon: 'fa-check-circle', text: 'Tus mazos y notas se conservan' }
                 ];
             } else {
                 config.badgeText = 'Acceso Premium';
                 config.badgeIcon = 'fa-crown';
                 features = [
-                    { icon: 'fa-check-circle', text: 'Acceso ilimitado a todas las herramientas' },
+                    { icon: 'fa-check-circle', text: 'Más capacidad de práctica según el pase elegido' },
                     { icon: 'fa-check-circle', text: 'Tutoría IA disponible para resolver tus dudas' }
                 ];
             }
@@ -1404,7 +1212,6 @@ class UIManager {
             const modalHTML = `
             <div id="${modalId}" class="auth-prompt-modal paywall-overlay" style="display:flex;">
                 <div class="modal-content paywall-modal-content">
-                    <div class="paywall-glow"></div>
                     <div class="paywall-header">
                         <div class="paywall-header-top">
                             <span class="paywall-badge">
@@ -1424,6 +1231,7 @@ class UIManager {
                         </div>
                     </div>
                     <div class="paywall-footer">
+                        <p class="paywall-reassurance">Tu progreso y tus notas se conservan.</p>
                         <button id="${modalId}-btn" class="btn-paywall-primary" onclick="window.location.href='${config.btnUrl}'">
                             <span id="${modalId}-btn-text">${config.btnText}</span>
                             <i class="fas fa-arrow-right"></i>
@@ -1543,52 +1351,11 @@ class UIManager {
         if (document.getElementById(this.modalId)) return;
 
         const modalHTML = `
-            <div id="${this.modalId}" class="auth-prompt-modal" style="display: none;">
-                <div class="modal-content premium-glass-dark">
-                    <div class="modal-header">
-                        <h2 style="color: var(--text-main) !important;"><i class="fas fa-rocket" style="color: var(--primary);"></i> Únete a Hub Academia</h2>
-                        <button class="modal-close-btn" onclick="window.uiManager.hideAuthPromptModal()">&times;</button>
-                    </div>
-                    
-                    <div class="modal-body">
-                        <div class="auth-prompt-icon" style="margin-bottom: 24px;">
-                            <div style="
-                                width: 70px; height: 70px; 
-                                background: var(--bg-tertiary); 
-                                border-radius: 20px; 
-                                display: flex; align-items: center; justify-content: center; 
-                                margin: 0 auto;
-                                border: 1px solid var(--border-color);
-                                box-shadow: var(--shadow-md);
-                                transform: rotate(-5deg);
-                            ">
-                                <img src="/assets/logo.png" alt="Hub Academia" style="width: 80%; height: 80%; object-fit: contain;">
-                            </div>
-                        </div>
-
-                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px; line-height: 1.5; padding: 0 10px;">
-                            Únete hoy de forma gratuita para guardar tu progreso, analizar tus estadísticas y probar todos los simuladores y servicios de la plataforma.
-                        </div>
-                    </div>
-
-                    <div class="modal-footer" style="padding: 0 24px 32px 24px;">
-                        <button class="btn-primary" onclick="window.triggerGoogleLogin(this)" style="
-                            width: 100%; 
-                            background: linear-gradient(135deg, #2563eb, #1d4ed8); 
-                            color: #ffffff !important; 
-                            font-weight: 700; 
-                            border: none;
-                            padding: 14px 20px; 
-                            font-size: 1rem;
-                            border-radius: 12px;
-                            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
-                            cursor: pointer;
-                            display: flex; align-items: center; justify-content: center; gap: 10px;
-                            transition: all 0.2s ease;
-                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(37, 99, 235, 0.45)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(37, 99, 235, 0.35)'">
-                            <i class="fab fa-google" style="font-size: 1.1rem;"></i> Continuar con Google
-                        </button>
-                    </div>
+            <div id="${this.modalId}" class="auth-prompt-modal" role="dialog" aria-modal="true" aria-labelledby="auth-prompt-title">
+                <div class="modal-content access-modal-content">
+                    <div class="modal-header access-modal-header"><div><p class="access-modal-eyebrow">Tu cuenta en Hub Academia</p><h2 id="auth-prompt-title">Tu estudio, en un solo lugar.</h2></div><button type="button" class="modal-close-btn" aria-label="Cerrar" onclick="window.uiManager.hideAuthPromptModal()">×</button></div>
+                    <div class="modal-body access-modal-body"><p>Accede para dar continuidad a tu práctica y conservar lo que aprendes.</p><ul class="access-benefits"><li><i class="fas fa-chart-line" aria-hidden="true"></i><div><strong>Tu progreso a la vista</strong><span>Revisa tus simulacros y resultados.</span></div></li><li><i class="far fa-comment" aria-hidden="true"></i><div><strong>Aprende con el Tutor IA</strong><span>Profundiza en las respuestas de tus sesiones.</span></div></li><li><i class="far fa-bookmark" aria-hidden="true"></i><div><strong>Conserva tus ideas</strong><span>Reúne explicaciones y apuntes en tus Notas.</span></div></li></ul></div>
+                    <div class="modal-footer"><button type="button" class="btn-primary" onclick="window.triggerGoogleLogin(this)"><i class="fab fa-google" aria-hidden="true"></i> Continuar con Google</button><a href="/login" class="btn-secondary">Otras formas de acceso</a></div>
                 </div>
             </div>`;
 
@@ -1606,221 +1373,20 @@ class UIManager {
     }
 
     /**
-     * ✅ CENTRALIZACIÓN: Renderiza el banner de Modo Invitado con estilo Premium Glass
-     */
-    /**
-     * ✅ CENTRALIZACIÓN: Banner de Modo Invitado (Desactivado a solicitud del usuario para una UI más limpia)
-     */
-    renderGuestBanner(containerId) {
-        // Desactivado a petición del usuario
-        return;
-    }
-    /**
      * Inyecta el HTML de la barra de estado Freemium.
      */
     injectFreemiumStatusBar() {
         if (document.getElementById('freemium-status-bar')) return;
 
         const barHTML = `
-            <style>
-                .freemium-status-bar {
-                    background: var(--bg-secondary);
-                    border-bottom: 1px solid var(--border-color);
-                    color: var(--text-main);
-                    padding: 0 16px;
-                    display: none; /* Oculto por defecto */
-                    justify-content: center;
-                    align-items: center;
-                    font-size: 0.88rem;
-                    font-family: var(--font-main, 'Inter', system-ui, sans-serif);
-                    position: fixed; /* ✅ FIXED: Always on top */
-                    top: 0; 
-                    left: 0;
-                    width: 100%;
-                    height: 46px; /* Explicit height matching CSS var */
-                    box-sizing: border-box;
-                    z-index: 9999; /* Z-Index Alto */
-                    box-shadow: var(--shadow-sm);
-                    transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-                }
-                [data-theme="dark"] .freemium-status-bar {
-                    background: #090a0f;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-                    color: #f8fafc;
-                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-                }
-                [data-theme="light"] .freemium-status-bar {
-                    background: #ffffff;
-                    border-bottom: 1px solid rgba(15, 23, 42, 0.09);
-                    color: #0f172a;
-                    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
-                }
-                .freemium-status-bar.visible {
-                    display: flex;
-                    animation: slideDown 0.3s ease-out;
-                }
-                .status-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 14px;
-                    width: 100%;
-                    max-width: 1200px;
-                    justify-content: center;
-                }
-                .probation-text {
-                    font-weight: 800;
-                    letter-spacing: 0.03em;
-                    font-size: 0.82rem;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                }
-                [data-theme="dark"] .probation-text {
-                    color: #f8fafc;
-                }
-                [data-theme="light"] .probation-text {
-                    color: #0f172a;
-                }
-                .probation-text .bolt-icon {
-                    color: #f59e0b;
-                }
-                [data-theme="light"] .probation-text .bolt-icon {
-                    color: #d97706;
-                }
-                .usage-pill {
-                    padding: 3px 10px;
-                    border-radius: 9999px;
-                    font-weight: 800;
-                    font-size: 0.85rem;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    white-space: nowrap;
-                    transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
-                }
-                [data-theme="dark"] .usage-pill {
-                    background: rgba(245, 158, 11, 0.15);
-                    border: 1px solid rgba(245, 158, 11, 0.35);
-                    color: #fbbf24;
-                }
-                [data-theme="light"] .usage-pill {
-                    background: rgba(217, 119, 6, 0.1);
-                    border: 1px solid rgba(217, 119, 6, 0.25);
-                    color: #b45309;
-                }
-                [data-theme="dark"] .usage-pill.low-lives {
-                    background: rgba(239, 68, 68, 0.2);
-                    border-color: rgba(239, 68, 68, 0.45);
-                    color: #fca5a5;
-                }
-                [data-theme="light"] .usage-pill.low-lives {
-                    background: rgba(239, 68, 68, 0.12);
-                    border-color: rgba(239, 68, 68, 0.35);
-                    color: #b91c1c;
-                }
-                .usage-label-text {
-                    font-size: 0.85rem;
-                    font-weight: 500;
-                }
-                [data-theme="dark"] .usage-label-text {
-                    color: #94a3b8;
-                }
-                [data-theme="light"] .usage-label-text {
-                    color: #64748b;
-                }
-                .upgrade-btn-small {
-                    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                    border: none;
-                    border-radius: 9999px;
-                    padding: 5px 14px;
-                    font-size: 0.78rem;
-                    font-weight: 800;
-                    cursor: pointer;
-                    color: #ffffff;
-                    letter-spacing: 0.02em;
-                    text-transform: uppercase;
-                    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-                    white-space: nowrap;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    box-shadow: 0 2px 10px rgba(217, 119, 6, 0.35);
-                }
-                .upgrade-btn-small:hover {
-                    transform: translateY(-1px) scale(1.03);
-                    box-shadow: 0 4px 16px rgba(217, 119, 6, 0.5);
-                    color: #ffffff;
-                }
-                .upgrade-btn-small:active {
-                    transform: translateY(0) scale(0.98);
-                }
-
-                /* 📱 MOBILE RESPONSIVE OPTIMIZATION */
-                @media (max-width: 600px) {
-                    .freemium-status-bar {
-                        padding: 0 10px;
-                    }
-                    .status-content {
-                        gap: 8px;
-                        justify-content: space-between;
-                    }
-                    .hide-mobile {
-                        display: none !important;
-                    }
-                    .usage-pill {
-                        padding: 3px 8px;
-                        font-size: 0.82rem;
-                    }
-                    .upgrade-btn-small {
-                        padding: 4px 10px;
-                        font-size: 0.74rem;
-                    }
-                    .probation-text {
-                        font-size: 0.78rem;
-                        font-weight: 700;
-                    }
-                }
-
-                @keyframes slideDown {
-                    from { transform: translateY(-100%); }
-                    to { transform: translateY(0); }
-                }
-
-                /* Toast Notification */
-                .freemium-toast {
-                    position: fixed;
-                    bottom: 20px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: #334155;
-                    color: white;
-                    padding: 12px 24px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                    z-index: 2147483647; /* MAX Z-INDEX: Absolutamente sobre todo */
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    opacity: 0;
-                    transition: opacity 0.3s, transform 0.3s;
-                    pointer-events: none;
-                }
-                .freemium-toast.show {
-                    opacity: 1;
-                    transform: translateX(-50%) translateY(0);
-                }
-                .freemium-toast i { color: #ffd700; }
-            </style>
-            <div id="freemium-status-bar" class="freemium-status-bar" title="Tus créditos de vidas se restablecen a 10 cada 30 días automáticamente">
+<div id="freemium-status-bar" class="freemium-status-bar" hidden aria-label="Créditos de acceso gratuito" title="Tus créditos se renuevan cada 30 días">
                 <div class="status-content">
-                    <span class="probation-text"><i class="fas fa-bolt bolt-icon"></i> <span class="hide-mobile">PLAN </span>GRATUITO</span>
-                    <div class="usage-pill">
-                        <i class="fas fa-bolt"></i> <span id="free-usage-count">--/--</span>
+                    <span class="probation-text">Acceso gratuito</span>
+                    <div class="usage-pill" role="status" aria-live="polite" aria-atomic="true">
+                        <span id="free-usage-count">--/--</span>
+                        <span class="usage-label-text">créditos</span>
                     </div>
-                    <span class="usage-label-text hide-mobile">restantes</span>
-                    <button class="upgrade-btn-small" onclick="window.location.href='/pricing'">
-                         💎 <span class="hide-mobile">Activar </span>Ilimitado
-                    </button>
+                    <a class="upgrade-btn-small" href="/pricing">Ver pases <span aria-hidden="true">↗</span></a>
                 </div>
             </div>
             <div id="freemium-toast" class="freemium-toast">
@@ -1858,8 +1424,8 @@ class UIManager {
         const isPaidActive = user && (tier === 'basic' || tier === 'advanced') && status === 'active';
         const isOptimistic = Boolean(user && user._isOptimistic);
 
-        if (isExcludedPage || !user || isPaidActive || user.role === 'admin' || isOptimistic || tier === 'unknown') {
-            if (bar) bar.style.display = 'none';
+        if (isExcludedPage || document.body.classList.contains('auth-page') || !user || isPaidActive || user.role === 'admin' || isOptimistic || tier === 'unknown') {
+            if (bar) { bar.hidden = true; bar.classList.remove('visible'); }
             document.body.classList.remove('has-trial-mode'); // ✅ Remove class
             return;
         }
@@ -1867,8 +1433,7 @@ class UIManager {
         // Es Freemium/Pending
         if (bar) {
             bar.classList.add('visible');
-            // Asegurarnos que no se oculte por display:none directo
-            bar.style.display = 'flex';
+            bar.hidden = false;
             document.body.classList.add('has-trial-mode'); // ✅ Add class
         }
 
@@ -1881,33 +1446,22 @@ class UIManager {
         const labelSpan = bar ? bar.querySelector('.usage-label-text') : null;
 
         if (!isEmailVerified) {
-            if (labelSpan) labelSpan.textContent = 'bloqueadas (no verificado)';
+            if (labelSpan) labelSpan.textContent = 'sin activar';
             if (upgradeBtn) {
-                upgradeBtn.innerHTML = '✉️ <span class="hide-mobile">Verificar </span>Correo';
-                upgradeBtn.onclick = () => window.location.href = '/profile';
+                upgradeBtn.textContent = 'Verificar correo';
+                upgradeBtn.href = '/profile';
             }
         } else {
-            if (labelSpan) labelSpan.textContent = 'restantes';
+            if (labelSpan) labelSpan.textContent = 'créditos';
             if (upgradeBtn) {
-                upgradeBtn.innerHTML = '💎 <span class="hide-mobile">Activar </span>Ilimitado';
-                upgradeBtn.onclick = () => window.location.href = '/pricing';
+                upgradeBtn.textContent = 'Ver pases ↗';
+                upgradeBtn.href = '/pricing';
             }
         }
 
         if (countSpan) {
-            const prevText = countSpan.textContent;
             const newText = isEmailVerified ? `${remaining}/${limit}` : `0/${limit}`;
             const pill = countSpan.closest('.usage-pill');
-            
-            if (prevText !== newText && prevText !== '--/--') {
-                // Agregar animación de rebote reactiva
-                if (pill) {
-                    pill.style.transform = 'scale(1.15)';
-                    setTimeout(() => {
-                        pill.style.transform = '';
-                    }, 300);
-                }
-            }
             
             countSpan.textContent = newText;
             // Estado semántico reactivo según vidas restantes o verificación
@@ -1943,6 +1497,8 @@ class UIManager {
 
         const toast = document.createElement('div');
         toast.className = `hub-toast toast-${type}`;
+        toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
         
         let iconClass = 'fa-info-circle';
         if (type === 'success') iconClass = 'fa-check-circle';
@@ -2057,7 +1613,7 @@ class UIManager {
 
         const tier = String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase().trim();
         const status = String(user.subscriptionStatus || user.subscription_status || 'pending').toLowerCase().trim();
-        if (tier !== 'free' || tier === 'basic' || tier === 'advanced' || status === 'active') return;
+        if (tier !== 'free' || status === 'active') return;
 
         // Solo mostrar si usage_count es 0 (indica vidas completas, es decir, renovación mensual)
         const usage = user.usageCount !== undefined ? user.usageCount : (user.usage_count || 0);
@@ -2095,54 +1651,17 @@ class UIManager {
         const modalId = 'welcome-freemium-modal';
         if (document.getElementById(modalId)) return;
 
-        const titleText = '¡Tus 10 vidas mensuales están listas!';
-        const bodyText = 'Recibiste de regalo <strong>10 vidas adicionales</strong> para continuar utilizando todas nuestras herramientas de estudio y tutoría IA este mes.';
-        const buttonText = '¡A estudiar!';
-
-        const modalHTML = `
-            <div id="${modalId}" class="auth-prompt-modal" style="display:flex; backdrop-filter: blur(15px); background: rgba(0,0,0,0.5);">
-                <div class="modal-content" style="
-                    background: var(--modal-bg); 
-                    border: 1px solid var(--border-color); 
-                    border-radius: 20px; 
-                    padding: 3rem; 
-                    text-align: center; 
-                    max-width: 440px; 
-                    box-shadow: var(--shadow-xl);
-                ">
-                    <div style="margin-bottom: 2rem;">
-                        <img src="/assets/logo.png" alt="Hub Academia" style="height: 60px; object-fit: contain;">
-                    </div>
-
-                    <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 1rem; letter-spacing: -0.01em;">
-                        ${titleText}
-                    </h2>
-                    
-                    <div style="margin-bottom: 2.5rem; text-align: center;">
-                        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
-                            ${bodyText}
-                        </p>
-                    </div>
-
-                    <button class="btn-primary" onclick="window.uiManager.closeWelcomeModal('${modalId}', '${lastRenewalDate}', '${userId}')" style="
-                        width: 100%; 
-                        background: #3b82f6; 
-                        color: white; 
-                        font-weight: 600; 
-                        border: none;
-                        padding: 1rem; 
-                        font-size: 1rem;
-                        border-radius: 8px;
-                        cursor: pointer;
-                        transition: background 0.2s;
-                    " onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
-                        ${buttonText}
-                    </button>
-                </div>
-            </div>`;
-
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        const modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'auth-prompt-modal active';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'renewal-modal-title');
+        modal.innerHTML = '<div class="modal-content"><div class="modal-header"><h2 id="renewal-modal-title">Tus créditos están listos</h2></div><div class="modal-body"><p>Se han renovado tus 10 créditos de acceso gratuito. Puedes usarlos en simuladores y consultas al Tutor IA durante los próximos 30 días.</p></div><div class="modal-footer"><button type="button" class="btn-primary">Continuar</button></div></div>';
+        document.body.append(modal);
+        modal.querySelector('button').addEventListener('click', () => this.closeWelcomeModal(modalId, lastRenewalDate, userId));
         this.pushModalState(modalId);
+        modal.querySelector('button').focus();
     }
 
     closeWelcomeModal(id, lastRenewalDate, userId) {

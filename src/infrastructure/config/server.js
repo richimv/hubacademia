@@ -1,6 +1,8 @@
 const path = require('path');
 require('events').EventEmitter.defaultMaxListeners = 50;
-require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
+// Local secrets stay outside tracked configuration; hosted environment values win.
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env.local'), quiet: true });
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env'), quiet: true });
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');

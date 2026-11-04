@@ -76,12 +76,6 @@
     letter-spacing: -0.025em;
 }
 
-.footer-logo img {
-    height: 32px;
-    width: 32px;
-    object-fit: contain;
-}
-
 .footer-slogan {
     color: var(--text-muted);
     line-height: 1.6;

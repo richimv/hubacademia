@@ -924,7 +924,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
         return '<div class="review-card-error">Error: Datos de pregunta no disponibles.</div>';
     }
 
-    const { question, answer, index, isDemo, isSavedFront, career } = config;
+    const { question, answer, index, isDemo, career } = config;
 
     let imageHTML = '';
     if (question.image_url) {

@@ -6,7 +6,7 @@ class ChatComponent {
         this.messages = [];
         this.conversations = [];
         this.messageIdCounter = 0;
-        this.specialization = localStorage.getItem('chatbot_specialization') || 'neutral'; // ✅ Por defecto Neutro
+        this.specialization = 'neutral'; // Hubi is company support; academic tutors live in study tools.
 
         // Fase IV: Opciones de Modularidad
         this.targetSelector = options.targetSelector || 'body'; // Dónde se inyecta
@@ -33,7 +33,7 @@ class ChatComponent {
             window.sessionManager.onStateChange((user) => {
                 const toggleBtn = document.getElementById('chatbot-toggle');
                 if (toggleBtn) {
-                    toggleBtn.style.display = 'block';
+                    toggleBtn.style.display = this.isOpen ? 'none' : 'block';
                 }
                 const newUserId = user ? user.id : null;
                 if (lastUserId !== newUserId) {
@@ -47,31 +47,31 @@ class ChatComponent {
     }
 
     getPersonaLabel() {
-        return 'Asistente Guía';
+        return 'Hubi';
     }
 
     createChatInterface() {
         const user = window.sessionManager ? window.sessionManager.getUser() : null;
 
         const chatHTML = `
-            <div id="chatbot-container" class="chatbot-container" role="dialog" aria-modal="true" aria-hidden="true">
-                <div class="chatbot-main-panel" style="width: 100%;">
+            <div id="chatbot-container" class="chatbot-container" role="dialog" aria-labelledby="chatbot-title-heading" aria-modal="false" aria-hidden="true" inert>
+                <div class="chatbot-main-panel">
                     <div class="chatbot-header">
-                        <div class="chatbot-title-selector" style="cursor: default;" title="Asistente Guía Hub Academia">
+                        <div class="chatbot-title-selector" title="Asistente Guía Hub Academia">
                             <img id="chatbot-icon" src="/assets/hubifrente.png" alt="Hubi" class="chatbot-header-avatar">
-                            <h3 id="chatbot-title-heading" class="chatbot-title-heading">Asistente Guía Hub Academia</h3>
+                            <div><h3 id="chatbot-title-heading" class="chatbot-title-heading">Hubi</h3><p class="chatbot-subtitle">Atención de Hub Academia</p></div>
                         </div>
-                        <div class="chatbot-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
-                            <button id="chatbot-expand" class="chatbot-expand" aria-label="Pantalla completa" title="Pantalla completa">
+                        <div class="chatbot-header-actions">
+                            <button type="button" aria-pressed="false" id="chatbot-expand" class="chatbot-expand" aria-label="Pantalla completa" title="Pantalla completa">
                                 <i class="fas fa-expand"></i>
                             </button>
-                            <button id="chatbot-close" class="chatbot-close" aria-label="Cerrar chat" title="Cerrar">
+                            <button type="button" id="chatbot-close" class="chatbot-close" aria-label="Cerrar chat" title="Cerrar">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div id="chatbot-messages" class="chatbot-messages">
+                    <div id="chatbot-messages" class="chatbot-messages" role="log" aria-live="polite" aria-relevant="additions">
                         <!-- Mensajes se cargarán aquí -->
                     </div>
 
@@ -85,28 +85,24 @@ class ChatComponent {
                             <!-- Sugerencias se cargarán dinámicamente -->
                         </div>
                         <div class="chatbot-input">
-                            <textarea id="chatbot-input" placeholder="Ingrese su consulta..." maxlength="5000" rows="1"></textarea>
-                            <button id="chatbot-send" class="chatbot-send" aria-label="Enviar consulta">
+                            <textarea aria-label="Tu consulta para Hubi" id="chatbot-input" placeholder="¿Qué necesitas saber de Hub Academia?" maxlength="1200" rows="1"></textarea>
+                            <button type="button" id="chatbot-send" class="chatbot-send" aria-label="Enviar consulta">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </div>
-                        <div class="chatbot-disclaimer-text">El Asistente IA puede cometer errores. Verifica información importante.</div>
+                        <div class="chatbot-disclaimer-text">Atención de plataforma. Evita compartir datos sensibles. <a href="/privacy#hubi-atencion">Privacidad</a></div>
                     </div>
                 </div>
             </div>
 
-            <button id="chatbot-toggle" class="chatbot-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="chatbot-container" aria-label="Abrir chat del Asistente">
+            <button id="chatbot-toggle" class="chatbot-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="chatbot-container" aria-label="Abrir chat del Asistente">
                 <img src="/assets/hubi.png" alt="Hubi" class="chatbot-toggle-avatar">
                 <span class="chatbot-notification" id="chatbot-notification" style="display: none;"></span>
             </button>
             
-            <!-- Burbuja de Invitación animada (Fuera del botón para fluidez extrema) -->
-            <div id="chat-invitation-bubble" class="chat-invitation-bubble">
-                <img src="/assets/hubifrente.png" alt="Hubi" class="chat-invitation-avatar">
-                <span class="chat-invitation-text">¿Tienes alguna duda? ¡Pregúntame!</span>
-                <button type="button" class="chat-invitation-close" aria-label="Cerrar invitación" onclick="event.stopPropagation(); document.getElementById('chat-invitation-bubble').classList.remove('active'); sessionStorage.setItem('chat_invitation_dismissed', 'true');">
-                    <i class="fas fa-times"></i>
-                </button>
+            <div id="chat-invitation-bubble" class="chat-invitation-bubble" aria-hidden="true" inert>
+                <button type="button" class="chat-invitation-open"><span>¿En qué puedo ayudarte?</span><span>Hablar con Hubi ↗</span></button>
+                <button type="button" class="chat-invitation-close" aria-label="Cerrar invitación"><i class="fas fa-times" aria-hidden="true"></i></button>
             </div>
         `;
 
@@ -116,8 +112,6 @@ class ChatComponent {
         } else {
             console.error(`Target selector ${this.targetSelector} no encontrado para inyectar el Chat.`);
         }
-
-        this.loadChatStyles();
 
         // Inicializar el dropdown con el estado del usuario actual
         this.updatePersonaDropdown(user);
@@ -168,12 +162,6 @@ class ChatComponent {
         }
     }
 
-    loadChatStyles() {
-        // Esta función ya no es necesaria, los estilos están en styles.css
-        // Se mantiene la función vacía para no romper la llamada en init()
-        console.log('🎨 Estilos del chat cargados desde CSS centralizado.');
-    }
-
     updatePersonaUI() {
         const icon = document.getElementById('chatbot-icon');
         if (icon) {
@@ -221,48 +209,10 @@ class ChatComponent {
     updateInputPlaceholder() {
         const textarea = document.getElementById('chatbot-input');
         if (!textarea) return;
-        const placeholders = {
-            neutral: "Escribe tu pregunta aquí...",
-            medicine: "Escribe tu pregunta aquí...",
-            education: "Escribe tu pregunta aquí..."
-        };
-        textarea.placeholder = placeholders[this.specialization] || "Escribe tu pregunta aquí...";
+        textarea.placeholder = "¿Qué necesitas saber de Hub Academia?";
     }
 
-    getVisitorDailyData() {
-        const today = new Date().toISOString().split('T')[0];
-        try {
-            const stored = localStorage.getItem('visitor_general_chat_daily_v1');
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                if (parsed.date === today) {
-                    return parsed;
-                }
-            }
-        } catch (e) {}
-        const newData = { date: today, count: 0 };
-        localStorage.setItem('visitor_general_chat_daily_v1', JSON.stringify(newData));
-        return newData;
-    }
-
-    incrementVisitorDailyCount() {
-        const data = this.getVisitorDailyData();
-        data.count += 1;
-        localStorage.setItem('visitor_general_chat_daily_v1', JSON.stringify(data));
-        return data.count;
-    }
-
-    setVisitorLockState(isLocked = false) {
-        const input = document.getElementById('chatbot-input');
-        const sendBtn = document.getElementById('chatbot-send');
-        if (input) {
-            input.disabled = false;
-            input.placeholder = 'Ingrese su consulta...';
-        }
-        if (sendBtn) {
-            sendBtn.disabled = false;
-        }
-    }
+    
 
     resetVisitorChatState() {
         this.messages = [];
@@ -270,7 +220,6 @@ class ChatComponent {
         if (messagesContainer) {
             messagesContainer.innerHTML = '';
         }
-        this.setVisitorLockState(false);
         this.addWelcomeMessage();
     }
 
@@ -283,7 +232,6 @@ class ChatComponent {
             const user = window.sessionManager ? window.sessionManager.getUser() : null;
             const isRegistered = !!(user && (user.id || user.email));
 
-            let optionsMarkdown = `1. **Herramientas y Ecosistema**\n2. **Planes y Mercado Pago**\n3. **Sustento Oficial y Ventajas**`;
             let defaultSuggestions = [
                 "1. Herramientas y Ecosistema",
                 "2. Planes y Mercado Pago",
@@ -292,20 +240,13 @@ class ChatComponent {
 
             // Si el usuario NO está registrado (es visitante), se añade la 4ta opción al final
             if (!isRegistered) {
-                optionsMarkdown += `\n4. **¿Cómo registrarme?**`;
                 defaultSuggestions.push("4. ¿Cómo registrarme?");
             }
 
-            const welcomeText = `**Hola, soy el Asistente Guía de Hub Academia.**
-Te doy la bienvenida a nuestro ecosistema de herramientas e Inteligencia Artificial aplicada.
-
-**Selecciona o ingresa el número de tu consulta:**
-
-${optionsMarkdown}`;
+            const welcomeText = `**Hola, soy Hubi.** Te ayudo a conocer Hub Academia, sus soluciones y cómo utilizar la plataforma. Escribe tu duda o elige una opción para empezar.`;
 
             this.addMessage(welcomeText, 'bot', { isWelcome: true });
             this.showFollowUpSuggestions(defaultSuggestions);
-            this.setVisitorLockState(false);
         }
     }
 
@@ -324,15 +265,27 @@ ${optionsMarkdown}`;
             });
         }
 
-        // BURBUJA DE INVITACIÓN - Clic abre el chat
-        const bubbleEl = document.getElementById('chat-invitation-bubble');
-        if (bubbleEl) {
-            bubbleEl.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.handleChatToggleClick();
-            });
-        }
+        const bubble = document.getElementById('chat-invitation-bubble');
+        bubble?.querySelector('.chat-invitation-open')?.addEventListener('click', () => this.toggleChat());
+        bubble?.querySelector('.chat-invitation-close')?.addEventListener('click', () => {
+            this.setInvitationVisible(false);
+            sessionStorage.setItem('chat_invitation_dismissed', 'true');
+        });
+        const dialog = document.getElementById('chatbot-container');
+        window.addEventListener('resize', () => {
+            if (!this.isOpen) return;
+            const modal = this.isFullScreen || innerWidth <= 750;
+            dialog.setAttribute('aria-modal', String(modal));
+            document.body.style.overflow = modal ? 'hidden' : this._bodyOverflow || '';
+        }, { passive: true });
+        dialog?.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') { event.stopPropagation(); this.closeChat(); return; }
+            if (event.key !== 'Tab' || !(this.isFullScreen || innerWidth <= 750)) return;
+            const controls = [...dialog.querySelectorAll('button:not(:disabled),a[href],textarea:not(:disabled)')].filter((element) => element.offsetParent !== null);
+            const first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        });
 
         // ✅ MEJORA UI/UX MÓVIL: Listener para el botón hardware 'Atrás'
         window.addEventListener('popstate', this.handlePopState);
@@ -643,7 +596,10 @@ ${optionsMarkdown}`;
             const bubble = document.getElementById('chat-invitation-bubble');
             const dismissed = sessionStorage.getItem('chat_invitation_dismissed');
             if (bubble && !dismissed && !this.isOpen) {
-                bubble.classList.add('active');
+                this.setInvitationVisible(true);
+                setTimeout(() => {
+                    if (!bubble.matches(':hover') && !bubble.contains(document.activeElement)) this.setInvitationVisible(false);
+                }, 9000);
             }
         }, 2500);
     }
@@ -661,49 +617,39 @@ ${optionsMarkdown}`;
         }
     }
 
+    setInvitationVisible(visible) {
+        const bubble = document.getElementById('chat-invitation-bubble');
+        if (!bubble) return;
+        if (!visible && bubble.contains(document.activeElement)) {
+            document.getElementById(this.isOpen ? 'chatbot-input' : 'chatbot-toggle')?.focus();
+        }
+        bubble.classList.toggle('active', visible);
+        bubble.setAttribute('aria-hidden', String(!visible));
+        bubble.inert = !visible;
+    }
+
     toggleChat() {
-        this.isOpen = !this.isOpen;
+        if (this.isOpen) { this.closeChat(); return; }
         const container = document.getElementById('chatbot-container');
         const toggleBtn = document.getElementById('chatbot-toggle');
-
-        container.classList.toggle('open', this.isOpen);
-        // Actualizar atributos ARIA para accesibilidad
-        container.setAttribute('aria-hidden', !this.isOpen);
-        toggleBtn.setAttribute('aria-expanded', this.isOpen);
-
-        if (this.isOpen) {
-            // Ocultar burbuja al abrir
-            const bubble = document.getElementById('chat-invitation-bubble');
-            if (bubble) bubble.classList.remove('active');
-
-            // ✅ Fix OVERSCROLL: Si el usuario usa móvil, bloquear scroll de body siempre por precaución
-            if (window.innerWidth <= 750 || this.isFullScreen) {
-                document.body.style.overflow = 'hidden';
-            }
-
-            // ✅ UX MÓVIL: Guardamos el estado de navegación actual ANTES de pushear
-            // el checkpoint del chat. Así al cerrar con la X podemos restaurarlo
-            // con replaceState (silencioso) en vez de history.back() (ruidoso).
-            if (window.history && window.history.pushState) {
-                this._stateBeforeChat = window.history.state;
-                this._hrefBeforeChat = window.location.href;
-                window.history.pushState({ chatbotOpen: true }, '', '');
-            }
-
-            // ✅ CORRECCIÓN: Ocultar el botón flotante solo en vista móvil.
-            if (window.innerWidth <= 750) {
-                toggleBtn.style.display = 'none';
-            }
-            document.getElementById('chatbot-input').focus();
-            this.hideNotification();
-            toggleBtn.setAttribute('aria-label', 'Cerrar chat del Asistente');
-        } else {
-            // ✅ CORRECCIÓN: Devolver el foco al botón principal ANTES de hacer otros cambios.
-            // Esto evita el error de accesibilidad al cerrar el chat.
-            toggleBtn.focus();
-            toggleBtn.style.display = 'block';
-            toggleBtn.setAttribute('aria-label', 'Abrir chat del Asistente');
-        }
+        if (!container || !toggleBtn) return;
+        this._returnFocus = document.activeElement;
+        this._bodyOverflow = document.body.style.overflow;
+        this.isOpen = true;
+        container.inert = false;
+        container.classList.add('open');
+        container.setAttribute('aria-hidden', 'false');
+        container.setAttribute('aria-modal', String(innerWidth <= 750 || this.isFullScreen));
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        toggleBtn.style.display = 'none';
+        this.setInvitationVisible(false);
+        if (innerWidth <= 750 || this.isFullScreen) document.body.style.overflow = 'hidden';
+        // Preserve the existing silent-close checkpoint; never re-render the library.
+        this._stateBeforeChat = window.history.state;
+        this._hrefBeforeChat = window.location.href;
+        window.history.pushState({ chatbotOpen: true }, '', '');
+        document.getElementById('chatbot-input')?.focus();
+        this.hideNotification();
     }
 
     closeChat() {
@@ -734,56 +680,41 @@ ${optionsMarkdown}`;
     // Función helper para cerrar visualmente sin alterar history (usado cuando history ya disparó popstate)
     forceCloseChatFromBack() {
         if (!this.isOpen) return;
-
-        // 1. Mostrar el botón de nuevo (si estamos en móvil se ocultó)
-        // ✅ DEBE hacerse ANTES de enfocar para que el focus funcione
-        const toggleBtn = document.getElementById('chatbot-toggle');
-        if (toggleBtn) {
-            toggleBtn.style.display = 'block';
-            toggleBtn.focus();
-            toggleBtn.setAttribute('aria-expanded', 'false');
-            toggleBtn.setAttribute('aria-label', 'Abrir chat del Asistente');
-        }
-
-        // 2. Ocultar el contenedor del chat.
-        this.isOpen = false;
         const container = document.getElementById('chatbot-container');
-        container.classList.remove('open');
+        const toggle = document.getElementById('chatbot-toggle');
+        this.isOpen = false;
+        this.isFullScreen = false;
+        toggle.style.display = 'block';
+        toggle.setAttribute('aria-expanded', 'false');
+        const previous = this._returnFocus;
+        if (previous?.isConnected && previous.getClientRects().length && !previous.closest('.chat-invitation-bubble')) previous.focus();
+        else toggle.focus();
+        container.classList.remove('open', 'chat-fullscreen');
         container.setAttribute('aria-hidden', 'true');
-
-        // Liberar el scroll del body
-        document.body.style.overflow = '';
+        container.setAttribute('aria-modal', 'false');
+        container.inert = true;
+        const expand = document.getElementById('chatbot-expand');
+        expand.setAttribute('aria-pressed', 'false');
+        expand.setAttribute('aria-label', 'Pantalla completa');
+        expand.title = 'Pantalla completa';
+        expand.querySelector('i').className = 'fas fa-expand';
+        document.body.style.overflow = this._bodyOverflow || '';
     }
 
     toggleFullScreen() {
-        this.isFullScreen = !this.isFullScreen;
         const container = document.getElementById('chatbot-container');
-        const expandBtn = document.getElementById('chatbot-expand');
-        const icon = expandBtn.querySelector('i');
-
-        if (this.isFullScreen) {
-            container.classList.add('chat-fullscreen');
-            icon.classList.remove('fa-expand');
-            icon.classList.add('fa-compress');
-            // Bloquear scroll trasero agresivamente en PC y móvil
-            document.body.style.overflow = 'hidden';
-            expandBtn.setAttribute('aria-label', 'Salir de pantalla completa');
-            expandBtn.setAttribute('title', 'Restaurar ventana');
-        } else {
-            container.classList.remove('chat-fullscreen');
-            icon.classList.remove('fa-compress');
-            icon.classList.add('fa-expand');
-            // Restaurar scroll si es PC y no está en modo normal
-            if (window.innerWidth > 750) {
-                document.body.style.overflow = '';
-            }
-            expandBtn.setAttribute('aria-label', 'Pantalla completa');
-            expandBtn.setAttribute('title', 'Pantalla completa');
-
-            // Reparar UI si hay overflow en base a resize
-            const input = document.getElementById('chatbot-input');
-            if (input) input.style.height = 'auto';
-        }
+        const expand = document.getElementById('chatbot-expand');
+        if (!container || !expand) return;
+        this.isFullScreen = !this.isFullScreen;
+        container.classList.toggle('chat-fullscreen', this.isFullScreen);
+        const modal = this.isFullScreen || innerWidth <= 750;
+        container.setAttribute('aria-modal', String(modal));
+        expand.setAttribute('aria-pressed', String(this.isFullScreen));
+        const label = this.isFullScreen ? 'Restaurar ventana' : 'Pantalla completa';
+        expand.setAttribute('aria-label', label);
+        expand.title = label;
+        expand.querySelector('i').className = this.isFullScreen ? 'fas fa-compress' : 'fas fa-expand';
+        document.body.style.overflow = modal ? 'hidden' : this._bodyOverflow || '';
     }
 
     async sendMessage() {
@@ -792,10 +723,6 @@ ${optionsMarkdown}`;
 
         if (!message) return;
 
-        const user = window.sessionManager ? window.sessionManager.getUser() : null;
-        const isLogged = !!user;
-
-        console.log('💬 Enviando mensaje:', message);
 
         if (this.isSending) {
             console.log('⚠️ Mensaje ya en proceso, ignorando...');
@@ -806,9 +733,10 @@ ${optionsMarkdown}`;
         input.disabled = true;
         document.getElementById('chatbot-send').disabled = true;
 
-        // ✅ TIMEOUT de seguridad (60 segundos)
+        // Provider fallback completes first; clear the UI safety timer after every request.
+        let requestTimer;
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Timeout: El servidor tardó demasiado en responder')), 60000);
+            requestTimer = setTimeout(() => reject(new Error('Timeout: El servidor tardó demasiado en responder')), 20000);
         });
 
         try {
@@ -821,11 +749,10 @@ ${optionsMarkdown}`;
 
             console.log('📡 Enviando solicitud al servidor...');
 
-            // Extraer los últimos 10 turnos de conversación previa en memoria para mantener la hilación de sesión
-            const historyToSend = this.messages.slice(0, -1).slice(-10).map(msg => ({
+            // Extraer los últimos dos intercambios de conversación previa en memoria para mantener la hilación de sesión
+            const historyToSend = this.messages.slice(0, -1).slice(-4).map(msg => ({
                 sender: msg.sender,
-                content: msg.content,
-                ...(msg.thoughtSignature ? { thoughtSignature: msg.thoughtSignature } : {})
+                content: String(msg.content || '').slice(0, 800)
             }));
 
             const requestData = {
@@ -855,6 +782,10 @@ ${optionsMarkdown}`;
             }
 
             if (!response.ok) {
+                if (response.status === 429 || response.status === 400) {
+                    this.addMessage(data?.error || 'Espera un momento antes de enviar otra consulta.', 'bot');
+                    return;
+                }
                 if (response.status === 403) {
                     if (data && data.paywall) {
                         this.hideTypingIndicator();
@@ -882,22 +813,11 @@ ${optionsMarkdown}`;
 
             this.hideTypingIndicator();
 
-            console.log('✅ Respuesta recibida del servidor:', data);
 
             this.addMessage(data.respuesta, 'bot', { ...data, messageId: data.messageId });
 
             if (data.sugerencias && data.sugerencias.length > 0) {
                 this.showFollowUpSuggestions(data.sugerencias);
-            }
-
-            // Incrementar contador diario de visitante si no está autenticado
-            if (!isLogged) {
-                const newCount = this.incrementVisitorDailyCount();
-
-                // Si se alcanzaron las 2 consultas gratuitas, bloquear suavemente el input para la siguiente interacción
-                if (newCount >= 2) {
-                    this.setVisitorLockState(true);
-                }
             }
 
         } catch (error) {
@@ -928,6 +848,7 @@ ${optionsMarkdown}`;
                 this.addMessage(errorMessage, 'bot');
             }
         } finally {
+            clearTimeout(requestTimer);
             // ✅ RESTABLECER ESTADO
             this.isSending = false;
             input.disabled = false;
@@ -943,7 +864,6 @@ ${optionsMarkdown}`;
         if (!this.isOpen) {
             this.toggleChat();
         }
-        this.setVisitorLockState(false);
         const input = document.getElementById('chatbot-input');
         const sendBtn = document.getElementById('chatbot-send');
         if (input) {
@@ -1008,7 +928,7 @@ ${optionsMarkdown}`;
         // ✅ AÑADIR BOTÓN DE REDIRECCIÓN SI EXISTE LA URL
         if (sender === 'bot' && metadata.redirectUrl) {
             messageHTML += `
-                <div class="redirect-container" style="margin-top: 10px;">
+                <div class="redirect-container">
                     <a href="${metadata.redirectUrl}" target="_blank" class="redirect-btn">Ver más detalles</a>
                 </div>
             `;
@@ -1017,9 +937,9 @@ ${optionsMarkdown}`;
         // Botón CTA de Registro si es mensaje de Despedida/Cierre
         if (sender === 'bot' && (metadata.isFarewell || metadata.intencion === 'despedida_visitante')) {
             messageHTML += `
-                <div class="cta-register-container" style="margin-top: 12px; margin-bottom: 6px; text-align: center;">
-                    <button class="btn-cta-register" style="background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000; font-weight: 700; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; font-size: 0.9rem;" onclick="if(window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function'){ window.uiManager.showAuthPromptModal(); } else { window.location.href='/register'; }">
-                        ✨ Crear Cuenta Gratis (20 Vidas de Prueba)
+                <div class="cta-register-container">
+                    <button class="btn-cta-register" type="button" onclick="if(window.uiManager && typeof window.uiManager.showAuthPromptModal === 'function'){ window.uiManager.showAuthPromptModal(); } else { window.location.href='/login?mode=register'; }">
+                        Crear mi cuenta
                     </button>
                 </div>`;
         }
@@ -1041,51 +961,22 @@ ${optionsMarkdown}`;
     }
 
     formatMessage(text) {
-        // ✅ SAFETY NET: Si el texto es un JSON crudo de la IA (ej: {"intencion":..., "respuesta":...}),
-        // extraer solo el campo "respuesta" para mostrar al usuario.
-        if (typeof text === 'string' && text.trimStart().startsWith('{')) {
-            try {
-                const parsed = JSON.parse(text);
-                if (parsed && parsed.respuesta) {
-                    text = parsed.respuesta;
-                    console.log('🛡️ JSON Safety Net: Extraído campo "respuesta" de JSON crudo.');
-                }
-            } catch (e) {
-                // No es JSON válido, continuar con el texto original
-            }
-        }
-
-        // Expresión regular para detectar URLs (absolutas y relativas que empiezan con /)
-        const urlRegex = /(https?:\/\/[^\s]+)|(\B\/[^\s]+)/g;
-        // ✅ SOLUCIÓN: La regex ahora captura el formato `* [type:ID] Texto` y `[type:ID] Texto`.
-        // Soporta: [career:1], [course:2], [topic:3]
-        const navRegex = /\*?\s*\[(career|course|topic):(\d+)\]\s*([^\n<]+)/g;
-
-        const formatted = window.MarkdownRenderer ? window.MarkdownRenderer.render(text) : text.replace(/\n/g, '<br>');
-
-        return formatted
-            // ✅ MEJORA: Convertir URLs en enlaces clickeables (Soporta absolutas y relativas).
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${linkText}</a>`)
-            // ✅ NUEVO: Convertir enlaces de navegación internos en botones.
-            .replace(navRegex, (match, type, id, text) => {
-                const numericId = parseInt(id, 10);
-                const trimmedText = text.trim();
-                let functionCall = '';
-
-                if (type === 'career') {
-                    // ✅ FIX: Redirigir a la página real de carrera (MPA) para asegurar el diseño correcto.
-                    functionCall = `window.location.href = 'career?id=${numericId}'`;
-                } else if (type === 'course') {
-                    // ✅ FIX: Redirigir a la página real de curso (MPA).
-                    functionCall = `window.location.href = 'course?id=${numericId}'`;
-                } else if (type === 'topic') {
-                    functionCall = `window.location.href = '/library?q=tema:${numericId}'`;
-                }
-
-                return `<button class="chat-nav-button" onclick="${functionCall}">${trimmedText}</button>`;
-            });
+        const content = String(text || '');
+        if (window.MarkdownRenderer) return window.MarkdownRenderer.render(content);
+        // Safe readable fallback on pages that do not load the study Markdown renderer.
+        const escaped = document.createElement('div');
+        escaped.textContent = content;
+        return escaped.innerHTML
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
+                const internal = /^\/(?!\/)/.test(url);
+                const corporate = /^https:\/\/(?:www\.)?hubacademia\.com(?:\/|$)|^https:\/\/docentes\.hubacademia\.com(?:\/|$)/i.test(url);
+                const contact = url === 'mailto:soporte@hubacademia.com';
+                if (!internal && !corporate && !contact) return label;
+                return `<a href="${url}" rel="noopener noreferrer">${label}</a>`;
+            })
+            .replace(/\n/g, '<br>');
     }
-
     showTypingIndicator() {
         const typingIndicator = document.getElementById('chatbot-typing');
         typingIndicator.style.display = 'flex';

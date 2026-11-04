@@ -2,6 +2,7 @@ const axios = require('axios');
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 const sharp = require('sharp');
+const { pipeline } = require('node:stream/promises');
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 
 const ALLOWED_MEDIA_PREFIXES = new Set([
@@ -17,6 +18,19 @@ const ALLOWED_MEDIA_PREFIXES = new Set([
     'audio-cards',
     'audio',
     'tts_cache'
+]);
+
+const DIRECT_IMAGE_TYPES = Object.freeze({
+    '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp', '.gif': 'image/gif', '.avif': 'image/avif'
+});
+
+// Study/editor assets can be reused across questions, cases and saved HTML.
+// Detaching a reference is not proof that the object is unreferenced globally.
+// Keep these versions until a separate, reference-aware maintenance operation.
+const SHARED_ASSET_PREFIXES = new Set([
+    'cases', 'questions', 'explanations', 'editor-content',
+    'recursos', 'cursos', 'carreras', 'thumbnails'
 ]);
 
 function normalizeMediaPath(rawPath) {
@@ -142,6 +156,9 @@ class MediaController {
     async deleteFile(gcsPath, options = {}) {
         const normalizedPath = extractMediaPath(gcsPath);
         if (!normalizedPath) return false;
+        if (SHARED_ASSET_PREFIXES.has(normalizedPath.split('/')[0]) && options.deleteSharedAsset !== true) {
+            return false;
+        }
 
         try {
             const bucket = this.storage.bucket(this.bucketName);
@@ -188,6 +205,9 @@ class MediaController {
      * Lógica interna compartida para servir archivos de GCS por ruta.
      */
     async _serveGCSByPath(req, res, isAdminOnly = false) {
+        // Error responses and signed redirects must never survive in a CDN cache.
+        res.setHeader('Cache-Control', 'no-store');
+        res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
         try {
             // Soportamos ?file= (Nuevo Estandar Seguro) y ?path= (Legacy)
             let gcsPath = req.query.file || req.query.path;
@@ -204,6 +224,30 @@ class MediaController {
 
             const bucket = this.storage.bucket(this.bucketName);
             const file = bucket.file(gcsPath);
+            const ext = path.extname(gcsPath).toLowerCase();
+            const isDownload = req.query.download === 'true' || req.query.download === '1';
+
+            // Opt-in for <img> delivery only. Preview/blob fetches and downloads
+            // retain the same-origin stream (no new GCS CORS requirement).
+            // Nothing expiring is persisted in PostgreSQL or TinyMCE HTML.
+            if (!isAdminOnly && req.method === 'GET' && !isDownload &&
+                req.query.delivery === 'direct' && DIRECT_IMAGE_TYPES[ext]) {
+                try {
+                    const [signedUrl] = await file.getSignedUrl({
+                        version: 'v4',
+                        action: 'read',
+                        expires: Date.now() + 60 * 60 * 1000,
+                        responseType: DIRECT_IMAGE_TYPES[ext],
+                        responseDisposition: 'inline'
+                    });
+                    res.setHeader('Location', signedUrl);
+                    return res.status(302).end();
+                } catch (error) {
+                    // ADC setups may lack signing permission. The compatible
+                    // proxy remains available; never fall back to Render.
+                    console.warn('[GCS_SIGN_FALLBACK]', { code: error.code || 'SIGNING_UNAVAILABLE' });
+                }
+            }
 
             const [exists] = await file.exists();
             if (!exists) {
@@ -211,13 +255,8 @@ class MediaController {
                 return res.status(404).send('Archivo no encontrado en GCS.');
             }
 
-            const ext = path.extname(gcsPath).toLowerCase();
             const contentTypes = {
-                '.png': 'image/png',
-                '.jpg': 'image/jpeg',
-                '.jpeg': 'image/jpeg',
-                '.webp': 'image/webp',
-                '.gif': 'image/gif',
+                ...DIRECT_IMAGE_TYPES,
                 '.svg': 'image/svg+xml',
                 '.pdf': 'application/pdf',
                 '.mp4': 'video/mp4',
@@ -228,18 +267,27 @@ class MediaController {
                 '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             };
 
-            const isDownload = req.query.download === 'true' || req.query.download === '1';
             const baseName = path.basename(gcsPath);
 
             res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
             const forceDownload = isDownload || ext === '.svg';
             res.setHeader('Content-Disposition', forceDownload ? `attachment; filename="${baseName}"` : 'inline');
-            res.setHeader('Cache-Control', isAdminOnly ? 'no-cache' : 'public, max-age=31536000, immutable'); // Cache 1 año para usuarios
+            const isStudyImage = /^(cases|questions|explanations|thumbnails|editor-content|recursos|cursos|carreras)\//.test(gcsPath) && DIRECT_IMAGE_TYPES[ext];
+            res.setHeader('Cache-Control', !isAdminOnly && isStudyImage && !isDownload
+                ? 'public, max-age=86400' : 'private, no-store');
+            res.setHeader('Vercel-CDN-Cache-Control', !isAdminOnly && isStudyImage && !isDownload
+                ? 'public, max-age=86400' : 'no-store');
 
-            file.createReadStream().pipe(res);
+            // Await and handle stream failures instead of letting the function
+            // fail after headers or leave an incomplete image response behind.
+            await pipeline(file.createReadStream(), res);
         } catch (error) {
-            console.error('❌ Error sirviendo GCS por ruta:', error);
-            res.status(500).send('Error interno.');
+            console.error('[GCS_READ_FAILED]', { code: error.code || 'UNKNOWN' });
+            if (res.headersSent || res.destroyed) return;
+            res.removeHeader('Content-Disposition');
+            res.setHeader('Cache-Control', 'no-store');
+            res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
+            res.status(error.code === 404 ? 404 : 503).type('text/plain').send('No se pudo recuperar el archivo multimedia.');
         }
     }
 

@@ -8,7 +8,7 @@ const { coursesController, analyticsController, authController, chatController, 
 const { auth, optionalAuth, adminOnly, authIdentity, internalServiceAuth } = require('../middleware/authMiddleware');
 const usageMiddleware = require('../middleware/usageMiddleware');
 const checkAILimits = require('../../application/middlewares/checkLimitsMiddleware'); // ✅ NUEVO LÍMITE DE PRECIOS
-const { authLimiter } = require('../config/rateLimiters');
+const { authLimiter, platformSupportLimiter } = require('../config/rateLimiters');
 
 // ======================
 // 🔗 CONFIGURACIÓN DE CARGA (Multer)
@@ -98,7 +98,16 @@ router.delete('/auth/delete-account', auth, authController.deleteAccount);
 
 // --- Rutas de Chat (Prefijo /api/chat) ---
 // SE AGREGA checkAILimits('chat_standard') ANTES DE PROCESS MESSAGE
-router.post('/chat', optionalAuth, checkAILimits('chat_standard'), chatController.processMessage); // ✅ Permite visitantes (Asistente Guía Efímero)
+const studyChatLimits = checkAILimits('chat_standard');
+router.post('/chat', optionalAuth, platformSupportLimiter, (req, res, next) => {
+    const isStudyTutor = ['quiz_tutor', 'flashcard_tutor'].includes(req.body?.context?.type);
+    if (isStudyTutor) return studyChatLimits(req, res, next);
+    // Customer support never queries or decrements academic credit balances.
+    req.useRag = false;
+    req.usageType = null;
+    req.cost = 0;
+    return next();
+}, chatController.processMessage);
 router.post('/chat/train-model', auth, adminOnly, chatController.trainModel);
 
 // --- Rutas Públicas ---

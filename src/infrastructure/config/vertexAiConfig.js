@@ -1,7 +1,7 @@
 /**
  * Gobernanza Centralizada de Modelos y Parámetros en Google Cloud Vertex AI
  * - Plataforma exclusiva: Google Enterprise AI (@google-cloud/vertexai).
- * - Estándar de modelos (ACT-02): gemini-3.6-flash-lite (primario) y gemini-3.6-flash (respaldo).
+ * - Modelos y endpoint configurables; generación global separada de embeddings regionales.
  * - Higiene de parámetros (ACT-01): adopción exclusiva de thinking_level ("minimal" | "low" | "medium" | "high")
  *   y omisión estricta de parámetros de muestreo depreciados.
  * - Preservación obligatoria de Thought Signatures en conversaciones multi-turno.
@@ -33,9 +33,16 @@ const VERTEX_INTERACTIONS_API_ROADMAP = Object.freeze({
 });
 
 function getVertexCandidateModels() {
-    const primary = String(process.env.VERTEX_MODEL_PRIMARY || 'gemini-3.6-flash-lite').trim();
-    const fallback = String(process.env.VERTEX_MODEL_FALLBACK || 'gemini-3.6-flash').trim();
+    const primary = String(process.env.VERTEX_MODEL_PRIMARY || 'gemini-3.5-flash-lite').trim();
+    const fallback = String(process.env.VERTEX_MODEL_FALLBACK || 'gemini-3.8-flash').trim();
     return Array.from(new Set([primary, fallback].filter(Boolean)));
+}
+
+// Gemini generation uses the global endpoint; embedding requests keep their
+// GOOGLE_CLOUD_LOCATION (us-central1). Do not apply the region of one to the other.
+function getVertexGenerativeEndpoint() {
+    const location = String(process.env.VERTEX_GENERATIVE_LOCATION || 'global').trim() || 'global';
+    return { location, ...(location === 'global' ? { apiEndpoint: 'aiplatform.googleapis.com' } : {}) };
 }
 
 function normalizeThinkingLevel(rawLevel) {
@@ -45,7 +52,7 @@ function normalizeThinkingLevel(rawLevel) {
 }
 
 /**
- * Construye generationConfig limpio para Gemini 3.6+ sin parámetros de muestreo depreciados.
+ * Construye generationConfig para los modelos Gemini configurados, sin parámetros de muestreo depreciados.
  */
 function buildVertexGenerationConfig({ maxOutputTokens = 8192, responseMimeType = 'application/json', thinkingLevel = undefined } = {}) {
     const config = {
@@ -111,6 +118,7 @@ module.exports = {
     VERTEX_DURABLE_CACHE_POLICY,
     VERTEX_INTERACTIONS_API_ROADMAP,
     getVertexCandidateModels,
+    getVertexGenerativeEndpoint,
     normalizeThinkingLevel,
     buildVertexGenerationConfig,
     extractModelResponsePayload

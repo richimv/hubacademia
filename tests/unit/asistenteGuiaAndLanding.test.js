@@ -1,18 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const asistenteGuiaKnowledge = require('../../src/domain/services/asistenteGuiaKnowledge');
-const {
-    LIVE_CASES,
-    TUTOR_DEMO_CASES,
-    initLiveEvaluator,
-    initToolsWorkbench,
-    initToolsAccordion,
-    initTutorDemo
-} = require('../../src/presentation/public/js/home-animations');
 
 describe('Fase 5: Asistente Guía Corporativo, Portada Hub Academia y Health CSS', () => {
     const publicDir = path.join(__dirname, '../../src/presentation/public');
-    const cssDir = path.join(publicDir, 'css');
 
     describe('1. Base de Conocimiento Estática (asistenteGuiaKnowledge.js)', () => {
         test('expone píldoras limpias para visitantes (4) y registrados (3) sin emojis innecesarios', () => {
@@ -66,9 +57,9 @@ describe('Fase 5: Asistente Guía Corporativo, Portada Hub Academia y Health CSS
             expect(indexHtml).toContain('/simulator-dashboard?context=MEDICINA');
             expect(indexHtml).toContain('/repaso');
             expect(indexHtml).toContain('/library');
-            expect(indexHtml).toContain('id="live-casuistica"');
+            expect(indexHtml).toContain('data-media-slot="hero"');
             expect(indexHtml).toContain('id="tools-live-stage"');
-            expect(indexHtml).toContain('id="tutor-live-demo"');
+            expect(indexHtml).toContain('data-media-slot="boletin"');
         });
 
         test('define tema oscuro institucional con theme-color #050505 y tipografía Inter', () => {
@@ -94,47 +85,4 @@ describe('Fase 5: Asistente Guía Corporativo, Portada Hub Academia y Health CSS
         });
     });
 
-    describe('3. Salud de Código y Centralización CSS (code-health-rules.md & DESIGN_SYSTEM.md)', () => {
-        test('verifica eliminación de stylesheets muertos y duplicados', () => {
-            expect(fs.existsSync(path.join(cssDir, 'hero.css'))).toBe(false);
-            expect(fs.existsSync(path.join(cssDir, 'modules.css'))).toBe(false);
-            expect(fs.existsSync(path.join(cssDir, 'privacy.css'))).toBe(false);
-            expect(fs.existsSync(path.join(cssDir, 'terms.css'))).toBe(false);
-
-            expect(fs.existsSync(path.join(cssDir, 'legal.css'))).toBe(true);
-            expect(fs.existsSync(path.join(cssDir, 'footer.css'))).toBe(true);
-        });
-
-        test('landing.css prohíbe superficies azuladas en tema oscuro y aplica escala Matte Black', () => {
-            const landingCss = fs.readFileSync(path.join(cssDir, 'landing.css'), 'utf8');
-
-            // Asegura que no se usen fondos navy/azules prohibidos
-            expect(landingCss).not.toMatch(/--land-bg-a:\s*#(?:0b1120|131c2e|192438|0f172a|060911)/i);
-            expect(landingCss).not.toMatch(/--land-surface:\s*#(?:0b1120|131c2e|192438|0f172a)/i);
-
-            // Asegura presencia de tokens institucionales Matte Black
-            expect(landingCss).toContain('#050505');
-            expect(landingCss).toContain('#0c0c0c');
-            expect(landingCss).toContain('#121212');
-            expect(landingCss).toContain("'Inter'");
-        });
-    });
-
-    describe('4. Componentes Interactivos en home-animations.js', () => {
-        test('contiene casuística oficial curada para EDUCACION y SALUD con retroalimentación normativa', () => {
-            expect(LIVE_CASES.EDUCACION).toBeDefined();
-            expect(LIVE_CASES.SALUD).toBeDefined();
-            expect(LIVE_CASES.EDUCACION.options).toHaveLength(3);
-            expect(LIVE_CASES.SALUD.options).toHaveLength(3);
-            expect(typeof initLiveEvaluator).toBe('function');
-        });
-
-        test('exporta gestor de mesa de trabajo de herramientas y casos de diálogo tutor', () => {
-            expect(TUTOR_DEMO_CASES.CNEB).toBeDefined();
-            expect(TUTOR_DEMO_CASES.MINSA).toBeDefined();
-            expect(typeof initToolsWorkbench).toBe('function');
-            expect(typeof initToolsAccordion).toBe('function');
-            expect(typeof initTutorDemo).toBe('function');
-        });
-    });
 });

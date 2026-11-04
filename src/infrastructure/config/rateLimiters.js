@@ -31,7 +31,18 @@ const authLimiter = rateLimit({
     message: { error: 'Demasiados intentos de autenticación desde esta IP, por favor intente de nuevo después de 5 minutos.' }
 });
 
+// Public support consumes provider quota, not academic credits. Memory store is per instance.
+const platformSupportLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 12,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: req => ['quiz_tutor', 'flashcard_tutor'].includes(req.body?.context?.type),
+    message: { error: 'Has enviado varias consultas seguidas. Espera un minuto para volver a escribir a Hubi.' }
+});
+
 module.exports = {
+    platformSupportLimiter,
     globalApiLimiter,
     authLimiter
 };

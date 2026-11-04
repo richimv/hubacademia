@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/css/sidebar.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/footer.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/resource.css?v=7110047d648f"> <!-- Movido al final con caché breaker -->
-    <link rel="stylesheet" href="/css/chat.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/chat.css?v=guide-v1">
     <link rel="stylesheet" href="/css/markdown-content.css?v=7110047d648f"> <!-- ✅ Formato unificado de Markdown IA -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 
@@ -30,17 +30,17 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <script src="/js/config.js?v=7110047d648f"></script>
     <script src="/js/utils/themeManager.js?v=7110047d648f"></script>
+    <link rel="stylesheet" href="/css/workspace.css">
+    <script src="/js/ui/workspace-shell.js" defer></script>
+    <link rel="stylesheet" href="/css/brand.css">
 </head>
 
-<body>
+<body class="workspace-page" data-workspace="resource">
 
     <!-- Header -->
     <header class="main-header">
         <div class="header-start">
-            <a href="/" class="logo">
-                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
-                <span class="logo-text">Hub Academia</span>
-            </a>
+            <a href="/" class="logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
         </div>
         <div class="header-nav">
             <div id="user-session-controls">
@@ -62,10 +62,7 @@
         <footer class="main-footer">
         <div class="footer-container">
             <div class="footer-brand">
-                <a href="/" class="footer-logo">
-                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
-                    Hub Academia
-                </a>
+                <a href="/" class="footer-logo brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
                 <p class="footer-slogan">Ecosistema peruano de Inteligencia Artificial y herramientas de evaluación y estudio activo para docentes y profesionales.</p>
             </div>
             <div class="footer-links-col">
@@ -74,7 +71,7 @@
                     <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial</a></li>
                     <li><a href="/simulator-dashboard" class="footer-link">Simuladores de Exámenes</a></li>
                     <li><a href="/repaso" class="footer-link">Repaso y Notas</a></li>
-                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
+                    <li><a href="/pricing" class="footer-link">Pases de acceso</a></li>
                 </ul>
             </div>
             <div class="footer-links-col">
@@ -106,7 +103,7 @@
     <script src="/js/ui/components.js?v=7110047d648f"></script>
     <script src="/js/security.js?v=7110047d648f"></script> <!-- Escudo de seguridad global -->
     <script src="/js/resource.js?v=7110047d648f"></script>
-    <script src="/js/chat.js?v=7110047d648f"></script>
+    <script src="/js/chat.js?v=guide-v1"></script>
     <script src="/js/ui/sidebar.js?v=7110047d648f"></script>
     <script src="/js/app.js?v=7110047d648f"></script>
 </body>

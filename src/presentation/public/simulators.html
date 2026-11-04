@@ -1,104 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simuladores Oficiales - Hub Academia</title>
-    <!-- ✅ PÁGINA PRIVADA/DRAFT: Deshabilitar indexación en motores de búsqueda -->
     <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/base.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/components.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/header.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/footer.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/dashboard.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/simulators.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/modal.css?v=7110047d648f">
-    <link rel="stylesheet" href="/css/sidebar.css?v=7110047d648f">
-    <script src="/js/config.js?v=7110047d648f"></script>
-    <script src="/js/utils/themeManager.js?v=7110047d648f"></script>
+    <title>Simuladores | Hub Academia</title>
+    <link rel="canonical" href="https://www.hubacademia.com/simulator-dashboard">
+    <script src="/js/simulatorsHub.js" defer></script>
 </head>
-
-<body class="hero-hidden">
-    <!-- Header -->
-    <header class="main-header">
-        <div class="header-start">
-            <a href="/" class="logo">
-                <img src="/assets/logo.png" alt="Logo Hub Academia" class="logo-img">
-                <span class="logo-text">Hub Academia</span>
-            </a>
-        </div>
-        <div class="header-nav">
-
-            <div id="user-session-controls">
-                <span class="loading-user">Cargando...</span>
-            </div>
-        </div>
-    </header>
-
-    <div class="dashboard-container">
-
-        <div class="header-clean">
-            <h1 id="sim-hub-title">Simuladores de Evaluación Oficial</h1>
-            <p id="sim-hub-subtitle">Entrenamiento cronometrado con bancos oficiales auditados y análisis de desempeño.</p>
-        </div>
-
-        <div id="simulators-container" class="sim-hub-list">
-            <!-- Populated dynamically by simulatorsHub.js -->
-        </div>
-
-    </div>
-
-    <!-- Footer Injection -->
-    <footer class="main-footer">
-        <div class="footer-container footer-container--three">
-            <div class="footer-brand">
-                <a href="/" class="footer-logo">
-                    <img src="/assets/logo.png" alt="Hub Academia Logo" width="36" height="36" loading="lazy">
-                    Hub Academia
-                </a>
-                <p class="footer-slogan">Ecosistema peruano de Inteligencia Artificial y herramientas de alto impacto para educación y evaluación profesional.</p>
-            </div>
-            <div class="footer-links-col">
-                <h4 class="footer-heading">Herramientas</h4>
-                <ul class="footer-links-list">
-                    <li><a href="https://docentes.hubacademia.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Docentes Inicial</a></li>
-                    <li><a href="/simulator-dashboard" class="footer-link">Simuladores de Exámenes</a></li>
-                    <li><a href="/repaso" class="footer-link">Repaso y Notas</a></li>
-                    <li><a href="/library" class="footer-link">Biblioteca</a></li>
-                    <li><a href="/pricing" class="footer-link">Planes y Precios</a></li>
-                </ul>
-            </div>
-            <div class="footer-links-col">
-                <h4 class="footer-heading">Legal y Soporte</h4>
-                <ul class="footer-links-list">
-                    <li><a href="/privacy" class="footer-link">Política de Privacidad</a></li>
-                    <li><a href="/terms" class="footer-link">Términos y Condiciones</a></li>
-                    <li><a href="mailto:soporte@hubacademia.com" class="footer-link">Contacto y Ayuda</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <div class="copyright">© 2026 Hub Academia. Todos los derechos reservados.</div>
-        </div>
-    </footer>
-
-    <!-- Core Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=7110047d648f"></script>
-    <script src="/js/services/authApiService.js?v=7110047d648f"></script>
-    <script src="/js/services/analyticsApiService.js?v=7110047d648f"></script>
-    <script src="/js/sessionManager.js?v=7110047d648f"></script>
-    <script src="/js/ui/uiManager.js?v=7110047d648f"></script>
-    <script src="/js/ui/confirmationModal.js?v=7110047d648f"></script>
-    <script src="/js/ui/sidebar.js?v=7110047d648f"></script>
-    <script src="/js/app.js?v=7110047d648f"></script>
-    <script src="/js/simulatorsHub.js?v=7110047d648f"></script>
-
+<body>
+    <main>
+        <h1>Simuladores de Hub Academia</h1>
+        <p>El catálogo y la configuración ahora se encuentran en un mismo lugar.</p>
+        <p><a href="/simulator-dashboard?context=EDUCACION">Simulador docente</a> · <a href="/simulator-dashboard?context=MEDICINA">Simulador médico</a></p>
+    </main>
 </body>
-
 </html>

@@ -1,0 +1,22 @@
+# Local tools, credentials and development-only files never ship.
+.git/
+.env
+.env.*
+service-account-key.json
+Credenciales.zip
+.tools/
+.taste-skill/
+.agents/
+.codex/
+node_modules/
+tests/
+documentation/
+__pycache__/
+*.pyc
+*.log
+
+# Authoring masters are preserved locally; only web derivatives are published.
+src/presentation/public/assets/landing/source/
+src/presentation/public/assets/landing/archive/
+src/presentation/public/assets/landing/flow/
+src/presentation/public/assets/landing/video/*.mp4

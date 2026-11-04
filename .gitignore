@@ -5,6 +5,8 @@ __pycache__/
 
 # Archivos de entorno con secretos
 .env
+.env.*
+!.env.example
 
 # Archivos de log y bases de datos locales
 *.log
@@ -26,3 +28,4 @@ Credenciales.zip
 # Herramientas de despliegue e inspección visual local
 .vercel/
 .taste-skill/
+.tools/

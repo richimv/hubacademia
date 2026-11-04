@@ -20,34 +20,12 @@ class FlashcardTutor {
     }
 
     _renderPanel() {
-        const panel = document.createElement('div');
-        panel.id = 'tutor-chat-panel';
-        panel.className = 'tutor-chat-panel';
-        panel.innerHTML = `
-            <div class="tutor-chat-header">
-                <div class="tutor-header-title">
-                    <img src="/assets/hubifrente.png" alt="Hubi" class="tutor-header-avatar-img">
-                    <span>Tutor de Apoyo IA</span>
-                </div>
-                <div class="tutor-header-actions" style="display:flex; gap:0.5rem; align-items:center;">
-                    <button id="tutor-expand" class="tutor-expand-btn" aria-label="Pantalla completa" title="Pantalla completa">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                    <button id="tutor-close" class="tutor-close-btn" aria-label="Cerrar">&times;</button>
-                </div>
-            </div>
-            <div id="tutor-messages" class="tutor-messages-area">
-                <div class="tutor-message tutor-message-bot">Hola, soy tu tutor de apoyo. ¿Hay algo en esta tarjeta que no te haya quedado claro?</div>
-            </div>
-            <div class="tutor-input-area">
-                <textarea id="tutor-input" class="tutor-input-field" placeholder="Escribe tu duda aquí..." rows="1"></textarea>
-                <button id="tutor-send" class="tutor-send-btn" aria-label="Enviar mensaje">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-            <div class="tutor-disclaimer-text">El Tutor IA puede cometer errores. Verifica información importante.</div>
-        `;
-        document.body.appendChild(panel);
+        const panel = window.StudyTutorView.mount({
+            id: 'tutor-chat-panel',
+            prefix: 'tutor',
+            contextLabel: 'Sobre la tarjeta actual',
+            welcome: 'Hola, soy tu tutor de apoyo. ¿Hay algo en esta tarjeta que no te haya quedado claro?'
+        });
 
         this.dom = {
             panel: panel,
@@ -57,6 +35,7 @@ class FlashcardTutor {
             expand: document.getElementById('tutor-expand'),
             close: document.getElementById('tutor-close')
         };
+        window.StudyTutorView.bindLifecycle(panel, () => this.toggle(false));
     }
 
     _bindEvents() {
@@ -97,29 +76,9 @@ class FlashcardTutor {
     }
 
     toggleFullScreen() {
+        if (!this.dom.panel || !this.dom.expand) return;
         this.isFullScreen = !this.isFullScreen;
-        const panel = this.dom.panel;
-        const expandBtn = this.dom.expand;
-        if (!panel || !expandBtn) return;
-        const icon = expandBtn.querySelector('i');
-
-        if (this.isFullScreen) {
-            panel.classList.add('chat-fullscreen');
-            if (icon) {
-                icon.classList.remove('fa-expand');
-                icon.classList.add('fa-compress');
-            }
-            document.body.style.overflow = 'hidden';
-            expandBtn.setAttribute('title', 'Restaurar ventana');
-        } else {
-            panel.classList.remove('chat-fullscreen');
-            if (icon) {
-                icon.classList.remove('fa-compress');
-                icon.classList.add('fa-expand');
-            }
-            document.body.style.overflow = '';
-            expandBtn.setAttribute('title', 'Pantalla completa');
-        }
+        window.StudyTutorView.setExpanded(this.dom.panel, this.dom.expand, this.isFullScreen);
     }
 
     toggle(forceState, context = null) {
@@ -133,14 +92,17 @@ class FlashcardTutor {
 
         this.isOpen = forceState !== undefined ? forceState : !this.isOpen;
         this.dom.panel.classList.toggle('active', this.isOpen);
+        if (!this.isOpen && this.isFullScreen) this.toggleFullScreen();
+        window.StudyTutorView.setOpen(this.dom.panel, this.isOpen);
 
         // Actualizar contexto si se provee, pero NO limpiar chat aquí
         if (context) {
             this.cardContext = context;
+            window.StudyTutorView.setContext(this.dom.panel, context.topic || context.deckName || 'Sobre la tarjeta actual');
         }
 
         if (this.isOpen) {
-            setTimeout(() => this.dom.input.focus(), 300);
+            setTimeout(() => { if (this.isOpen) this.dom.input.focus(); }, 300);
         }
     }
 
@@ -342,7 +304,6 @@ class FlashcardTutor {
             // Feedback visual exitoso apuntando a Repaso y Notas (/repaso?view=notes)
             btn.innerHTML = '<i class="fas fa-check"></i> Guardada en Repaso y Notas';
             btn.title = 'Abrir Mis Notas en Repaso';
-            btn.style.color = '#f59e0b';
             btn.classList.add('saved');
             btn.disabled = false;
             btn.onclick = () => { window.location.href = '/repaso?view=notes'; };
@@ -354,11 +315,11 @@ class FlashcardTutor {
         } catch (error) {
             console.error("Error saving tutor note:", error);
             btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error al guardar';
-            btn.style.color = '#ef4444';
+            btn.classList.add('note-save-error');
             setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
-                btn.style.color = '';
+                btn.classList.remove('note-save-error');
             }, 2500);
         }
     }

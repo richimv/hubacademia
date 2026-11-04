@@ -105,7 +105,7 @@ class RepasoNotesUI {
                 <div id="notes-toolbar" class="notes-toolbar">
                     <div class="notes-search-wrapper">
                         <i class="fas fa-search search-icon" aria-hidden="true"></i>
-                        <input type="text" id="notes-search-input" placeholder="Buscar por título o contenido..." oninput="window.repasoNotesUI.filterAndSortNotes()">
+                        <input type="text" id="notes-search-input" placeholder="Buscar por título o contenido..." aria-label="Buscar en Mis Notas" oninput="window.repasoNotesUI.filterAndSortNotes()">
                     </div>
                     <div class="notes-sort-wrapper">
                         <label for="notes-sort-select">Ordenar:</label>
@@ -242,7 +242,7 @@ class RepasoNotesUI {
                 </div>
 
                 <div class="modal-body note-modal-body" id="note-modal-editor" style="display:none; flex-direction:column; gap:0.75rem;">
-                    <input type="text" id="note-editor-title" class="note-editor-title form-input" placeholder="Título de la nota">
+                    <input type="text" id="note-editor-title" class="note-editor-title form-input" placeholder="Título de la nota" aria-label="Título de la nota">
                     <div class="note-editor-toolbar" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
                         <button type="button" class="note-toolbar-btn" onclick="window.repasoNotesUI.insertFormat('**', '**')" title="Negrita" aria-label="Negrita"><i class="fas fa-bold"></i></button>
                         <button type="button" class="note-toolbar-btn" onclick="window.repasoNotesUI.insertFormat('*', '*')" title="Cursiva" aria-label="Cursiva"><i class="fas fa-italic"></i></button>
@@ -254,7 +254,7 @@ class RepasoNotesUI {
                             <input type="hidden" id="note-editor-color" value="">
                         </div>
                     </div>
-                    <textarea id="note-editor-textarea" class="note-editor-textarea form-input" placeholder="Escribe aquí tu nota..."></textarea>
+                    <textarea id="note-editor-textarea" class="note-editor-textarea form-input" placeholder="Escribe aquí tu nota..." aria-label="Contenido de la nota"></textarea>
                 </div>
 
                 <div class="modal-footer note-modal-footer">

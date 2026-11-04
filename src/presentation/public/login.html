@@ -15,170 +15,180 @@
     <link rel="stylesheet" href="/css/theme.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/base.css?v=7110047d648f">
     <link rel="stylesheet" href="/css/auth.css?v=7110047d648f">
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/auth-page.css?v=auth-v1">
     <script src="/js/config.js?v=7110047d648f"></script>
     <script src="/js/utils/themeManager.js?v=7110047d648f"></script>
+    <link rel="stylesheet" href="/css/brand.css">
 </head>
 
-<body class="auth-page">
-    <div class="auth-bg-ambient"></div>
-
-    <div class="top-controls">
-        <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" title="Cambiar tema" aria-label="Cambiar tema">
-            <i class="fas fa-sun"></i>
-        </button>
-    </div>
-
-    <div class="login-card">
-        <!-- Logo -->
-        <div class="logo-container">
-            <a href="/" title="Hub Academia">
-                <img src="/assets/logo.png" alt="Hub Academia" class="logo-icon">
-            </a>
+<body class="auth-page auth-redesign">
+    <header class="auth-site-header">
+        <a href="/" class="auth-brand brand-link" aria-label="Hub Academia, inicio"><span class="brand-wordmark" aria-hidden="true"><img class="brand-image brand-image--dark" src="/assets/hubacademiadark.png" alt="" width="168" height="44"><img class="brand-image brand-image--light" src="/assets/hubacademialight.png" alt="" width="168" height="44"></span></a>
+        <div class="auth-header-actions">
+            <a href="/">Volver al inicio ↗</a>
+            <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" title="Cambiar tema" aria-label="Cambiar tema"><i class="fas fa-sun" aria-hidden="true"></i></button>
         </div>
+    </header>
+    <main class="auth-layout">
+        <section class="auth-intro" aria-labelledby="auth-intro-title">
+            <h2 id="auth-intro-title">Aprender abre caminos.</h2>
+            <p>Simuladores, flashcards y Tutor IA. Un mismo espacio para practicar, profundizar y conservar tus notas.</p>
+            <dl class="auth-study-map">
+                <div><dt>Practica</dt><dd>Prepárate con simuladores para docentes y profesionales de la salud.</dd></div>
+                <div><dt>Comprende</dt><dd>Resuelve tus dudas con el Tutor IA durante tus sesiones de estudio.</dd></div>
+                <div><dt>Recuerda</dt><dd>Repasa con tarjetas y vuelve a las explicaciones que guardaste en Notas.</dd></div>
+            </dl>
+        </section>
+        <section class="auth-form-panel" aria-labelledby="auth-page-title">
+            <div class="login-card">
+                <h1 class="card-header-title" id="auth-page-title">Accede a tu espacio</h1>
+                <p class="card-header-sub">
+                    Continúa con tus simuladores, flashcards y Notas.
+                </p>
 
-        <h1 class="card-header-title">¡Bienvenido!</h1>
-        <p class="card-header-sub">
-            Inicia sesión o crea tu cuenta para continuar aprendiendo con el Tutor IA.
-        </p>
-
-        <!-- Alerta Contextual -->
-        <div class="alert-banner" id="alert-banner">
-            <span id="alert-text"></span>
-            <button type="button" class="alert-close-btn" id="alert-close" aria-label="Cerrar alerta">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <!-- Google OAuth Button (1-Clic) -->
-        <button type="button" class="btn-google-auth" id="google-login-btn">
-            <svg class="google-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-            </svg>
-            <span>Continuar con Google</span>
-        </button>
-
-        <!-- Divisor -->
-        <div class="auth-divider">
-            <span>o con tu correo electrónico</span>
-        </div>
-
-        <!-- Segmented Tab Controls -->
-        <div class="tabs-container">
-            <button type="button" class="tab-btn active" id="tab-btn-login">Iniciar Sesión</button>
-            <button type="button" class="tab-btn" id="tab-btn-register">Crear Cuenta</button>
-        </div>
-
-        <!-- Formulario Iniciar Sesión -->
-        <form class="auth-form" id="form-login">
-            <div class="form-group">
-                <label class="form-label" for="login-email">Correo Electrónico</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-envelope input-icon-left"></i>
-                    <input type="email" id="login-email" class="form-input no-right-icon" placeholder="tu@correo.com" required autocomplete="email">
-                </div>
-                <div class="email-feedback-container" id="login-email-suggestion"></div>
-            </div>
-
-            <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                    <label class="form-label" for="login-password" style="margin-bottom: 0;">Contraseña</label>
-                    <a href="#" id="link-forgot-password" class="forgot-password-link">¿Olvidaste tu contraseña?</a>
-                </div>
-                <div class="input-wrapper">
-                    <i class="fas fa-lock input-icon-left"></i>
-                    <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
-                    <button type="button" class="btn-toggle-password" data-target="login-password" aria-label="Mostrar contraseña">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </div>
-            </div>
-
-            <button type="submit" class="btn-submit-action" id="btn-login-submit">
-                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-            </button>
-        </form>
-
-        <!-- Formulario Crear Cuenta -->
-        <form class="auth-form" id="form-register" style="display: none;">
-            <div class="form-group">
-                <label class="form-label" for="register-name">Nombre y Apellido</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-user input-icon-left"></i>
-                    <input type="text" id="register-name" class="form-input no-right-icon" placeholder="Ej. Carlos Mendoza" required autocomplete="name">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="register-email">Correo Electrónico</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-envelope input-icon-left"></i>
-                    <input type="email" id="register-email" class="form-input no-right-icon" placeholder="tu@correo.com" required autocomplete="email">
-                </div>
-                <div class="email-feedback-container" id="register-email-suggestion"></div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="register-password">Contraseña Segura</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-lock input-icon-left"></i>
-                    <input type="password" id="register-password" class="form-input" placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
-                    <button type="button" class="btn-toggle-password" data-target="register-password" aria-label="Mostrar contraseña">
-                        <i class="fas fa-eye"></i>
+                <!-- Alerta Contextual -->
+                <div class="alert-banner" id="alert-banner" role="status" aria-live="polite">
+                    <span id="alert-text"></span>
+                    <button type="button" class="alert-close-btn" id="alert-close" aria-label="Cerrar alerta">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
 
-                <!-- Criterios de Seguridad en Tiempo Real -->
-                <div class="password-rules" id="password-rules-list">
-                    <div class="rule-item" id="rule-length">
-                        <i class="far fa-circle rule-icon"></i> Mínimo 8 caracteres (máx. 100)
-                    </div>
-                    <div class="rule-item" id="rule-upper">
-                        <i class="far fa-circle rule-icon"></i> Al menos una letra mayúscula (A-Z)
-                    </div>
-                    <div class="rule-item" id="rule-lower">
-                        <i class="far fa-circle rule-icon"></i> Al menos una letra minúscula (a-z)
-                    </div>
-                    <div class="rule-item" id="rule-number">
-                        <i class="far fa-circle rule-icon"></i> Al menos un número (0-9)
-                    </div>
-                    <div class="rule-item" id="rule-spaces">
-                        <i class="far fa-circle rule-icon"></i> Sin espacios en blanco
-                    </div>
-                </div>
-            </div>
+                <!-- Google OAuth Button (1-Clic) -->
+                <button type="button" class="btn-google-auth" id="google-login-btn">
+                    <svg class="google-icon" width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                    </svg>
+                    <span>Continuar con Google</span>
+                </button>
 
-            <div class="form-group">
-                <label class="form-label" for="register-confirm-password">Confirmar Contraseña</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-shield-alt input-icon-left"></i>
-                    <input type="password" id="register-confirm-password" class="form-input" placeholder="Repite tu contraseña" required autocomplete="new-password">
-                    <button type="button" class="btn-toggle-password" data-target="register-confirm-password" aria-label="Mostrar contraseña">
-                        <i class="fas fa-eye"></i>
+                <!-- Divisor -->
+                <div class="auth-divider">
+                    <span>o con tu correo electrónico</span>
+                </div>
+
+                <!-- Segmented Tab Controls -->
+                <div class="tabs-container" role="tablist" aria-label="Acceso a tu cuenta">
+                    <button type="button" class="tab-btn active" id="tab-btn-login" role="tab" aria-selected="true" aria-controls="form-login">Iniciar Sesión</button>
+                    <button type="button" class="tab-btn" id="tab-btn-register" role="tab" aria-selected="false" aria-controls="form-register" tabindex="-1">Crear Cuenta</button>
+                </div>
+
+                <!-- Formulario Iniciar Sesión -->
+                <form class="auth-form" id="form-login" role="tabpanel" aria-labelledby="tab-btn-login">
+                    <div class="form-group">
+                        <label class="form-label" for="login-email">Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon-left"></i>
+                            <input type="email" id="login-email" class="form-input no-right-icon" placeholder="tu@correo.com" required autocomplete="email">
+                        </div>
+                        <div class="email-feedback-container" id="login-email-suggestion"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="password-label-row">
+                            <label class="form-label" for="login-password">Contraseña</label>
+                            <a href="#" id="link-forgot-password" class="forgot-password-link">¿Olvidaste tu contraseña?</a>
+                        </div>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon-left"></i>
+                            <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                            <button type="button" class="btn-toggle-password" data-target="login-password" aria-label="Mostrar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit-action" id="btn-login-submit">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
                     </button>
+                </form>
+
+                <!-- Formulario Crear Cuenta -->
+                <form class="auth-form" id="form-register" role="tabpanel" aria-labelledby="tab-btn-register" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="register-name">Nombre y Apellido</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon-left"></i>
+                            <input type="text" id="register-name" class="form-input no-right-icon" placeholder="Ej. Carlos Mendoza" required autocomplete="name">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="register-email">Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon-left"></i>
+                            <input type="email" id="register-email" class="form-input no-right-icon" placeholder="tu@correo.com" required autocomplete="email">
+                        </div>
+                        <div class="email-feedback-container" id="register-email-suggestion"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="register-password">Contraseña Segura</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon-left"></i>
+                            <input type="password" id="register-password" aria-describedby="password-rules-list" class="form-input" placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
+                            <button type="button" class="btn-toggle-password" data-target="register-password" aria-label="Mostrar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <!-- Criterios de Seguridad en Tiempo Real -->
+                        <div class="password-rules" id="password-rules-list">
+                            <div class="rule-item" id="rule-length">
+                                <i class="far fa-circle rule-icon"></i> Mínimo 8 caracteres (máx. 100)
+                            </div>
+                            <div class="rule-item" id="rule-upper">
+                                <i class="far fa-circle rule-icon"></i> Al menos una letra mayúscula (A-Z)
+                            </div>
+                            <div class="rule-item" id="rule-lower">
+                                <i class="far fa-circle rule-icon"></i> Al menos una letra minúscula (a-z)
+                            </div>
+                            <div class="rule-item" id="rule-number">
+                                <i class="far fa-circle rule-icon"></i> Al menos un número (0-9)
+                            </div>
+                            <div class="rule-item" id="rule-spaces">
+                                <i class="far fa-circle rule-icon"></i> Sin espacios en blanco
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="register-confirm-password">Confirmar Contraseña</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-shield-alt input-icon-left"></i>
+                            <input type="password" id="register-confirm-password" class="form-input" placeholder="Repite tu contraseña" required autocomplete="new-password">
+                            <button type="button" class="btn-toggle-password" data-target="register-confirm-password" aria-label="Mostrar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit-action" id="btn-register-submit">
+                        <i class="fas fa-user-plus"></i> Crear Cuenta
+                    </button>
+                </form>
+
+                <!-- Terms Footer -->
+                <div class="terms-footer">
+                    Al continuar, aceptas nuestros 
+                    <a href="/terms">Términos de Servicio</a> y la 
+                    <a href="/privacy">Política de Privacidad</a> de Hub Academia.
+                </div>
+
+                <div class="back-link-container">
+                    <a href="/" class="back-link">
+                        <i class="fas fa-arrow-left"></i> Volver al inicio
+                    </a>
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit-action" id="btn-register-submit">
-                <i class="fas fa-user-plus"></i> Crear Cuenta
-            </button>
-        </form>
-
-        <!-- Terms Footer -->
-        <div class="terms-footer">
-            Al continuar, aceptas nuestros 
-            <a href="/terms">Términos de Servicio</a> y la 
-            <a href="/privacy">Política de Privacidad</a> de Hub Academia.
-        </div>
-
-        <div class="back-link-container">
-            <a href="/" class="back-link">
-                <i class="fas fa-arrow-left"></i> Volver al inicio
-            </a>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <!-- ========================================================
          MODAL DE VERIFICACIÓN OTP DE 8 DÍGITOS (VerifyEmailOtpModal)
@@ -218,7 +228,7 @@
             </div>
 
             <!-- Input oculto para captura en móviles y desktop -->
-            <input type="tel" id="otp-hidden-input" class="otp-hidden-input" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="one-time-code">
+            <input type="tel" id="otp-hidden-input" aria-label="Código de verificación de 8 dígitos" class="otp-hidden-input" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="one-time-code">
 
             <!-- Mensaje de Feedback -->
             <div class="otp-feedback" id="otp-feedback"></div>
@@ -348,12 +358,11 @@
 
     <!-- Scripts de Lógica y Dependencias -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/config.js?v=7110047d648f"></script>
     <script src="/js/utils/authValidation.js?v=7110047d648f"></script>
     <script src="/js/services/networkService.js?v=7110047d648f"></script>
     <script src="/js/services/authApiService.js?v=7110047d648f"></script>
     <script src="/js/sessionManager.js?v=7110047d648f"></script>
-    <script src="/js/login.js?v=7110047d648f"></script>
+    <script src="/js/login.js?v=auth-v1"></script>
 </body>
 
 </html>

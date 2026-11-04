@@ -3,14 +3,16 @@ const KnowledgeBaseRepository = require('../../domain/repositories/knowledgeBase
 const ChatService = require('../../domain/services/chatService');
 const TutorAiService = require('../../domain/services/tutorAiService');
 const asistenteGuiaKnowledge = require('../../domain/services/asistenteGuiaKnowledge');
+const { MAX_MESSAGE_CHARS } = require('../../domain/services/platformSupportService');
 
 class ChatController {
-    constructor(chatService, analyticsService, usageService) {
+    constructor(chatService, analyticsService, usageService, platformSupportService = null) {
         console.log('🔄 Inicializando ChatController...');
         this.analyticsService = analyticsService;
         this.usageService = usageService;
         this.knowledgeBaseRepo = new KnowledgeBaseRepository();
         this.chatService = chatService;
+        this.platformSupportService = platformSupportService;
         console.log('✅ ChatController inicializado correctamente');
 
         // Bindeo explícito para mantener el contexto
@@ -30,25 +32,26 @@ class ChatController {
             let { conversationId } = req.body;
             const userId = req.user ? req.user.id : null; // Soporte para visitantes no autenticados
 
-            if (!message || message.trim() === '') {
+            if (typeof message !== 'string' || message.trim() === '') {
                 return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
             }
 
             const isQuizTutor = context && context.type === 'quiz_tutor';
             const isFlashcardTutor = context && context.type === 'flashcard_tutor';
-            const isEphemeral = true; // El chat general ya NO se guarda en PostgreSQL/Supabase
 
-            // ⚡ CHAT GENERAL ES 100% ESTÁTICO Y EFÍMERO PARA TODOS LOS USUARIOS (0ms / 0 Costo IA)
+            // Public company support has its own provider; academic tutors retain Vertex AI.
             const isGeneralChat = !isQuizTutor && !isFlashcardTutor;
 
             if (isGeneralChat) {
-                const staticResp = asistenteGuiaKnowledge.matchIntent(message);
-                console.log(`⚡ [Asistente Guía 0ms] Respuesta estática devuelta a usuario (${userId ? 'Registrado' : 'Visitante'}): ${staticResp.intencion}`);
+                if (message.length > MAX_MESSAGE_CHARS) {
+                    return res.status(400).json({ error: `Resume tu consulta a un máximo de ${MAX_MESSAGE_CHARS} caracteres.` });
+                }
+                res.set('Cache-Control', 'no-store');
+                const guideResponse = this.platformSupportService
+                    ? await this.platformSupportService.reply({ message, history: req.body.history, registered: Boolean(userId) })
+                    : { ...asistenteGuiaKnowledge.matchIntent(message), isStatic: true };
                 return res.json({
-                    intencion: staticResp.intencion,
-                    respuesta: staticResp.respuesta,
-                    sugerencias: staticResp.sugerencias,
-                    isStatic: true,
+                    ...guideResponse,
                     conversationId: 'ephemeral',
                     messageId: 'temp',
                     timestamp: new Date().toISOString()

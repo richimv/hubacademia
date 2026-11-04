@@ -6,6 +6,9 @@
 const AuthService = require('../../domain/services/authService');
 const UserRepository = require('../../domain/repositories/userRepository'); // ✅ 1. Importar la CLASE del repositorio.
 const ChatService = require('../../domain/services/chatService');
+const { PlatformSupportService } = require('../../domain/services/platformSupportService');
+const asistenteGuiaKnowledge = require('../../domain/services/asistenteGuiaKnowledge');
+const { generatePlatformSupportText } = require('../../infrastructure/services/platformSupportGateway');
 const AnalyticsService = require('../../domain/services/analyticsService');
 const adminServiceSingleton = require('../../domain/services/adminService');
 const SearchService = require('../../domain/services/searchService');
@@ -25,6 +28,7 @@ const LibraryController = require('./libraryController'); // ✅ NUEVO: Importar
 const userRepository = new UserRepository(); // ✅ 2. Crear una ÚNICA instancia del repositorio.
 const analyticsService = new AnalyticsService();
 const chatService = new ChatService();
+const platformSupportService = new PlatformSupportService({ generateText: generatePlatformSupportText, knowledge: asistenteGuiaKnowledge });
 const adminService = adminServiceSingleton;
 const searchService = new SearchService();
 const usageService = new UsageService(userRepository); // ✅ NUEVO: Servicio singleton
@@ -35,7 +39,7 @@ const authService = new AuthService(userRepository, usageService); // ✅ Inyect
 // --- 3. Inyectar los servicios en los controladores al crearlos ---
 module.exports = {
     authController: new AuthController(authService), // Ahora authService tiene su repositorio.
-    chatController: new ChatController(chatService, analyticsService, usageService), // ✅ Nuevo: Inyectar usageService
+    chatController: new ChatController(chatService, analyticsService, usageService, platformSupportService),
     analyticsController: new AnalyticsController(analyticsService, userRepository), // ✅ 3. Inyectar el repositorio.
     coursesController: new CoursesController(searchService, adminService),
     usageController: new UsageController(usageService), // ✅ NUEVO
