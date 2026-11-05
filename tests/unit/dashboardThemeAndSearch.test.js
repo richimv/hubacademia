@@ -20,7 +20,7 @@ describe('Dashboard Dual-Theme, Modal Isolation & Admin Responsive Search Bar', 
         test("El buscador usa tokens de formulario y área táctil de 44px", () => {
             expect(adminCss).toMatch(/\.search-bar-container\s*\{[^}]*min-height:\s*44px/);
             expect(adminCss).toMatch(/\.search-bar-container\s*\{[^}]*background:\s*var\(--input-bg\)/);
-            expect(adminCss).toMatch(/\.search-bar-container:focus-within\s*\{[^}]*border-color:\s*var\(--primary\)/);
+            expect(adminCss).toMatch(/\.search-bar-container:focus-within\s*\{[^}]*outline:\s*2px solid var\(--primary\)/);
         });
 
         test("El buscador puede encogerse y apilarse en pantallas móviles", () => {

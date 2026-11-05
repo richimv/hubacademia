@@ -149,8 +149,8 @@ describe('Profile Usage Rendering', () => {
         expect(mockContainer.innerHTML).toContain('Disponibles');
         expect(mockContainer.innerHTML).toContain('6 / 10');
         expect(mockSubtitle.textContent).toContain('30 días');
-        expect(mockContainer.innerHTML).toContain('Recarga Mensual');
-        expect(mockContainer.innerHTML).toContain('Consumidos este mes: 4');
+        expect(mockContainer.innerHTML).toContain('Recarga cada 30 días');
+        expect(mockContainer.innerHTML).toContain('Consumidos: 4');
     });
 
     test('getNextFreeRenewalInfo debe calcular fecha de renovacion cada 30 dias', () => {
@@ -181,7 +181,8 @@ describe('Profile Usage Rendering', () => {
 
         profileModule.renderUsageDetails(userUnverified);
         expect(mockContainer.innerHTML).toContain('0 / 10');
-        expect(mockContainer.innerHTML).toContain('Cuenta No Confirmada (0 Vidas)');
+        expect(mockContainer.innerHTML).toContain('Confirma tu correo');
+        expect(mockContainer.innerHTML).toContain('data-tone="warning"');
         expect(mockContainer.innerHTML).toContain('Bloqueadas: Confirma tu correo');
     });
 
