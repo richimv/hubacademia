@@ -16,6 +16,8 @@ const UsageService = require('../../domain/services/usageService'); // ✅ NUEVO
 
 const AuthController = require('./authController');
 const ChatController = require('./chatController');
+const BulletinController = require('./bulletinController');
+const BookRepository = require('../../domain/repositories/bookRepository');
 const AnalyticsController = require('./analyticsController');
 const CoursesController = require('./coursesController');
 const UsageController = require('./usageController'); // ✅ NUEVO
@@ -38,6 +40,7 @@ const authService = new AuthService(userRepository, usageService); // ✅ Inyect
 
 // --- 3. Inyectar los servicios en los controladores al crearlos ---
 module.exports = {
+    bulletinController: new BulletinController(new BookRepository()),
     authController: new AuthController(authService), // Ahora authService tiene su repositorio.
     chatController: new ChatController(chatService, analyticsService, usageService, platformSupportService),
     analyticsController: new AnalyticsController(analyticsService, userRepository), // ✅ 3. Inyectar el repositorio.

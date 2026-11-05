@@ -27,7 +27,10 @@
 
     // 3. Exponer configuración globalmente
     // Usamos var o window para asegurar que sea global
+    const configSource = typeof document !== 'undefined' ? (document.currentScript?.src || '') : '';
+    const assetVersion = configSource.match(/[?&]v=([^&]+)/)?.[1] || '1';
     window.AppConfig = {
+        ASSET_VERSION: assetVersion,
         API_URL: API_URL,
 
         // ✅ GOOGLE AUTH CLIENT ID

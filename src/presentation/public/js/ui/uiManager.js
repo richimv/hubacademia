@@ -34,7 +34,7 @@ class UIManager {
             if (document.querySelector('link[href*="/css/' + file + '.css"]')) continue;
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = '/css/' + file + '.css?v=' + (window.AppConfig?.VERSION || '1');
+            link.href = '/css/' + file + '.css?v=' + (window.AppConfig?.ASSET_VERSION || '1');
             document.head.append(link);
         }
     }

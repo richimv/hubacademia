@@ -1,4 +1,5 @@
 const db = require('../../infrastructure/database/db');
+const { normalizeResourceData } = require('../utils/resourcePolicy');
 
 const globalBookCache = new Map();
 
@@ -17,11 +18,11 @@ class BookRepository {
     }
 
     async findAll(filters = {}) {
-        const { type, domain, includeHidden, isNews } = filters;
+        const { type, includeHidden, isNews } = filters;
 
         // Cache para consultas públicas de catálogo
         const isPublicCacheable = !includeHidden;
-        const cacheKey = `findAll_${type || 'all'}_${domain || 'all'}_${!!isNews}`;
+        const cacheKey = `findAll_${type || 'all'}_${!!isNews}`;
         if (isPublicCacheable) {
             const cached = this.cache.get(cacheKey);
             if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL_MS)) {
@@ -41,10 +42,6 @@ class BookRepository {
                 conditions.push(`r.resource_type = $${params.length}`);
             }
         }
-        if (domain) {
-            params.push(domain);
-            conditions.push(`r.domain = $${params.length}`);
-        }
         if (!includeHidden) {
             conditions.push(`r.visible = true`);
         }
@@ -54,7 +51,7 @@ class BookRepository {
 
         const query = `
             SELECT 
-                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium, r.content_html, r.domain, r.visible, r.open_directly, r.created_at,
+                r.id, r.title, r.author, r.image_url, r.url, r.resource_type, r.is_premium, r.content_html, r.publish_in_bulletin, r.visible, r.open_directly, r.created_at,
                 (
                     SELECT COALESCE(JSON_AGG(DISTINCT car.area), '[]')
                     FROM course_books cb
@@ -84,6 +81,23 @@ class BookRepository {
             this.cache.set(cacheKey, { timestamp: Date.now(), data: rows });
         }
 
+        return rows;
+    }
+
+    /** Public editorial selection. Course materials keep their existing associations. */
+    async findBulletin({ type, query = '' } = {}) {
+        const params = [];
+        const conditions = ["r.visible = true", "r.publish_in_bulletin = true", "r.resource_type IN ('noticia','paper')"];
+        if (['noticia', 'paper'].includes(type)) {
+            params.push(type);
+            conditions.push('r.resource_type = $' + params.length);
+        }
+        if (query.trim()) {
+            params.push('%' + query.trim().slice(0, 120) + '%');
+            conditions.push('(r.title ILIKE $' + params.length + ' OR r.author ILIKE $' + params.length + ')');
+        }
+        const { rows } = await db.query(
+            "SELECT r.id,r.title,r.author,r.url,r.image_url,r.resource_type,r.created_at,LEFT(regexp_replace(COALESCE(r.content_html,''),'<[^>]+>',' ','g'),220) AS excerpt FROM resources r WHERE " + conditions.join(' AND ') + ' ORDER BY r.created_at DESC,r.id DESC LIMIT 60', params);
         return rows;
     }
 
@@ -140,16 +154,18 @@ class BookRepository {
     }
 
     async create(bookData) {
+        bookData = normalizeResourceData(bookData);
         const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium = false, content_html = null, visible = true, open_directly = false } = bookData;
         // ✅ SOLUCIÓN: Generar el 'resource_id' de texto que la base de datos requiere.
         const resourceId = `RES_${Date.now()}`;
 
+        const client = await db.pool().connect();
         try {
-            await db.query('BEGIN');
+            await client.query('BEGIN');
 
-            const { rows } = await db.query(
-                'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type, is_premium, content_html, domain, visible, open_directly) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-                [resourceId, title, author, url, image_url || null, resource_type || 'book', is_premium, content_html, bookData.domain || 'medicine', visible, open_directly]
+            const { rows } = await client.query(
+                'INSERT INTO resources (resource_id, title, author, url, image_url, resource_type, is_premium, content_html, publish_in_bulletin, visible, open_directly) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+                [resourceId, title, author, url, image_url || null, resource_type || 'book', is_premium, content_html, bookData.publish_in_bulletin, visible, open_directly]
             );
             const newResource = rows[0];
 
@@ -158,26 +174,29 @@ class BookRepository {
                 // Generar query de insert masivo: ($1, $2), ($1, $3)...
                 const valuesStr = topicIds.map((_, i) => `($1, $${i + 2})`).join(', ');
                 const params = [newResource.id, ...topicIds.map(id => parseInt(id, 10))];
-                await db.query(`INSERT INTO topic_resources (resource_id, topic_id) VALUES ${valuesStr}`, params);
+                await client.query(`INSERT INTO topic_resources (resource_id, topic_id) VALUES ${valuesStr}`, params);
             }
 
             // ✅ NUEVO: Insertar relación directa con Cursos (courseIds) para facilitar gestión
             if (Array.isArray(courseIds) && courseIds.length > 0) {
                 const valuesStrCourses = courseIds.map((_, i) => `($1, $${i + 2})`).join(', ');
                 const paramsCourses = [newResource.id, ...courseIds.map(id => parseInt(id, 10))];
-                await db.query(`INSERT INTO course_books (resource_id, course_id) VALUES ${valuesStrCourses} ON CONFLICT DO NOTHING`, paramsCourses);
+                await client.query(`INSERT INTO course_books (resource_id, course_id) VALUES ${valuesStrCourses} ON CONFLICT DO NOTHING`, paramsCourses);
             }
 
-            await db.query('COMMIT');
+            await client.query('COMMIT');
             this.clearCache();
             return newResource;
         } catch (error) {
-            await db.query('ROLLBACK');
+            await client.query('ROLLBACK');
             throw error;
+        } finally {
+            client.release();
         }
     }
 
     async update(id, bookData) {
+        bookData = normalizeResourceData(bookData, { partial: true });
         // ✅ MEJORA ROBUSTA: Construcción dinámica de la query.
         const { title, author, url, image_url, resource_type, topicIds = [], courseIds = [], is_premium, content_html } = bookData;
 
@@ -203,9 +222,9 @@ class BookRepository {
             fields.push(`content_html = $${params.length}`);
         }
 
-        if (bookData.domain !== undefined) {
-            params.push(bookData.domain);
-            fields.push(`domain = $${params.length}`);
+        if (bookData.publish_in_bulletin !== undefined) {
+            params.push(bookData.publish_in_bulletin);
+            fields.push(`publish_in_bulletin = $${params.length}`);
         }
 
         if (bookData.visible !== undefined) {
@@ -223,38 +242,41 @@ class BookRepository {
 
         console.log('📚 Updating Resource:', { id, type: resource_type, query });
 
+        const client = await db.pool().connect();
         try {
-            await db.query('BEGIN');
+            await client.query('BEGIN');
 
-            const { rows } = await db.query(query, params);
+            const { rows } = await client.query(query, params);
 
             if (rows.length === 0) {
                 throw new Error(`Recurso (libro) con ID ${id} no encontrado.`);
             }
 
             // Actualizar relaciones con temas: Borrar antiguas e insertar nuevas
-            await db.query('DELETE FROM topic_resources WHERE resource_id = $1', [id]);
+            await client.query('DELETE FROM topic_resources WHERE resource_id = $1', [id]);
 
             if (Array.isArray(topicIds) && topicIds.length > 0) {
                 const valuesStr = topicIds.map((_, i) => `($1, $${i + 2})`).join(', ');
                 const relParams = [id, ...topicIds.map(tid => parseInt(tid, 10))];
-                await db.query(`INSERT INTO topic_resources (resource_id, topic_id) VALUES ${valuesStr}`, relParams);
+                await client.query(`INSERT INTO topic_resources (resource_id, topic_id) VALUES ${valuesStr}`, relParams);
             }
 
             // ✅ NUEVO: Agregar/Actualizar relación directa con Cursos (courseIds)
-            await db.query('DELETE FROM course_books WHERE resource_id = $1', [id]);
+            await client.query('DELETE FROM course_books WHERE resource_id = $1', [id]);
             if (Array.isArray(courseIds) && courseIds.length > 0) {
                 const valuesStrCourses = courseIds.map((_, i) => `($1, $${i + 2})`).join(', ');
                 const relParamsCourses = [id, ...courseIds.map(cid => parseInt(cid, 10))];
-                await db.query(`INSERT INTO course_books (resource_id, course_id) VALUES ${valuesStrCourses} ON CONFLICT DO NOTHING`, relParamsCourses);
+                await client.query(`INSERT INTO course_books (resource_id, course_id) VALUES ${valuesStrCourses} ON CONFLICT DO NOTHING`, relParamsCourses);
             }
 
-            await db.query('COMMIT');
+            await client.query('COMMIT');
             this.clearCache();
             return rows[0];
         } catch (error) {
-            await db.query('ROLLBACK');
+            await client.query('ROLLBACK');
             throw error;
+        } finally {
+            client.release();
         }
     }
 
@@ -288,7 +310,7 @@ class BookRepository {
         // Detección de intención de tipo (Type Intent)
         const typeMap = {
             'libro': 'book', 'libros': 'book', 'book': 'book', 'books': 'book',
-            'articulo': 'article', 'articulos': 'article', 'article': 'article', 'paper': 'paper',
+            'articulo': 'paper', 'articulos': 'paper', 'article': 'paper', 'paper': 'paper',
             'video': 'video', 'videos': 'video',
             'norma': 'norma', 'normativas': 'norma', 'ley': 'norma', 'leyes': 'norma',
             'guia': 'guia', 'guias': 'guia', 'clinica': 'guia'

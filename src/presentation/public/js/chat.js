@@ -85,7 +85,7 @@ class ChatComponent {
                             <!-- Sugerencias se cargarán dinámicamente -->
                         </div>
                         <div class="chatbot-input">
-                            <textarea aria-label="Tu consulta para Hubi" id="chatbot-input" placeholder="¿Qué necesitas saber de Hub Academia?" maxlength="1200" rows="1"></textarea>
+                            <textarea aria-label="Tu consulta para Hubi" id="chatbot-input" placeholder="¿Qué necesitas saber?" maxlength="1200" rows="1"></textarea>
                             <button type="button" id="chatbot-send" class="chatbot-send" aria-label="Enviar consulta">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
@@ -209,7 +209,7 @@ class ChatComponent {
     updateInputPlaceholder() {
         const textarea = document.getElementById('chatbot-input');
         if (!textarea) return;
-        textarea.placeholder = "¿Qué necesitas saber de Hub Academia?";
+        textarea.placeholder = "¿Qué necesitas saber?";
     }
 
     
@@ -436,14 +436,6 @@ class ChatComponent {
                 }
             });
 
-            // ✅ MEJORA UI/UX: Permitir scroll horizontal con la rueda del mouse (Shift opcional)
-            suggestionsContainer.addEventListener('wheel', (e) => {
-                if (e.deltaY !== 0) {
-                    // Si el usuario mueve la rueda verticalmente, lo traducimos a horizontal
-                    e.preventDefault();
-                    suggestionsContainer.scrollLeft += e.deltaY;
-                }
-            }, { passive: false });
         }
 
         // ✅ FASE III: Delegación de eventos para la lista de conversaciones

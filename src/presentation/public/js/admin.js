@@ -1,3 +1,5 @@
+const ADMIN_RESOURCE_TYPES = Object.freeze([{id:'book',name:'Libro'},{id:'paper',name:'Paper / investigación'},{id:'noticia',name:'Noticia'},{id:'norma',name:'Norma'},{id:'guia',name:'Guía'},{id:'video',name:'Video'},{id:'other',name:'Imagen u otro recurso'}]);
+
 class AdminManager {
     constructor() {
         // Almacenes de datos
@@ -250,7 +252,7 @@ class AdminManager {
         });
 
         const handleSearchFilter = (e) => {
-            if (e.target.classList.contains('admin-search-input') || e.target.classList.contains('admin-type-filter') || e.target.classList.contains('admin-domain-filter')) {
+            if (e.target.classList.contains('admin-search-input') || e.target.classList.contains('admin-type-filter') || e.target.classList.contains('admin-domain-filter') || e.target.classList.contains('admin-editorial-filter')) {
                 // 🛡️ Al filtrar o buscar, limpiar inmediatamente cualquier selección previa para evitar borrar elementos ocultos
                 this.clearBulkSelection();
 
@@ -265,12 +267,14 @@ class AdminManager {
                     const searchInput = tabContent.querySelector('.admin-search-input');
                     const typeSelect = tabContent.querySelector('.admin-type-filter');
                     const domainSelect = tabContent.querySelector('.admin-domain-filter');
+                    const editorialSelect = tabContent.querySelector('.admin-editorial-filter');
 
                     // Guardar estado
                     this.searchState[tabId] = {
                         search: searchInput ? searchInput.value.trim() : '',
                         filter: typeSelect ? typeSelect.value : 'all',
-                        domain: domainSelect ? domainSelect.value : 'all'
+                        domain: domainSelect ? domainSelect.value : 'all',
+                        publication: editorialSelect ? editorialSelect.value : 'all'
                     };
 
                     this.applySearchFilterForTab(tabId);
@@ -587,11 +591,7 @@ class AdminManager {
             <div class="tab-header-controls">
                 <div class="tab-top-row">
                     <div class="admin-filters-group">
-                        <select class="admin-domain-filter" data-target-tab="tab-books">
-                            <option value="all">Todos los Dominios</option>
-                            <option value="medicine">Salud Profesional</option>
-                            <option value="education">Educación Docente</option>
-                        </select>
+                        <select class="admin-editorial-filter" data-target-tab="tab-books"><option value="all">Todos los destinos</option><option value="bulletin">Boletín IA</option><option value="materials">Materiales para cursos</option></select>
                         <select class="admin-type-filter" data-target-tab="tab-books">
                             <option value="all">Todos los Tipos</option>
                             <option value="book">Libro/Manual</option>
@@ -1288,25 +1288,13 @@ class AdminManager {
                 // Removido de aquí para hacerlo global al final del método
 
                 // Definir tipos de recurso acordes al nuevo enfoque EdTech
-                const resourceTypes = [
-                    { id: 'norma', name: 'Norma Técnica/Legal' },
-                    { id: 'guia', name: 'Guía de Práctica Clínica' },
-                    { id: 'paper', name: 'Artículo/Paper' },
-                    { id: 'noticia', name: 'Noticia Oficial (Novedades)' },
-                    { id: 'video', name: 'Video' },
-                    { id: 'book', name: 'Libro (Histórico)' },
-                    { id: 'other', name: 'Otro' }
-                ];
+                const resourceTypes = ADMIN_RESOURCE_TYPES;
 
-                const domainsBook = [
-                    { id: 'medicine', name: 'Sector Salud' },
-                    { id: 'education', name: 'Sector Educación' }
-                ];
 
                 fieldsHTML = `
                 <div class="admin-form-grid admin-form-section">
                     ${this.createSelect('generic-type', 'Tipo de Recurso (*)', resourceTypes, this.currentItem?.resource_type || 'book', false)}
-                    ${this.createSelect('generic-domain', 'Sector / Dominio (*)', domainsBook, this.currentItem?.domain || 'medicine', false)}
+                    ${this.createEditorialControl(this.currentItem?.publish_in_bulletin)}
                 </div>
 
                 <!-- Switches de Control del Recurso (Premium / Visibilidad / Apertura Directa) -->
@@ -1370,25 +1358,25 @@ class AdminManager {
                         ${this.createFormGroup('text', 'generic-title', 'Título (*)', this.currentItem?.title || '', true)}
                     </div>
                     <div class="admin-form-full">
-                        <!-- UX MEJORA: Campo Autor Validado -->
                         <div class="form-group">
-                            <label for="generic-author">Autor/Creador (*)</label>
-                            <input type="text" id="generic-author" name="generic-author" value="${this.escapeHtml(this.currentItem?.author || '')}" required placeholder="Ej: Drake, Richard L.; Vogl, A. Wayne">
+                            <label for="generic-author">Autor o fuente</label>
+                            <input type="text" id="generic-author" name="generic-author" value="${this.escapeHtml(this.currentItem?.author || '')}" placeholder="Autor o medio de publicación">
                                 <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.8em;">
-                                    <i class="fas fa-info-circle"></i> Formato obligatorio: <b>Nombre, Apellido</b>. Separa múltiples autores con punto y coma (;).
+                                    Indica el autor, equipo investigador o medio que publica el contenido.
                                 </small>
                         </div>
                     </div>
 
-                        ${this.createFormGroup('text', 'generic-url', 'URL del Recurso (Opcional)', this.currentItem?.url || '', false)}
+                    <div class="admin-form-full">
+                        ${this.createFormGroup('url', 'generic-url', 'Enlace externo al recurso (web o Drive)', this.currentItem?.url || '', true)}
                         <small style="display:block; color:var(--text-muted); margin-top:2px;">
-                            <i class="fas fa-magic"></i> <b>Tip:</b> Si se deja vacío, se usará la <b>imagen de portada</b> como recurso (ideal para infografías/mapas).
+                            En recursos de tipo «Imagen / Otro» puedes dejar el enlace vacío y utilizar la imagen cargada como recurso.
                         </small>
                     </div>
 
                     <!-- NUEVO: Editor de Texto Enriquecido para el Resumen (TinyMCE - Mini Word) -->
                     <div class="admin-form-full admin-form-section">
-                        <label class="form-label" style="font-weight: 600;">Resumen del Recurso (Estilo Wikipedia, Opcional)</label>
+                        <label class="form-label" style="font-weight: 600;">Resumen del recurso (opcional)</label>
                         <textarea id="generic-content-html" style="height: 350px;"></textarea>
                         <input type="hidden" id="hidden-content-html" name="generic-content-html" value="">
                     </div>
@@ -1408,22 +1396,14 @@ class AdminManager {
             case 'drive-sync': {
                 title.textContent = 'Sincronizar Carpeta de Google Drive';
 
-                const resourceTypes = [
-                    { id: 'book', name: 'Libro / PDF' },
-                    { id: 'guia', name: 'Guía de Práctica Clínica' },
-                    { id: 'norma', name: 'Norma Técnica/Legal' },
-                    { id: 'paper', name: 'Artículo / Paper' },
-                    { id: 'noticia', name: 'Noticia Oficial (Novedades)' },
-                    { id: 'video', name: 'Video Clase' },
-                    { id: 'other', name: 'Otro Recurso' }
-                ];
+                const resourceTypes = ADMIN_RESOURCE_TYPES;
 
                 fieldsHTML = `
                     <div class="admin-item-card" style="padding: 15px; text-align: left; background: rgba(66, 133, 244, 0.1); border: 1px solid rgba(66, 133, 244, 0.2); margin-bottom: 20px; border-radius: 12px;">
                         <p style="margin: 0; color: var(--text-main); font-size: 0.9rem;">
                             <i class="fab fa-google-drive" style="color: #4285f4; font-size: 1.2rem; margin-right: 8px;"></i>
                             <strong>Instrucciones:</strong> Ingresa el ID de la carpeta de Drive (el código al final de la URL). 
-                            El sistema escaneará todos los archivos y los añadirá automáticamente al Hub.
+                            Se guardarán enlaces a los archivos y sus miniaturas. Los documentos permanecen en Drive.
                         </p>
                     </div>
 
@@ -1431,11 +1411,8 @@ class AdminManager {
                     
                     <div class="admin-form-grid admin-form-grid-three admin-form-section">
                         ${this.createSelect('generic-resource-type', 'Tipo de Recurso (*)', resourceTypes, 'book', false)}
-                        ${this.createSelect('generic-domain', 'Sector / Dominio (*)', [
-                            { id: 'medicine', name: 'Sector Salud' },
-                            { id: 'education', name: 'Sector Educación' }
-                        ], 'medicine', false)}
-                        ${this.createFormGroup('text', 'generic-author', 'Nombre de Autor / Fuente', 'Admin Hub', true)}
+                        ${this.createEditorialControl(false)}
+                        ${this.createFormGroup('text', 'generic-author', 'Autor o fuente (opcional)', '', false)}
                     </div>
 
                     <!-- Switches de Control del Recurso para Drive Sync (Premium / Visibilidad / Apertura Directa) -->
@@ -1680,6 +1657,7 @@ class AdminManager {
 
 
 
+        if (type === 'book' || type === 'drive-sync') this.setupEditorialControl(type === 'book' ? 'generic-type' : 'generic-resource-type');
         if (type === 'topic' && this.currentItem) this.renderTopicResources(this.currentItem.resources);
 
         // Activar filtros de búsqueda en vivo y listeners de selección
@@ -1929,6 +1907,36 @@ class AdminManager {
                 });
             }
         };
+    }
+
+
+    createEditorialControl(selected = false) {
+        return '<label class="editorial-control" for="generic-publish-bulletin"><input type="checkbox" id="generic-publish-bulletin"' + (selected ? ' checked' : '') + '><span><strong>Publicar en el Boletín IA</strong><small>Solo noticias y papers relacionados con inteligencia artificial. El enlace será público; los demás materiales se asocian a cursos.</small></span></label>';
+    }
+
+    setupEditorialControl(typeId) {
+        const type = document.getElementById(typeId);
+        const publish = document.getElementById('generic-publish-bulletin');
+        if (!type || !publish) return;
+        const sync = () => {
+            const resourceUrl = document.getElementById('generic-url');
+            if (resourceUrl) resourceUrl.required = type.value !== 'other';
+            publish.disabled = !['noticia', 'paper'].includes(type.value);
+            if (publish.disabled) publish.checked = false;
+            if (publish.checked) {
+                const premium = document.getElementById('generic-is-premium');
+                const direct = document.getElementById('generic-open-directly');
+                if (premium) premium.checked = false;
+                if (direct) direct.checked = true;
+            }
+            const premium = document.getElementById('generic-is-premium');
+            const direct = document.getElementById('generic-open-directly');
+            if (premium) premium.disabled = publish.checked;
+            if (direct) direct.disabled = publish.checked;
+        };
+        type.addEventListener('change', sync);
+        publish.addEventListener('change', sync);
+        sync();
     }
 
     createImageUploadGroup(id, label, value = '') {
@@ -2468,7 +2476,7 @@ class AdminManager {
                     formData.append('url', document.getElementById('generic-url').value);
                     // Type Field
                     formData.append('resource_type', document.getElementById('generic-type').value);
-                    formData.append('domain', document.getElementById('generic-domain').value);
+                    formData.append('publish_in_bulletin', document.getElementById('generic-publish-bulletin').checked);
                     // Premium Field
                     formData.append('is_premium', document.getElementById('generic-is-premium').checked);
                     // NUEVO: visible y open_directly
@@ -2770,7 +2778,7 @@ class AdminManager {
                         const folderId = document.getElementById('generic-folder-id').value.trim();
                         const resourceType = document.getElementById('generic-resource-type').value;
                         const author = document.getElementById('generic-author').value.trim();
-                        const domainVal = document.getElementById('generic-domain').value;
+                        const publishInBulletin = document.getElementById('generic-publish-bulletin').checked;
 
                         // Capturar switches de sincronización masiva
                         const isPremium = document.getElementById('generic-is-premium').checked;
@@ -2792,7 +2800,7 @@ class AdminManager {
                                 folderId, 
                                 resourceType, 
                                 author, 
-                                domain: domainVal,
+                                publish_in_bulletin: publishInBulletin,
                                 is_premium: isPremium,
                                 visible: visible,
                                 open_directly: openDirectly,
@@ -3509,6 +3517,8 @@ class AdminManager {
         }
 
         const domainSelect = tabContent.querySelector('.admin-domain-filter');
+        const editorialSelect = tabContent.querySelector('.admin-editorial-filter');
+        if (editorialSelect && state.publication) editorialSelect.value = state.publication;
         if (domainSelect && state.domain) {
             domainSelect.value = state.domain;
         }
@@ -3537,12 +3547,13 @@ class AdminManager {
             }
 
             let matchesDomain = true;
-            if (state.domain && state.domain !== 'all') {
+            if (tabId !== 'tab-books' && state.domain && state.domain !== 'all') {
                 const itemDomain = (item.dataset.domain || 'medicine').toLowerCase();
                 matchesDomain = itemDomain === state.domain.toLowerCase();
             }
 
-            const matches = matchesText && matchesType && matchesDomain;
+            const matchesPublication = !state.publication || state.publication === 'all' || item.dataset.publication === state.publication;
+            const matches = matchesText && matchesType && matchesDomain && matchesPublication;
             item.style.display = matches ? '' : 'none';
         });
 

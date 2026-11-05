@@ -884,3 +884,31 @@
         min-width: 0;
     }
 }
+.admin-page .editorial-control {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    cursor: pointer;
+}
+.admin-page .editorial-control input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin-top: 3px;
+    accent-color: var(--primary);
+}
+.admin-page .editorial-control strong {
+    display: block;
+    color: var(--text-main);
+    font-size: .875rem;
+}
+.admin-page .editorial-control small {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: .8125rem;
+    line-height: 1.6;
+}

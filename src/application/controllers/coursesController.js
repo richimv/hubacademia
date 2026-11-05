@@ -180,12 +180,14 @@ class CoursesController {
         }
     }
 
+
+
     async getBooks(req, res) {
         try {
-            const { type, domain, includeHidden } = req.query; // ✅ Soporte para filtrado por tipo y dominio
+            const { type, includeHidden } = req.query;
             const isHiddenIncluded = includeHidden === 'true' && Boolean(req.user && req.user.role === 'admin');
-            const books = await this.adminService.getAll('book', { type, domain, includeHidden: isHiddenIncluded });
-            
+            const books = await this.adminService.getAll('book', { type, includeHidden: isHiddenIncluded });
+
             if (isHiddenIncluded) {
                 res.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
             } else {
@@ -249,15 +251,15 @@ class CoursesController {
         // 1. Si ya se subió una imagen manual en este request, NO sobreescribir.
         if (currentImageUrl) return currentImageUrl;
         if (!url) return null;
- 
+
         // 2. Extraer ID de archivo de Drive
         const fileId = DriveService.extractFileId(url);
         if (!fileId) return null;
- 
+
         try {
             console.log(`📡 [Drive] Detectado recurso de Drive (${fileId}). Intentando extraer miniatura...`);
             const thumbData = await DriveService.downloadThumbnailBuffer(fileId);
-            
+
             if (thumbData && thumbData.buffer) {
                 // Persistir en GCS (Optimizado a WebP)
                 const persistentUrl = await mediaController.uploadBuffer(
@@ -339,7 +341,7 @@ class CoursesController {
 
         return sanitized;
     }
- 
+
     // --- Métodos CRUD Genéricos para el Panel de Administración ---
 
     async createEntity(req, res, entityType) {
@@ -395,7 +397,7 @@ class CoursesController {
             if (req.body.open_directly !== undefined) {
                 req.body.open_directly = req.body.open_directly === 'true';
             }
-            
+
             // ✅ NUEVO: Fallback para recursos visuales (infografías)
             // Si no hay URL pero hay imagen, la imagen ES el recurso.
             if (entityType === 'book' && (!req.body.url || req.body.url.trim() === '')) {
@@ -403,7 +405,7 @@ class CoursesController {
                     req.body.url = req.body.image_url;
                 }
             }
- 
+
             // ✅ Sanitizar imágenes Base64 pegadas en TinyMCE -> subir a GCS exclusivamente al momento de guardar
             if (req.body.content_html) {
                 req.body.content_html = await this._sanitizeHtmlImages(req.body.content_html, 'recursos');
@@ -517,7 +519,7 @@ class CoursesController {
                     req.body.url = req.body.image_url;
                 }
             }
- 
+
             // ✅ NUEVO: EXTRACCIÓN AUTOMÁTICA DE MINIATURA (Drive Update)
             if (entityType === 'book' && req.body.url) {
                 const driveThumb = await this._handleDriveThumbnail(req.body.url, req.body.image_url);
@@ -532,7 +534,7 @@ class CoursesController {
                 // Retain old shared assets; detaching editor content must not
                 // delete files still referenced by another entity or saved note.
             }
- 
+
             const updatedItem = await this.adminService.update(entityType, entityId, req.body);
             res.json(updatedItem);
         } catch (error) {

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // --- Importar Controladores ---
-const { coursesController, analyticsController, authController, chatController, usageController, adminController, medicoController, docenteController, flashcardController, userPreferencesController, mediaController, speechController } = require('../../application/controllers');
+const { bulletinController, coursesController, analyticsController, authController, chatController, usageController, adminController, medicoController, docenteController, flashcardController, userPreferencesController, mediaController, speechController } = require('../../application/controllers');
 
 // --- Importar Middleware ---
 const { auth, optionalAuth, adminOnly, authIdentity, internalServiceAuth } = require('../middleware/authMiddleware');
@@ -120,6 +120,7 @@ router.get('/courses', coursesController.getCourses);
 
 router.get('/topics', coursesController.getTopics);
 router.get('/books', optionalAuth, coursesController.getBooks);
+router.get('/bulletin', bulletinController.getFeed);
 router.get('/resources', optionalAuth, coursesController.getBooks); // ✅ Alias dinámico para todos los recursos (Categorías/Directorios)
 router.get('/books/medical', optionalAuth, coursesController.getMedicalBooks); // ✅ NUEVO: Libros de Medicina
 

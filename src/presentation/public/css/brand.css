@@ -37,7 +37,7 @@ a.brand-link span.brand-wordmark img.brand-image--light {
 }
 @media (max-width: 640px) {
     header a.brand-link span.brand-wordmark {
-        width: 124px;
+        width: clamp(104px, 31vw, 124px);
         height: 34px;
     }
 }

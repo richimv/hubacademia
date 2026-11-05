@@ -295,20 +295,9 @@
 }
 
 /* ── Training Modes Grid ────────────────────────────────── */
-.modes-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.25rem;
-    margin-bottom: 0.5rem;
-}
 
-@media (max-width: 900px) {
-    .modes-grid { grid-template-columns: 1fr 1fr; }
-}
 
-@media (max-width: 600px) {
-    .modes-grid { grid-template-columns: 1fr; }
-}
+
 /* Exam mode presentation is owned by workspace-simulator.css. */
 .badge-soon {
     position: absolute;
@@ -1669,10 +1658,6 @@
 @media (max-width: 900px) {
     .dashboard-container {
         padding: 1.5rem 1.25rem 4rem !important;
-    }
-    .modes-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 1rem !important;
     }
     .stats-overview {
         grid-template-columns: 1fr 1fr !important;

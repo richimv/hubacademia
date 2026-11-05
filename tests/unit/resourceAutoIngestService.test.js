@@ -65,7 +65,7 @@ describe('ResourceAutoIngestService', () => {
             expect(result.skippedCount).toBe(0);
             expect(result.created[0].id).toBe(200);
             expect(result.created[0].resource_type).toBe('guia');
-            expect(result.created[0].domain).toBe('medicine');
+            expect(result.created[0]).not.toHaveProperty('domain');
             expect(result.created[0].content_html).toBe('<p>Texto plano sin HTML</p>');
         });
     });
@@ -81,11 +81,5 @@ describe('ResourceAutoIngestService', () => {
         });
     });
 
-    describe('_normalizeDomain', () => {
-        it('should normalize domains correctly', () => {
-            expect(service._normalizeDomain('medicina humana')).toBe('medicine');
-            expect(service._normalizeDomain('educacion basica')).toBe('education');
-            expect(service._normalizeDomain('otro')).toBe('medicine');
-        });
-    });
+
 });

@@ -53,51 +53,28 @@ describe('SEO Architecture & Indexing Test Suite', () => {
             });
         });
 
-        test('index.html contains valid and parseable JSON-LD Structured Data with ACT-05/ACT-06 fields', () => {
+        test('index.html describes the actual organization and website without fabricated reviews', () => {
             const content = fs.readFileSync(path.join(publicDir, 'index.html'), 'utf8');
-            const jsonLdMatch = content.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/i);
-            expect(jsonLdMatch).not.toBeNull();
-            
-            const parsed = JSON.parse(jsonLdMatch[1]);
+            const match = content.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/i);
+            expect(match).not.toBeNull();
+            const parsed = JSON.parse(match[1]);
             expect(parsed['@context']).toBe('https://schema.org');
-            expect(parsed['@graph']).toBeDefined();
-            expect(parsed['@graph'].length).toBeGreaterThan(0);
-
-            const appNode = parsed['@graph'].find(node => node['@type'] === 'SoftwareApplication' || node['@type'] === 'Product');
-            expect(appNode).toBeDefined();
-            expect(appNode.aggregateRating).toBeDefined();
-            expect(Array.isArray(appNode.review)).toBe(true);
-            expect(appNode.review.length).toBeGreaterThan(0);
-            expect(appNode.offers.shippingDetails).toBeDefined();
-            expect(appNode.offers.shippingDetails.shippingDestination.addressCountry).toBe('PE');
-            expect(appNode.offers.hasMerchantReturnPolicy).toBeDefined();
-            expect(appNode.offers.hasMerchantReturnPolicy.applicableCountry).toBe('PE');
+            expect(parsed['@graph'].some(node => node['@type'] === 'Organization')).toBe(true);
+            expect(parsed['@graph'].some(node => node['@type'] === 'WebSite')).toBe(true);
+            expect(content).not.toContain('"aggregateRating"');
+            expect(content).not.toContain('"review"');
         });
 
-        test('pricing.html contains valid Product (ACT-05 & ACT-06) and FAQPage JSON-LD Structured Data', () => {
+        test('pricing.html describes the real access-pass page without fabricated reviews', () => {
             const content = fs.readFileSync(path.join(publicDir, 'pricing.html'), 'utf8');
-            const jsonLdMatch = content.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/i);
-            expect(jsonLdMatch).not.toBeNull();
-            
-            const parsed = JSON.parse(jsonLdMatch[1]);
+            const match = content.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/i);
+            expect(match).not.toBeNull();
+            const parsed = JSON.parse(match[1]);
             expect(parsed['@context']).toBe('https://schema.org');
-            expect(parsed['@graph']).toBeDefined();
-
-            const productNode = parsed['@graph'].find(node => node['@type'] === 'Product');
-            expect(productNode).toBeDefined();
-            expect(productNode.aggregateRating).toBeDefined();
-            expect(Array.isArray(productNode.review)).toBe(true);
-            expect(productNode.review.length).toBeGreaterThan(0);
-            expect(Array.isArray(productNode.offers)).toBe(true);
-            expect(productNode.offers.length).toBe(2);
-
-            productNode.offers.forEach(offer => {
-                expect(offer.shippingDetails).toBeDefined();
-                expect(offer.shippingDetails.shippingRate.value).toBe('0.00');
-                expect(offer.shippingDetails.shippingDestination.addressCountry).toBe('PE');
-                expect(offer.hasMerchantReturnPolicy).toBeDefined();
-                expect(offer.hasMerchantReturnPolicy.applicableCountry).toBe('PE');
-            });
+            expect(parsed['@type']).toBe('WebPage');
+            expect(parsed.url).toBe('https://www.hubacademia.com/pricing');
+            expect(content).not.toContain('"aggregateRating"');
+            expect(content).not.toContain('"review"');
         });
     });
 

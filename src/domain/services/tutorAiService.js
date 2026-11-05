@@ -89,7 +89,12 @@ class TutorAiService {
                 LEFT JOIN topics t ON t.id = tr.topic_id
                 WHERE r.resource_type = 'other' 
                   AND r.image_url IS NOT NULL
-                  AND r.domain = $${domainIndex}
+                  AND r.visible = true
+                  AND EXISTS (
+                      SELECT 1 FROM course_books cb
+                      JOIN courses c ON c.id = cb.course_id
+                      WHERE cb.resource_id = r.id AND c.domain = $${domainIndex}
+                  )
                   AND (${conditions})
                 GROUP BY r.title, r.image_url
                 ORDER BY relevance DESC

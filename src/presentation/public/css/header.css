@@ -110,6 +110,12 @@ body {
     object-fit: cover;
     flex-shrink: 0;
 }
+.user-menu-details {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
 .user-header-meta {
     display: flex;
     flex-direction: column;
@@ -277,7 +283,7 @@ body {
         width: 44px;
         padding: 6px;
     }
-    .user-header-meta, .user-header-chevron {
+    .user-menu-toggle .user-menu-details {
         display: none;
     }
     #user-session-controls #open-login-modal, .exec-login-btn {

@@ -21,10 +21,6 @@ export function initMobileMenu() {
     window.matchMedia('(min-width: 961px)').addEventListener('change', (event) => {
         if (event.matches) setOpen(false);
     });
-    document.getElementById('mobile-menu-login-link')?.addEventListener('click', (event) => {
-        const login = document.getElementById('open-login-modal');
-        if (login) { event.preventDefault(); login.click(); }
-    });
 }
 
 export function initGuide() {
@@ -73,9 +69,11 @@ function initSectionLinks() {
     let frame = 0;
     let active = false;
     const cancel = () => {
+        if (!active) return;
         cancelAnimationFrame(frame);
         active = false;
         root.classList.remove('landing-anchor-scroll');
+        document.dispatchEvent(new Event('landing:anchor-settled'));
     };
     window.addEventListener('wheel', cancel, { passive: true });
     window.addEventListener('touchstart', cancel, { passive: true });
@@ -95,7 +93,7 @@ function initSectionLinks() {
         active = true;
         const start = window.scrollY;
         const started = performance.now();
-        const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650;
+        const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 280;
         let settleFrames = 3;
         const destination = () => {
             const header = document.querySelector('.exec-header');
@@ -121,7 +119,9 @@ function initSectionLinks() {
                 if (!hadTabIndex) target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true });
             }
             root.classList.remove('landing-anchor-scroll');
+            document.dispatchEvent(new Event('landing:anchor-settled'));
         };
-        frame = requestAnimationFrame(step);
+        // Start the timeline on this click; video seeking resumes after navigation settles.
+        step(started);
     });
 }

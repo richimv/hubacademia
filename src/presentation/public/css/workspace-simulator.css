@@ -83,7 +83,7 @@
 * All states live here; the historical hover/glow rules were removed. */
 .workspace-page[data-workspace="simulator"] .modes-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
     gap: 16px;
 }
 .workspace-page[data-workspace="simulator"] .mode-card {
@@ -116,6 +116,7 @@
 }
 .workspace-page[data-workspace="simulator"] .mode-card-top {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
     gap: 16px;
@@ -337,7 +338,7 @@
         max-width: none;
     }
 }
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .workspace-page[data-workspace="simulator"] .context-hero-card {
         padding-top: 8px;
     }

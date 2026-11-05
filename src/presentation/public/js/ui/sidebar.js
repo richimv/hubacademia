@@ -24,7 +24,7 @@ class GlobalSidebar {
         if (!document.querySelector('link[href*="sidebar.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = '/css/sidebar.css?v=' + (window.AppConfig?.VERSION || '1.0');
+            link.href = '/css/sidebar.css?v=' + (window.AppConfig?.ASSET_VERSION || '1');
             document.head.appendChild(link);
         }
     }

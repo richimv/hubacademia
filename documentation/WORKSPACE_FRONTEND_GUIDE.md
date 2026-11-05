@@ -21,7 +21,7 @@ La secuencia real del producto organiza la interfaz: configurar una práctica, r
 | `css/workspace-study.css` | Lectura del quiz, estados de respuesta, revisión, carga y superficie de las flashcards. |
 | `css/workspace-repaso.css` | Explorador, mazos, editor, acciones y tablero de Notas. |
 | `css/repaso-page.css` | Estilos antes incrustados en `repaso.html`: contenido de guía y selectores. |
-| `css/library-layout.css` | Estilos antes incrustados en `library.html`: archivo y buscador. |
+| `css/bulletin.css` y `js/bulletin.js` | Página editorial pública del Boletín IA y lectura de publicaciones seleccionadas. |
 | `css/tutor.css` | Única presentación del Tutor del quiz y del Tutor de flashcards, incluido modo ampliado y móvil. |
 | `js/ui/workspace-shell.js` | Navegación común y conexión con el renderizador de cuenta existente de `app.js`. |
 | `js/ui/studyTutorView.js` | Panel compartido, contexto visible, foco, Escape y pantalla completa. No llama a IA ni persiste notas. |
@@ -39,7 +39,7 @@ Se conservan las reglas necesarias de otras vistas, la mecánica de tarjetas y l
 | `/quiz` con sus parámetros actuales | `data-workspace="quiz"` | `workspace-study.css` |
 | `/repaso`, `/repaso?view=notes` | `data-workspace="repaso"` | `workspace-repaso.css` |
 | `/flashcards` con el mazo y parámetros actuales | `data-workspace="flashcards"` | `workspace-study.css` |
-| `/library` | `data-workspace="library"` | Archivo editorial y `library-layout.css` |
+| `/library` | `corporate-page bulletin-page` | `bulletin.css` y navegación corporativa pública |
 | `/profile` | `data-workspace="profile"` | `profile.css` |
 | `/admin` | `data-workspace="admin"` | `admin.css` |
 | `/dashboard` | `data-workspace="dashboard"` | `dashboard.css` |

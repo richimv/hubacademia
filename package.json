@@ -1,6 +1,7 @@
 {
   "name": "hubacademia",
   "version": "1.0.0",
+  "packageManager": "npm@11.12.1",
   "description": "Chatbot Tutor Académico con IA - Arquitectura 4 Capas",
   "main": "src/infrastructure/config/server.js",
   "scripts": {

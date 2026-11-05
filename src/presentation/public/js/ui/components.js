@@ -487,9 +487,6 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
             areaBadge = `<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">${courseBadge}</div>`;
         }
     } else if (type === 'book') {
-        const domainText = item.domain === 'education' ? 'Educación' : 'Salud';
-        const domainClass = item.domain === 'education' ? 'admin-badge-blue' : 'admin-badge-green';
-        const domainBadge = `<span class="admin-badge ${domainClass}">${domainText}</span>`;
         const typeLabelMap = {
             book: 'Libro/Manual',
             paper: 'Paper',
@@ -503,7 +500,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         const typeBadge = `<span class="admin-badge admin-badge-muted">${typeLabelMap[rType] || rType}</span>`;
         areaBadge = `
             <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.35rem; align-items: center;">
-                ${domainBadge}
+                <span class="admin-badge admin-badge-muted">${item.publish_in_bulletin ? 'Boletín IA' : 'Material para cursos'}</span>
                 ${typeBadge}
             </div>
         `;
@@ -613,7 +610,7 @@ function createAdminItemCardHTML(item, type, subtitle = '', showResetPassword = 
         }
 
         return `
-            <div class="admin-item-card item-card resource-item-card" ${resourceTypeAttr} data-name="${safeHtmlValue(item.title || item.name || displayName || '')}" data-domain="${safeHtmlValue(item.domain || 'medicine')}" data-target="${safeHtmlValue(item.target || '')}">
+            <div class="admin-item-card item-card resource-item-card" ${resourceTypeAttr} data-name="${safeHtmlValue(item.title || item.name || displayName || '')}" data-publication="${item.publish_in_bulletin ? 'bulletin' : 'materials'}" data-target="${safeHtmlValue(item.target || '')}">
                 <div class="admin-item-checkbox-wrapper">
                     <input type="checkbox" class="admin-item-checkbox" data-type="${type}" data-id="${item.id}" title="Seleccionar para acción masiva">
                 </div>

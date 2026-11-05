@@ -26,6 +26,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Use the project npm version
+        run: npm install --global npm@11.12.1 --ignore-scripts --no-audit --no-fund
       - run: npm ci
       - run: npm audit --omit=dev --audit-level=high
       - run: npm test -- --runInBand

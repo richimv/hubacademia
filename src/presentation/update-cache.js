@@ -23,7 +23,11 @@ function walkFiles(directory) {
 
 const assetFiles = assetRoots
     .flatMap((folder) => walkFiles(path.join(d, folder)))
-    .sort((left, right) => left.localeCompare(right));
+    .sort((left, right) => {
+        const first = path.relative(d, left).replace(/\\/g, '/');
+        const second = path.relative(d, right).replace(/\\/g, '/');
+        return first < second ? -1 : first > second ? 1 : 0;
+    });
 
 const hash = crypto.createHash('sha256');
 assetFiles.forEach((filePath) => {

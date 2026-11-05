@@ -54,7 +54,6 @@ class ResourceAutoIngestService {
                     url: cleanUrl,
                     image_url: item.image_url || item.imageUrl || null,
                     resource_type: this._normalizeResourceType(item.resource_type || item.type),
-                    domain: this._normalizeDomain(item.domain),
                     is_premium: Boolean(item.is_premium),
                     content_html: formattedHtml,
                     visible: item.visible !== undefined ? Boolean(item.visible) : true,
@@ -190,11 +189,6 @@ class ResourceAutoIngestService {
         return 'other';
     }
 
-    _normalizeDomain(domainStr = '') {
-        const dom = (domainStr || '').toLowerCase().trim();
-        if (dom.includes('edu')) return 'education';
-        return 'medicine';
-    }
 
     _ensureCleanHtml(textOrHtml) {
         if (!textOrHtml) return null;

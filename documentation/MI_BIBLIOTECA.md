@@ -1,193 +1,63 @@
-# Boletín de Inteligencia Artificial y archivo de consulta (Hub Academia)
+# Boletín IA y catálogo compartido de recursos
 
-La página `/library` comparte ahora cabecera y marco `workspace-page` con las pantallas de estudio. Sus estilos incrustados se separaron en `css/library-layout.css`, conservando el archivo, el buscador y las fuentes editoriales existentes. Las Notas de simuladores y flashcards siguen en `/repaso?view=notes`. Véase [WORKSPACE_FRONTEND_GUIDE.md](WORKSPACE_FRONTEND_GUIDE.md).
+Actualización: 4 de noviembre de 2026.
 
-## Estado vigente — 3 de noviembre de 2026
+## Separación de responsabilidades
 
-La ruta pública `/library` conserva su URL y pasa a presentarse como **Boletín de Inteligencia Artificial**. La landing y la navegación lateral enlazan a ese destino. La página incluye una selección inicial de fuentes externas: PCM (Estrategia Nacional de IA), UNESCO (IA y educación) y Google DeepMind (publicaciones de investigación). Son enlaces a fuentes, no noticias generadas ni un feed automático.
+`/library` es una página editorial pública de noticias y papers sobre inteligencia artificial. No muestra un archivo de Educación/Salud ni los materiales de todos los cursos. Su diseño usa cabecera corporativa, portada editorial, búsqueda, filtros por tipo y tarjetas con fuente, autor, miniatura y fecha de incorporación. Cada lectura abre su enlace original.
 
-El buscador y los recursos existentes de Educación y Salud se conservan bajo **Archivo de consulta**. No se reclasificaron registros de base de datos ni se cambió la ingesta automática para hacerlos pasar por publicaciones de IA. Las secciones posteriores de este documento conservan detalles de la arquitectura histórica; no implican que las antiguas pestañas Guardados/Favoritos/Notas sigan disponibles en `/library`.
+El catálogo `resources` sigue siendo compartido. El formato del recurso y su destino editorial son conceptos distintos:
 
-**Notas personales:** pertenecen a `/repaso?view=notes`. Tanto el Tutor de Simuladores (`quiz-tutor.js`) como el Tutor de Flashcards (`tutor-chat.js`) guardan sus respuestas en esa libreta mediante `/api/library/notes`. Hubi es el asistente de orientación general, no el destino del Boletín.
+| Campo | Función |
+| --- | --- |
+| `resource_type` | `book`, `paper`, `noticia`, `norma`, `guia`, `video`, `other`. La entrada antigua `article` se normaliza a `paper`. |
+| `url` | Enlace HTTP/HTTPS al contenido externo, incluido Google Drive. |
+| `image_url` | Miniatura/portada; las imágenes pueden estar en Google Cloud Storage. |
+| `publish_in_bulletin` | Selección editorial explícita de una noticia o paper relacionado con IA. Predeterminado: false. |
+| `visible` | Control de visibilidad del registro. |
+| `course_books` y `topic_resources` | Asociaciones del mismo recurso con cursos y temas; no se duplican archivos. |
 
-La siguiente etapa editorial y audiovisual se describe en `PLAN_LANDING_V4_Y_PRODUCCION_FLOW.md`. No se ejecutaron pruebas en esta iteración por indicación del usuario.
+Se retira únicamente `resources.domain`. Los sectores de preguntas, casos y cursos se conservan. Los documentos PDF, Word o Excel enlazados permanecen en su origen. La carga masiva de Drive guarda enlaces y puede persistir miniaturas; no sube esos documentos al bucket.
 
-## 1. 🌟 Visión General y Filosofía de Diseño
-La **Biblioteca de Consulta** (`/library`) es el centro ágil de búsqueda y acceso documental de **Hub Academia**. Bajo la reestructuración corporativa de la plataforma, ha sido optimizada para ofrecer:
-- **Consulta Directa y sin Fricción:** Búsqueda inmediata de marcos curriculares (CNEB, RVM 094-2020-MINEDU), leyes magisteriales y normas técnicas del MINSA sin laberintos de filtros.
-- **Buscador Inteligente Senior:** Búsqueda reactiva por palabra clave con auto-reset, botón de limpieza rápida `X`, soporte para tecla `Escape` y lupa responsiva en celulares.
-- **Visor Inmersivo Universal:** Lectura y estudio de documentos normativos sin salir del dominio de la plataforma.
-- **Migración de Notas a `/repaso`:** Las Notas Personales fueron unificadas con el Módulo de Repaso Espaciado SM-2 (`/repaso?view=notes`), consolidando en un solo entorno el estudio activo y los apuntes del Tutor IA.
-- **Preparación para el Boletín de Noticias en IA:** Estructura modular preparada para evolucionar hacia el portal informativo sobre avances de la IA en educación, medicina y sociedad en el Perú y el mundo.
+## Publicar desde gestión
 
----
+1. Crear o editar un Recurso y seleccionar Noticia o Paper.
+2. Introducir título y enlace externo. Añadir autor/fuente y portada si corresponde.
+3. Marcar «Publicar en el Boletín IA» únicamente para contenido relacionado con inteligencia artificial y mantenerlo visible.
+4. Guardar. El Boletín lee la selección directamente, sin caché de publicaciones en el navegador.
 
-## 2. 📂 Clasificación y Acceso a Recursos Normativos
-La plataforma clasifica cada material en su sector correspondiente (**Salud** o **Educación**):
+El control editorial está disponible tanto en edición individual como en sincronización de Drive. El Boletín es público: al publicarlo se usa apertura directa del enlace y no se marca como material premium. Para otros formatos el control editorial queda deshabilitado; esos registros conservan su uso como materiales para cursos. Gestión permite filtrar por tipo y destino, sin clasificar recursos en Educación o Salud.
 
-| Tipo de Recurso | Identificador | Descripción | Distintivo Visual (UI) |
-| :--- | :--- | :--- | :--- |
-| **Noticia Oficial** | `noticia` | Comunicados y avances ministeriales de MINEDU y MINSA. | Badge Morado |
-| **Paper Científico** | `paper` | Artículos clínicos e investigaciones peer-reviewed. | Badge Azul |
-| **Norma Técnica / Legal** | `norma` | Normas Técnicas de Salud (NTS), leyes y resoluciones pedagógicas. | Badge Ámbar |
-| **Guía Clínica / Técnica**| `guia` | Guías de Práctica Clínica (GPC) y manuales curriculares. | Badge Esmeralda |
-| **Libro / Manual** | `book` | Bibliografía académica y textos de consulta histórica. | Tarjeta Estándar |
+## Contrato técnico
 
----
+- Presentación: `library.html`, `css/bulletin.css`, `js/bulletin.js`. El antiguo `library-layout.css` se retiró; esta página no inicia el buscador del catálogo académico.
+- Aplicación: `BulletinController.getFeed`; ruta pública `GET /api/bulletin?type=noticia|paper&q=texto`.
+- Dominio: `BookRepository.findBulletin` y `resourcePolicy.js`. El feed exige visible=true, publish_in_bulletin=true y tipo noticia/paper. Límite: 60 registros, más recientes primero.
+- Infraestructura: PostgreSQL/Supabase y migración `20261104_resources_bulletin.sql`. Los parámetros de búsqueda son preparados; no se concatenan valores del usuario al SQL.
+- Los endpoints de recursos/cursos se conservan, sin filtrar ni escribir el antiguo dominio del recurso.
+- Las escrituras de recurso y sus relaciones usan un mismo cliente transaccional; no se reparte BEGIN/COMMIT entre conexiones del pool.
+- El catálogo visual opcional del Tutor deriva el sector de la asociación con el curso. Las imágenes de preguntas y casos mantienen sus campos propios.
 
-## 3. 🖥️ Arquitectura UI/UX Simplificada
+El Boletín no obtiene actualidad de un modelo generativo ni convierte automáticamente todos los papers en publicaciones de IA. La selección corresponde al editor. La fecha mostrada identifica la incorporación al catálogo, no una fecha de publicación original que no se haya registrado.
 
-### A. Layout Despejado de Consulta Directa (`library.html`)
-- **Espacio Vertical Optimizado:** Se retiraron las pestañas obsoletas de *Guardados*, *Favoritos* y *Notas*. La vista opera directamente sobre el catálogo general público.
-- **Búsqueda Focada:** Una barra de búsqueda limpia con soporte de teclado y limpieza instantánea.
+## Migración de producción
 
-```
-+-----------------------------------------------------------------------------------+
-|  [ 🔍 Busca por norma, resolución ministerial, casuística...    [x] [ 🔍 Buscar ] ]|
-+-----------------------------------------------------------------------------------+
-|  SALUD  |  EDUCACIÓN                                                              |
-+-----------------------------------------------------------------------------------+
-|  📰 CATÁLOGO Y BOLETÍN DE RECURSOS NORMATIVOS DIRECTOS                            |
-+-----------------------------------------------------------------------------------+
-```
+La inspección encontró 0 recursos, 0 relaciones course_books y 0 topic_resources. Se preservan IDs, enlaces y relaciones. La migración añade el indicador editorial, amplía URL y miniatura a TEXT, normaliza el alias article y retira domain; mantiene los permisos/RLS existentes.
 
----
+El despliegue se hace en dos fases: preparar el campo nuevo manteniendo domain para la versión anterior; publicar el código compatible; después retirar domain y aplicar restricciones/índice editorial. Se conserva una copia local ignorada de la clasificación anterior antes del cambio final.
 
-## 4. 🔄 Unificación de Notas en el Módulo de Repaso (`/repaso`)
+## Cursos futuros
 
-En cumplimiento de la directriz de coherencia funcional:
-*   Las notas personales ya no residen en `/library`.
-*   El acceso a la libreta de apuntes se realiza ahora a través de la ruta `/repaso?view=notes`.
-*   Los botones *"Guardar en Notas"* del Tutor IA (`quiz-tutor.js` y `tutor-chat.js`) dirigen automáticamente a la libreta sincronizada en Repaso.
+El catálogo y sus asociaciones permiten un campus independiente en `cursos.hubacademia.com` sin copiar los materiales. Ese proyecto podrá compartir la API y los registros, configurando expresamente su autenticación y CORS para el nuevo origen. La página `course.html` y la infraestructura de cursos actuales se conservan.
 
----
+## Correcciones móviles y CI de esta entrega
 
-## 5. 🚀 Proyección Estratégica: Futuro Boletín de Noticias sobre Inteligencia Artificial
+- Cabecera: se elimina «Mi cuenta» del menú móvil y se agrupan los detalles de perfil, incluida la flecha, para ocultarlos juntos en móvil.
+- Hubi: sugerencias en una sola fila con desplazamiento horizontal nativo y placeholder «¿Qué necesitas saber?».
+- Modos de examen: se retiran las reglas históricas que imponían dos columnas con !important. La hoja del simulador usa una columna hasta 900 px y adaptación por ancho disponible en escritorio.
+- Navegación de portada: recorrido de 280 ms; los vídeos suspenden sus seeks durante la navegación y se sincronizan al terminar. Se conservan cancelación manual y movimiento reducido.
+- Los CSS cargados dinámicamente usan ASSET_VERSION del script de configuración para evitar reutilizar una URL constante durante un año de caché.
+- Se regeneró el lockfile desde un directorio limpio. npm ci --ignore-scripts completó en un directorio aislado y la revisión npm audit con umbral high terminó correctamente. Las dependencias locales se restauraron tras un bloqueo de DLL en Windows.
+- El build genera las versiones del frontend que CI exige tener comprometidas; el orden del hash usa rutas normalizadas y comparación independiente del sistema.
 
-Conforme a la visión empresarial de Hub Academia, esta sección evolucionará hacia un **Boletín Especializado de Inteligencia Artificial**:
-1.  **Avances de la IA en Educación:** Análisis de herramientas generativas, evaluación formativa asistida y experiencias pedagógicas en aulas peruanas.
-2.  **Innovaciones de la IA en Medicina y Salud:** Telemedicina, diagnóstico por imágenes y protocolos asistidos en atención primaria.
-3.  **Marco Regulatorio y Ético en el Perú:** Seguimiento de la aplicación de la Ley N.° 31814 y directrices de la Secretaría de Gobierno y Transformación Digital (PCM).
-
-### B. Buscador Inteligente Senior (`search.js`)
-- **Auto-Reset en Tiempo Real (`input` listener):** Si el usuario busca y posteriormente borra todo el texto ingresado en la barra, el sistema ejecuta `resetSearchToBrowse()` restaurando el widget de Novedades y el catálogo original sin necesidad de recargar la página.
-- **Botón de Limpieza (`#searchClearBtn`):** Un botón `X` se despliega reactivamente en el campo de texto cuando hay caracteres ingresados. Al hacer clic, borra el campo, enfoca el cursor y restaura la vista inicial.
-- **Teclas de Acceso Rápido:** Presionar la tecla `Escape` en el teclado cancela la búsqueda activa y regresa al catálogo.
-- **Diseño Adaptativo Móvil:** En smartphones (<= 768px), el botón de búsqueda oculta su etiqueta de texto y se contrae a una lupa circular de 36px x 36px a la derecha del input de texto.
-
-### C. Widget de Novedades y Boletín Reciente (30 Días / Mensual) (`components.js` & `browse.css`)
-- **Alcance Temporal:** Muestra las publicaciones oficiales e investigaciones más recientes del **mes en curso (últimos 30 días)**.
-- **Filtrado Estricto de Novedades (Normas y Noticias Exclusivamente):** Tanto en la consulta SQL (`bookRepository.js`: `r.resource_type IN ('norma', 'noticia')`) como en el componente UI (`components.js`: `createNewsBulletinWidgetHTML`), el boletín filtra de forma exclusiva **normas legales y noticias oficiales**, manteniendo papers en su sección académica y guías técnicas en su respectiva categoría.
-- **Simetría Completa de Filtros en Salud y Educación (`search.js`):** El sector Educación dispone ahora del repertorio simétrico de 6 píldoras de navegación (*🔥 Novedades*, *Libros y Manuales*, *Papers Científicos*, *Normas y Directivas*, *Guías Técnicas* y *Otros Recursos*).
-- **Tarjetas de Recursos con Difuminado Suave (`components.css`):**
-  - Se redujo la densidad del degradado inferior en `.unified-resource-card.has-bg-image .urc-visual-overlay` a `linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.35) 35%, transparent 65%)`.
-  - Esto despeja el 65% superior de la portada para exhibir con mayor luminosidad y detalle las miniaturas de libros y documentos sin sacrificar la legibilidad del texto en la zona inferior.
-- **Estructura Plana y Control de Altura (Zero Box-in-a-Box):**
-  - Contenedor plano `.news-bulletin-container` sin marcos dobles ni envoltorios decorativos.
-  - Tarjeta principal `.news-lead-card` como contenedor único de 2 columnas (1.25fr / 0.75fr en desktop; 1 columna en móvil) con altura calibrada (`min-height: 220px; max-height: 270px;` en desktop) y padding moderado (`1.5rem 2rem;`), eliminando espacios vacíos desmedidos.
-- **Adaptación de Imagen al Contenedor y Difuminado Exclusivo:**
-  - La imagen `.news-lead-img` se posiciona de forma absoluta (`position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;`), adaptándose estrictamente al contenedor sin expandir la altura del mismo.
-  - La difuminación suave mediante degradado (`linear-gradient`) aplica **únicamente al recurso principal**, desvaneciéndose hacia blanco `#ffffff` (claro) o negro `#0a0a0a` (oscuro).
-  - Tarjetas secundarias `.news-item-card` en cuadrícula de 3 columnas con proporción `16:9` nítida y delimitada con borde inferior, **sin difuminación alguna**.
-- **Sobriedad Editorial y Ausencia de Artificios:**
-  - Prohibición total de insignias inventadas ("VERIFICADO", "EXPEDIENTE DIGITAL", "EDICIÓN OFICIAL"), puntos de ventana simulados o icon clutter.
-  - La jerarquía se sostiene exclusivamente en kickers tipográficos, títulos claros, fuentes y botones discretos.
-
-### D. Página de Destino (`/resource?id=X`) y Visor Inmersivo
-- **Página de Destino:** Presenta la portada en gran tamaño, metadatos de autoría, botones de acción (*Estudiar*, *Descargar*, *Guardar*) y resumen factual estilo enciclopedia.
-- **Visor Inmersivo Universal (Full Screen):** Permite estudiar PDFs, videos (MP4/YouTube) y documentos directamente en pantalla completa sin salir del dominio de Hub Academia.
-- **Descargas Directas:** Los archivos en Google Cloud Storage (GCS) se descargan nativamente con el parámetro `download=true` notificando las cabeceras `Content-Disposition`.
-
----
-
-## 4. 🔒 Control de Acceso y Pestañas Privadas
-
-La biblioteca adapta sus pestañas según el estado de la sesión del usuario:
-
-- **Biblioteca de Recursos (`resources`):** Catálogo general público, buscador avanzado y boletín de novedades. Disponible para todos los visitantes.
-- **Guardados (`saved`):** Colección privada de recursos guardados por el estudiante (Requiere inicio de sesión).
-- **Favoritos (`favorites`):** Cursos y recursos destacados con el icono de corazón (Requiere inicio de sesión).
-- **Notas (`notes`):** Editor de Notas Premium y tablón moderno de notas personales (Requiere inicio de sesión).
-
-> 💡 **Protección de Invitados (`guest-mode`):** Si no hay una sesión activa (`user === null`), las pestañas *Guardados*, *Favoritos* y *Notas* se ocultan automáticamente (`display: none !important`). Si un visitante intenta ingresar por URL (ej. `/library?tab=saved`), el controlador lo redirige de forma limpia a `resources`.
-
----
-
-## 5. 🛠️ Tablón de Notas Personales y Modal Canónica Universal (Sección 3.17)
-
-- **Guardado Directo desde el Chat:** Cada respuesta generada por el Tutor IA incluye el control de un clic **"Guardar como Nota"**, formateando y almacenando el contenido en la biblioteca del estudiante.
-- **Creación Manual de Notas (`openNoteModal`):** Permite al estudiante redactar notas de estudio desde cero a través del botón "Nueva Nota" en el tablón, delegando limpiamente a `openNoteEditor(noteId)` en `libraryUI.js`.
-- **Modal Canónica de Notas (Estándar Universal de Modales):**
-  - **Estructura Estricta de 4 Capas:** `.modal-overlay.note-modal-overlay` > `.modal-content.note-modal` > `.modal-header` con `<h2>` + `.modal-close-btn` > `.modal-body` con scroll confinado > `.modal-footer`.
-  - **Tokens Dinámicos Dual-Theme:** El editor de notas consume estrictamente `var(--input-bg)` y `var(--border-color)` en lugar de tonos rígidos, garantizando legibilidad nítida con fondo claro y borde suave en tema claro, y mate slate en tema oscuro.
-  - **Grupo de Acción en Modo Edición (`#note-edit-actions`):** Contiene de forma exclusiva el botón secundario **"Cancelar"** (`.btn-action.btn-secondary-action`) y el botón primario **"Guardar"** (`.btn-action.btn-primary`), erradicando botones huérfanos o duplicados.
-  - **Grupo de Acción en Modo Lectura (`#note-view-actions`):** Proporciona **"Eliminar"** (`.btn-secondary-action.note-delete-btn`), **"Cerrar"** (`.btn-secondary-action`) y **"Editar"** (`.btn-primary`).
-- **Visualización en Tarjetas Modernas (`.note-card`):** Sustituye los listados planos por tarjetas visuales con indicador cromático.
-- **Herramientas de Tablón (`.notes-toolbar`):**
-  - **Buscador de Notas:** Filtrado en caliente por palabras clave en título o contenido en cápsula redondeada de 44px.
-  - **Selector de Orden:** Organiza notas por fecha (Recientes/Antiguas), alfabéticamente (A-Z), por color asignado o por origen (Chat / Manual).
-
----
-
-## 6. 🗄️ Modelo de Datos y Seguridad (PostgreSQL & Supabase RLS)
-
-```sql
--- Tabla Principal de Recursos Educativos
-CREATE TABLE IF NOT EXISTS public.resources (
-    id SERIAL PRIMARY KEY,
-    resource_id VARCHAR(50) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    author VARCHAR(255),
-    url VARCHAR(255) UNIQUE,
-    image_url VARCHAR(500),
-    resource_type VARCHAR(50) DEFAULT 'book', -- 'paper', 'norma', 'guia', 'noticia', 'book', 'video', 'other'
-    is_premium BOOLEAN DEFAULT false,
-    content_html TEXT,
-    domain VARCHAR(50) DEFAULT 'medicine',   -- 'medicine', 'education'
-    visible BOOLEAN DEFAULT true,
-    open_directly BOOLEAN DEFAULT false
-);
-
--- Relación de Recursos Guardados por Usuario
-CREATE TABLE IF NOT EXISTS public.user_book_library (
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    book_id INTEGER REFERENCES public.resources(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, book_id)
-);
-
--- Tabla de Notas Personales
-CREATE TABLE IF NOT EXISTS public.user_notes (
-    id SERIAL PRIMARY KEY,
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    type VARCHAR(50) DEFAULT 'manual', -- 'chat', 'manual'
-    color VARCHAR(20) DEFAULT '#3b82f6',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-- **Seguridad RLS (Row Level Security):** Políticas configuradas en Supabase asegurando que cada usuario acceda **únicamente a sus propios registros guardados y notas personales**, validando mediante `auth.uid()`.
-- **Clean URLs:** Configurado mediante `"cleanUrls": true` en `vercel.json` y la ruta Express `/library` para navegación sin extensión `.html`.
-
----
-
-## 7. 🤖 Curaduría Científica e Ingesta Automática (Antigravity 2.0)
-
-La biblioteca se actualiza de forma autónoma mediante **Scheduled Tasks** en **Antigravity 2.0** a las **8:00 PM**:
-
-1. **Ingesta Diaria de Noticias Oficiales (`0 20 * * *`)**:
-   - Escanea diariamente los portales de noticias MINEDU ([gob.pe/institucion/minedu/noticias](https://www.gob.pe/institucion/minedu/noticias)) y MINSA ([gob.pe/institucion/minsa/noticias](https://www.gob.pe/institucion/minsa/noticias)).
-   - Extrae noticias del día con deduplicación por URL y almacena con `resource_type: "noticia"`.
-2. **Ingesta Semanal de Papers Científicos (`0 20 * * 1`)**:
-   - Escanea PubMed, PMC, SciELO, Redalyc y Dialnet en la ventana de los **últimos 7 días**.
-   - Garantiza mínimo **80% Papers Científicos** (`resource_type: "paper"`).
-   - **Traducción e Interpretación Hispana:** Traduce títulos en inglés al español técnico y elabora la síntesis factual en español de 2 a 3 líneas para `content_html`.
-3. **Verificación Anti-Soft-404:** Todo recurso es analizado mediante `read_url_content` e inspección HTTP antes de insertarse en la BD. Si la URL devuelve 404, Soft-404 o paywall bloqueado, es descartada automáticamente.
-
----
-
-## 🧪 Verificación y Suite de Pruebas Unitarias
-El sistema de biblioteca y el ecosistema completo cuentan con una suite de pruebas unitarias pasando al **100% (57/57 test suites, 477/477 pruebas pasando en verde)**.
+No se ejecutaron pruebas funcionales locales ni inferencias. Los contratos de pruebas que dependían del campo retirado y de interfaces reemplazadas se actualizaron; el workflow existente de GitHub los ejecutará al publicar.

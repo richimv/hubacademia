@@ -29,7 +29,7 @@ describe('AdminService - syncResource', () => {
             url,
             type,
             thumb,
-            'medicine',
+            false,
             false,
             true,
             false,
@@ -51,7 +51,7 @@ describe('AdminService - syncResource', () => {
             title,
             type,
             thumb,
-            'medicine',
+            false,
             false,
             true,
             false,
@@ -64,7 +64,7 @@ describe('AdminService - syncResource', () => {
         adminRepository.getResourceByUrl.mockResolvedValue(undefined);
         adminRepository.addResource.mockResolvedValue(undefined);
 
-        await adminService.syncResource(url, title, type, thumb, author, 'education', true, false, true, [10, 20]);
+        await adminService.syncResource(url, title, type, thumb, author, false, true, false, true, [10, 20]);
 
         expect(adminRepository.addResource).toHaveBeenCalledWith(
             expect.stringMatching(/^RES_\d+_\d+$/),
@@ -73,7 +73,7 @@ describe('AdminService - syncResource', () => {
             url,
             type,
             thumb,
-            'education',
+            false,
             true,
             false,
             true,
@@ -102,7 +102,7 @@ describe('AdminService - syncResource', () => {
             title,
             type,
             thumb,
-            'medicine',
+            false,
             false,
             true,
             false,

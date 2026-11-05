@@ -292,16 +292,18 @@ CREATE TABLE IF NOT EXISTS public.resources (
     resource_id VARCHAR(50) NOT NULL,
     title VARCHAR(255) NOT NULL,
     author VARCHAR(255),
-    url VARCHAR(255),
-    image_url VARCHAR(500),
+    url TEXT,
+    image_url TEXT,
     resource_type VARCHAR(50) DEFAULT 'book'::character varying,
     is_premium BOOLEAN DEFAULT false,
     content_html TEXT,
-    domain VARCHAR(50) DEFAULT 'medicine'::character varying,
+    publish_in_bulletin BOOLEAN NOT NULL DEFAULT false,
     visible BOOLEAN DEFAULT true,
     open_directly BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT resources_pkey PRIMARY KEY (id)
+    CONSTRAINT resources_pkey PRIMARY KEY (id),
+    CONSTRAINT check_resource_type CHECK (resource_type IN ('book','paper','noticia','norma','guia','video','other')),
+    CONSTRAINT resources_bulletin_type_check CHECK (NOT publish_in_bulletin OR resource_type IN ('noticia','paper'))
 );
 
 -- Table: public.search_history
@@ -1103,7 +1105,7 @@ CREATE UNIQUE INDEX quiz_history_source_session_unique ON public.quiz_history US
 CREATE INDEX quiz_sessions_user_status_idx ON public.quiz_sessions USING btree (user_id, status, expires_at DESC);
 CREATE INDEX quiz_session_questions_session_idx ON public.quiz_session_questions USING btree (session_id, position);
 CREATE INDEX idx_resources_created_at ON public.resources USING btree (created_at DESC);
-CREATE INDEX idx_resources_type_domain_vis_created ON public.resources USING btree (resource_type, domain, visible, created_at DESC);
+CREATE INDEX idx_resources_bulletin_created ON public.resources (created_at DESC, id DESC) WHERE publish_in_bulletin AND visible;
 CREATE UNIQUE INDEX resources_resource_id_key ON public.resources USING btree (resource_id);
 CREATE UNIQUE INDEX resources_url_key ON public.resources USING btree (url);
 CREATE INDEX idx_search_history_query ON public.search_history USING btree (query);

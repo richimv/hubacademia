@@ -290,11 +290,11 @@ function updateHeaderUI(user) {
             <div class="user-menu-container">
                 <button type="button" id="user-menu-toggle" class="user-menu-toggle" aria-expanded="false" aria-controls="user-menu-dropdown" aria-label="Abrir menú de mi cuenta" title="${safeName} (${tierLabel})">
                     <img src="${avatarUrl}" class="user-avatar" alt="Avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${fallbackAvatar}';">
-                    <div class="user-header-meta">
+                    <div class="user-menu-details"><div class="user-header-meta">
                         <span class="user-header-name">${safeName}</span>
                         <span class="user-header-tier ${tierClass}">${tierLabel}</span>
                     </div>
-                    <i class="fas fa-chevron-down user-header-chevron"></i>
+                    <i class="fas fa-chevron-down user-header-chevron" aria-hidden="true"></i></div>
                 </button>
                 <div id="user-menu-dropdown" class="user-menu-dropdown">
                     <div class="user-menu-header">

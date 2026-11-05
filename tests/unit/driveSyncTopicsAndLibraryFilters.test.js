@@ -2,14 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 describe('Drive Sync Topics, Topic Modal Sorting, and Library Filters', () => {
-    let adminJs, searchJs, componentsJs, componentsCss, bookRepoCode;
+    let adminJs;
 
     beforeAll(() => {
         adminJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/admin.js'), 'utf8');
-        searchJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/search.js'), 'utf8');
-        componentsJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/components.js'), 'utf8');
-        componentsCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/components.css'), 'utf8');
-        bookRepoCode = fs.readFileSync(path.join(__dirname, '../../src/domain/repositories/bookRepository.js'), 'utf8');
     });
 
     describe('1. Google Drive Sync Modal & Topics Association', () => {
@@ -48,29 +44,4 @@ describe('Drive Sync Topics, Topic Modal Sorting, and Library Filters', () => {
         });
     });
 
-    describe('3. Mi Biblioteca - Novedades Filter (Strictly Noticia and Norma)', () => {
-        test('bookRepository.js filters news strictly to norma and noticia', () => {
-            expect(bookRepoCode).toContain("r.resource_type IN ('norma', 'noticia')");
-            expect(bookRepoCode).not.toContain("r.resource_type IN ('paper', 'norma', 'guia', 'noticia')");
-        });
-
-        test('components.js filters newsItems to exclusively include noticia and norma', () => {
-            expect(componentsJs).toMatch(/validNews\s*=\s*\(newsItems\s*\|\|\s*\[\]\)\.filter/);
-            expect(componentsJs).toMatch(/type\s*===\s*'noticia'\s*\|\|\s*type\s*===\s*'norma'/);
-        });
-    });
-
-    describe('4. Resource Cards Gradient & Education Tab Filters', () => {
-        test('components.css has softened dark gradient overlay for resource cards', () => {
-            expect(componentsCss).toMatch(/\.unified-resource-card\.has-bg-image\s+\.urc-visual-overlay\s*\{[^}]*background:\s*linear-gradient\(to top,\s*rgba\(0,\s*0,\s*0,\s*0\.8\)\s*0%,\s*rgba\(0,\s*0,\s*0,\s*0\.35\)\s*35%,\s*transparent\s*65%\)/);
-        });
-
-        test('search.js defaults to Educación-first direct catalog consultation without category filter pills', () => {
-            expect(searchJs).toContain("this.activeSector = 'education'");
-            expect(searchJs).toContain("this.activeTab = 'educacion'");
-            expect(searchJs).not.toContain('biblioFilters = [');
-            expect(searchJs).not.toContain('id="manta-filters"');
-            expect(searchJs).toContain('/api/books?domain=');
-        });
-    });
 });

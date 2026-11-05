@@ -1,4 +1,9 @@
 # 🏛️ PROJECT BRIEF MAESTRO: HUB ACADEMIA (2026)
+
+## Arquitectura editorial vigente — 4 de noviembre de 2026
+
+El Boletín IA público muestra únicamente noticias y papers seleccionados mediante `resources.publish_in_bulletin`. La columna `resources.domain` se retira; los materiales externos conservan sus relaciones con cursos y temas. Se mantienen dominios de preguntas, casos y cursos. Contrato y procedimiento de migración: [MI_BIBLIOTECA.md](MI_BIBLIOTECA.md).
+
 > **Fuente Central de Verdad de Negocio, Producto y Arquitectura Técnica**  
 > **Ecosistema Web:** `hubacademia.com` | **Subdominio Inicial:** `docentes.hubacademia.com`  
 > **Versión del Sistema:** V7.0 Corporate & Enterprise AI (Noviembre 2026) | **Infraestructura:** 100% Vercel Serverless

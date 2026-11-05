@@ -2,7 +2,7 @@
  * Seek requests are coalesced while a decoder is busy. One orientation per scene.
  * Posters remain available for reduced motion, data saving and media errors.
  */
-import { MEDIA_SLOTS } from './media-config.js?v=landing-v6';
+import { MEDIA_SLOTS } from './media-config.js?v=776928af6484';
 
 export function initMedia() {
     const mobile = matchMedia('(max-width: 640px)');
@@ -31,7 +31,7 @@ export function initMedia() {
     }
     function sync() {
         frame = 0;
-        if (!allowed() || document.hidden) return;
+        if (!allowed() || document.hidden || document.documentElement.classList.contains('landing-anchor-scroll')) return;
         for (const state of states) {
             const { video } = state;
             if (!state.near || state.failed || video.readyState < 1 || !Number.isFinite(video.duration)) continue;
@@ -116,6 +116,7 @@ export function initMedia() {
     reduced.addEventListener('change', resetSources);
     connection?.addEventListener('change', resetSources);
     pinnedHero.addEventListener('change', refreshScene);
+    document.addEventListener('landing:anchor-settled', requestSync);
     window.addEventListener('scroll', requestSync, { passive: true });
     window.addEventListener('resize', requestSync, { passive: true });
     document.addEventListener('visibilitychange', requestSync);
