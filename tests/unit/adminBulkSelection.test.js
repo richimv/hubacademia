@@ -46,10 +46,10 @@ describe('Panel de Gestión - Selección Masiva y Filtros Blindados', () => {
             expect(componentsJsContent).toContain('data-target=');
         });
 
-        test('createAdminItemCardHTML genera badge de dominio (Salud / Educación) para recursos (type === "book")', () => {
-            expect(componentsJsContent).toContain("item.domain === 'education' ? 'Educación' : 'Salud'");
-            expect(componentsJsContent).toContain('admin-badge-blue');
-            expect(componentsJsContent).toContain('admin-badge-green');
+        test("Los recursos muestran su destino editorial y conservan su tipo", () => {
+            expect(componentsJsContent).toContain("item.publish_in_bulletin ? 'Boletín IA' : 'Material para cursos'");
+            expect(componentsJsContent).toContain('data-publication=');
+            expect(componentsJsContent).not.toContain("item.domain === 'education' ? 'Educación' : 'Salud'");
         });
     });
 
@@ -194,10 +194,12 @@ describe('Panel de Gestión - Selección Masiva y Filtros Blindados', () => {
     });
 
     describe('5. Filtros por Dominio en Recursos y Casos en admin.js', () => {
-        test('displayBooks incluye el selector de dominio con opciones Salud Profesional y Educación Docente', () => {
-            expect(adminJsContent).toContain('class="admin-domain-filter" data-target-tab="tab-books"');
-            expect(adminJsContent).toContain('value="medicine"');
-            expect(adminJsContent).toContain('value="education"');
+        test("displayBooks filtra por destino sin sectores de educación y medicina", () => {
+            const section = adminJsContent.slice(adminJsContent.indexOf('    displayBooks()'), adminJsContent.indexOf('    displayQuestions()'));
+            expect(section).toContain('admin-editorial-filter');
+            expect(section).toContain('value="bulletin"');
+            expect(section).toContain('value="materials"');
+            expect(section).not.toContain('admin-domain-filter');
         });
 
         test('displayQuestions incluye filtro por asociación a casos (linked, unlinked)', () => {

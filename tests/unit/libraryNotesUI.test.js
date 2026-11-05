@@ -20,14 +20,13 @@ describe('Repaso y Notas Unificados + Simplificación de Biblioteca', () => {
         expect(repasoHtml).toContain('/js/ui/repasoNotesUI.js');
     });
 
-    test('library.html elimina Guardados, Favoritos y Notas, y redirige ?tab=notes a /repaso?view=notes', () => {
-        expect(libraryHtml).not.toContain('id="panel-saved"');
-        expect(libraryHtml).not.toContain('id="panel-favorites"');
-        expect(libraryHtml).not.toContain('id="panel-notes"');
-        expect(libraryHtml).not.toContain('class="library-tabs');
-        expect(libraryHtml).toContain('/repaso?view=notes');
+    test("El boletín no carga la biblioteca de cuenta; las notas siguen en Repaso", () => {
+        expect(libraryHtml).not.toMatch(/id="panel-(saved|favorites|notes)"/);
+        expect(libraryHtml).not.toContain('/js/ui/libraryUI.js');
+        expect(libraryHtml).toContain('/js/bulletin.js');
+        expect(libraryHtml).toContain('id="bulletin-feed"');
         expect(libraryJs).toContain('/repaso?view=notes');
-    });
+        });
 
     test('El archivo repasoNotesUI.js debe definir explícitamente el método openNoteModal en la clase RepasoNotesUI', () => {
         expect(repasoNotesJs).toContain('openNoteModal(noteId = null)');
@@ -132,11 +131,11 @@ describe('Repaso y Notas Unificados + Simplificación de Biblioteca', () => {
         expect(componentsCss).not.toMatch(/\.note-modal-footer\s+button\s*\{/);
     });
 
-    test('modal.css debe soportar .modal-overlay.open y el botón .btn-action.btn-primary', () => {
+    test("modal.css conserva apertura y acciones primarias en selectores compartidos", () => {
         const modalCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/modal.css'), 'utf8');
-        expect(modalCss).toContain('.modal-overlay.open');
-        expect(modalCss).toContain('.modal-footer .btn-action.btn-primary');
-    });
+        expect(modalCss).toMatch(/:is\([^)]*\.modal-overlay[^)]*\):is\([^)]*\.open[^)]*\)\s*\{[^}]*display:\s*flex/);
+        expect(modalCss).toMatch(/\.modal-footer\s+:is\([^)]*\.btn-primary/);
+        });
 
     test('saveNote y deleteNote deben implementar la regla CRUD obligatoria de spinner y deshabilitación', () => {
         expect(repasoNotesJs).toContain('saveBtn.disabled = true;');

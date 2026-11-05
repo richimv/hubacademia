@@ -1,4 +1,7 @@
+jest.mock('../../src/application/controllers/mediaController', () => ({ uploadFile: jest.fn() }));
+const mediaController = require('../../src/application/controllers/mediaController');
 const adminController = require('../../src/application/controllers/adminController');
+beforeEach(() => mediaController.uploadFile.mockImplementation(async (_file, folder) => folder + '/editor-test.webp'));
 
 describe('Admin TinyMCE & Image Sanitization Logic', () => {
     describe('_sanitizeHtmlImages', () => {
@@ -17,6 +20,7 @@ describe('Admin TinyMCE & Image Sanitization Logic', () => {
             expect(result).not.toContain('data:image/png;base64');
             expect(result).toMatch(/src=["'](\/assets\/cases\/|https?:\/\/.*\/api\/media\/gcs\?file=)/);
             expect(result).toContain('alt="Figura 1"');
+            expect(mediaController.uploadFile).toHaveBeenCalledWith(expect.objectContaining({ buffer: expect.any(Buffer), mimetype: 'image/png' }), 'cases');
         });
 
         it('should strip MSO / VML comments from Microsoft Word copies', async () => {

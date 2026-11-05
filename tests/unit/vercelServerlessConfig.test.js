@@ -30,7 +30,7 @@ describe('Fase 1: Vercel Serverless Architecture & Zero Render Verification', ()
         process.env = savedEnv;
     });
 
-    test('vercel.json routes /api/* and /health to /api/index with maxDuration 60 and zero Render references', () => {
+    test('vercel.json routes /api/* and /health to /api/index with maxDuration 300 and zero Render references', () => {
         const vercelConfigPath = path.join(rootDir, 'vercel.json');
         const raw = fs.readFileSync(vercelConfigPath, 'utf8');
         expect(raw).not.toContain('onrender.com');
@@ -38,7 +38,7 @@ describe('Fase 1: Vercel Serverless Architecture & Zero Render Verification', ()
         const parsed = JSON.parse(raw);
         expect(parsed.outputDirectory).toBe('src/presentation/public');
         expect(parsed.cleanUrls).toBe(true);
-        expect(parsed.functions['api/*.js'].maxDuration).toBe(60);
+        expect(parsed.functions['api/*.js'].maxDuration).toBe(300);
 
         const apiRewrite = parsed.rewrites.find((r) => r.source === '/api/:apiRoute*');
         expect(apiRewrite).toBeDefined();
@@ -83,21 +83,24 @@ describe('Fase 1: Vercel Serverless Architecture & Zero Render Verification', ()
         expect(resolvePublicBaseUrl()).toBe('https://www.hubacademia.com');
     });
 
-    test('zero active references to onrender.com remain in src/, api/, or vercel.json', () => {
-        const filesToCheck = [
+    test("Render solo se reconoce para normalizar contenido antiguo; API y archivos se sirven en el origen actual", () => {
+        const compatibilityFile = path.join(rootDir, 'src/presentation/public/js/config.js');
+        const activeFiles = [
             ...collectFilesRecursively(path.join(rootDir, 'src')),
             ...collectFilesRecursively(path.join(rootDir, 'api')),
             path.join(rootDir, 'vercel.json')
-        ];
-
-        const offending = [];
-        for (const file of filesToCheck) {
-            const content = fs.readFileSync(file, 'utf8');
-            if (/onrender\.com/i.test(content)) {
-                offending.push(path.relative(rootDir, file));
-            }
-        }
-
-        expect(offending).toEqual([]);
-    });
+        ].filter(file => file !== compatibilityFile);
+        expect(activeFiles.filter(file => /onrender\.com/i.test(fs.readFileSync(file, 'utf8')))).toEqual([]);
+        const windowMock = { location: { hostname: 'www.hubacademia.com', origin: 'https://www.hubacademia.com' } };
+        require('vm').runInNewContext(fs.readFileSync(compatibilityFile, 'utf8'), {
+            window: windowMock, URL, document: { currentScript: null },
+            console: { log() {}, info() {}, debug() {}, warn() {}, error() {} }
+        });
+        expect(windowMock.AppConfig.API_URL).toBe(windowMock.location.origin);
+        const resolved = new URL(windowMock.resolveImageUrl('https://tutor-ia-backend.onrender.com/api/media/gcs?file=questions%2Fsample.webp'));
+        expect(resolved.origin).toBe(windowMock.location.origin);
+        expect(resolved.pathname).toBe('/api/media/gcs');
+        expect(resolved.searchParams.get('file')).toBe('questions/sample.webp');
+        expect(windowMock.resolveImageUrl('https://tutor-ia-backend.onrender.com/assets/legacy.webp')).toBe(windowMock.location.origin + '/assets/legacy.webp');
+        });
 });

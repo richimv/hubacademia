@@ -17,21 +17,24 @@ describe('Dashboard Dual-Theme, Modal Isolation & Admin Responsive Search Bar', 
     });
 
     describe('Barra de Búsqueda Responsiva en admin.css', () => {
-        test('Debe usar estilo cápsula unificado con border-radius de 30px y altura de 44px en desktop', () => {
-            expect(adminCss).toMatch(/\.search-bar-container\s*\{[\s\S]*?border-radius:\s*30px;/);
-            expect(adminCss).toMatch(/\.search-bar-container\s*\{[\s\S]*?height:\s*44px;/);
-            expect(adminCss).toMatch(/\.search-bar-container\s*\{[\s\S]*?min-height:\s*44px;/);
-            expect(adminCss).toMatch(/\.search-bar-container:focus-within\s*\{[\s\S]*?border-color:\s*var\(--primary\);/);
+        test("El buscador usa tokens de formulario y área táctil de 44px", () => {
+            expect(adminCss).toMatch(/\.search-bar-container\s*\{[^}]*min-height:\s*44px/);
+            expect(adminCss).toMatch(/\.search-bar-container\s*\{[^}]*background:\s*var\(--input-bg\)/);
+            expect(adminCss).toMatch(/\.search-bar-container:focus-within\s*\{[^}]*border-color:\s*var\(--primary\)/);
         });
 
-        test('Debe adaptarse ergonómicamente a celulares (<= 768px) con altura de 46px y cápsula', () => {
-            expect(adminCss).toMatch(/@media\s*\(max-width:\s*768px\)[\s\S]*?\.search-bar-container\s*\{[\s\S]*?height:\s*46px;[\s\S]*?min-height:\s*46px;[\s\S]*?border-radius:\s*30px;/);
+        test("El buscador puede encogerse y apilarse en pantallas móviles", () => {
+            expect(adminCss).toMatch(/@media\s*\(max-width:\s*768px\)[\s\S]*?\.search-bar-container\s*\{[^}]*min-width:\s*0/);
+            expect(adminCss).toMatch(/\.tab-search-row\s*\{[^}]*flex-direction:\s*column/);
         });
     });
 
     describe('Aislamiento de la Modal de Registro (Join Modal)', () => {
-        test('injectModalHTML en uiManager.js debe incluir display: none inline defensivo', () => {
-            expect(uiManagerJs).toContain('class="auth-prompt-modal" style="display: none;"');
+        test("La invitación de acceso inicia oculta mediante el CSS compartido", () => {
+            const modalCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/modal.css'), 'utf8');
+            expect(uiManagerJs).toContain('class="auth-prompt-modal" role="dialog"');
+            expect(modalCss).toMatch(/\.auth-prompt-modal[^{]*\{[^}]*display:\s*none/);
+            expect(modalCss).toMatch(/:is\([^)]*\.auth-prompt-modal[^)]*\):is\([^)]*\.active/);
         });
 
         test('injectModalHTML debe excluir rutas administrativas (/dashboard y /admin)', () => {
@@ -50,15 +53,15 @@ describe('Dashboard Dual-Theme, Modal Isolation & Admin Responsive Search Bar', 
             expect(dashboardCss).toContain('--bg-card: var(--card-bg);');
         });
 
-        test('dashboard.css debe estilizar .kpi-card y .chart-card consumiendo var(--card-bg)', () => {
-            expect(dashboardCss).toMatch(/\.kpi-card\s*\{[\s\S]*?background:\s*var\(--card-bg\);/);
-            expect(dashboardCss).toMatch(/\.chart-card\s*\{[\s\S]*?background:\s*var\(--card-bg\);/);
+        test("Las métricas heredan su superficie y los gráficos usan tokens de tema", () => {
+            expect(dashboardCss).toMatch(/\.kpi-card\s*\{[^}]*background:\s*none/);
+            expect(dashboardCss).toMatch(/\.kpi-card\s*\{[^}]*color:\s*var\(--text-main\)/);
+            expect(dashboardCss).toMatch(/\.chart-card,\s*\.ai-card\s*\{[^}]*background:\s*var\(--bg-secondary\)/);
         });
 
-        test('dashboard.css debe definir clases semánticas para variantes de KPI (.kpi-card-warning y .kpi-card-live)', () => {
-            expect(dashboardCss).toContain('.kpi-card.kpi-card-warning');
-            expect(dashboardCss).toContain('.kpi-card.kpi-card-live');
-            expect(dashboardCss).toContain('var(--danger-bg)');
+        test("Las métricas usan colores semánticos de texto en avisos y actividad", () => {
+            expect(dashboardCss).toMatch(/\.kpi-card-warning\s+\.kpi-value\s*\{[^}]*color:\s*var\(--warning\)/);
+            expect(dashboardCss).toMatch(/\.kpi-card-live\s+\.kpi-value\s*\{[^}]*color:\s*var\(--success\)/);
         });
 
         test('dashboard.html debe aplicar clases semánticas y no hardcodear estilos oscuros inline', () => {

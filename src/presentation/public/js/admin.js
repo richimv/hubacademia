@@ -1485,20 +1485,6 @@ class AdminManager {
         fieldsContainer.innerHTML = fieldsHTML;
         this.hydrateImagePreviews(fieldsContainer);
 
-        // Ajustar dimensiones del modal sincrónicamente antes de mostrarlo para erradicar el parpadeo
-        const modalContent = this.genericModal.querySelector('.modal-content');
-        if (modalContent) {
-            if (window.innerWidth <= 768) {
-                modalContent.style.maxWidth = '100%';
-                modalContent.style.width = 'calc(100% - 16px)';
-                modalContent.style.maxHeight = '94vh';
-            } else {
-                modalContent.style.maxWidth = '1100px';
-                modalContent.style.width = '95%';
-                modalContent.style.maxHeight = '92vh';
-            }
-        }
-
         this.genericModal.style.display = 'flex';
 
         // LÓGICA DE SUSCRIPCIONES DINÁMICAS Y CONSISTENCIA PARA ESTUDIANTES
@@ -2296,13 +2282,6 @@ class AdminManager {
     closeGenericModal() {
         // 1. Ocultar el modal
         this.genericModal.style.display = 'none';
-
-        // Restaurar ancho original por si fue modificado (ej. por 'book')
-        const modalContent = this.genericModal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.style.maxWidth = '';
-            modalContent.style.width = '';
-        }
 
         // 2. Limpiar su contenido para la próxima vez que se abra
         const fieldsContainer = document.getElementById('generic-form-fields');

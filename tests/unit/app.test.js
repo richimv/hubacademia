@@ -50,6 +50,8 @@ describe('app.js Presentation Orchestrator', () => {
 
         // Mock window & AppConfig
         global.window = {
+            // Browser dependency supplied by config.js; this suite isolates orchestration.
+            escapeHtml: jest.fn(value => String(value ?? '')),
             location: {
                 hostname: 'localhost',
                 pathname: '/',

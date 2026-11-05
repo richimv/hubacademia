@@ -55,7 +55,7 @@ describe('Simulador & Sidebar - Truncado de Áreas Extensas y Scrollbar Cross-Br
             expect(sidebarJs).toContain('https://docentes.hubacademia.com/');
             expect(sidebarJs).toContain('Simuladores de Exámenes');
             expect(sidebarJs).toContain('Repaso y Notas');
-            expect(sidebarJs).toContain('<span class="sidebar-item-label">Biblioteca</span>');
+            expect(sidebarJs).toContain('<span class="sidebar-item-label">Boletín IA</span>');
         });
 
         test('simulator-dash.js prioriza EDUCACION por defecto y simulatorsHub.js no expone generadores pedagógicos futuros', () => {

@@ -196,10 +196,13 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
             expect(code).toContain("fileLabel.textContent = 'Seleccionar Archivo'");
         });
 
-        it('dashboard.css should target .modal-footer specifically to avoid inverting .modal-header', () => {
+        it("Shared modal styles isolate footer layout from the dashboard", () => {
             const css = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/css/dashboard.css'), 'utf8');
+            const modalCss = fs.readFileSync(path.resolve(__dirname, '../../src/presentation/public/css/modal.css'), 'utf8');
             expect(css).not.toContain('.modal-content>div:last-of-type');
-            expect(css).toContain('.modal-content .modal-footer');
+            expect(css).not.toMatch(/\.modal-(header|footer)\s*\{/);
+            expect(modalCss).toMatch(/\.modal-footer\s*\{[^}]*display:\s*flex/);
+            expect(modalCss).toMatch(/\.modal-header\s*\{[^}]*display:\s*flex/);
         });
 
         it('repaso.html bulk-file-label should have text-overflow ellipsis', () => {

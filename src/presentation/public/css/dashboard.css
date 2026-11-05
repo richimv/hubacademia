@@ -96,6 +96,12 @@
 .kpi-card:nth-child(n + 4) {
     border-top: 1px solid var(--border-color);
 }
+.kpi-card-warning .kpi-value {
+    color: var(--warning);
+}
+.kpi-card-live .kpi-value {
+    color: var(--success);
+}
 .kpi-value {
     color: var(--text-main);
     font-size: 2rem;

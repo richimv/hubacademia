@@ -44,6 +44,8 @@ describe('Profile Usage Rendering', () => {
         };
 
         global.window = {
+            // Browser dependency supplied by config.js.
+            escapeHtml: jest.fn(value => String(value ?? '')),
             sessionManager: {
                 initialize: jest.fn(),
                 getUser: jest.fn()
@@ -70,7 +72,7 @@ describe('Profile Usage Rendering', () => {
         expect(typeof html).toBe('string');
         expect(html).toContain('Tutor de IA');
         expect(html).toContain('15 / 50');
-        expect(html).toContain('width: 30%');
+        expect(html).toContain('--usage-progress:30%');
         expect(html).toContain('Disponibles: 35');
     });
 

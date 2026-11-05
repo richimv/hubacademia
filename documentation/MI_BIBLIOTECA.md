@@ -61,3 +61,9 @@ El catálogo y sus asociaciones permiten un campus independiente en `cursos.huba
 - El build genera las versiones del frontend que CI exige tener comprometidas; el orden del hash usa rutas normalizadas y comparación independiente del sistema.
 
 No se ejecutaron pruebas funcionales locales ni inferencias. Los contratos de pruebas que dependían del campo retirado y de interfaces reemplazadas se actualizaron; el workflow existente de GitHub los ejecutará al publicar.
+
+## Cierre de migración y CI
+
+La migración de `resources` se completó después de que Vercel publicara el código compatible. La columna `domain` ya no existe en esa tabla. Al finalizar se conservaron los recuentos anteriores: 0 recursos, 0 asociaciones a cursos y 0 a temas; no se borraron datos. Las columnas de dominio de preguntas, casos y cursos se mantienen.
+
+El CI ya supera `npm ci` y la auditoría con umbral high. Se corrigieron los mocks de `config.js` y del almacenamiento de imágenes, y se actualizaron los contratos de estilos para comprobar sus hojas propietarias. Las URLs históricas de Render se aceptan como entrada para normalizarlas al origen actual; no constituyen una conexión a Render. El cálculo del hash de assets es compartido por el build y su verificación, incluyendo la normalización de imports versionados de la landing.

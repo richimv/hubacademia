@@ -72,4 +72,4 @@ Se conserva `course.html` para formación asíncrona futura. Los accesos `/simul
 
 Guías: [WORKSPACE_FRONTEND_GUIDE.md](WORKSPACE_FRONTEND_GUIDE.md), [LANDING_FRONTEND_GUIDE.md](LANDING_FRONTEND_GUIDE.md), [LANDING_VIDEO_INTEGRATION.md](LANDING_VIDEO_INTEGRATION.md) y [FRONTEND_POLISH_V2.md](FRONTEND_POLISH_V2.md).
 
-Esta entrega incluye revisión de código y referencias locales. Por solicitud del usuario no se ejecutaron pruebas, lint, build ni inspección de navegador. No se desplegó a producción.
+La validación visual y funcional local queda a cargo del usuario. Se generan las versiones de assets con `npm run build`; el CI existente de GitHub realiza sus controles automáticos al publicar. Los estilos de diálogos se verifican en `modal.css` y los específicos del editor en `admin.css`, evitando exigir reglas duplicadas o tamaños inline en JavaScript.

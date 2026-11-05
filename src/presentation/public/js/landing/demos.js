@@ -1,6 +1,6 @@
 /** Product controls and local sample forms. Markup lives in index.html. */
-import { INITIAL_EXAMPLES } from './data.js?v=776928af6484';
-import { animate } from './motion.js?v=776928af6484';
+import { INITIAL_EXAMPLES } from './data.js?v=f7918836952f';
+import { animate } from './motion.js?v=f7918836952f';
 
 export function initProducts() {
     const stage = document.getElementById('tools-live-stage');

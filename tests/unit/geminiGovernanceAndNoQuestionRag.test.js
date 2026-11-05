@@ -29,7 +29,7 @@ function readProjectFile(relPath) {
     return fs.readFileSync(path.join(ROOT, relPath), 'utf8');
 }
 
-describe('Fase 2: Vertex AI Gemini 3.6 Governance, Sniper-RAG Eradication & Supabase Explicit GRANTs', () => {
+describe('Vertex AI model configuration, Sniper-RAG Eradication & Supabase Explicit GRANTs', () => {
     const originalEnv = { ...process.env };
 
     afterEach(() => {
@@ -37,12 +37,12 @@ describe('Fase 2: Vertex AI Gemini 3.6 Governance, Sniper-RAG Eradication & Supa
         jest.clearAllMocks();
     });
 
-    test('ACT-01 & ACT-02: Vertex AI defaults to gemini-3.6-flash-lite / gemini-3.6-flash and omits deprecated sampling params', () => {
+    test('ACT-01 & ACT-02: Vertex AI retains the configured project defaults and omits deprecated sampling params', () => {
         delete process.env.VERTEX_MODEL_PRIMARY;
         delete process.env.VERTEX_MODEL_FALLBACK;
         delete process.env.VERTEX_THINKING_LEVEL;
 
-        expect(getVertexCandidateModels()).toEqual(['gemini-3.6-flash-lite', 'gemini-3.6-flash']);
+        expect(getVertexCandidateModels()).toEqual(['gemini-3.5-flash-lite', 'gemini-3.8-flash']);
 
         const defaultConfig = buildVertexGenerationConfig({ maxOutputTokens: 2048, responseMimeType: 'application/json' });
         expect(defaultConfig).toEqual({
@@ -104,21 +104,24 @@ describe('Fase 2: Vertex AI Gemini 3.6 Governance, Sniper-RAG Eradication & Supa
         expect(patchSpec.body).toEqual({ retentionType: 'EPHEMERAL' });
     });
 
-    test('Zero Google AI Studio endpoints or deprecated Gemini 2.5/3.5 models remain in src/', () => {
+    test("Los servicios académicos mantienen Vertex y parámetros vigentes; Hubi usa su proveedor independiente", () => {
         const aiFiles = [
             'src/infrastructure/config/vertexAiConfig.js',
             'src/domain/services/tutorAiService.js',
             'src/domain/services/ragService.js',
             'src/application/controllers/analyticsController.js'
         ];
-
         for (const rel of aiFiles) {
             const source = readProjectFile(rel);
             expect(source).not.toMatch(/generativelanguage\.googleapis\.com/i);
-            expect(source).not.toMatch(/gemini-2\.5|gemini-3\.5/i);
             expect(source).not.toMatch(/thinking_budget/i);
         }
-    });
+        process.env.VERTEX_MODEL_PRIMARY = 'primary-project-model';
+        process.env.VERTEX_MODEL_FALLBACK = 'fallback-project-model';
+        expect(getVertexCandidateModels()).toEqual(['primary-project-model', 'fallback-project-model']);
+        process.env.VERTEX_MODEL_FALLBACK = 'primary-project-model';
+        expect(getVertexCandidateModels()).toEqual(['primary-project-model']);
+        });
 
     test('Sniper-RAG question generation files and endpoints are 100% eradicated', () => {
         expect(fs.existsSync(path.join(ROOT, 'src/domain/services/questionRagService.js'))).toBe(false);

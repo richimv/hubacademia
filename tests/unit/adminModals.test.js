@@ -21,28 +21,28 @@ describe('Admin Panel - Modales Responsivas y Contraste Dual-Theme', () => {
             }
         });
 
-        test('.modal-content debe implementar las variables de tema var(--modal-bg) y var(--border-color)', () => {
-            expect(adminCss).toMatch(/\.modal-content\s*\{[^}]*background:\s*var\(--modal-bg\)/);
-            expect(adminCss).toMatch(/\.modal-content\s*\{[^}]*border:\s*1px\s+solid\s+var\(--border-color\)/);
-            expect(adminCss).toMatch(/\.modal-content\s*\{[^}]*box-shadow:\s*var\(--shadow-xl\)/);
+        test("modal.css es el propietario único de la superficie de los diálogos", () => {
+            const modalCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/modal.css'), 'utf8');
+            const surface = modalCss.match(/\.modal-content,\s*\.modal-card\s*\{([^}]+)\}/)[1];
+            expect(surface).toMatch(/background:\s*var\(--modal-bg\)/);
+            expect(surface).toMatch(/border:\s*1px solid var\(--border-color\)/);
+            expect(surface).toMatch(/box-shadow:\s*var\(--shadow-xl\)/);
+            expect(adminCss).not.toMatch(/\.modal-content\s*\{[^}]*background:/);
         });
 
-        test('Arquitectura de caja: .modal-content debe tener padding: 0 !important para anclaje limpio de header/footer', () => {
-            expect(adminCss).toMatch(/\.modal-content\s*\{[^}]*padding:\s*0\s*!important/);
+        test("Header y body controlan su espaciado sin padding global forzado", () => {
+            const modalCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/modal.css'), 'utf8');
+            const surface = modalCss.match(/\.modal-content,\s*\.modal-card\s*\{([^}]+)\}/)[1];
+            expect(surface).not.toMatch(/padding:/);
+            expect(modalCss).toMatch(/\.modal-header\s*\{[^}]*padding:/);
+            expect(modalCss).toMatch(/\.modal-body\s*\{[^}]*padding:/);
         });
 
-        test('Subcontenedores internos de modales utilizan tokens Dual-Theme de alto contraste', () => {
-            // Tarjetas de métodos de importación masiva
-            expect(adminCss).toContain('.import-method-card {');
+        test("Subcontenedores y chips consumen superficies y textos de ambos temas", () => {
             expect(adminCss).toMatch(/\.import-method-card\s*\{[^}]*background:\s*var\(--bg-tertiary\)/);
-            expect(adminCss).toMatch(/\.import-method-card\s*\{[^}]*border:\s*1px\s+solid\s+var\(--border-color\)/);
-
-            // Contenedores de carga de imágenes
-            expect(adminCss).toContain('.image-upload-group {');
             expect(adminCss).toMatch(/\.image-upload-group\s*\{[^}]*background:\s*var\(--bg-tertiary\)/);
-
-            // Chips seleccionados tienen texto blanco de alto contraste
-            expect(adminCss).toMatch(/\.selected-chip\s*\{[^}]*color:\s*#ffffff\s*!important/);
+            expect(adminCss).toMatch(/\.selected-chip\s*\{[^}]*background:\s*var\(--bg-tertiary\)/);
+            expect(adminCss).toMatch(/\.selected-chip\s*\{[^}]*color:\s*var\(--text-main\)/);
         });
 
         test('No deben existir variables CSS huérfanas en admin.css ni admin.js', () => {
@@ -53,40 +53,41 @@ describe('Admin Panel - Modales Responsivas y Contraste Dual-Theme', () => {
     });
 
     describe('2. Responsividad Móvil (≤ 768px y ≤ 480px) y Adaptabilidad de Ancho', () => {
-        test('Media query móvil (≤ 768px) ajusta el ancho de .modal-content con márgenes perimetrales', () => {
-            expect(adminCss).toMatch(/@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.modal-content\s*\{[\s\S]*?width:\s*calc\(100%\s*-\s*20px\)\s*!important/);
+        test("El editor mantiene margen horizontal y altura segura en móvil", () => {
+            expect(adminCss).toMatch(/@media\s*\(max-width:\s*768px\)[\s\S]*?#generic-modal\s+\.modal-content\s*\{[^}]*width:\s*calc\(100vw\s*-\s*24px\)/);
+            expect(adminCss).toMatch(/#generic-modal\s+\.modal-content\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*24px\)/);
         });
 
-        test('Media query ultracompacta (≤ 480px) ajusta márgenes seguros para pantallas de 360px-480px', () => {
-            expect(adminCss).toMatch(/@media\s*\(max-width:\s*480px\)\s*\{[\s\S]*?\.modal-content\s*\{[\s\S]*?width:\s*calc\(100%\s*-\s*16px\)\s*!important/);
+        test("Los diálogos compartidos reservan márgenes en pantallas compactas", () => {
+            const modalCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/modal.css'), 'utf8');
+            expect(modalCss).toMatch(/@media\s*\(max-width:\s*640px\)[\s\S]*?\.modal-overlay[^{]*\{[^}]*padding:\s*12px/);
+            expect(modalCss).toMatch(/\.modal-content,\s*\.modal-card\s*\{[^}]*width:\s*min\(560px,\s*100%\)/);
         });
 
-        test('Colapso automático de cuadrículas multi-columna en modales para pantallas móviles', () => {
-            // Impide que campos en 2 o 3 columnas (como Opciones A/B/C/D o Dominio/Target) se aplasten
-            expect(adminCss).toMatch(/\.modal-body\s+div\[style\*="grid-template-columns"\]\s*\{[\s\S]*?grid-template-columns:\s*1fr\s*!important/);
+        test("El formulario usa una sola columna semántica hasta 640px", () => {
+            expect(adminCss).toMatch(/@media\s*\(max-width:\s*640px\)[\s\S]*?\.admin-form-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+            expect(adminCss).not.toContain('div[style*="grid-template-columns"]');
         });
 
         test('Acciones de subida de imágenes (.image-upload-actions) hacen flex-wrap en pantallas móviles', () => {
             expect(adminCss).toMatch(/\.image-upload-actions\s*\{[\s\S]*?flex-wrap:\s*wrap/);
         });
 
-        test('openGenericModal ajusta dinámicamente el ancho máximo en pantallas móviles', () => {
-            expect(adminJs).toContain('if (window.innerWidth <= 768) {');
-            expect(adminJs).toContain("modalContent.style.width = 'calc(100% - 16px)';");
-            expect(adminJs).toContain("modalContent.style.maxWidth = '100%';");
+        test("El ancho del editor pertenece al CSS y reacciona al viewport", () => {
+            expect(adminJs).not.toContain('modalContent.style.width');
+            expect(adminJs).not.toContain('modalContent.style.maxWidth');
+            expect(adminCss).toMatch(/#generic-modal\s+\.modal-content\s*\{[^}]*width:/);
         });
 
-        test('#generic-modal .modal-content tiene ancho y max-width estáticos en admin.css para erradicar flash', () => {
+        test("El editor define dimensiones adaptables antes de abrirse", () => {
             expect(adminCss).toMatch(/#generic-modal\s+\.modal-content\s*\{[^}]*max-width:\s*1100px/);
-            expect(adminCss).toMatch(/#generic-modal\s+\.modal-content\s*\{[^}]*width:\s*95%/);
+            expect(adminCss).toMatch(/#generic-modal\s+\.modal-content\s*\{[^}]*width:\s*min\(1100px,\s*calc\(100vw\s*-\s*32px\)\)/);
         });
 
-        test('admin.js ajusta las dimensiones de modalContent sincrónicamente antes de display flex', () => {
-            const sizePos = adminJs.indexOf("modalContent.style.maxWidth = '1100px';");
-            const displayPos = adminJs.indexOf("this.genericModal.style.display = 'flex';");
-            expect(sizePos).toBeGreaterThan(-1);
-            expect(displayPos).toBeGreaterThan(-1);
-            expect(sizePos).toBeLessThan(displayPos);
+        test("El controlador abre el editor sin imponer geometría inline", () => {
+            expect(adminJs).toContain("this.genericModal.style.display = 'flex';");
+            expect(adminJs).not.toContain('modalContent.style.maxHeight');
+            expect(adminHtml).toMatch(/href="\/css\/modal\.css/);
         });
     });
 

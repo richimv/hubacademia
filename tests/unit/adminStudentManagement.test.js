@@ -224,17 +224,12 @@ describe('Admin Panel - Arquitectura de Gestión de Alumnos y Suscripciones', ()
     });
 
     describe('4. Coherencia con DESIGN_SYSTEM.md', () => {
-        test('DESIGN_SYSTEM.md documenta la Sección 13 para Panel de Gestión y Gestión de Alumnos', () => {
-            expect(designSystemMd).toContain('## 13. 🖥️ Arquitectura y Estándar Visual del Panel de Gestión / Administración');
-            expect(designSystemMd).toContain('13.1. Layout del Panel y Contenedor Maestro');
-            expect(designSystemMd).toContain('13.4. Arquitectura Avanzada de Modales del Panel de Gestión');
-            expect(designSystemMd).toContain('13.5. Subcontenedores Internos dentro de las Modales');
-            expect(designSystemMd).toContain('13.6. Adaptabilidad Móvil y Colapso Automático de Cuadrículas');
-            expect(designSystemMd).toContain('13.7. Editor Científico TinyMCE 6 Dual-Theme Dinámico');
-            expect(designSystemMd).toContain('13.9. Arquitectura y Reglas de la Pestaña de Gestión de Alumnos / Usuarios');
-            expect(designSystemMd).toContain('Google OAuth');
-            expect(designSystemMd).toContain('calc(100% - 20px)');
-            expect(designSystemMd).toContain('calc(100% - 16px)');
+        test("DESIGN_SYSTEM.md define responsables de estilos y adaptación", () => {
+            expect(designSystemMd).toContain('Propiedad de componentes');
+            expect(designSystemMd).toContain('admin.css');
+            expect(designSystemMd).toContain('modal.css');
+            expect(designSystemMd).toContain('sessionManager.js');
+            expect(designSystemMd).toContain('Adaptación e interacción');
         });
     });
 });
