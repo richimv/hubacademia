@@ -40,21 +40,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/theme.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/base.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/header.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/footer.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/dashboard.css?v=f7918836952f">
+    <link rel="stylesheet" href="/css/theme.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/base.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/header.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/footer.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/dashboard.css?v=e86e06546949">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/modal.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/sidebar.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/components.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/markdown-content.css?v=f7918836952f"> <!-- Formato unificado de Markdown IA -->
+    <link rel="stylesheet" href="/css/modal.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/sidebar.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/simulator-dashboard.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/components.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/markdown-content.css?v=e86e06546949"> <!-- Formato unificado de Markdown IA -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <link rel="stylesheet" href="/css/quiz.css?v=f7918836952f">
-    <script src="/js/config.js?v=f7918836952f"></script>
-    <script src="/js/utils/themeManager.js?v=f7918836952f"></script>
+    <link rel="stylesheet" href="/css/quiz.css?v=e86e06546949">
+    <script src="/js/config.js?v=e86e06546949"></script>
+    <script src="/js/utils/themeManager.js?v=e86e06546949"></script>
 
     <!-- ✅ Schema.org / JSON-LD -->
     <script type="application/ld+json">
@@ -74,9 +74,9 @@
     }
     </script>
     <!-- Shared working-screen design; page sheets retain their state/layout mechanics. -->
-    <link rel="stylesheet" href="/css/workspace.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/workspace-simulator.css?v=f7918836952f">
-    <link rel="stylesheet" href="/css/brand.css?v=f7918836952f">
+    <link rel="stylesheet" href="/css/workspace.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/workspace-simulator.css?v=e86e06546949">
+    <link rel="stylesheet" href="/css/brand.css?v=e86e06546949">
 </head>
 
 <body class="hero-hidden workspace-page" data-workspace="simulator">
@@ -102,44 +102,43 @@
         <!-- Content -->
         <div id="dashboard-content" style="display: none;">
 
-            <!-- Context Hero Card -->
-            <section class="context-hero-card">
-                <div class="context-hero-content">
-                    <div class="context-hero-info">
-                        <div class="sim-domain-switcher" id="sim-domain-switcher" role="tablist" aria-label="Seleccionar vertical de simulación">
-                            <button type="button" class="sim-domain-tab active" data-context="EDUCACION" role="tab" aria-selected="true">Educación (MINEDU)</button>
-                            <button type="button" class="sim-domain-tab" data-context="MEDICINA" role="tab" aria-selected="false">Salud (SERUMS)</button>
-                        </div>
-                        <h1 id="ctx-title" class="context-hero-title">Simulador docente</h1>
-                        <p id="ctx-subtitle" class="context-hero-subtitle">
-                            Evaluación de casuística pedagógica basada en el CNEB y Marco de Buen Desempeño Docente.
-                        </p>
-                    </div>
+            <div class="sim-domain-switcher" id="sim-domain-switcher" role="tablist" aria-label="Seleccionar vertical de simulación">
+                <button type="button" class="sim-domain-tab active" data-context="EDUCACION" role="tab" aria-selected="true">Educación</button>
+                <button type="button" class="sim-domain-tab" data-context="MEDICINA" role="tab" aria-selected="false">Salud</button>
+            </div>
 
-                    <div class="context-hero-actions">
-                        <!-- Active config summary -->
-                        <div id="active-config-summary" class="context-config-summary">
-                            <!-- Filled via JS -->
+            <!-- Simulator introduction: shared frame, distinct heading and study surfaces. -->
+            <section class="simulator-intro" aria-labelledby="ctx-title">
+                <div class="context-hero-card">
+                    <div class="context-hero-content">
+                        <div class="context-hero-info">
+                            <h1 id="ctx-title" class="context-hero-title">Simulador docente</h1>
+                            <p id="ctx-subtitle" class="context-hero-subtitle">
+                                Evaluación de casuística pedagógica basada en el CNEB y Marco de Buen Desempeño Docente.
+                            </p>
                         </div>
-                        <div class="context-hero-buttons-row">
-                            <button id="btn-show-guide" class="btn-guide-hero" data-tooltip="Ver guía rápida del simulador" aria-label="Guía rápida">
-                                <i class="fas fa-circle-question"></i>
-                                <span>Guía</span>
-                            </button>
-                            <button id="btn-start-config" class="btn-config-hero">
-                                <i class="fas fa-sliders-h"></i>
-                                <span>Configurar examen</span>
-                            </button>
+
+                        <div class="context-hero-actions">
+                            <div class="context-hero-buttons-row">
+                                <button id="btn-show-guide" class="btn-guide-hero" data-tooltip="Ver guía rápida del simulador" aria-label="Guía rápida">
+                                    <i class="fas fa-circle-question"></i>
+                                    <span>Guía</span>
+                                </button>
+                                <button id="btn-start-config" class="btn-config-hero">
+                                    <i class="fas fa-sliders-h"></i>
+                                    <span>Configurar examen</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            <!-- Shared tools: availability during a quiz is enforced by the exam mode. -->
-            <aside class="study-support-strip" aria-label="Herramientas para tu estudio">
-                <div class="study-support-copy"><strong>Una práctica, más formas de aprender.</strong><ol class="study-support-steps"><li>Responde y revisa</li><li>Profundiza con el Tutor IA</li><li>Guarda lo aprendido en Notas</li></ol><p>El Tutor está disponible en modo estudio y durante la revisión. Tus notas también acompañan a tus flashcards.</p></div>
-                <a href="/repaso?view=notes">Abrir Mis Notas ↗</a>
-            </aside>
+                <!-- Shared tools: availability during a quiz is enforced by the exam mode. -->
+                <aside class="study-support-strip" aria-label="Herramientas para tu estudio">
+                    <div class="study-support-copy"><strong>Una práctica, más formas de aprender.</strong><ol class="study-support-steps"><li>Responde y revisa</li><li>Profundiza con el Tutor IA</li><li>Guarda lo aprendido en Notas</li></ol><p>El Tutor está disponible en modo estudio y durante la revisión. Tus notas también acompañan a tus flashcards.</p></div>
+                    <a href="/repaso?view=notes">Abrir Mis Notas ↗</a>
+                </aside>
+            </section>
 
             <div id="sim-dashboard-sections">
 
@@ -151,6 +150,9 @@
                                 <i class="fas fa-bolt-lightning" style="color: #f59e0b;"></i> Modos de Entrenamiento
                             </h3>
                             <p class="section-subtitle">Selecciona el tipo de simulación para iniciar la prueba interactiva</p>
+                        </div>
+                        <div id="active-config-summary" class="context-config-summary kpi-tabs-group" role="group" aria-label="Configuración activa del examen">
+                            <!-- Filled via JS; shares the analytics filter presentation. -->
                         </div>
                     </div>
 
@@ -206,7 +208,7 @@
                 <section class="dashboard-section">
                     <div class="section-header-row" style="flex-wrap: wrap; gap: 1rem;">
                         <div>
-                            <h3 class="section-title">
+                            <h3 class="section-title" id="analytics-heading">
                                 <i class="fas fa-chart-line" id="analytics-section-icon" style="color: var(--primary);"></i> Panel de Control de Analítica
                             </h3>
                             <p class="section-subtitle">Métricas consolidadas de desempeño y volumen de práctica</p>
@@ -330,7 +332,7 @@
                         </div>
 
                         <!-- Doughnut Distribution Chart -->
-                        <div class="detail-card detail-card--distribution" id="doughnut-chart-card">
+                        <div class="detail-card detail-card--distribution" id="doughnut-chart-card" data-area-stat hidden>
                             <div class="detail-card-header">
                                 <div>
                                     <h4 class="detail-card-title" id="doughnut-chart-title">
@@ -364,8 +366,8 @@
                         </div>
                     </div>
 
-                    <!-- Domain Mastery Bars Card -->
-                    <div class="detailed-row" style="grid-template-columns: 1fr; margin-top: 1.25rem;">
+                    <!-- Domain Mastery Bars Card: medical classifications only. -->
+                    <div data-area-stat hidden class="detailed-row" style="grid-template-columns: 1fr; margin-top: 1.25rem;">
                         <div class="detail-card detail-card--mastery">
                             <div class="detail-card-header" style="flex-wrap: wrap; gap: 0.75rem;">
                                 <div>
@@ -671,24 +673,24 @@
     <!-- Core Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/services/networkService.js?v=f7918836952f"></script>
+    <script src="/js/services/networkService.js?v=e86e06546949"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="/js/utils/markdown-renderer.js?v=f7918836952f"></script>
-    <script src="/js/services/authApiService.js?v=f7918836952f"></script>
-    <script src="/js/services/analyticsApiService.js?v=f7918836952f"></script>
-    <script src="/js/sessionManager.js?v=f7918836952f"></script>
-    <script src="/js/ui/uiManager.js?v=f7918836952f"></script>
-    <script src="/js/ui/tooltipManager.js?v=f7918836952f"></script>
-    <script src="/js/ui/components.js?v=f7918836952f"></script>
-    <script src="/js/ui/sidebar.js?v=f7918836952f"></script>
-    <script src="/js/app.js?v=f7918836952f"></script>
+    <script src="/js/utils/markdown-renderer.js?v=e86e06546949"></script>
+    <script src="/js/services/authApiService.js?v=e86e06546949"></script>
+    <script src="/js/services/analyticsApiService.js?v=e86e06546949"></script>
+    <script src="/js/sessionManager.js?v=e86e06546949"></script>
+    <script src="/js/ui/uiManager.js?v=e86e06546949"></script>
+    <script src="/js/ui/tooltipManager.js?v=e86e06546949"></script>
+    <script src="/js/ui/components.js?v=e86e06546949"></script>
+    <script src="/js/ui/sidebar.js?v=e86e06546949"></script>
+    <script src="/js/app.js?v=e86e06546949"></script>
 
     <!-- Editor de Texto Enriquecido: TinyMCE 6 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
 
-    <script src="/js/simulator-dash.js?v=f7918836952f"></script>
-    <script src="/js/ui/workspace-shell.js?v=f7918836952f" defer></script>
+    <script src="/js/simulator-dash.js?v=e86e06546949"></script>
+    <script src="/js/ui/workspace-shell.js?v=e86e06546949" defer></script>
 </body>
 
 </html>

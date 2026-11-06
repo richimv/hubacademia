@@ -916,6 +916,18 @@ window.createVideoCardHTML = function (item) {
 // ==========================================
 window.UIComponents = window.UIComponents || {};
 
+/** Shared study/review content policy: blank editor markup is not an explanation. */
+window.UIComponents.getQuestionExplanation = function (question) {
+    const raw = typeof question.explanation === 'string' ? question.explanation.trim() : '';
+    const visibleText = raw.replace(/<[^>]*>/g, '')
+        .replace(/&(?:nbsp|#160|#x0*a0|#8203|#x200b);/gi, '')
+        .replace(/[\s\u200b-\u200d\ufeff]/g, '');
+    const hasMedia = /<(?:img|svg|video|audio|iframe|math)\b/i.test(raw);
+    const text = visibleText || hasMedia ? raw : '';
+    const imageUrl = typeof question.explanation_image_url === 'string' ? question.explanation_image_url.trim() : '';
+    return { text, imageUrl, hasContent: Boolean(text || imageUrl) };
+};
+
 window.UIComponents.createReviewCardHTML = function (config) {
     if (!config || !config.question) {
         return '<div class="review-card-error">Error: Datos de pregunta no disponibles.</div>';
@@ -960,14 +972,14 @@ window.UIComponents.createReviewCardHTML = function (config) {
     const rawQuestionText = question.question_text || 'Pregunta sin texto disponible.';
     const questionTextHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(rawQuestionText) : rawQuestionText;
 
-    const defaultExp = 'Respuesta correcta basada en guías prácticas u oficiales pertinentes al tema.';
-    const rawExpText = question.explanation || defaultExp;
+    const explanation = window.UIComponents.getQuestionExplanation(question);
+    const rawExpText = explanation.text;
     const expTextHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(rawExpText) : rawExpText.replace(/\n/g, '<br>');
 
     let expImageHTML = '';
-    if (question.explanation_image_url) {
+    if (explanation.imageUrl) {
         const safeResolve = window.resolveImageUrl || (url => url);
-        const resolvedExpImg = safeResolve(question.explanation_image_url);
+        const resolvedExpImg = safeResolve(explanation.imageUrl);
         expImageHTML = `
         <div class="review-explanation-image-container">
             <img src="${resolvedExpImg}" loading="lazy" alt="Sustento gráfico">
@@ -1030,16 +1042,15 @@ window.UIComponents.createReviewCardHTML = function (config) {
         <div class="review-options">
             ${optionsHTML}
         </div>
-        <div class="review-explanation">
+        ${explanation.hasContent ? `<div class="review-explanation">
             <div class="review-explanation-header">
                 <span class="review-exp-tag">
                     <i class="fas fa-lightbulb"></i> Explicación y Sustento
                 </span>
             </div>
-            <div class="review-explanation-body">
-                ${expTextHTML}
-            </div>
+            ${explanation.text ? `<div class="review-explanation-body">${expTextHTML}</div>` : ''}
             ${expImageHTML}
+        </div>` : ''}
             ${!isDemo && !(typeof window !== 'undefined' && window.location && window.location.search && window.location.search.includes('demo=true')) ? `
             <div class="review-tutor-action-row">
                 <button type="button" class="btn-review-tutor-trigger" onclick="window.openTutorForReviewQuestion(${index})">
@@ -1047,7 +1058,6 @@ window.UIComponents.createReviewCardHTML = function (config) {
                     <span>Consultar Tutor IA</span>
                 </button>
             </div>` : ''}
-        </div>
     </div>`;
 };
 

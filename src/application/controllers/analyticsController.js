@@ -3,6 +3,7 @@ const UserRepository = require('../../domain/repositories/userRepository'); // 1
 const { VertexAI } = require('@google-cloud/vertexai'); // ✅ NUEVO: Importar Vertex para el Analizador
 const securityUtils = require('../../domain/utils/securityUtils');
 const mineduScoringService = require('../../domain/services/mineduScoringService');
+const { generateEducationDiagnostic } = require('../../domain/services/educationDiagnosticService');
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 const {
     getVertexCandidateModels,
@@ -280,11 +281,11 @@ class AnalyticsController {
 
             // Sanitizar/Validar entrada de contexto
             const context = typeof rawContext === 'string' 
-                ? rawContext.replace(/[^A-Z]/g, '').substring(0, 20) 
+                ? rawContext.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 20)
                 : 'MEDICINA';
 
             // Validación de datos estadísticos mínimos y sanitización
-            if (!rawStats || !rawStats.radar_data) {
+            if (!rawStats || (context !== 'EDUCACION' && !rawStats.radar_data)) {
                 return res.status(400).json({ error: 'Faltan datos estadísticos para analizar.' });
             }
 
@@ -298,7 +299,12 @@ class AnalyticsController {
             // Propagar targetScale si fue enviado en body o en stats
             const targetScale = req.body.targetScale || rawStats.targetScale || stats.targetScale || 2;
             stats.targetScale = targetScale;
+            if (context === 'EDUCACION') stats.radar_data = []; // Do not infer skills from retired classifications.
             if (req.body.target && !stats.target) stats.target = req.body.target;
+            const educationSummary = context === 'EDUCACION' ? generateEducationDiagnostic(stats) : null;
+            if (educationSummary && !educationSummary.hasHistory) {
+                return res.json({ success: true, ...educationSummary });
+            }
 
             // 💸 DESCONTAR CUOTA / VIDAS según el tipo definido por el middleware (usage_count para Free, daily_ai_usage para Advanced)
             if (req.usageType && tier !== 'admin') {
@@ -339,9 +345,9 @@ class AnalyticsController {
 
             if (context === 'EDUCACION') {
                 const cutoff = mineduScoringService.getScaleCutoff(targetScale);
-                const mineduScore = (stats.minedu_score !== undefined && !isNaN(parseFloat(stats.minedu_score)))
+                const mineduScore = educationSummary?.mineduEvaluation?.mineduScore ?? ((stats.minedu_score !== undefined && !isNaN(parseFloat(stats.minedu_score)))
                     ? parseFloat(stats.minedu_score)
-                    : Math.round(((stats.avg_score / 20) * 90) * 10) / 10;
+                    : Math.round(((stats.avg_score / 20) * 90) * 10) / 10);
                 const gap = Math.round((mineduScore - cutoff.minPoints) * 10) / 10;
                 const statusStr = gap >= 0
                     ? `+${gap.toFixed(1)} pts de margen (PROYECCIÓN APROBATORIA)`
@@ -349,7 +355,7 @@ class AnalyticsController {
 
                 tutorRole = "Asesor Pedagógico Especialista en Evaluación y Currículo Nacional (CNEB / Minedu)";
                 examType = `docente en preparación para la Prueba Nacional de Ascenso de Escala Magisterial (Postula a: ${cutoff.name})`;
-                areaLabel = "RENDIMIENTO POR COMPETENCIAS PEDAGÓGICAS";
+                areaLabel = "RENDIMIENTO GLOBAL SIN CLASIFICACIÓN TEMÁTICA";
                 scaleSectionPrompt = `
                 ESCALA OBJETIVO DEL POSTULANTE (MINEDU):
                 - Meta Postulada: ${cutoff.name}
@@ -357,10 +363,10 @@ class AnalyticsController {
                 - Puntaje Actual Estimado: ${mineduScore} / 90 puntos
                 - Estado frente al Corte: ${statusStr}
                 `;
-                strengthTextPrompt = `El análisis debe centrarse en la mediación pedagógica, resolución de casuísticas de aula y cómo sus fortalezas respaldan su avance hacia la ${cutoff.name}.`;
-                weaknessTextPrompt = `Identifica patrones de confusión en casuísticas y la brecha concreta de puntos para asegurar el corte de ${cutoff.minPoints} pts de la ${cutoff.name}.`;
-                highYieldPrompt = "Una 'Píldora Pedagógica High-Yield' sobre un principio doctrinal clave del CNEB de alta recurrencia en la prueba nacional de Ascenso.";
-                step1Title = `Refuerzo Doctrinal para ${cutoff.name}`;
+                strengthTextPrompt = 'Describe únicamente la nota, precisión y volumen de respuestas observados. No se dispone de ejes temáticos ni del contenido de las respuestas: no atribuyas competencias o fortalezas pedagógicas específicas.';
+                weaknessTextPrompt = `Describe el margen o brecha frente al corte configurado de ${cutoff.minPoints} puntos. No inventes patrones de error, debilidades por área, velocidad ni tendencias temporales. La proyección de práctica no garantiza aprobación oficial.`;
+                highYieldPrompt = 'Una sugerencia general de estudio, identificada como recomendación y no como una debilidad detectada en el usuario.';
+                step1Title = 'Revisión de respuestas incorrectas';
                 step2Title = "Casuísticas de Retroalimentación y Rúbricas";
                 step3Title = "Simulacros Oficiales MINEDU (60q)";
             }
@@ -372,6 +378,7 @@ class AnalyticsController {
             
             Nota Promedio: ${stats.avg_score} / 20
             Precisión Global: ${stats.accuracy}%
+            ${context === 'EDUCACION' ? `Preguntas respondidas: ${stats.total_questions ?? 'Sin volumen disponible'}. No hay datos fiables de rendimiento por ejes temáticos.` : ''}
             Tarjetas Repasadas y Dominadas: ${stats.mastered_cards}
             ${scaleSectionPrompt}
             
@@ -401,6 +408,17 @@ class AnalyticsController {
             try {
                 const rawText = await this._callGeminiDiagnostic(prompt);
                 diagnostic = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
+                if (!diagnostic || !['strengths', 'weaknesses', 'strategy'].every(key => typeof diagnostic[key] === 'string')) {
+                    throw new Error('INVALID_DIAGNOSTIC_RESPONSE');
+                }
+                diagnostic.source = 'ai';
+                if (educationSummary) {
+                    // Keep measured indicators deterministic; the model supplies the narrative only.
+                    diagnostic = { ...diagnostic, source: 'ai', hasHistory: true,
+                        readinessIndex: educationSummary.readinessIndex,
+                        readinessLevel: educationSummary.readinessLevel,
+                        ...(educationSummary.mineduEvaluation ? { mineduEvaluation: educationSummary.mineduEvaluation } : {}) };
+                }
             } catch(err) {
                 console.warn("⚠️ [Diagnóstico IA Fallback] Usando motor heurístico enriquecido por:", err.message);
                 diagnostic = this.analyticsService.generateHeuristicDiagnostic(stats, context);

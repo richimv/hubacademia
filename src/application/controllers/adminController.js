@@ -352,7 +352,7 @@ class AdminController {
                 career: sanitize(req.body.career),
                 subtopic: sanitize(req.body.subtopic),
                 target: sanitize(req.body.target),
-                topic: sanitize(req.body.topic) || 'General',
+                topic: sanitize(req.body.topic) || (req.body.domain === 'education' ? '' : 'General'),
                 explanation: sanitize(req.body.explanation) || '',
                 case_id: sanitize(req.body.case_id),
                 case_order: parseInt(req.body.case_order, 10) || 1
@@ -399,7 +399,7 @@ class AdminController {
                 career: sanitize(req.body.career),
                 subtopic: sanitize(req.body.subtopic),
                 target: sanitize(req.body.target),
-                topic: sanitize(req.body.topic) || 'General',
+                topic: sanitize(req.body.topic) || (req.body.domain === 'education' ? '' : 'General'),
                 difficulty: sanitize(req.body.difficulty) || 'Senior',
                 explanation: sanitize(req.body.explanation) || '',
                 case_id: sanitize(req.body.case_id),

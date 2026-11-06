@@ -177,7 +177,13 @@ class Server {
         }));
         this.app.use('/assets', express.static(path.join(publicPath, 'assets'), {
             maxAge: '30d',
-            immutable: true
+            immutable: true,
+            setHeaders: (res, filePath) => {
+                // This authoring asset is replaced in place; validate it on each visit.
+                if (path.basename(filePath) === 'fondo_simulador.png') {
+                    res.setHeader('Cache-Control', 'no-cache');
+                }
+            }
         }));
 
         this.app.get('/robots.txt', (req, res) => {

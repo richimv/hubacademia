@@ -559,7 +559,7 @@ class AdminRepository {
                 batch.forEach((q, idx) => {
                     const domain = canonicalDomain(q.domain);
                     const target = q.target || 'N/A';
-                    const exactTopic = q.topic || 'General';
+                    const exactTopic = q.topic || (domain === 'education' ? '' : 'General');
                     const exactSubtopic = q.subtopic || null;
                     const difficulty = canonicalDifficulty(q.difficulty);
                     const question_text = decodeHtmlEntities(formatPlainTextToHtml(String(q.question_text || q.question || '')));

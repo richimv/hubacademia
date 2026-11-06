@@ -3,10 +3,10 @@
  * Content: index.html / local samples: landing/data.js / media: landing/media-config.js.
  * Global session, account menu and Hubi remain owned by app.js.
  */
-import { initProducts, initMemoryCard, initInitialDemo } from './landing/demos.js?v=f7918836952f';
-import { initMobileMenu, initGuide, initNavigation } from './landing/navigation.js?v=f7918836952f';
-import { initReveals, initScrollMotion } from './landing/motion.js?v=f7918836952f';
-import { initMedia } from './landing/media.js?v=f7918836952f';
+import { initProducts, initMemoryCard, initInitialDemo } from './landing/demos.js?v=e86e06546949';
+import { initMobileMenu, initGuide, initNavigation } from './landing/navigation.js?v=e86e06546949';
+import { initReveals, initScrollMotion } from './landing/motion.js?v=e86e06546949';
+import { initMedia } from './landing/media.js?v=e86e06546949';
 
 function initLanding() {
     if (!document.body.classList.contains('landing-page')) return;

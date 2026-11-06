@@ -51,28 +51,24 @@ describe('AI Diagnostic Controller & Heuristic Analytics Engine', () => {
             expect(result.sprint.length).toBe(3);
         });
 
-        it('should generate accurate dynamic insights for Education when user has real topic metrics', () => {
+        it('uses global education metrics and ignores obsolete thematic scores', () => {
             const stats = {
-                avg_score: '15.5',
-                accuracy: 77,
-                mastered_cards: 8,
+                avg_score: '15.5', accuracy: 77, mastered_cards: 8,
+                total_questions: 100, total_correct: 77,
                 radar_data: [
                     { subject: 'Planificación Pedagógica', accuracy: 85, total: 20, correct: 17 },
-                    { subject: 'Convivencia Democrática', accuracy: 80, total: 10, correct: 8 },
                     { subject: 'Evaluación Formativa y Rúbricas', accuracy: 35, total: 20, correct: 7 }
                 ]
             };
-
             const result = analyticsService.generateHeuristicDiagnostic(stats, 'EDUCACION');
-            expect(result.strengths).toContain('Planificación Pedagógica');
-            expect(result.strengths).toContain('85%');
-            expect(result.weaknesses).toContain('Evaluación Formativa y Rúbricas');
-            expect(result.weaknesses).toContain('35%');
-            expect(result.strategy).toContain('Evaluación Formativa y Rúbricas');
-            expect(result.readinessIndex).toBeGreaterThanOrEqual(65);
+            expect(result.strengths).toContain('77%');
+            expect(result.strengths).toContain('15.5 / 20');
+            expect(result.strengths).not.toContain('Planificación Pedagógica');
+            expect(result.weaknesses).not.toContain('Evaluación Formativa y Rúbricas');
+            expect(result.strategy).toContain('Tutor IA');
+            expect(result.readinessIndex).toBe(77);
             expect(result.readinessLevel).toBe('Nivel Competente');
-            expect(Array.isArray(result.sprint)).toBe(true);
-            expect(result.sprint.length).toBe(3);
+            expect(result.sprint).toHaveLength(3);
         });
 
         it('should provide benchmark overview when user has 0 simulation history', () => {
@@ -116,7 +112,7 @@ describe('AI Diagnostic Controller & Heuristic Analytics Engine', () => {
             expect(result.mineduEvaluation.minPointsRequired).toBe(60);
             expect(result.mineduEvaluation.mineduScore).toBe(63.0);
             expect(result.mineduEvaluation.gapPoints).toBe(3.0);
-            expect(result.strengths).toContain('Proyección Aprobatoria Oficial');
+            expect(result.strengths).toContain('Proyección de práctica');
             expect(result.strengths).toContain('4.ª Escala');
             expect(result.strategy).toContain('4.ª Escala');
         });
@@ -144,6 +140,28 @@ describe('AI Diagnostic Controller & Heuristic Analytics Engine', () => {
             expect(result.weaknesses).toContain('5.ª Escala');
             expect(result.weaknesses).toContain('9.0 pts');
             expect(result.strategy).toContain('5.ª Escala');
+        });
+
+        it('keeps an all-wrong education attempt distinct from no history', () => {
+            const result = analyticsService.generateHeuristicDiagnostic({
+                avg_score: 0, accuracy: 0, mastered_cards: 0,
+                total_questions: 20, total_correct: 0, radar_data: []
+            }, 'EDUCACION');
+            expect(result.hasHistory).toBe(true);
+            expect(result.readinessIndex).toBe(0);
+            expect(result.strengths).toContain('20 preguntas');
+            expect(result.mineduEvaluation.mineduScore).toBe(0);
+        });
+
+        it('does not infer education strengths from obsolete thematic data without attempts', () => {
+            const result = analyticsService.generateHeuristicDiagnostic({
+                avg_score: 0, accuracy: 0, mastered_cards: 0, total_questions: 0,
+                radar_data: [{ subject: 'Old axis', accuracy: 90 }]
+            }, 'EDUCACION');
+            expect(result.hasHistory).toBe(false);
+            expect(result.strengths).not.toContain('Old axis');
+            expect(result.readinessIndex).toBe(0);
+            expect(result).not.toHaveProperty('mineduEvaluation');
         });
     });
 

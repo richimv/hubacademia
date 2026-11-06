@@ -79,3 +79,10 @@ Se escribieron reglas para navegación lateral móvil, cabeceras compactas, colu
 La validación visual y funcional sigue a cargo del usuario. No se atribuyen puntuaciones de auditoría, compatibilidad medida ni resultados de pruebas a esta entrega. Las instrucciones habituales de inspección de la skill quedaron exceptuadas por la solicitud explícita de no hacer pruebas.
 
 Para ampliar otra vista, reutilizar el marco común y añadir una hoja específica; no copiar plantillas de Tutor ni implementar otro menú de usuario. Para sustituir material didáctico, trabajar sobre el contenido del banco o mazo correspondiente, separado de los recursos de marketing.
+
+
+## Cabecera del simulador — 6 de noviembre de 2026
+
+Las pestañas «Educación» y «Salud» quedan fuera del marco introductorio. Ambos simuladores utilizan `assets/fondo_simulador.png` a todo el ancho de la cabecera en escritorio. Hasta 1050 px no se carga el fondo y la altura vuelve a adaptarse al contenido. La franja de herramientas conserva su superficie independiente.
+
+El título, Guía, configuración y recorrido de estudio comparten `simulator-intro`, conservando superficies diferenciadas. El resumen del examen se sitúa junto a Modos de Entrenamiento y reutiliza `kpi-tabs-group`; sus estilos específicos pertenecen a `workspace-simulator.css`. Se retiraron las reglas históricas y colores inline de ese resumen. En móvil los encabezados se apilan y los valores se ajustan en varias filas. La Guía describe las diferencias entre Educación y Medicina y apunta al título visible de analítica. Sin pruebas ni despliegue.

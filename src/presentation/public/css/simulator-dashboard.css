@@ -138,75 +138,6 @@
     gap: 0.75rem;
 }
 
-.context-config-summary {
-    display: none;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 0.45rem 0.8rem;
-    box-shadow: var(--shadow-sm);
-    font-size: 0.75rem;
-    transition: var(--transition);
-}
-
-.context-config-summary:hover {
-    border-color: var(--primary);
-}
-
-.config-summary-icon {
-    color: var(--primary);
-    font-size: 0.8rem;
-    margin-right: 0.15rem;
-}
-
-.config-summary-title {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    margin-right: 0.2rem;
-}
-
-.config-summary-pill {
-    display: inline-flex;
-    align-items: center;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-main);
-    border-radius: 20px;
-    padding: 0.2rem 0.65rem;
-    font-size: 0.72rem;
-    font-weight: 600;
-    line-height: 1;
-}
-
-.config-summary-pill--area {
-    max-width: 210px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.config-summary-pill--accent {
-    background: var(--primary-glow);
-    border-color: var(--primary);
-    color: var(--primary);
-    font-weight: 700;
-}
-
-.config-summary-pill--count {
-    background: rgba(139, 92, 246, 0.12);
-    border-color: rgba(139, 92, 246, 0.3);
-    color: var(--accent-purple);
-    font-weight: 600;
-}
-
 .context-hero-buttons-row {
     display: flex;
     align-items: center;
@@ -409,77 +340,6 @@
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
-}
-
-.stat-box::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-    opacity: 0.85;
-    filter: brightness(0.9) saturate(0.92);
-    transition: opacity 0.3s ease, filter 0.3s ease;
-    pointer-events: none;
-    z-index: 1;
-}
-
-[data-theme="light"] .stat-box::before {
-    opacity: 0.88;
-    filter: brightness(0.98) saturate(0.9);
-}
-
-.stat-box:hover::before {
-    opacity: 0.98;
-    filter: brightness(0.95) saturate(1);
-}
-
-.stat-box-header,
-.stat-value-row,
-.stat-sub,
-.stat-progress-track {
-    position: relative;
-    z-index: 2;
-}
-
-.stat-box--score::before {
-    background-image: url('/assets/puntuacion-promedio.webp');
-}
-
-.stat-box--counts::before {
-    background-image: url('/assets/volumen-respuestas.webp');
-}
-
-/* Precisión Global: Salud (Default) */
-.stat-box--accuracy::before {
-    background-image: url('/assets/precision-global-salud.webp');
-}
-
-/* Precisión Global: Educación */
-[data-simulator-context="educacion"] .stat-box--accuracy::before,
-[data-context="educacion"] .stat-box--accuracy::before,
-.context-educacion .stat-box--accuracy::before {
-    background-image: url('/assets/precision-global-educacion.webp');
-}
-
-/* Light Theme Backgrounds for Stat Boxes */
-[data-theme="light"] .stat-box--score::before {
-    background-image: url('/assets/puntuacion-promedio-claro.webp');
-}
-
-[data-theme="light"] .stat-box--counts::before {
-    background-image: url('/assets/volumen-respuestas-claro.webp');
-}
-
-[data-theme="light"] .stat-box--accuracy::before {
-    background-image: url('/assets/precision-global-salud-claro.webp');
-}
-
-[data-theme="light"][data-simulator-context="educacion"] .stat-box--accuracy::before,
-[data-theme="light"][data-context="educacion"] .stat-box--accuracy::before,
-[data-theme="light"] .context-educacion .stat-box--accuracy::before {
-    background-image: url('/assets/precision-global-educacion-claro.webp');
 }
 
 .stat-box:hover {
@@ -1729,20 +1589,7 @@
         gap: 0.6rem !important;
     }
 
-    .context-config-summary {
-        width: 100% !important;
-        box-sizing: border-box !important;
-        justify-content: flex-start !important;
-        font-size: 0.72rem !important;
-        padding: 0.4rem 0.65rem !important;
-        gap: 0.35rem !important;
-    }
-
-    .config-summary-pill--area {
-        max-width: 140px;
-    }
-
-    .context-hero-buttons-row {
+.context-hero-buttons-row {
         width: 100% !important;
         display: flex !important;
         align-items: center !important;

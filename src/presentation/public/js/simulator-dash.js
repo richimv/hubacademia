@@ -33,11 +33,9 @@ const SimulatorDash = (() => {
             title: 'Simulador docente',
             subtitle: 'Evaluación de casuística pedagógica basada en el CNEB y Marco de Buen Desempeño Docente.',
             quizParams: '', // Eliminado el fallback automático.
-            studyDesc: '20 preguntas con explicación pedagógica y Tutor IA después de responder.',
+            studyDesc: '20 preguntas con Tutor IA y explicación cuando esté disponible.',
             realDesc: '60 preguntas integradas con temporizador oficial estricto (3 horas).',
             realQuestions: 60,
-            barChartTitle: 'Dominio por Áreas Pedagógicas',
-            barChartEmptyDesc: 'Completa simulacros variados para ver tu dominio pedagógico por especialidad.',
             targets: [
                 { value: 'NOMBRAMIENTO', label: 'NOMBRAMIENTO', disabled: true, subtitle: '(Próximamente)' },
                 { value: 'ASCENSO', label: 'ASCENSO', checked: true, subtitle: 'Escala Magisterial' },
@@ -57,19 +55,12 @@ const SimulatorDash = (() => {
                 'Educación Religiosa', 'Educación para el Trabajo',
                 'Inglés como Lengua Extranjera', 'Matemática', 'Profesor de Innovación Pedagógica'
             ],
-            areas: [
-                { label: 'Habilidades Generales', areas: ['Comprensión Lectora', 'Razonamiento Lógico'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308', conditionalTarget: 'NOMBRAMIENTO' },
-                { label: 'Enfoques y Principios del CNEB', areas: ['Enfoque por competencias', 'Enfoques transversales', 'Principios de la educación peruana'], bg: 'rgba(234, 179, 8, 0.7)', border: '#eab308', conditionalTarget: 'ASCENSO' },
-                { label: 'Teorías y Procesos del Aprendizaje', areas: ['Constructivismo y socioconstructivismo', 'Aprendizajes significativos', 'Activación y recojo de saberes previos', 'Conflicto o disonancia cognitiva y demanda cognitiva', 'Procesos auxiliares'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6', conditionalTarget: 'ASCENSO' },
-                { label: 'Planificación y Evaluación', areas: ['Planificación pedagógica', 'Evaluación formativa y retroalimentación'], bg: 'rgba(99, 102, 241, 0.7)', border: '#6366f1', conditionalTarget: 'ASCENSO' },
-                { label: 'Clima Escolar e Inclusión', areas: ['Convivencia democrática y clima de aula', 'Educación inclusiva y DUA', 'Características y desarrollo del estudiante'], bg: 'rgba(16, 185, 129, 0.7)', border: '#10b981', conditionalTarget: 'ASCENSO' },
-                { label: 'Conocimientos Pedagógicos y Curriculares', areas: ['Teorías del Aprendizaje y Desarrollo', 'Principios del Currículo Nacional (CNEB)', 'Planificación Curricular (PCI, PCA, Unidades)', 'Evaluación Formativa y Retroalimentación', 'Convivencia Escolar y Clima de Aula', 'Principios de la Educación Peruana'], bg: 'rgba(59, 130, 246, 0.7)', border: '#3b82f6', conditionalTarget: 'NOMBRAMIENTO' },
-                { label: 'Gestión Institucional', areas: ['Liderazgo Pedagógico', 'Planificación Estratégica (PEI, PAT)', 'Gestión del Riesgo de Desastres', 'Monitoreo y Acompañamiento'], bg: 'rgba(249, 115, 22, 0.7)', border: '#f97316', conditionalTarget: 'ACCESO_CARGOS' }
-            ]
+            areas: []
         }
     };
 
     let currentContext = 'EDUCACION';
+    const hasAreaAnalytics = () => currentContext === 'MEDICINA';
     let activeConfig = null;
     let activeMode = null;
     let activeDays = null;
@@ -82,6 +73,7 @@ const SimulatorDash = (() => {
     let areaToGroupMap = {};
 
     function renderBarChart(cleanRadarMap) {
+        if (!hasAreaAnalytics()) return;
         const emptyState = document.getElementById('radar-empty-state');
         const container = document.getElementById('native-bars-container');
         if (!container) return;
@@ -180,6 +172,7 @@ const SimulatorDash = (() => {
             doughnutChartInst = null;
         }
 
+        if (!hasAreaAnalytics()) return;
         const emptyState = document.getElementById('doughnut-empty-state');
         const wrapper = document.getElementById('doughnut-wrapper');
         const legend = document.getElementById('doughnut-legend');
@@ -332,20 +325,21 @@ const SimulatorDash = (() => {
 
         let pillsHtml = `<span class="config-summary-pill config-summary-pill--accent">${escapeAttr(targetText)}</span>`;
         if (config.target === 'ASCENSO' && config.targetScale) {
-            pillsHtml += ` <span class="config-summary-pill config-summary-pill--accent" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.35); color: var(--primary-light);"><i class="fas fa-layer-group" style="margin-right: 0.25rem;"></i>Meta: ${escapeAttr(config.targetScale)}.ª Escala</span>`;
+            pillsHtml += ` <span class="config-summary-pill config-summary-pill--accent"><i class="fas fa-layer-group"></i>Meta: ${escapeAttr(config.targetScale)}.ª Escala</span>`;
         }
         if (infoText) {
             pillsHtml += ` <span class="config-summary-pill config-summary-pill--area" title="${escapeAttr(infoText)}">${escapeAttr(infoText)}</span>`;
         }
-        if (isDefault) {
+        if (!hasAreaAnalytics()) {
+            pillsHtml += ' <span class="config-summary-pill config-summary-pill--count">Selección por examen y modalidad</span>';
+        } else if (isDefault) {
             pillsHtml += ` <span class="config-summary-pill config-summary-pill--count">Examen Oficial (Todas las áreas)</span>`;
         } else {
             pillsHtml += ` <span class="config-summary-pill config-summary-pill--count">${areasCount} ${areasCount === 1 ? 'área' : 'áreas'}</span>`;
         }
 
         summaryBox.innerHTML = `
-            <i class="fas fa-filter config-summary-icon"></i>
-            <span class="config-summary-title">Filtro Activo:</span>
+            <span class="kpi-filter-label"><i class="fas fa-filter" aria-hidden="true"></i> Examen:</span>
             ${pillsHtml}
         `;
     }
@@ -376,6 +370,7 @@ const SimulatorDash = (() => {
         // Presentation tokens are shared with the quiz in workspace.css.
         document.documentElement.setAttribute('data-simulator-context', currentContext.toLowerCase());
         document.body.dataset.studyContext = currentContext.toLowerCase();
+        document.querySelectorAll('[data-area-stat]').forEach(panel => { panel.hidden = !hasAreaAnalytics(); });
 
         // 0. Initialize Context-Aware Data Structures
         const ctxConfig = contexts[currentContext] || contexts['EDUCACION'];
@@ -661,7 +656,8 @@ const SimulatorDash = (() => {
 
         // Append Custom Config if active
         if (activeConfig) {
-            baseParams = `?target=${encodeURIComponent(activeConfig.target)}&areas=${encodeURIComponent(activeConfig.areas.join(','))}&context=${currentContext}`;
+            baseParams = `?target=${encodeURIComponent(activeConfig.target)}&context=${currentContext}`;
+            if (hasAreaAnalytics() && activeConfig.areas?.length) baseParams += '&areas=' + encodeURIComponent(activeConfig.areas.join(','));
             if (activeConfig.configType) {
                 baseParams += `&configType=${encodeURIComponent(activeConfig.configType)}`;
             }
@@ -916,7 +912,7 @@ const SimulatorDash = (() => {
 
             // Control de visualización armónico (Oculto en examen oficial, desplegado en personalizada)
             if (areasContainer) {
-                if (selectedMode === 'default') {
+                if (selectedMode === 'default' || !hasAreaAnalytics()) {
                     areasContainer.style.display = 'none';
                 } else {
                     areasContainer.style.display = 'block';
@@ -1347,7 +1343,7 @@ const SimulatorDash = (() => {
                     }
                 }
 
-                if (selectedAreas.length === 0) {
+                if (hasAreaAnalytics() && selectedAreas.length === 0) {
                     if (window.uiManager) window.uiManager.showToast('Debes seleccionar al menos un área de estudio.', 'warning');
                     else alert('Debes seleccionar al menos un área de estudio.');
                     return;
@@ -1364,7 +1360,7 @@ const SimulatorDash = (() => {
                     targetScale = scaleSelect ? parseInt(scaleSelect.value, 10) || 2 : 2;
                 }
 
-                activeConfig = { configType, target, areas: selectedAreas, career, ...(targetScale ? { targetScale } : {}) };
+                activeConfig = { configType, target, areas: hasAreaAnalytics() ? selectedAreas : [], career, ...(targetScale ? { targetScale } : {}) };
                 localStorage.setItem(`simActiveConfig_${currentContext}`, JSON.stringify(activeConfig)); // Persist locally
                 const activeSessionUserId = (window.sessionManager && window.sessionManager.getUser()) ? window.sessionManager.getUser().id : 'guest';
                 localStorage.removeItem(`simulator_active_session_${activeSessionUserId}`); // Clear any pending quiz session on config change
@@ -1422,7 +1418,7 @@ const SimulatorDash = (() => {
         try {
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
-            if (activeConfig && activeConfig.areas && activeConfig.areas.length > 0) {
+            if (hasAreaAnalytics() && activeConfig && activeConfig.areas && activeConfig.areas.length > 0) {
                 qs += `&areas=${encodeURIComponent(activeConfig.areas.join(','))}`;
             }
             let careerVal = (activeConfig && activeConfig.career) ? activeConfig.career : null;
@@ -1631,7 +1627,7 @@ const SimulatorDash = (() => {
             // Fetch Optimized Summary
             let qs = `?context=${currentContext}`;
             if (activeConfig && activeConfig.target) qs += `&target=${encodeURIComponent(activeConfig.target)}`;
-            if (activeConfig && activeConfig.areas && activeConfig.areas.length > 0) {
+            if (hasAreaAnalytics() && activeConfig && activeConfig.areas && activeConfig.areas.length > 0) {
                 qs += `&areas=${encodeURIComponent(activeConfig.areas.join(','))}`;
             }
             let careerVal = (activeConfig && activeConfig.career) ? activeConfig.career : null;
@@ -1965,34 +1961,22 @@ const SimulatorDash = (() => {
         }
 
         // 4. Bar Chart Demo (Context-Aware Mock Data)
-        const demoAreasMap = currentContext === 'EDUCACION' ? {
-            'Enfoque por competencias': { correct: 88, total: 100 },
-            'Constructivismo y socioconstructivismo': { correct: 75, total: 100 },
-            'Planificación pedagógica': { correct: 68, total: 100 },
-            'Evaluación formativa y retroalimentación': { correct: 62, total: 100 },
-            'Convivencia democrática y clima de aula': { correct: 55, total: 100 },
-            'Características y desarrollo del estudiante': { correct: 50, total: 100 }
-        } : {
+        const demoAreasMap = hasAreaAnalytics() ? {
             'Ética e Interculturalidad': { correct: 85, total: 100 },
             'Salud Pública': { correct: 80, total: 100 },
             'Gestión de Servicios de Salud': { correct: 75, total: 100 },
             'Investigación': { correct: 68, total: 100 },
             'Cuidado Integral de Salud': { correct: 60, total: 100 }
-        };
+        } : {};
 
         // 4b. Doughnut Chart Demo
-        const demoDoughnutData = currentContext === 'MEDICINA' ? {
+        const demoDoughnutData = hasAreaAnalytics() ? {
             'Ética e Interculturalidad': 8,
             'Salud Pública': 15,
             'Gestión de Servicios de Salud': 9,
             'Investigación': 6,
             'Cuidado Integral de Salud': 12
-        } : {
-            'Enfoques y Principios del CNEB': 14,
-            'Teorías y Procesos del Aprendizaje': 22,
-            'Planificación y Evaluación': 18,
-            'Clima Escolar e Inclusión': 11
-        };
+        } : {};
 
         // Si el usuario configuró áreas específicas, adaptar los gráficos a dicha selección
         let activeBarData = demoAreasMap;
@@ -2042,7 +2026,7 @@ const SimulatorDash = (() => {
                 }
 
                 // Update Bar Chart if areaStats exists (Real performance)
-                if (stats.areaStats && Object.keys(stats.areaStats).length > 0) {
+                if (hasAreaAnalytics() && stats.areaStats && Object.keys(stats.areaStats).length > 0) {
                     renderBarChart(stats.areaStats);
                     const masteryEl = document.getElementById('stat-mastery');
                     let masteryCount = 0;
@@ -2064,24 +2048,7 @@ const SimulatorDash = (() => {
                                 guestDoughnut[topic] += parseInt(stats.areaStats[topic].total || 0, 10);
                             }
                         });
-                    } else if (currentContext === 'EDUCACION') {
-                        const eduGroups = {
-                            'Enfoques y Principios del CNEB': ['Enfoque por competencias', 'Enfoques transversales', 'Principios de la educación peruana'],
-                            'Teorías y Procesos del Aprendizaje': ['Constructivismo y socioconstructivismo', 'Aprendizajes significativos', 'Activación y recojo de saberes previos', 'Conflicto o disonancia cognitiva y demanda cognitiva', 'Procesos auxiliares'],
-                            'Planificación y Evaluación': ['Planificación pedagógica', 'Evaluación formativa y retroalimentación'],
-                            'Clima Escolar e Inclusión': ['Convivencia democrática y clima de aula', 'Educación inclusiva y DUA', 'Características y desarrollo del estudiante']
-                        };
-                        const eduGroupLabels = Object.keys(eduGroups);
-                        eduGroupLabels.forEach(g => guestDoughnut[g] = 0);
-                        Object.keys(stats.areaStats).forEach(topic => {
-                            for (const gLabel of eduGroupLabels) {
-                                if (eduGroups[gLabel].includes(topic)) {
-                                    guestDoughnut[gLabel] += parseInt(stats.areaStats[topic].total || 0, 10);
-                                    break;
-                                }
-                            }
-                        });
-                    }
+                    } else {}
                     renderDoughnutChart(guestDoughnut);
                 }
             } catch (e) { console.error("Error parsing local stats", e); }
@@ -2150,7 +2117,14 @@ const SimulatorDash = (() => {
             if (weaknessesEl && data.weaknesses) weaknessesEl.innerHTML = data.weaknesses;
             if (strategyTextEl && data.strategy) strategyTextEl.textContent = data.strategy;
 
-            if (readinessNumEl) readinessNumEl.textContent = (data.readinessIndex || 60) + '%';
+            if (readinessNumEl) readinessNumEl.textContent = (data.readinessIndex ?? 0) + '%';
+            const title = document.getElementById('ai-readiness-title');
+            const description = document.getElementById('ai-readiness-desc');
+            if (currentContext === 'EDUCACION') {
+                if (title) title.textContent = 'Precisión global de la práctica';
+                if (description) description.textContent = 'Resume tus aciertos; no mide dominio por ejes ni una probabilidad de aprobación.';
+            }
+            if (data.source) isAdvanced = data.source === 'ai';
             if (readinessLevelEl) readinessLevelEl.textContent = data.readinessLevel || 'Nivel Competente';
 
             if (tierTextEl) {
@@ -2164,7 +2138,9 @@ const SimulatorDash = (() => {
                 }
             }
             if (strategyBadgeEl) {
-                strategyBadgeEl.textContent = isAdvanced ? 'Auditoría Cognitiva IA' : 'Motor Heurístico Multi-Área';
+                strategyBadgeEl.textContent = currentContext === 'EDUCACION'
+                    ? (isAdvanced ? 'Análisis global con IA' : 'Análisis global de resultados')
+                    : (isAdvanced ? 'Auditoría Cognitiva IA' : 'Motor Heurístico Multi-Área');
             }
 
             if (highYieldBoxEl && highYieldTextEl) {
@@ -2206,7 +2182,30 @@ const SimulatorDash = (() => {
                 const guestStats = (window.GuestSessionManager && typeof window.GuestSessionManager.getGuestStats === 'function') 
                     ? window.GuestSessionManager.getGuestStats(currentContext) 
                     : null;
-                const isEducacion = currentContext === 'EDUCACION';
+                if (currentContext === 'EDUCACION') {
+                    const correct = Math.max(0, Number(guestStats?.correct) || 0);
+                    const incorrect = Math.max(0, Number(guestStats?.incorrect) || 0);
+                    const total = correct + incorrect;
+                    const accuracy = total ? Math.round(correct / total * 100) : 0;
+                    renderDiagnosisUI({
+                        source: 'heuristic',
+                        strengths: total
+                            ? '<p>Registraste <strong>' + correct + ' aciertos de ' + total + ' preguntas</strong>, con una precisión de <strong>' + accuracy + '%</strong>.</p>'
+                            : '<p>Aún no hay una práctica guardada en este dispositivo para analizar.</p>',
+                        weaknesses: total
+                            ? '<p>Revisa las ' + incorrect + ' respuestas incorrectas u omitidas. No se infieren dificultades por ejes temáticos.</p>'
+                            : '<p>Completa una práctica para establecer tu punto de partida.</p>',
+                        strategy: total ? 'Revisa tus errores y compara tus resultados en la siguiente sesión. Accede para continuar con modo estudio, Tutor IA y Notas.' : 'Inicia un simulacro rápido para obtener resultados propios.',
+                        readinessIndex: accuracy,
+                        readinessLevel: total ? 'Resultado global de práctica' : 'Sin historial',
+                        sprint: [
+                            { step: 1, title: 'Resuelve una práctica', desc: 'Usa el mismo modo para comparar tus resultados.' },
+                            { step: 2, title: 'Revisa tus respuestas', desc: 'Consulta la explicación cuando exista y profundiza tus dudas con el Tutor IA al acceder.' },
+                            { step: 3, title: 'Conserva lo aprendido', desc: 'Guarda tus conclusiones en Notas y revisa tu progreso.' }
+                        ]
+                    }, false);
+                    return;
+                }
                 let guestStrengths = '';
                 let guestWeaknesses = '';
                 let guestStrategy = '';
@@ -2214,7 +2213,7 @@ const SimulatorDash = (() => {
                 let guestIndex = 50;
                 let guestLevel = 'Nivel Inicial / Prueba';
 
-                if (guestStats && guestStats.areaStats && Object.keys(guestStats.areaStats).length > 0) {
+                if (hasAreaAnalytics() && guestStats && guestStats.areaStats && Object.keys(guestStats.areaStats).length > 0) {
                     const guestRadar = Object.entries(guestStats.areaStats).map(([subject, data]) => ({
                         subject,
                         accuracy: data.total > 0 ? Math.round((data.correct / data.total) * 100) : 0,
@@ -2229,38 +2228,7 @@ const SimulatorDash = (() => {
                     guestIndex = Math.min(Math.max(Math.round(best1.accuracy * 0.7 + (parseFloat(guestStats.avgScore || 0) / 20 * 100) * 0.3), 35), 90);
                     guestLevel = guestIndex >= 70 ? 'Nivel Competente' : 'Nivel en Desarrollo';
 
-                    if (isEducacion) {
-                        const targetScale = activeConfig.targetScale || 2;
-                        const scaleName = `${targetScale}.ª Escala`;
-                        const scalePoints = { 2: 54, 3: 57, 4: 60, 5: 63, 6: 66, 7: 69, 8: 69 }[targetScale] || 54;
-
-                        guestStrengths = `
-                            <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--primary); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-graduation-cap"></i> MODO PRUEBA DEMO · META: ${scaleName} (${scalePoints} PTS)</div>
-                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Has demostrado criterio pedagógico en tu simulacro de prueba:</p>
-                            <ul style="margin:0; padding:0; list-style:none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
-                                    <span>Dominio en <strong>${best1.subject}</strong> con <strong>${best1.accuracy}%</strong> de aciertos (${best1.correct}/${best1.total} correctas).</span>
-                                </li>
-                            </ul>
-                        `;
-                        guestWeaknesses = `
-                            <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--text-muted); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-crosshairs"></i> FOCO DE MEJORA</div>
-                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Oportunidad de refuerzo detectada en tu evaluación para alcanzar los ${scalePoints} pts de la ${scaleName}:</p>
-                            <ul style="margin:0; padding:0; list-style:none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-crosshairs" style="color:var(--text-muted); margin-top:2px;"></i>
-                                    <span>Precisión del <strong>${worst1.accuracy}%</strong> en <strong>${worst1.subject}</strong> (${worst1.total - worst1.correct} fallas). Conviene repasar criterios del CNEB.</span>
-                                </li>
-                            </ul>
-                        `;
-                        guestStrategy = `Te sugerimos registrarte gratis para proyectar tu puntaje oficial en Base 90 hacia la ${scaleName} y reforzar ${worst1.subject}.`;
-                        guestSprint = [
-                            { step: 1, title: "Registro Gratuito", desc: `Crea tu cuenta gratis para proyectar tus notas hacia la ${scaleName}.` },
-                            { step: 2, title: `Refuerzo en ${worst1.subject}`, desc: "Practica simulacros comentados para afianzar tus respuestas." },
-                            { step: 3, title: `Simulacro Real (${scalePoints} pts)`, desc: `Evalúa tu avance diario hacia el corte de ${scalePoints} pts de tu escala.` }
-                        ];
-                    } else {
+                    {
                         guestStrengths = `
                             <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.65rem; border-radius:6px; background:var(--surface-hover); border:1px solid var(--border-color); color:var(--primary); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.75rem;"><i class="fas fa-arrow-trend-up"></i> MODO PRUEBA DEMO</div>
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Tu perfil de prueba muestra buen razonamiento clínico inicial:</p>
@@ -2289,31 +2257,7 @@ const SimulatorDash = (() => {
                         ];
                     }
                 } else {
-                    if (isEducacion) {
-                        guestStrengths = `
-                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">El marco oficial de la Carrera Pública Magisterial evalúa competencias clave:</p>
-                            <ul style="margin:0; padding:0; list-style:none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
-                                    <span>Fundamentos de <strong>Planificación Curricular</strong> y diseño de sesiones.</span>
-                                </li>
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
-                                    <span>Principios del CNEB para <strong>Convivencia Democrática</strong> y clima de aula.</span>
-                                </li>
-                            </ul>
-                        `;
-                        guestWeaknesses = `
-                            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Completa tu simulacro diario para diagnosticar tus áreas de mayor riesgo:</p>
-                            <ul style="margin:0; padding:0; list-style:none;">
-                                <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                                    <i class="fas fa-crosshairs" style="color:var(--text-muted); margin-top:2px;"></i>
-                                    <span>Evaluación de casuísticas complejas en <strong>Rúbricas de Evaluación Formativa</strong>.</span>
-                                </li>
-                            </ul>
-                        `;
-                        guestStrategy = "Inicia con tu prueba diaria de 10 preguntas para calibrar tu nivel inicial.";
-                    } else {
+                    {
                         guestStrengths = `
                             <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Las pruebas oficiales médicas ponderan con alta carga las siguientes especialidades:</p>
                             <ul style="margin:0; padding:0; list-style:none;">

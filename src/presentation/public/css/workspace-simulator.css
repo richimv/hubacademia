@@ -2,20 +2,36 @@
 * S01 heading and configuration; S02 exam modes; S03 analytics and history.
 * Images are deliberately absent from analytical controls and question material.
 */
+.workspace-page[data-workspace="simulator"] .simulator-intro {
+    margin-bottom: 32px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+.workspace-page[data-workspace="simulator"] .simulator-intro .study-support-strip {
+    margin: 0;
+    border-radius: 0;
+}
 .workspace-page[data-workspace="simulator"] .context-hero-card {
-    margin-bottom: 24px;
-    padding: 24px 0 28px;
-    background: transparent;
+    margin: 0;
+    padding: 24px;
+    background: var(--bg-main);
     border: 0;
     border-radius: 0;
     box-shadow: none;
+    min-height: clamp(190px, 14vw, 250px);
+    background-image: url('/assets/fondo_simulador.png?v=2');
+    background-repeat: no-repeat;
+    /* Width-based framing compensates for the PNG's transparent vertical margins. */
+    background-position: right 35%;
+    background-size: 100% auto;
 }
 .workspace-page[data-workspace="simulator"] .context-hero-card:hover {
     transform: none;
 }
 .workspace-page[data-workspace="simulator"] .context-hero-content {
     gap: 24px;
-    align-items: flex-end;
+    align-items: flex-start;
 }
 .workspace-page[data-workspace="simulator"] .context-hero-info {
     min-width: 0;
@@ -25,7 +41,7 @@
     font-size: clamp(1.5rem, 2.6vw, 2rem);
     font-weight: 600;
     letter-spacing: -.04em;
-    margin-block: 24px 12px;
+    margin-block: 0 12px;
     background: none;
     -webkit-text-fill-color: currentColor;
 }
@@ -36,14 +52,34 @@
     line-height: 1.6;
 }
 .workspace-page[data-workspace="simulator"] .context-hero-actions {
-    max-width: 440px;
+    max-width: none;
 }
 .workspace-page[data-workspace="simulator"] .context-config-summary {
-    border: 0;
-    background: var(--bg-secondary);
-    box-shadow: none;
-    border-radius: 6px;
-    padding: 14px 16px;
+    display: none;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+    font-size: .75rem;
+}
+.workspace-page[data-workspace="simulator"] .config-summary-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--card-bg);
+    color: var(--text-main);
+    font-weight: 500;
+    line-height: 1.3;
+}
+.workspace-page[data-workspace="simulator"] .config-summary-pill--area {
+    max-width: 28ch;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: block;
 }
 .workspace-page[data-workspace="simulator"] .context-hero-buttons-row {
     gap: 12px;
@@ -53,6 +89,7 @@
     border: 0;
     padding: 0;
     gap: 8px;
+    margin-bottom: 16px;
 }
 .workspace-page[data-workspace="simulator"] .sim-domain-tab {
     padding: 10px 16px;
@@ -178,6 +215,12 @@
     opacity: .65;
 }
 /* Analytics: numbers carry hierarchy, semantic colour remains in the actual data. */
+.workspace-page[data-workspace="simulator"] [data-area-stat][hidden] {
+    display: none;
+}
+.workspace-page[data-study-context="educacion"] #evolution-doughnut-row {
+    grid-template-columns: 1fr;
+}
 .workspace-page[data-workspace="simulator"] .stats-overview {
     gap: 0;
     background: var(--bg-secondary);
@@ -301,10 +344,6 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
-.workspace-page[data-workspace="simulator"] .config-summary-pill {
-    border-radius: 4px;
-    font-weight: 500;
-}
 .workspace-page[data-workspace="simulator"] .html-bar-track {
     height: 7px;
     border: 0;
@@ -330,6 +369,10 @@
     font-variant-numeric: tabular-nums;
 }
 @media (max-width: 1050px) {
+    .workspace-page[data-workspace="simulator"] .context-hero-card {
+        min-height: 0;
+        background-image: none;
+    }
     .workspace-page[data-workspace="simulator"] .context-hero-content {
         flex-direction: column;
         align-items: stretch;
@@ -340,7 +383,11 @@
 }
 @media (max-width: 900px) {
     .workspace-page[data-workspace="simulator"] .context-hero-card {
-        padding-top: 8px;
+        padding: 20px;
+    }
+    .workspace-page[data-workspace="simulator"] .section-header-row {
+        flex-direction: column;
+        align-items: stretch;
     }
     .workspace-page[data-workspace="simulator"] .modes-grid {
         grid-template-columns: 1fr;

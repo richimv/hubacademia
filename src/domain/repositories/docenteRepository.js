@@ -3,7 +3,7 @@ const crypto = require('crypto');
 
 class DocenteRepository {
 
-    async findQuestionsInBankBatch(target, topics, limit = 10, userId, career = null, difficulty = null, sessionSeenIds = [], mode = null) {
+    async findQuestionsInBankBatch(target, _topics, limit = 10, userId, career = null, difficulty = null, sessionSeenIds = [], mode = null) {
         let seenIds = [];
         const isRealMock = mode === 'real';
 
@@ -26,11 +26,8 @@ class DocenteRepository {
 
         console.log(`🔎 [DocenteRepo] Usuario ${userId} solicitando lote de ${limit} (${isRealMock ? 'Simulacro Real: anti-repetición 24h omitido' : seenIds.length + ' vistas excluidas'}).`);
 
-        const filterTopics = topics && topics.length > 0 && !topics.includes('*') && !topics.includes('ALL') && !topics.includes('all');
+        const topics = ['*']; // Preserve SQL parameter positions without using legacy education filters.
         let whereClauses = `WHERE qb.domain = 'education' AND ($2::text IS NULL OR qb.target = $2)`;
-        if (filterTopics) {
-            whereClauses += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))`;
-        }
 
         const params = [topics, target];
         let paramIdx = 3;
@@ -139,9 +136,6 @@ class DocenteRepository {
             try {
                 const currentQuestionIds = questions.map(q => q.id).filter(Boolean);
                 let fallbackWhere = `WHERE qb.domain = 'education' AND ($2::text IS NULL OR qb.target = $2)`;
-                if (filterTopics) {
-                    fallbackWhere += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))`;
-                }
                 const fallbackParams = [topics, target];
                 let fbIdx = 3;
                 if (career) {
@@ -262,7 +256,7 @@ class DocenteRepository {
         return reassembled.slice(0, limit);
     }
 
-    async getRandomDemoQuestions(limit = 10, excludeIds = [], target = null, career = null, difficulty = null, areas = null) {
+    async getRandomDemoQuestions(limit = 10, excludeIds = [], target = null, career = null, difficulty = null, _areas = null) {
         let sanitizedExcludeIds = [];
         if (excludeIds && Array.isArray(excludeIds)) {
             sanitizedExcludeIds = excludeIds.filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
@@ -298,15 +292,6 @@ class DocenteRepository {
             query += ` AND qb.difficulty = $${paramIdx} `;
             params.push(difficulty);
             paramIdx++;
-        }
-
-        if (areas) {
-            const areasArray = Array.isArray(areas) ? areas : String(areas).split(',').map(a => a.trim()).filter(Boolean);
-            if (areasArray.length > 0) {
-                query += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($${paramIdx}::text[])))) `;
-                params.push(areasArray);
-                paramIdx++;
-            }
         }
 
         if (sanitizedExcludeIds.length > 0) {
@@ -421,7 +406,7 @@ class DocenteRepository {
         const totalQ = quizData.totalQuestions || quizData.total_questions || (quizData.questions ? quizData.questions.length : 10);
         const scoreInt = Math.round(Number(quizData.score) || 0);
         const finalTopic = quizData.topic || 'Multi-Área';
-        const weakPoints = scoreInt < totalQ ? [finalTopic] : [];
+        const weakPoints = []; // No pedagogical weakness can be inferred from an unclassified question.
         const finalDifficulty = (quizData.difficulty && quizData.difficulty !== 'MIXTO') ? quizData.difficulty : 'Senior';
         const values = [
             userId,
@@ -495,7 +480,7 @@ class DocenteRepository {
         return { attemptId: quizHistoryId, wasCreated };
     }
 
-    async getQuizEvolution(userId, target, limit, timeFilter = '', areas = null, career = null) {
+    async getQuizEvolution(userId, target, limit, timeFilter = '', _areas = null, career = null) {
         let filter = '';
         const params = [userId];
 
@@ -528,14 +513,6 @@ class DocenteRepository {
             }
         }
 
-        if (areas && Array.isArray(areas) && areas.length > 0) {
-            params.push(areas);
-            filter += ` AND jsonb_typeof(area_stats) = 'object' AND EXISTS (
-                SELECT 1 FROM jsonb_each(area_stats) 
-                WHERE unaccent(UPPER(key)) = ANY(SELECT unaccent(UPPER(unnest($${params.length}::text[]))))
-            )`;
-        }
-
         const query = `
             SELECT 
                 to_char(created_at, 'DD/MM') as date_label,
@@ -557,63 +534,16 @@ class DocenteRepository {
         await db.query(query, [userId]);
     }
 
-    async getBasicQuizStats(userId, topicFilter, params, timeFilter = '', areas = null) {
-        const queryParams = [...params];
-        let areaFilter = '';
-        if (areas && Array.isArray(areas) && areas.length > 0) {
-            queryParams.push(areas);
-            areaFilter = ` AND jsonb_typeof(area_stats) = 'object' AND EXISTS (
-                SELECT 1 FROM jsonb_each(area_stats) 
-                WHERE unaccent(UPPER(key)) = ANY(SELECT unaccent(UPPER(unnest($${queryParams.length}::text[]))))
-            )`;
-        }
-
-        const query = `
-            SELECT 
-                COALESCE(SUM(total_questions), 0) as total_questions,
-                COALESCE(SUM(score), 0) as total_correct,
-                COUNT(*) as total_games
-            FROM quiz_history
-            WHERE user_id = $1 ${topicFilter} ${timeFilter} ${areaFilter}
-        `;
-        const res = await db.query(query, queryParams);
-        return res.rows[0];
+    async getBasicQuizStats(userId, topicFilter, params, timeFilter = '') {
+        const { rows } = await db.query(
+            'SELECT COALESCE(SUM(total_questions),0) AS total_questions, COALESCE(SUM(score),0) AS total_correct, COUNT(*) AS total_games FROM quiz_history WHERE user_id = $1 ' + topicFilter + timeFilter, params
+        );
+        return rows[0];
     }
 
-    async getTopicAnalysis(userId, topicFilter, params, timeFilter = '', areas = null) {
-        const queryParams = [...params];
-        let areaFilter = '';
-        if (areas && Array.isArray(areas) && areas.length > 0) {
-            queryParams.push(areas);
-            areaFilter = ` AND unaccent(UPPER(key)) = ANY(SELECT unaccent(UPPER(unnest($${queryParams.length}::text[]))))`;
-        }
 
-        const query = `
-            SELECT 
-                key as subtema,
-                SUM((value->>'correct')::int) as correct_answers,
-                SUM((value->>'total')::int) as total_answers
-            FROM quiz_history, jsonb_each(area_stats)
-            WHERE user_id = $1 ${topicFilter} ${timeFilter} ${areaFilter} AND jsonb_typeof(area_stats) = 'object'
-            GROUP BY key
-            HAVING SUM((value->>'total')::int) > 0
-            ORDER BY (SUM((value->>'correct')::int)::float / SUM((value->>'total')::int)) DESC
-        `;
-        const res = await db.query(query, queryParams);
-        return res.rows;
-    }
 
-    async getTopicAnalysisFallback(userId, topicFilter, params) {
-        const query = `
-            SELECT topic, AVG(score) as avg_s 
-            FROM quiz_history 
-            WHERE user_id = $1 ${topicFilter} 
-            GROUP BY topic 
-            ORDER BY avg_s DESC
-        `;
-        const res = await db.query(query, params);
-        return res.rows;
-    }
+
 
     async getLeaderboard() {
         const query = `

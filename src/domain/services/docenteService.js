@@ -1,109 +1,6 @@
 const docenteRepository = require('../repositories/docenteRepository');
 
-const CANONICAL_SUBAREAS_MAP = {
-    // ASCENSO - Enfoques y Principios del CNEB
-    'enfoque por competencias': 'Enfoque por competencias',
-    'enfoques por competencias': 'Enfoque por competencias',
-    'competencias': 'Enfoque por competencias',
-    'enfoques transversales': 'Enfoques transversales',
-    'enfoque transversal': 'Enfoques transversales',
-    'principios de la educacion peruana': 'Principios de la educación peruana',
-    'principios de la educacion': 'Principios de la educación peruana',
-
-    // ASCENSO - Teorías y Procesos del Aprendizaje
-    'constructivismo y socioconstructivismo': 'Constructivismo y socioconstructivismo',
-    'constructivismo': 'Constructivismo y socioconstructivismo',
-    'socioconstructivismo': 'Constructivismo y socioconstructivismo',
-    'aprendizajes significativos': 'Aprendizajes significativos',
-    'aprendizaje significativo': 'Aprendizajes significativos',
-    'activacion y recojo de saberes previos': 'Activación y recojo de saberes previos',
-    'saberes previos': 'Activación y recojo de saberes previos',
-    'recojo de saberes previos': 'Activación y recojo de saberes previos',
-    'conflicto o disonancia cognitiva y demanda cognitiva': 'Conflicto o disonancia cognitiva y demanda cognitiva',
-    'conflicto cognitivo': 'Conflicto o disonancia cognitiva y demanda cognitiva',
-    'disonancia cognitiva': 'Conflicto o disonancia cognitiva y demanda cognitiva',
-    'demanda cognitiva': 'Conflicto o disonancia cognitiva y demanda cognitiva',
-    'procesos auxiliares': 'Procesos auxiliares',
-    'procesos auxiliares del aprendizaje': 'Procesos auxiliares',
-
-    // ASCENSO - Planificación y Evaluación
-    'planificacion pedagogica': 'Planificación pedagógica',
-    'evaluacion formativa y retroalimentacion': 'Evaluación formativa y retroalimentación',
-    'evaluacion formativa': 'Evaluación formativa y retroalimentación',
-    'retroalimentacion': 'Evaluación formativa y retroalimentación',
-
-    // ASCENSO - Clima Escolar e Inclusión
-    'convivencia democratica y clima de aula': 'Convivencia democrática y clima de aula',
-    'convivencia democratica': 'Convivencia democrática y clima de aula',
-    'clima de aula': 'Convivencia democrática y clima de aula',
-    'educacion inclusiva y dua': 'Educación inclusiva y DUA',
-    'educacion inclusiva': 'Educación inclusiva y DUA',
-    'dua': 'Educación inclusiva y DUA',
-    'caracteristicas y desarrollo del estudiante': 'Características y desarrollo del estudiante',
-    'desarrollo del estudiante': 'Características y desarrollo del estudiante',
-
-    // NOMBRAMIENTO
-    'comprension lectora': 'Comprensión Lectora',
-    'razonamiento logico': 'Razonamiento Lógico',
-    'teorias del aprendizaje y desarrollo': 'Teorías del Aprendizaje y Desarrollo',
-    'principios del curriculo nacional (cneb)': 'Principios del Currículo Nacional (CNEB)',
-    'planificacion curricular (pci, pca, unidades)': 'Planificación Curricular (PCI, PCA, Unidades)',
-    'convivencia escolar y clima de aula': 'Convivencia Escolar y Clima de Aula',
-
-    // ACCESO CARGOS
-    'liderazgo pedagogico': 'Liderazgo Pedagógico',
-    'planificacion estrategica (pei, pat)': 'Planificación Estratégica (PEI, PAT)',
-    'gestion del riesgo de desastres': 'Gestión del Riesgo de Desastres',
-    'monitoreo y acompanamiento': 'Monitoreo y Acompañamiento'
-};
-
-function normalizeDocenteAreaName(topic) {
-    if (!topic || typeof topic !== 'string') return 'Conocimientos Pedagógicos';
-    const norm = topic.trim().toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-    // 1. Coincidencia directa con mapa canónico
-    if (CANONICAL_SUBAREAS_MAP[norm]) {
-        return CANONICAL_SUBAREAS_MAP[norm];
-    }
-
-    // 2. Coincidencia inteligente por subcadenas específicas de subáreas
-    if (norm.includes('competencia')) return 'Enfoque por competencias';
-    if (norm.includes('transversal')) return 'Enfoques transversales';
-    if (norm.includes('principios de la educacion') || norm.includes('educacion peruana')) return 'Principios de la educación peruana';
-
-    if (norm.includes('constructivismo') || norm.includes('socioconstructivismo')) return 'Constructivismo y socioconstructivismo';
-    if (norm.includes('significativo')) return 'Aprendizajes significativos';
-    if (norm.includes('saberes previos')) return 'Activación y recojo de saberes previos';
-    if (norm.includes('disonancia') || norm.includes('conflicto cognitivo') || norm.includes('demanda cognitiva')) return 'Conflicto o disonancia cognitiva y demanda cognitiva';
-    if (norm.includes('auxiliar')) return 'Procesos auxiliares';
-
-    if (norm.includes('planificacion')) return 'Planificación pedagógica';
-    if (norm.includes('evaluacion') || norm.includes('retroalimentacion')) return 'Evaluación formativa y retroalimentación';
-
-    if (norm.includes('convivencia') || norm.includes('clima')) return 'Convivencia democrática y clima de aula';
-    if (norm.includes('inclusi') || norm.includes('dua')) return 'Educación inclusiva y DUA';
-    if (norm.includes('desarrollo del estudiante') || norm.includes('caracteristicas')) return 'Características y desarrollo del estudiante';
-
-    if (norm.includes('comprension lectora') || norm.includes('lectura')) return 'Comprensión Lectora';
-    if (norm.includes('razonamiento') || norm.includes('logico')) return 'Razonamiento Lógico';
-    if (norm.includes('liderazgo')) return 'Liderazgo Pedagógico';
-    if (norm.includes('desastre')) return 'Gestión del Riesgo de Desastres';
-    if (norm.includes('monitoreo')) return 'Monitoreo y Acompañamiento';
-
-    return topic.trim();
-}
-
 class DocenteService {
-
-    normalizeTopic(input) {
-        if (!input) return "GENERAL";
-        return input
-            .toUpperCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .trim()
-            .replace(/\s+/g, " ");
-    }
 
     shuffleOptions(question) {
         if (!question.options || !question.options.length) return question;
@@ -126,161 +23,55 @@ class DocenteService {
     }
 
     async generateQuiz(categoryOptions, userId, limit = 10, subscriptionTier = 'free', seenIds = []) {
+        // Education classifications are not reliable; legacy area preferences are ignored.
         const target = categoryOptions.target || 'ASCENSO';
         const career = categoryOptions.career || 'EBR - Primaria';
         const difficulty = categoryOptions.difficulty || null;
-        let areas = categoryOptions.areas && categoryOptions.areas.length > 0 ? categoryOptions.areas : [];
-
-        if (categoryOptions.mode === 'real') {
-            const EDUCATION_AREAS_BY_TARGET = {
-                'ASCENSO': [
-                    'Enfoque por competencias', 'Enfoques transversales', 'Principios de la educación peruana',
-                    'Constructivismo y socioconstructivismo', 'Aprendizajes significativos', 'Activación y recojo de saberes previos', 'Conflicto o disonancia cognitiva y demanda cognitiva', 'Procesos auxiliares',
-                    'Planificación pedagógica', 'Evaluación formativa y retroalimentación',
-                    'Convivencia democrática y clima de aula', 'Educación inclusiva y DUA', 'Características y desarrollo del estudiante'
-                ],
-                'NOMBRAMIENTO': [
-                    'Comprensión Lectora', 'Razonamiento Lógico',
-                    'Teorías del Aprendizaje y Desarrollo', 'Principios del Currículo Nacional (CNEB)', 'Planificación Curricular (PCI, PCA, Unidades)', 'Evaluación Formativa y Retroalimentación', 'Convivencia Escolar y Clima de Aula', 'Principios de la Educación Peruana'
-                ],
-                'ACCESO_CARGOS': [
-                    'Liderazgo Pedagógico', 'Planificación Estratégica (PEI, PAT)', 'Gestión del Riesgo de Desastres', 'Monitoreo y Acompañamiento'
-                ]
-            };
-            areas = EDUCATION_AREAS_BY_TARGET[target] || EDUCATION_AREAS_BY_TARGET['ASCENSO'];
-        }
-
-        const isGeneric = !areas || areas.length === 0 ||
-            (areas.length === 1 && ['GENERAL', 'EDUCACION GENERAL', 'TODAS'].includes(areas[0].toUpperCase()));
-
-        if (isGeneric) {
-            areas = [
-                'Comprensión Lectora',
-                'Razonamiento Lógico',
-                'Teorías del Aprendizaje y Desarrollo',
-                'Principios del Currículo Nacional (CNEB)',
-                'Evaluación Formativa y Retroalimentación'
-            ];
-        }
-
-        const normalizedAllAreas = areas.map(a => a.trim().toUpperCase());
-        const areaMap = new Map();
-        areas.forEach(a => areaMap.set(a.trim().toUpperCase(), a.trim()));
-
-        const isRealMock = categoryOptions.mode === 'real' || limit >= 50;
-        const isDefault = isRealMock || categoryOptions.configType === 'default' || !categoryOptions.configType;
-        const queryAreas = isDefault ? ['*'] : normalizedAllAreas;
-        const modeToPass = isRealMock ? 'real' : (categoryOptions.mode || 'standard');
-
-        console.log(`📡 [DocenteService] Target: ${target} | Career: ${career} | Config: ${categoryOptions.configType || 'default'} | Mode: ${modeToPass} | QueryAreas: ${queryAreas.join(', ')} | Limit: ${limit}`);
-
-        const rawBankQuestions = await docenteRepository.findQuestionsInBankBatch(target, queryAreas, Math.max(50, limit * 3), userId, career, difficulty, seenIds, modeToPass);
-
-        const questionsByArea = {};
-        const returnedTopics = new Set();
-        rawBankQuestions.forEach(q => {
-            const shuffledQ = this.shuffleOptions(q);
-            const topicKey = shuffledQ.topic ? shuffledQ.topic.toUpperCase() : 'GENERAL';
-            if (!questionsByArea[topicKey]) questionsByArea[topicKey] = [];
-            questionsByArea[topicKey].push(shuffledQ);
-            returnedTopics.add(topicKey);
-        });
-
-        const activeAreas = (isDefault && returnedTopics.size > 0)
-            ? Array.from(returnedTopics)
-            : normalizedAllAreas;
-
-        const areasWithStock = activeAreas.filter(area => questionsByArea[area] && questionsByArea[area].length > 0);
-
-        let bankSampledAreas;
-        if (limit > 10 || areasWithStock.length <= 5) {
-            bankSampledAreas = [...areasWithStock];
-        } else {
-            bankSampledAreas = areasWithStock.sort(() => 0.5 - Math.random()).slice(0, 5);
-        }
-
-        const balancedBatch = this.packExamQuestions(rawBankQuestions, limit, bankSampledAreas, isDefault);
-        const sampledAreas = bankSampledAreas.length > 0
-            ? bankSampledAreas.map(a => areaMap.get(a) || a)
-            : normalizedAllAreas.map(a => areaMap.get(a) || a);
-
+        const mode = categoryOptions.mode === 'real' || limit >= 50 ? 'real' : (categoryOptions.mode || 'standard');
+        const candidates = await docenteRepository.findQuestionsInBankBatch(
+            target, ['*'], Math.max(50, limit * 3), userId, career, difficulty, seenIds, mode
+        );
+        const questions = candidates.map(question => this.shuffleOptions({ ...question, topic: '' }));
         return {
-            questions: balancedBatch.slice(0, limit),
+            questions: this.packExamQuestions(questions, limit, [], true),
             source: 'BANK',
-            topic: sampledAreas[0] || 'Conocimientos Pedagógicos',
-            areas: areas
+            topic: 'General',
+            areas: []
         };
     }
 
     async submitQuizResult(userId, quizData) {
-        const areaStats = {};
-        const allowedAreas = (quizData.areas && Array.isArray(quizData.areas) && quizData.areas.length > 0)
-            ? quizData.areas
-            : (quizData.topic ? [quizData.topic] : []);
-
-        // Normalizar topic principal a 'Multi-Área' si hay más de 1 área o es un simulacro
-        if (allowedAreas.length > 1 || !quizData.topic || quizData.topic.startsWith('Simulacro') || quizData.topic === 'General' || quizData.topic === 'EDUCACION') {
-            quizData.topic = allowedAreas.length === 1 ? normalizeDocenteAreaName(allowedAreas[0]) : 'Multi-Área';
-        } else {
-            quizData.topic = normalizeDocenteAreaName(quizData.topic);
-        }
-
-        // Forzar dificultad válida (nunca MIXTO)
-        quizData.difficulty = (quizData.difficulty && quizData.difficulty !== 'MIXTO') ? quizData.difficulty : 'Senior';
-
-        if (quizData.questions && Array.isArray(quizData.questions)) {
-            quizData.questions.forEach(q => {
-                let rawTopic = q.topic || q.area || quizData.topic || 'Conocimientos Pedagógicos';
-                const isCorrect = q.isCorrect === true || (q.userAnswer !== undefined && q.correct_option_index !== undefined && Number(q.userAnswer) === Number(q.correct_option_index));
-
-                const isGeneric = !rawTopic || rawTopic === 'General' || rawTopic === 'EDUCACION' || rawTopic.startsWith('Simulacro');
-
-                let topic = rawTopic;
-                if (isGeneric && allowedAreas.length > 0) {
-                    topic = allowedAreas[0];
-                } else if (allowedAreas.length > 0) {
-                    const matched = allowedAreas.find(a => rawTopic.toLowerCase().includes(a.toLowerCase()));
-                    if (matched) topic = matched;
-                } else if (topic.includes(',')) {
-                    topic = topic.split(',')[0].trim();
-                }
-
-                // Normalización canónica de mayúsculas/acentos
-                topic = normalizeDocenteAreaName(topic);
-
-                if (!areaStats[topic]) {
-                    areaStats[topic] = { correct: 0, total: 0 };
-                }
-
-                areaStats[topic].total += 1;
-                if (isCorrect) {
-                    areaStats[topic].correct += 1;
-                }
-                q.topic = topic;
-                q.isCorrect = isCorrect;
+        // Scores depend on answers, not on the optional classification of the question.
+        quizData.topic = 'General';
+        quizData.areas = [];
+        quizData.areaStats = {};
+        quizData.difficulty = quizData.difficulty && quizData.difficulty !== 'MIXTO' ? quizData.difficulty : 'Senior';
+        if (Array.isArray(quizData.questions)) {
+            quizData.questions.forEach(question => {
+                question.topic = '';
+                question.isCorrect = question.isCorrect === true || (
+                    question.isCorrect === undefined && question.userAnswer != null &&
+                    question.correct_option_index != null &&
+                    Number(question.userAnswer) === Number(question.correct_option_index)
+                );
             });
         }
-
-        const calculatedScore = quizData.questions && quizData.questions.length > 0
-            ? quizData.questions.filter(q => q.isCorrect === true).length
-            : (Number(quizData.score) || 0);
-
-        quizData.score = calculatedScore;
-        quizData.areaStats = areaStats;
-
+        quizData.score = quizData.questions?.length
+            ? quizData.questions.filter(question => question.isCorrect).length
+            : Number(quizData.score) || 0;
         const savedAttempt = await docenteRepository.saveQuizHistory(userId, quizData);
-        const attemptId = typeof savedAttempt === 'object' ? savedAttempt.attemptId : savedAttempt;
-        const wasCreated = typeof savedAttempt === 'object' ? savedAttempt.wasCreated : true;
-        console.log(`💾 [DocenteService] Historial de examen guardado. Intento ID: ${attemptId}`);
-
-        return { attemptId, flashcardsCreated: 0, wasCreated };
+        return {
+            attemptId: typeof savedAttempt === 'object' ? savedAttempt.attemptId : savedAttempt,
+            flashcardsCreated: 0,
+            wasCreated: typeof savedAttempt === 'object' ? savedAttempt.wasCreated : true
+        };
     }
 
     async incrementUserSimulatorUsage(userId) {
         await docenteRepository.incrementSimulatorUsage(userId);
     }
 
-    async getUserQuizStats(userId, context, target, limit, days = null, areas = null, career = null) {
+    async getUserQuizStats(userId, context, target, limit, days = null, _areas = null, career = null) {
         let topicFilter = ` AND target IN ('NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS')`;
         let timeFilter = '';
         const params = [userId];
@@ -316,13 +107,12 @@ class DocenteService {
             }
         }
 
-        const qStats = await docenteRepository.getBasicQuizStats(userId, topicFilter, params, timeFilter, areas);
+        const qStats = await docenteRepository.getBasicQuizStats(userId, topicFilter, params, timeFilter);
 
         let accuracy = 0;
         let avgScore20 = 0;
         const totalQ = parseInt(qStats.total_questions) || 0;
         const totalCorrect = parseInt(qStats.total_correct) || 0;
-        const totalGames = parseInt(qStats.total_games) || 0;
         const totalIncorrect = totalQ - totalCorrect;
 
         if (totalQ > 0) {
@@ -333,59 +123,18 @@ class DocenteService {
         const flashcardRepository = require('../repositories/flashcardRepository');
         const mastered = await flashcardRepository.getMasteredFlashcardsCount ? await flashcardRepository.getMasteredFlashcardsCount(userId) : 0;
 
-        let strongest = 'N/A';
-        let weakest = 'N/A';
-        let radarData = [];
-
-        try {
-            const topicRes = await docenteRepository.getTopicAnalysis(userId, topicFilter, params, timeFilter, areas);
-            if (topicRes.length > 0) {
-                // Normalizar y consolidar subtemas para evitar duplicados por casing
-                const consolidatedMap = new Map();
-                topicRes.forEach(row => {
-                    const normSubject = normalizeDocenteAreaName(row.subtema);
-                    const correctAnswers = parseInt(row.correct_answers || 0, 10);
-                    const totalAnswers = parseInt(row.total_answers || 0, 10);
-
-                    if (!consolidatedMap.has(normSubject)) {
-                        consolidatedMap.set(normSubject, { subject: normSubject, correct: 0, total: 0 });
-                    }
-                    const entry = consolidatedMap.get(normSubject);
-                    entry.correct += correctAnswers;
-                    entry.total += totalAnswers;
-                });
-
-                const consolidatedList = Array.from(consolidatedMap.values()).map(entry => ({
-                    subject: entry.subject,
-                    accuracy: entry.total > 0 ? Math.round((entry.correct / entry.total) * 100) : 0,
-                    correct: entry.correct,
-                    total: entry.total
-                }));
-
-                consolidatedList.sort((a, b) => b.accuracy - a.accuracy);
-
-                if (consolidatedList.length > 0) {
-                    strongest = consolidatedList[0].subject;
-                    weakest = consolidatedList[consolidatedList.length - 1].subject;
-                    radarData = consolidatedList;
-                }
-            }
-        } catch (e) {
-            console.warn("⚠️ No se pudo procesar area_stats JSONB en Docente.", e.message);
-            const topicRes = await docenteRepository.getTopicAnalysisFallback(userId, topicFilter, params);
-            if (topicRes.length > 0) {
-                strongest = topicRes[0].topic;
-                weakest = topicRes[topicRes.length - 1].topic;
-            }
-        }
-
-        let deckId = null;
+        const strongest = 'N/A';
+        const weakest = 'N/A';
+        const radarData = [];
+        const deckId = null;
 
         return {
             avg_score: avgScore20.toFixed(1),
             accuracy: Math.round(accuracy),
             total_correct: totalCorrect,
             total_incorrect: totalIncorrect,
+            total_questions: totalQ,
+            total_games: parseInt(qStats.total_games, 10) || 0,
             mastered_cards: mastered,
             strongest_topic: strongest,
             weakest_topic: weakest,

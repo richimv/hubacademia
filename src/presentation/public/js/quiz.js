@@ -450,6 +450,11 @@ async function init() {
         state.areas = state.topic ? [state.topic] : [];
     }
 
+    if (state.context === 'EDUCACION') {
+        state.areas = [];
+        state.topic = 'General';
+    }
+
     // 🎯 Mode Selection: 
     // ?limit=10 -> Quick / Arcade Mode (Modo Demo para visitantes)
     // ?limit=20 -> Study Mode
@@ -1546,15 +1551,17 @@ function handleAnswer(selectedIndex, btnElement, isReplaying = false) {
     const isRealMock = state.mode === 'real' || Number(state.maxQuestions) >= 50;
     const isStudyMode = !isRealMock && !state.isDemo && state.mode !== 'arcade' && Number(state.maxQuestions) !== 10 && (Number(state.maxQuestions) === 20 || state.mode === 'study');
 
-    if (isStudyMode) {
+    const explanation = window.UIComponents.getQuestionExplanation(q);
+    if (isStudyMode && explanation.hasContent) {
         // MODO ESTUDIO (20q): Mostrar explicación y el botón siguiente
         if (elements.explanationText) {
-            elements.explanationText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.") : (q.explanation || "Respuesta correcta según normas técnicas y guías oficiales.");
+            elements.explanationText.style.display = explanation.text ? '' : 'none';
+            elements.explanationText.innerHTML = window.MarkdownRenderer ? window.MarkdownRenderer.render(explanation.text) : (explanation.text);
         }
 
         if (elements.explanationImage && elements.explanationImageContainer) {
-            if (q.explanation_image_url && typeof q.explanation_image_url === 'string' && q.explanation_image_url.trim() !== '') {
-                elements.explanationImage.src = window.resolveImageUrl(q.explanation_image_url);
+            if (explanation.imageUrl) {
+                elements.explanationImage.src = window.resolveImageUrl(explanation.imageUrl);
                 elements.explanationImageContainer.style.display = 'block';
                 elements.explanationImageContainer.classList.remove('hidden');
             } else {
@@ -1905,6 +1912,7 @@ async function finishQuiz() {
         // Calculate Area Stats for Radar Chart
         const areaStats = {};
         state.answers.forEach((ans, idx) => {
+            if (state.context === 'EDUCACION') return;
             const q = state.questions[idx];
             const topic = q.topic || 'Otros';
             if (!areaStats[topic]) areaStats[topic] = { correct: 0, total: 0 };

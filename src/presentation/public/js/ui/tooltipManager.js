@@ -417,13 +417,16 @@ class TooltipManager {
         const storageKey = 'hasSeenSimulatorTour_v2';
         if (!force && localStorage.getItem(storageKey)) return;
 
+        const isEducation = document.body.dataset.studyContext === 'educacion';
         const steps = [
             {
                 target: '#btn-start-config',
                 badge: 'Paso 1 de 3',
                 icon: 'fa-sliders-h',
                 title: '1. Configura tu Examen',
-                description: 'Personaliza tu simulador seleccionando tu <strong>área profesional o especialidad</strong> para enfocar las preguntas en tu temario oficial.',
+                description: isEducation
+                    ? 'Elige el <strong>examen, modalidad y escala</strong>. Revisa tu selección junto a Modos de Entrenamiento.'
+                    : 'Elige tu <strong>examen, especialidad y áreas</strong>. Revisa tu selección junto a Modos de Entrenamiento.',
                 position: 'bottom'
             },
             {
@@ -431,15 +434,17 @@ class TooltipManager {
                 badge: 'Paso 2 de 3',
                 icon: 'fa-book-open-reader',
                 title: '2. Elige tu Modo de Estudio',
-                description: 'Practica en <strong>Modo Estudio</strong> para obtener retroalimentación y lecciones con IA inmediata, o usa <strong>Simulacro Rápido</strong> para agilidad diaria.',
+                description: 'En <strong>Modo Estudio</strong> puedes consultar al Tutor IA y ver la explicación cuando esté disponible. Elige Rápido para una práctica breve o Real para entrenar con tiempo oficial.',
                 position: 'top'
             },
             {
-                target: '#analytics-section-icon',
+                target: '#analytics-heading',
                 badge: 'Paso 3 de 3',
                 icon: 'fa-chart-line',
                 title: '3. Panel de Analítica y Rendimiento',
-                description: 'Monitorea tu porcentaje de dominio, evolución de notas históricas y áreas temáticas que requieren refuerzo.',
+                description: isEducation
+                    ? 'Consulta tu <strong>puntuación, precisión y evolución histórica</strong>. Filtra por modo y periodo para seguir tu progreso.'
+                    : 'Consulta tus resultados, evolución histórica y dominio por áreas. Filtra por modo y periodo para seguir tu progreso.',
                 position: 'top'
             }
         ];

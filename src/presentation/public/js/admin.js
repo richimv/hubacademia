@@ -1022,7 +1022,7 @@ class AdminManager {
                         </select>
                     </div>
                     <div class="admin-form-grid admin-form-section">
-                        ${this.createFormGroup('text', 'generic-topic', 'Área de Estudio (*)', this.currentItem?.topic || '', true)}
+                        ${this.createFormGroup('text', 'generic-topic', 'Área de Estudio / Eje temático (opcional)', this.currentItem?.topic || '', false)}
                         ${this.createFormGroup('text', 'generic-subtopic', 'Subtema (Opcional)', this.currentItem?.subtopic || '', false)}
                     </div>
                     <fieldset>
@@ -2623,7 +2623,7 @@ class AdminManager {
                                             domain: String(cols[1] || 'medicine').trim(), // El usuario especificará GENERAL_TRIVIA en el Excel
                                             target: cols[2] ? String(cols[2]).trim() : null,
                                             career: cols[3] ? String(cols[3]).trim() : null,
-                                            topic: String(cols[4] || 'General').trim(),
+                                            topic: String(cols[4] || '').trim(),
                                             difficulty: cols[5] ? String(cols[5]).trim() : 'Senior',
                                             options: (targetVal === 'RESIDENTADO') ? [
                                                 String(cols[6] || 'Opción A').trim(),
@@ -3025,7 +3025,7 @@ class AdminManager {
                     'DOMINIO (medicine/education)', 
                     'TARGET (ENAM/SERUMS/RESIDENTADO/ASCENSO/NOMBRAMIENTO)', 
                     'CARRERA / MODALIDAD (Solo SERUMS o Educación)', 
-                    'AREA_ESTUDIO / EJE TEMÁTICO (*)', 
+                    'AREA_ESTUDIO / EJE TEMÁTICO (OPCIONAL)',
                     'DIFICULTAD (Senior)', 
                     'OPCION_A (*)', 
                     'OPCION_B (*)', 

@@ -1,5 +1,20 @@
 # Módulo Educación (Docente Pro) — Tech Specs
 
+## Política vigente de ejes y explicaciones — 6 de noviembre de 2026
+
+Educación no utiliza ejes temáticos para seleccionar preguntas, filtrar estadísticas ni generar diagnósticos por áreas. Se conservan `question_bank.topic` y los campos históricos; se limpian únicamente los valores de `topic` en preguntas con `domain = 'education'`. No se modifican las áreas de Medicina/SERUMS ni los intentos anteriores.
+
+Los nuevos intentos docentes guardan nota, total, aciertos, objetivo, modalidad y sesión como antes, con `area_stats = {}` y tema general sin clasificación pedagógica inferida. Sus KPI globales y evolución no dependen de áreas, incluso si llegan preferencias antiguas. La interfaz oculta distribución y dominio por áreas solo en Educación. Las explicaciones del quiz y de la revisión aparecen únicamente cuando tienen texto, contenido multimedia o imagen explicativa; el Tutor IA sigue disponible por separado.
+
+La limpieza de Supabase requiere copia previa de los valores originales y utiliza el filtro exacto de dominio. Las pruebas y el despliegue quedan a cargo del usuario. Las secciones siguientes documentan la arquitectura histórica y quedan subordinadas a esta política.
+
+Limpieza aplicada por autorización expresa del usuario: 2.074 preguntas docentes quedaron con `topic = ''`; las 571 preguntas de Medicina conservaron su recuento y el checksum de sus temas. La copia previa está en `.tools/education-topics-before-1793987663709.json` (archivo local ignorado por Git). No se modificaron intentos históricos ni se desplegó el código. Hasta el próximo despliegue, la versión publicada conserva sus filtros antiguos.
+
+
+### Diagnóstico global de resultados
+
+El diagnóstico docente usa nota, precisión y cantidad de respuestas; los ejes antiguos no alimentan recomendaciones. `educationDiagnosticService.js` distingue ausencia de historial de un intento con cero aciertos y calcula indicadores sin inventar fortalezas temáticas. La referencia de escala de Ascenso es una proyección de práctica, no una garantía de aprobación. La narrativa de Vertex no puede sobrescribir las métricas deterministas. Sin historial se devuelve orientación inicial sin consumir una llamada al modelo. Visitantes usan sus resultados del dispositivo, con el mismo criterio global; Medicina conserva su análisis por áreas.
+
 ## Interfaz web vigente — 3 de noviembre de 2026
 
 Entrada actual: `/simulator-dashboard?context=EDUCACION`. La UI muestra «Simulador docente» y comparte marco, cabecera, tipografía y controles con Medicina, Repaso y la identidad de la landing. El modo real conserva 60 preguntas y 3 horas; Rápido y Estudio conservan 10 y 20. En la configuración web actual, Ascenso está disponible; Nombramiento y Acceso a Cargos permanecen deshabilitados. Las referencias históricas siguientes describen capacidades del módulo y no deben interpretarse como habilitación de todos los objetivos.

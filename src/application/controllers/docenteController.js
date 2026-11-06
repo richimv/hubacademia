@@ -10,16 +10,13 @@ class DocenteController {
 
     async startQuiz(req, res) {
         try {
-            const { target, areas, round = 1, limit = 5, topic, career, difficulty, mode } = req.body;
+            const { target, round = 1, limit = 5, career, difficulty, mode } = req.body;
             const user = req.user;
 
             const finalTarget = target || 'ASCENSO';
             const finalCareer = career || 'EBR - Primaria';
-            let finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : []);
+            const finalAreas = []; // Legacy thematic filters are intentionally ignored in education.
 
-            if (!finalAreas || finalAreas.length === 0) {
-                return res.status(400).json({ error: 'Debes configurar tu examen (áreas y especialidad) antes de comenzar.' });
-            }
 
             const tier = String(user.subscriptionTier || 'free').toLowerCase();
             const status = (user.subscriptionStatus || 'pending').toLowerCase();
@@ -183,8 +180,7 @@ class DocenteController {
 
     async getStats(req, res) {
         try {
-            const { context, target, limit, days, areas, career, targetScale } = req.query;
-            const areaList = areas ? areas.split(',') : null;
+            const { context, target, limit, days, career, targetScale } = req.query;
             const scaleCutoff = mineduScoringService.getScaleCutoff(targetScale || 2);
 
             if (!req.user) {
@@ -194,16 +190,9 @@ class DocenteController {
                     total_correct: 145,
                     total_incorrect: 55,
                     mastered_cards: 12,
-                    strongest_topic: "Enfoque por competencias",
-                    weakest_topic: "Características y desarrollo del estudiante",
-                    radar_data: [
-                        { subject: "Enfoque por competencias", accuracy: 88, correct: 42, total: 48 },
-                        { subject: "Constructivismo y socioconstructivismo", accuracy: 75, correct: 36, total: 48 },
-                        { subject: "Planificación pedagógica", accuracy: 68, correct: 32, total: 47 },
-                        { subject: "Evaluación formativa y retroalimentación", accuracy: 62, correct: 28, total: 45 },
-                        { subject: "Convivencia democrática y clima de aula", accuracy: 55, correct: 22, total: 40 },
-                        { subject: "Características y desarrollo del estudiante", accuracy: 50, correct: 20, total: 40 }
-                    ],
+                    strongest_topic: "N/A",
+                    weakest_topic: "N/A",
+                    radar_data: [],
                     system_deck_id: "example-deck",
                     isGuest: true,
                     minedu_avg_score_90: ((14.5 / 20) * 90).toFixed(1),
@@ -214,7 +203,7 @@ class DocenteController {
                 return res.json({ success: true, kpis: exampleKpis });
             }
 
-            const kpis = await docenteService.getUserQuizStats(req.user.id, context || 'EDUCACION', target, limit, days, areaList, career);
+            const kpis = await docenteService.getUserQuizStats(req.user.id, context || 'EDUCACION', target, limit, days, null, career);
             if (kpis && kpis.avg_score) {
                 const numericAvg = parseFloat(kpis.avg_score) || 0;
                 kpis.minedu_avg_score_90 = ((numericAvg / 20) * 90).toFixed(1);
@@ -231,8 +220,7 @@ class DocenteController {
 
     async getEvolution(req, res) {
         try {
-            const { context, target, limit, days, areas, career, targetScale } = req.query;
-            const areaList = areas ? areas.split(',') : null;
+            const { context, target, limit, days, career, targetScale } = req.query;
             const scaleInfo = mineduScoringService.getScaleCutoff(targetScale || 2);
 
             if (!req.user) {
@@ -260,7 +248,7 @@ class DocenteController {
                 timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
             }
 
-            const data = await docenteRepository.getQuizEvolution(userId, target, limit, timeFilter, areaList, career);
+            const data = await docenteRepository.getQuizEvolution(userId, target, limit, timeFilter, null, career);
             const chartData = {
                 labels: data.map(d => d.date_label),
                 scores10: data.map(d => (d.total_questions <= 15) ? parseFloat(d.score_20).toFixed(1) : null),
@@ -297,7 +285,7 @@ class DocenteController {
 
     async getNextBatch(req, res) {
         try {
-            const { quizSessionId, target, areas, difficulty, topic, career, seenIds, mode } = req.body;
+            const { quizSessionId, target, difficulty, career, seenIds, mode } = req.body;
             const userId = req.user.id;
 
             if (secureQuizSessionsEnabled() && !quizSessionId) {
@@ -306,11 +294,8 @@ class DocenteController {
 
             const finalTarget = target || 'ASCENSO';
             const finalCareer = career || 'EBR - Primaria';
-            let finalAreas = (areas && areas.length > 0) ? areas : (topic ? [topic] : []);
+            const finalAreas = []; // Legacy thematic filters are intentionally ignored in education.
 
-            if (!finalAreas || finalAreas.length === 0) {
-                return res.status(400).json({ error: 'Configuración de áreas no encontrada.' });
-            }
 
             const batchLimit = parseInt(req.body.limit, 10) || 10;
             const result = await docenteService.generateQuiz(
@@ -357,10 +342,9 @@ class DocenteController {
             const target = req.query.target || 'ASCENSO';
             const career = req.query.career || null;
             const difficulty = req.query.difficulty || null;
-            const areas = req.query.areas || null;
 
             const docenteRepository = require('../../domain/repositories/docenteRepository');
-            const questions = await docenteRepository.getRandomDemoQuestions(limit, excludeIds, target, career, difficulty, areas);
+            const questions = await docenteRepository.getRandomDemoQuestions(limit, excludeIds, target, career, difficulty);
             const secureSession = secureQuizSessionsEnabled()
                 ? await quizSessionService.createSession({
                     userId: req.user?.id || null,
