@@ -7,22 +7,24 @@ describe('Simulador & Sidebar - Truncado de Áreas Extensas y Scrollbar Cross-Br
     let sidebarCss;
 
     beforeAll(() => {
-        simCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/simulator-dashboard.css'), 'utf8');
+        simCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/workspace-simulator.css'), 'utf8');
         simJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/simulator-dash.js'), 'utf8');
         sidebarCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/sidebar.css'), 'utf8');
     });
 
-    describe('1. Truncado Elíptico de Áreas Pedagógicas Extensas en Hero Card', () => {
-        test('simulator-dashboard.css define .config-summary-pill--area con elipsis y max-width', () => {
+    describe('1. Resumen de examen adaptable junto a Modos de Entrenamiento', () => {
+        test('workspace-simulator.css limita los valores extensos con elipsis', () => {
             expect(simCss).toContain('.config-summary-pill--area');
-            expect(simCss).toMatch(/\.config-summary-pill--area\s*\{[^}]*max-width:\s*210px/);
+            expect(simCss).toMatch(/\.config-summary-pill--area\s*\{[^}]*max-width:\s*28ch/);
             expect(simCss).toMatch(/\.config-summary-pill--area\s*\{[^}]*text-overflow:\s*ellipsis/);
             expect(simCss).toMatch(/\.config-summary-pill--area\s*\{[^}]*overflow:\s*hidden/);
             expect(simCss).toMatch(/\.config-summary-pill--area\s*\{[^}]*white-space:\s*nowrap/);
         });
 
-        test('Media query móvil ajusta max-width compacto para .config-summary-pill--area', () => {
-            expect(simCss).toMatch(/@media[^{]*max-width:\s*768px[\s\S]*?\.config-summary-pill--area\s*\{[^}]*max-width:\s*140px/);
+        test('El resumen cabe en su contenedor y permite varias filas en móvil', () => {
+            expect(simCss).toMatch(/\.context-config-summary\s*\{[^}]*max-width:\s*100%/);
+            expect(simCss).toMatch(/\.kpi-tabs-group\s*\{[^}]*flex-wrap:\s*wrap/);
+            expect(simCss).toMatch(/@media\s*\(max-width:\s*900px\)[\s\S]*?\.section-header-row\s*\{[^}]*flex-direction:\s*column/);
         });
 
         test('simulator-dash.js inyecta la clase config-summary-pill--area y el atributo title accesible', () => {
