@@ -1,149 +1,196 @@
 /**
- * @file quizNavigation.test.js
- * Pruebas unitarias de lógica de estado para navegación hacia atrás/adelante en el Quiz
+ * Unit tests for Simulator Quiz Navigation & Answer State
+ * Executes real logic from src/presentation/public/js/quiz.js
  */
 
-describe('Quiz Navigation & Answer State Management', () => {
-    let state;
+function createMockElement(id = '') {
+    const el = {
+        id,
+        className: '',
+        textContent: '',
+        _innerHTML: '',
+        disabled: false,
+        onclick: null,
+        style: {},
+        children: [],
+        classList: {
+            _set: new Set(),
+            add: jest.fn(function (...cls) { cls.forEach(c => el.classList._set.add(c)); }),
+            remove: jest.fn(function (...cls) { cls.forEach(c => el.classList._set.delete(c)); }),
+            contains: jest.fn((c) => el.classList._set.has(c))
+        },
+        appendChild: jest.fn((child) => {
+            el.children.push(child);
+            return child;
+        }),
+        querySelectorAll: jest.fn(() => el.children),
+        removeAttribute: jest.fn(),
+        remove: jest.fn(),
+        scrollIntoView: jest.fn()
+    };
+    Object.defineProperty(el, 'innerHTML', {
+        get() { return el._innerHTML; },
+        set(val) {
+            el._innerHTML = val;
+            if (val === '') el.children = [];
+        }
+    });
+    return el;
+}
+
+function createStorageMock() {
+    const store = new Map();
+    return {
+        get length() { return store.size; },
+        key: jest.fn((i) => Array.from(store.keys())[i] || null),
+        getItem: jest.fn((k) => (store.has(k) ? store.get(k) : null)),
+        setItem: jest.fn((k, v) => { store.set(k, String(v)); }),
+        removeItem: jest.fn((k) => { store.delete(k); })
+    };
+}
+
+describe('Quiz Simulator Navigation & Answer State (Real quiz.js)', () => {
+    let quizModule;
+    let elementsMap;
 
     beforeEach(() => {
-        state = {
-            currentQuestionIndex: 0,
-            maxQuestions: 10,
-            score: 0,
-            answers: [],
-            questions: [
-                { id: 'q1', question_text: 'Pregunta 1', options: ['A', 'B', 'C'], correct_option_index: 0, topic: 'Pediatría' },
-                { id: 'q2', question_text: 'Pregunta 2', options: ['A', 'B', 'C'], correct_option_index: 1, topic: 'Cirugía' },
-                { id: 'q3', question_text: 'Pregunta 3', options: ['A', 'B', 'C'], correct_option_index: 2, topic: 'Ginecología' }
-            ],
-            isFinished: false
+        jest.useFakeTimers();
+        elementsMap = new Map();
+
+        const getMockEl = (id) => {
+            if (!elementsMap.has(id)) elementsMap.set(id, createMockElement(id));
+            return elementsMap.get(id);
         };
+
+        global.localStorage = createStorageMock();
+        global.sessionStorage = createStorageMock();
+        global.document = {
+            readyState: 'complete',
+            getElementById: jest.fn(getMockEl),
+            createElement: jest.fn(() => createMockElement()),
+            addEventListener: jest.fn()
+        };
+        global.window = {
+            AppConfig: { API_URL: 'http://localhost:3000' },
+            location: { search: '?limit=20' },
+            scrollTo: jest.fn(),
+            sessionManager: {
+                getUser: () => ({ id: 'user-nav-1' }),
+                isLoggedIn: () => true
+            },
+            UIComponents: {
+                getQuestionExplanation: jest.fn(() => ({ hasContent: false, text: '', imageUrl: null }))
+            },
+            quizTutor: { toggle: jest.fn() },
+            resolveImageUrl: (url) => url
+        };
+
+        jest.isolateModules(() => {
+            quizModule = require('../../src/presentation/public/js/quiz');
+        });
+
+        quizModule.state.context = 'MEDICINA';
+        quizModule.state.mode = 'study';
+        quizModule.state.maxQuestions = 3;
+        quizModule.state.currentQuestionIndex = 0;
+        quizModule.state.score = 0;
+        quizModule.state.answers = [];
+        quizModule.state.questions = [
+            { id: 'q1', question_text: 'P1', options: ['A1', 'B1', 'C1'], correct_option_index: 0, topic: 'Pediatría' },
+            { id: 'q2', question_text: 'P2', options: ['A2', 'B2', 'C2'], correct_option_index: 1, topic: 'Cirugía' },
+            { id: 'q3', question_text: 'P3', options: ['A3', 'B3', 'C3'], correct_option_index: 2, topic: 'Ginecología' }
+        ];
+        quizModule.renderQuestion();
     });
 
-    const handleAnswer = (selectedIndex, isReplaying = false) => {
-        const q = state.questions[state.currentQuestionIndex];
-        if (!q) return;
+    afterEach(() => {
+        jest.runOnlyPendingTimers();
+        jest.useRealTimers();
+    });
 
-        const isCorrect = selectedIndex === q.correct_option_index;
-        if (!isReplaying) {
-            state.answers[state.currentQuestionIndex] = {
-                questionId: state.currentQuestionIndex,
-                userAnswer: selectedIndex,
-                isCorrect: isCorrect
-            };
-            state.score = state.answers.filter(a => a && a.isCorrect).length;
-        }
-    };
+    it('records answers indexed by current question position and recalculates score', () => {
+        let buttons = elementsMap.get('optionsGrid').querySelectorAll('button');
+        quizModule.handleAnswer(0, buttons[0]);
 
-    const handlePreviousQuestion = () => {
-        if (state.currentQuestionIndex > 0) {
-            state.currentQuestionIndex--;
-        }
-    };
-
-    const handleNextQuestion = () => {
-        state.currentQuestionIndex++;
-        if (state.currentQuestionIndex >= state.maxQuestions) {
-            state.isFinished = true;
-        }
-    };
-
-    it('records answers indexed by current question position correctly', () => {
-        // Responder Pregunta 1
-        handleAnswer(0); // Correcta
-        expect(state.score).toBe(1);
-        expect(state.answers[0]).toEqual({
+        expect(quizModule.state.score).toBe(1);
+        expect(quizModule.state.answers[0]).toEqual({
             questionId: 0,
             userAnswer: 0,
             isCorrect: true
         });
+        expect(buttons[0].classList.contains('correct')).toBe(true);
 
-        // Avanzar a Pregunta 2
-        handleNextQuestion();
-        expect(state.currentQuestionIndex).toBe(1);
+        quizModule.handleNextQuestion();
+        expect(quizModule.state.currentQuestionIndex).toBe(1);
 
-        // Responder Pregunta 2
-        handleAnswer(0); // Incorrecta (correcta era 1)
-        expect(state.score).toBe(1);
-        expect(state.answers[1]).toEqual({
+        buttons = elementsMap.get('optionsGrid').querySelectorAll('button');
+        quizModule.handleAnswer(0, buttons[0]);
+
+        expect(quizModule.state.score).toBe(1);
+        expect(quizModule.state.answers[1]).toEqual({
             questionId: 1,
             userAnswer: 0,
             isCorrect: false
         });
+        expect(buttons[0].classList.contains('wrong')).toBe(true);
+        expect(buttons[1].classList.contains('correct')).toBe(true);
     });
 
-    it('allows moving backward to review previously answered questions without modifying score', () => {
-        // Responder Pregunta 1 y 2
-        handleAnswer(0);
-        handleNextQuestion();
-        handleAnswer(1); // Correcta
-        expect(state.score).toBe(2);
+    it('allows moving backward to review previously answered questions without mutating score', () => {
+        let buttons = elementsMap.get('optionsGrid').querySelectorAll('button');
+        quizModule.handleAnswer(0, buttons[0]); // +1
+        quizModule.handleNextQuestion();
 
-        // Retroceder a Pregunta 1
-        handlePreviousQuestion();
-        expect(state.currentQuestionIndex).toBe(0);
+        buttons = elementsMap.get('optionsGrid').querySelectorAll('button');
+        quizModule.handleAnswer(1, buttons[1]); // +1
+        expect(quizModule.state.score).toBe(2);
 
-        // Reanudar/revisar pregunta previa
-        const existingAns = state.answers[state.currentQuestionIndex];
-        expect(existingAns).toBeDefined();
-        expect(existingAns.userAnswer).toBe(0);
+        // Retroceder a Pregunta 1 (renderQuestion reanima handleAnswer con isReplaying=true)
+        quizModule.handlePreviousQuestion();
+        expect(quizModule.state.currentQuestionIndex).toBe(0);
+        expect(quizModule.state.score).toBe(2);
+        expect(global.window.quizTutor.toggle).toHaveBeenCalledWith(false);
 
-        // Simular ejecución de handleAnswer en modo replay
-        handleAnswer(existingAns.userAnswer, true);
-        expect(state.score).toBe(2); // Puntaje inmutable
+        const replayedButtons = elementsMap.get('optionsGrid').querySelectorAll('button');
+        expect(replayedButtons[0].disabled).toBe(true);
+        expect(replayedButtons[0].classList.contains('correct')).toBe(true);
+
+        // No retrocede por debajo de 0
+        quizModule.handlePreviousQuestion();
+        expect(quizModule.state.currentQuestionIndex).toBe(0);
 
         // Volver a avanzar a Pregunta 2
-        handleNextQuestion();
-        expect(state.currentQuestionIndex).toBe(1);
+        quizModule.handleNextQuestion();
+        expect(quizModule.state.currentQuestionIndex).toBe(1);
     });
 
-    it('correctly maps questions and answers for submission payload after multiple navigations', () => {
-        // Responder Q1, Q2, Q3
-        handleAnswer(0); // Q1 correct (0)
-        handleNextQuestion();
-        handleAnswer(2); // Q2 wrong (correct 1)
-        handleNextQuestion();
-        handleAnswer(2); // Q3 correct (2)
+    it('preserves answer array alignment across repeated back-and-forth navigations', () => {
+        quizModule.handleAnswer(0, elementsMap.get('optionsGrid').querySelectorAll('button')[0]);
+        quizModule.handleNextQuestion();
+        quizModule.handleAnswer(2, elementsMap.get('optionsGrid').querySelectorAll('button')[2]);
+        quizModule.handleNextQuestion();
+        quizModule.handleAnswer(2, elementsMap.get('optionsGrid').querySelectorAll('button')[2]);
 
-        // Retroceder a Q1 y volver a Q3
-        handlePreviousQuestion();
-        handlePreviousQuestion();
-        expect(state.currentQuestionIndex).toBe(0);
-        handleNextQuestion();
-        handleNextQuestion();
-        expect(state.currentQuestionIndex).toBe(2);
+        quizModule.handlePreviousQuestion();
+        quizModule.handlePreviousQuestion();
+        expect(quizModule.state.currentQuestionIndex).toBe(0);
 
-        const totalCount = 3;
-        const mappedQuestions = state.questions.slice(0, totalCount).map((q, idx) => ({
+        quizModule.handleNextQuestion();
+        quizModule.handleNextQuestion();
+        expect(quizModule.state.currentQuestionIndex).toBe(2);
+
+        const mapped = quizModule.state.questions.map((q, idx) => ({
             id: q.id,
-            userAnswer: state.answers[idx]?.userAnswer !== undefined ? state.answers[idx].userAnswer : 0,
+            userAnswer: quizModule.state.answers[idx].userAnswer,
             correct_option_index: q.correct_option_index,
-            isCorrect: !!state.answers[idx]?.isCorrect,
-            topic: q.topic || 'General'
+            isCorrect: quizModule.state.answers[idx].isCorrect,
+            topic: q.topic
         }));
 
-        expect(mappedQuestions).toHaveLength(3);
-        expect(mappedQuestions[0]).toEqual({
-            id: 'q1',
-            userAnswer: 0,
-            correct_option_index: 0,
-            isCorrect: true,
-            topic: 'Pediatría'
-        });
-        expect(mappedQuestions[1]).toEqual({
-            id: 'q2',
-            userAnswer: 2,
-            correct_option_index: 1,
-            isCorrect: false,
-            topic: 'Cirugía'
-        });
-        expect(mappedQuestions[2]).toEqual({
-            id: 'q3',
-            userAnswer: 2,
-            correct_option_index: 2,
-            isCorrect: true,
-            topic: 'Ginecología'
-        });
+        expect(mapped).toEqual([
+            { id: 'q1', userAnswer: 0, correct_option_index: 0, isCorrect: true, topic: 'Pediatría' },
+            { id: 'q2', userAnswer: 2, correct_option_index: 1, isCorrect: false, topic: 'Cirugía' },
+            { id: 'q3', userAnswer: 2, correct_option_index: 2, isCorrect: true, topic: 'Ginecología' }
+        ]);
     });
 });

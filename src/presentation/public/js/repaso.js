@@ -2634,7 +2634,14 @@ class RepasoManager {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    window.repasoManager = new RepasoManager();
-    window.repasoManager.init();
-});
+const _isRepasoJestEnv = typeof process !== 'undefined' && process.env && Boolean(process.env.JEST_WORKER_ID);
+if (typeof document !== 'undefined' && !_isRepasoJestEnv) {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.repasoManager = new RepasoManager();
+        window.repasoManager.init();
+    });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { RepasoManager };
+}

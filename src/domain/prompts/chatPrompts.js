@@ -244,4 +244,118 @@ ${visualInstructions}
 `;
 };
 
+/**
+ * Construye el prompt contextualizado para el Tutor IA del simulador de exámenes.
+ * Centraliza la normalización de opciones, alternativas y casuística en la capa de dominio.
+ */
+CHAT_PROMPTS.buildQuizTutorPrompt = function ({ context = {}, message = '', finalSpecialization = 'education', targetExam = null }) {
+  const safeContext = context || {};
+  const examDomain = String(
+    safeContext.examDomain || safeContext.examContext || (finalSpecialization === 'education' ? 'EDUCACION' : 'MEDICINA')
+  ).toUpperCase();
+  const target = safeContext.target || targetExam || (examDomain === 'EDUCACION' ? 'ASCENSO' : 'SERUMS');
+  const career = safeContext.career || 'No especificada';
+  const difficulty = safeContext.difficulty || 'Senior';
+  const topic = safeContext.topic || safeContext.area || 'General';
+  const areas = (safeContext.areas && Array.isArray(safeContext.areas) && safeContext.areas.length > 0)
+    ? safeContext.areas.join(', ')
+    : topic;
+
+  let rawOptions = safeContext.options || [];
+  if (typeof rawOptions === 'string') {
+    try {
+      const parsed = JSON.parse(rawOptions);
+      if (Array.isArray(parsed)) rawOptions = parsed;
+    } catch (e) {
+      rawOptions = [rawOptions];
+    }
+  }
+  let safeOptions = [];
+  if (Array.isArray(rawOptions)) {
+    safeOptions = rawOptions.map(opt => typeof opt === 'string' ? opt : (opt?.text || opt?.option || JSON.stringify(opt)));
+  } else if (typeof rawOptions === 'object' && rawOptions !== null) {
+    safeOptions = Object.values(rawOptions).map(opt => typeof opt === 'string' ? opt : (opt?.text || opt?.option || JSON.stringify(opt)));
+  }
+
+  const questionText = (safeContext.questionText || safeContext.question_text || safeContext.question || '').trim();
+
+  const correctIdx = (safeContext.correctOptionIndex !== null && safeContext.correctOptionIndex !== undefined && !isNaN(Number(safeContext.correctOptionIndex)))
+    ? Number(safeContext.correctOptionIndex)
+    : null;
+
+  const userIdx = (safeContext.userOptionIndex !== null && safeContext.userOptionIndex !== undefined && !isNaN(Number(safeContext.userOptionIndex)))
+    ? Number(safeContext.userOptionIndex)
+    : (safeContext.userAnswer !== null && safeContext.userAnswer !== undefined && !isNaN(Number(safeContext.userAnswer)))
+      ? Number(safeContext.userAnswer)
+      : null;
+
+  const correctLetter = correctIdx !== null ? String.fromCharCode(65 + correctIdx) : 'N/A';
+  const correctText = (correctIdx !== null && safeOptions[correctIdx]) ? safeOptions[correctIdx] : (safeContext.correctOptionText || 'No especificada');
+
+  const userLetter = userIdx !== null ? String.fromCharCode(65 + userIdx) : null;
+  const userText = (userIdx !== null && safeOptions[userIdx]) ? safeOptions[userIdx] : (safeContext.userOptionText || null);
+  const isUserCorrect = Boolean(safeContext.isUserCorrect || (userIdx !== null && correctIdx !== null && userIdx === correctIdx));
+
+  const optionsFormatted = safeOptions.length > 0
+    ? safeOptions.map((opt, i) => `  [${String.fromCharCode(65 + i)}] ${opt}`).join('\n')
+    : '  (No se proporcionaron opciones cerradas para este reactivo)';
+
+  let caseSection = '';
+  if (safeContext.caseDescription || safeContext.caseTableHtml || safeContext.caseImageUrl) {
+    caseSection = `\nCASUÍSTICA / SITUACIÓN COMPARTIDA:
+${safeContext.caseDescription || ''}${safeContext.caseTableHtml ? `\nTabla / Datos de Apoyo:\n${safeContext.caseTableHtml}\n` : ''}${safeContext.caseImageUrl ? `\nImagen de Casuística: ${safeContext.caseImageUrl}\n` : ''}`;
+  }
+
+  const visualSupportSection = safeContext.imageUrl
+    ? `\nIMAGEN DE APOYO EN LA PREGUNTA: ${safeContext.imageUrl}`
+    : '';
+
+  let studentSelectionInfo = '- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: El estudiante aún no ha marcado una alternativa (o está consultando antes de responder).';
+  if (userLetter !== null) {
+    studentSelectionInfo = `- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [${userLetter}] (${userText || ''}) -> ${isUserCorrect ? '✅ Correcta' : '❌ Incorrecta'}`;
+  }
+
+  const tutorInstruction = `[MODO: TUTOR DE SIMULADOR DE EXAMEN]
+Eres un tutor senior de Hub Academia especializado en ${examDomain === 'EDUCACION' ? 'Currículo Nacional, Didáctica y Casuística Pedagógica (MINEDU / CNEB)' : 'Medicina Peruana, Normas Técnicas MINSA, GPC y Diagnóstico Clínico'}.
+El estudiante está interactuando con este reactivo en un simulacro interactivo y tiene una duda sobre su resolución, la clave o el sustento.
+
+CONFIGURACIÓN DE EXAMEN Y CONTEXTO DEL ALUMNO:
+- DOMINIO ACADÉMICO: ${examDomain}
+- EXAMEN OBJETIVO (TARGET): ${target}
+- NIVEL / ESPECIALIDAD (CAREER): ${career}
+- DIFICULTAD CONFIGURADA: ${difficulty}
+- ÁREA O TEMA: ${topic}
+- ÁREAS SELECCIONADAS EN LA PRUEBA: ${areas}${caseSection}
+
+DETALLES COMPLETOS DEL REACTIVO DEL SIMULADOR:
+- ENUNCIADO DE LA PREGUNTA:
+${questionText || 'Pregunta del simulacro'}${visualSupportSection}
+
+- OPCIONES DE RESPUESTA:
+${optionsFormatted}
+
+- CLAVE CORRECTA OFICIAL: Opción [${correctLetter}] (${correctText})
+${studentSelectionInfo}
+- EXPLICACIÓN / SUSTENTO OFICIAL DE LA CLAVE:
+${safeContext.explanation || 'No especificada en el banco'}
+
+DIRECTRICES CLAVE PARA EL TUTOR:
+1. Explica con claridad, rigor pedagógico y didáctica por qué la clave correcta [${correctLetter}] es la opción acertada.
+2. Analiza las alternativas cuando sea pertinente para despejar dudas y reforzar el aprendizaje del alumno.
+3. 🚨 TIENES ACCESO COMPLETO AL REACTIVO Y A SUS OPCIONES. NUNCA digas que no te proporcionaron las opciones ni la pregunta.
+4. 🚨 PROHIBICIÓN ESTRICTA DE CÓDIGOS Y TÍTULOS INTERNOS: NUNCA menciones códigos de caso, títulos internos ni identificadores técnicos (como "Caso-Secundaria-Arte13", "CASO-01", códigos alfa-numéricos o IDs de base de datos) en tu saludo, inicio de mensaje o explicación. Refiérete a la casuística de forma natural diciendo "en esta casuística", "en la situación planteada" o "en este caso".
+
+---
+PREGUNTA O DUDA DEL ESTUDIANTE:
+${message}`;
+
+  return {
+    tutorInstruction,
+    examDomain,
+    target,
+    career,
+    optionsCount: safeOptions.length
+  };
+};
+
 module.exports = CHAT_PROMPTS;

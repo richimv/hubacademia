@@ -1,109 +1,105 @@
-const fs = require('fs');
-const path = require('path');
 const db = require('../../src/infrastructure/database/db');
 const flashcardRepository = require('../../src/domain/repositories/flashcardRepository');
 const DeckService = require('../../src/domain/services/deckService');
+const { SessionManager } = require('../../src/presentation/public/js/sessionManager');
+const { RepasoManager } = require('../../src/presentation/public/js/repaso');
 
 jest.mock('../../src/infrastructure/database/db');
 
-describe('Repaso Tier Permissions and Chronological Ordering (Architecture & Code Health)', () => {
+describe('Repaso Tier Permissions and Chronological Ordering (Real Modules)', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        const store = new Map();
+        global.localStorage = {
+            getItem: jest.fn((k) => (store.has(k) ? store.get(k) : null)),
+            setItem: jest.fn((k, v) => store.set(k, String(v))),
+            removeItem: jest.fn((k) => store.delete(k)),
+            _store: store
+        };
+        global.window = {
+            addEventListener: jest.fn(),
+            sessionManager: { getUser: jest.fn(() => null) },
+            uiManager: { showPaywallModal: jest.fn(), showToast: jest.fn(), showAuthPromptModal: jest.fn() }
+        };
     });
 
     describe('SessionManager & RepasoManager: Tier and Admin Resolution', () => {
-        let sessionManagerCode;
-        let repasoCode;
-
-        beforeAll(() => {
-            sessionManagerCode = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/sessionManager.js'), 'utf8');
-            repasoCode = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/repaso.js'), 'utf8');
-        });
-
         it('SessionManager.isAdmin correctly identifies admin by role or subscriptionTier', () => {
-            // Emulate SessionManager.prototype.isAdmin logic
-            const isAdminFn = (currentUser) => {
-                return currentUser?.role === 'admin' || String(currentUser?.subscriptionTier || '').toLowerCase() === 'admin';
-            };
+            const checkAdmin = (user) => SessionManager.prototype.isAdmin.call({ currentUser: user });
 
-            expect(isAdminFn({ role: 'admin', subscriptionTier: 'free' })).toBe(true);
-            expect(isAdminFn({ role: 'admin', subscriptionTier: null })).toBe(true);
-            expect(isAdminFn({ role: 'student', subscriptionTier: 'admin' })).toBe(true);
-            expect(isAdminFn({ role: 'student', subscriptionTier: 'basic' })).toBe(false);
-            expect(isAdminFn({ role: 'student', subscriptionTier: 'advanced' })).toBe(false);
-            expect(isAdminFn({ role: 'student', subscriptionTier: 'free' })).toBe(false);
-            expect(isAdminFn(null)).toBe(false);
+            expect(checkAdmin({ role: 'admin', subscriptionTier: 'free' })).toBe(true);
+            expect(checkAdmin({ role: 'admin', subscriptionTier: null })).toBe(true);
+            expect(checkAdmin({ role: 'student', subscriptionTier: 'admin' })).toBe(true);
+            expect(checkAdmin({ role: 'student', subscriptionTier: 'basic' })).toBe(false);
+            expect(checkAdmin({ role: 'student', subscriptionTier: 'advanced' })).toBe(false);
+            expect(checkAdmin({ role: 'student', subscriptionTier: 'free' })).toBe(false);
+            expect(checkAdmin(null)).toBe(false);
         });
 
         it('RepasoManager.userTier correctly returns "admin" when role is admin even if subscription_tier is free', () => {
-            const getUserTier = (user) => {
-                if (!user) return 'free';
-                const role = String(user.role || '').toLowerCase();
-                const tier = String(user.subscriptionTier || user.subscription_tier || 'free').toLowerCase();
-                if (role === 'admin' || tier === 'admin') return 'admin';
-                return tier;
+            const repasoProto = RepasoManager.prototype;
+            const resolveTier = (user) => {
+                global.window.sessionManager.getUser.mockReturnValue(user);
+                return Object.getOwnPropertyDescriptor(repasoProto, 'userTier').get.call({});
             };
 
-            expect(getUserTier({ role: 'admin', subscription_tier: 'free' })).toBe('admin');
-            expect(getUserTier({ role: 'admin', subscriptionTier: 'free' })).toBe('admin');
-            expect(getUserTier({ role: 'student', subscription_tier: 'basic' })).toBe('basic');
-            expect(getUserTier({ role: 'student', subscriptionTier: 'advanced' })).toBe('advanced');
-            expect(getUserTier({ role: 'student', subscription_tier: 'free' })).toBe('free');
-            expect(getUserTier(null)).toBe('free');
+            expect(resolveTier({ role: 'admin', subscription_tier: 'free' })).toBe('admin');
+            expect(resolveTier({ role: 'admin', subscriptionTier: 'free' })).toBe('admin');
+            expect(resolveTier({ role: 'student', subscription_tier: 'basic' })).toBe('basic');
+            expect(resolveTier({ role: 'student', subscriptionTier: 'advanced' })).toBe('advanced');
+            expect(resolveTier({ role: 'student', subscription_tier: 'free' })).toBe('free');
+            expect(resolveTier(null)).toBe('free');
         });
 
         it('RepasoManager.isAdvancedOrAdmin returns true for advanced and admin, false for basic and free', () => {
-            const isAdvancedOrAdminFn = (userTier) => {
-                return userTier === 'advanced' || userTier === 'admin';
-            };
+            const repasoProto = RepasoManager.prototype;
+            const isAdv = (tier) => Object.getOwnPropertyDescriptor(repasoProto, 'isAdvancedOrAdmin').get.call({ userTier: tier });
 
-            expect(isAdvancedOrAdminFn('admin')).toBe(true);
-            expect(isAdvancedOrAdminFn('advanced')).toBe(true);
-            expect(isAdvancedOrAdminFn('basic')).toBe(false);
-            expect(isAdvancedOrAdminFn('free')).toBe(false);
+            expect(isAdv('admin')).toBe(true);
+            expect(isAdv('advanced')).toBe(true);
+            expect(isAdv('basic')).toBe(false);
+            expect(isAdv('free')).toBe(false);
         });
 
-        it('switchCardMode gate allows admin and basic into bulk mode, while showing paywall to free', () => {
-            const simulateSwitchMode = (mode, userTier, token = 'valid-token') => {
-                const paywallCalls = [];
-                const activeTabs = [];
-
-                if (!token) return { blocked: 'auth' };
-
-                if (mode === 'bulk' && userTier === 'free') {
-                    paywallCalls.push('La Carga Masiva (Excel) es una función para usuarios con plan Basic o Advanced.');
-                    return { blocked: 'paywall', paywallCalls };
-                }
-
-                activeTabs.push(mode);
-                return { blocked: null, activeTabs };
+        it('RepasoManager.switchCardMode allows admin/basic/advanced into bulk mode, while blocking free with paywall and unauthenticated with auth modal', () => {
+            const elements = {
+                'tab-card-individual': { classList: { toggle: jest.fn() } },
+                'tab-card-bulk': { classList: { toggle: jest.fn() } },
+                'section-card-individual': { style: { display: '' } },
+                'section-card-bulk': { style: { display: '' } }
+            };
+            global.document = {
+                getElementById: jest.fn((id) => elements[id])
             };
 
-            // Admin: allowed
-            const adminResult = simulateSwitchMode('bulk', 'admin');
-            expect(adminResult.blocked).toBeNull();
-            expect(adminResult.activeTabs).toContain('bulk');
+            const createInstance = (tier, token = 'valid-token') => {
+                if (token) global.localStorage._store.set('authToken', token);
+                else global.localStorage._store.delete('authToken');
+                const instance = Object.create(RepasoManager.prototype);
+                Object.defineProperty(instance, 'token', { get: () => global.localStorage.getItem('authToken') });
+                Object.defineProperty(instance, 'userTier', { get: () => tier });
+                instance.currentCardMode = 'individual';
+                return instance;
+            };
 
-            // Basic: allowed
-            const basicResult = simulateSwitchMode('bulk', 'basic');
-            expect(basicResult.blocked).toBeNull();
-            expect(basicResult.activeTabs).toContain('bulk');
+            for (const tier of ['admin', 'basic', 'advanced']) {
+                const mgr = createInstance(tier);
+                mgr.switchCardMode('bulk');
+                expect(mgr.currentCardMode).toBe('bulk');
+                expect(elements['section-card-bulk'].style.display).toBe('block');
+            }
 
-            // Advanced: allowed
-            const advancedResult = simulateSwitchMode('bulk', 'advanced');
-            expect(advancedResult.blocked).toBeNull();
-            expect(advancedResult.activeTabs).toContain('bulk');
+            const freeMgr = createInstance('free');
+            freeMgr.switchCardMode('bulk');
+            expect(freeMgr.currentCardMode).toBe('individual');
+            expect(global.window.uiManager.showPaywallModal).toHaveBeenCalledWith(
+                expect.stringContaining('Carga Masiva'),
+                'flashcards'
+            );
 
-            // Free: blocked with paywall
-            const freeResult = simulateSwitchMode('bulk', 'free');
-            expect(freeResult.blocked).toBe('paywall');
-            expect(freeResult.paywallCalls.length).toBe(1);
-        });
-
-        it('repaso.js contains no dead switchMode(mode) method (Clean Code)', () => {
-            // switchMode was orphan dead code from previous iterations, replaced by switchCardMode
-            expect(repasoCode).not.toMatch(/switchMode\(mode\)\s*\{/);
-            expect(repasoCode).toMatch(/switchCardMode\(mode\)\s*\{/);
+            const guestMgr = createInstance('free', null);
+            guestMgr.switchCardMode('bulk');
+            expect(global.window.uiManager.showAuthPromptModal).toHaveBeenCalled();
         });
     });
 

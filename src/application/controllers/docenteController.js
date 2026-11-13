@@ -1,6 +1,6 @@
 const docenteService = require('../../domain/services/docenteService');
 const quizSessionService = require('../../domain/services/quizSessionService');
-const { secureQuizSessionsEnabled, sendQuizSessionError } = require('./quizSessionControllerSupport');
+const { secureQuizSessionsEnabled, sendQuizSessionError, buildQuizEvolutionChartData } = require('./quizSessionControllerSupport');
 const UsageService = require('../../domain/services/usageService');
 const usageService = new UsageService();
 const { LIMITS } = require('../../infrastructure/config/limits');
@@ -250,11 +250,7 @@ class DocenteController {
 
             const data = await docenteRepository.getQuizEvolution(userId, target, limit, timeFilter, null, career);
             const chartData = {
-                labels: data.map(d => d.date_label),
-                scores10: data.map(d => (d.total_questions <= 15) ? parseFloat(d.score_20).toFixed(1) : null),
-                scores20: data.map(d => (d.total_questions > 15 && d.total_questions < 50) ? parseFloat(d.score_20).toFixed(1) : null),
-                scoresReal: data.map(d => (d.total_questions >= 50) ? parseFloat(d.score_20).toFixed(1) : null),
-                scores: data.map(d => parseFloat(d.score_20).toFixed(1)),
+                ...buildQuizEvolutionChartData(data),
                 scoresMinedu: data.map(d => {
                     const mineduVal = (d.score / (d.total_questions || 1)) * 90;
                     return parseFloat(mineduVal.toFixed(1));

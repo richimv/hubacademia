@@ -1680,14 +1680,22 @@ class UIManager {
     }
 }
 
-// Inicializar y exponer globalmente
-window.uiManager = new UIManager();
+const _isUIManagerJestEnv = typeof process !== 'undefined' && process.env && Boolean(process.env.JEST_WORKER_ID);
 
-// Hook automático para la barra al cargar sesión
-// Esperamos a que sessionManager esté listo, o escuchamos directamente aquí si App no lo hace
-if (window.sessionManager) {
-    window.sessionManager.onStateChange((user) => {
-        window.uiManager.updateFreemiumStatus(user);
-        window.uiManager.checkAndShowWelcomeModal(user);
-    });
+// Inicializar y exponer globalmente solo en navegador real
+if (typeof window !== 'undefined' && typeof document !== 'undefined' && !_isUIManagerJestEnv) {
+    window.uiManager = new UIManager();
+
+    // Hook automático para la barra al cargar sesión
+    // Esperamos a que sessionManager esté listo, o escuchamos directamente aquí si App no lo hace
+    if (window.sessionManager) {
+        window.sessionManager.onStateChange((user) => {
+            window.uiManager.updateFreemiumStatus(user);
+            window.uiManager.checkAndShowWelcomeModal(user);
+        });
+    }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { UIManager };
 }

@@ -19,7 +19,8 @@ const state = {
 };
 
 // Exponer estado para diagnóstico
-window.__quizState = state;
+const _quizGlobalWin = typeof window !== 'undefined' ? window : {};
+_quizGlobalWin.__quizState = state;
 
 // Control del Scroll Automático
 let currentScrollAnimationId = null;
@@ -76,33 +77,35 @@ const LOADING_RESOURCES = {
 
 let tipInterval = null;
 
+const _getQuizEl = (id) => (typeof document !== 'undefined' ? document.getElementById(id) : null);
+
 // Elementos DOM
 const elements = {
-    loadingOverlay: document.getElementById('loadingOverlay'),
-    loadingTitle: document.getElementById('loadingTitle'),
-    loadingSubtitle: document.getElementById('loadingSubtitle'),
-    loadingIcon: document.getElementById('loadingIcon'),
-    loadingModeBadge: document.getElementById('loadingModeBadge'),
-    loadingModeText: document.getElementById('loadingModeText'),
-    loadingTip: document.getElementById('loadingTip'),
-    questionText: document.getElementById('questionText'),
-    optionsGrid: document.getElementById('optionsGrid'),
+    loadingOverlay: _getQuizEl('loadingOverlay'),
+    loadingTitle: _getQuizEl('loadingTitle'),
+    loadingSubtitle: _getQuizEl('loadingSubtitle'),
+    loadingIcon: _getQuizEl('loadingIcon'),
+    loadingModeBadge: _getQuizEl('loadingModeBadge'),
+    loadingModeText: _getQuizEl('loadingModeText'),
+    loadingTip: _getQuizEl('loadingTip'),
+    questionText: _getQuizEl('questionText'),
+    optionsGrid: _getQuizEl('optionsGrid'),
     // Header Progress
-    currentQ: document.getElementById('currentQ'),
-    maxQ: document.getElementById('maxQ'),
-    progressBar: document.getElementById('progressBar'),
-    timer: document.getElementById('timer'),
-    feedbackBox: document.getElementById('feedbackBox'),
-    explanationText: document.getElementById('explanationText'),
-    prevBtn: document.getElementById('prevBtn'),
-    nextBtn: document.getElementById('nextBtn'),
-    nextBtnContainer: document.getElementById('nextBtnContainer'),
-    resultsOverlay: document.getElementById('resultsOverlay'),
-    scoreCircle: document.getElementById('scoreCircle'),
-    svgScoreProgress: document.getElementById('svgScoreProgress'),
-    finalScore: document.getElementById('finalScore'),
-    explanationImageContainer: document.getElementById('explanationImageContainer'),
-    explanationImage: document.getElementById('explanationImage')
+    currentQ: _getQuizEl('currentQ'),
+    maxQ: _getQuizEl('maxQ'),
+    progressBar: _getQuizEl('progressBar'),
+    timer: _getQuizEl('timer'),
+    feedbackBox: _getQuizEl('feedbackBox'),
+    explanationText: _getQuizEl('explanationText'),
+    prevBtn: _getQuizEl('prevBtn'),
+    nextBtn: _getQuizEl('nextBtn'),
+    nextBtnContainer: _getQuizEl('nextBtnContainer'),
+    resultsOverlay: _getQuizEl('resultsOverlay'),
+    scoreCircle: _getQuizEl('scoreCircle'),
+    svgScoreProgress: _getQuizEl('svgScoreProgress'),
+    finalScore: _getQuizEl('finalScore'),
+    explanationImageContainer: _getQuizEl('explanationImageContainer'),
+    explanationImage: _getQuizEl('explanationImage')
 };
 
 /**
@@ -188,7 +191,7 @@ function hideLoadingOverlay() {
 // ==========================================
 // 🚀 ASIGNACIÓN TEMPRANA (Para evitar Race Conditions)
 // ==========================================
-window.showExamReview = async function () {
+_quizGlobalWin.showExamReview = async function () {
     console.log("🚀 Iniciando renderizado de revisión...");
     cancelCurrentScroll();
     if (window.quizTutor) window.quizTutor.toggle(false);
@@ -360,7 +363,7 @@ function buildQuestionTutorContext(qIndex) {
 /**
  * Abre el Tutor IA con el contexto específico de una pregunta durante la revisión post-examen
  */
-window.openTutorForReviewQuestion = function (qIndex, event) {
+_quizGlobalWin.openTutorForReviewQuestion = function (qIndex, event) {
     const isGuest = new URLSearchParams(window.location.search).get('demo') === 'true' || 
                     (window.sessionManager ? !window.sessionManager.isLoggedIn() : !localStorage.getItem('authToken'));
     if (isGuest) {
@@ -385,7 +388,7 @@ window.openTutorForReviewQuestion = function (qIndex, event) {
 };
 
 // Configuración
-let API_URL = `${window.AppConfig.API_URL}/api/medico`; // Default fallback
+let API_URL = `${_quizGlobalWin.AppConfig ? _quizGlobalWin.AppConfig.API_URL : ''}/api/medico`; // Default fallback
 
 // 1. Inicialización
 async function init() {
@@ -830,7 +833,7 @@ function clearSession() {
 }
 
 // Exponer función para iniciar nuevo examen limpiando caché sin race conditions
-window.startNewExam = function () {
+_quizGlobalWin.startNewExam = function () {
     const user = window.sessionManager ? window.sessionManager.getUser() : null;
     const token = localStorage.getItem('authToken');
     const isAuthenticated = !!user || !!token;
@@ -2003,11 +2006,14 @@ async function finishQuiz() {
 }
 
 
-// Auto-init
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
+// Auto-init (omitido bajo Jest para permitir pruebas unitarias limpias)
+const _isQuizJestEnv = typeof process !== 'undefined' && process.env && Boolean(process.env.JEST_WORKER_ID);
+if (typeof document !== 'undefined' && !_isQuizJestEnv) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 }
 
 // --- 🖼️ Visor Lightbox Premium (Zoom, Drag, Gestos) ---
@@ -2344,4 +2350,23 @@ function smoothScrollTo(element, duration = 2200) {
 
 console.log("💎 Module quiz.js loaded successfully. showExamReview is ready with Zoom Lightbox.");
 
-window.openQuizTutorForReview = window.openTutorForReviewQuestion;
+_quizGlobalWin.openQuizTutorForReview = _quizGlobalWin.openTutorForReviewQuestion;
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        state,
+        init,
+        startQuiz,
+        startNewExam: _quizGlobalWin.startNewExam,
+        getStorageKey,
+        serializeSessionState,
+        saveSession,
+        loadSession,
+        clearSession,
+        handleAnswer,
+        handlePreviousQuestion,
+        handleNextQuestion,
+        renderQuestion,
+        buildQuestionTutorContext
+    };
+}

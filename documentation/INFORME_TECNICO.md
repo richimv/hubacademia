@@ -2,6 +2,20 @@
 
 Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
 
+### 🟢 [2026-11-13] - Saneamiento, Depuración y Refactorización de la Suite de Pruebas Unitarias (Ejecución Real sobre Módulos)
+* **Objetivo:** Eliminar pruebas obsoletas basadas en lectura estática/regex de CSS/HTML, código muerto ya retirado y funciones duplicadas/auto-mockeadas dentro de los propios archivos `.test.js`, reemplazándolas por ejecución directa sobre los módulos reales de producción (`src/`) en las 4 capas.
+* **Archivos obsoletos eliminados (`tests/unit/`):**
+  * Eliminados `retiredLanguagesModule.test.js`, `adminModals.test.js`, `dashboardThemeAndSearch.test.js`, `simulatorAreaFilterAndSidebar.test.js` y `driveSyncTopicsAndLibraryFilters.test.js`.
+* **Pruebas híbridas depuradas:**
+  * Depuradas las aserciones cosméticas de CSS/HTML y lecturas por regex en `deckIdiomasAndSecurity.test.js`, `asistenteGuiaAndLanding.test.js`, `vercelServerlessConfig.test.js`, `libraryNotesUI.test.js`, `flashcardScope.test.js` y `loginFlow.test.js`, conservando intactas todas las validaciones de seguridad, rutas admin, RLS/ownership, límites freemium, pagos, caché/SEO y configuración de despliegue en Vercel.
+* **Desacoplamiento y helpers compartidos para testabilidad real (`src/`):**
+  * `domain/`: Extraído `CHAT_PROMPTS.buildQuizTutorPrompt` en `src/domain/prompts/chatPrompts.js` y consumido desde `ChatController.processMessage`.
+  * `application/`: Extraído `buildQuizEvolutionChartData(data)` en `src/application/controllers/quizSessionControllerSupport.js`, unificando la construcción de series evolutivas entre `DocenteController.getEvolution` y `MedicoController.getEvolution`.
+  * `presentation/`: Extraídos `aggregateRadarMap` / `aggregateDoughnutData` en `SimulatorDash` (`simulator-dash.js`) e incorporados guards seguros de entorno browser/Node (`module.exports`) en `quiz.js`, `ui/uiManager.js`, `repaso.js`, `admin.js`, `ui/components.js` y `simulator-dash.js` sin alterar la ejecución en navegador.
+* **Suites refactorizadas a ejecución real de módulos:**
+  * `quizTutorContext.test.js`, `kpiEvolutionAndDoughnut.test.js`, `quizNavigation.test.js`, `quizSessionPersistence.test.js`, `quizModalFlow.test.js`, `uiPaywallLogic.test.js`, `repasoTierAndOrdering.test.js`, `adminUserSearch.test.js`, `adminBulkSelection.test.js` y `adminStudentManagement.test.js`.
+* **Verificación post-refactorización:** Ejecutado `npm run build` (actualizando hash de assets `160d7c8e22c9` en 17 HTML y 3 módulos landing) y validada la suite completa (`npm test -- --runInBand`): **61 suites aprobadas (61/61)** y **485 pruebas unitarias aprobadas (485/485)** con 0 fallos.
+
 ### 🟢 [2026-09-22] - Migración Exclusiva a Google Enterprise AI (Vertex AI), Erradicación de Google AI Studio, Retiro de TTS y Calificación MINEDU Base 90
 
 - **☁️ Migración Exclusiva a Google Cloud Vertex AI y Erradicación de Google AI Studio ([adminAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/adminAiService.js), [tutorAiService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/tutorAiService.js), [analyticsController.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/application/controllers/analyticsController.js), [ragService.js](file:///c:/Users/ricar/Downloads/PROYECTOS/hubacademia/src/domain/services/ragService.js)):**

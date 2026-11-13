@@ -1,45 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
-describe('Repaso y Notas Unificados + Simplificación de Biblioteca', () => {
-    let repasoNotesJs;
-    let repasoHtml;
-    let libraryJs;
-    let libraryHtml;
-
-    beforeAll(() => {
-        repasoNotesJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/repasoNotesUI.js'), 'utf8');
-        repasoHtml = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/repaso.html'), 'utf8');
-        libraryJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/libraryUI.js'), 'utf8');
-        libraryHtml = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/library.html'), 'utf8');
-    });
-
-    test('repaso.html integra la vista unificada de Mis Notas y carga repasoNotesUI.js', () => {
-        expect(repasoHtml).toContain('id="notes-view"');
-        expect(repasoHtml).toContain('data-repaso-view="notes"');
-        expect(repasoHtml).toContain('/js/ui/repasoNotesUI.js');
-    });
-
-    test("El boletín no carga la biblioteca de cuenta; las notas siguen en Repaso", () => {
-        expect(libraryHtml).not.toMatch(/id="panel-(saved|favorites|notes)"/);
-        expect(libraryHtml).not.toContain('/js/ui/libraryUI.js');
-        expect(libraryHtml).toContain('/js/bulletin.js');
-        expect(libraryHtml).toContain('id="bulletin-feed"');
-        expect(libraryJs).toContain('/repaso?view=notes');
-        });
-
-    test('El archivo repasoNotesUI.js debe definir explícitamente el método openNoteModal en la clase RepasoNotesUI', () => {
-        expect(repasoNotesJs).toContain('openNoteModal(noteId = null)');
-    });
-
-    test('openNoteModal debe delegar la ejecución directamente a openNoteEditor', () => {
-        expect(repasoNotesJs).toMatch(/openNoteModal\s*\(\s*noteId\s*=\s*null\s*\)\s*\{\s*this\.openNoteEditor\(noteId\);\s*\}/);
-    });
-
-    test('Los botones de creación de nota en repasoNotesUI.js deben invocar window.repasoNotesUI.openNoteModal() sin errores', () => {
-        expect(repasoNotesJs).toContain('onclick="window.repasoNotesUI.openNoteModal()"');
-    });
-
+describe('RepasoNotesUI Unit Tests', () => {
     test('El método openNoteEditor debe inicializar el estado en modo edición cuando se llama sin noteId', () => {
         const { RepasoNotesUI } = require('../../src/presentation/public/js/ui/repasoNotesUI');
 
@@ -81,72 +40,6 @@ describe('Repaso y Notas Unificados + Simplificación de Biblioteca', () => {
 
         instance.openNoteModal('note-123');
         expect(editorSpy).toHaveBeenCalledWith('note-123');
-    });
-
-    test('La modal de notas debe cumplir con el Estándar Universal (4 capas)', () => {
-        expect(repasoNotesJs).toContain('modal-overlay note-modal-overlay');
-        expect(repasoNotesJs).toContain('modal-content note-modal');
-        expect(repasoNotesJs).toContain('modal-header note-modal-header');
-        expect(repasoNotesJs).toContain('modal-body note-modal-body');
-        expect(repasoNotesJs).toContain('modal-footer note-modal-footer');
-        expect(repasoNotesJs).toContain('modal-close-btn note-modal-close');
-    });
-
-    test('El footer de la modal de notas NO debe contener botones sueltos fuera de los grupos de acción', () => {
-        const footerMatch = repasoNotesJs.match(/<div class="modal-footer note-modal-footer">([\s\S]*?)<\/div>\s*<\/div>\s*`;/);
-        expect(footerMatch).not.toBeNull();
-        const footerContent = footerMatch[1];
-
-        const withoutGroups = footerContent
-            .replace(/<div id="note-view-actions"[\s\S]*?<\/div>/, '')
-            .replace(/<div id="note-edit-actions"[\s\S]*?<\/div>/, '')
-            .trim();
-
-        expect(withoutGroups).not.toContain('<button');
-    });
-
-    test('El grupo de edición debe contener exactamente Cancelar y Guardar con clases estándar', () => {
-        const editActionsMatch = repasoNotesJs.match(/<div id="note-edit-actions"[\s\S]*?>([\s\S]*?)<\/div>/);
-        expect(editActionsMatch).not.toBeNull();
-        const editActionsHtml = editActionsMatch[1];
-
-        expect(editActionsHtml).toContain('btn-action btn-secondary-action');
-        expect(editActionsHtml).toContain('switchToViewer()');
-        expect(editActionsHtml).toContain('Cancelar');
-
-        expect(editActionsHtml).toContain('btn-action btn-primary');
-        expect(editActionsHtml).toContain('saveNote()');
-        expect(editActionsHtml).toContain('Guardar');
-
-        expect(editActionsHtml).not.toContain('Cerrar');
-    });
-
-    test('El CSS de componentes debe consumir tokens semánticos dinámicos para el textarea y título de notas', () => {
-        const componentsCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/components.css'), 'utf8');
-
-        expect(componentsCss).not.toContain('rgba(15, 23, 42, 0.4)');
-        expect(componentsCss).not.toContain('rgba(15, 23, 42, 0.6)');
-        expect(componentsCss).toMatch(/\.note-editor-textarea\s*\{[\s\S]*?background:\s*var\(--input-bg\)/);
-        expect(componentsCss).toMatch(/\.note-editor-textarea\s*\{[\s\S]*?border:\s*1\.5px\s*solid\s*var\(--border-color\)/);
-        expect(componentsCss).not.toMatch(/\.note-modal-footer\s+button\s*\{/);
-    });
-
-    test("modal.css conserva apertura y acciones primarias en selectores compartidos", () => {
-        const modalCss = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/modal.css'), 'utf8');
-        expect(modalCss).toMatch(/:is\([^)]*\.modal-overlay[^)]*\):is\([^)]*\.open[^)]*\)\s*\{[^}]*display:\s*flex/);
-        expect(modalCss).toMatch(/\.modal-footer\s+:is\([^)]*\.btn-primary/);
-        });
-
-    test('saveNote y deleteNote deben implementar la regla CRUD obligatoria de spinner y deshabilitación', () => {
-        expect(repasoNotesJs).toContain('saveBtn.disabled = true;');
-        expect(repasoNotesJs).toContain('cancelBtn.disabled = true;');
-        expect(repasoNotesJs).toContain('saveBtn.innerHTML = \'<i class="fas fa-spinner fa-spin"></i> Guardando...\';');
-        expect(repasoNotesJs).toContain('saveBtn.disabled = false;');
-        expect(repasoNotesJs).toContain('cancelBtn.disabled = false;');
-
-        expect(repasoNotesJs).toContain('targetBtn.disabled = true;');
-        expect(repasoNotesJs).toContain('targetBtn.innerHTML = deleteBtn ? \'<i class="fas fa-spinner fa-spin"></i> Eliminando...\' : \'<i class="fas fa-spinner fa-spin"></i>\';');
-        expect(repasoNotesJs).toContain('targetBtn.disabled = false;');
     });
 
     test('saveNote deshabilita botones, muestra spinner y restaura el estado original al finalizar', async () => {

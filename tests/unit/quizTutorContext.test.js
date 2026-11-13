@@ -1,114 +1,19 @@
 /**
  * Tests unitarios para el Tutor IA de Simulador de Examen (Quiz Tutor)
- * Valida la normalización de opciones, formateo de contexto y construcción de prompts.
+ * Ejecuta directamente buildQuizTutorPrompt (domain/prompts/chatPrompts) y ChatController.
  */
 
-describe('Quiz Tutor Context Normalization & Prompt Construction', () => {
+const { buildQuizTutorPrompt } = require('../../src/domain/prompts/chatPrompts');
+const ChatController = require('../../src/application/controllers/chatController');
+const TutorAiService = require('../../src/domain/services/tutorAiService');
 
-    function buildQuizTutorInstruction(context, message, finalSpecialization = 'education') {
-        const examDomain = String(context.examDomain || context.examContext || (finalSpecialization === 'education' ? 'EDUCACION' : 'MEDICINA')).toUpperCase();
-        const target = context.target || (examDomain === 'EDUCACION' ? 'ASCENSO' : 'SERUMS');
-        const career = context.career || 'No especificada';
-        const difficulty = context.difficulty || 'Senior';
-        const topic = context.topic || context.area || 'General';
-        const areas = (context.areas && Array.isArray(context.areas) && context.areas.length > 0) 
-            ? context.areas.join(', ') 
-            : topic;
+jest.mock('../../src/domain/repositories/knowledgeBaseRepository');
+jest.mock('../../src/domain/services/tutorAiService');
 
-        // 1. Normalización segura de opciones de respuesta
-        let rawOptions = context.options || [];
-        if (typeof rawOptions === 'string') {
-            try {
-                const parsed = JSON.parse(rawOptions);
-                if (Array.isArray(parsed)) rawOptions = parsed;
-            } catch (e) {
-                rawOptions = [rawOptions];
-            }
-        }
-        let safeOptions = [];
-        if (Array.isArray(rawOptions)) {
-            safeOptions = rawOptions.map(opt => typeof opt === 'string' ? opt : (opt?.text || opt?.option || JSON.stringify(opt)));
-        } else if (typeof rawOptions === 'object' && rawOptions !== null) {
-            safeOptions = Object.values(rawOptions).map(opt => typeof opt === 'string' ? opt : (opt?.text || opt?.option || JSON.stringify(opt)));
-        }
-
-        // 2. Normalización de pregunta
-        const questionText = (context.questionText || context.question_text || context.question || '').trim();
-
-        // 3. Normalización de clave oficial e intento del estudiante
-        const correctIdx = (context.correctOptionIndex !== null && context.correctOptionIndex !== undefined && !isNaN(Number(context.correctOptionIndex)))
-            ? Number(context.correctOptionIndex)
-            : null;
-        
-        const userIdx = (context.userOptionIndex !== null && context.userOptionIndex !== undefined && !isNaN(Number(context.userOptionIndex)))
-            ? Number(context.userOptionIndex)
-            : (context.userAnswer !== null && context.userAnswer !== undefined && !isNaN(Number(context.userAnswer)))
-                ? Number(context.userAnswer)
-                : null;
-
-        const correctLetter = correctIdx !== null ? String.fromCharCode(65 + correctIdx) : 'N/A';
-        const correctText = (correctIdx !== null && safeOptions[correctIdx]) ? safeOptions[correctIdx] : (context.correctOptionText || 'No especificada');
-
-        const userLetter = userIdx !== null ? String.fromCharCode(65 + userIdx) : null;
-        const userText = (userIdx !== null && safeOptions[userIdx]) ? safeOptions[userIdx] : (context.userOptionText || null);
-        const isUserCorrect = Boolean(context.isUserCorrect || (userIdx !== null && correctIdx !== null && userIdx === correctIdx));
-
-        // 4. Formatear opciones para el prompt
-        let optionsFormatted = '';
-        if (safeOptions.length > 0) {
-            optionsFormatted = safeOptions.map((opt, i) => `  [${String.fromCharCode(65 + i)}] ${opt}`).join('\n');
-        } else {
-            optionsFormatted = '  (No se proporcionaron opciones cerradas para este reactivo)';
-        }
-
-        // 5. Casuística / Situación compartida / Apoyo visual
-        let caseSection = '';
-        if (context.caseDescription || context.caseTableHtml || context.caseImageUrl) {
-            caseSection = `\nCASUÍSTICA / SITUACIÓN COMPARTIDA:\n${context.caseDescription || ''}${context.caseTableHtml ? `\nTabla / Datos de Apoyo:\n${context.caseTableHtml}\n` : ''}${context.caseImageUrl ? `\nImagen de Casuística: ${context.caseImageUrl}\n` : ''}`;
-        }
-
-        let visualSupportSection = '';
-        if (context.imageUrl) {
-            visualSupportSection = `\nIMAGEN DE APOYO EN LA PREGUNTA: ${context.imageUrl}`;
-        }
-
-        // 6. Información de respuesta del estudiante
-        let studentSelectionInfo = '- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: El estudiante aún no ha marcado una alternativa (o está consultando antes de responder).';
-        if (userLetter !== null) {
-            studentSelectionInfo = `- RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [${userLetter}] (${userText || ''}) -> ${isUserCorrect ? '✅ Correcta' : '❌ Incorrecta'}`;
-        }
-
-        return `[MODO: TUTOR DE SIMULADOR DE EXAMEN]
-Eres un tutor senior de Hub Academia especializado en ${examDomain === 'EDUCACION' ? 'Currículo Nacional, Didáctica y Casuística Pedagógica (MINEDU / CNEB)' : 'Medicina Peruana, Normas Técnicas MINSA, GPC y Diagnóstico Clínico'}.
-El estudiante está interactuando con este reactivo en un simulacro interactivo y tiene una duda sobre su resolución, la clave o el sustento.
-
-CONFIGURACIÓN DE EXAMEN Y CONTEXTO DEL ALUMNO:
-- DOMINIO ACADÉMICO: ${examDomain}
-- EXAMEN OBJETIVO (TARGET): ${target}
-- NIVEL / ESPECIALIDAD (CAREER): ${career}
-- DIFICULTAD CONFIGURADA: ${difficulty}
-- ÁREA O TEMA: ${topic}
-- ÁREAS SELECCIONADAS EN LA PRUEBA: ${areas}${caseSection}
-
-DETALLES COMPLETOS DEL REACTIVO DEL SIMULADOR:
-- ENUNCIADO DE LA PREGUNTA:\n${questionText || 'Pregunta del simulacro'}${visualSupportSection}
-
-- OPCIONES DE RESPUESTA:\n${optionsFormatted}
-
-- CLAVE CORRECTA OFICIAL: Opción [${correctLetter}] (${correctText})
-${studentSelectionInfo}
-- EXPLICACIÓN / SUSTENTO OFICIAL DE LA CLAVE:\n${context.explanation || 'No especificada en el banco'}
-
-DIRECTRICES CLAVE PARA EL TUTOR:
-1. Explica con claridad, rigor pedagógico y didáctica por qué la clave correcta [${correctLetter}] es la opción acertada.
-2. Analiza las alternativas cuando sea pertinente para despejar dudas y reforzar el aprendizaje del alumno.
-3. 🚨 TIENES ACCESO COMPLETO AL REACTIVO Y A SUS OPCIONES. NUNCA digas que no te proporcionaron las opciones ni la pregunta.
-4. 🚨 PROHIBICIÓN ESTRICTA DE CÓDIGOS Y TÍTULOS INTERNOS: NUNCA menciones códigos de caso, títulos internos ni identificadores técnicos (como "Caso-Secundaria-Arte13", "CASO-01", códigos alfa-numéricos o IDs de base de datos) en tu saludo, inicio de mensaje o explicación. Refiérete a la casuística de forma natural diciendo "en esta casuística", "en la situación planteada" o "en este caso".
-
----
-PREGUNTA O DUDA DEL ESTUDIANTE:
-${message}`;
-    }
+describe('Quiz Tutor Context Normalization & Prompt Construction (Real Module)', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
     test('should include all options formatted as [A], [B], [C] in the prompt', () => {
         const mockContext = {
@@ -123,16 +28,22 @@ ${message}`;
             explanation: 'Sustento oficial',
             topic: 'Evaluación'
         };
-        const res = buildQuizTutorInstruction(mockContext, 'Detalles');
-        expect(res).toContain('[A] Opción 1');
-        expect(res).toContain('[B] Opción 2');
-        expect(res).toContain('[C] Opción 3');
-        expect(res).toContain('RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [A]');
-        expect(res).toContain('❌ Incorrecta');
-        expect(res).toContain('TIENES ACCESO COMPLETO AL REACTIVO Y A SUS OPCIONES');
+
+        const { tutorInstruction } = buildQuizTutorPrompt({
+            context: mockContext,
+            message: 'Detalles',
+            finalSpecialization: 'education'
+        });
+
+        expect(tutorInstruction).toContain('[A] Opción 1');
+        expect(tutorInstruction).toContain('[B] Opción 2');
+        expect(tutorInstruction).toContain('[C] Opción 3');
+        expect(tutorInstruction).toContain('RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [A]');
+        expect(tutorInstruction).toContain('❌ Incorrecta');
+        expect(tutorInstruction).toContain('TIENES ACCESO COMPLETO AL REACTIVO Y A SUS OPCIONES');
     });
 
-    test('should handle stringified JSON options', () => {
+    test('should handle stringified JSON options and medicine specialization', () => {
         const mockContext = {
             type: 'quiz_tutor',
             questionText: 'Paciente con dolor...',
@@ -140,9 +51,17 @@ ${message}`;
             correctOptionIndex: 1,
             examContext: 'MEDICINA'
         };
-        const res = buildQuizTutorInstruction(mockContext, 'Medicina', 'medicine');
-        expect(res).toContain('[A] Nitroglicerina');
-        expect(res).toContain('CLAVE CORRECTA OFICIAL: Opción [B] (Aspirina)');
+
+        const { tutorInstruction, examDomain, optionsCount } = buildQuizTutorPrompt({
+            context: mockContext,
+            message: 'Medicina',
+            finalSpecialization: 'medicine'
+        });
+
+        expect(examDomain).toBe('MEDICINA');
+        expect(optionsCount).toBe(2);
+        expect(tutorInstruction).toContain('[A] Nitroglicerina');
+        expect(tutorInstruction).toContain('CLAVE CORRECTA OFICIAL: Opción [B] (Aspirina)');
     });
 
     test('should handle userOptionIndex = 0 and correctOptionIndex = 0 properly', () => {
@@ -154,9 +73,15 @@ ${message}`;
             userOptionIndex: 0,
             isUserCorrect: true
         };
-        const res = buildQuizTutorInstruction(mockContext, 'Consulta');
-        expect(res).toContain('CLAVE CORRECTA OFICIAL: Opción [A] (Opción A)');
-        expect(res).toContain('RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [A] (Opción A) -> ✅ Correcta');
+
+        const { tutorInstruction } = buildQuizTutorPrompt({
+            context: mockContext,
+            message: 'Consulta',
+            finalSpecialization: 'education'
+        });
+
+        expect(tutorInstruction).toContain('CLAVE CORRECTA OFICIAL: Opción [A] (Opción A)');
+        expect(tutorInstruction).toContain('RESPUESTA SELECCIONADA POR EL ESTUDIANTE: Opción [A] (Opción A) -> ✅ Correcta');
     });
 
     test('should include case scenario, data table and image when provided, omitting internal case title', () => {
@@ -170,12 +95,68 @@ ${message}`;
             caseTableHtml: '<table><tr><th>Dinosaurio</th></tr></table>',
             imageUrl: 'https://storage.googleapis.com/hubacademia/dinos.png'
         };
-        const res = buildQuizTutorInstruction(mockContext, 'Explica');
-        expect(res).not.toContain('Caso-Primaria-Mat15');
-        expect(res).not.toContain('Título:');
-        expect(res).toContain('La docente organizó los datos en una tabla.');
-        expect(res).toContain('Tabla / Datos de Apoyo:');
-        expect(res).toContain('IMAGEN DE APOYO EN LA PREGUNTA: https://storage.googleapis.com/hubacademia/dinos.png');
-        expect(res).toContain('PROHIBICIÓN ESTRICTA DE CÓDIGOS Y TÍTULOS INTERNOS');
+
+        const { tutorInstruction } = buildQuizTutorPrompt({
+            context: mockContext,
+            message: 'Explica',
+            finalSpecialization: 'education'
+        });
+
+        expect(tutorInstruction).not.toContain('Caso-Primaria-Mat15');
+        expect(tutorInstruction).not.toContain('Título:');
+        expect(tutorInstruction).toContain('La docente organizó los datos en una tabla.');
+        expect(tutorInstruction).toContain('Tabla / Datos de Apoyo:');
+        expect(tutorInstruction).toContain('IMAGEN DE APOYO EN LA PREGUNTA: https://storage.googleapis.com/hubacademia/dinos.png');
+        expect(tutorInstruction).toContain('PROHIBICIÓN ESTRICTA DE CÓDIGOS Y TÍTULOS INTERNOS');
+    });
+
+    test('ChatController.processMessage injects real buildQuizTutorPrompt output into TutorAiService', async () => {
+        TutorAiService.handleChat.mockResolvedValue({
+            intencion: 'explicacion_reactivo',
+            respuesta: 'La clave correcta es la B.',
+            sugerencias: ['Ver norma']
+        });
+
+        const controller = new ChatController(
+            { addMessage: jest.fn() },
+            { logEvent: jest.fn() },
+            { checkAndIncrementUsage: jest.fn() }
+        );
+        controller.enrichResponse = jest.fn(async (_msg, aiResult) => aiResult);
+
+        const req = {
+            user: { id: 'user-123' },
+            userTier: 'basic',
+            useRag: false,
+            body: {
+                message: '¿Por qué es la B?',
+                specialization: 'education',
+                context: {
+                    type: 'quiz_tutor',
+                    questionText: 'Enfoque pedagógico',
+                    options: ['Memorístico', 'Por competencias'],
+                    correctOptionIndex: 1,
+                    userOptionIndex: 0
+                }
+            }
+        };
+        const res = {
+            set: jest.fn(),
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await controller.processMessage(req, res);
+
+        expect(TutorAiService.handleChat).toHaveBeenCalledTimes(1);
+        const [injectedPrompt, , meta] = TutorAiService.handleChat.mock.calls[0];
+        expect(injectedPrompt).toContain('[MODO: TUTOR DE SIMULADOR DE EXAMEN]');
+        expect(injectedPrompt).toContain('[B] Por competencias');
+        expect(injectedPrompt).toContain('❌ Incorrecta');
+        expect(injectedPrompt).toContain('¿Por qué es la B?');
+        expect(meta.specialization).toBe('education');
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            respuesta: 'La clave correcta es la B.'
+        }));
     });
 });

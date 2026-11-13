@@ -1699,38 +1699,13 @@ const SimulatorDash = (() => {
 
             // --- Render Bar Chart (Áreas) ---
             if (kpis.radar_data && kpis.radar_data.length > 0) {
-                // 🧹 Sanitizar y agrupar historial viejo corrupto
-                const cleanRadarMap = {};
-                kpis.radar_data.forEach(d => {
-                    let cleanSubject = d.subject || 'General';
-                    if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
-
-                    if (!cleanRadarMap[cleanSubject]) {
-                        cleanRadarMap[cleanSubject] = { correct: 0, total: 0 };
-                    }
-
-                    const safeTotal = parseInt(d.total || 0, 10);
-                    const rawCorrect = (d.correct !== undefined) ? parseInt(d.correct, 10) : Math.round((d.accuracy / 100) * safeTotal);
-                    cleanRadarMap[cleanSubject].correct += rawCorrect;
-                    cleanRadarMap[cleanSubject].total += safeTotal;
-                });
-
-                renderBarChart(cleanRadarMap);
+                renderBarChart(aggregateRadarMap(kpis.radar_data));
             } else {
                 renderBarChart({}); // Empty state handler
             }
 
             // --- Render Doughnut Chart (Distribución por Áreas / Topics Reales) ---
-            const doughnutData = {};
-            kpis.radar_data?.forEach(d => {
-                let cleanSubject = d.subject || 'General';
-                if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
-                const totalCount = parseInt(d.total || 0, 10);
-                if (totalCount > 0) {
-                    doughnutData[cleanSubject] = (doughnutData[cleanSubject] || 0) + totalCount;
-                }
-            });
-            renderDoughnutChart(doughnutData);
+            renderDoughnutChart(aggregateDoughnutData(kpis.radar_data));
 
             // --- AI Diagnostic Strengths / Weaknesses ---
             const strengthsEl = document.getElementById('ai-strengths-content');
@@ -2384,15 +2359,60 @@ const SimulatorDash = (() => {
         }
     }
 
-    return { init };
+    /**
+     * Normaliza y agrupa aciertos y totales por tema principal para el gráfico de barras.
+     */
+    function aggregateRadarMap(radarData = []) {
+        const cleanRadarMap = {};
+        (radarData || []).forEach(d => {
+            let cleanSubject = d.subject || 'General';
+            if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
+
+            if (!cleanRadarMap[cleanSubject]) {
+                cleanRadarMap[cleanSubject] = { correct: 0, total: 0 };
+            }
+
+            const safeTotal = parseInt(d.total || 0, 10);
+            const rawCorrect = (d.correct !== undefined) ? parseInt(d.correct, 10) : Math.round((d.accuracy / 100) * safeTotal);
+            cleanRadarMap[cleanSubject].correct += rawCorrect;
+            cleanRadarMap[cleanSubject].total += safeTotal;
+        });
+        return cleanRadarMap;
+    }
+
+    /**
+     * Agrega la distribución de preguntas practicadas por tema/área para el gráfico doughnut.
+     */
+    function aggregateDoughnutData(radarData = []) {
+        const doughnutData = {};
+        (radarData || []).forEach(d => {
+            let cleanSubject = d.subject || 'General';
+            if (cleanSubject.includes(',')) cleanSubject = cleanSubject.split(',')[0].trim();
+            const totalCount = parseInt(d.total || 0, 10);
+            if (totalCount > 0) {
+                doughnutData[cleanSubject] = (doughnutData[cleanSubject] || 0) + totalCount;
+            }
+        });
+        return doughnutData;
+    }
+
+    return { init, aggregateRadarMap, aggregateDoughnutData };
 })();
 
-document.addEventListener('DOMContentLoaded', SimulatorDash.init);
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', SimulatorDash.init);
+}
 
 // 🔄 AUTO-REFRESH: Recargar estadísticas al volver al tablero (Botón Atrás o Salir del Quiz)
-window.addEventListener('pageshow', (event) => {
-    if (event.persisted) {
-        console.log("🔄 Navegación detectada: Refrescando Estadísticas...");
-        SimulatorDash.init();
-    }
-});
+if (typeof window !== 'undefined') {
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            console.log("🔄 Navegación detectada: Refrescando Estadísticas...");
+            SimulatorDash.init();
+        }
+    });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { SimulatorDash };
+}

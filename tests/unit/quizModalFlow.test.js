@@ -1,12 +1,10 @@
 /**
- * Tests unitarios para el flujo de modales en simuladores:
- * 1. Modal de finalización (¡Simulacro Finalizado!) y botón "Nuevo Examen" en modo normal vs demo.
- * 2. Modal de reanudación (Simulacro en progreso) y botón "Iniciar nuevo".
+ * Tests unitarios de ejecución real para el flujo de modales en simuladores:
+ * 1. Modal de finalización (startNewExam) + UIManager (showAuthPromptModal / hideAuthPromptModal / backdrop).
+ * 2. Modal de reanudación (init con resume === false) y startQuiz con seenIds / excludeIds.
  * 3. Aislamiento y ejecución del ciclo anti-repetición 24h solo tras culminar examen.
  */
 
-const fs = require('fs');
-const path = require('path');
 const db = require('../../src/infrastructure/database/db');
 const docenteRepository = require('../../src/domain/repositories/docenteRepository');
 const medicoRepository = require('../../src/domain/repositories/medicoRepository');
@@ -16,59 +14,273 @@ jest.mock('../../src/infrastructure/database/db', () => ({
     getClient: jest.fn()
 }));
 
-describe('Quiz Modals Flow & Anti-Repetition Lifecycle Verification', () => {
-    let quizJs;
-    let uiManagerJs;
+function setupQuizModalDom({ search = '', isAuthenticated = true, canTakeDemo = false } = {}) {
+    const store = {};
+    if (isAuthenticated) {
+        store.authToken = 'jwt-test-token';
+    }
+    const localStorageMock = {
+        getItem: jest.fn((k) => (Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null)),
+        setItem: jest.fn((k, v) => { store[k] = String(v); }),
+        removeItem: jest.fn((k) => { delete store[k]; }),
+        clear: jest.fn(() => { Object.keys(store).forEach(k => delete store[k]); })
+    };
 
-    beforeAll(() => {
-        quizJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/quiz.js'), 'utf8');
-        uiManagerJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/uiManager.js'), 'utf8');
+    const makeStubEl = () => ({
+        classList: { add: jest.fn(), remove: jest.fn(), toggle: jest.fn(), contains: jest.fn(() => false) },
+        style: {},
+        textContent: '',
+        innerHTML: '',
+        disabled: false,
+        dataset: {},
+        setAttribute: jest.fn(),
+        addEventListener: jest.fn(),
+        remove: jest.fn(),
+        querySelector: jest.fn(() => null),
+        querySelectorAll: jest.fn(() => [])
     });
 
+    const elementsById = {
+        loadingOverlay: makeStubEl(),
+        'loading-overlay': makeStubEl(),
+        maxQ: makeStubEl(),
+        lightboxModal: makeStubEl(),
+        lightboxImage: makeStubEl(),
+        lightboxClose: makeStubEl(),
+        lightboxZoomIn: makeStubEl(),
+        lightboxZoomOut: makeStubEl(),
+        lightboxZoomReset: makeStubEl(),
+        lightboxViewport: makeStubEl()
+    };
+
+    const reloadMock = jest.fn();
+    const locationMock = {
+        href: `https://hubacademia.test/quiz.html${search}`,
+        pathname: '/quiz.html',
+        search,
+        reload: reloadMock
+    };
+
+    global.localStorage = localStorageMock;
+    global.sessionStorage = localStorageMock;
+    global.location = locationMock;
+    global.document = {
+        body: {
+            setAttribute: jest.fn(),
+            classList: { remove: jest.fn(), add: jest.fn() },
+            dataset: {},
+            insertAdjacentHTML: jest.fn()
+        },
+        title: '',
+        getElementById: jest.fn((id) => elementsById[id] || null),
+        querySelector: jest.fn(() => null),
+        querySelectorAll: jest.fn(() => []),
+        addEventListener: jest.fn(),
+        createElement: jest.fn(() => makeStubEl())
+    };
+    global.window = {
+        location: locationMock,
+        history: { pushState: jest.fn(), back: jest.fn() },
+        AppConfig: { API_URL: '' },
+        NetworkService: { fetch: jest.fn() },
+        sessionManager: {
+            initialize: jest.fn().mockResolvedValue(undefined),
+            getUser: jest.fn(() => (isAuthenticated ? { id: 'usr-1', email: 'doc@test.com' } : null)),
+            isLoggedIn: jest.fn(() => isAuthenticated)
+        },
+        GuestSessionManager: {
+            canTakeDailyDemo: jest.fn(() => canTakeDemo),
+            recordDemoAttempt: jest.fn()
+        },
+        confirmationModal: {
+            show: jest.fn().mockResolvedValue(false),
+            showAlert: jest.fn().mockResolvedValue(undefined)
+        },
+        uiManager: {
+            showAuthPromptModal: jest.fn(),
+            showPaywallModal: jest.fn(),
+            showToast: jest.fn(),
+            injectModalHTML: jest.fn()
+        },
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn()
+    };
+
+    return { store, locationMock, reloadMock };
+}
+
+describe('Quiz Modals Flow & Anti-Repetition Lifecycle Verification', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    describe('1. Modal de Finalización & Botón "Nuevo Examen"', () => {
-        it('window.startNewExam verifica demo/visitante y sale de quiz redirigiendo al dashboard', () => {
-            expect(quizJs).toContain('window.startNewExam = function () {');
-            // Verifica que usuarios autenticados nunca son tratados como visitantes
-            expect(quizJs).toContain('const isAuthenticated = !!user || !!token;');
-            expect(quizJs).toContain('if (!isAuthenticated) {');
-            // Verifica que limpia la sesión activa
-            expect(quizJs).toContain('clearSession();');
-            // Verifica que muestra modal de registro con callback para salir al cerrar
-            expect(quizJs).toMatch(/window\.uiManager\.showAuthPromptModal\(\(\)\s*=>\s*\{[\s\S]*?exitToDashboard\(\);/);
-            // Verifica que para usuarios registrados ejecuta location.reload()
-            expect(quizJs).toContain('location.reload();');
+    describe('1. Modal de Finalización, Botón "Nuevo Examen" y UIManager Auth Modal', () => {
+        it('window.startNewExam redirige al dashboard al cerrar modal cuando visitante agotó demo, y recarga cuando es usuario autenticado', () => {
+            // Caso A: visitante no autenticado sin cuota demo -> muestra auth modal y ejecuta exitToDashboard en onClose
+            const guestEnv = setupQuizModalDom({ isAuthenticated: false, canTakeDemo: false });
+            let quizModule;
+            jest.isolateModules(() => {
+                quizModule = require('../../src/presentation/public/js/quiz');
+            });
+
+            quizModule.state.context = 'EDUCACION';
+            quizModule.state.questions = [{ id: 'q1' }];
+            quizModule.saveSession();
+
+            global.window.startNewExam();
+
+            expect(global.localStorage.removeItem).toHaveBeenCalledWith(quizModule.getStorageKey());
+            expect(global.window.uiManager.showAuthPromptModal).toHaveBeenCalledTimes(1);
+            const onCloseCallback = global.window.uiManager.showAuthPromptModal.mock.calls[0][0];
+            expect(typeof onCloseCallback).toBe('function');
+            onCloseCallback();
+            expect(guestEnv.locationMock.href).toBe('simulator-dashboard?context=EDUCACION');
+
+            // Caso B: usuario autenticado con ?demo=true -> elimina demo param y recarga sin bloqueo de invitado
+            const authEnv = setupQuizModalDom({ search: '?demo=true&context=MEDICINA', isAuthenticated: true, canTakeDemo: false });
+            jest.isolateModules(() => {
+                quizModule = require('../../src/presentation/public/js/quiz');
+            });
+
+            global.window.startNewExam();
+            expect(global.window.uiManager.showAuthPromptModal).not.toHaveBeenCalled();
+            expect(authEnv.locationMock.href).toBe('/quiz.html?context=MEDICINA');
+
+            // Caso C: usuario autenticado sin ?demo -> recarga la página
+            const stdEnv = setupQuizModalDom({ search: '?context=MEDICINA', isAuthenticated: true });
+            jest.isolateModules(() => {
+                quizModule = require('../../src/presentation/public/js/quiz');
+            });
+            global.window.startNewExam();
+            expect(stdEnv.reloadMock).toHaveBeenCalledTimes(1);
         });
 
-        it('uiManager.showAuthPromptModal acepta callback onClose y lo ejecuta en hideAuthPromptModal', () => {
-            expect(uiManagerJs).toMatch(/showAuthPromptModal\(onClose\s*=\s*null\)\s*\{[\s\S]*?this\._authModalOnClose\s*=\s*onClose;/);
-            expect(uiManagerJs).toMatch(/hideAuthPromptModal\(\)\s*\{[\s\S]*?this\._authModalOnClose[\s\S]*?cb\(\);/);
-        });
+        it('UIManager.showAuthPromptModal registra callback onClose y lo ejecuta en hideAuthPromptModal y al hacer clic en backdrop', () => {
+            const modalEl = {
+                style: { display: 'none' },
+                addEventListener: jest.fn()
+            };
+            const statusEl = () => ({ className: '', textContent: '', classList: { add: jest.fn(), remove: jest.fn() } });
+            let modalInserted = false;
+            global.navigator = { onLine: true };
+            global.window = {
+                location: { href: 'http://localhost/' },
+                history: { pushState: jest.fn(), back: jest.fn() },
+                addEventListener: jest.fn()
+            };
+            global.document = {
+                getElementById: jest.fn((id) => {
+                    if (id === 'status-pill-container' || id === 'status-pill' || id === 'status-text') return statusEl();
+                    if (id === 'auth-prompt-modal' && modalInserted) return modalEl;
+                    return null;
+                }),
+                querySelector: jest.fn(() => true),
+                createElement: jest.fn(() => ({ style: {}, setAttribute: jest.fn(), className: '' })),
+                head: { appendChild: jest.fn() },
+                body: {
+                    classList: { add: jest.fn(), remove: jest.fn() },
+                    appendChild: jest.fn(),
+                    insertAdjacentHTML: jest.fn(() => { modalInserted = true; })
+                }
+            };
 
-        it('uiManager.injectModalHTML vincula evento de clic en backdrop para cerrar y disparar callback', () => {
-            expect(uiManagerJs).toMatch(/modalEl\.addEventListener\('click',\s*\(e\)\s*=>\s*\{[\s\S]*?this\.hideAuthPromptModal\(\);/);
+            const { UIManager } = require('../../src/presentation/public/js/ui/uiManager');
+            const ui = new UIManager();
+            const onClose = jest.fn();
+
+            ui.showAuthPromptModal(onClose);
+            expect(modalEl.style.display).toBe('flex');
+            expect(modalEl.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
+
+            // Simular clic directo en el backdrop (e.target === modalEl)
+            const clickCall = modalEl.addEventListener.mock.calls.find(([ev]) => ev === 'click');
+            clickCall[1]({ target: modalEl });
+
+            expect(modalEl.style.display).toBe('none');
+            expect(onClose).toHaveBeenCalledTimes(1);
+
+            // Una segunda llamada a hideAuthPromptModal no debe re-ejecutar el callback ya consumido
+            ui.hideAuthPromptModal();
+            expect(onClose).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('2. Modal de Reanudación ("Simulacro en progreso") & Botón "Iniciar nuevo"', () => {
-        it('al descartar sesión anterior (resume === false), resetea estado en limpio y rearma un nuevo examen con el banco completo', () => {
-            expect(quizJs).toMatch(/else\s+if\s*\(resume\s*===\s*false\)\s*\{/);
-            expect(quizJs).toMatch(/clearSession\(\);/);
-            expect(quizJs).toMatch(/state\.questions\s*=\s*\[\];/);
-            expect(quizJs).toMatch(/state\.currentQuestionIndex\s*=\s*0;/);
-            expect(quizJs).toMatch(/state\.score\s*=\s*0;/);
-            expect(quizJs).toMatch(/state\.answers\s*=\s*\[\];/);
-            expect(quizJs).toMatch(/state\.quizSessionId\s*=\s*null;/);
-            expect(quizJs).toMatch(/await\s+startQuiz\(\);/);
+    describe('2. Modal de Reanudación ("Simulacro en progreso") & startQuiz', () => {
+        it('init() con resume === false descarta sesión previa, resetea state y llama a startQuiz() contra /start', async () => {
+            const env = setupQuizModalDom({ search: '?context=MEDICINA&topic=Cardio', isAuthenticated: true });
+            global.window.NetworkService.fetch.mockResolvedValue({
+                ok: false,
+                status: 500,
+                json: async () => ({ error: 'stop-after-request' })
+            });
+
+            let quizModule;
+            jest.isolateModules(() => {
+                quizModule = require('../../src/presentation/public/js/quiz');
+            });
+
+            // Guardar sesión previa recuperable en localStorage
+            quizModule.state.context = 'MEDICINA';
+            quizModule.state.questions = [{ id: 'old-q1' }];
+            quizModule.state.currentQuestionIndex = 1;
+            quizModule.state.score = 1;
+            quizModule.state.answers = [{ questionId: 'old-q1', userAnswer: 0, isCorrect: true }];
+            quizModule.state.quizSessionId = 'sess-prev-1';
+            quizModule.saveSession();
+
+            await quizModule.init();
+
+            expect(env.store[quizModule.getStorageKey()]).toBeUndefined();
+            expect(quizModule.state.questions).toEqual([]);
+            expect(quizModule.state.currentQuestionIndex).toBe(0);
+            expect(quizModule.state.score).toBe(0);
+            expect(quizModule.state.answers).toEqual([]);
+            expect(quizModule.state.quizSessionId).toBeNull();
+            expect(global.window.NetworkService.fetch).toHaveBeenCalledWith(
+                '/api/medico/start',
+                expect.objectContaining({
+                    method: 'POST',
+                    body: expect.any(String)
+                })
+            );
         });
 
-        it('startQuiz recibe temporarySeenIds y los inyecta en el payload de /start y en /demo', () => {
-            expect(quizJs).toMatch(/async\s+function\s+startQuiz\(temporarySeenIds\s*=\s*\[\]\)/);
-            expect(quizJs).toMatch(/seenIds:\s*Array\.isArray\(temporarySeenIds\)\s*\?\s*temporarySeenIds\s*:\s*\[\]/);
-            expect(quizJs).toMatch(/excludeIds=\$\{combinedExclude\.join\(','\)\}/);
+        it('startQuiz(temporarySeenIds) inyecta seenIds en /start y excludeIds combinados en /demo', async () => {
+            // Modo estándar /start con seenIds temporales
+            const env = setupQuizModalDom({ search: '?context=MEDICINA', isAuthenticated: true });
+            global.window.NetworkService.fetch.mockResolvedValue({
+                ok: false,
+                status: 500,
+                json: async () => ({ error: 'stop' })
+            });
+
+            let quizModule;
+            jest.isolateModules(() => {
+                quizModule = require('../../src/presentation/public/js/quiz');
+            });
+            await quizModule.init();
+            global.window.NetworkService.fetch.mockClear();
+
+            await quizModule.startQuiz(['temp-q1', 'temp-q2']);
+            const [, postOpts] = global.window.NetworkService.fetch.mock.calls[0];
+            expect(JSON.parse(postOpts.body).seenIds).toEqual(['temp-q1', 'temp-q2']);
+
+            // Modo demo con guest_seen_ids_medicine + temporarySeenIds combinados
+            setupQuizModalDom({ search: '?demo=true&context=MEDICINA', isAuthenticated: false, canTakeDemo: true });
+            global.localStorage.setItem('guest_seen_ids_medicine', JSON.stringify(['guest-q1']));
+            global.window.NetworkService.fetch.mockResolvedValue({
+                json: async () => ({ success: false })
+            });
+
+            jest.isolateModules(() => {
+                quizModule = require('../../src/presentation/public/js/quiz');
+            });
+            quizModule.state.context = 'MEDICINA';
+            await quizModule.startQuiz(['temp-q3', 'guest-q1']);
+
+            const [demoUrl] = global.window.NetworkService.fetch.mock.calls[0];
+            expect(demoUrl).toContain('excludeIds=guest-q1,temp-q3');
+            expect(env.store).toBeDefined();
         });
     });
 

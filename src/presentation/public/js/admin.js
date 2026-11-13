@@ -3556,35 +3556,43 @@ class AdminManager {
     }
 }
 
-// Inicializar administrador cuando el DOM y los servicios estén listos y verificados
-document.addEventListener('DOMContentLoaded', () => {
-    const verifyAdminAndInit = async () => {
-        try {
-            if (!window.NetworkService || !window.sessionManager) {
-                setTimeout(verifyAdminAndInit, 50);
-                return;
-            }
+const _isAdminJestEnv = typeof process !== 'undefined' && process.env && Boolean(process.env.JEST_WORKER_ID);
 
-            const user = await window.sessionManager.initialize();
-            if (!user || user.role !== 'admin') {
-                console.warn('⛔ [Admin Shield] Acceso no autorizado denegado. Redirigiendo...');
+// Inicializar administrador cuando el DOM y los servicios estén listos y verificados
+if (typeof document !== 'undefined' && !_isAdminJestEnv) {
+    document.addEventListener('DOMContentLoaded', () => {
+        const verifyAdminAndInit = async () => {
+            try {
+                if (!window.NetworkService || !window.sessionManager) {
+                    setTimeout(verifyAdminAndInit, 50);
+                    return;
+                }
+
+                const user = await window.sessionManager.initialize();
+                if (!user || user.role !== 'admin') {
+                    console.warn('⛔ [Admin Shield] Acceso no autorizado denegado. Redirigiendo...');
+                    document.body.innerHTML = '';
+                    window.location.replace('/');
+                    return;
+                }
+
+                // ✅ Acceso verificado criptográficamente por el backend: Retirar el escudo
+                const shield = document.getElementById('admin-shield-style');
+                if (shield) shield.remove();
+                document.documentElement.style.display = '';
+
+                window.adminManager = new AdminManager();
+            } catch (err) {
+                console.error('❌ [Admin Shield] Error verificando privilegios:', err);
                 document.body.innerHTML = '';
                 window.location.replace('/');
-                return;
             }
+        };
 
-            // ✅ Acceso verificado criptográficamente por el backend: Retirar el escudo
-            const shield = document.getElementById('admin-shield-style');
-            if (shield) shield.remove();
-            document.documentElement.style.display = '';
+        verifyAdminAndInit();
+    });
+}
 
-            window.adminManager = new AdminManager();
-        } catch (err) {
-            console.error('❌ [Admin Shield] Error verificando privilegios:', err);
-            document.body.innerHTML = '';
-            window.location.replace('/');
-        }
-    };
-
-    verifyAdminAndInit();
-});
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { AdminManager, ADMIN_RESOURCE_TYPES };
+}

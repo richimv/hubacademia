@@ -1,120 +1,208 @@
 /**
- * Unit Tests for Quiz Session Persistence & Storage Resilience
- * Tests case deduplication (_casesMap) and QuotaExceededError fallback handling.
+ * Unit tests for Quiz Session Persistence & Resilience (localStorage -> sessionStorage -> _casesMap hydration)
+ * Executes real logic from src/presentation/public/js/quiz.js
  */
 
-describe('Quiz Session Storage & Persistence Resilience', () => {
+function createStorageMock() {
+    const store = new Map();
+    return {
+        get length() { return store.size; },
+        key: jest.fn((i) => Array.from(store.keys())[i] || null),
+        getItem: jest.fn((k) => (store.has(k) ? store.get(k) : null)),
+        setItem: jest.fn((k, v) => { store.set(k, String(v)); }),
+        removeItem: jest.fn((k) => { store.delete(k); }),
+        _store: store
+    };
+}
 
-    function serializeSessionState(state) {
-        const casesMap = {};
-        const optimizedQuestions = (state.questions || []).map(q => {
-            if (q.case_id) {
-                if (!casesMap[q.case_id]) {
-                    casesMap[q.case_id] = {
-                        case_title: q.case_title || null,
-                        case_description: q.case_description || null,
-                        case_image_url: q.case_image_url || null,
-                        case_order: q.case_order || null,
-                        case_code: q.case_code || null
-                    };
-                }
-                const { case_title, case_description, case_image_url, case_order, case_code, ...rest } = q;
-                return rest;
+describe('Quiz Session Persistence & Multi-Tier Resilience (Real quiz.js)', () => {
+    let quizModule;
+    let localStore;
+    let sessionStore;
+
+    beforeEach(() => {
+        localStore = createStorageMock();
+        sessionStore = createStorageMock();
+
+        global.localStorage = localStore;
+        global.sessionStorage = sessionStore;
+        global.document = {
+            readyState: 'complete',
+            getElementById: jest.fn(() => null),
+            createElement: jest.fn(() => ({ style: {}, classList: { add: jest.fn(), remove: jest.fn() } })),
+            addEventListener: jest.fn()
+        };
+        global.window = {
+            AppConfig: { API_URL: 'http://localhost:3000' },
+            location: { search: '?limit=20&context=MEDICINA' },
+            scrollTo: jest.fn(),
+            sessionManager: {
+                getUser: () => ({ id: 'user-persist-1' }),
+                isLoggedIn: () => true
             }
-            return q;
+        };
+
+        jest.isolateModules(() => {
+            quizModule = require('../../src/presentation/public/js/quiz');
         });
 
-        return {
-            ...state,
-            questions: optimizedQuestions,
-            _casesMap: Object.keys(casesMap).length > 0 ? casesMap : undefined,
-            savedAt: Date.now(),
-            isFinished: false
-        };
-    }
-
-    function hydrateSessionState(data) {
-        if (data._casesMap && Array.isArray(data.questions)) {
-            data.questions = data.questions.map(q => {
-                if (q.case_id && data._casesMap[q.case_id]) {
-                    return {
-                        ...q,
-                        ...data._casesMap[q.case_id]
-                    };
-                }
-                return q;
-            });
-            delete data._casesMap;
-        }
-        return data;
-    }
-
-    test('should deduplicate case_description across nested questions in same case', () => {
-        const heavyCaseDescription = '<p>Heavy description of case scenario</p>'.repeat(500); // ~20KB
-        const mockQuestions = [
-            { id: 'q1', case_id: 'case-arte-1', case_description: heavyCaseDescription, case_title: 'Arte 1', question_text: 'Pregunta 1', options: ['A', 'B'] },
-            { id: 'q2', case_id: 'case-arte-1', case_description: heavyCaseDescription, case_title: 'Arte 1', question_text: 'Pregunta 2', options: ['A', 'B'] },
-            { id: 'q3', case_id: 'case-arte-1', case_description: heavyCaseDescription, case_title: 'Arte 1', question_text: 'Pregunta 3', options: ['A', 'B'] },
-            { id: 'q4', case_id: 'case-arte-1', case_description: heavyCaseDescription, case_title: 'Arte 1', question_text: 'Pregunta 4', options: ['A', 'B'] },
-            { id: 'q5', case_id: null, question_text: 'Pregunta independiente', options: ['A', 'B'] }
-        ];
-
-        const state = { questions: mockQuestions, currentQuestionIndex: 0 };
-        const serialized = serializeSessionState(state);
-
-        // Verify that serialized questions do not contain case_description on every question
-        expect(serialized.questions[0].case_description).toBeUndefined();
-        expect(serialized.questions[1].case_description).toBeUndefined();
-        expect(serialized._casesMap).toBeDefined();
-        expect(serialized._casesMap['case-arte-1'].case_description).toBe(heavyCaseDescription);
-
-        // Verify serialized size is significantly smaller than raw duplication
-        const rawJsonLength = JSON.stringify(state).length;
-        const optimizedJsonLength = JSON.stringify(serialized).length;
-        expect(optimizedJsonLength).toBeLessThan(rawJsonLength * 0.5);
-
-        // Verify hydration restores the full question objects perfectly
-        const hydrated = hydrateSessionState(serialized);
-        expect(hydrated.questions[0].case_description).toBe(heavyCaseDescription);
-        expect(hydrated.questions[1].case_description).toBe(heavyCaseDescription);
-        expect(hydrated.questions[3].case_title).toBe('Arte 1');
-        expect(hydrated.questions[4].case_id).toBeNull();
+        quizModule.state.context = 'MEDICINA';
+        quizModule.state.mode = 'study';
+        quizModule.state.targetExam = 'SERUMS';
+        quizModule.state.career = 'Medicina Humana';
+        quizModule.state.maxQuestions = 20;
+        quizModule.state.quizId = 'quiz-abc';
+        quizModule.state.quizSessionId = 'qs-999';
+        quizModule.state.timeLeft = 1800;
+        quizModule.state.isFinished = false;
     });
 
-    test('should fallback to sessionStorage when localStorage throws QuotaExceededError', () => {
-        const mockLocalStorage = {
-            storage: {},
-            setItem(k, v) {
-                const err = new Error("Quota exceeded");
-                err.name = "QuotaExceededError";
-                throw err;
+    it('serializeSessionState deduplicates case metadata into _casesMap and loadSession rehydrates it', () => {
+        const longCaseDesc = 'Paciente acude con fiebre prolongada '.repeat(20);
+        quizModule.state.questions = [
+            {
+                id: 'q1',
+                case_id: 'case_100',
+                case_title: 'Caso 100',
+                case_description: longCaseDesc,
+                case_image_url: '/img/caso100.png',
+                case_order: 1,
+                case_code: 'C-100',
+                question_text: '¿Diagnóstico?'
             },
-            removeItem(k) { delete this.storage[k]; },
-            length: 0,
-            key(i) { return null; }
+            {
+                id: 'q2',
+                case_id: 'case_100',
+                case_title: 'Caso 100',
+                case_description: longCaseDesc,
+                case_image_url: '/img/caso100.png',
+                case_order: 2,
+                case_code: 'C-100',
+                question_text: '¿Tratamiento?'
+            }
+        ];
+
+        const serialized = quizModule.serializeSessionState();
+        expect(serialized._casesMap.case_100).toEqual({
+            case_title: 'Caso 100',
+            case_description: longCaseDesc,
+            case_image_url: '/img/caso100.png',
+            case_order: 1,
+            case_code: 'C-100'
+        });
+        expect(serialized.questions[0].case_description).toBeUndefined();
+        expect(serialized.questions[1].case_description).toBeUndefined();
+
+        quizModule.saveSession();
+
+        // Reset in-memory config to verify loadSession restores it and rehydrates questions
+        quizModule.state.quizSessionId = null;
+        quizModule.state.career = null;
+
+        const restored = quizModule.loadSession();
+        expect(restored).not.toBeNull();
+        expect(restored._casesMap).toBeUndefined();
+        expect(restored.questions).toHaveLength(2);
+        expect(restored.questions[0].case_description).toBe(longCaseDesc);
+        expect(restored.questions[1].case_description).toBe(longCaseDesc);
+        expect(restored.questions[1].case_image_url).toBe('/img/caso100.png');
+        expect(quizModule.state.quizSessionId).toBe('qs-999');
+        expect(quizModule.state.career).toBe('Medicina Humana');
+    });
+
+    it('saveSession falls back to sessionStorage when localStorage throws QuotaExceededError', () => {
+        quizModule.state.questions = [{ id: 'q1', question_text: 'Pregunta única' }];
+
+        localStore.setItem.mockImplementation(() => {
+            const err = new Error('QuotaExceededError');
+            err.name = 'QuotaExceededError';
+            throw err;
+        });
+
+        quizModule.saveSession();
+
+        const key = quizModule.getStorageKey();
+        expect(sessionStore.setItem).toHaveBeenCalledWith(key, expect.any(String));
+
+        const restored = quizModule.loadSession();
+        expect(restored).not.toBeNull();
+        expect(restored.questions[0].id).toBe('q1');
+    });
+
+    it('loadSession rejects and clears expired sessions older than 24 hours', () => {
+        const key = quizModule.getStorageKey();
+        const expiredPayload = {
+            context: 'MEDICINA',
+            maxQuestions: 20,
+            savedAt: Date.now() - (25 * 60 * 60 * 1000),
+            isFinished: false,
+            questions: [{ id: 'q1' }]
         };
+        localStore._store.set(key, JSON.stringify(expiredPayload));
 
-        const mockSessionStorage = {
-            storage: {},
-            setItem(k, v) { this.storage[k] = v; },
-            getItem(k) { return this.storage[k] || null; },
-            removeItem(k) { delete this.storage[k]; }
-        };
+        expect(quizModule.loadSession()).toBeNull();
+        expect(localStore.removeItem).toHaveBeenCalledWith(key);
+    });
 
-        let fallbackUsed = false;
-        const key = 'simulator_active_session_user1';
-        const data = JSON.stringify({ quizId: 'abc', score: 5 });
+    it('loadSession clears finished sessions and enforces mode/context/demo guards', () => {
+        const key = quizModule.getStorageKey();
 
-        try {
-            mockLocalStorage.setItem(key, data);
-        } catch (e) {
-            try {
-                mockSessionStorage.setItem(key, data);
-                fallbackUsed = true;
-            } catch (e2) {}
-        }
+        // 1. Finished session
+        localStore._store.set(key, JSON.stringify({
+            context: 'MEDICINA',
+            maxQuestions: 20,
+            savedAt: Date.now(),
+            isFinished: true,
+            questions: [{ id: 'q1' }]
+        }));
+        expect(quizModule.loadSession()).toBeNull();
+        expect(localStore.removeItem).toHaveBeenCalledWith(key);
 
-        expect(fallbackUsed).toBe(true);
-        expect(mockSessionStorage.getItem(key)).toBe(data);
+        // 2. Context mismatch (stored EDUCACION while current is MEDICINA)
+        localStore._store.set(key, JSON.stringify({
+            context: 'EDUCACION',
+            maxQuestions: 20,
+            savedAt: Date.now(),
+            isFinished: false,
+            questions: [{ id: 'q1' }]
+        }));
+        expect(quizModule.loadSession()).toBeNull();
+
+        // 3. Mode limit mismatch (stored 10q while URL asks 20q)
+        localStore._store.set(key, JSON.stringify({
+            context: 'MEDICINA',
+            maxQuestions: 10,
+            savedAt: Date.now(),
+            isFinished: false,
+            questions: [{ id: 'q1' }]
+        }));
+        expect(quizModule.loadSession()).toBeNull();
+
+        // 4. Demo mode ignores stored session without deleting user storage
+        global.window.location.search = '?limit=20&demo=true';
+        localStore._store.set(key, JSON.stringify({
+            context: 'MEDICINA',
+            maxQuestions: 20,
+            savedAt: Date.now(),
+            isFinished: false,
+            questions: [{ id: 'q1' }]
+        }));
+        expect(quizModule.loadSession()).toBeNull();
+    });
+
+    it('preserves timeLeft intact for real simulacros (>= 50 questions)', () => {
+        global.window.location.search = '?limit=60';
+        quizModule.state.context = 'EDUCACION';
+        quizModule.state.mode = 'real';
+        quizModule.state.maxQuestions = 60;
+        quizModule.state.timeLeft = 4120;
+        quizModule.state.questions = [{ id: 'q1', question_text: 'Casuística' }];
+
+        quizModule.saveSession();
+        const restored = quizModule.loadSession();
+
+        expect(restored).not.toBeNull();
+        expect(restored.timeLeft).toBe(4120);
+        expect(restored.maxQuestions).toBe(60);
     });
 });

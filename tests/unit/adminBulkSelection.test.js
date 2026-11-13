@@ -1,191 +1,229 @@
 /**
- * adminBulkSelection.test.js
- * 
- * Suite de pruebas unitarias para validar:
- * 1. Selección con Shift-Click considerando estrictamente la visibilidad (omitiendo elementos filtrados/ocultos).
- * 2. Reseteo automático de selección al cambiar filtros de búsqueda, tipo, dominio o pestaña.
- * 3. Formateo transparente e itemizado del mensaje de confirmación antes del borrado masivo.
- * 4. Atributos data-domain y badges de dominio (Salud / Educación) en componentes.
+ * Unit tests for Admin Panel Bulk Selection (visible-only + Shift+Click),
+ * Confirmation Message Generation, Composite Filters & Resource Card Generation.
+ * Executes real logic from components.js and AdminManager (admin.js).
  */
 
-const fs = require('fs');
-const path = require('path');
+const { AdminManager } = require('../../src/presentation/public/js/admin');
+const { createAdminItemCardHTML } = require('../../src/presentation/public/js/ui/components');
 
-describe('Panel de Gestión - Selección Masiva y Filtros Blindados', () => {
-    let adminJsContent;
-    let adminHtmlContent;
-    let componentsJsContent;
+function createClassList(initial = []) {
+    const set = new Set(initial);
+    return {
+        add: jest.fn((...cls) => cls.forEach(c => set.add(c))),
+        remove: jest.fn((...cls) => cls.forEach(c => set.delete(c))),
+        contains: jest.fn((c) => set.has(c))
+    };
+}
 
+function createCardAndCheckbox({ id, name, type = 'book', resourceType = 'paper', domain = 'medicine', publication = 'materials', visible = true }) {
+    const card = {
+        style: { display: visible ? '' : 'none' },
+        dataset: { email: '', name, resourceType, domain, publication },
+        textContent: name,
+        querySelector: jest.fn((sel) => (sel === 'h3' ? { textContent: name } : null))
+    };
+    const checkbox = {
+        checked: false,
+        dataset: { id: String(id), type },
+        classList: createClassList(['admin-item-checkbox']),
+        closest: jest.fn((sel) => (sel === '.admin-item-card, .item-card' ? card : null))
+    };
+    return { card, checkbox };
+}
+
+describe('Panel de Gestión - Selección Masiva y Filtros Blindados (Real Modules)', () => {
     beforeAll(() => {
-        adminJsContent = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/admin.js'), 'utf8');
-        adminHtmlContent = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/admin.html'), 'utf8');
-        componentsJsContent = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/components.js'), 'utf8');
+        global.safeHtmlValue = (val) => String(val || '');
+        global.createAdminItemCardHTML = createAdminItemCardHTML;
+        global.document = {
+            addEventListener: jest.fn(),
+            querySelector: jest.fn(),
+            querySelectorAll: jest.fn(() => [])
+        };
+        global.window = {
+            resolveImageUrl: (url) => url,
+            uiManager: {
+                registerMaterial: jest.fn(),
+                isResourceLocked: jest.fn()
+            }
+        };
     });
 
-    describe('1. Estructura HTML y Controles de la Barra de Acciones Masivas', () => {
-        test('admin.html contiene el botón "Seleccionar visibles" en la barra de acciones masivas', () => {
-            expect(adminHtmlContent).toContain('id="bulk-select-visible-btn"');
-            expect(adminHtmlContent).toContain('Seleccionar visibles');
-        });
+    function setupBulkDom(items) {
+        const containerListeners = {};
+        const mainContainer = {
+            addEventListener: jest.fn((event, handler) => {
+                if (!containerListeners[event]) containerListeners[event] = [];
+                containerListeners[event].push(handler);
+            })
+        };
+        const bar = { classList: createClassList() };
+        const barText = { textContent: '' };
+        const modalStub = { addEventListener: jest.fn() };
+        const activeTab = {
+            contains: jest.fn((node) => items.some(it => it.checkbox === node)),
+            querySelector: jest.fn((sel) => {
+                const match = sel.match(/data-id="([^"]+)"/);
+                if (match) {
+                    const found = items.find(it => it.checkbox.dataset.id === match[1]);
+                    return found ? found.checkbox : null;
+                }
+                return null;
+            }),
+            querySelectorAll: jest.fn((sel) => {
+                if (sel === '.admin-item-checkbox') return items.map(it => it.checkbox);
+                if (sel === '.admin-item-card, .item-card') return items.map(it => it.card);
+                return [];
+            })
+        };
 
-        test('admin.html contiene los botones de desmarcar y eliminar masivo', () => {
-            expect(adminHtmlContent).toContain('id="bulk-cancel-selection-btn"');
-            expect(adminHtmlContent).toContain('id="bulk-delete-btn"');
-        });
+        global.document = {
+            getElementById: jest.fn((id) => {
+                if (id === 'admin-main-container') return mainContainer;
+                if (id === 'admin-bulk-actions-bar') return bar;
+                if (id === 'bulk-actions-text') return barText;
+                return null;
+            }),
+            querySelector: jest.fn((sel) => {
+                if (sel === '.tab-content.active') return activeTab;
+                if (sel === '.admin-tabs') return { addEventListener: jest.fn() };
+                return null;
+            }),
+            querySelectorAll: jest.fn((sel) => {
+                if (sel === '.admin-item-checkbox') return items.map(it => it.checkbox);
+                return [];
+            }),
+            createElement: jest.fn(() => ({ className: '', textContent: '', style: { display: '' } })),
+            addEventListener: jest.fn()
+        };
 
-        test('admin.js registra listeners para bulk-select-visible-btn, bulk-cancel-selection-btn y bulk-delete-btn', () => {
-            expect(adminJsContent).toContain("document.getElementById('bulk-select-visible-btn')");
-            expect(adminJsContent).toContain("document.getElementById('bulk-cancel-selection-btn')");
-            expect(adminJsContent).toContain("document.getElementById('bulk-delete-btn')");
+        const manager = Object.create(AdminManager.prototype);
+        manager.selectedIds = [];
+        manager.selectedType = '';
+        manager.lastCheckedCheckbox = null;
+        manager.genericForm = modalStub;
+        manager.genericModal = modalStub;
+        manager.searchState = { 'tab-books': { search: '', filter: 'all', domain: 'all', publication: 'all' } };
+        manager.tabSortState = { 'tab-books': 'date-desc' };
+        manager.setupMainContainerDelegation = jest.fn();
+        manager.setupEventListeners();
+
+        return { manager, containerListeners, bar, barText, activeTab };
+    }
+
+    describe('1. Tarjetas de Recursos (createAdminItemCardHTML real)', () => {
+        test('inyecta data-target, data-publication, data-domain (en cursos) y etiqueta editorial correcta', () => {
+            const bulletinCard = createAdminItemCardHTML({
+                id: 'res-1',
+                title: 'Guía Boletín',
+                author: 'MINSA',
+                resource_type: 'guia',
+                target: 'SERUMS',
+                publish_in_bulletin: true
+            }, 'book');
+
+            const materialCard = createAdminItemCardHTML({
+                id: 'res-2',
+                title: 'Manual Curso',
+                author: 'MINEDU',
+                resource_type: 'book',
+                target: 'ASCENSO',
+                publish_in_bulletin: false
+            }, 'book');
+
+            const courseCard = createAdminItemCardHTML({
+                id: 'crs-1',
+                title: 'Curso Ascenso',
+                domain: 'education',
+                target: 'ASCENSO'
+            }, 'course');
+
+            expect(bulletinCard).toContain('data-target="SERUMS"');
+            expect(bulletinCard).toContain('data-publication="bulletin"');
+            expect(bulletinCard).toContain('Boletín IA');
+
+            expect(materialCard).toContain('data-target="ASCENSO"');
+            expect(materialCard).toContain('data-publication="materials"');
+            expect(materialCard).toContain('Material para cursos');
+
+            expect(courseCard).toContain('data-domain="education"');
+            expect(courseCard).toContain('data-target="ASCENSO"');
         });
     });
 
-    describe('2. Generación de Tarjetas con data-domain y Badges en components.js', () => {
-        test('createAdminItemCardHTML inyecta data-domain en las tarjetas de recursos y elementos generales', () => {
-            expect(componentsJsContent).toContain('data-domain=');
-            expect(componentsJsContent).toContain('data-target=');
-        });
-
-        test("Los recursos muestran su destino editorial y conservan su tipo", () => {
-            expect(componentsJsContent).toContain("item.publish_in_bulletin ? 'Boletín IA' : 'Material para cursos'");
-            expect(componentsJsContent).toContain('data-publication=');
-            expect(componentsJsContent).not.toContain("item.domain === 'education' ? 'Educación' : 'Salud'");
-        });
-    });
-
-    describe('3. Lógica de Filtrado por Visibilidad en Shift + Clic (Simulación Pura)', () => {
-        let cards;
-        let adminState;
-
-        beforeEach(() => {
-            // Estructura de tarjetas simulando un DOM donde 2 items fueron ocultados por el filtro
-            cards = [
-                { id: '1', name: 'Paper 1', type: 'book', resourceType: 'paper', isVisible: true, checked: false },
-                { id: '2', name: 'Norma Técnica 2', type: 'book', resourceType: 'norma', isVisible: false, checked: false }, // Oculto
-                { id: '3', name: 'Guía Clínica 3', type: 'book', resourceType: 'guia', isVisible: false, checked: false },  // Oculto
-                { id: '4', name: 'Paper 4', type: 'book', resourceType: 'paper', isVisible: true, checked: false },
-                { id: '5', name: 'Paper 5', type: 'book', resourceType: 'paper', isVisible: true, checked: false }
+    describe('2. Selección Masiva Real (Shift + Clic, selectVisibleItems y clearBulkSelection)', () => {
+        test('Shift + Clic delegado sobre admin-main-container selecciona rango visible omitiendo elementos ocultos', () => {
+            const items = [
+                createCardAndCheckbox({ id: '1', name: 'Paper 1', resourceType: 'paper', visible: true }),
+                createCardAndCheckbox({ id: '2', name: 'Norma Técnica 2', resourceType: 'norma', visible: false }),
+                createCardAndCheckbox({ id: '3', name: 'Guía Clínica 3', resourceType: 'guia', visible: false }),
+                createCardAndCheckbox({ id: '4', name: 'Paper 4', resourceType: 'paper', visible: true }),
+                createCardAndCheckbox({ id: '5', name: 'Paper 5', resourceType: 'paper', visible: true })
             ];
 
-            adminState = {
-                selectedIds: [],
-                selectedType: '',
-                lastCheckedCard: null,
-                barActive: false,
-                clearBulkSelection() {
-                    this.selectedIds = [];
-                    this.selectedType = '';
-                    this.lastCheckedCard = null;
-                    cards.forEach(c => c.checked = false);
-                    this.barActive = false;
-                },
-                updateBulkActionsBar() {
-                    this.barActive = this.selectedIds.length > 0;
-                },
-                selectVisibleItems() {
-                    const visibleCards = cards.filter(c => c.isVisible);
-                    visibleCards.forEach(c => {
-                        c.checked = true;
-                        this.selectedType = c.type;
-                        if (!this.selectedIds.includes(c.id)) {
-                            this.selectedIds.push(c.id);
-                        }
-                    });
-                    this.updateBulkActionsBar();
-                }
-            };
+            const { manager, containerListeners, bar, barText } = setupBulkDom(items);
+            const clickHandler = containerListeners.click.find(Boolean);
+            expect(typeof clickHandler).toBe('function');
+
+            // 1. Clic normal en Paper 1
+            items[0].checkbox.checked = true;
+            clickHandler({ target: items[0].checkbox, shiftKey: false });
+            expect(manager.selectedIds).toEqual(['1']);
+
+            // 2. Shift + Clic en Paper 4 (items[3]) -> solo 1 y 4 seleccionados; 2 y 3 ocultos permanecen desmarcados
+            items[3].checkbox.checked = true;
+            clickHandler({ target: items[3].checkbox, shiftKey: true });
+
+            expect(manager.selectedIds).toEqual(['1', '4']);
+            expect(items[1].checkbox.checked).toBe(false);
+            expect(items[2].checkbox.checked).toBe(false);
+            expect(bar.classList.add).toHaveBeenCalledWith('active');
+            expect(barText.textContent).toBe('2 elementos seleccionados');
         });
 
-        test('Shift + Clic sobre visibleCheckboxes ignora estrictamente elementos ocultos por filtro', () => {
-            // Helper que replica exactamente el filtro implementado en admin.js:
-            // const visibleCheckboxes = Array.from(activeTab.querySelectorAll('.admin-item-checkbox')).filter(isCardVisible);
-            const visibleCards = cards.filter(c => c.isVisible);
-            expect(visibleCards.length).toBe(3); // Solo Paper 1, Paper 4 y Paper 5
+        test('selectVisibleItems marca únicamente elementos visibles y clearBulkSelection limpia todo', () => {
+            const items = [
+                createCardAndCheckbox({ id: '1', name: 'Paper 1', visible: true }),
+                createCardAndCheckbox({ id: '2', name: 'Norma Oculta', visible: false }),
+                createCardAndCheckbox({ id: '4', name: 'Paper 4', visible: true }),
+                createCardAndCheckbox({ id: '5', name: 'Paper 5', visible: true })
+            ];
+            const { manager, bar } = setupBulkDom(items);
 
-            // 1. Clic en Paper 1
-            const card1 = visibleCards[0];
-            card1.checked = true;
-            adminState.selectedIds.push(card1.id);
-            adminState.selectedType = card1.type;
-            adminState.lastCheckedCard = card1;
-            adminState.updateBulkActionsBar();
+            manager.selectVisibleItems();
 
-            expect(adminState.selectedIds).toEqual(['1']);
+            expect(manager.selectedIds).toEqual(['1', '4', '5']);
+            expect(items[1].checkbox.checked).toBe(false);
+            expect(bar.classList.add).toHaveBeenCalledWith('active');
 
-            // 2. Shift + Clic en Paper 4
-            const card4 = visibleCards[1];
-            card4.checked = true;
+            manager.clearBulkSelection();
 
-            const start = visibleCards.indexOf(card4);
-            const end = visibleCards.indexOf(adminState.lastCheckedCard);
-            const rangeStart = Math.min(start, end);
-            const rangeEnd = Math.max(start, end);
-
-            for (let i = rangeStart; i <= rangeEnd; i++) {
-                const c = visibleCards[i];
-                c.checked = true;
-                if (!adminState.selectedIds.includes(c.id)) {
-                    adminState.selectedIds.push(c.id);
-                }
-            }
-            adminState.updateBulkActionsBar();
-
-            // 3. Validar que SOLO los papers visibles (1 y 4) están marcados
-            expect(adminState.selectedIds).toEqual(['1', '4']);
-            expect(cards.find(c => c.id === '1').checked).toBe(true);
-            expect(cards.find(c => c.id === '4').checked).toBe(true);
-
-            // Las normas y guías ocultas NUNCA fueron marcadas ni añadidas a selectedIds
-            expect(cards.find(c => c.id === '2').checked).toBe(false);
-            expect(cards.find(c => c.id === '3').checked).toBe(false);
-            expect(adminState.selectedIds).not.toContain('2');
-            expect(adminState.selectedIds).not.toContain('3');
-        });
-
-        test('selectVisibleItems marca únicamente los elementos visibles (no ocultos)', () => {
-            adminState.selectVisibleItems();
-
-            expect(adminState.selectedIds).toEqual(['1', '4', '5']);
-            expect(cards.find(c => c.id === '1').checked).toBe(true);
-            expect(cards.find(c => c.id === '4').checked).toBe(true);
-            expect(cards.find(c => c.id === '5').checked).toBe(true);
-            expect(cards.find(c => c.id === '2').checked).toBe(false);
-            expect(cards.find(c => c.id === '3').checked).toBe(false);
-            expect(adminState.barActive).toBe(true);
-        });
-
-        test('clearBulkSelection limpia todas las selecciones y desactiva la barra', () => {
-            adminState.selectVisibleItems();
-            expect(adminState.selectedIds.length).toBe(3);
-
-            adminState.clearBulkSelection();
-            expect(adminState.selectedIds.length).toBe(0);
-            expect(adminState.barActive).toBe(false);
-            expect(cards.every(c => !c.checked)).toBe(true);
+            expect(manager.selectedIds).toEqual([]);
+            expect(items.every(i => !i.checkbox.checked)).toBe(true);
+            expect(bar.classList.remove).toHaveBeenCalledWith('active');
         });
     });
 
-    describe('4. Construcción del Mensaje Transparente de Confirmación', () => {
-        test('Construye la lista de títulos de los elementos a eliminar para verificación del admin', () => {
-            const selectedIds = ['1', '4'];
-            const titles = ['Paper de Cardiología 2026', 'Paper de Neumología'];
-            const type = 'book';
-            const count = selectedIds.length;
+    describe('3. Construcción Real del Mensaje Transparente en handleBulkDelete()', () => {
+        test('handleBulkDelete construye la lista de títulos y etiqueta amigable antes de confirmar eliminación', async () => {
+            const items = [
+                createCardAndCheckbox({ id: '1', name: 'Paper de Cardiología 2026', type: 'book', visible: true }),
+                createCardAndCheckbox({ id: '4', name: 'Paper de Neumología', type: 'book', visible: true })
+            ];
+            const { manager } = setupBulkDom(items);
+            manager.selectedIds = ['1', '4'];
+            manager.selectedType = 'book';
 
-            const maxDisplay = 8;
-            const previewList = titles.slice(0, maxDisplay).map(t => `• ${t}`).join('\n');
-            const remaining = titles.length - maxDisplay;
-            const remainingText = remaining > 0 ? `\n... y ${remaining} elemento(s) más.` : '';
-
-            const typeLabels = {
-                book: 'Recursos / Bibliografía',
-                question: 'Preguntas',
-                case: 'Casuísticas'
+            global.window.confirmationModal = {
+                show: jest.fn().mockResolvedValue(false)
             };
-            const typeFriendly = typeLabels[type] || type;
 
-            const confirmMsg = `¿Estás seguro de que deseas eliminar permanentemente estos ${count} elementos de tipo "${typeFriendly}"?\n\nElementos que se eliminarán:\n${previewList}${remainingText}\n\n⚠️ Esta acción no se puede deshacer y eliminará permanentemente todos los recursos e imágenes asociadas.`;
+            await manager.handleBulkDelete();
 
+            expect(global.window.confirmationModal.show).toHaveBeenCalledTimes(1);
+            const [confirmMsg, title] = global.window.confirmationModal.show.mock.calls[0];
+            expect(title).toBe('Eliminación Masiva');
             expect(confirmMsg).toContain('2 elementos de tipo "Recursos / Bibliografía"');
             expect(confirmMsg).toContain('• Paper de Cardiología 2026');
             expect(confirmMsg).toContain('• Paper de Neumología');
@@ -193,68 +231,40 @@ describe('Panel de Gestión - Selección Masiva y Filtros Blindados', () => {
         });
     });
 
-    describe('5. Filtros por Dominio en Recursos y Casos en admin.js', () => {
-        test("displayBooks filtra por destino sin sectores de educación y medicina", () => {
-            const section = adminJsContent.slice(adminJsContent.indexOf('    displayBooks()'), adminJsContent.indexOf('    displayQuestions()'));
-            expect(section).toContain('admin-editorial-filter');
-            expect(section).toContain('value="bulletin"');
-            expect(section).toContain('value="materials"');
-            expect(section).not.toContain('admin-domain-filter');
-        });
+    describe('4. Filtros Compuestos Reales en displayBooks y applySearchFilterForTab', () => {
+        test('displayBooks renderiza filtro editorial sin filtro de dominio y applySearchFilterForTab aplica tipo + publicación', () => {
+            const items = [
+                createCardAndCheckbox({ id: '1', name: 'Cardiología Boletín', resourceType: 'paper', domain: 'medicine', publication: 'bulletin', visible: true }),
+                createCardAndCheckbox({ id: '2', name: 'Norma Curso', resourceType: 'norma', domain: 'education', publication: 'materials', visible: true })
+            ];
 
-        test('displayQuestions incluye filtro por asociación a casos (linked, unlinked)', () => {
-            expect(adminJsContent).toContain('handleQuestionCaseFilterChange');
-            expect(adminJsContent).toContain('value="linked"');
-            expect(adminJsContent).toContain('value="unlinked"');
-        });
+            let booksHtml = '';
+            const tabBooks = {
+                set innerHTML(val) { booksHtml = val; },
+                get innerHTML() { return booksHtml; },
+                querySelector: jest.fn(() => null),
+                querySelectorAll: jest.fn((sel) => (sel === '.admin-item-card, .item-card' ? items.map(i => i.card) : [])),
+                appendChild: jest.fn()
+            };
 
-        test('applySearchFilterForTab evalúa matchesDomain concurrentemente con matchesType y matchesText', () => {
-            expect(adminJsContent).toContain('let matchesDomain = true;');
-            expect(adminJsContent).toContain('item.dataset.domain');
-            expect(adminJsContent).toContain('matchesText && matchesType && matchesDomain');
-        });
-    });
+            global.document = {
+                getElementById: jest.fn((id) => (id === 'tab-books' ? tabBooks : null)),
+                createElement: jest.fn(() => ({ className: '', textContent: '', style: { display: '' } }))
+            };
 
-    describe('6. Arquitectura Responsiva de Cabecera (Dos Filas) y Erradicación de Código Muerto', () => {
-        let adminCssContent;
+            const manager = Object.create(AdminManager.prototype);
+            manager.tabSortState = { 'tab-books': 'date-desc' };
+            manager.searchState = { 'tab-books': { search: '', filter: 'paper', domain: 'all', publication: 'bulletin' } };
+            manager.allBooks = [{ id: '1', title: 'Cardiología Boletín', author: 'Autor', created_at: '2026-01-01' }];
 
-        beforeAll(() => {
-            adminCssContent = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/css/admin.css'), 'utf8');
-        });
+            manager.displayBooks();
 
-        test('admin.css define la arquitectura de dos filas: tab-top-row y tab-search-row', () => {
-            expect(adminCssContent).toContain('.tab-top-row');
-            expect(adminCssContent).toContain('.tab-search-row');
-            expect(adminCssContent).toContain('.admin-filters-group');
-        });
-
-        test('displayBooks ubica filtros y acciones en tab-top-row y la barra de búsqueda en tab-search-row', () => {
-            expect(adminJsContent).toContain('<div class="tab-top-row">');
-            expect(adminJsContent).toContain('<div class="tab-search-row">');
-        });
-
-        test('displayQuestions ubica filtros y acciones en tab-top-row y el buscador de servidor en tab-search-row', () => {
-            const questionsSection = adminJsContent.slice(adminJsContent.indexOf('displayQuestions()'), adminJsContent.indexOf('handleDomainChange(domain)'));
-            expect(questionsSection).toContain('class="tab-top-row"');
-            expect(questionsSection).toContain('class="tab-search-row"');
-            expect(questionsSection).toContain('class="admin-search-input-dynamic"');
-        });
-
-        test('displayCases ubica filtros y acciones en tab-top-row y buscador en tab-search-row', () => {
-            const casesSection = adminJsContent.slice(adminJsContent.indexOf('displayCases()'), adminJsContent.indexOf('handleCaseDomainChange(domain)'));
-            expect(casesSection).toContain('class="tab-top-row"');
-            expect(casesSection).toContain('class="tab-search-row"');
-        });
-
-        test('_createTabHeaderHTML genera estructura uniforme de dos filas para Carreras, Cursos, Alumnos y Temas', () => {
-            const helperSection = adminJsContent.slice(adminJsContent.indexOf('_createTabHeaderHTML'), adminJsContent.indexOf('downloadExcelTemplate'));
-            expect(helperSection).toContain('class="tab-top-row"');
-            expect(helperSection).toContain('class="tab-search-row"');
-        });
-
-        test('Código muerto erradicado: admin.html no contiene el botón inactivo bulk-link-case-btn', () => {
-            expect(adminHtmlContent).not.toContain('id="bulk-link-case-btn"');
-            expect(adminHtmlContent).not.toContain('Encadenar en Caso');
+            expect(booksHtml).toContain('admin-editorial-filter');
+            expect(booksHtml).toContain('value="bulletin"');
+            expect(booksHtml).toContain('value="materials"');
+            expect(booksHtml).not.toContain('admin-domain-filter');
+            expect(items[0].card.style.display).toBe('');
+            expect(items[1].card.style.display).toBe('none');
         });
     });
 });

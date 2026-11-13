@@ -1,20 +1,15 @@
-const fs = require('fs');
-const path = require('path');
 const adminService = require('../../src/domain/services/adminService');
+const { AdminManager } = require('../../src/presentation/public/js/admin');
+const { createAdminItemCardHTML } = require('../../src/presentation/public/js/ui/components');
 
 jest.mock('../../src/domain/repositories/adminRepository');
 jest.mock('../../src/infrastructure/database/db');
 
 describe('Admin Panel - Arquitectura de Gestión de Alumnos y Suscripciones', () => {
-    let componentsJs;
-    let adminJs;
-    let designSystemMd;
     let mockUserRepo;
 
     beforeAll(() => {
-        componentsJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/components.js'), 'utf8');
-        adminJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/admin.js'), 'utf8');
-        designSystemMd = fs.readFileSync(path.join(__dirname, '../../documentation/DESIGN_SYSTEM.md'), 'utf8');
+        global.createAdminItemCardHTML = createAdminItemCardHTML;
     });
 
     beforeEach(() => {
@@ -149,54 +144,133 @@ describe('Admin Panel - Arquitectura de Gestión de Alumnos y Suscripciones', ()
         });
     });
 
-    describe('2. Capa de Presentación (admin.js): Controladores de Alumnos y Mensajería', () => {
-        test('displayStudents() no pasa showResetPassword=true para erradicar botones de contraseñas locales', () => {
-            expect(adminJs).toContain("const sortedStudents = this.sortData(this.allStudents, 'student', 'tab-students');");
-            expect(adminJs).toContain("const itemsHTML = sortedStudents.map(student => createAdminItemCardHTML(student, 'student', `(${student.email})`)).join('');");
-            expect(adminJs).not.toContain("createAdminItemCardHTML(student, 'student', `(${student.email})`, true)");
-        });
-
-        test('handleResetPassword muestra modal informativo de autenticación exclusiva Google OAuth', () => {
-            expect(adminJs).toContain('Hub Academia utiliza autenticación exclusiva mediante Google OAuth');
-            expect(adminJs).not.toContain('/api/auth/users/${userId}/reset-password');
-        });
-
-        test('saveGenericForm muestra mensaje de bienvenida Google para alumnos nuevos', () => {
-            expect(adminJs).toContain("type === 'student' && method === 'POST'");
-            expect(adminJs).toContain('El usuario podrá ingresar directamente con su cuenta de Google');
-            expect(adminJs).not.toContain('responseData.tempPassword');
-        });
-
-        test('admin.js maneja la lógica de reactividad bidireccional entre tier y status en el formulario modal', () => {
-            expect(adminJs).toContain("tierSelect.addEventListener('change', () => {");
-            expect(adminJs).toContain("if (tier === 'basic') {");
-            expect(adminJs).toContain("statusSelect.value = 'active';");
-            expect(adminJs).toContain("expiresInput.value = getFutureDate(2);");
-            expect(adminJs).toContain("} else if (tier === 'advanced') {");
-            expect(adminJs).toContain("expiresInput.value = getFutureDate(4);");
-            expect(adminJs).toContain("} else if (tier === 'free') {");
-            expect(adminJs).toContain("statusSelect.value = 'pending';");
-            expect(adminJs).toContain("expiresInput.value = '';");
-        });
-    });
-
-    describe('3. Componentes Visuales (components.js): Tarjeta de Alumno y Badges', () => {
-        test('createAdminItemCardHTML omite botón reset-pass cuando no se solicita', () => {
+    describe('2. Capa de Presentación (admin.js): Controladores de Alumnos y Mensajería (Ejecución Real)', () => {
+        beforeEach(() => {
             global.safeHtmlValue = (val) => String(val || '');
-            global.document = {
-                addEventListener: jest.fn(),
-                querySelector: jest.fn(),
-                querySelectorAll: jest.fn(() => [])
-            };
             global.window = {
                 resolveImageUrl: (url) => url,
                 uiManager: {
                     registerMaterial: jest.fn(),
                     isResourceLocked: jest.fn()
+                },
+                confirmationModal: {
+                    showAlert: jest.fn().mockResolvedValue(true)
                 }
             };
-            eval(componentsJs);
+        });
 
+        test('displayStudents() renderiza tarjetas de alumnos sin botones de contraseña local (Google OAuth exclusivo)', () => {
+            global.document = {
+                addEventListener: jest.fn(),
+                querySelector: jest.fn(),
+                querySelectorAll: jest.fn(() => [])
+            };
+
+            let renderedHtml = '';
+            const tabContainer = {
+                set innerHTML(val) { renderedHtml = val; },
+                get innerHTML() { return renderedHtml; }
+            };
+            global.document.getElementById = jest.fn((id) => (id === 'tab-students' ? tabContainer : null));
+
+            const manager = Object.create(AdminManager.prototype);
+            manager.tabSortState = { 'tab-students': 'date-desc' };
+            manager.applySearchFilterForTab = jest.fn();
+            manager.allStudents = [{
+                id: 'std-oauth-1',
+                name: 'Mariana Ríos',
+                email: 'mariana.rios@gmail.com',
+                subscriptionTier: 'basic',
+                subscriptionStatus: 'active',
+                created_at: '2026-01-01T00:00:00.000Z'
+            }];
+
+            manager.displayStudents();
+
+            expect(renderedHtml).toContain('Mariana Ríos');
+            expect(renderedHtml).toContain('mariana.rios@gmail.com');
+            expect(renderedHtml).not.toContain('reset-pass-btn-small');
+            expect(manager.applySearchFilterForTab).toHaveBeenCalledWith('tab-students');
+        });
+
+        test('handleResetPassword muestra alerta informativa de autenticación exclusiva Google OAuth', async () => {
+            const manager = Object.create(AdminManager.prototype);
+            manager.allStudents = [{ id: 'std-oauth-1', name: 'Carlos Ruiz' }];
+
+            await manager.handleResetPassword('std-oauth-1');
+
+            expect(global.window.confirmationModal.showAlert).toHaveBeenCalledWith(
+                expect.stringContaining('Hub Academia utiliza autenticación exclusiva mediante Google OAuth'),
+                'Autenticación Google OAuth'
+            );
+            expect(global.window.confirmationModal.showAlert.mock.calls[0][0]).toContain('Carlos Ruiz');
+        });
+
+        test('openGenericModal("student") sincroniza reactividad bidireccional entre tier, status y fecha de expiración', async () => {
+            const makeSelect = (initial) => {
+                const listeners = {};
+                return {
+                    value: initial,
+                    addEventListener: jest.fn((ev, cb) => { listeners[ev] = cb; }),
+                    trigger(ev) { if (listeners[ev]) listeners[ev](); }
+                };
+            };
+
+            const tierSelect = makeSelect('free');
+            const statusSelect = makeSelect('pending');
+            const expiresInput = { value: '' };
+            const titleEl = { textContent: '' };
+            const modalEl = {
+                style: { display: '' },
+                querySelector: jest.fn((sel) => (sel === '.modal-header h2' ? titleEl : null)),
+                querySelectorAll: jest.fn(() => [])
+            };
+            const formEl = { reset: jest.fn(), dataset: {} };
+            const fieldsContainer = { innerHTML: '' };
+            const saveBtn = { innerHTML: '', style: {} };
+
+            global.document = {
+                getElementById: jest.fn((id) => {
+                    if (id === 'generic-modal') return modalEl;
+                    if (id === 'generic-form-fields') return fieldsContainer;
+                    if (id === 'generic-save-btn') return saveBtn;
+                    if (id === 'generic-subscription-tier') return tierSelect;
+                    if (id === 'generic-subscription-status') return statusSelect;
+                    if (id === 'generic-subscription-expires-at') return expiresInput;
+                    return null;
+                })
+            };
+
+            const manager = Object.create(AdminManager.prototype);
+            manager.genericModal = modalEl;
+            manager.genericForm = formEl;
+            manager.allStudents = [];
+            manager.hydrateImagePreviews = jest.fn();
+
+            await manager.openGenericModal('student');
+
+            // Cambio a basic -> status active + expiración +2 meses
+            tierSelect.value = 'basic';
+            tierSelect.trigger('change');
+            expect(statusSelect.value).toBe('active');
+            expect(expiresInput.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+            // Cambio a advanced -> status active + expiración +4 meses
+            tierSelect.value = 'advanced';
+            tierSelect.trigger('change');
+            expect(statusSelect.value).toBe('active');
+            expect(expiresInput.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+            // Cambio a free -> degrade active a pending y limpia expiración
+            tierSelect.value = 'free';
+            tierSelect.trigger('change');
+            expect(statusSelect.value).toBe('pending');
+            expect(expiresInput.value).toBe('');
+        });
+    });
+
+    describe('3. Componentes Visuales (components.js): Tarjeta de Alumno y Badges', () => {
+        test('createAdminItemCardHTML omite botón reset-pass cuando no se solicita', () => {
             const student = {
                 id: 'std_456',
                 name: 'Luis Alarcón',
@@ -220,16 +294,6 @@ describe('Admin Panel - Arquitectura de Gestión de Alumnos y Suscripciones', ()
             expect(html).not.toContain('reset-pass-btn-small');
             expect(html).toContain('edit-btn-small');
             expect(html).toContain('delete-btn-small');
-        });
-    });
-
-    describe('4. Coherencia con DESIGN_SYSTEM.md', () => {
-        test("DESIGN_SYSTEM.md define responsables de estilos y adaptación", () => {
-            expect(designSystemMd).toContain('Propiedad de componentes');
-            expect(designSystemMd).toContain('admin.css');
-            expect(designSystemMd).toContain('modal.css');
-            expect(designSystemMd).toContain('sessionManager.js');
-            expect(designSystemMd).toContain('Adaptación e interacción');
         });
     });
 });

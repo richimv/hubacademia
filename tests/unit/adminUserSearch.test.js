@@ -1,17 +1,24 @@
-const fs = require('fs');
-const path = require('path');
+/**
+ * Unit tests for Admin Panel Student Card Rendering & Email/Name Search Filtering
+ * Executes real createAdminItemCardHTML (components.js) and AdminManager (admin.js)
+ */
 
-describe('Admin Panel - Búsqueda de Usuarios por Correo y Nombre', () => {
-    let componentsJs;
-    let adminJs;
+const { AdminManager } = require('../../src/presentation/public/js/admin');
+const { createAdminItemCardHTML } = require('../../src/presentation/public/js/ui/components');
 
+function createClassList() {
+    const set = new Set();
+    return {
+        add: jest.fn((...c) => c.forEach(x => set.add(x))),
+        remove: jest.fn((...c) => c.forEach(x => set.delete(x))),
+        contains: jest.fn((c) => set.has(c))
+    };
+}
+
+describe('Admin Panel - Búsqueda de Usuarios por Correo y Nombre (Real Modules)', () => {
     beforeAll(() => {
-        componentsJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/ui/components.js'), 'utf8');
-        adminJs = fs.readFileSync(path.join(__dirname, '../../src/presentation/public/js/admin.js'), 'utf8');
-    });
-
-    test('createAdminItemCardHTML incluye data-email y data-name en las tarjetas de usuarios/alumnos', () => {
         global.safeHtmlValue = (val) => String(val || '');
+        global.createAdminItemCardHTML = createAdminItemCardHTML;
         global.document = {
             addEventListener: jest.fn(),
             querySelector: jest.fn(),
@@ -24,7 +31,9 @@ describe('Admin Panel - Búsqueda de Usuarios por Correo y Nombre', () => {
                 isResourceLocked: jest.fn()
             }
         };
+    });
 
+    test('createAdminItemCardHTML incluye data-email y data-name en las tarjetas de alumnos', () => {
         const student = {
             id: 'usr_123',
             name: 'Carlos Mendoza',
@@ -34,9 +43,7 @@ describe('Admin Panel - Búsqueda de Usuarios por Correo y Nombre', () => {
             subscriptionExpiresAt: '2026-12-31T00:00:00.000Z'
         };
 
-        eval(componentsJs);
-
-        const cardHtml = createAdminItemCardHTML(student, 'student', `(${student.email})`, true);
+        const cardHtml = createAdminItemCardHTML(student, 'student', `(${student.email})`);
 
         expect(cardHtml).toContain('data-email="carlos.mendoza@universidad.edu.pe"');
         expect(cardHtml).toContain('data-name="Carlos Mendoza"');
@@ -45,34 +52,78 @@ describe('Admin Panel - Búsqueda de Usuarios por Correo y Nombre', () => {
         expect(cardHtml).toContain('ACTIVE');
     });
 
-    test('El placeholder del buscador en la pestaña Alumnos/Usuarios indica búsqueda por correo', () => {
-        expect(adminJs).toContain("tabId === 'tab-students' ? 'Buscar por nombre o correo...'");
+    test('_createTabHeaderHTML asigna placeholder de búsqueda por nombre o correo únicamente a tab-students', () => {
+        const manager = Object.create(AdminManager.prototype);
+        manager.tabSortState = { 'tab-students': 'date-desc', 'tab-topics': 'date-desc' };
+
+        const studentsHeader = manager._createTabHeaderHTML('student', 'Añadir Alumno', 'tab-students');
+        const topicsHeader = manager._createTabHeaderHTML('topic', 'Añadir Tema', 'tab-topics');
+
+        expect(studentsHeader).toContain('placeholder="Buscar por nombre o correo..."');
+        expect(topicsHeader).toContain('placeholder="Buscar..."');
     });
 
-    test('El algoritmo de filtrado en applySearchFilterForTab evalúa data-email, data-name y textContent', () => {
-        expect(adminJs).toContain("const emailAttr = (item.dataset.email || '').toLowerCase();");
-        expect(adminJs).toContain("const nameAttr = (item.dataset.name || '').toLowerCase();");
-        expect(adminJs).toContain('matchesText = textContent.includes(searchVal) || emailAttr.includes(searchVal) || nameAttr.includes(searchVal);');
-    });
+    test('applySearchFilterForTab filtra tarjetas reales por prefijo, apellido, dominio de correo y estado vacío', () => {
+        const makeStudentCard = (name, email, extraText = 'basic active') => ({
+            dataset: { email, name },
+            textContent: `${name} (${email}) ${extraText}`,
+            style: { display: '' }
+        });
 
-    test('Simulación de filtrado por email: coincide por prefijo, dominio y nombre', () => {
-        const student = {
-            name: 'Ana García',
-            email: 'ana.garcia@medicina.pe'
+        const anaCard = makeStudentCard('Ana García', 'ana.garcia@medicina.pe');
+        const carlosCard = makeStudentCard('Carlos Mendoza', 'carlos.mendoza@universidad.edu.pe', 'advanced active');
+        const cards = [anaCard, carlosCard];
+
+        const searchInput = { value: '' };
+        let emptyStateEl = null;
+
+        const tabContent = {
+            querySelector: jest.fn((sel) => {
+                if (sel === '.admin-search-input') return searchInput;
+                if (sel === '.search-empty-state') return emptyStateEl;
+                return null;
+            }),
+            querySelectorAll: jest.fn((sel) => (sel === '.admin-item-card, .item-card' ? cards : [])),
+            appendChild: jest.fn((node) => { emptyStateEl = node; })
         };
 
-        const emailAttr = student.email.toLowerCase();
-        const nameAttr = student.name.toLowerCase();
-        const textContent = `${student.name} (${student.email}) basic active`.toLowerCase();
-
-        const match = (query) => {
-            const q = query.toLowerCase().trim();
-            return textContent.includes(q) || emailAttr.includes(q) || nameAttr.includes(q);
+        global.document = {
+            getElementById: jest.fn((id) => (id === 'tab-students' ? tabContent : null)),
+            createElement: jest.fn(() => ({
+                className: '',
+                textContent: '',
+                style: { display: '' },
+                classList: createClassList()
+            }))
         };
 
-        expect(match('ana')).toBe(true);
-        expect(match('garcia')).toBe(true);
-        expect(match('medicina.pe')).toBe(true);
-        expect(match('carlos')).toBe(false);
+        const manager = Object.create(AdminManager.prototype);
+        manager.tabSortState = { 'tab-students': 'date-desc' };
+        manager.searchState = { 'tab-students': { search: 'ana', filter: 'all' } };
+
+        // Prefijo de correo / nombre
+        manager.applySearchFilterForTab('tab-students');
+        expect(anaCard.style.display).toBe('');
+        expect(carlosCard.style.display).toBe('none');
+
+        // Dominio del correo
+        manager.searchState['tab-students'].search = 'medicina.pe';
+        manager.applySearchFilterForTab('tab-students');
+        expect(anaCard.style.display).toBe('');
+        expect(carlosCard.style.display).toBe('none');
+
+        // Nombre completo del segundo alumno
+        manager.searchState['tab-students'].search = 'mendoza';
+        manager.applySearchFilterForTab('tab-students');
+        expect(anaCard.style.display).toBe('none');
+        expect(carlosCard.style.display).toBe('');
+
+        // Sin resultados -> genera emptyState con mensaje
+        manager.searchState['tab-students'].search = 'inexistente@nope.com';
+        manager.applySearchFilterForTab('tab-students');
+        expect(anaCard.style.display).toBe('none');
+        expect(carlosCard.style.display).toBe('none');
+        expect(emptyStateEl).not.toBeNull();
+        expect(emptyStateEl.textContent).toContain('inexistente@nope.com');
     });
 });

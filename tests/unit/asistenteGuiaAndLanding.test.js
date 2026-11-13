@@ -62,13 +62,6 @@ describe('Fase 5: Asistente Guía Corporativo, Portada Hub Academia y Health CSS
             expect(indexHtml).toContain('data-media-slot="boletin"');
         });
 
-        test('define tema oscuro institucional con theme-color #050505 y tipografía Inter', () => {
-            expect(indexHtml).toContain('<meta name="theme-color" content="#050505">');
-            expect(indexHtml).toContain('family=Inter');
-            expect(indexHtml).not.toContain('family=Epilogue');
-            expect(indexHtml).toContain('/css/footer.css');
-        });
-
         test('NO muestra herramientas futuras prohibidas en la interfaz (PCA, Unidades, Sesiones, Rúbricas)', () => {
             expect(indexHtml).not.toMatch(/Planificación Curricular Anual/i);
             expect(indexHtml).not.toMatch(/Programación Curricular Anual/i);

@@ -6,12 +6,14 @@
  * Esto ayuda a mantener la lógica de la aplicación (en search.js, admin.js) separada de la presentación.
  */
 
+const _compWin = typeof window !== 'undefined' ? window : {};
+
 // GLOBAL: Lógica de Auto-Scroll para Carruseles
-window.carouselInterval = null;
+_compWin.carouselInterval = null;
 
 // Todos los valores provenientes del catálogo/administración pasan por este
 // escape antes de interpolarse en plantillas HTML.
-const safeHtmlValue = value => window.escapeHtml
+const safeHtmlValue = value => (typeof window !== 'undefined' && window.escapeHtml)
     ? window.escapeHtml(value ?? '')
     : String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -22,7 +24,7 @@ const safeHtmlValue = value => window.escapeHtml
  * @param {number} direction - -1 (izq) o 1 (der).
  * @param {number} speedMultiplier - Multiplicador de velocidad (Default: 1).
  */
-window.startCarouselScroll = function (trackId, direction, speedMultiplier = 1) {
+_compWin.startCarouselScroll = function (trackId, direction, speedMultiplier = 1) {
     const track = document.getElementById(trackId);
     if (!track) return;
 
@@ -41,7 +43,7 @@ window.startCarouselScroll = function (trackId, direction, speedMultiplier = 1) 
     window.carouselInterval = requestAnimationFrame(step);
 };
 
-window.stopCarouselScroll = function () {
+_compWin.stopCarouselScroll = function () {
     if (window.carouselInterval) {
         cancelAnimationFrame(window.carouselInterval);
         window.carouselInterval = null;
@@ -52,7 +54,7 @@ window.stopCarouselScroll = function () {
  * Inicializa el carrusel (comprueba si necesita botones de scroll).
  * @param {string} id - ID del contenedor del carrusel.
  */
-window.initializeCarousel = function (containerId) {
+_compWin.initializeCarousel = function (containerId) {
     // 1. Obtener el contenedor principal (Wrapper)
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -855,7 +857,7 @@ function createSkeletonCardHTML(type = 'Grid') {
 }
 
 // NUEVO: Tarjeta de Video Premium (Rediseñada para distinción visual)
-window.createVideoCardHTML = function (item) {
+_compWin.createVideoCardHTML = function (item) {
     const title = item.title || item.name || 'Video Educativo';
     const author = item.author || 'Hub Academia';
     const url = item.url || '#';
@@ -911,10 +913,10 @@ window.createVideoCardHTML = function (item) {
 // ==========================================
 // QUIZ REVIEW CARDS (Fase 4 Refactoring)
 // ==========================================
-window.UIComponents = window.UIComponents || {};
+_compWin.UIComponents = _compWin.UIComponents || {};
 
 /** Shared study/review content policy: blank editor markup is not an explanation. */
-window.UIComponents.getQuestionExplanation = function (question) {
+_compWin.UIComponents.getQuestionExplanation = function (question) {
     const raw = typeof question.explanation === 'string' ? question.explanation.trim() : '';
     const visibleText = raw.replace(/<[^>]*>/g, '')
         .replace(/&(?:nbsp|#160|#x0*a0|#8203|#x200b);/gi, '')
@@ -925,7 +927,7 @@ window.UIComponents.getQuestionExplanation = function (question) {
     return { text, imageUrl, hasContent: Boolean(text || imageUrl) };
 };
 
-window.UIComponents.createReviewCardHTML = function (config) {
+_compWin.UIComponents.createReviewCardHTML = function (config) {
     if (!config || !config.question) {
         return '<div class="review-card-error">Error: Datos de pregunta no disponibles.</div>';
     }
@@ -1061,7 +1063,7 @@ window.UIComponents.createReviewCardHTML = function (config) {
 /**
  * Global Helper: Abre la URL directa comprobada de un recurso o delega a uiManager.
  */
-window.openVerifiedNewsUrl = function (url, id, type, isPremium, openDirectly) {
+_compWin.openVerifiedNewsUrl = function (url, id, type, isPremium, openDirectly) {
     if (url && typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
         window.open(url, '_blank');
         return;
@@ -1167,25 +1169,37 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
 
 // Navegación de tarjetas sin inline onclick. Los datos viajan en data-* y se
 // convierten a valores controlados antes de llegar al UI manager.
-document.addEventListener('click', event => {
-    const zone = event.target.closest('.urc-visual-zone, .urc-info-zone');
-    if (!zone || event.target.closest('.js-library-btn')) return;
+const _isComponentsJestEnv = typeof process !== 'undefined' && process.env && Boolean(process.env.JEST_WORKER_ID);
+if (typeof document !== 'undefined' && !_isComponentsJestEnv) {
+    document.addEventListener('click', event => {
+        const zone = event.target.closest('.urc-visual-zone, .urc-info-zone');
+        if (!zone || event.target.closest('.js-library-btn')) return;
 
-    const card = zone.closest('.unified-resource-card');
-    if (!card || !window.uiManager?.unlockAndNavigate) return;
+        const card = zone.closest('.unified-resource-card');
+        if (!card || !window.uiManager?.unlockAndNavigate) return;
 
-    window.uiManager.unlockAndNavigate(
-        card.dataset.resourceId,
-        card.dataset.resourceType || 'other',
-        card.dataset.isPremium === 'true',
-        card.dataset.openDirectly === 'true'
-    );
-});
+        window.uiManager.unlockAndNavigate(
+            card.dataset.resourceId,
+            card.dataset.resourceType || 'other',
+            card.dataset.isPremium === 'true',
+            card.dataset.openDirectly === 'true'
+        );
+    });
 
-document.addEventListener('keydown', event => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    const zone = event.target.closest('.urc-visual-zone, .urc-info-zone');
-    if (!zone) return;
-    event.preventDefault();
-    zone.click();
-});
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const zone = event.target.closest('.urc-visual-zone, .urc-info-zone');
+        if (!zone) return;
+        event.preventDefault();
+        zone.click();
+    });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        createAdminItemCardHTML,
+        safeHtmlValue,
+        getQuestionExplanation: _compWin.UIComponents.getQuestionExplanation,
+        createReviewCardHTML: _compWin.UIComponents.createReviewCardHTML
+    };
+}

@@ -21,4 +21,18 @@ function sendQuizSessionError(res, error) {
     return true;
 }
 
-module.exports = { secureQuizSessionsEnabled, sendQuizSessionError };
+/**
+ * Construye series clasificadas por modalidad (rápido, estudio, simulacro real) para evolución de puntajes.
+ */
+function buildQuizEvolutionChartData(data = []) {
+    const safeData = Array.isArray(data) ? data : [];
+    return {
+        labels: safeData.map(d => d.date_label),
+        scores10: safeData.map(d => (d.total_questions <= 15) ? parseFloat(d.score_20).toFixed(1) : null),
+        scores20: safeData.map(d => (d.total_questions > 15 && d.total_questions < 50) ? parseFloat(d.score_20).toFixed(1) : null),
+        scoresReal: safeData.map(d => (d.total_questions >= 50) ? parseFloat(d.score_20).toFixed(1) : null),
+        scores: safeData.map(d => parseFloat(d.score_20).toFixed(1))
+    };
+}
+
+module.exports = { secureQuizSessionsEnabled, sendQuizSessionError, buildQuizEvolutionChartData };
