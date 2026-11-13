@@ -179,8 +179,9 @@ class Server {
             maxAge: '30d',
             immutable: true,
             setHeaders: (res, filePath) => {
-                // This authoring asset is replaced in place; validate it on each visit.
-                if (path.basename(filePath) === 'fondo_simulador.png') {
+                // Brand logo and authoring background may be replaced in place; validate on each visit.
+                const assetName = path.basename(filePath);
+                if (assetName === 'fondo_simulador.png' || assetName === 'logo.png') {
                     res.setHeader('Cache-Control', 'no-cache');
                 }
             }
@@ -198,16 +199,16 @@ class Server {
             res.sendFile(path.join(publicPath, 'sitemap.xml'));
         });
 
+        this.app.get('/favicon.ico', (req, res) => {
+            res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+            res.sendFile(path.join(publicPath, 'favicon.ico'));
+        });
+
         this.app.use(express.static(publicPath, {
             maxAge: 0,
             etag: true,
             lastModified: true
         }));
-
-        this.app.get('/favicon.ico', (req, res) => {
-            res.setHeader('Cache-Control', 'public, max-age=604800');
-            res.sendFile(path.join(__dirname, '../../../favicon.ico'));
-        });
     }
 
     configureRoutes() {

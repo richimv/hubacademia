@@ -88,6 +88,7 @@ Se han integrado esquemas validados para rich snippets en Google conforme a las 
 1. **Compresión Gzip/Deflate:** Middleware `compression` activado en el servidor Express para reducir el peso de las transferencias hasta en un 75%.
 2. **Políticas de Caché (Express y Vercel):**
    * CSS, JS e Imágenes: `public, max-age=31536000, immutable` (apoyado por el sistema determinista de Cache-Busting SHA256 generado en build con `src/presentation/update-cache.js`).
+   * Iconos de marca (`/favicon.ico` y `/assets/logo.png`): `public, max-age=0, must-revalidate` en `vercel.json` (y `no-cache` / `must-revalidate` en `src/infrastructure/config/server.js`), además de versionado `?v=<hash>` en las etiquetas `<link rel="icon">` y `<link rel="apple-touch-icon">` mediante `update-cache.js`. Ambos archivos (`favicon.ico` en raíz y `src/presentation/public/favicon.ico`) deben mantenerse sincronizados como `.ico` multiresolución (`16x16` a `256x256`).
    * HTML: `Cache-Control: no-store, no-cache, must-revalidate` para garantizar entrega inmediata de cambios.
    * `sitemap.xml`: `public, max-age=3600, stale-while-revalidate=86400`.
    * `robots.txt`: `public, max-age=86400`.

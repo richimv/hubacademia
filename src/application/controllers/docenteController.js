@@ -102,7 +102,7 @@ class DocenteController {
                 });
             }
 
-            return res.status(500).json({ success: false, error: error.message });
+            return res.status(500).json({ success: false, error: 'Error interno al iniciar el simulador.' });
         }
     }
 

@@ -5,6 +5,18 @@ const mediaController = require('./mediaController'); // ✅ NUEVO: Para subida 
 const DriveService = require('../../domain/services/driveService'); // ✅ NUEVO: Para extracción de miniaturas
 const { resolvePublicBaseUrl } = require('../../infrastructure/config/publicUrl');
 
+/**
+ * Parsea un identificador entero positivo estricto desde parámetros de ruta.
+ * @param {string|number} rawId
+ * @returns {number|null}
+ */
+function parsePositiveIntId(rawId) {
+    const normalized = String(rawId ?? '').trim();
+    if (!/^\d+$/.test(normalized)) return null;
+    const parsed = Number.parseInt(normalized, 10);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 class CoursesController {
     constructor(searchService, adminService) {
         this.searchService = searchService;
@@ -83,7 +95,7 @@ class CoursesController {
             } else {
                 console.error('Error in getCourses:', error);
             }
-            res.status(500).json({ error: `Error al obtener los cursos base: ${error.message}` });
+            res.status(500).json({ error: 'Error al obtener los cursos base' });
         }
     }
 
@@ -115,7 +127,9 @@ class CoursesController {
 
     async getCareerById(req, res) {
         try {
-            const id = parseInt(req.params.id, 10);
+            const id = parsePositiveIntId(req.params.id);
+            if (!id) return res.status(400).json({ error: 'ID de carrera inválido' });
+
             const career = await this.adminService.getById('career', id);
 
             if (!career) return res.status(404).json({ error: 'Carrera no encontrada' });
@@ -134,13 +148,14 @@ class CoursesController {
             res.json(career);
         } catch (error) {
             console.error('Error in getCareerById:', error);
-            res.status(500).json({ error: `Error al obtener la carrera: ${error.message}` });
+            res.status(500).json({ error: 'Error al obtener la carrera' });
         }
     }
 
     async getCourseById(req, res) {
         try {
-            const id = parseInt(req.params.id, 10);
+            const id = parsePositiveIntId(req.params.id);
+            if (!id) return res.status(400).json({ error: 'ID de curso inválido' });
 
             // 1. Obtener curso con temas y materiales (gracias al nuevo repositorio)
             const course = await this.adminService.getById('course', id);
@@ -152,31 +167,35 @@ class CoursesController {
             res.json(course);
         } catch (error) {
             console.error('Error in getCourseById:', error);
-            res.status(500).json({ error: `Error al obtener el curso: ${error.message}` });
+            res.status(500).json({ error: 'Error al obtener el curso' });
         }
     }
 
     async getResourceById(req, res) {
         try {
-            const id = parseInt(req.params.id, 10);
+            const id = parsePositiveIntId(req.params.id);
+            if (!id) return res.status(400).json({ error: 'ID de recurso inválido' });
+
             const resource = await this.adminService.getById('book', id);
             if (!resource) return res.status(404).json({ error: 'Recurso no encontrado' });
             res.json(resource);
         } catch (error) {
             console.error('Error in getResourceById:', error);
-            res.status(500).json({ error: `Error al obtener el recurso: ${error.message}` });
+            res.status(500).json({ error: 'Error al obtener el recurso' });
         }
     }
 
     async getTopicById(req, res) {
         try {
-            const id = parseInt(req.params.id, 10);
+            const id = parsePositiveIntId(req.params.id);
+            if (!id) return res.status(400).json({ error: 'ID de tema inválido' });
+
             const topic = await this.adminService.getById('topic', id);
             if (!topic) return res.status(404).json({ error: 'Tema no encontrado' });
             res.json(topic);
         } catch (error) {
             console.error('Error in getTopicById:', error);
-            res.status(500).json({ error: `Error al obtener el tema: ${error.message}` });
+            res.status(500).json({ error: 'Error al obtener el tema' });
         }
     }
 
@@ -219,8 +238,10 @@ class CoursesController {
 
     async getCourseDescription(req, res) {
         try {
-            // ✅ CORRECCIÓN: Convertir el ID de string a número.
-            const courseId = parseInt(req.params.id, 10);
+            const courseId = parsePositiveIntId(req.params.id);
+            if (!courseId) {
+                return res.status(400).json({ error: 'ID de curso inválido' });
+            }
             // Usamos adminService que ya está instanciado y es consistente con getTopicDescription
             const course = await this.adminService.getById('course', courseId);
             if (!course) {
@@ -449,7 +470,10 @@ class CoursesController {
             // ✅ SOLUCIÓN: El ID es un UUID para usuarios (admin/alumnos) pero un número para otras entidades.
             const entityId = (['student', 'admin'].includes(entityType))
                 ? req.params.id
-                : parseInt(req.params.id, 10);
+                : parsePositiveIntId(req.params.id);
+            if (!entityId) {
+                return res.status(400).json({ error: 'ID de entidad inválido' });
+            }
 
             // ✅ MANEJO DE ARCHIVOS: SUBIDA CENTRALIZADA A GCS (Update)
             // ✅ GESTIÓN DE IMÁGENES GCS (si existe archivo o se mandó borrar)
@@ -547,7 +571,10 @@ class CoursesController {
             // ✅ SOLUCIÓN: El ID es un UUID para usuarios (admin/alumno) pero un número para otras entidades.
             const entityId = (['student', 'admin'].includes(entityType))
                 ? req.params.id
-                : parseInt(req.params.id, 10);
+                : parsePositiveIntId(req.params.id);
+            if (!entityId) {
+                return res.status(400).json({ error: 'ID de entidad inválido' });
+            }
 
             // ✅ CLEANUP: Borrar imagen de GCS si existe
             const oldItem = await this.adminService.getById(entityType, entityId);

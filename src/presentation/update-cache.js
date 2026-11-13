@@ -16,6 +16,8 @@ function walkFiles(directory) {
     });
 }
 
+const brandIconFiles = ['favicon.ico', 'assets/logo.png'];
+
 function collectAssets() {
     return ['css', 'js'].flatMap(folder => walkFiles(path.join(publicDir, folder)))
         .sort((left, right) => {
@@ -23,6 +25,12 @@ function collectAssets() {
             const second = relativePath(right);
             return first < second ? -1 : first > second ? 1 : 0;
         });
+}
+
+function collectBrandIcons() {
+    return brandIconFiles
+        .map(rel => path.join(publicDir, rel))
+        .filter(fullPath => fs.existsSync(fullPath));
 }
 
 /** Canonical hash shared by the build and CI; versioned imports cannot hash themselves. */
@@ -33,6 +41,10 @@ function getAssetVersion() {
         let content = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
         if (isLandingModule(file)) content = content.replace(localModuleImportRegex, '$1?v=__ASSET_VERSION__');
         hash.update(content, 'utf8');
+    }
+    for (const iconFile of collectBrandIcons()) {
+        hash.update(relativePath(iconFile));
+        hash.update(fs.readFileSync(iconFile));
     }
     return hash.digest('hex').slice(0, 12);
 }
@@ -54,7 +66,9 @@ function updateCache() {
         const original = fs.readFileSync(target, 'utf8');
         const content = original
             .replace(/(href="(?:\/)?css\/[^"]+\.css)(?:\?v=[^"]+)?(?=")/g, '$1?v=' + version)
-            .replace(/(src="(?:\/)?js\/[^"]+\.js)(?:\?v=[^"]+)?(?=")/g, '$1?v=' + version);
+            .replace(/(src="(?:\/)?js\/[^"]+\.js)(?:\?v=[^"]+)?(?=")/g, '$1?v=' + version)
+            .replace(/(href="(?:\/)?favicon\.ico)(?:\?v=[^"]+)?(?=")/g, '$1?v=' + version)
+            .replace(/(<link\b[^>]*\bhref="(?:\/)?assets\/logo\.png)(?:\?v=[^"]+)?(?=")/g, '$1?v=' + version);
         if (content !== original) {
             fs.writeFileSync(target, content);
             updatedFiles++;

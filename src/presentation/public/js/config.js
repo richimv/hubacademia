@@ -133,22 +133,11 @@
     };
 
     /**
-     * ✅ NUEVO: Retorna la ruta de la portada artística por defecto según el tipo de recurso.
-     * Estos archivos deben existir en /assets (formato WebP optimizado).
+     * Las portadas estáticas por defecto (.webp) fueron retiradas; cuando no hay
+     * imagen asignada se retorna cadena vacía para activar el fallback visual por CSS/icono.
      */
-    window.getDefaultResourceImage = function (type) {
-        const base = 'assets/';
-        const map = {
-            'book': 'book.webp',
-            'paper': 'paper.webp',
-            'guia': 'guia.webp',
-            'norma': 'norma.webp',
-            'noticia': 'noticia.webp',
-            'other': 'other.webp',
-            'article': 'paper.webp'
-        };
-        const fileName = map[type] || map['other'];
-        return base + fileName;
+    window.getDefaultResourceImage = function () {
+        return '';
     };
 
     console.log('✅ Configuración Cargada Exitosamente.');

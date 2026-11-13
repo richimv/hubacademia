@@ -738,19 +738,16 @@ function createUnifiedResourceCardHTML(item) {
             break;
     }
 
-    // 5. Layout Híbrido Senior: Resolución de Imagen Inteligente (Smart Cover)
+    // 5. Layout Híbrido Senior: Resolución de Imagen o Fallback Visual CSS/Icono
     const rawImage = item.image_url || item.coverUrl;
+    const displayImage = (rawImage && window.resolveImageUrl) ? window.resolveImageUrl(rawImage, type) : (rawImage || '');
 
-    // ✅ RESOLUCIÓN UNIVERSAL: resolveImageUrl ahora maneja los fallbacks artísticos internamente
-    const displayImage = window.resolveImageUrl(rawImage, type);
+    const visualHTML = displayImage
+        ? `<img src="${safeHtmlValue(displayImage)}" alt="${safeTitle}" class="urc-image" loading="lazy" decoding="async" onerror="this.onerror=null;this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';">`
+        : '';
 
-    // Siempre renderizamos la imagen (ya sea la del recurso o la artística por defecto)
-    let visualHTML = `<img src="${safeHtmlValue(displayImage)}" alt="${safeTitle}" class="urc-image" loading="lazy" decoding="async" onerror="this.src='${safeHtmlValue(window.getDefaultResourceImage(type))}'">`;
-
-    // El fallback de icono ahora es solo decorativo o para estados de error crítico,
-    // pero por defecto lo mantenemos oculto ya que la imagen siempre debería cubrir el fondo.
     const fallbackHTML = `
-        <div class="urc-icon-fallback ${typeColorClass} fallback-trigger" style="display:none;">
+        <div class="urc-icon-fallback ${typeColorClass} fallback-trigger" style="display:${displayImage ? 'none' : 'flex'};">
             <i class="fas ${iconClass}"></i>
         </div>
     `;
@@ -762,7 +759,7 @@ function createUnifiedResourceCardHTML(item) {
             <!-- Zona Superior: Visual (Clicable) -->
             <div class="urc-visual-zone" role="button" tabindex="0" title="Ver detalles de ${safeTitle}">
                 ${visualHTML}
-                ${displayImage ? fallbackHTML : ''}
+                ${fallbackHTML}
                 
                 <!-- Overlay Oscuro y Candado -->
                 <div class="urc-visual-overlay"></div>
@@ -1123,20 +1120,34 @@ function createNewsBulletinWidgetHTML(newsItems = [], domain = 'medicine') {
         const openDirectly = item.open_directly === true || String(item.open_directly) === 'true';
         const isPremium = item.is_premium === true;
         const itemUrl = item.url || '';
-        const thumb = window.resolveImageUrl ? window.resolveImageUrl(item.image_url, itemType) : (item.image_url || 'assets/paper.webp');
+        const thumb = (item.image_url && window.resolveImageUrl)
+            ? window.resolveImageUrl(item.image_url, itemType)
+            : (item.image_url || '');
         const snippet = cleanSnippet(item.content_html, 140);
         const author = item.author || (domain === 'medicine' ? 'MINSA Perú' : 'MINEDU Perú');
+        const safeUrl = safeHtmlValue(itemUrl);
+        const safeId = safeHtmlValue(item.id);
+        const safeType = safeHtmlValue(itemType);
+        const safeThumb = safeHtmlValue(thumb);
+        const safeTitle = safeHtmlValue(item.title || '');
+        const safeCategory = safeHtmlValue(categoryLabel);
+        const safeAuthor = safeHtmlValue(author);
+        const safeSnippet = safeHtmlValue(snippet);
+        const mediaHTML = safeThumb
+            ? `
+                <div class="news-item-media news-sec-media">
+                    <img src="${safeThumb}" alt="${safeTitle}" class="news-item-img news-sec-img" loading="lazy" decoding="async" onerror="this.onerror=null;const media=this.closest('.news-item-media');if(media)media.remove();">
+                </div>`
+            : '';
 
         return `
-            <article class="news-item-card news-secondary-card ${isFeatured ? 'news-card-featured' : ''}" data-type="${itemType}" onclick="window.openVerifiedNewsUrl('${itemUrl}', '${item.id}', '${itemType}', ${isPremium}, ${openDirectly})">
-                <div class="news-item-media news-sec-media">
-                    <img src="${thumb}" alt="${item.title}" class="news-item-img news-sec-img" loading="lazy" decoding="async">
-                </div>
+            <article class="news-item-card news-secondary-card ${isFeatured ? 'news-card-featured' : ''}" data-type="${safeType}" data-url="${safeUrl}" data-id="${safeId}" data-premium="${isPremium}" data-open-directly="${openDirectly}" onclick="window.openVerifiedNewsUrl(this.dataset.url, this.dataset.id, this.dataset.type, this.dataset.premium === 'true', this.dataset.openDirectly === 'true')">
+                ${mediaHTML}
                 <div class="news-item-body news-sec-body">
-                    <span class="news-item-kicker">${categoryLabel}</span>
-                    <h4 class="news-item-title news-sec-title">${item.title}</h4>
-                    <div class="news-item-meta news-sec-author">${author}</div>
-                    ${snippet ? `<p class="news-item-summary news-sec-snippet">${snippet}</p>` : ''}
+                    <span class="news-item-kicker">${safeCategory}</span>
+                    <h4 class="news-item-title news-sec-title">${safeTitle}</h4>
+                    <div class="news-item-meta news-sec-author">${safeAuthor}</div>
+                    ${safeSnippet ? `<p class="news-item-summary news-sec-snippet">${safeSnippet}</p>` : ''}
                     <div class="news-item-footer news-sec-footer">
                         <span class="news-item-link news-sec-link">Ver publicación</span>
                     </div>

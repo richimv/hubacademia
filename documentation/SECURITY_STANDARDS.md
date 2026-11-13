@@ -174,7 +174,7 @@ Para erradicar ataques de fuerza bruta, escaneo automatizado y denegación de se
 | **M1: Insecure Credential Usage** | Almacenar tokens o credenciales en almacenamiento inseguro. | Uso exclusivo de `ExpoSecureStore` en móvil; tokens en `localStorage` con expiración local en web. |
 | **M2: Inadequate Supply Chain** | Paquetes con vulnerabilidades transitivas. | Auditorías continuas con `npm audit` y bloqueo de versiones con `package-lock.json`. |
 | **M3: Insecure Authentication** | Sesiones zombis tras logout o borrado. | Flujo atómico de cierre de sesión (*Nuclear Logout*) y endpoint `DELETE /api/auth/delete-account`. |
-| **M4: Insufficient Input Validation** | Inyecciones SQL, scripts o desbordamientos. | Validación de tipos, longitudes y caracteres de control en controladores y repositorios. |
+| **M4: Insufficient Input Validation** | Inyecciones SQL, scripts o desbordamientos. | Validación estricta de tipos, longitudes, IDs enteros positivos (`400`), intervalos SQL parametrizados (`analyticsRepository.js`), escape HTML/XSS y mensajes de error 500 genéricos sin trazas internas. |
 | **M5: Insecure Communication** | Ataques MitM en redes no seguras. | Cifrado forzado sobre TLS 1.3 / HTTPS; soporte para Strict-Transport-Security. |
 | **M6: Inadequate Privacy Controls** | Fuga de PII o tokens en logs de depuración. | Supresión de `console.log` en producción; censura de tokens y cuerpos de petición sensibles. |
 | **M7: Insufficient Binary Protections** | Ingeniería inversa y desensamblado APK/AAB. | Compilación a bytecode con motor Hermes (`"jsEngine": "hermes"`), ProGuard/R8 y `allowBackup: false`. |
@@ -207,7 +207,8 @@ Para erradicar ataques de fuerza bruta, escaneo automatizado y denegación de se
 | FASE 3 [COMPLETADA]   | Guardrails LLM, Sanitización de Prompts y Diagnóstico en Vertex AI       |
 | FASE 4 [COMPLETADA]   | Eliminación de Cuentas (Google Play / GDPR), CSP y CORS Dinámico Seguro   |
 | FASE 5 [COMPLETADA]   | Blindaje search_path (public, pg_temp), Anti-SQLi Columnas, Anti-CSV Inject|
-| FASE 6 [PROGRAMADA]   | Detección de Correos Desechables y Auditoría Continua de Dependencias     |
+| FASE 6 [COMPLETADA]   | Parametrización SQL de intervalos, IDs enteros positivos, XSS UI y Fuga 500|
+| FASE 7 [PROGRAMADA]   | Detección de Correos Desechables y Auditoría Continua de Dependencias     |
 +---------------------------------------------------------------------------------------------------+
 ```
 

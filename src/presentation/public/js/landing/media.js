@@ -2,7 +2,7 @@
  * Seek requests are coalesced while a decoder is busy. One orientation per scene.
  * Posters remain available for reduced motion, data saving and media errors.
  */
-import { MEDIA_SLOTS } from './media-config.js?v=e86e06546949';
+import { MEDIA_SLOTS } from './media-config.js?v=c30d1894928a';
 
 export function initMedia() {
     const mobile = matchMedia('(max-width: 640px)');

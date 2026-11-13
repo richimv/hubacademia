@@ -1,6 +1,18 @@
 const LibraryRepository = require('../../domain/repositories/libraryRepository');
 const libraryRepo = new LibraryRepository();
 
+/**
+ * Parsea un identificador entero positivo estricto desde parámetros de ruta.
+ * @param {string|number} rawId
+ * @returns {number|null}
+ */
+function parsePositiveIntId(rawId) {
+    const normalized = String(rawId ?? '').trim();
+    if (!/^\d+$/.test(normalized)) return null;
+    const parsed = Number.parseInt(normalized, 10);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 exports.toggleItem = async (req, res) => {
     try {
         const { type, id, action } = req.body; // type: 'course'|'book', action: 'save'|'favorite'
@@ -104,7 +116,10 @@ exports.getNotes = async (req, res) => {
 exports.updateNote = async (req, res) => {
     try {
         const userId = req.user.id;
-        const noteId = parseInt(req.params.id, 10);
+        const noteId = parsePositiveIntId(req.params.id);
+        if (!noteId) {
+            return res.status(400).json({ error: 'ID de nota inválido.' });
+        }
         const { title, content, color } = req.body;
 
         const updated = await libraryRepo.updateNote(userId, noteId, { title, content, color });
@@ -121,7 +136,10 @@ exports.updateNote = async (req, res) => {
 exports.deleteNote = async (req, res) => {
     try {
         const userId = req.user.id;
-        const noteId = parseInt(req.params.id, 10);
+        const noteId = parsePositiveIntId(req.params.id);
+        if (!noteId) {
+            return res.status(400).json({ error: 'ID de nota inválido.' });
+        }
 
         const deleted = await libraryRepo.deleteNote(userId, noteId);
         if (!deleted) {

@@ -644,8 +644,10 @@ class SearchComponent {
             `;
         }
 
+        const safeSearchQuery = window.escapeHtml ? window.escapeHtml(data.searchQuery || '') : String(data.searchQuery || '');
+
         if (contentHTML === '') {
-            contentHTML = `<p class="empty-state" style="margin-top: 2rem;">No se encontraron resultados para "${data.searchQuery}".</p>`;
+            contentHTML = `<p class="empty-state" style="margin-top: 2rem;">No se encontraron resultados para "${safeSearchQuery}".</p>`;
         }
 
         // 5. Renderizar Vista "Biblioteca Digital" (Limpia, sin banners obsoletos)
@@ -654,7 +656,7 @@ class SearchComponent {
                 
                 <!-- Cabecera de Resultados (Compacta) -->
                 <div class="results-header-container">
-                     <h2 class="results-main-title">Resultados para "${data.searchQuery}"</h2>
+                     <h2 class="results-main-title">Resultados para "${safeSearchQuery}"</h2>
                      <p class="results-count">
                         ${data.results ? data.results.length : 0} recursos encontrados
                      </p>
@@ -849,13 +851,14 @@ class SearchComponent {
         let newHtml = '';
         nextAreas.forEach(area => {
             const books = this.booksByAreaContext[area];
+            const safeArea = window.escapeHtml ? window.escapeHtml(area) : area;
             const booksGrid = books.map(book => createUnifiedResourceCardHTML(book)).join('');
             newHtml += `
                 <div class="area-group-section" style="margin-bottom: 3rem; opacity: 0; animation: fadeInUp 0.5s ease forwards;">
                      <button class="section-header" style="background: none; border: none; border-bottom: 1px solid var(--border-color); width: 100%; padding: 0 0 0.5rem 0;" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.fa-chevron-down').classList.toggle('fa-rotate-180');">
                          <h3 class="area-title" style="font-size: 1.1rem; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600;">
                             <i class="fas fa-layer-group" style="color: var(--accent); font-size: 1rem;"></i>
-                            ${area}
+                            ${safeArea}
                          </h3>
                          <i class="fas fa-chevron-down" style="color: var(--text-muted); transition: transform 0.3s;"></i>
                     </button>
@@ -988,6 +991,7 @@ class SearchComponent {
 
         let newHtml = '';
         nextAreas.forEach(area => {
+            const safeArea = window.escapeHtml(area);
             const courses = this.coursesByAreaContext[area];
             const coursesGrid = courses.map(course => createUnifiedResourceCardHTML({ ...course, type: 'course' })).join('');
 
@@ -996,7 +1000,7 @@ class SearchComponent {
                     <button class="section-header" style="background: none; border: none; border-bottom: 1px solid var(--border-color); width: 100%; padding: 0 0 0.5rem 0;" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.fa-chevron-down').classList.toggle('fa-rotate-180');">
                          <h3 class="area-title" style="font-size: 1.1rem; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600;">
                             <i class="fas fa-university" style="color: var(--accent); font-size: 1rem;"></i>
-                            ${area}
+                            ${safeArea}
                          </h3>
                          <i class="fas fa-chevron-down" style="color: var(--text-muted); transition: transform 0.3s;"></i>
                     </button>
@@ -1129,7 +1133,8 @@ class SearchComponent {
 
         let allCardsHTML = [];
         for (const topic of Object.keys(groupedData).sort()) {
-            allCardsHTML.push(`<div class="manta-group-title" style="grid-column: 1/-1;">${topic}</div>`);
+            const safeTopic = window.escapeHtml ? window.escapeHtml(topic) : topic;
+            allCardsHTML.push(`<div class="manta-group-title" style="grid-column: 1/-1;">${safeTopic}</div>`);
             groupedData[topic].forEach(doc => {
                 allCardsHTML.push(createUnifiedResourceCardHTML(doc));
             });

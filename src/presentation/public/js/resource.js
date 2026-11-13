@@ -54,10 +54,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             'other': { icon: 'fa-image', colorClass: 'urc-color-other' }
         };
         const config = typeConfigs[rType] || typeConfigs['other'];
-        const fallbackImg = window.getDefaultResourceImage(rType);
+        const fallbackVisual = `<div class="urc-icon-fallback ${config.colorClass} resource-cover-fallback" style="display:${coverImage ? 'none' : 'flex'}; min-height:220px; border-radius:12px;"><i class="fas ${config.icon}"></i></div>`;
 
-        // Usar la imagen resuelta con fallback a la imagen artística por defecto
-        let visualHTML = `<img src="${escape(coverImage)}" alt="Portada de ${safeTitle}" class="resource-cover" onerror="this.src='${escape(fallbackImg)}'">`;
+        // Usar portada resuelta o fallback visual CSS/icono sin depender de archivos estáticos
+        let visualHTML = coverImage
+            ? `<img src="${escape(coverImage)}" alt="Portada de ${safeTitle}" class="resource-cover" onerror="this.onerror=null;this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';">${fallbackVisual}`
+            : fallbackVisual;
 
         if (isVideo) {
             visualHTML = `

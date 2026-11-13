@@ -43,6 +43,11 @@
     "jest": "^30.2.0",
     "nodemon": "^3.1.10"
   },
+  "jest": {
+    "modulePathIgnorePatterns": [
+      "<rootDir>/.tools/"
+    ]
+  },
   "keywords": [
     "chatbot",
     "ia",

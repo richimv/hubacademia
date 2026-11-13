@@ -17,13 +17,26 @@ class AnalyticsRepository {
     }
 
     /**
+     * Valida y acota el número de días para intervalos SQL parametrizados.
+     * @param {number|string} days
+     * @param {number} defaultDays
+     * @returns {number}
+     */
+    _sanitizeDays(days, defaultDays = 30) {
+        const parsed = Number.parseInt(days, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) return defaultDays;
+        return Math.min(parsed, 3650);
+    }
+
+    /**
      * Obtiene el historial de búsquedas agrupado por día para los top 5 términos.
      */
     async getSearchHistoryTimeSeries(days) {
+        const safeDays = this._sanitizeDays(days);
         const topTermsQuery = `
             SELECT query
             FROM search_history
-            WHERE created_at >= NOW() - INTERVAL '${days} days'
+            WHERE created_at >= NOW() - ($1 || ' days')::interval
             GROUP BY query
             ORDER BY COUNT(*) DESC
             LIMIT 5
@@ -33,13 +46,13 @@ class AnalyticsRepository {
             WITH TopTerms AS (${topTermsQuery})
             SELECT DATE(created_at) as date, query, COUNT(*) as count
             FROM search_history
-            WHERE created_at >= NOW() - INTERVAL '${days} days'
+            WHERE created_at >= NOW() - ($1 || ' days')::interval
             AND query IN (SELECT query FROM TopTerms)
             GROUP BY DATE(created_at), query
             ORDER BY date ASC;
         `;
 
-        const { rows } = await db.query(timeSeriesQuery);
+        const { rows } = await db.query(timeSeriesQuery, [safeDays]);
         return rows;
     }
 
@@ -48,6 +61,7 @@ class AnalyticsRepository {
      */
     async getTimeSeriesForQueries(queries, days) {
         if (!queries || queries.length === 0) return [];
+        const safeDays = this._sanitizeDays(days);
         const placeholders = queries.map((_, i) => `$${i + 2}`).join(', ');
         const safeQuery = `
             SELECT DATE(created_at) as date, query, COUNT(*) as count
@@ -58,7 +72,7 @@ class AnalyticsRepository {
             ORDER BY date ASC;
         `;
 
-        const { rows } = await db.query(safeQuery, [days, ...queries]);
+        const { rows } = await db.query(safeQuery, [safeDays, ...queries]);
         return rows;
     }
 
@@ -142,21 +156,26 @@ class AnalyticsRepository {
     }
 
     async getDashboardMetricsRaw(days) {
-        const dateFilter = `created_at >= NOW() - INTERVAL '${days} days'`;
+        const safeDays = this._sanitizeDays(days);
+        const dateFilter = `created_at >= NOW() - ($1 || ' days')::interval`;
 
         const queries = [
-            `SELECT COUNT(*) FROM search_history WHERE source = 'search_bar' AND ${dateFilter}`,
-            `SELECT COUNT(*) FROM search_history WHERE source = 'chatbot' AND ${dateFilter}`,
-            `SELECT COUNT(*) FROM search_history WHERE is_educational_query = TRUE AND ${dateFilter}`,
-            `SELECT 0 AS count`,
-            `SELECT 0 AS count`,
-            `
+            { sql: `SELECT COUNT(*) FROM search_history WHERE source = 'search_bar' AND ${dateFilter}`, params: [safeDays] },
+            { sql: `SELECT COUNT(*) FROM search_history WHERE source = 'chatbot' AND ${dateFilter}`, params: [safeDays] },
+            { sql: `SELECT COUNT(*) FROM search_history WHERE is_educational_query = TRUE AND ${dateFilter}`, params: [safeDays] },
+            { sql: `SELECT 0 AS count` },
+            { sql: `SELECT 0 AS count` },
+            {
+                sql: `
                 SELECT COUNT(DISTINCT user_id) 
                 FROM search_history 
                 WHERE ${dateFilter} AND user_id IS NOT NULL;
             `,
-            `SELECT 0 AS count`,
-            `
+                params: [safeDays]
+            },
+            { sql: `SELECT 0 AS count` },
+            {
+                sql: `
                 SELECT query, COUNT(*) as count 
                 FROM search_history 
                 WHERE ${dateFilter}
@@ -164,10 +183,14 @@ class AnalyticsRepository {
                 ORDER BY count DESC
                 LIMIT 5
             `,
-            'SELECT COUNT(*) FROM users'
+                params: [safeDays]
+            },
+            { sql: 'SELECT COUNT(*) FROM users' }
         ];
 
-        const results = await Promise.all(queries.map(q => db.query(q)));
+        const results = await Promise.all(
+            queries.map(q => (q.params ? db.query(q.sql, q.params) : db.query(q.sql)))
+        );
         
         return {
             totalSearches: parseInt(results[0].rows[0].count, 10),
@@ -189,22 +212,25 @@ class AnalyticsRepository {
     }
 
     async getSearchTrendsRaw(days) {
+        const safeDays = this._sanitizeDays(days);
         const trendsQuery = `
             SELECT DATE(created_at) as date, COUNT(*) as count
             FROM search_history
-            WHERE created_at >= NOW() - INTERVAL '${days} days'
+            WHERE created_at >= NOW() - ($1 || ' days')::interval
             GROUP BY DATE(created_at)
             ORDER BY date ASC;
         `;
-        const trendsData = await db.query(trendsQuery);
+        const trendsData = await db.query(trendsQuery, [safeDays]);
         return trendsData.rows;
     }
 
     async getInteractionTrendsRaw(days) {
+        const safeDays = this._sanitizeDays(days);
+        const lookbackDays = Math.max(0, safeDays - 1);
         const query = `
             WITH all_dates AS (
                 SELECT generate_series(
-                    (NOW() - INTERVAL '${days - 1} days')::date,
+                    (NOW() - ($1 || ' days')::interval)::date,
                     NOW()::date,
                     '1 day'::interval
                 )::date AS date
@@ -218,11 +244,12 @@ class AnalyticsRepository {
             GROUP BY d.date
             ORDER BY d.date ASC;
         `;
-        const { rows } = await db.query(query);
+        const { rows } = await db.query(query, [lookbackDays]);
         return rows;
     }
 
     async getTopViewedEntitiesRaw(type, days) {
+        const safeDays = this._sanitizeDays(days);
         let tableName = '';
         let nameField = 'name';
         switch (type) {
@@ -236,44 +263,47 @@ class AnalyticsRepository {
             FROM page_views pv
             JOIN ${tableName} t ON pv.entity_id = t.id
             WHERE pv.entity_type = $1 
-            AND pv.created_at >= NOW() - INTERVAL '${days} days'
+            AND pv.created_at >= NOW() - ($2 || ' days')::interval
             GROUP BY t.id, t.${nameField}
             ORDER BY count DESC
             LIMIT 5;
         `;
-        const res = await db.query(query, [type]);
+        const res = await db.query(query, [type, safeDays]);
         return res.rows;
     }
 
     async getTopSearchesRawData(days, limit) {
+        const safeDays = this._sanitizeDays(days);
         const query = `
             SELECT query, COUNT(*) as count 
             FROM search_history 
-            WHERE created_at >= NOW() - INTERVAL '${days} days'
+            WHERE created_at >= NOW() - ($1 || ' days')::interval
             GROUP BY query 
             ORDER BY count DESC
-            LIMIT $1`;
-        const res = await db.query(query, [limit]);
+            LIMIT $2`;
+        const res = await db.query(query, [safeDays, limit]);
         return res.rows;
     }
 
     async getZeroResultSearchesRaw(days) {
+        const safeDays = this._sanitizeDays(days);
         const query = `
             SELECT query, COUNT(*) as count
             FROM search_history
             WHERE results_count = 0
-            AND created_at >= NOW() - INTERVAL '${days} days'
+            AND created_at >= NOW() - ($1 || ' days')::interval
             GROUP BY query
             ORDER BY count DESC
             LIMIT 5;
         `;
-        const res = await db.query(query);
+        const res = await db.query(query, [safeDays]);
         return res.rows;
     }
 
     async getAnalyticsForMLRaw(days) {
-        const querySearch = `SELECT query, results_count, created_at FROM search_history WHERE created_at >= NOW() - INTERVAL '${days} days' ORDER BY created_at DESC LIMIT 50000`;
-        const searchHistoryRes = await db.query(querySearch);
+        const safeDays = this._sanitizeDays(days);
+        const querySearch = `SELECT query, results_count, created_at FROM search_history WHERE created_at >= NOW() - ($1 || ' days')::interval ORDER BY created_at DESC LIMIT 50000`;
+        const searchHistoryRes = await db.query(querySearch, [safeDays]);
         return { searchHistory: searchHistoryRes.rows, feedback: [] };
     }
 
@@ -286,29 +316,31 @@ class AnalyticsRepository {
     }
 
     async getAIAnalyticsRaw(days) {
+        const safeDays = this._sanitizeDays(days);
         const query = `
             SELECT 
                 COUNT(*) FILTER (WHERE event_type = 'impression') as impressions,
                 COUNT(*) FILTER (WHERE event_type = 'click_explanation') as clicks,
                 COUNT(DISTINCT query) as unique_questions
             FROM ai_analytics
-            WHERE created_at >= NOW() - INTERVAL '${days} days'
+            WHERE created_at >= NOW() - ($1 || ' days')::interval
         `;
-        const res = await db.query(query);
+        const res = await db.query(query, [safeDays]);
         return res.rows[0] || { impressions: 0, clicks: 0, unique_questions: 0 };
     }
 
     async getTopDeepQuestionsRaw(days) {
+        const safeDays = this._sanitizeDays(days);
         const query = `
             SELECT query, COUNT(*) as count
             FROM ai_analytics
             WHERE event_type = 'click_explanation'
-            AND created_at >= NOW() - INTERVAL '${days} days'
+            AND created_at >= NOW() - ($1 || ' days')::interval
             GROUP BY query
             ORDER BY count DESC
             LIMIT 5
         `;
-        const res = await db.query(query);
+        const res = await db.query(query, [safeDays]);
         return res.rows;
     }
 
