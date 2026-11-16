@@ -1,14 +1,5 @@
-const { VertexAI } = require('@google-cloud/vertexai');
 const securityUtils = require('../../domain/utils/securityUtils');
-const mineduScoringService = require('../../domain/services/mineduScoringService');
-const { generateEducationDiagnostic } = require('../../domain/services/educationDiagnosticService');
-const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
-const {
-    getVertexCandidateModels,
-    getVertexGenerativeEndpoint,
-    buildVertexGenerationConfig,
-    extractModelResponsePayload
-} = require('../../infrastructure/config/vertexAiConfig');
+const UsageService = require('../../domain/services/usageService');
 
 // Ventana de deduplicación serverless para evitar escrituras redundantes a web_traffic y page_views
 const PULSE_THROTTLE_MS = 2 * 60 * 1000; // 2 minutos (ventana active_now en BD es de 5 minutos)
@@ -16,24 +7,11 @@ const VIEW_THROTTLE_MS = 30 * 1000;      // 30 segundos por entidad/sesión
 const MAX_CACHE_ENTRIES = 5000;
 const BOT_USER_AGENT_REGEX = /bot|crawler|spider|crawling|uptimerobot|headlesschrome|lighthouse|pagespeed|gtmetrix|pingdom|curl|wget|python-requests/i;
 
-// CONFIGURACIÓN VERTEX AI
-const googleAuthOptions = resolveGoogleAuthOptions('AnalyticsController');
-const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
-let vertex_ai = null;
-try {
-    vertex_ai = new VertexAI({
-        project: project,
-        ...getVertexGenerativeEndpoint(),
-        ...(Object.keys(googleAuthOptions).length > 0 ? { googleAuthOptions } : {})
-    });
-} catch (e) {
-    console.warn('⚠️ AnalyticsController: VertexAI no inicializado (Modo test o sin credenciales).');
-}
-
 class AnalyticsController {
-    constructor(analyticsService, userRepository) {
+    constructor(analyticsService, userRepository, usageService = null) {
         this.analyticsService = analyticsService;
         this.userRepository = userRepository;
+        this.usageService = usageService || (userRepository ? new UsageService(userRepository) : new UsageService());
         this._pulseCache = new Map();
         this._viewCache = new Map();
 
@@ -269,51 +247,15 @@ class AnalyticsController {
         }
     }
 
-    async _callGeminiDiagnostic(prompt) {
-        if (!vertex_ai) {
-            throw new Error('VertexAI no está inicializado en AnalyticsController');
-        }
-
-        // Canal Exclusivo: Google Cloud Vertex AI (GCP Enterprise) — Estándar Gemini 3.6
-        const vertexCandidateModels = getVertexCandidateModels();
-        const generationConfig = buildVertexGenerationConfig({
-            maxOutputTokens: 2048,
-            responseMimeType: 'application/json',
-            thinkingLevel: process.env.VERTEX_DIAGNOSTIC_THINKING_LEVEL || null
-        });
-        console.log('📡 [VertexAI Analytics] Conectando a Vertex AI SDK (GCP Enterprise)...');
-        let lastError = null;
-
-        for (const modelName of vertexCandidateModels) {
-            try {
-                const vertexModel = vertex_ai.getGenerativeModel({
-                    model: modelName,
-                    generationConfig
-                });
-                const result = await vertexModel.generateContent(prompt);
-                const payload = extractModelResponsePayload(result);
-                if (payload && payload.text) {
-                    console.log(`✅ [VertexAI Analytics Éxito] Diagnóstico generado con modelo: ${modelName}`);
-                    return payload.text;
-                }
-            } catch (err) {
-                lastError = err;
-                console.warn(`⚠️ [VertexAI Analytics Fallo - ${modelName}]:`, err.message);
-            }
-        }
-
-        throw (lastError || new Error('No se pudo conectar con Vertex AI en ningún modelo de la cascada.'));
-    }
-
     async getAIDiagnostic(req, res) {
         try {
             const userId = req.user.id;
             const tier = req.userTier || 'free';
-            const { stats: rawStats, context: rawContext = 'MEDICINA' } = req.body;
+            const { stats: rawStats, context: rawContext = 'MEDICINA' } = req.body || {};
 
             // Sanitizar/Validar entrada de contexto
-            const context = typeof rawContext === 'string' 
-                ? rawContext.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 20)
+            const context = typeof rawContext === 'string'
+                ? (rawContext.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 20) || 'MEDICINA')
                 : 'MEDICINA';
 
             // Validación de datos estadísticos mínimos y sanitización
@@ -333,126 +275,31 @@ class AnalyticsController {
             stats.targetScale = targetScale;
             if (context === 'EDUCACION') stats.radar_data = []; // Do not infer skills from retired classifications.
             if (req.body.target && !stats.target) stats.target = req.body.target;
-            const educationSummary = context === 'EDUCACION' ? generateEducationDiagnostic(stats) : null;
-            if (educationSummary && !educationSummary.hasHistory) {
-                return res.json({ success: true, ...educationSummary });
+
+            const diagnostic = await this.analyticsService.generateDiagnosticInsight({
+                user: req.user,
+                userTier: tier,
+                stats,
+                context,
+                targetScale,
+                target: req.body.target,
+                fallbackToStatic: Boolean(req.fallbackToStatic)
+            });
+
+            if (diagnostic && context === 'EDUCACION' && diagnostic.hasHistory === false) {
+                return res.json({ success: true, ...diagnostic });
             }
 
             // 💸 DESCONTAR CUOTA / VIDAS según el tipo definido por el middleware (usage_count para Free, daily_ai_usage para Advanced)
             if (req.usageType && tier !== 'admin') {
                 try {
                     if (securityUtils.isValidUsageColumn(req.usageType)) {
-                        const db = require('../../infrastructure/database/db');
-                        await db.query(
-                            `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
-                            [userId]
-                        );
+                        await this.usageService.incrementUsageColumn(userId, req.usageType);
                         console.log(`📉 Cuota de ${req.usageType} incrementada para usuario ${userId} en Diagnóstico.`);
                     }
                 } catch (limitErr) {
-                    console.error("⚠️ No se pudo actualizar el límite en base de datos. Continuando...", limitErr);
+                    console.error('⚠️ No se pudo actualizar el límite en base de datos. Continuando...', limitErr);
                 }
-            }
-
-            // Retornar Diagnóstico Heurístico Inteligente para cuentas no Premium (free, basic, pending, etc.) o si se forzó el fallback
-            if ((tier !== 'advanced' && tier !== 'admin') || req.fallbackToStatic) {
-                const diagnostic = this.analyticsService.generateHeuristicDiagnostic(stats, context);
-                return res.json({ success: true, ...diagnostic });
-            }
-
-            console.log(`🧠 [IA MULTI-MÓDULO] Generando diagnóstico cognitivo profundo con IA para el usuario ${userId} en contexto ${context}...`);
-
-            // Adaptar dinámicamente el prompt según el contexto
-            let tutorRole = "Tutor Médico experto y evaluador del Examen Nacional de Medicina (ENAM / SERUMS / Residentado)";
-            let examType = "médico cirujano en preparación intensiva para sus exámenes oficiales nacionales";
-            let areaLabel = "RENDIMIENTO Y MATRIZ POR ÁREAS CLÍNICAS";
-            let scaleSectionPrompt = "";
-            let strengthTextPrompt = "El análisis debe centrarse en el dominio clínico, razonamiento diagnóstico, correlación fisiopatológica y precisión terapéutica. Destaca sus áreas más sólidas con porcentajes reales de acierto.";
-            let weaknessTextPrompt = "Identifica patrones de error sistemático, sesgos diagnósticos (ej. sesgo de anclaje, confusión en dosis críticas o no reconocer signos de alarma) y el riesgo real en el puntaje de la prueba oficial.";
-            let highYieldPrompt = "Una 'Píldora Clínica High-Yield' de alto impacto que suelen preguntar en los exámenes oficiales sobre una de sus áreas débiles.";
-            let step1Title = "Refuerzo Clínico y Guías Oficiales";
-            let step2Title = "Entrenamiento en Descarte Rápido";
-            let step3Title = "Simulacros de Alta Exigencia";
-
-            if (context === 'EDUCACION') {
-                const cutoff = mineduScoringService.getScaleCutoff(targetScale);
-                const mineduScore = educationSummary?.mineduEvaluation?.mineduScore ?? ((stats.minedu_score !== undefined && !isNaN(parseFloat(stats.minedu_score)))
-                    ? parseFloat(stats.minedu_score)
-                    : Math.round(((stats.avg_score / 20) * 90) * 10) / 10);
-                const gap = Math.round((mineduScore - cutoff.minPoints) * 10) / 10;
-                const statusStr = gap >= 0
-                    ? `+${gap.toFixed(1)} pts de margen (PROYECCIÓN APROBATORIA)`
-                    : `-${Math.abs(gap).toFixed(1)} pts de déficit (BRECHA POR CUBRIR)`;
-
-                tutorRole = "Asesor Pedagógico Especialista en Evaluación y Currículo Nacional (CNEB / Minedu)";
-                examType = `docente en preparación para la Prueba Nacional de Ascenso de Escala Magisterial (Postula a: ${cutoff.name})`;
-                areaLabel = "RENDIMIENTO GLOBAL SIN CLASIFICACIÓN TEMÁTICA";
-                scaleSectionPrompt = `
-                ESCALA OBJETIVO DEL POSTULANTE (MINEDU):
-                - Meta Postulada: ${cutoff.name}
-                - Puntaje Mínimo Requerido: ${cutoff.minPoints} / 90 puntos (equiv. ${cutoff.vigesimalEquivalent}/20)
-                - Puntaje Actual Estimado: ${mineduScore} / 90 puntos
-                - Estado frente al Corte: ${statusStr}
-                `;
-                strengthTextPrompt = 'Describe únicamente la nota, precisión y volumen de respuestas observados. No se dispone de ejes temáticos ni del contenido de las respuestas: no atribuyas competencias o fortalezas pedagógicas específicas.';
-                weaknessTextPrompt = `Describe el margen o brecha frente al corte configurado de ${cutoff.minPoints} puntos. No inventes patrones de error, debilidades por área, velocidad ni tendencias temporales. La proyección de práctica no garantiza aprobación oficial.`;
-                highYieldPrompt = 'Una sugerencia general de estudio, identificada como recomendación y no como una debilidad detectada en el usuario.';
-                step1Title = 'Revisión de respuestas incorrectas';
-                step2Title = "Casuísticas de Retroalimentación y Rúbricas";
-                step3Title = "Simulacros Oficiales MINEDU (60q)";
-            }
-
-            // Prompt analítico adaptado para Plan Avanzado (Deep Reasoning)
-            const prompt = `
-            Actúa como un ${tutorRole}.
-            Analiza el historial de rendimiento de un ${examType}:
-            
-            Nota Promedio: ${stats.avg_score} / 20
-            Precisión Global: ${stats.accuracy}%
-            ${context === 'EDUCACION' ? `Preguntas respondidas: ${stats.total_questions ?? 'Sin volumen disponible'}. No hay datos fiables de rendimiento por ejes temáticos.` : ''}
-            Tarjetas Repasadas y Dominadas: ${stats.mastered_cards}
-            ${scaleSectionPrompt}
-            
-            ${areaLabel}:
-            ${JSON.stringify(stats.radar_data, null, 2)}
-            
-            TAREA:
-            Genera una auditoría diagnóstica cognitiva profunda de alto nivel profesional y analítico. Detecta sesgos de razonamiento, patrones de error frente a distractores y oportunidades críticas de mejora antes de la prueba oficial. Usa un tono de mentor de élite: analítico, riguroso, pero altamente motivador y accionable.
-            
-            JSON ESTRICTO:
-            {
-                "readinessIndex": 82,
-                "readinessLevel": "Nivel Competente Avanzado",
-                "strengths": "HTML sin etiquetas <html> o <body>. Usa <p style='color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;'> para un resumen inicial. Luego usa <ul style='margin:0; padding:0; list-style:none;'> con items <li style='display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;'><i class='fas fa-check-circle' style='color:var(--primary); margin-top:2px;'></i><span>...</span></li>. ${strengthTextPrompt} Menciona su precisión específica.",
-                "weaknesses": "Mismo formato HTML (Párrafo + Lista ul/li). El icono de la lista debe ser: <i class='fas fa-crosshairs' style='color:var(--text-muted); margin-top:2px;'></i>. ${weaknessTextPrompt}",
-                "strategy": "Texto conciso de 1 o 2 oraciones con la recomendación de estudio más importante para su próxima sesión.",
-                "highYieldTip": "${highYieldPrompt}",
-                "sprint": [
-                    { "step": 1, "title": "${step1Title}", "desc": "Acción concreta de estudio y revisión teórica recomendada." },
-                    { "step": 2, "title": "${step2Title}", "desc": "Acción de práctica focalizada en simuladores comentados." },
-                    { "step": 3, "title": "${step3Title}", "desc": "Acción de consolidación y prueba de velocidad para la prueba oficial." }
-                ]
-            }
-            `;
-
-            let diagnostic;
-            try {
-                const rawText = await this._callGeminiDiagnostic(prompt);
-                diagnostic = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
-                if (!diagnostic || !['strengths', 'weaknesses', 'strategy'].every(key => typeof diagnostic[key] === 'string')) {
-                    throw new Error('INVALID_DIAGNOSTIC_RESPONSE');
-                }
-                diagnostic.source = 'ai';
-                if (educationSummary) {
-                    // Keep measured indicators deterministic; the model supplies the narrative only.
-                    diagnostic = { ...diagnostic, source: 'ai', hasHistory: true,
-                        readinessIndex: educationSummary.readinessIndex,
-                        readinessLevel: educationSummary.readinessLevel,
-                        ...(educationSummary.mineduEvaluation ? { mineduEvaluation: educationSummary.mineduEvaluation } : {}) };
-                }
-            } catch(err) {
-                console.warn("⚠️ [Diagnóstico IA Fallback] Usando motor heurístico enriquecido por:", err.message);
-                diagnostic = this.analyticsService.generateHeuristicDiagnostic(stats, context);
             }
 
             return res.json({ success: true, ...diagnostic });
@@ -460,8 +307,8 @@ class AnalyticsController {
         } catch (error) {
             console.error('❌ Error en getAIDiagnostic:', error);
             try {
-                const fallbackStats = { ...(req.body.stats || {}), targetScale: req.body.targetScale || req.body.stats?.targetScale || 2 };
-                const fallback = this.analyticsService.generateHeuristicDiagnostic(fallbackStats, req.body.context || 'MEDICINA');
+                const fallbackStats = { ...(req.body?.stats || {}), targetScale: req.body?.targetScale || req.body?.stats?.targetScale || 2 };
+                const fallback = this.analyticsService.generateHeuristicDiagnostic(fallbackStats, req.body?.context || 'MEDICINA');
                 return res.json({ success: true, ...fallback });
             } catch (fallbackErr) {
                 res.status(500).json({ error: 'Hubo un problema generando tu diagnóstico con IA.' });

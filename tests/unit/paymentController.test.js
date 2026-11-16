@@ -1,13 +1,18 @@
 const fs = require('fs');
 const path = require('path');
-const paymentController = require('../../src/application/controllers/paymentController');
-const pool = require('../../src/infrastructure/database/db');
-const { Payment, Preference } = require('mercadopago');
 const crypto = require('crypto');
 
-// Mock dependencies
-jest.mock('../../src/infrastructure/database/db');
+const mockPaymentRepository = {
+    processApprovedWebhook: jest.fn()
+};
+
+jest.mock('../../src/domain/repositories/paymentRepository', () => {
+    return jest.fn().mockImplementation(() => mockPaymentRepository);
+});
 jest.mock('mercadopago');
+
+const paymentController = require('../../src/application/controllers/paymentController');
+const { Payment, Preference } = require('mercadopago');
 
 describe('PaymentController - handleWebhook', () => {
     let mockReq;
@@ -115,26 +120,21 @@ describe('PaymentController - handleWebhook', () => {
         mockReq.query.type = 'payment';
 
         // Mock Payment.get behavior
-        const mockGet = jest.fn().mockResolvedValue({
+        const paymentPayload = {
             status: 'approved',
             external_reference: 'user_123|advanced',
             transaction_amount: 24.90
-        });
+        };
+        const mockGet = jest.fn().mockResolvedValue(paymentPayload);
         Payment.mockImplementation(() => {
             return { get: mockGet };
         });
 
-        // Mock database transaction behavior
-        const client = {
-            query: jest.fn()
-                .mockResolvedValueOnce({})
-                .mockResolvedValueOnce({ rows: [{ payment_id: dataId }] })
-                .mockResolvedValueOnce({ rows: [{ id: 'user_123' }] })
-                .mockResolvedValueOnce({ rows: [] })
-                .mockResolvedValueOnce({}),
-            release: jest.fn()
-        };
-        pool.pool.mockReturnValue({ connect: jest.fn().mockResolvedValue(client) });
+        mockPaymentRepository.processApprovedWebhook.mockResolvedValueOnce({
+            duplicate: false,
+            processed: true,
+            user: { id: 'user_123' }
+        });
 
         await paymentController.handleWebhook(mockReq, mockRes);
 
@@ -144,8 +144,16 @@ describe('PaymentController - handleWebhook', () => {
         await new Promise(resolve => setImmediate(resolve));
 
         expect(mockGet).toHaveBeenCalledWith({ id: dataId });
-        expect(client.query).toHaveBeenCalledWith('COMMIT');
-        expect(client.release).toHaveBeenCalled();
+        expect(mockPaymentRepository.processApprovedWebhook).toHaveBeenCalledWith({
+            eventId: dataId,
+            eventType: 'payment',
+            email: null,
+            userId: 'user_123',
+            planType: 'advanced',
+            amount: 24.90,
+            months: 4,
+            rawPayload: paymentPayload
+        });
     });
 
     it('should ignore a replayed payment_id without updating the user', async () => {
@@ -168,22 +176,43 @@ describe('PaymentController - handleWebhook', () => {
             })
         }));
 
-        const client = {
-            query: jest.fn()
-                .mockResolvedValueOnce({})
-                .mockResolvedValueOnce({ rows: [] })
-                .mockResolvedValueOnce({}),
-            release: jest.fn()
-        };
-        pool.pool.mockReturnValue({ connect: jest.fn().mockResolvedValue(client) });
+        mockPaymentRepository.processApprovedWebhook.mockResolvedValueOnce({
+            duplicate: true,
+            processed: false
+        });
 
         await paymentController.handleWebhook(mockReq, mockRes);
         await new Promise(resolve => setImmediate(resolve));
 
         expect(mockRes.sendStatus).toHaveBeenCalledWith(200);
-        expect(client.query).toHaveBeenCalledWith('COMMIT');
-        expect(client.query).not.toHaveBeenCalledWith(expect.stringContaining('UPDATE users'), expect.anything());
-        expect(client.release).toHaveBeenCalled();
+        expect(mockPaymentRepository.processApprovedWebhook).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reject mismatched payment amount without delegating to PaymentRepository', async () => {
+        const ts = '1700000000';
+        const requestId = 'bad-amount-request';
+        const dataId = 'bad-amount-payment';
+        const secret = 'test_webhook_secret_key';
+        const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+        const calculatedHash = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+
+        mockReq.headers['x-signature'] = `ts=${ts},v1=${calculatedHash}`;
+        mockReq.headers['x-request-id'] = requestId;
+        mockReq.query = { 'data.id': dataId, type: 'payment' };
+
+        Payment.mockImplementation(() => ({
+            get: jest.fn().mockResolvedValue({
+                status: 'approved',
+                external_reference: 'user_123|advanced',
+                transaction_amount: 1.00
+            })
+        }));
+
+        await paymentController.handleWebhook(mockReq, mockRes);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(mockRes.sendStatus).toHaveBeenCalledWith(200);
+        expect(mockPaymentRepository.processApprovedWebhook).not.toHaveBeenCalled();
     });
 
     it('should create Mercado Pago preference with Hub Academia corporate plan titles and enforce zero WhatsApp/Yape flows', async () => {

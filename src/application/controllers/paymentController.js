@@ -1,8 +1,10 @@
-// infrastructure/controllers/paymentController.js
+// src/application/controllers/paymentController.js
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
-const pool = require('../../infrastructure/database/db');
 const crypto = require('crypto');
 const { resolvePublicBaseUrl } = require('../../infrastructure/config/publicUrl');
+const PaymentRepository = require('../../domain/repositories/paymentRepository');
+
+const paymentRepository = new PaymentRepository();
 
 // Configuración del cliente Mercado Pago (Producción / Vercel Serverless)
 const client = new MercadoPagoConfig({
@@ -13,6 +15,8 @@ const PLANS = {
     basic: { price: 9.90, months: 2, title: 'Plan Básico - Hub Academia' },
     advanced: { price: 24.90, months: 4, title: 'Plan Avanzado - Hub Academia' }
 };
+
+exports.paymentRepository = paymentRepository;
 
 exports.createOrder = async (req, res) => {
     try {
@@ -162,80 +166,26 @@ exports.handleWebhook = async (req, res) => {
                     throw new Error(`Monto de pago no coincide con el plan ${planId}.`);
                 }
 
-                // Reclamo idempotente y activación en una sola transacción:
+                // Reclamo idempotente y activación transaccional delegada a PaymentRepository:
                 // un replay nunca debe duplicar beneficios ni dejar el ledger
                 // en processing después de una interrupción parcial.
-                const client = await pool.pool().connect();
-                try {
-                    await client.query('BEGIN');
-                    const claim = await client.query(`
-                        INSERT INTO payment_events (payment_id, user_id, plan_id, amount, status)
-                        VALUES ($1, $2, $3, $4, 'processing')
-                        ON CONFLICT (payment_id) DO UPDATE
-                            SET status = 'processing', error_message = NULL
-                            WHERE payment_events.status = 'failed'
-                        RETURNING payment_id
-                    `, [String(paymentId), userId, planId, paidAmount]);
+                const result = await exports.paymentRepository.processApprovedWebhook({
+                    eventId: String(paymentId),
+                    eventType: type,
+                    email: data.payer?.email || null,
+                    userId,
+                    planType: planId,
+                    amount: paidAmount,
+                    months: plan.months,
+                    rawPayload: data
+                });
 
-                    if (!claim.rows || claim.rows.length === 0) {
-                        await client.query('COMMIT');
-                        console.log(`ℹ️ Webhook duplicado ignorado para payment_id=${paymentId}`);
-                        return;
-                    }
-
-                    const todayDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' });
-
-                    const updateQuery = `
-                        UPDATE users SET 
-                            subscription_status = 'active',
-                            subscription_tier = $1,
-                            subscription_expires_at = CASE 
-                                WHEN subscription_tier = 'basic' AND $1 = 'advanced' THEN GREATEST(subscription_expires_at, NOW()) + INTERVAL '${plan.months} months'
-                                ELSE NOW() + INTERVAL '${plan.months} months'
-                            END,
-                            usage_count = 0,
-                            daily_ai_usage = 0,
-                            monthly_flashcards_usage = 0,
-                            daily_simulator_usage = 0,
-                            last_usage_reset = $4,
-                            payment_id = $2
-                        WHERE id = $3
-                        RETURNING id
-                    `;
-
-                    const updated = await client.query(updateQuery, [planId, paymentId, userId, todayDate]);
-                    if (!updated.rows || updated.rows.length === 0) {
-                        throw new Error('Usuario asociado al pago no encontrado.');
-                    }
-
-                    await client.query(`
-                        UPDATE payment_events
-                        SET status = 'processed', processed_at = NOW()
-                        WHERE payment_id = $1
-                    `, [String(paymentId)]);
-                    await client.query('COMMIT');
-                    console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado en Plan ${planId.toUpperCase()}`);
-                } catch (processingError) {
-                    await client.query('ROLLBACK').catch(rollbackError => {
-                        console.error('⚠️ No se pudo revertir el webhook:', rollbackError.message);
-                    });
-                    // El INSERT inicial se revierte junto con la transacción;
-                    // conservar un estado failed permite auditar y reintentar
-                    // sin ocultar el error original.
-                    try {
-                        await pool.query(`
-                            INSERT INTO payment_events (payment_id, user_id, plan_id, amount, status, error_message)
-                            VALUES ($1, $2, $3, $4, 'failed', LEFT($5, 1000))
-                            ON CONFLICT (payment_id) DO UPDATE
-                            SET status = 'failed', error_message = EXCLUDED.error_message
-                        `, [String(paymentId), userId, planId, paidAmount, processingError.message]);
-                    } catch (auditError) {
-                        console.error('⚠️ No se pudo registrar el fallo del webhook:', auditError.message);
-                    }
-                    throw processingError;
-                } finally {
-                    client.release();
+                if (result?.duplicate) {
+                    console.log(`ℹ️ Webhook duplicado ignorado para payment_id=${paymentId}`);
+                    return;
                 }
+
+                console.log(`🎉 PAGO EXITOSO: Usuario ${userId} activado en Plan ${planId.toUpperCase()}`);
             }
         }
     } catch (error) {

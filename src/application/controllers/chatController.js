@@ -1,13 +1,15 @@
 const TutorAiService = require('../../domain/services/tutorAiService');
+const UsageService = require('../../domain/services/usageService');
 const asistenteGuiaKnowledge = require('../../domain/services/asistenteGuiaKnowledge');
 const { MAX_MESSAGE_CHARS } = require('../../domain/services/platformSupportService');
 const { buildQuizTutorPrompt } = require('../../domain/prompts/chatPrompts');
+const { isValidUsageColumn } = require('../../domain/utils/securityUtils');
 
 class ChatController {
-    constructor(chatService, analyticsService, usageService, platformSupportService = null) {
+    constructor(chatService, analyticsService, usageService = null, platformSupportService = null) {
         console.log('🔄 Inicializando ChatController...');
         this.analyticsService = analyticsService;
-        this.usageService = usageService;
+        this.usageService = usageService || new UsageService();
         this.chatService = chatService;
         this.platformSupportService = platformSupportService;
         console.log('✅ ChatController inicializado correctamente');
@@ -174,18 +176,19 @@ ${message}`;
             // 6. ACTUALIZAR LÍMITES DE USO IA (Solo si aplica cobro y hay usuario autenticado)
             if (userId && req.usageType) {
                 try {
-                    const { isValidUsageColumn } = require('../../domain/utils/securityUtils');
                     if (req.usageType === 'usage_count') {
                         const cost = req.cost || 1;
                         await this.usageService.checkAndIncrementUsage(userId, cost);
                         console.log(`📉 Límite de usage_count incrementado (+${cost}) para usuario ${userId}.`);
                     } else if (isValidUsageColumn(req.usageType)) {
-                        const pool = require('../../infrastructure/database/db');
+                        const updates = [this.usageService.incrementUsageColumn(userId, req.usageType, 1)];
                         if (req.incrementRag) {
-                            await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1, daily_rag_usage = daily_rag_usage + 1 WHERE id = $1`, [userId]);
+                            updates.push(this.usageService.incrementUsageColumn(userId, 'daily_rag_usage', 1));
+                        }
+                        await Promise.all(updates);
+                        if (req.incrementRag) {
                             console.log(`📉 Límite de ${req.usageType} (+1) y daily_rag_usage (+1) incrementado para usuario ${userId}.`);
                         } else {
-                            await pool.query(`UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`, [userId]);
                             console.log(`📉 Límite de ${req.usageType} (+1) incrementado para usuario ${userId}.`);
                         }
                     }

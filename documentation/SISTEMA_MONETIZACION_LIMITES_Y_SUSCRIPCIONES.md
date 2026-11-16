@@ -135,8 +135,8 @@ La lógica de renovación de vidas para usuarios Free/Pending está centralizada
 *   Garantiza coherencia total y elimina la duplicación previa de código SQL entre controladores y middlewares.
 
 ### 5.2 Repositorios de Pagos, Cuotas y Preferencias (Desacoplamiento Fase 2 - Noviembre 2026)
-*   **`PaymentRepository`** (`src/domain/repositories/paymentRepository.js`): Centraliza el ledger idempotente de `payment_events` (`recordEventIfNew`, `markEventProcessed`, `markEventFailed`), la activación/upgrade de suscripciones (`upgradeUserPlanByWebhook`) y el flujo transaccional completo (`processApprovedWebhook`).
-*   **`UserRepository` / `UsageService`**: Incorporan `findLimitsProfileById(userId)`, `expireSubscription(userId)`, `resetDailyUsage(userId, fields)` y `resetMonthlyFlashcards(userId, currentMonth)` para aislar el acceso SQL de `users` fuera de `application/middlewares/checkLimitsMiddleware.js`.
+*   **`PaymentRepository`** (`src/domain/repositories/paymentRepository.js`): Centraliza el ledger idempotente de `payment_events` (`recordEventIfNew`, `markEventProcessed`, `markEventFailed`), la activación/upgrade de suscripciones (`upgradeUserPlanByWebhook`) y el flujo transaccional completo (`processApprovedWebhook`). `paymentController.js` delega completamente el procesamiento del webhook aprobado a `paymentRepository.processApprovedWebhook` sin importar `db`.
+*   **`UserRepository` / `UsageService`**: Incorporan `findLimitsProfileById(userId)`, `expireSubscription(userId)`, `resetDailyUsage(userId, fields)`, `resetMonthlyFlashcards(userId, currentMonth)` e `incrementUsageColumn(userId, columnName, amount)` para erradicar el SQL crudo de `src/application/` (`checkLimitsMiddleware.js`, `analyticsController.js`, `chatController.js` y `deckController.js`).
 *   **`UserPreferencesRepository`** (`src/domain/repositories/userPreferencesRepository.js`): Encapsula las lecturas (`findByUserAndDomain`) y escrituras (`upsert`) sobre `user_simulator_preferences` consumidas por `UserPreferencesService`.
 
 ---

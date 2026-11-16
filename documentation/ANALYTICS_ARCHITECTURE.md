@@ -33,7 +33,7 @@ El sistema de analíticas de Hub Academia está diseñado siguiendo una arquitec
 - **`mlService.js`**: Registra eventos analíticos específicos de IA (impresiones, clicks en explicaciones).
 
 ### Controladores (`application/controllers`)
-- **`analyticsController.js`**: Expone endpoints para el Dashboard de Admin. Maneja el diagnóstico preventivo (antiguo Thinking) transformado en IA Clínica.
+- **`analyticsController.js`**: Expone endpoints para el Dashboard de Admin y diagnóstico cognitivo (`getAIDiagnostic`), delegando la generación de diagnóstico IA/heurístico a `AnalyticsService.generateDiagnosticInsight(...)` y el descuento de cuotas a `UsageService.incrementUsageColumn(...)` sin acceso directo a `db` ni `@google-cloud/vertexai`.
 - **`adminController.js`**: Gestiona las "Estadísticas Maestras" y el proceso de Batch de IA (Exportación CSV -> Python).
 
 ## 3. Motor de IA Predictiva Local (Python)

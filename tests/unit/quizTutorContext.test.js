@@ -159,4 +159,55 @@ describe('Quiz Tutor Context Normalization & Prompt Construction (Real Module)',
             respuesta: 'La clave correcta es la B.'
         }));
     });
+
+    test('ChatController.processMessage increments daily_ai_usage and daily_rag_usage via UsageService without direct DB calls', async () => {
+        TutorAiService.handleChat.mockResolvedValue({
+            intencion: 'explicacion_reactivo',
+            respuesta: 'Explicación con RAG.',
+            sugerencias: []
+        });
+
+        const mockUsageService = {
+            checkAndIncrementUsage: jest.fn(),
+            incrementUsageColumn: jest.fn().mockResolvedValue(undefined)
+        };
+        const controller = new ChatController(
+            { addMessage: jest.fn() },
+            { logEvent: jest.fn() },
+            mockUsageService
+        );
+        controller.enrichResponse = jest.fn(async (_msg, aiResult) => aiResult);
+
+        const req = {
+            user: { id: 'user-adv-1' },
+            userTier: 'advanced',
+            useRag: true,
+            usageType: 'daily_ai_usage',
+            incrementRag: true,
+            body: {
+                message: 'Explica el fundamento clínico',
+                specialization: 'medicine',
+                context: {
+                    type: 'quiz_tutor',
+                    questionText: 'Caso clínico',
+                    options: ['A', 'B'],
+                    correctOptionIndex: 0
+                }
+            }
+        };
+        const res = {
+            set: jest.fn(),
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await controller.processMessage(req, res);
+
+        expect(mockUsageService.incrementUsageColumn).toHaveBeenCalledWith('user-adv-1', 'daily_ai_usage', 1);
+        expect(mockUsageService.incrementUsageColumn).toHaveBeenCalledWith('user-adv-1', 'daily_rag_usage', 1);
+        expect(mockUsageService.checkAndIncrementUsage).not.toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            respuesta: 'Explicación con RAG.'
+        }));
+    });
 });

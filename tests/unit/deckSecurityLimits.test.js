@@ -151,4 +151,20 @@ describe('DeckController Security & Cost Limits', () => {
             expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
         });
     });
+
+    describe('Usage Quota Delegation via UsageService', () => {
+        it('should increment req.usageType via usageService.incrementUsageColumn without direct db access', async () => {
+            const incrementSpy = jest.spyOn(deckController.usageService, 'incrementUsageColumn').mockResolvedValue(undefined);
+            mockReq.user = { id: 'user-free-1', subscription_tier: 'free' };
+            mockReq.usageType = 'usage_count';
+            mockReq.body = { front: 'Pregunta', back: 'Respuesta' };
+            DeckService.addCard.mockResolvedValue({ id: 'card-free' });
+
+            await deckController.addCard(mockReq, mockRes);
+
+            expect(incrementSpy).toHaveBeenCalledWith('user-free-1', 'usage_count', 1);
+            expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+            incrementSpy.mockRestore();
+        });
+    });
 });

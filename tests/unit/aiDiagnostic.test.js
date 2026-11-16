@@ -411,4 +411,136 @@ describe('AI Diagnostic Controller & Heuristic Analytics Engine', () => {
             expect(res.strengths).toContain('Cardiología');
         });
     });
+
+    describe('AnalyticsController getAIDiagnostic Delegation (Zero Direct DB/VertexAI)', () => {
+        const AnalyticsController = require('../../src/application/controllers/analyticsController');
+
+        const createRes = () => {
+            const res = {
+                statusCode: 200,
+                body: null,
+                status: jest.fn(code => {
+                    res.statusCode = code;
+                    return res;
+                }),
+                json: jest.fn(payload => {
+                    res.body = payload;
+                    return res;
+                })
+            };
+            return res;
+        };
+
+        it('delegates diagnostic generation to analyticsService and increments quota via usageService', async () => {
+            const mockAnalyticsService = {
+                generateDiagnosticInsight: jest.fn().mockResolvedValue({
+                    source: 'ai',
+                    strengths: '<p>OK</p>',
+                    weaknesses: '<p>Mejora</p>',
+                    strategy: 'Seguir practicando'
+                }),
+                generateHeuristicDiagnostic: jest.fn()
+            };
+            const mockUsageService = {
+                incrementUsageColumn: jest.fn().mockResolvedValue(undefined)
+            };
+            const controller = new AnalyticsController(mockAnalyticsService, {}, mockUsageService);
+
+            const req = {
+                user: { id: 'adv-user-1', subscriptionTier: 'advanced' },
+                userTier: 'advanced',
+                usageType: 'daily_ai_usage',
+                body: {
+                    context: 'MEDICINA',
+                    stats: {
+                        avg_score: '15.0',
+                        accuracy: 75,
+                        mastered_cards: 5,
+                        radar_data: [{ subject: 'Pediatría', accuracy: 75, correct: 3, total: 4 }]
+                    }
+                }
+            };
+            const res = createRes();
+
+            await controller.getAIDiagnostic(req, res);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body.source).toBe('ai');
+            expect(mockAnalyticsService.generateDiagnosticInsight).toHaveBeenCalledWith(expect.objectContaining({
+                user: req.user,
+                userTier: 'advanced',
+                context: 'MEDICINA',
+                fallbackToStatic: false
+            }));
+            expect(mockUsageService.incrementUsageColumn).toHaveBeenCalledWith('adv-user-1', 'daily_ai_usage');
+        });
+
+        it('does not charge quota when EDUCACION diagnostic reports hasHistory: false', async () => {
+            const mockAnalyticsService = {
+                generateDiagnosticInsight: jest.fn().mockResolvedValue({
+                    hasHistory: false,
+                    readinessIndex: 0,
+                    strengths: '<p>Sin historial</p>',
+                    weaknesses: '<p>Pendiente</p>',
+                    strategy: 'Realiza un simulacro'
+                }),
+                generateHeuristicDiagnostic: jest.fn()
+            };
+            const mockUsageService = {
+                incrementUsageColumn: jest.fn()
+            };
+            const controller = new AnalyticsController(mockAnalyticsService, {}, mockUsageService);
+
+            const req = {
+                user: { id: 'edu-user-1' },
+                userTier: 'free',
+                usageType: 'usage_count',
+                body: {
+                    context: 'EDUCACION',
+                    stats: { avg_score: 0, accuracy: 0, mastered_cards: 0, total_questions: 0, radar_data: [] }
+                }
+            };
+            const res = createRes();
+
+            await controller.getAIDiagnostic(req, res);
+
+            expect(res.body.success).toBe(true);
+            expect(res.body.hasHistory).toBe(false);
+            expect(mockUsageService.incrementUsageColumn).not.toHaveBeenCalled();
+        });
+
+        it('returns 400 when stats are missing or corrupted and falls back heuristically on unexpected service failure', async () => {
+            const mockAnalyticsService = {
+                generateDiagnosticInsight: jest.fn().mockRejectedValue(new Error('Unexpected service failure')),
+                generateHeuristicDiagnostic: jest.fn().mockReturnValue({ source: 'heuristic', strengths: 'fallback' })
+            };
+            const mockUsageService = { incrementUsageColumn: jest.fn() };
+            const controller = new AnalyticsController(mockAnalyticsService, {}, mockUsageService);
+
+            const resMissing = createRes();
+            await controller.getAIDiagnostic({ user: { id: 'u1' }, body: { context: 'MEDICINA' } }, resMissing);
+            expect(resMissing.statusCode).toBe(400);
+
+            const resInvalid = createRes();
+            await controller.getAIDiagnostic({
+                user: { id: 'u1' },
+                body: { context: 'MEDICINA', stats: { avg_score: 'NaN', accuracy: 'NaN', mastered_cards: 'NaN', radar_data: [] } }
+            }, resInvalid);
+            expect(resInvalid.statusCode).toBe(400);
+
+            const resFallback = createRes();
+            await controller.getAIDiagnostic({
+                user: { id: 'u1' },
+                userTier: 'advanced',
+                usageType: 'daily_ai_usage',
+                body: {
+                    context: 'MEDICINA',
+                    stats: { avg_score: 14, accuracy: 70, mastered_cards: 2, radar_data: [] }
+                }
+            }, resFallback);
+            expect(resFallback.body).toEqual({ success: true, source: 'heuristic', strengths: 'fallback' });
+            expect(mockUsageService.incrementUsageColumn).not.toHaveBeenCalled();
+        });
+    });
 });

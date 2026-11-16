@@ -1,4 +1,6 @@
 const DeckService = require('../../domain/services/deckService');
+const UsageService = require('../../domain/services/usageService');
+const { isValidUsageColumn } = require('../../domain/utils/securityUtils');
 
 // 🛡️ CONSTANTES DE SEGURIDAD Y CONTROL DE COSTOS
 const SECURITY_LIMITS = {
@@ -12,6 +14,10 @@ const DECK_CATEGORIES = new Set([
 ]);
 
 class DeckController {
+    constructor(usageService = new UsageService()) {
+        this.usageService = usageService;
+    }
+
     _normalizeCategory = (category, fallback = 'General') => {
         const value = String(category || '').trim();
         return DECK_CATEGORIES.has(value) ? value : fallback;
@@ -76,13 +82,8 @@ class DeckController {
     _syncUsage = async (req) => {
         try {
             if (req.usageType && req.user && req.user.id) {
-                const { isValidUsageColumn } = require('../../domain/utils/securityUtils');
                 if (isValidUsageColumn(req.usageType)) {
-                    const db = require('../../infrastructure/database/db');
-                    await db.query(
-                        `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
-                        [req.user.id]
-                    );
+                    await this.usageService.incrementUsageColumn(req.user.id, req.usageType, 1);
                     console.log(`📉 Usage ${req.usageType} incremented for user ${req.user.id}`);
                 }
             }

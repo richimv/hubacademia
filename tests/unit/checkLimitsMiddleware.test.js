@@ -1,8 +1,16 @@
-const checkAILimits = require('../../src/application/middlewares/checkLimitsMiddleware');
-const pool = require('../../src/infrastructure/database/db');
+const mockUsageService = {
+    findLimitsProfileById: jest.fn(),
+    renewFreeLivesIfNeeded: jest.fn(),
+    expireSubscription: jest.fn(),
+    resetDailyUsage: jest.fn(),
+    resetMonthlyFlashcards: jest.fn()
+};
 
-// Mock database pool
-jest.mock('../../src/infrastructure/database/db');
+jest.mock('../../src/domain/services/usageService', () => {
+    return jest.fn().mockImplementation(() => mockUsageService);
+});
+
+const checkAILimits = require('../../src/application/middlewares/checkLimitsMiddleware');
 
 describe('Check Limits Middleware', () => {
     let mockReq;
@@ -37,15 +45,11 @@ describe('Check Limits Middleware', () => {
             last_free_renewal: new Date().toISOString() // Avoid weekly reset block in middleware
         };
 
-        pool.query.mockImplementation(async (sql, params) => {
-            if (sql.includes('SELECT') && sql.includes('subscription_tier')) {
-                return { rows: [dbUser] };
-            }
-            if (sql.includes('SELECT') && sql.includes('last_free_renewal')) {
-                return { rows: [{ usage_count: dbUser.usage_count, last_free_renewal: dbUser.last_free_renewal }] };
-            }
-            return { rows: [] };
-        });
+        mockUsageService.findLimitsProfileById.mockImplementation(async () => ({ ...dbUser }));
+        mockUsageService.renewFreeLivesIfNeeded.mockResolvedValue(false);
+        mockUsageService.expireSubscription.mockResolvedValue(true);
+        mockUsageService.resetDailyUsage.mockResolvedValue(true);
+        mockUsageService.resetMonthlyFlashcards.mockResolvedValue({ reset: true });
     });
 
     it('should set req.usageType to null and req.cost to 0 for chat_standard (General Chat zero consumption)', async () => {
@@ -422,6 +426,43 @@ describe('Check Limits Middleware', () => {
             expect(mockReq.userTier).toBe('free');
             expect(mockReq.usageType).toBe('usage_count');
             expect(mockReq.useRag).toBe(false);
+            expect(mockUsageService.expireSubscription).toHaveBeenCalledWith(1);
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should return 404 when findLimitsProfileById returns null', async () => {
+            mockUsageService.findLimitsProfileById.mockResolvedValueOnce(null);
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockRes.status).toHaveBeenCalledWith(404);
+            expect(mockNext).not.toHaveBeenCalled();
+        });
+
+        it('should reload profile after renewFreeLivesIfNeeded returns true and reset daily/monthly counters via UsageService', async () => {
+            mockReq.user = { id: 42, emailVerified: true };
+            mockReq.body = { context: { type: 'quiz_tutor' } };
+            dbUser.subscription_tier = 'free';
+            dbUser.subscription_status = 'pending';
+            dbUser.usage_count = 10;
+            dbUser.last_usage_reset = '2020-01-01';
+
+            mockUsageService.findLimitsProfileById
+                .mockResolvedValueOnce({ ...dbUser })
+                .mockResolvedValueOnce({ ...dbUser, usage_count: 0, max_free_limit: 10 });
+            mockUsageService.renewFreeLivesIfNeeded.mockResolvedValueOnce(true);
+
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockUsageService.renewFreeLivesIfNeeded).toHaveBeenCalledWith(42);
+            expect(mockUsageService.findLimitsProfileById).toHaveBeenCalledTimes(2);
+            expect(mockUsageService.resetDailyUsage).toHaveBeenCalledWith(42, expect.objectContaining({
+                todayDate: expect.any(String),
+                includeMonthlyFlashcards: true
+            }));
+            expect(mockReq.usageType).toBe('usage_count');
             expect(mockNext).toHaveBeenCalled();
         });
     });

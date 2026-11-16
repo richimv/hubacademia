@@ -1,4 +1,3 @@
-const pool = require('../../infrastructure/database/db');
 const { LIMITS } = require('../../infrastructure/config/limits');
 const UsageService = require('../../domain/services/usageService');
 const usageService = new UsageService();
@@ -21,31 +20,13 @@ const checkAILimits = (type) => {
 
             const userId = req.user.id;
 
-            // Obtener estado completo del usuario actual
-            const result = await pool.query(`
-                SELECT 
-                    role,
-                    subscription_tier, 
-                    subscription_status,
-                    usage_count,
-                    max_free_limit,
-                    subscription_expires_at, 
-                    daily_ai_usage, 
-                    daily_rag_usage,
-                    monthly_flashcards_usage,
-                    daily_simulator_usage,
-                    daily_import_usage,
-                    last_usage_reset,
-                    last_free_renewal
-                FROM users 
-                WHERE id = $1
-            `, [userId]);
+            // Obtener estado completo del usuario actual vía capa de dominio
+            const user = await usageService.findLimitsProfileById(userId);
 
-            if (result.rows.length === 0) {
+            if (!user) {
                 return res.status(404).json({ error: 'Usuario no encontrado' });
             }
 
-            let user = result.rows[0];
             const userRole = user.role || req.user?.role || 'student';
             const isAdmin = (userRole === 'admin' || user.subscription_tier === 'admin' || req.user?.role === 'admin');
             let tier = isAdmin ? 'admin' : (user.subscription_tier || 'free');
@@ -58,11 +39,11 @@ const checkAILimits = (type) => {
                     
                     if (wasRenewed) {
                         // Recargar los valores actualizados del usuario tras la renovación
-                        const reloadRes = await pool.query("SELECT usage_count, max_free_limit, last_free_renewal FROM users WHERE id = $1", [userId]);
-                        if (reloadRes.rows.length > 0) {
-                            user.usage_count = reloadRes.rows[0].usage_count;
-                            user.max_free_limit = reloadRes.rows[0].max_free_limit;
-                            user.last_free_renewal = reloadRes.rows[0].last_free_renewal;
+                        const reloadedUser = await usageService.findLimitsProfileById(userId);
+                        if (reloadedUser) {
+                            user.usage_count = reloadedUser.usage_count;
+                            user.max_free_limit = reloadedUser.max_free_limit;
+                            user.last_free_renewal = reloadedUser.last_free_renewal;
                         }
                     }
                 } catch (e) {
@@ -89,7 +70,7 @@ const checkAILimits = (type) => {
                     const expiresAt = new Date(user.subscription_expires_at);
                     if (Date.now() > expiresAt.getTime()) {
                         // ✅ CORRECCIÓN CRÍTICA: Rebajar Tier Y Status, y resetear vidas como beneficio de fidelización
-                        await pool.query("UPDATE users SET subscription_tier = 'free', subscription_status = 'expired', usage_count = 0, max_free_limit = 10, last_free_renewal = CURRENT_TIMESTAMP WHERE id = $1", [userId]);
+                        await usageService.expireSubscription(userId);
                         user.subscription_tier = 'free';
                         user.subscription_status = 'expired';
                         user.usage_count = 0;
@@ -108,28 +89,13 @@ const checkAILimits = (type) => {
 
                 const resetMonthlyFlashcards = !lastResetDateStr || lastResetDateStr.slice(0, 7) !== todayDate.slice(0, 7);
 
+                await usageService.resetDailyUsage(userId, {
+                    todayDate,
+                    includeMonthlyFlashcards: resetMonthlyFlashcards
+                });
+
                 if (resetMonthlyFlashcards) {
-                    await pool.query(`
-                        UPDATE users SET 
-                            daily_ai_usage = 0, 
-                            daily_rag_usage = 0,
-                            daily_simulator_usage = 0,
-                            daily_import_usage = 0,
-                            monthly_flashcards_usage = 0,
-                            last_usage_reset = $1 
-                        WHERE id = $2
-                    `, [todayDate, userId]);
                     user.monthly_flashcards_usage = 0;
-                } else {
-                    await pool.query(`
-                        UPDATE users SET 
-                            daily_ai_usage = 0, 
-                            daily_rag_usage = 0,
-                            daily_simulator_usage = 0,
-                            daily_import_usage = 0,
-                            last_usage_reset = $1 
-                        WHERE id = $2
-                    `, [todayDate, userId]);
                 }
 
                 user.daily_import_usage = 0;
