@@ -1,14 +1,20 @@
 const db = require('../../infrastructure/database/db');
 const { normalizeText } = require('../utils/textUtils');
 
+const globalCourseCache = new Map();
+
 class CourseRepository {
     constructor() {
-        this.cache = new Map();
+        this.cache = globalCourseCache;
         this.CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
     }
 
     clearCache() {
         this.cache.clear();
+    }
+
+    static clearCache() {
+        globalCourseCache.clear();
     }
 
     async findAll(filters = {}) {
@@ -180,41 +186,29 @@ class CourseRepository {
     }
 
     async create(courseData) {
-        // ✅ LÓGICA REHECHA: Esta función ahora es simple y correcta.
-        const { name, topicIds, bookIds, units, careerIds, image_url, domain = 'medicine' } = courseData;
+        const { name, bookIds, careerIds, image_url, domain = 'medicine' } = courseData;
 
         const client = await db.pool().connect();
         try {
             await client.query('BEGIN');
-            // 1. Insertar el curso principal.
-            const tempCourseId = `C-${Date.now()}`; // Valor temporal para satisfacer la restricción NOT NULL.
-            // ✅ FIX: Incluir image_url y domain en el insert
+            const tempCourseId = `C-${Date.now()}`;
             const courseRes = await client.query('INSERT INTO courses (name, course_id, image_url, domain) VALUES ($1, $2, $3, $4) RETURNING *', [name, tempCourseId, image_url, domain]);
             const newCourse = courseRes.rows[0];
 
-            /* 2. Insertar temas. (DESACTIVADO: El usuario solicitó eliminar la relación curso-temas)
-            if (units && units.length > 0) {
-                // ...
-            }
-            */
-
-            // 3. Insertar las relaciones con los libros en la tabla de unión.
             if (bookIds && bookIds.length > 0) {
                 const bookPromises = bookIds.map(bookId => client.query('INSERT INTO course_books (course_id, resource_id) VALUES ($1, $2)', [newCourse.id, bookId]));
                 await Promise.all(bookPromises);
             }
 
-            // 4. ✅ NUEVO: Insertar relaciones con carreras
             if (careerIds && careerIds.length > 0) {
                 const careerPromises = careerIds.map(careerId => client.query('INSERT INTO course_careers (course_id, career_id) VALUES ($1, $2)', [newCourse.id, careerId]));
                 await Promise.all(careerPromises);
             }
 
-            // 5. Confirmar la transacción si todo fue exitoso.
             await client.query('COMMIT');
+            this.clearCache();
             return newCourse;
         } catch (e) {
-            // 6. Si algo falla, revertir todos los cambios.
             await client.query('ROLLBACK');
             throw e;
         } finally {
@@ -223,14 +217,13 @@ class CourseRepository {
     }
 
     async update(id, courseData) {
-        // ✅ SOLUCIÓN: Usar una transacción para actualizar el curso y sus relaciones.
-        const { name, topicIds, bookIds, units, careerIds, image_url, domain } = courseData;
+        const { name, bookIds, careerIds, image_url, domain } = courseData;
         const client = await db.pool().connect();
         try {
             await client.query('BEGIN');
             
-            let queryFields = ['name = $1'];
-            let params = [name];
+            const queryFields = ['name = $1'];
+            const params = [name];
             let pIndex = 2;
 
             if (image_url !== undefined) {
@@ -248,17 +241,12 @@ class CourseRepository {
             const courseRes = await client.query(updateQuery, params);
             const updatedCourse = courseRes.rows[0];
 
-            // 2. Relations... (Rest of method)
-
-            /* DESACTIVADO... */
-
             await client.query('DELETE FROM course_books WHERE course_id = $1', [id]);
             if (bookIds && bookIds.length > 0) {
                 const bookPromises = bookIds.map(bookId => client.query('INSERT INTO course_books (course_id, resource_id) VALUES ($1, $2)', [id, bookId]));
                 await Promise.all(bookPromises);
             }
 
-            // ✅ NUEVO: Actualizar carreras
             await client.query('DELETE FROM course_careers WHERE course_id = $1', [id]);
             if (careerIds && careerIds.length > 0) {
                 const careerPromises = careerIds.map(careerId => client.query('INSERT INTO course_careers (course_id, career_id) VALUES ($1, $2)', [id, careerId]));
@@ -266,6 +254,7 @@ class CourseRepository {
             }
 
             await client.query('COMMIT');
+            this.clearCache();
             return updatedCourse;
         } catch (e) {
             await client.query('ROLLBACK');
@@ -280,6 +269,7 @@ class CourseRepository {
         if (rowCount === 0) {
             throw new Error(`Curso con ID ${id} no encontrado para eliminar.`);
         }
+        this.clearCache();
         return { success: true };
     }
 

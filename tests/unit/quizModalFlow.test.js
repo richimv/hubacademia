@@ -288,8 +288,7 @@ describe('Quiz Modals Flow & Anti-Repetition Lifecycle Verification', () => {
         it('docenteRepository.saveQuizHistory registra preguntas en user_question_history para exámenes estándar de 10q y 20q', async () => {
             db.query
                 .mockResolvedValueOnce({ rows: [{ id: 'mock-hist-id', inserted: true }] }) // INSERT quiz_history
-                .mockResolvedValueOnce({ rows: [] }) // SELECT user_question_history
-                .mockResolvedValueOnce({ rows: [] }); // INSERT user_question_history
+                .mockResolvedValueOnce({ rows: [] }); // Batch UPSERT user_question_history
 
             const quizData = {
                 topic: 'Pedagogía',
@@ -310,7 +309,6 @@ describe('Quiz Modals Flow & Anti-Repetition Lifecycle Verification', () => {
         it('medicoRepository.saveQuizHistory registra preguntas en user_question_history para exámenes estándar de 10q y 20q', async () => {
             db.query
                 .mockResolvedValueOnce({ rows: [{ id: 'mock-med-hist-id', inserted: true }] })
-                .mockResolvedValueOnce({ rows: [] })
                 .mockResolvedValueOnce({ rows: [] });
 
             const quizData = {

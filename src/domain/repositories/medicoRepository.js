@@ -1,5 +1,5 @@
 const db = require('../../infrastructure/database/db');
-const crypto = require('crypto');
+const { sanitizeUuidList, packDemoBatch, mapQuestionRow } = require('../utils/quizPackingUtils');
 
 class MedicoRepository {
 
@@ -21,8 +21,7 @@ class MedicoRepository {
             seenIds = [...new Set([...seenIds, ...sessionSeenIds])];
         }
 
-        // Sanitize to only valid UUID strings
-        seenIds = seenIds.filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
+        seenIds = sanitizeUuidList(seenIds);
 
         console.log(`🔎 [MedicoRepo] Usuario ${userId} solicitando lote de ${limit} (${isRealMock ? 'Simulacro Real: anti-repetición 24h omitido' : seenIds.length + ' vistas excluidas'}).`);
 
@@ -54,35 +53,39 @@ class MedicoRepository {
             paramIdx++;
         }
 
+        // Selección balanceada ligera de IDs antes del JOIN pesado con textos y casuísticas (Late Row Lookup)
         const query = `
             WITH BalancedPool AS (
-                SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
-                       qb.explanation_image_url, qb.image_url, qb.domain, qb.topic,
-                       qb.case_id, qb.case_order,
-                       cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
-                       cs.image_url as case_image_url,
+                SELECT qb.id,
                        ROW_NUMBER() OVER(PARTITION BY qb.topic ORDER BY RANDOM()) as rn
                 FROM question_bank qb
-                LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
                 ${whereClauses}
+            ),
+            SelectedPool AS (
+                SELECT id
+                FROM BalancedPool 
+                WHERE rn <= CASE 
+                    WHEN $1::text[] IS NULL OR $1::text[] = ARRAY['*']::text[] THEN $${paramIdx} 
+                    ELSE GREATEST(3, CEIL(($${paramIdx}::float / GREATEST(1, array_length($1::text[], 1))) * 1.5)) 
+                END
+                ORDER BY RANDOM() 
+                LIMIT $${paramIdx}
             )
-            SELECT id, question_text, options, correct_option_index, explanation, explanation_image_url, 
-                   image_url, domain, topic, case_id, case_order,
-                   case_code, case_title, case_description, case_image_url
-            FROM BalancedPool 
-            WHERE rn <= CASE 
-                WHEN $1::text[] IS NULL OR $1::text[] = ARRAY['*']::text[] THEN $${paramIdx} 
-                ELSE GREATEST(3, CEIL(($${paramIdx}::float / GREATEST(1, array_length($1::text[], 1))) * 1.5)) 
-            END
-            ORDER BY RANDOM() 
-            LIMIT $${paramIdx}
+            SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
+                   qb.explanation_image_url, qb.image_url, qb.domain, qb.topic,
+                   qb.case_id, qb.case_order,
+                   cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
+                   cs.image_url as case_image_url
+            FROM SelectedPool sp
+            JOIN question_bank qb ON qb.id = sp.id
+            LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
         `;
         params.push(limit);
 
         const res = await db.query(query, params);
         let questions = res.rows;
 
-        // If any question in batch belongs to a case, retrieve and cluster all its sibling questions consecutively
+        // Si alguna pregunta pertenece a un caso clínico, recuperar y agrupar sus preguntas hermanas consecutivamente
         const caseIdsInBatch = [...new Set(questions.filter(q => q.case_id).map(q => q.case_id))];
         if (caseIdsInBatch.length > 0) {
             try {
@@ -156,16 +159,22 @@ class MedicoRepository {
                 }
                 const needed = Math.max(1, limit - questions.length);
                 const fallbackQuery = `
+                    WITH FallbackIds AS (
+                        SELECT qb.id
+                        FROM question_bank qb
+                        ${fallbackWhere}
+                        AND ($1::text[] IS NOT NULL)
+                        ORDER BY RANDOM()
+                        LIMIT $${fbIdx}
+                    )
                     SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
                            qb.explanation_image_url, qb.image_url, qb.domain, qb.topic,
                            qb.case_id, qb.case_order,
                            cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
                            cs.image_url as case_image_url
-                    FROM question_bank qb
+                    FROM FallbackIds fi
+                    JOIN question_bank qb ON qb.id = fi.id
                     LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
-                    ${fallbackWhere}
-                    ORDER BY RANDOM()
-                    LIMIT $${fbIdx}
                 `;
                 fallbackParams.push(needed);
                 const fallbackRes = await db.query(fallbackQuery, fallbackParams);
@@ -178,119 +187,35 @@ class MedicoRepository {
             }
         }
 
-        return questions.map(row => ({
-            id: row.id,
-            question_text: row.question_text,
-            options: row.options,
-            correct_option_index: row.correct_option_index,
-            explanation: row.explanation,
-            explanation_image_url: row.explanation_image_url,
-            image_url: row.image_url,
-            topic: row.topic,
-            case_id: row.case_id || null,
-            case_order: row.case_id ? (parseInt(row.case_order, 10) || 1) : null,
-            case_code: row.case_code || null,
-            case_title: row.case_title || null,
-            case_description: row.case_description || null,
-            case_image_url: row.case_image_url || null
-        }));
+        return questions.map(row => mapQuestionRow(row, false));
     }
 
     packDemoBatch(candidateRows, siblingRows, limit) {
-        if (!candidateRows || candidateRows.length === 0) return [];
-
-        const siblingMap = new Map();
-        (siblingRows || []).forEach(sq => {
-            if (!siblingMap.has(sq.case_id)) siblingMap.set(sq.case_id, []);
-            siblingMap.get(sq.case_id).push(sq);
-        });
-
-        siblingMap.forEach(siblings => {
-            siblings.sort((a, b) => (a.case_order || 1) - (b.case_order || 1));
-        });
-
-        const processedCaseIds = new Set();
-        const reassembled = [];
-
-        // 1. Empacar respetando la integridad del caso y el límite estricto
-        for (const q of candidateRows) {
-            if (reassembled.length >= limit) break;
-
-            if (!q.case_id) {
-                if (limit - reassembled.length >= 1) {
-                    reassembled.push(q);
-                }
-            } else if (!processedCaseIds.has(q.case_id)) {
-                processedCaseIds.add(q.case_id);
-                const siblings = siblingMap.get(q.case_id) || [q];
-                const spaceLeft = limit - reassembled.length;
-                if (siblings.length <= spaceLeft) {
-                    reassembled.push(...siblings);
-                }
-            }
-        }
-
-        // 2. Si quedan cupos libres (porque hubo casos que excedían el espacio restante), rellenar con preguntas sueltas
-        if (reassembled.length < limit) {
-            const addedIds = new Set(reassembled.map(r => r.id));
-            for (const q of candidateRows) {
-                if (reassembled.length >= limit) break;
-                if (!q.case_id && !addedIds.has(q.id)) {
-                    addedIds.add(q.id);
-                    reassembled.push(q);
-                }
-            }
-        }
-
-        // 3. Salvaguarda final: si aún no se alcanza el límite y quedan candidatas no añadidas
-        if (reassembled.length < limit) {
-            const addedIds = new Set(reassembled.map(r => r.id));
-            for (const q of candidateRows) {
-                if (reassembled.length >= limit) break;
-                if (!addedIds.has(q.id)) {
-                    addedIds.add(q.id);
-                    reassembled.push(q);
-                }
-            }
-        }
-
-        return reassembled.slice(0, limit);
+        return packDemoBatch(candidateRows, siblingRows, limit);
     }
 
     async getRandomDemoQuestions(limit = 10, excludeIds = [], target = null, career = null, difficulty = null, areas = null) {
-        let sanitizedExcludeIds = [];
-        if (excludeIds && Array.isArray(excludeIds)) {
-            sanitizedExcludeIds = excludeIds.filter(id => id && typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id));
-        }
+        const sanitizedExcludeIds = sanitizeUuidList(excludeIds);
 
-        let query = `
-            SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
-                   qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.target,
-                   qb.case_id, qb.case_order,
-                   cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
-                   cs.image_url as case_image_url
-            FROM question_bank qb
-            LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
-            WHERE qb.domain = 'medicine'
-        `;
+        let whereClause = `WHERE qb.domain = 'medicine'`;
         const params = [];
         let paramIdx = 1;
 
         if (target) {
-            query += ` AND qb.target = $${paramIdx} `;
+            whereClause += ` AND qb.target = $${paramIdx} `;
             params.push(target);
             paramIdx++;
         }
 
         if (career) {
-            query += ` AND (qb.career IS NULL OR qb.career = $${paramIdx}) `;
+            whereClause += ` AND (qb.career IS NULL OR qb.career = $${paramIdx}) `;
             params.push(career);
             paramIdx++;
         }
 
         const isMixtoDifficulty = !difficulty || ['MIXTO', 'TODOS', 'ALL', 'MIXED', 'DEFAULT', 'GENERAL'].includes(String(difficulty).toUpperCase().trim());
         if (!isMixtoDifficulty) {
-            query += ` AND qb.difficulty = $${paramIdx} `;
+            whereClause += ` AND qb.difficulty = $${paramIdx} `;
             params.push(difficulty);
             paramIdx++;
         }
@@ -298,21 +223,38 @@ class MedicoRepository {
         if (areas) {
             const areasArray = Array.isArray(areas) ? areas : String(areas).split(',').map(a => a.trim()).filter(Boolean);
             if (areasArray.length > 0) {
-                query += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($${paramIdx}::text[])))) `;
+                whereClause += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($${paramIdx}::text[])))) `;
                 params.push(areasArray);
                 paramIdx++;
             }
         }
 
         if (sanitizedExcludeIds.length > 0) {
-            query += ` AND qb.id <> ALL($${paramIdx}::uuid[]) `;
+            whereClause += ` AND qb.id <> ALL($${paramIdx}::uuid[]) `;
             params.push(sanitizedExcludeIds);
             paramIdx++;
         }
 
         const candidatePoolLimit = Math.max(limit * 3, 30);
-        query += ` ORDER BY RANDOM() LIMIT $${paramIdx}`;
         params.push(candidatePoolLimit);
+
+        const query = `
+            WITH DemoCandidateIds AS (
+                SELECT qb.id
+                FROM question_bank qb
+                ${whereClause}
+                ORDER BY RANDOM()
+                LIMIT $${paramIdx}
+            )
+            SELECT qb.id, qb.question_text, qb.options, qb.correct_option_index, qb.explanation, 
+                   qb.explanation_image_url, qb.image_url, qb.domain, qb.topic, qb.target,
+                   qb.case_id, qb.case_order,
+                   cs.code as case_code, cs.title as case_title, cs.description_text as case_description,
+                   cs.image_url as case_image_url
+            FROM DemoCandidateIds dci
+            JOIN question_bank qb ON qb.id = dci.id
+            LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
+        `;
 
         const res = await db.query(query, params);
         const candidateRows = res.rows;
@@ -339,77 +281,7 @@ class MedicoRepository {
         }
 
         const questions = this.packDemoBatch(candidateRows, siblingRows, limit);
-
-        return questions.map(row => ({
-            id: row.id,
-            question_text: row.question_text,
-            options: row.options,
-            correct_option_index: row.correct_option_index,
-            explanation: row.explanation,
-            explanation_image_url: row.explanation_image_url,
-            image_url: row.image_url,
-            topic: row.topic,
-            target: row.target,
-            case_id: row.case_id || null,
-            case_order: row.case_id ? (parseInt(row.case_order, 10) || 1) : null,
-            case_code: row.case_code || null,
-            case_title: row.case_title || null,
-            case_description: row.case_description || null,
-            case_image_url: row.case_image_url || null
-        }));
-    }
-
-    async saveQuestionBankBatch(questions, defaultTopic, target, defaultCareer = null) {
-        if (!questions || questions.length === 0) return [];
-
-        const query = `
-            INSERT INTO question_bank (topic, domain, target, difficulty, question_text, options, correct_option_index, explanation, explanation_image_url, image_url, question_hash, times_used, career)
-            VALUES ($1, 'medicine', $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11)
-            ON CONFLICT (question_hash) DO UPDATE SET 
-                times_used = question_bank.times_used + 1,
-                career = EXCLUDED.career,
-                explanation_image_url = EXCLUDED.explanation_image_url,
-                image_url = EXCLUDED.image_url
-            RETURNING id;
-        `;
-
-        const newIds = [];
-
-        for (const q of questions) {
-            const exactTopic = q.topic || defaultTopic;
-            const exactCareer = q.career || defaultCareer;
-            const difficultyVal = q.difficulty || 'Senior';
-
-            const normTopic = String(exactTopic || 'General').toLowerCase().trim();
-            const normText = String(q.question_text || '').toLowerCase().trim();
-            const rawString = `${normTopic}-${normText}-${JSON.stringify(q.options)}`;
-            const hash = crypto.createHash('md5').update(rawString).digest('hex');
-
-            try {
-                const res = await db.query(query, [
-                    exactTopic,
-                    target,
-                    difficultyVal,
-                    q.question_text,
-                    JSON.stringify(q.options),
-                    q.correct_option_index,
-                    q.explanation,
-                    q.explanation_image_url || null,
-                    q.image_url || null,
-                    hash,
-                    exactCareer
-                ]);
-                if (res.rows.length > 0) {
-                    newIds.push(res.rows[0].id);
-                } else {
-                    newIds.push(null);
-                }
-            } catch (e) {
-                console.error("Error guardando pregunta de medicina:", e.message);
-                newIds.push(null);
-            }
-        }
-        return newIds;
+        return questions.map(row => mapQuestionRow(row, true));
     }
 
     async saveQuizHistory(userId, quizData) {
@@ -453,8 +325,9 @@ class MedicoRepository {
             `;
         }
         const res = await db.query(query, values);
-        const quizHistoryId = res.rows[0].id;
-        const wasCreated = res.rows[0].inserted === true;
+        const firstRow = (res && res.rows && res.rows[0]) ? res.rows[0] : { id: null, inserted: true };
+        const quizHistoryId = firstRow.id;
+        const wasCreated = firstRow.inserted !== false;
 
         const isRealMock = quizData.mode === 'real' || totalQ >= 50;
 
@@ -462,26 +335,21 @@ class MedicoRepository {
             if (isRealMock) {
                 console.log(`ℹ️ [MedicoRepo] Simulacro Real (${totalQ}qs): No se marca bloqueo anti-repetición 24h para permitir práctica libre e ilimitada.`);
             } else {
-                for (const q of quizData.questions) {
-                    if (q.id) {
-                        try {
-                            const checkQuery = `SELECT id, times_seen FROM user_question_history WHERE user_id = $1 AND question_id = $2`;
-                            const checkRes = await db.query(checkQuery, [userId, q.id]);
-                            if (checkRes.rows.length > 0) {
-                                const row = checkRes.rows[0];
-                                await db.query(
-                                    `UPDATE user_question_history SET seen_at = NOW(), times_seen = $1 WHERE id = $2`,
-                                    [row.times_seen + 1, row.id]
-                                );
-                            } else {
-                                await db.query(
-                                    `INSERT INTO user_question_history (user_id, question_id, seen_at, times_seen) VALUES ($1, $2, NOW(), 1)`,
-                                    [userId, q.id]
-                                );
-                            }
-                        } catch (err) {
-                            console.error("❌ Error actualizando user_question_history en MedicoRepo:", err.message);
-                        }
+                const questionIds = [...new Set(quizData.questions.map(q => q && q.id).filter(Boolean))];
+                if (questionIds.length > 0) {
+                    try {
+                        const placeholders = questionIds.map((_, idx) => `($1, $${idx + 2}, NOW(), 1)`).join(', ');
+                        await db.query(
+                            `INSERT INTO user_question_history (user_id, question_id, seen_at, times_seen)
+                             VALUES ${placeholders}
+                             ON CONFLICT (user_id, question_id)
+                             DO UPDATE SET
+                                 seen_at = NOW(),
+                                 times_seen = user_question_history.times_seen + 1`,
+                            [userId, ...questionIds]
+                        );
+                    } catch (err) {
+                        console.error("❌ Error actualizando user_question_history en MedicoRepo:", err.message);
                     }
                 }
             }

@@ -191,7 +191,6 @@ class AdminService {
                 updatePayload.usageCount = 0;
                 updatePayload.dailyAiUsage = 0;
                 updatePayload.dailyRagUsage = 0;
-                updatePayload.dailyArenaUsage = 0;
                 updatePayload.dailySimulatorUsage = 0;
                 updatePayload.monthlyFlashcardsUsage = 0;
             }

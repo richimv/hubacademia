@@ -1,5 +1,3 @@
-const pool = require('../../infrastructure/database/db');
-
 class ChatRepository {
     async createConversation(userId, title) {
         return { id: 'ephemeral', title, user_id: userId };
@@ -9,11 +7,11 @@ class ChatRepository {
         return { id: Date.now(), conversation_id: conversationId, sender, content };
     }
 
-    async getConversationsByUserId(userId) {
+    async getConversationsByUserId(_userId) {
         return [];
     }
 
-    async getMessagesByConversationId(conversationId, userId) {
+    async getMessagesByConversationId(_conversationId, _userId) {
         return [];
     }
 
@@ -21,7 +19,7 @@ class ChatRepository {
         return { id: conversationId, title: newTitle, user_id: userId };
     }
 
-    async deleteConversation(conversationId, userId) {
+    async deleteConversation(_conversationId, _userId) {
         return true;
     }
 }

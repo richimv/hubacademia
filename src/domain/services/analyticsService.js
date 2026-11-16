@@ -1,5 +1,3 @@
-// const db = require('../../infrastructure/database/db'); // ❌ REMOVED: Clean Architecture enforcement
-
 const KnowledgeBaseRepository = require('../repositories/knowledgeBaseRepository');
 const AnalyticsRepository = require('../repositories/analyticsRepository');
 const { normalizeText } = require('../utils/textUtils');
@@ -11,6 +9,8 @@ class AnalyticsService {
     constructor() {
         this.knowledgeBaseRepo = new KnowledgeBaseRepository();
         this.analyticsRepo = new AnalyticsRepository();
+        this.courseRepo = new CourseRepository();
+        this.topicRepo = new TopicRepository();
         this.isKBReady = false;
     }
 
@@ -33,8 +33,7 @@ class AnalyticsService {
         }
     }
 
-    async recordFeedback(query, response, isHelpful, userId = null, messageId = null) {
-        // Obsoleto: Chat General es efímero y la tabla feedback fue eliminada.
+    async recordFeedback(_query, _response, _isHelpful, _userId = null, _messageId = null) {
         return;
     }
 
@@ -47,21 +46,22 @@ class AnalyticsService {
     }
 
     // ==========================================
-    // NUEVO: SISTEMA DE PULSO (REAL-TIME)
+    // SISTEMA DE PULSO (REAL-TIME)
     // ==========================================
 
     async logPulse(sessionId, userId = null, isMobile = false) {
-        // Redirigimos al repo, el error se captura en el Controller para manejo centralizado
-        await this.analyticsRepo.logPulse(sessionId, userId, isMobile);
+        return await this.analyticsRepo.logPulse(sessionId, userId, isMobile);
     }
 
     async getRealTimeStats() {
         try {
             const stats = await this.analyticsRepo.getRealTimeStats();
+            const activeNow = parseInt(stats.active_now, 10) || 0;
+            const mobileActive = parseInt(stats.mobile_active, 10) || 0;
             return {
-                activeNow: parseInt(stats.active_now, 10),
-                mobileActive: parseInt(stats.mobile_active, 10),
-                desktopActive: parseInt(stats.active_now, 10) - parseInt(stats.mobile_active, 10)
+                activeNow,
+                mobileActive,
+                desktopActive: Math.max(0, activeNow - mobileActive)
             };
         } catch (error) {
             console.error('❌ Error obteniendo tráfico en tiempo real:', error);
@@ -74,12 +74,25 @@ class AnalyticsService {
     // ==========================================
 
     async getDashboardAnalytics(days = 30) {
-        if (!this.isKBReady) {
-            await this.knowledgeBaseRepo.load();
-            this.isKBReady = true;
-        }
+        await this.ensureReady();
 
-        const metrics = await this.analyticsRepo.getDashboardMetricsRaw(days);
+        const [
+            metrics,
+            topSearches500,
+            topCareers,
+            topCourses,
+            topTopics,
+            zeroResultSearches,
+            uniqueVisitors
+        ] = await Promise.all([
+            this.analyticsRepo.getDashboardMetricsRaw(days),
+            this.getTopSearchesRaw(days, 500),
+            this.getTopViewedEntities('career', days),
+            this.getTopViewedEntities('course', days),
+            this.getTopViewedEntities('topic', days),
+            this.getZeroResultSearches(days),
+            this.getUniqueVisitorsCount(days)
+        ]);
 
         const totalInteractions = metrics.totalSearches + metrics.totalChatQueries;
 
@@ -87,6 +100,14 @@ class AnalyticsService {
             ...term,
             type: this.classifySearchTerm(term.query)
         }));
+
+        const categoryDistribution = { Curso: 0, Tema: 0, Carrera: 0, Docente: 0, General: 0 };
+        (topSearches500 || []).forEach(item => {
+            const type = this.classifySearchTerm(item.query);
+            categoryDistribution[type] += parseInt(item.count, 10) || 0;
+        });
+
+        const topInstructors = this.getTopInstructorsFromSearches((topSearches500 || []).slice(0, 100));
 
         return {
             totalSearches: metrics.totalSearches,
@@ -101,13 +122,13 @@ class AnalyticsService {
             },
             totalChatMessages: metrics.totalChatMessages,
             topSearches: classifiedTopSearches,
-            categoryDistribution: await this.getCategoryDistribution(days),
-            topCareers: await this.getTopViewedEntities('career', days),
-            topCourses: await this.getTopViewedEntities('course', days),
-            topTopics: await this.getTopViewedEntities('topic', days),
-            topInstructors: this.getTopInstructorsFromSearches(await this.getTopSearchesRaw(days, 100)),
-            zeroResultSearches: await this.getZeroResultSearches(days),
-            uniqueVisitors: await this.getUniqueVisitorsCount(days)
+            categoryDistribution,
+            topCareers,
+            topCourses,
+            topTopics,
+            topInstructors,
+            zeroResultSearches,
+            uniqueVisitors
         };
     }
 
@@ -186,21 +207,18 @@ class AnalyticsService {
     }
 
     // ==========================================
-    // MÉTODOS DE AGRUPACIÓN Y Gráficas (CORREGIDO FINAL)
+    // MÉTODOS DE AGRUPACIÓN Y GRÁFICAS
     // ==========================================
 
     async getEntityTimeSeriesData(type, days = 30) {
-        const rawTerms = await this.getTopSearchesRaw(days, 500); 
-
-        const courseRepo = new CourseRepository();
-        const topicRepo = new TopicRepository();
+        const rawTerms = await this.getTopSearchesRaw(days, 500);
 
         let canonicalNames = [];
         if (type === 'Curso') {
-            const courses = await courseRepo.findAll();
+            const courses = await this.courseRepo.findAll();
             canonicalNames = courses.map(c => c.name);
         } else {
-            const topics = await topicRepo.findAll();
+            const topics = await this.topicRepo.findAll();
             canonicalNames = topics.map(t => t.name);
         }
 
@@ -375,7 +393,6 @@ class AnalyticsService {
         }
     }
 
-    // Wrappers específicos
     async getCourseTimeSeriesData(days) { return this.getEntityTimeSeriesData('Curso', days); }
     async getTopicTimeSeriesData(days) { return this.getEntityTimeSeriesData('Tema', days); }
 
@@ -395,7 +412,7 @@ class AnalyticsService {
     }
 
     // ==========================================
-    // MÉTODOS DE ANALÍTICA DE IA (NUEVO)
+    // MÉTODOS DE ANALÍTICA DE IA
     // ==========================================
 
     async logAIInteraction(query, intentType, eventType, userId = null) {
@@ -409,13 +426,13 @@ class AnalyticsService {
     async getAIAnalytics(days = 30) {
         const stats = await this.analyticsRepo.getAIAnalyticsRaw(days);
         const ctr = stats.impressions > 0
-            ? ((parseInt(stats.clicks) / parseInt(stats.impressions)) * 100).toFixed(1)
+            ? ((parseInt(stats.clicks, 10) / parseInt(stats.impressions, 10)) * 100).toFixed(1)
             : 0;
 
         return {
-            impressions: parseInt(stats.impressions),
-            clicks: parseInt(stats.clicks),
-            uniqueQuestions: parseInt(stats.unique_questions),
+            impressions: parseInt(stats.impressions, 10) || 0,
+            clicks: parseInt(stats.clicks, 10) || 0,
+            uniqueQuestions: parseInt(stats.unique_questions, 10) || 0,
             ctr: ctr
         };
     }
@@ -424,8 +441,7 @@ class AnalyticsService {
         return await this.analyticsRepo.getTopDeepQuestionsRaw(days);
     }
 
-    async predictPopularCourse(days = 30) {
-        // ✅ PYTHON SERVICE DEPRECATED: Removido
+    async predictPopularCourse(_days = 30) {
         return { popularCourse: null, popularTopic: null };
     }
 
@@ -454,11 +470,10 @@ class AnalyticsService {
         const heatmap = {};
         const res = await this.analyticsRepo.getHeatmapDataRaw(userId, deckId);
 
-        // Contabilizar exclusivamente repasos de tarjetas (user_flashcards)
         if (res && res.cardResRows) {
             res.cardResRows.forEach(row => {
                 if (row.day) {
-                    heatmap[row.day] = (heatmap[row.day] || 0) + parseInt(row.count);
+                    heatmap[row.day] = (heatmap[row.day] || 0) + parseInt(row.count, 10);
                 }
             });
         }
@@ -469,19 +484,12 @@ class AnalyticsService {
     /**
      * Genera un diagnóstico heurístico inteligente basado en los datos reales del usuario
      * para usuarios gratuitos (Free), básicos (Basic), invitados (Guest) y fallback de IA.
-     * 
-     * @param {object} stats - Estadísticas de rendimiento (radar_data, avg_score, accuracy, etc.)
-     * @param {string} context - 'MEDICINA' o 'EDUCACION'
-     * @returns {object} { strengths, weaknesses, strategy, readinessIndex, readinessLevel, sprint }
      */
     generateHeuristicDiagnostic(stats, context = 'MEDICINA') {
         if (context === 'EDUCACION') return generateEducationDiagnostic(stats);
         const accuracy = Number(stats?.accuracy) || 0;
         const avgScore = Number(stats?.avg_score) || 0;
 
-
-
-        // 2. Cálculo de Nivel de Competencia y Readiness Index
         let readinessLevel = 'Nivel Inicial';
         let readinessIndex = 45;
 
@@ -511,7 +519,6 @@ class AnalyticsService {
             }));
         }
 
-        // Ordenar por precisión descendente
         topics.sort((a, b) => b.accuracy - a.accuracy);
 
         let strengths = '';
@@ -520,110 +527,102 @@ class AnalyticsService {
         let sprint = [];
 
         if (topics.length === 0) {
-            // Usuario sin historial de simulacros aún
-            {
-                strengths = `
-                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(13,148,136,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(13,148,136,0.25)); text-transform:uppercase; letter-spacing:0.04em;">ESTÁNDAR OFICIAL MINSA / ASPEFAM</span>
-                    </div>
-                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Las pruebas oficiales médicas (SERUMS/ENAM) ponderan con alta carga las siguientes especialidades troncales:</p>
-                    <ul style="margin:0; padding:0; list-style:none;">
-                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
-                            <span>Diagnóstico y terapéutica en <strong>Medicina Interna</strong> y <strong>Pediatría</strong> basada en guías clínicas.</span>
-                        </li>
-                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
-                            <span>Manejo de algoritmos de shock, soporte vital y emergencias en el primer nivel de atención.</span>
-                        </li>
-                    </ul>
-                `;
-                weaknesses = `
-                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.04em;">CALIBRACIÓN PENDIENTE</span>
-                    </div>
-                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Es necesario medir tu nivel inicial para identificar qué áreas requieren mayor refuerzo:</p>
-                    <ul style="margin:0; padding:0; list-style:none;">
-                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
-                            <span>Sin calibración en <strong>Salud Pública, Epidemiología y Gestión</strong> (Grupo D del SERUMS).</span>
-                        </li>
-                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
-                            <span>Casos de alto riesgo materno-perinatal en <strong>Ginecología y Obstetricia</strong>.</span>
-                        </li>
-                    </ul>
-                `;
-                strategy = "Resuelve tu primer simulacro de 10 preguntas para diagnosticar tus áreas fuertes y focos de refuerzo.";
-                sprint = [
-                    { step: 1, title: "Calibración Inicial", desc: "Completa un Simulacro Rápido (10q) para obtener tu primera radiografía de aciertos." },
-                    { step: 2, title: "Estudio Guiado", desc: "Realiza simulacros de 20 preguntas leyendo los sustentos de cada caso clínico." },
-                    { step: 3, title: "Repaso de Salud Pública", desc: "Refuerza la Norma Técnica MINSA y Cuidado Integral de Salud para el SERUMS." }
-                ];
-            }
+            strengths = `
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                    <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(13,148,136,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(13,148,136,0.25)); text-transform:uppercase; letter-spacing:0.04em;">ESTÁNDAR OFICIAL MINSA / ASPEFAM</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Las pruebas oficiales médicas (SERUMS/ENAM) ponderan con alta carga las siguientes especialidades troncales:</p>
+                <ul style="margin:0; padding:0; list-style:none;">
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
+                        <span>Diagnóstico y terapéutica en <strong>Medicina Interna</strong> y <strong>Pediatría</strong> basada en guías clínicas.</span>
+                    </li>
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
+                        <span>Manejo de algoritmos de shock, soporte vital y emergencias en el primer nivel de atención.</span>
+                    </li>
+                </ul>
+            `;
+            weaknesses = `
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                    <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.04em;">CALIBRACIÓN PENDIENTE</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Es necesario medir tu nivel inicial para identificar qué áreas requieren mayor refuerzo:</p>
+                <ul style="margin:0; padding:0; list-style:none;">
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
+                        <span>Sin calibración en <strong>Salud Pública, Epidemiología y Gestión</strong> (Grupo D del SERUMS).</span>
+                    </li>
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
+                        <span>Casos de alto riesgo materno-perinatal en <strong>Ginecología y Obstetricia</strong>.</span>
+                    </li>
+                </ul>
+            `;
+            strategy = "Resuelve tu primer simulacro de 10 preguntas para diagnosticar tus áreas fuertes y focos de refuerzo.";
+            sprint = [
+                { step: 1, title: "Calibración Inicial", desc: "Completa un Simulacro Rápido (10q) para obtener tu primera radiografía de aciertos." },
+                { step: 2, title: "Estudio Guiado", desc: "Realiza simulacros de 20 preguntas leyendo los sustentos de cada caso clínico." },
+                { step: 3, title: "Repaso de Salud Pública", desc: "Refuerza la Norma Técnica MINSA y Cuidado Integral de Salud para el SERUMS." }
+            ];
         } else {
-            // Usuario con datos reales de temas practicados
             const best1 = topics[0];
             const best2 = topics.length > 1 ? topics[1] : null;
 
-            // Peores temas (orden inverso)
             const reversed = [...topics].reverse();
             const worst1 = reversed[0];
             const worst2 = (reversed.length > 1 && reversed[1].subject !== worst1.subject) ? reversed[1] : null;
 
-            {
-                const bestTotalStr1 = best1.total ? ` (${best1.correct}/${best1.total} aciertos)` : '';
-                const bestTotalStr2 = (best2 && best2.total) ? ` (${best2.correct}/${best2.total} aciertos)` : '';
-                const worstFailStr1 = worst1.total ? ` (${worst1.total - worst1.correct} fallas en ${worst1.total} reactivos)` : '';
-                const worstFailStr2 = (worst2 && worst2.total) ? ` (${worst2.total - worst2.correct} fallas en ${worst2.total} reactivos)` : '';
+            const bestTotalStr1 = best1.total ? ` (${best1.correct}/${best1.total} aciertos)` : '';
+            const bestTotalStr2 = (best2 && best2.total) ? ` (${best2.correct}/${best2.total} aciertos)` : '';
+            const worstFailStr1 = worst1.total ? ` (${worst1.total - worst1.correct} fallas en ${worst1.total} reactivos)` : '';
+            const worstFailStr2 = (worst2 && worst2.total) ? ` (${worst2.total - worst2.correct} fallas en ${worst2.total} reactivos)` : '';
 
-                strengths = `
-                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(13,148,136,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(13,148,136,0.25)); text-transform:uppercase; letter-spacing:0.04em;">${readinessLevel.toUpperCase()}</span>
-                        <span style="font-size:0.75rem; color:var(--text-secondary);">${accuracy}% Precisión Global</span>
-                    </div>
-                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Tu perfil de respuestas refleja solvencia diagnóstica y criterio clínico en tus áreas top:</p>
-                    <ul style="margin:0; padding:0; list-style:none;">
-                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
-                            <span>Excelente precisión clínica en <strong>${best1.subject}</strong> con un <strong>${best1.accuracy}%</strong> de aciertos${bestTotalStr1}. Evidencias buen manejo de algoritmos diagnósticos y tratamiento.</span>
-                        </li>
-                        ${best2 ? `
-                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
-                            <span>Buen criterio clínico en <strong>${best2.subject}</strong> (${best2.accuracy}% de efectividad${bestTotalStr2}), manteniendo una base terapéutica sólida.</span>
-                        </li>` : ''}
-                    </ul>
-                `;
+            strengths = `
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                    <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--primary-glow-sm, rgba(13,148,136,0.1)); color:var(--primary); border:1px solid var(--primary-glow, rgba(13,148,136,0.25)); text-transform:uppercase; letter-spacing:0.04em;">${readinessLevel.toUpperCase()}</span>
+                    <span style="font-size:0.75rem; color:var(--text-secondary);">${accuracy}% Precisión Global</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Tu perfil de respuestas refleja solvencia diagnóstica y criterio clínico en tus áreas top:</p>
+                <ul style="margin:0; padding:0; list-style:none;">
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
+                        <span>Excelente precisión clínica en <strong>${best1.subject}</strong> con un <strong>${best1.accuracy}%</strong> de aciertos${bestTotalStr1}. Evidencias buen manejo de algoritmos diagnósticos y tratamiento.</span>
+                    </li>
+                    ${best2 ? `
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-check-circle" style="color:var(--primary); margin-top:2px;"></i>
+                        <span>Buen criterio clínico en <strong>${best2.subject}</strong> (${best2.accuracy}% de efectividad${bestTotalStr2}), manteniendo una base terapéutica sólida.</span>
+                    </li>` : ''}
+                </ul>
+            `;
 
-                weaknesses = `
-                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                        <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.04em;">FOCO CLÍNICO PRIORITARIO</span>
-                    </div>
-                    <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Se detectaron áreas clínicas críticas con margen de error que deben reforzarse:</p>
-                    <ul style="margin:0; padding:0; list-style:none;">
-                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
-                            <span>Foco de refuerzo inmediato en <strong>${worst1.subject}</strong> con <strong>${worst1.accuracy}%</strong> de precisión${worstFailStr1}. Requiere repaso de normas técnicas y manejo de casos complejos.</span>
-                        </li>
-                        ${worst2 ? `
-                        <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
-                            <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
-                            <span>Inestabilidad en <strong>${worst2.subject}</strong> (${worst2.accuracy}% de aciertos${worstFailStr2}), donde los distractores farmacológicos aumentan la tasa de fallo.</span>
-                        </li>` : ''}
-                    </ul>
-                `;
+            weaknesses = `
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                    <span style="font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-hover); color:var(--text-secondary); border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.04em;">FOCO CLÍNICO PRIORITARIO</span>
+                </div>
+                <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.6; margin-bottom:1rem;">Se detectaron áreas clínicas críticas con margen de error que deben reforzarse:</p>
+                <ul style="margin:0; padding:0; list-style:none;">
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
+                        <span>Foco de refuerzo inmediato en <strong>${worst1.subject}</strong> con <strong>${worst1.accuracy}%</strong> de precisión${worstFailStr1}. Requiere repaso de normas técnicas y manejo de casos complejos.</span>
+                    </li>
+                    ${worst2 ? `
+                    <li style="display:flex; align-items:start; gap:0.75rem; margin-bottom:0.75rem; color:var(--text-main); font-size:0.85rem; line-height:1.4;">
+                        <i class="fas fa-exclamation-triangle" style="color:var(--text-muted); margin-top:2px;"></i>
+                        <span>Inestabilidad en <strong>${worst2.subject}</strong> (${worst2.accuracy}% de aciertos${worstFailStr2}), donde los distractores farmacológicos aumentan la tasa de fallo.</span>
+                    </li>` : ''}
+                </ul>
+            `;
 
-                strategy = `Enfócate en resolver simulacros en ${worst1.subject} para dominar el diagnóstico diferencial y guías clínicas clave antes de la prueba oficial.`;
-                sprint = [
-                    { step: 1, title: `Protocolos de ${worst1.subject}`, desc: `Revisa guías de práctica clínica y algoritmos de manejo para ${worst1.subject}.` },
-                    { step: 2, title: "Simulacros Modo Estudio", desc: "Entrena con reactivos comentados para afianzar el diagnóstico diferencial y tratamiento." },
-                    { step: 3, title: `Retención en ${best1.subject}`, desc: `Mantén la memoria activa en ${best1.subject} con repasos ágiles de 10 preguntas.` }
-                ];
-            }
+            strategy = `Enfócate en resolver simulacros en ${worst1.subject} para dominar el diagnóstico diferencial y guías clínicas clave antes de la prueba oficial.`;
+            sprint = [
+                { step: 1, title: `Protocolos de ${worst1.subject}`, desc: `Revisa guías de práctica clínica y algoritmos de manejo para ${worst1.subject}.` },
+                { step: 2, title: "Simulacros Modo Estudio", desc: "Entrena con reactivos comentados para afianzar el diagnóstico diferencial y tratamiento." },
+                { step: 3, title: `Retención en ${best1.subject}`, desc: `Mantén la memoria activa en ${best1.subject} con repasos ágiles de 10 preguntas.` }
+            ];
         }
 
-        // Llamado a Suscripción Avanzada
         const upgradeCallout = `
             <div style="margin-top:1.25rem; padding:1.1rem; background:var(--surface-hover); border:1px solid var(--border-color); border-radius:12px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">

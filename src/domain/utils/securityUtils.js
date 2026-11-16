@@ -151,6 +151,7 @@ function sanitizeCSVCell(val) {
  */
 const ALLOWED_USAGE_COLUMNS = new Set([
     'daily_ai_usage',
+    'daily_rag_usage',
     'usage_count',
     'monthly_flashcards_usage',
     'daily_import_usage',

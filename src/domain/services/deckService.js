@@ -151,6 +151,10 @@ class DeckService {
     }
 
     async isMediaInUse(url) {
+        if (typeof trainingRepository.isMediaInUse === 'function') {
+            const repoResult = await trainingRepository.isMediaInUse(url);
+            if (typeof repoResult === 'boolean') return repoResult;
+        }
         const db = require('../../infrastructure/database/db');
         const cardsQuery = `SELECT count(*) FROM user_flashcards WHERE image_url = $1 OR explanation_image_url = $1 OR audio_url_frente = $1 OR audio_url_dorso = $1`;
         const decksQuery = `SELECT count(*) FROM decks WHERE description LIKE '%' || $1 || '%'`;
@@ -160,7 +164,7 @@ class DeckService {
             db.query(decksQuery, [url])
         ]);
 
-        return (parseInt(cardsRes.rows[0].count) + parseInt(decksRes.rows[0].count)) > 0;
+        return (parseInt(cardsRes.rows[0].count, 10) + parseInt(decksRes.rows[0].count, 10)) > 0;
     }
 }
 
