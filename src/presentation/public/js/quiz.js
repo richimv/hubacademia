@@ -2032,6 +2032,9 @@ function initLightbox() {
         return;
     }
 
+    if (modal.dataset.lightboxBound) return;
+    modal.dataset.lightboxBound = 'true';
+
     let zoomLevel = 1;
     let isDragging = false;
     let startX = 0, startY = 0;

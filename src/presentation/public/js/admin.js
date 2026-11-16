@@ -516,6 +516,55 @@ class AdminManager {
         }
     }
 
+    /**
+     * Refresca únicamente la entidad afectada tras operaciones CRUD o sincronización,
+     * evitando re-descargar todo el banco de preguntas y casuísticas innecesariamente.
+     */
+    async refreshEntityByType(type) {
+        try {
+            if (type === 'question' || type === 'bulk-question') {
+                await this.refreshQuestions();
+                return;
+            }
+            if (type === 'case' || type === 'bulk-case') {
+                await this.refreshCases();
+                return;
+            }
+            if (type === 'student') {
+                const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/students`);
+                if (res.ok) this.allStudents = await res.json();
+                this.renderCurrentTab();
+                return;
+            }
+            if (type === 'career') {
+                const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/careers`);
+                if (res.ok) this.allCareers = await res.json();
+                this.renderCurrentTab();
+                return;
+            }
+            if (type === 'course') {
+                const res = await window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/courses`);
+                if (res.ok) this.allCourses = await res.json();
+                this.renderCurrentTab();
+                return;
+            }
+            if (type === 'topic' || type === 'book' || type === 'drive-sync') {
+                const [topicsRes, booksRes] = await Promise.all([
+                    window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/topics`),
+                    window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/books?includeHidden=true`)
+                ]);
+                if (topicsRes.ok) this.allTopics = await topicsRes.json();
+                if (booksRes.ok) this.allBooks = await booksRes.json();
+                this.renderCurrentTab();
+                return;
+            }
+            await this.loadAllData();
+        } catch (error) {
+            console.error(`❌ Error refrescando entidad (${type}):`, error);
+            await this.loadAllData();
+        }
+    }
+
 
 
     setupMainContainerDelegation() {
@@ -2678,7 +2727,7 @@ class AdminManager {
 
                     await window.confirmationModal.showAlert(`¡Éxito! ${_responseData.message}`, 'Inyección Completada');
                     this.closeGenericModal();
-                    await this.loadAllData();
+                    await this.refreshEntityByType('bulk-question');
                     return; // Retorno anticipado
                 }
 
@@ -2796,7 +2845,7 @@ class AdminManager {
                         );
 
                         this.closeGenericModal();
-                        await this.loadAllData();
+                        await this.refreshEntityByType('drive-sync');
                         return; // Fin del flujo exitoso
                     } catch (err) {
                         throw err; // Burbujea al catch general
@@ -2887,7 +2936,7 @@ class AdminManager {
             await window.confirmationModal.showAlert(successMessage, 'Éxito');
 
             this.closeGenericModal();
-            await this.loadAllData(); // Recargar todos los datos y refrescar la UI
+            await this.refreshEntityByType(type);
 
         } catch (error) {
             if (error.message === 'Unauthorized') return; // NetworkService ya manejó el logout
@@ -2924,7 +2973,7 @@ class AdminManager {
             }
 
             await window.confirmationModal.showAlert('Elemento eliminado con éxito.', 'Éxito');
-            await this.loadAllData(); // Recargar todos los datos y refrescar la UI
+            await this.refreshEntityByType(type);
 
         } catch (error) {
             if (error.message === 'Unauthorized') return;
@@ -3469,7 +3518,7 @@ class AdminManager {
             this.clearBulkSelection();
 
             await window.confirmationModal.showAlert(`Eliminación masiva completada con éxito. Se eliminaron ${result.deleted} elementos.`, 'Éxito');
-            await this.loadAllData();
+            await this.refreshEntityByType(type);
 
         } catch (error) {
             console.error('❌ Error en borrado masivo:', error);

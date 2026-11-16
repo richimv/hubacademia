@@ -24,15 +24,6 @@ class RepasoNotesUI {
                 this.filterAndSortNotes();
             }
         });
-
-        if (localStorage.getItem('authToken') && this.service) {
-            try {
-                await this.service.loadFullLibrary();
-                this._hasLoadedOnce = true;
-            } catch (err) {
-                console.error('[RepasoNotesUI] Error precargando notas:', err);
-            }
-        }
     }
 
     _bindEvents() {

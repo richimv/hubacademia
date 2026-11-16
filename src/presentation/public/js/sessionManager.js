@@ -6,6 +6,8 @@ class SessionManager {
         this.onStateChangeCallbacks = [];
         this.lastSyncTime = 0; // Para throttling global de peticiones pasivas
         this.lastSyncAttemptTime = 0;
+        this._lastRefreshTime = 0;
+        this._refreshPromise = null;
         this._listenerAttached = false;
         this._visibilityAttached = false;
         this.initSupabaseListener();
@@ -150,12 +152,16 @@ class SessionManager {
         this.notifyStateChange();
     }
 
-    // ✅ Refresco proactivo al retomar la pestaña tras inactividad
+    // ✅ Refresco proactivo al retomar la pestaña tras inactividad (con cooldown de 30s)
     _setupVisibilityListener() {
         if (typeof document === 'undefined' || this._visibilityAttached) return;
         this._visibilityAttached = true;
         document.addEventListener('visibilitychange', async () => {
             if (document.visibilityState === 'visible') {
+                // Evitar ráfagas de /api/auth/me al alternar pestañas rápidamente
+                if (this._lastRefreshTime > 0 && (Date.now() - this._lastRefreshTime) < 30000) {
+                    return;
+                }
                 const token = localStorage.getItem('authToken');
                 if (token && window.AuthApiService && typeof window.AuthApiService.getValidToken === 'function') {
                     try {
@@ -195,6 +201,7 @@ class SessionManager {
                         this.currentUser = await AuthApiService.getMe();
                         if (this.currentUser) {
                             this.currentUser._isOptimistic = false;
+                            this._lastRefreshTime = Date.now();
                         }
                     } catch (err) {
                         this.currentUser = null;
@@ -210,35 +217,48 @@ class SessionManager {
         return this.initPromise;
     }
 
-    // ✅ NUEVO: Método para refrescar sesión sin recargar (para actualizar vidas/tokens)
-    async refreshUser() {
+    // ✅ NUEVO: Método para refrescar sesión sin recargar (con deduplicación en vuelo y cooldown)
+    async refreshUser(force = false) {
         if (!this.currentUser) return;
-        try {
-            console.log('🔄 Refrescando sesión de usuario en segundo plano...');
-            const updatedUser = await AuthApiService.getMe();
-                if (updatedUser) {
-                // Solo notificar si cambió el conteo de uso (Free/Pending) o contadores premium o el tier
-                const usageChanged = 
-                    this.currentUser.usageCount !== updatedUser.usageCount ||
-                    this.currentUser.dailyAiUsage !== updatedUser.dailyAiUsage ||
-                    this.currentUser.dailySimulatorUsage !== updatedUser.dailySimulatorUsage ||
-                    this.currentUser.monthlyFlashcardsUsage !== updatedUser.monthlyFlashcardsUsage ||
-                    this.currentUser.usage_count !== updatedUser.usage_count ||
-                    this.currentUser.daily_ai_usage !== updatedUser.daily_ai_usage ||
-                    this.currentUser.daily_simulator_usage !== updatedUser.daily_simulator_usage ||
-                    this.currentUser.monthly_flashcards_usage !== updatedUser.monthly_flashcards_usage;
-                const tierChanged = this.currentUser.subscriptionTier !== updatedUser.subscriptionTier;
-                
-                this.currentUser = updatedUser;
-                if (usageChanged || tierChanged) {
-                    this.notifyStateChange();
-                }
-                console.log('✅ Sesión refrescada. Vidas:', updatedUser.usageCount, 'Daily AI:', updatedUser.dailyAiUsage);
-            }
-        } catch (error) {
-            console.warn('⚠️ Falló el refresco silencioso de sesión:', error);
-            // No hacemos logout, solo ignoramos el error de red momentáneo
+        if (this._refreshPromise) return this._refreshPromise;
+        if (!force && this._lastRefreshTime > 0 && (Date.now() - this._lastRefreshTime) < 1500) {
+            return this.currentUser;
         }
+
+        this._refreshPromise = (async () => {
+            try {
+                console.log('🔄 Refrescando sesión de usuario en segundo plano...');
+                const updatedUser = await AuthApiService.getMe();
+                if (updatedUser) {
+                    this._lastRefreshTime = Date.now();
+                    // Solo notificar si cambió el conteo de uso (Free/Pending) o contadores premium o el tier
+                    const usageChanged = 
+                        this.currentUser.usageCount !== updatedUser.usageCount ||
+                        this.currentUser.dailyAiUsage !== updatedUser.dailyAiUsage ||
+                        this.currentUser.dailySimulatorUsage !== updatedUser.dailySimulatorUsage ||
+                        this.currentUser.monthlyFlashcardsUsage !== updatedUser.monthlyFlashcardsUsage ||
+                        this.currentUser.usage_count !== updatedUser.usage_count ||
+                        this.currentUser.daily_ai_usage !== updatedUser.daily_ai_usage ||
+                        this.currentUser.daily_simulator_usage !== updatedUser.daily_simulator_usage ||
+                        this.currentUser.monthly_flashcards_usage !== updatedUser.monthly_flashcards_usage;
+                    const tierChanged = this.currentUser.subscriptionTier !== updatedUser.subscriptionTier;
+                    
+                    this.currentUser = updatedUser;
+                    if (usageChanged || tierChanged) {
+                        this.notifyStateChange();
+                    }
+                    console.log('✅ Sesión refrescada. Vidas:', updatedUser.usageCount, 'Daily AI:', updatedUser.dailyAiUsage);
+                }
+                return this.currentUser;
+            } catch (error) {
+                console.warn('⚠️ Falló el refresco silencioso de sesión:', error);
+                // No hacemos logout, solo ignoramos el error de red momentáneo
+            } finally {
+                this._refreshPromise = null;
+            }
+        })();
+
+        return this._refreshPromise;
     }
 
     // 🛡️ NUEVO: Método para validar activamente si el token caducó en el backend y forzar logout en la UI
