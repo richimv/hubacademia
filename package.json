@@ -24,7 +24,6 @@
     "@google-cloud/vertexai": "^1.10.0",
     "@supabase/supabase-js": "^2.83.0",
     "axios": "^1.14.0",
-    "bcryptjs": "^2.4.3",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
@@ -55,5 +54,10 @@
     "universidad"
   ],
   "author": "Tu Equipo",
-  "license": "MIT"
+  "license": "MIT",
+  "allowScripts": {
+    "@google/genai": false,
+    "@parcel/watcher": false,
+    "protobufjs": false
+  }
 }

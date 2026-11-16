@@ -6,7 +6,7 @@
     "functions": {
         "api/*.js": {
             "maxDuration": 300,
-            "excludeFiles": "src/presentation/public/assets/**"
+            "excludeFiles": "{src/presentation/public/**,ml_service/**,scripts/**,data_dump/**,documentation/**,tests/**}"
         }
     },
     "headers": [

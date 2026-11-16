@@ -11,6 +11,11 @@ Credenciales.zip
 node_modules/
 tests/
 documentation/
+ml_service/
+scripts/
+data_dump/
+requirements.txt
+*.py
 __pycache__/
 *.pyc
 *.log

@@ -96,7 +96,7 @@ Integración nativa con **Mercado Pago** para la venta del "Mega Pack Universita
    # source venv/bin/activate
    
    # Instalar dependencias
-   pip install -r requirements.txt
+   pip install -r ml_service/requirements.txt
    ```
 
 3. **Configurar Variables de Entorno (.env)**

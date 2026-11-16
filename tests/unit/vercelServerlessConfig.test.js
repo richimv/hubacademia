@@ -28,6 +28,22 @@ describe('Fase 1: Vercel Serverless Architecture Verification', () => {
         const apiRewrite = parsed.rewrites.find((r) => r.source === '/api/:apiRoute*');
         expect(apiRewrite).toBeDefined();
         expect(apiRewrite.destination).toBe('/api/index');
+        expect(parsed.functions['api/*.js'].excludeFiles).toContain('src/presentation/public/**');
+        expect(parsed.functions['api/*.js'].excludeFiles).toContain('ml_service/**');
+    });
+
+    test('build hygiene: no root requirements.txt, CommonJS backend, no bcryptjs, and allowScripts configured', () => {
+        expect(fs.existsSync(path.join(rootDir, 'requirements.txt'))).toBe(false);
+        expect(fs.existsSync(path.join(rootDir, 'ml_service', 'requirements.txt'))).toBe(true);
+
+        const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
+        expect(pkg.type).not.toBe('module');
+        expect(pkg.dependencies.bcryptjs).toBeUndefined();
+        expect(pkg.allowScripts).toEqual({
+            '@google/genai': false,
+            '@parcel/watcher': false,
+            protobufjs: false
+        });
     });
 
     test('api/index.js exports an async serverless handler function', () => {
