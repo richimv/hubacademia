@@ -1,48 +1,52 @@
 /* ============================================================
-   DESIGN SYSTEM TOKENS - Hub Academia v3.5
-   Dual Mode: Dark Matte Slate 🌙 / Light Slate Studio ☀️
+   DESIGN SYSTEM TOKENS - Hub Academia v3.6
+   Dual Mode: Dark Cinema & Graphite Glass 🌙 / Light Slate Studio ☀️
+   Zero blue surfaces in Dark Mode (strictly neutral obsidian/graphite + crisp accents).
    ============================================================ */
 
 /* --- TEMA OSCURO (Por defecto) --- */
 :root,
 [data-theme="dark"] {
     --on-primary: #ffffff;
-    /* Paleta Base - Pure Dark Matte Scale */
-    --bg-main: #050505;        /* Fondo principal (body) */
-    --bg-secondary: #111113;   /* Visible surface step over the dark canvas */
-    --bg-tertiary: #1c1c20;    /* Nested controls and selected surfaces */
+    /* Paleta Base - Pure Dark Obsidian & Graphite Matte Scale */
+    --bg-main: #050507;        /* Fondo principal (body) - Dark Cinema */
+    --bg-secondary: #0d0d10;   /* Visible matte surface step */
+    --bg-tertiary: #141418;    /* Nested controls and selected surfaces */
     
     /* Superficies y Paneles */
-    --surface: #111113;
-    --surface-hover: #252529;
-    --surface-alt: #1c1c20;
-    --card-bg: #111113;
-    --modal-bg: #111113;
-    --modal-overlay-bg: rgba(0, 0, 0, 0.75);
+    --surface: #0d0d10;
+    --surface-hover: #1c1c22;
+    --surface-alt: #141418;
+    --card-bg: #0d0d10;
+    --modal-bg: #0d0d10;
+    --modal-overlay-bg: rgba(0, 0, 0, 0.78);
 
     /* Textos */
-    --text-main: #f8fafc;      /* Slate 50 - Blanco nítido */
-    --text-secondary: #cbd5e1; /* Slate 300 - Secundario legible */
-    --text-muted: #94a3b8;     /* Slate 400 - Descriptivo / placeholders */
-    --text-inverse: #050505;   /* Texto inverso para botones claros */
+    --text-main: #f4f4f6;      /* Titulares nítidos */
+    --text-secondary: #cbd5e1; /* Texto de lectura legible */
+    --text-muted: #94a3b8;     /* Subtítulos y telemetría secundaria */
+    --text-inverse: #050507;   /* Texto inverso para botones claros */
 
-    /* Acentos Principales */
-    --primary: #2563eb;        /* Azul de acción, texto blanco legible */
+    /* Acentos Principales (sin contaminar superficies de fondo) */
+    --primary: #2563eb;        /* Azul de acción, contraste alto con blanco */
     --primary-hover: #1d4ed8;  /* Azul 700 */
-    --primary-light: #60a5fa;  /* Azul 400 */
-    --primary-glow: rgba(59, 130, 246, 0.35);
+    --primary-light: #38bdf8;  /* Ice telemetry link & highlight */
+    --primary-glow: rgba(37, 99, 235, 0.28);
     --accent-purple: #8b5cf6;  /* Royal Purple */
-    --accent-teal: #14b8a6;    /* Teal 500 */
+    --accent-teal: #0f766e;    /* Medicina Teal estructural */
+    --accent-teal-bright: #2dd4bf; /* Medicina Teal acento texto/nodo */
     --accent-orange: #f97316;  /* Naranja 500 */
 
-    /* Gradientes Signature */
-    --manta-pill-gradient: linear-gradient(90deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%);
-    --manta-pill-glow: 0 4px 20px rgba(59, 130, 246, 0.35), 0 0 15px rgba(6, 182, 212, 0.25);
+    /* Gradientes Signature & Hairline Border Gradients */
+    --manta-pill-gradient: linear-gradient(90deg, #1d4ed8 0%, #2563eb 52%, #0891b2 100%);
+    --manta-pill-glow: 0 4px 20px rgba(37, 99, 235, 0.32), 0 0 15px rgba(56, 189, 248, 0.18);
+    --border-gradient-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(56, 189, 248, 0.22) 48%, rgba(255, 255, 255, 0.04) 100%);
+    --border-gradient-teal: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(45, 212, 191, 0.28) 52%, rgba(255, 255, 255, 0.04) 100%);
 
     /* Bordes y Líneas Divisorias */
     --border-color: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(59, 130, 246, 0.35);
-    --border-glow: rgba(59, 130, 246, 0.2);
+    --border-hover: rgba(56, 189, 248, 0.36);
+    --border-glow: rgba(37, 99, 235, 0.24);
     --border-dim: rgba(255, 255, 255, 0.05);
 
     /* Colores Funcionales */
@@ -62,39 +66,39 @@
 
     /* Sombras y Elevaciones */
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.8);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.7);
-    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.85);
-    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.95);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.72);
+    --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.85);
+    --shadow-xl: 0 22px 44px rgba(0, 0, 0, 0.95);
 
-    /* Componentes Específicos */
-    --header-bg: rgba(5, 5, 5, 0.85);
-    --header-border: rgba(255, 255, 255, 0.06);
-    --sidebar-bg: #0a0a0a;
-    --sidebar-border: rgba(255, 255, 255, 0.08);
-    --sidebar-hover: #18181b;
-    --sidebar-active-bg: rgba(59, 130, 246, 0.12);
-    --sidebar-active-border: #3b82f6;
-    --sidebar-text: #f8fafc;
+    /* Componentes Específicos — Sin tintes azules de fondo */
+    --header-bg: rgba(5, 5, 7, 0.82);
+    --header-border: rgba(255, 255, 255, 0.07);
+    --sidebar-bg: #08080a;
+    --sidebar-border: rgba(255, 255, 255, 0.07);
+    --sidebar-hover: #141418;
+    --sidebar-active-bg: rgba(255, 255, 255, 0.05);
+    --sidebar-active-border: #2563eb;
+    --sidebar-text: #f4f4f6;
     --sidebar-text-muted: #94a3b8;
     
-    --input-bg: #121212;
+    --input-bg: #101014;
     --input-border: rgba(255, 255, 255, 0.12);
     --input-text: #ffffff;
     --input-placeholder: #64748b;
 
-    --glass-bg: rgba(10, 10, 10, 0.8);
+    --glass-bg: rgba(14, 14, 18, 0.78);
     --glass-border: rgba(255, 255, 255, 0.08);
 
-    --table-header-bg: rgba(59, 130, 246, 0.12);
-    --table-border: rgba(255, 255, 255, 0.06);
+    --table-header-bg: rgba(255, 255, 255, 0.04);
+    --table-border: rgba(255, 255, 255, 0.07);
     --table-row-hover: rgba(255, 255, 255, 0.03);
 
-    --dropdown-bg: #0a0a0a;
-    --dropdown-border: rgba(59, 130, 246, 0.25);
+    --dropdown-bg: #0d0d10;
+    --dropdown-border: rgba(255, 255, 255, 0.12);
 
     /* Tipografía y Escala */
     --font-main: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     --font-weight-bold: 700;
     --font-weight-extrabold: 800;
     --font-weight-black: 900;

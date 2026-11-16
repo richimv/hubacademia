@@ -2,14 +2,14 @@
  * Markup and state: chat.js. Colour: theme.css. No duplicate theme blocks.
  * Only the live guide UI is styled here; removed history/persona menus have no UI.
  */
-:root { --guide-launcher-size: 56px; --guide-edge: max(16px, env(safe-area-inset-right)); --guide-bottom: max(16px, env(safe-area-inset-bottom)); }
+:root { --guide-launcher-size: 64px; --guide-edge: max(16px, env(safe-area-inset-right)); --guide-bottom: max(16px, env(safe-area-inset-bottom)); }
 .chatbot-container, .chatbot-container *, .chat-invitation-bubble, .chat-invitation-bubble * { box-sizing: border-box; }
 .chatbot-container { position: fixed; inset: calc(88px + var(--trial-bar-height, 0px)) 16px 16px auto; width: min(480px, calc(100vw - 32px)); height: calc(100dvh - 104px - var(--trial-bar-height, 0px)); max-height: none; display: flex; flex-direction: column; background: var(--bg-secondary); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-xl); font: .9375rem/1.7 var(--font-main); overflow: hidden; z-index: 9990; opacity: 0; visibility: hidden; pointer-events: none; transform: translateX(calc(100% + 24px)); transition: transform 240ms cubic-bezier(.22,1,.36,1), opacity 180ms, visibility 240ms; }
 .chatbot-container.open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
 .chatbot-main-panel { display: flex; flex: 1; flex-direction: column; width: 100%; min-width: 0; min-height: 0; }
 .chatbot-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; flex-shrink: 0; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary); }
 .chatbot-title-selector { display: flex; align-items: center; min-width: 0; gap: 12px; }
-.chatbot-header-avatar { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
+.chatbot-header-avatar { display: grid; place-items: center; width: 38px; height: 38px; object-fit: contain; flex-shrink: 0; }
 .chatbot-title-heading { margin: 0; font: 600 1rem/1.3 var(--font-main); color: var(--text-main); letter-spacing: -.02em; }
 .chatbot-subtitle { margin: 4px 0 0; font-size: .8125rem; color: var(--text-secondary); }
 .chatbot-header-actions { display: flex; align-items: center; gap: 8px; }
@@ -48,9 +48,10 @@
 .chatbot-send:disabled { opacity: .6; cursor: wait; }
 .chatbot-disclaimer-text { margin: 10px 0 0; color: var(--text-muted); font-size: .75rem; line-height: 1.5; }
 .chatbot-container :is(button,a,textarea):focus-visible, .chat-invitation-bubble button:focus-visible, .chatbot-toggle:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 3px; }
-.chatbot-toggle { position: fixed; right: var(--guide-edge); bottom: var(--guide-bottom); width: var(--guide-launcher-size); height: var(--guide-launcher-size); padding: 0; border: 0; border-radius: 6px; background: transparent; cursor: pointer; z-index: 9900; }
-.chatbot-toggle-avatar { display: block; width: 100%; height: 100%; object-fit: contain; }
-.chatbot-notification { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+.chatbot-toggle { position: fixed; right: var(--guide-edge); bottom: var(--guide-bottom); width: var(--guide-launcher-size); height: var(--guide-launcher-size); padding: 0; border: 0; border-radius: 9999px; background: transparent; cursor: pointer; z-index: 9900; overflow: visible; transition: transform 180ms cubic-bezier(.22,1,.36,1); }
+.chatbot-toggle:active { transform: scale(.94); }
+.chatbot-toggle-avatar { display: grid; place-items: center; width: 100%; height: 100%; object-fit: contain; overflow: visible; }
+.chatbot-notification { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
 .chat-invitation-bubble { display: flex; align-items: center; gap: 8px; position: fixed; right: var(--guide-edge); bottom: calc(var(--guide-bottom) + var(--guide-launcher-size) + 12px); width: min(280px, calc(100vw - 32px)); padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-secondary); color: var(--text-main); font-family: var(--font-main); box-shadow: var(--shadow-md); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(8px); z-index: 9901; transition: opacity 180ms, visibility 180ms, transform 180ms; }
 .chat-invitation-bubble.active { opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
 .chat-invitation-open { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--text-main); font: 500 .875rem/1.5 var(--font-main); text-align: left; cursor: pointer; }
@@ -61,7 +62,7 @@
 .chatbot-container.chat-fullscreen .chatbot-messages > * { width: min(100%, 960px); margin-inline: auto; }
 .chatbot-container.chat-fullscreen .chatbot-input-container { padding-inline: max(20px, calc((100vw - 960px) / 2)); }
 @media (max-width: 750px) {
-    :root { --guide-launcher-size: 52px; }
+    :root { --guide-launcher-size: 56px; }
     .chatbot-container { inset: calc(72px + var(--trial-bar-height, 0px)) 8px 8px; width: calc(100vw - 16px); height: calc(100dvh - 80px - var(--trial-bar-height, 0px)); }
     .chatbot-header { padding: 16px; gap: 8px; }
     .chatbot-title-selector { gap: 8px; }
@@ -82,4 +83,172 @@
     text-decoration: underline;
     text-underline-offset: 3px;
     font: inherit;
+}
+
+/* ==========================================================================
+   HUBI RIGGED SVG MASCOT — GPU-composited state animations (no external deps)
+   ========================================================================== */
+.hubi-rig {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform-origin: center;
+    transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+}
+.hubi-rig-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+.hubi-float {
+    transform-origin: 60px 64px;
+    animation: hubi-bob 3.4s ease-in-out infinite;
+}
+.hubi-aura {
+    transform-origin: 60px 64px;
+    animation: hubi-aura-pulse 3.4s ease-in-out infinite;
+}
+.hubi-wing--ul { transform-origin: 44px 58px; animation: hubi-wing-left 2.1s ease-in-out infinite; }
+.hubi-wing--ur { transform-origin: 76px 58px; animation: hubi-wing-right 2.1s ease-in-out infinite; }
+.hubi-wing--ll { transform-origin: 45px 70px; animation: hubi-wing-left 2.1s ease-in-out -0.25s infinite; }
+.hubi-wing--lr { transform-origin: 75px 70px; animation: hubi-wing-right 2.1s ease-in-out -0.25s infinite; }
+.hubi-antenna--left { transform-origin: 51px 37px; animation: hubi-antenna-sway-l 3.2s ease-in-out infinite; }
+.hubi-antenna--right { transform-origin: 69px 37px; animation: hubi-antenna-sway-r 3.2s ease-in-out -0.5s infinite; }
+.hubi-satellite-wrap { transform-origin: 60px 70px; animation: hubi-orbit-comet 5.5s ease-in-out infinite; }
+.hubi-sparkle--1 { animation: hubi-twinkle 2.8s ease-in-out infinite; }
+.hubi-sparkle--2 { animation: hubi-twinkle 2.8s ease-in-out 0.9s infinite; }
+.hubi-sparkle--3 { animation: hubi-twinkle 2.8s ease-in-out 1.7s infinite; }
+
+.hubi-eyes-open {
+    transform-origin: 60px 58.5px;
+    transition: opacity 140ms ease;
+}
+.hubi-eyes-open.is-blinking {
+    transform: scaleY(0.08);
+}
+.hubi-gaze {
+    transition: transform 140ms ease-out;
+}
+.hubi-eyes-happy {
+    opacity: 0;
+    transition: opacity 150ms ease;
+}
+.hubi-mouth-smile {
+    transform-origin: 60px 67px;
+    transition: opacity 140ms ease, transform 160ms ease;
+}
+.hubi-mouth-think {
+    opacity: 0;
+    transform-origin: 60px 67.8px;
+    transition: opacity 140ms ease;
+}
+.hubi-cheek {
+    transition: opacity 180ms ease;
+}
+
+/* Interactive states */
+.hubi-rig[data-hubi-state="hover"],
+.hubi-rig[data-hubi-state="invited"] {
+    transform: translateY(-3px) scale(1.07);
+}
+.hubi-rig[data-hubi-state="hover"] .hubi-eyes-open,
+.hubi-rig[data-hubi-state="invited"] .hubi-eyes-open,
+.hubi-rig[data-hubi-state="reply"] .hubi-eyes-open {
+    opacity: 0;
+}
+.hubi-rig[data-hubi-state="hover"] .hubi-eyes-happy,
+.hubi-rig[data-hubi-state="invited"] .hubi-eyes-happy,
+.hubi-rig[data-hubi-state="reply"] .hubi-eyes-happy {
+    opacity: 1;
+}
+.hubi-rig[data-hubi-state="hover"] .hubi-cheek,
+.hubi-rig[data-hubi-state="invited"] .hubi-cheek,
+.hubi-rig[data-hubi-state="reply"] .hubi-cheek {
+    opacity: 0.65;
+}
+.hubi-rig[data-hubi-state="hover"] .hubi-mouth-smile,
+.hubi-rig[data-hubi-state="invited"] .hubi-mouth-smile,
+.hubi-rig[data-hubi-state="reply"] .hubi-mouth-smile {
+    transform: scale(1.18);
+}
+.hubi-rig[data-hubi-state="hover"] .hubi-wing--ul,
+.hubi-rig[data-hubi-state="hover"] .hubi-wing--ur,
+.hubi-rig[data-hubi-state="hover"] .hubi-wing--ll,
+.hubi-rig[data-hubi-state="hover"] .hubi-wing--lr {
+    animation-duration: 0.65s;
+}
+.hubi-rig[data-hubi-state="thinking"] .hubi-gaze {
+    transform: translate(1.8px, -1.6px);
+}
+.hubi-rig[data-hubi-state="thinking"] .hubi-mouth-smile {
+    opacity: 0;
+}
+.hubi-rig[data-hubi-state="thinking"] .hubi-mouth-think {
+    opacity: 1;
+}
+.hubi-rig[data-hubi-state="thinking"] .hubi-antenna-halo {
+    animation: hubi-think-glow 0.9s ease-in-out infinite;
+}
+.hubi-rig[data-hubi-state="thinking"] .hubi-satellite-wrap {
+    animation-duration: 1.8s;
+}
+.hubi-rig[data-hubi-state="reply"] .hubi-float {
+    animation: hubi-celebrate 0.55s cubic-bezier(.22, 1, .36, 1) 2;
+}
+
+@keyframes hubi-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4.5px); }
+}
+@keyframes hubi-aura-pulse {
+    0%, 100% { transform: scale(0.94); opacity: 0.72; }
+    50% { transform: scale(1.06); opacity: 1; }
+}
+@keyframes hubi-wing-left {
+    0%, 100% { transform: rotate(0deg) scaleX(1); }
+    50% { transform: rotate(-9deg) scaleX(0.92); }
+}
+@keyframes hubi-wing-right {
+    0%, 100% { transform: rotate(0deg) scaleX(1); }
+    50% { transform: rotate(9deg) scaleX(0.92); }
+}
+@keyframes hubi-antenna-sway-l {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-5deg); }
+}
+@keyframes hubi-antenna-sway-r {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(5deg); }
+}
+@keyframes hubi-orbit-comet {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.95; }
+    50% { transform: translate(-76px, 9px) scale(0.76); opacity: 0.55; }
+}
+@keyframes hubi-twinkle {
+    0%, 100% { opacity: 0.25; transform: scale(0.8); }
+    50% { opacity: 0.95; transform: scale(1.25); }
+}
+@keyframes hubi-think-glow {
+    0%, 100% { opacity: 0.22; }
+    50% { opacity: 0.78; }
+}
+@keyframes hubi-celebrate {
+    0%, 100% { transform: translateY(0) scale(1); }
+    45% { transform: translateY(-7px) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hubi-rig,
+    .hubi-rig *,
+    .hubi-rig *::before,
+    .hubi-rig *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+html[data-reduce-motion="true"] .hubi-rig,
+html[data-reduce-motion="true"] .hubi-rig * {
+    animation: none !important;
+    transition: none !important;
 }

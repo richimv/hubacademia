@@ -1,12 +1,12 @@
 # Sistema visual de Hub Academia
 
-Actualizado: 4 de noviembre de 2026. Referencia vigente para la presentación web.
+Actualizado: 15 de noviembre de 2026. Referencia vigente para la presentación web, documentada además en [DESIGN.md](../DESIGN.md) y [WEB-BRIEF.md](WEB-BRIEF.md).
 
 ## Identidad y dirección
 
-Hub Academia desarrolla soluciones de inteligencia artificial aplicada al conocimiento profesional. Los simuladores, Repaso, Notas y el Boletín IA son productos de ese ecosistema. Educación Inicial conserva su sección y plataforma propias.
+Hub Academia desarrolla soluciones e información verificada sobre inteligencia artificial aplicada al conocimiento profesional en el Perú. Los simuladores, Repaso, Notas y el Boletín IA forman parte de ese ecosistema. Educación Inicial conserva su sección y plataforma propias.
 
-Se aplica la habilidad `design-taste-frontend`. La dirección de las pantallas de trabajo está guardada en `.taste-skill/workspace/direction.json`: True-black flat, semilla 1169276946. Se conservan Inter y el azul institucional. La landing y las herramientas comparten tipografía, superficies y controles; cada vista mantiene la jerarquía apropiada a su tarea.
+La portada pública (`/`) opera fija en **Dark Cinema** (`data-theme="dark"` y `data-theme-locked="dark"`), mientras los espacios de trabajo (`/simulator-dashboard`, `/repaso`, `/library`, `/pricing`, perfil y gestión) conservan alternancia Dual Mode (Dark-Glass Neutro / Light Slate Studio) sin contaminar la preferencia `hub_theme` guardada del usuario. En modo oscuro quedan prohibidas las superficies de fondo azules: todo lienzo y panel utiliza grafito/obsidiana neutro (`#050507`, `#0D0D10`, `#141418`), reservando azul cobalto (`#2563EB`), cian de telemetría (`#38BDF8`) y teal clínico (`#0F766E` / `#2DD4BF`) exclusivamente para acentos funcionales, CTAs, enlaces y refracción WebGL.
 
 ## Tokens
 
@@ -14,16 +14,17 @@ Los valores se definen en `src/presentation/public/css/theme.css`. Las hojas de 
 
 | Uso | Oscuro | Claro |
 | --- | --- | --- |
-| Fondo general | `--bg-main: #050505` | `#edf2f7` |
-| Panel | `--bg-secondary: #111113` | `#ffffff` |
-| Contenedor anidado | `--bg-tertiary: #1c1c20` | `#e2e8f0` |
-| Texto principal | `--text-main: #f8fafc` | `#0f172a` |
+| Fondo general | `--bg-main: #050507` | `#edf2f7` |
+| Panel | `--bg-secondary: #0d0d10` | `#ffffff` |
+| Contenedor anidado | `--bg-tertiary: #141418` | `#e2e8f0` |
+| Texto principal | `--text-main: #f4f4f6` | `#0f172a` |
 | Texto de lectura | `--text-secondary: #cbd5e1` | `#334155` |
 | Texto secundario | `--text-muted: #94a3b8` | `#64748b` |
 | Acción | `--primary: #2563eb` | `#2563eb` |
 | Acción al pasar el cursor | `--primary-hover: #1d4ed8` | `#1d4ed8` |
-| Enlace o CTA de texto | `--primary-light: #60a5fa` | `#1d4ed8` |
+| Enlace o CTA de texto | `--primary-light: #38bdf8` | `#1d4ed8` |
 | Texto sobre acción | `--on-primary: #ffffff` | `#ffffff` |
+| Borde gradiente focal | `--border-gradient-surface` | N/A |
 
 Medicina utiliza un acento teal local definido en `workspace.css` con variantes para ambos temas. Los colores de éxito, aviso y error señalan estados reales; los gráficos conservan sus categorías.
 

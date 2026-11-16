@@ -5,8 +5,9 @@
  */
 const base = '/assets/landing';
 export const MEDIA_SLOTS = {
+    // S01 Hero ahora se renderiza con el escenario WebGL de IA Aplicada (world.js).
     hero: {
-        enabled: true,
+        enabled: false,
         desktop: { mp4: `${base}/video/web-v1/hero-desktop.mp4`, poster: `${base}/posters/web-v1/hero-desktop.webp` },
         mobile: { mp4: `${base}/video/web-v1/hero-mobile.mp4`, poster: `${base}/posters/web-v1/hero-mobile.webp` }
     },

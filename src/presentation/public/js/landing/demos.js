@@ -1,6 +1,6 @@
 /** Product controls and local sample forms. Markup lives in index.html. */
-import { INITIAL_EXAMPLES } from './data.js?v=160d7c8e22c9';
-import { animate } from './motion.js?v=160d7c8e22c9';
+import { INITIAL_EXAMPLES } from './data.js?v=5df7c36bdf87';
+import { animate } from './motion.js?v=5df7c36bdf87';
 
 export function initProducts() {
     const stage = document.getElementById('tools-live-stage');
@@ -29,6 +29,7 @@ export function initProducts() {
             ], { duration: 550 });
         });
         chapters.forEach((chapter) => chapter.classList.toggle('is-current', chapter.dataset.productChapter === id));
+        window.dispatchEvent(new CustomEvent('hub:product-focus', { detail: { product: id } }));
     }
 
     tabs.forEach((tab, index) => {

@@ -3,10 +3,11 @@
  * Content: index.html / local samples: landing/data.js / media: landing/media-config.js.
  * Global session, account menu and Hubi remain owned by app.js.
  */
-import { initProducts, initMemoryCard, initInitialDemo } from './landing/demos.js?v=160d7c8e22c9';
-import { initMobileMenu, initGuide, initNavigation } from './landing/navigation.js?v=160d7c8e22c9';
-import { initReveals, initScrollMotion } from './landing/motion.js?v=160d7c8e22c9';
-import { initMedia } from './landing/media.js?v=160d7c8e22c9';
+import { initProducts, initMemoryCard, initInitialDemo } from './landing/demos.js?v=5df7c36bdf87';
+import { initMobileMenu, initGuide, initNavigation } from './landing/navigation.js?v=5df7c36bdf87';
+import { initReveals, initScrollMotion } from './landing/motion.js?v=5df7c36bdf87';
+import { initMedia } from './landing/media.js?v=5df7c36bdf87';
+import { initLandingWorld } from './landing/world.js?v=5df7c36bdf87';
 
 function initLanding() {
     if (!document.body.classList.contains('landing-page')) return;
@@ -20,7 +21,8 @@ function initLanding() {
         ['reveals', initReveals],
         ['navigation', initNavigation],
         ['media', initMedia],
-        ['scroll', () => initScrollMotion(products)]
+        ['scroll', () => initScrollMotion(products)],
+        ['world', initLandingWorld]
     ];
     for (const [name, initialize] of initializers) {
         try { initialize(); }

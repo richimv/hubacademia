@@ -66,10 +66,10 @@ body.workspace-page.sidebar-collapsed {
 .workspace-page .main-header {
     height: 72px;
     padding: 0 28px;
-    background: var(--ui-ground);
+    background: var(--header-bg);
     border-bottom: 1px solid var(--border-color);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     box-shadow: none;
     gap: 24px;
 }
@@ -174,6 +174,7 @@ body.workspace-page.sidebar-collapsed {
     border-radius: var(--ui-radius);
     box-shadow: none;
     min-height: 44px;
+    transition: background-color 150ms ease, transform 110ms cubic-bezier(.22,1,.36,1);
 }
 .workspace-page :is(.btn-secondary, .btn-secondary-action, .btn-guide-hero, .btn-premium-secondary, .btn-header-exit, .btn-prev-premium) {
     background: var(--ui-raised);
@@ -182,6 +183,10 @@ body.workspace-page.sidebar-collapsed {
     border-radius: var(--ui-radius);
     box-shadow: none;
     min-height: 44px;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 110ms cubic-bezier(.22,1,.36,1);
+}
+.workspace-page :is(.btn-primary, .btn-premium-primary, .btn-land-primary, .btn-config-hero, .btn-next-premium, .btn-results-review, .btn-action-primary, .btn-secondary, .btn-secondary-action, .btn-guide-hero, .btn-premium-secondary, .btn-header-exit, .btn-prev-premium):active {
+    transform: scale(.975);
 }
 .workspace-page :is(.sim-domain-tab, .kpi-mode-tab, .kpi-time-tab, .repaso-view-tab) {
     border-radius: var(--ui-radius);

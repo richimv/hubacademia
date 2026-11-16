@@ -58,7 +58,7 @@ class ChatComponent {
                 <div class="chatbot-main-panel">
                     <div class="chatbot-header">
                         <div class="chatbot-title-selector" title="Asistente Guía Hub Academia">
-                            <img id="chatbot-icon" src="/assets/hubifrente.png" alt="Hubi" class="chatbot-header-avatar">
+                            <span id="chatbot-icon" class="chatbot-header-avatar" aria-hidden="true"></span>
                             <div><h3 id="chatbot-title-heading" class="chatbot-title-heading">Hubi</h3><p class="chatbot-subtitle">Atención de Hub Academia</p></div>
                         </div>
                         <div class="chatbot-header-actions">
@@ -96,7 +96,7 @@ class ChatComponent {
             </div>
 
             <button id="chatbot-toggle" class="chatbot-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="chatbot-container" aria-label="Abrir chat del Asistente">
-                <img src="/assets/hubi.png" alt="Hubi" class="chatbot-toggle-avatar">
+                <span id="chatbot-toggle-avatar" class="chatbot-toggle-avatar" aria-hidden="true"></span>
                 <span class="chatbot-notification" id="chatbot-notification" style="display: none;"></span>
             </button>
             
@@ -109,12 +109,29 @@ class ChatComponent {
         const targetEl = document.querySelector(this.targetSelector);
         if (targetEl) {
             targetEl.insertAdjacentHTML('beforeend', chatHTML);
+            this.mountHubiAvatars();
         } else {
             console.error(`Target selector ${this.targetSelector} no encontrado para inyectar el Chat.`);
         }
 
         // Inicializar el dropdown con el estado del usuario actual
         this.updatePersonaDropdown(user);
+    }
+
+    mountHubiAvatars() {
+        const toggleHost = document.getElementById('chatbot-toggle-avatar');
+        const headerHost = document.getElementById('chatbot-icon');
+        if (window.HubiAvatar && typeof window.HubiAvatar.mountHubiAvatar === 'function') {
+            this.launcherAvatar = window.HubiAvatar.mountHubiAvatar(toggleHost, { variant: 'launcher', enableGaze: true });
+            this.headerAvatar = window.HubiAvatar.mountHubiAvatar(headerHost, { variant: 'header', enableGaze: false });
+            return;
+        }
+        if (toggleHost) {
+            toggleHost.innerHTML = '<img src="/assets/hubi.png" alt="" class="chatbot-toggle-avatar">';
+        }
+        if (headerHost) {
+            headerHost.innerHTML = '<img src="/assets/hubifrente.png" alt="" class="chatbot-header-avatar">';
+        }
     }
 
     updatePersonaDropdown(user) {
@@ -170,12 +187,7 @@ class ChatComponent {
                 icon.src = '/assets/hubifrente.png';
                 icon.className = 'chatbot-header-avatar';
             } else {
-                const classes = {
-                    neutral: 'fas fa-robot',
-                    medicine: 'fas fa-stethoscope',
-                    education: 'fas fa-graduation-cap'
-                };
-                icon.className = `${classes[this.specialization] || 'fas fa-robot'} chatbot-icon-svg`;
+                icon.className = 'chatbot-header-avatar';
             }
         }
 
@@ -262,6 +274,16 @@ class ChatComponent {
                 e.preventDefault();
                 e.stopPropagation();
                 this.handleChatToggleClick();
+            });
+            toggleBtn.addEventListener('pointerenter', () => this.launcherAvatar?.setState('hover'));
+            toggleBtn.addEventListener('pointerleave', () => {
+                const bubbleOpen = document.getElementById('chat-invitation-bubble')?.classList.contains('active');
+                this.launcherAvatar?.setState(bubbleOpen ? 'invited' : 'idle');
+            });
+            toggleBtn.addEventListener('focus', () => this.launcherAvatar?.setState('hover'));
+            toggleBtn.addEventListener('blur', () => {
+                const bubbleOpen = document.getElementById('chat-invitation-bubble')?.classList.contains('active');
+                this.launcherAvatar?.setState(bubbleOpen ? 'invited' : 'idle');
             });
         }
 
@@ -618,6 +640,9 @@ class ChatComponent {
         bubble.classList.toggle('active', visible);
         bubble.setAttribute('aria-hidden', String(!visible));
         bubble.inert = !visible;
+        if (!this.isSending) {
+            this.launcherAvatar?.setState(visible ? 'invited' : 'idle');
+        }
     }
 
     toggleChat() {
@@ -805,8 +830,8 @@ class ChatComponent {
 
             this.hideTypingIndicator();
 
-
             this.addMessage(data.respuesta, 'bot', { ...data, messageId: data.messageId });
+            this.headerAvatar?.flashReply(1500);
 
             if (data.sugerencias && data.sugerencias.length > 0) {
                 this.showFollowUpSuggestions(data.sugerencias);
@@ -972,6 +997,8 @@ class ChatComponent {
     showTypingIndicator() {
         const typingIndicator = document.getElementById('chatbot-typing');
         typingIndicator.style.display = 'flex';
+        this.headerAvatar?.setState('thinking');
+        this.launcherAvatar?.setState('thinking');
 
         const messagesContainer = document.getElementById('chatbot-messages');
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -980,6 +1007,12 @@ class ChatComponent {
     hideTypingIndicator() {
         const typingIndicator = document.getElementById('chatbot-typing');
         typingIndicator.style.display = 'none';
+        if (this.headerAvatar?.getState() === 'thinking') {
+            this.headerAvatar.setState('idle');
+        }
+        if (this.launcherAvatar?.getState() === 'thinking') {
+            this.launcherAvatar.setState('idle');
+        }
     }
 
     showFollowUpSuggestions(suggestions) {

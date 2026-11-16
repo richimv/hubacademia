@@ -111,4 +111,21 @@ describe('ThemeManager Engine', () => {
         manager.setTheme('dark');
         expect(listener).toHaveBeenCalledWith('dark');
     });
+
+    test('debe respetar data-theme-locked="dark" sin sobrescribir la preferencia light guardada en localStorage', () => {
+        mockStorage['hub_theme'] = 'light';
+        mockDocumentElement.dataset = { themeLocked: 'dark' };
+
+        const manager = new ThemeManager();
+        expect(manager.isLocked()).toBe(true);
+        expect(manager.getTheme()).toBe('dark');
+        expect(mockDocumentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'dark');
+
+        const toggled = manager.toggleTheme();
+        manager.setTheme('light');
+        expect(toggled).toBe('dark');
+        expect(manager.getTheme()).toBe('dark');
+        expect(mockStorage['hub_theme']).toBe('light');
+        expect(global.localStorage.setItem).not.toHaveBeenCalled();
+    });
 });

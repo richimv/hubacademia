@@ -10,8 +10,9 @@
 .workspace-page[data-workspace="repaso"] .tree-content { border-radius: 4px; min-height: 40px; }
 .workspace-page[data-workspace="repaso"] .decks-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
 .workspace-page[data-workspace="repaso"] :is(.deck-card-title-text, .deck-card-mob-title) { font-weight: 600; }
-.workspace-page[data-workspace="repaso"] .deck-action-btn { width: 36px; height: 36px; border-radius: 4px; }
+.workspace-page[data-workspace="repaso"] .deck-action-btn { width: 36px; height: 36px; border-radius: 4px; transition: background-color 140ms ease, transform 100ms ease; }
 .workspace-page[data-workspace="repaso"] .deck-action-btn:hover { transform: none; }
+.workspace-page[data-workspace="repaso"] .deck-action-btn:active { transform: scale(.96); }
 .workspace-page[data-workspace="repaso"] .deck-action-btn.btn-act-play { background: var(--primary) !important; border-color: var(--primary) !important; }
 .workspace-page[data-workspace="repaso"] .deck-action-btn.btn-act-play:hover { background: var(--primary-hover) !important; }
 .workspace-page[data-workspace="repaso"] .deck-mastery-header { color: var(--text-secondary); font-weight: 500; }

@@ -2,8 +2,12 @@
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const runningAnimations = new Set();
 
+function isMotionDisabled() {
+    return reducedMotion.matches || document.documentElement.dataset.reduceMotion === 'true';
+}
+
 export function animate(element, keyframes, options = {}) {
-    if (!element || reducedMotion.matches || !element.animate) return;
+    if (!element || isMotionDisabled() || !element.animate) return;
     const animation = element.animate(keyframes, {
         duration: 500, easing: 'cubic-bezier(.22,1,.36,1)', ...options
     });
@@ -49,17 +53,30 @@ export function initScrollMotion(products) {
         });
     });
     media.add('(min-width: 961px) and (prefers-reduced-motion: no-preference)', () => {
-        if (!document.querySelector('[data-hero-media][data-video-mode="scroll"]')) {
-            gsap.fromTo('[data-hero-media]', { yPercent: -2 }, {
-                yPercent: 5, ease: 'none',
-                scrollTrigger: { trigger: '#hero-section', start: 'top top', end: 'bottom top', scrub: true }
-            });
-        }
+        gsap.fromTo('.home-hero-copy', { y: 0, opacity: 1, scale: 1 }, {
+            y: -56, opacity: 0.14, scale: 0.96, ease: 'none',
+            scrollTrigger: { trigger: '#hero-scroll-scene', start: 'top top', end: 'bottom top', scrub: 0.4 }
+        });
         document.querySelectorAll('[data-image-drift]').forEach((image) => {
             if (image.closest('[data-video-mode="scroll"]')) return;
             gsap.fromTo(image, { scale: 1.08, yPercent: -2 }, {
                 scale: 1.02, yPercent: 2, ease: 'none',
                 scrollTrigger: { trigger: image.closest('figure'), start: 'top bottom', end: 'bottom top', scrub: .35 }
+            });
+        });
+        document.querySelectorAll('.inicial-visual, .bulletin-art').forEach((figure) => {
+            gsap.fromTo(figure, {
+                transformPerspective: 1200,
+                rotateX: 3.5,
+                y: 26,
+                scale: 0.975
+            }, {
+                transformPerspective: 1200,
+                rotateX: -2.0,
+                y: -18,
+                scale: 1.015,
+                ease: 'none',
+                scrollTrigger: { trigger: figure, start: 'top 90%', end: 'bottom 15%', scrub: 0.45 }
             });
         });
         if (products) {
@@ -97,4 +114,7 @@ export function initScrollMotion(products) {
 
 reducedMotion.addEventListener('change', (event) => {
     if (event.matches) runningAnimations.forEach((animation) => animation.cancel());
+});
+window.addEventListener('hub:motion-preference-changed', (event) => {
+    if (event.detail?.reduced) runningAnimations.forEach((animation) => animation.cancel());
 });

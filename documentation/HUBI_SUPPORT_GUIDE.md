@@ -26,7 +26,7 @@ La ficha debe actualizarse al cambiar servicios, rutas, precios o disponibilidad
 
 | Capa | Responsabilidad |
 | --- | --- |
-| Presentación: `js/chat.js` | Ventana, bienvenida abierta a preguntas, historial breve, mensajes y enlaces seguros. Se retiraron el contador ficticio de dos consultas de visitante y la navegación antigua por carreras/cursos. |
+| Presentación: `js/chat.js`, `js/ui/hubiAvatar.js` y `css/chat.css` | Ventana, bienvenida abierta a preguntas, historial breve, mensajes, enlaces seguros y mascota vectorial riggeada por capas SVG (`hubiAvatar.js`) con estados `idle`, `hover`, `invited`, `thinking` y `reply` respetando `prefers-reduced-motion` (con respaldo estático a `hubi.png`/`hubifrente.png`). Se retiraron el contador ficticio de dos consultas de visitante y la navegación antigua por carreras/cursos. |
 | Aplicación: `chatController.js` | Validación, respuesta HTTP y delegación en el servicio de atención. Mantiene el contrato `/api/chat`. |
 | Dominio: `platformSupportService.js` | Contexto curado, historial acotado, menús y respaldo de orientación. Recibe el proveedor por inyección. |
 | Infraestructura: `platformSupportGateway.js` | REST de Google, credencial privada, límite de salida, timeout de 10 s y errores sanitizados. |

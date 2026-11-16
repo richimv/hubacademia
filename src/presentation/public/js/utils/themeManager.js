@@ -26,9 +26,32 @@
         }
 
         /**
-         * Obtiene el tema inicial desde localStorage o preferencia del sistema
+         * Verifica si la vista actual declara bloqueo de tema via data-theme-locked.
+         * Se lee mediante dataset para mantener compatibilidad con HTML5 sin colisionar
+         * con mocks heredados de getAttribute.
+         */
+        _getLockedTheme() {
+            const root = typeof document !== 'undefined' ? document.documentElement : null;
+            const locked = root && root.dataset ? root.dataset.themeLocked : null;
+            return (locked === THEME_DARK || locked === THEME_LIGHT) ? locked : null;
+        }
+
+        /**
+         * Indica si el tema de esta página está fijado por diseño.
+         */
+        isLocked() {
+            return this._getLockedTheme() !== null;
+        }
+
+        /**
+         * Obtiene el tema inicial desde bloqueo de página, localStorage o preferencia del sistema
          */
         _getInitialTheme() {
+            const locked = this._getLockedTheme();
+            if (locked) {
+                return locked;
+            }
+
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
                 if (saved === THEME_DARK || saved === THEME_LIGHT) {
@@ -49,29 +72,37 @@
          * Aplica el tema al elemento raíz <html>
          */
         _applyTheme(theme, save = true) {
-            this.theme = theme;
-            document.documentElement.setAttribute('data-theme', theme);
+            const locked = this._getLockedTheme();
+            const effectiveTheme = locked || theme;
+            const shouldPersist = Boolean(save && !locked);
+
+            this.theme = effectiveTheme;
+            document.documentElement.setAttribute('data-theme', effectiveTheme);
             
             // Compatibilidad con meta theme-color para navegadores móviles
             const metaTheme = document.querySelector('meta[name="theme-color"]');
             if (metaTheme) {
-                metaTheme.setAttribute('content', theme === THEME_LIGHT ? '#f8fafc' : '#050505');
+                metaTheme.setAttribute('content', effectiveTheme === THEME_LIGHT ? '#f8fafc' : '#050507');
             }
 
-            if (save) {
+            if (shouldPersist) {
                 try {
-                    localStorage.setItem(STORAGE_KEY, theme);
+                    localStorage.setItem(STORAGE_KEY, effectiveTheme);
                 } catch (e) {}
             }
 
             this.updateToggleButtons();
-            this._notifyListeners(theme);
+            this._notifyListeners(effectiveTheme);
         }
 
         /**
          * Alterna entre modo claro y oscuro
          */
         toggleTheme() {
+            const locked = this._getLockedTheme();
+            if (locked) {
+                return locked;
+            }
             const next = this.theme === THEME_DARK ? THEME_LIGHT : THEME_DARK;
             this._applyTheme(next, true);
             return next;
@@ -81,6 +112,9 @@
          * Establece un tema específico
          */
         setTheme(theme) {
+            if (this._getLockedTheme()) {
+                return;
+            }
             if (theme === THEME_DARK || theme === THEME_LIGHT) {
                 this._applyTheme(theme, true);
             }
@@ -161,6 +195,9 @@
             if (!window.matchMedia) return;
             const mq = window.matchMedia('(prefers-color-scheme: dark)');
             const handler = (e) => {
+                if (this._getLockedTheme()) {
+                    return;
+                }
                 // Solo auto-adaptar si el usuario no ha forzado manualmente en localStorage
                 try {
                     if (!localStorage.getItem(STORAGE_KEY)) {

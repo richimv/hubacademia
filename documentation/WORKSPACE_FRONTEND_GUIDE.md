@@ -1,6 +1,6 @@
 # Interfaz de estudio de Hub Academia
 
-Actualización: 4 de noviembre de 2026. Implementación en la capa `presentation/`, con HTML, CSS y JavaScript existentes. Pendiente de validación por el usuario; no se ejecutaron pruebas, lint, build ni inspección en navegador por su indicación expresa. No se desplegó a producción.
+Actualización: 15 de noviembre de 2026. Implementación en la capa `presentation/`, conservando integridad funcional, contraste en ambos temas y ausencia de recursos decorativos dentro de preguntas, casos o tarjetas. Pendiente de ejecución local de `npm run build`, `npm test -- --runInBand` e inspección visual en navegador por el usuario (el entorno terminal de esta sesión estuvo bloqueado por la ruta eliminada `HubSaludApp`). No se desplegó a producción.
 
 El pulido de cabeceras, perfil, gestión, analítica, precios, páginas legales y overlays está documentado en [FRONTEND_POLISH_V2.md](FRONTEND_POLISH_V2.md). `header.css` es el único propietario del aspecto de tema, acceso y cuenta. `modal.css` contiene los diálogos y `ui-overlays.css` las barras de estado y el visor multimedia. Perfil, gestión, analítica y el lector de recursos también utilizan `workspace-page` y la navegación compartida.
 
@@ -86,3 +86,8 @@ Para ampliar otra vista, reutilizar el marco común y añadir una hoja específi
 Las pestañas «Educación» y «Salud» quedan fuera del marco introductorio. Ambos simuladores utilizan `assets/fondo_simulador.png` a todo el ancho de la cabecera en escritorio. Hasta 1050 px no se carga el fondo y la altura vuelve a adaptarse al contenido. La franja de herramientas conserva su superficie independiente.
 
 El título, Guía, configuración y recorrido de estudio comparten `simulator-intro`, conservando superficies diferenciadas. El resumen del examen se sitúa junto a Modos de Entrenamiento y reutiliza `kpi-tabs-group`; sus estilos específicos pertenecen a `workspace-simulator.css`. Se retiraron las reglas históricas y colores inline de ese resumen. En móvil los encabezados se apilan y los valores se ajustan en varias filas. La Guía describe las diferencias entre Educación y Medicina y apunta al título visible de analítica. Sin pruebas ni despliegue.
+
+## Refinamiento visual y táctil — 15 de noviembre de 2026
+
+- **Superficies oscuras neutras sin fondo azul:** `theme.css` alinea `--bg-main: #050507`, `--bg-secondary: #0d0d10`, `--bg-tertiary: #141418`, vidrio ahumado neutro `--glass-bg` y tokens `--border-gradient-surface` / `--border-gradient-teal`.
+- **Jerarquía y microinteracciones (`workspace.css`, `workspace-simulator.css`, `workspace-study.css`, `workspace-repaso.css`, `bulletin.css`, `pricing.css`):** Cabecera de trabajo con desenfoque sutil traslúcido, borde gradiente de 1 px únicamente en tarjetas focales (`.mode-card--study` con variante teal en `data-study-context="medicina"`, y `.plan-tile--featured` en `/pricing`), retroalimentación táctil breve al presionar (`scale`) respetando `prefers-reduced-motion` y preservando intacta la lectura limpia de exámenes y tarjetas.

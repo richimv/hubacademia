@@ -10,11 +10,46 @@ body.landing-page {
     --home-small: .875rem;
     --home-ui-head: clamp(1.5rem, 2.5vw, 2.25rem);
     --home-gap: clamp(24px, 4vw, 64px);
-    --home-white: #fafafa;
-    --home-black: #050505;
-    --home-photo-muted: #d4d4d8;
-    --home-photo-panel: #121212;
+    --home-white: #f4f4f6;
+    --home-black: #050507;
+    --home-photo-muted: #cbd5e1;
+    --home-photo-panel: #0d0d10;
+    --land-bg-a: #050507;
+    --land-bg-b: #0b0b0e;
+    --land-surface: #101014;
+    --land-surface-elevated: #18181f;
+    --land-surface-subtle: #141418;
     font-size: var(--home-copy);
+    background: var(--home-black);
+}
+.landing-webgl-stage {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    background: #050507;
+}
+.home-progressive-blur {
+    position: fixed;
+    inset: calc(72px + var(--trial-bar-height, 0px)) 0 auto;
+    height: 36px;
+    z-index: 90;
+    pointer-events: none;
+}
+.home-progressive-blur span {
+    position: absolute;
+    inset: 0;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%);
+}
+.landing-page main,
+.landing-page .home-footer {
+    position: relative;
+    z-index: 1;
 }
 .landing-page *, .landing-page *::before, .landing-page *::after {
     box-sizing: border-box;
@@ -206,7 +241,7 @@ body.landing-page {
 .landing-page .home-section-heading > p {
     max-width: 47ch;
 }
-/* S01 — First screen: a real image carries the scale; all text stays live HTML. */
+/* S01 — First screen: interactive Applied AI WebGL Observatory behind live HTML typography. */
 .landing-page .home-hero {
     position: relative;
     isolation: isolate;
@@ -214,48 +249,71 @@ body.landing-page {
     flex-direction: column;
     justify-content: center;
     min-height: min(920px, calc(100svh - 72px));
-    padding-block: 96px 32px;
-    background: var(--home-black);
+    padding-block: 88px 40px;
+    background: transparent;
     color: var(--home-white);
     overflow: clip;
+    cursor: grab;
+    touch-action: pan-y;
+}
+.landing-page .home-hero.is-dragging {
+    cursor: grabbing;
 }
 .landing-page .home-hero-media {
     position: absolute;
-    inset: -4% 0;
+    inset: 0;
     z-index: -3;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 420ms var(--ease-out);
 }
-.landing-page .home-hero-media > picture {
-    display: block;
-    width: 100%;
-    height: 100%;
+html[data-webgl="fallback"] .landing-page .home-hero-media {
+    opacity: 1;
 }
-.landing-page .home-hero-media img {
+.landing-page .home-hero-media picture,
+.landing-page .hero-optical-plate {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: 65% center;
+    object-position: 70% 50%;
+    opacity: 0.95;
 }
 .landing-page .home-hero-scrim {
     position: absolute;
     inset: 0;
     z-index: -2;
-    background: linear-gradient(90deg, rgba(0,0,0,.73) 0%, rgba(0,0,0,.44) 40%, rgba(0,0,0,.04) 75%);
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(5,5,7,.88) 0%, rgba(5,5,7,.56) 44%, rgba(5,5,7,.06) 76%),
+                radial-gradient(circle at 72% 48%, rgba(5,5,7,0) 0%, rgba(5,5,7,.55) 85%);
 }
 .landing-page .home-hero-grid {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: 1.3fr 1fr;
     align-items: end;
-    gap: 40px;
+    gap: 32px 48px;
     flex: 1;
 }
 .landing-page .home-hero-copy {
     align-self: center;
-    padding-bottom: 24px;
+    padding-bottom: 16px;
+}
+.landing-page .mono-tag {
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--primary-light);
+    font-variant-numeric: tabular-nums;
 }
 .landing-page .home-origin {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
     font-size: var(--home-small);
-    margin-bottom: 30px;
+    margin-bottom: 28px;
     color: var(--home-photo-muted);
 }
 .landing-page .home-hero h1 {
@@ -275,19 +333,45 @@ body.landing-page {
     display: block;
 }
 .landing-page .home-hero-lead {
-    max-width: 40ch;
+    max-width: 42ch;
     font-size: var(--home-copy);
-    margin-block: 32px;
+    margin-block: 28px;
     color: var(--home-white);
+}
+.landing-page .hero-orbit-hint {
+    font-size: .75rem;
+    color: var(--text-muted);
+}
+.landing-page .hero-motion-btn:active {
+    transform: scale(.97);
 }
 .landing-page .home-hero-foot {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 24px;
-    padding-top: 60px;
+    padding-top: 44px;
     font-size: var(--home-small);
     color: var(--home-photo-muted);
+}
+.landing-page .hero-foot-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.landing-page .hero-motion-btn {
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: rgba(14, 14, 18, 0.72);
+    color: var(--text-secondary);
+    font-size: .8125rem;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.landing-page .hero-motion-btn[aria-pressed="true"] {
+    border-color: rgba(56, 189, 248, 0.45);
+    color: var(--home-white);
 }
 .landing-page .home-hero-foot a {
     display: grid;
@@ -320,9 +404,18 @@ body.landing-page {
     top: 120px;
     min-width: 0;
 }
+.landing-page .home-products,
+.landing-page .home-bulletin,
+.landing-page .home-access {
+    background: rgba(5, 5, 7, 0.22);
+}
 .landing-page .product-stage {
     border-radius: 6px;
-    background: var(--land-surface);
+    border: 1px solid transparent;
+    background: linear-gradient(rgba(16, 16, 20, 0.88), rgba(16, 16, 20, 0.88)) padding-box,
+                var(--border-gradient-surface) border-box;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     padding: clamp(20px, 3vw, 40px);
     min-height: 550px;
 }
@@ -483,7 +576,7 @@ body.landing-page {
 }
 /* S03 — A human scene, a working sample: the two visual planes overlap by one grid column. */
 .landing-page .home-inicial {
-    background: var(--land-bg-b);
+    background: rgba(11, 11, 14, 0.36);
 }
 .landing-page .inicial-intro {
     display: grid;
@@ -534,8 +627,10 @@ body.landing-page {
     z-index: 1;
     margin-block: 32px;
     padding: clamp(24px, 3vw, 40px);
-    background: var(--land-surface);
-    border-radius: 4px;
+    border: 1px solid transparent;
+    background: linear-gradient(var(--land-surface), var(--land-surface)) padding-box,
+                var(--border-gradient-surface) border-box;
+    border-radius: 6px;
     min-width: 0;
 }
 .landing-page .inicial-demo fieldset {
@@ -675,7 +770,7 @@ body.landing-page {
 }
 /* S05 — Vision: a reading column drives one fixed instrument, with an honest future state. */
 .landing-page .home-vision {
-    background: var(--land-bg-b);
+    background: rgba(11, 11, 14, 0.36);
 }
 .landing-page .vision-layout {
     display: grid;
@@ -809,7 +904,10 @@ body.landing-page {
     font-size: 1.2rem;
 }
 .landing-page .access-plan-featured {
-    background: var(--land-surface-elevated);
+    border: 1px solid transparent;
+    background: linear-gradient(var(--land-surface-elevated), var(--land-surface-elevated)) padding-box,
+                var(--border-gradient-surface) border-box;
+    border-radius: 4px;
 }
 .landing-page .access-plan .access-price {
     font-size: clamp(2.5rem, 4.2vw, 4rem);
@@ -852,7 +950,10 @@ body.landing-page {
     max-width: 75ch;
 }
 .landing-page .home-footer {
-    background: var(--land-bg-b);
+    background: rgba(11, 11, 14, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-color);
     padding-block: 80px 32px;
 }
 .landing-page .footer-container, .landing-page .footer-bottom {
@@ -873,6 +974,8 @@ body.landing-page {
     position: relative;
     overflow: clip;
     background: var(--land-bg-b);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 5%, #000 94%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 5%, #000 94%, transparent 100%);
 }
 .landing-page .landing-video {
     position: absolute;
@@ -892,12 +995,12 @@ body.landing-page {
 .landing-page .inicial-visual .landing-video {
     object-position: 26% center;
 }
-/* The hero stays in view for a short native scroll scene on roomy desktops. */
-@media (min-width: 961px) and (min-height: 800px) and (prefers-reduced-motion: no-preference) {
-    .landing-page .home-hero-scene.has-scroll-video {
-        height: calc(165svh - 72px);
+/* Sticky scroll choreography on roomy desktops so the 3D core zooms and transitions into S02. */
+@media (min-width: 961px) and (min-height: 720px) and (prefers-reduced-motion: no-preference) {
+    .landing-page .home-hero-scene {
+        height: calc(155svh - 72px);
     }
-    .landing-page .home-hero-scene.has-scroll-video .home-hero {
+    .landing-page .home-hero-scene .home-hero {
         position: sticky;
         top: calc(72px + var(--trial-bar-height, 0px));
         height: calc(100svh - 72px);
@@ -1018,7 +1121,7 @@ are applied only at intersection; CSS does not hide waiting or failed scripts. *
         padding-top: calc(72px + var(--trial-bar-height, 0px));
     }
     .landing-page .home-hero-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
         align-items: end;
         gap: 24px;
     }
@@ -1211,14 +1314,16 @@ are applied only at intersection; CSS does not hide waiting or failed scripts. *
         opacity: .9;
     }
     .landing-page .home-hero-scrim {
-        background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.05) 40%, rgba(0,0,0,.8));
+        background: linear-gradient(180deg, rgba(5,5,7,.78) 0%, rgba(5,5,7,.46) 44%, rgba(5,5,7,.18) 100%);
     }
     .landing-page .home-actions {
         gap: 12px 20px;
     }
     .landing-page .home-hero-foot {
-        padding-top: 24px;
+        padding-top: 20px;
         font-size: .8125rem;
+        flex-wrap: wrap;
+        gap: 12px;
     }
     .landing-page .home-section-heading {
         margin-bottom: 36px;
@@ -1345,6 +1450,23 @@ are applied only at intersection; CSS does not hide waiting or failed scripts. *
         margin-top: 24px;
     }
 }
+html[data-reduce-motion="true"] .landing-page *,
+html[data-reduce-motion="true"] .landing-page *::before,
+html[data-reduce-motion="true"] .landing-page *::after {
+    animation: none !important;
+    transition: none !important;
+}
+html[data-reduce-motion="true"] .landing-page .home-progressive-blur {
+    display: none;
+}
+html[data-reduce-motion="true"] .landing-page .home-hero-scene {
+    height: auto;
+}
+html[data-reduce-motion="true"] .landing-page .home-hero-scene .home-hero {
+    position: relative;
+    top: 0;
+    height: auto;
+}
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto !important;
@@ -1353,6 +1475,9 @@ are applied only at intersection; CSS does not hide waiting or failed scripts. *
         animation: none !important;
         transition: none !important;
         scroll-behavior: auto !important;
+    }
+    .landing-page .home-progressive-blur {
+        display: none;
     }
     .landing-page .product-stage-wrap, .landing-page .vision-anchor {
         position: static;

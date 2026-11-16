@@ -11,8 +11,9 @@ body.workspace-page.quiz-body { display: block; padding: calc(104px + var(--tria
 .workspace-page.quiz-body .case-scenario-card { background: var(--bg-tertiary); border: 0; border-radius: 6px; box-shadow: none; padding: 24px; }
 .workspace-page.quiz-body .case-badge { background: none; border: 0; color: var(--text-secondary); }
 .workspace-page.quiz-body .options-grid { gap: 12px; margin-top: 28px; }
-.workspace-page.quiz-body .option-btn { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; box-shadow: none; padding: 18px 20px; min-height: 64px; gap: 16px; transform: none; }
+.workspace-page.quiz-body .option-btn { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; box-shadow: none; padding: 18px 20px; min-height: 64px; gap: 16px; transform: none; transition: background-color .14s ease, border-color .14s ease, transform .1s ease; }
 .workspace-page.quiz-body .option-btn:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--border-hover); box-shadow: none; transform: none; }
+.workspace-page.quiz-body .option-btn:active:not(:disabled) { transform: scale(.992); }
 .workspace-page.quiz-body .option-letter { flex-shrink: 0; width: 30px; height: 30px; border-radius: 4px; background: var(--bg-tertiary); border: 0; color: var(--text-secondary); box-shadow: none; font-weight: 600; }
 .workspace-page.quiz-body .option-text { font-size: .975rem; line-height: 1.65; }
 /* Keep the existing correct/wrong/selected semantics; never change scoring colours. */

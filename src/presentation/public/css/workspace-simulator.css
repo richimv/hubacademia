@@ -137,7 +137,7 @@
     box-shadow: none;
     overflow: hidden;
     transform: none;
-    transition: background-color .18s ease, border-color .18s ease;
+    transition: background-color .16s ease, border-color .16s ease, transform .12s cubic-bezier(.22,1,.36,1);
 }
 .workspace-page[data-workspace="simulator"] .mode-card:is(:hover,:focus-visible) {
     background: var(--surface-alt);
@@ -145,7 +145,19 @@
     transform: none;
     box-shadow: none;
 }
-.workspace-page[data-workspace="simulator"] .mode-card--study {
+.workspace-page[data-workspace="simulator"] .mode-card:active {
+    transform: scale(.99);
+}
+[data-theme="dark"] .workspace-page[data-workspace="simulator"] .mode-card--study {
+    border: 1px solid transparent;
+    background: linear-gradient(var(--bg-tertiary), var(--bg-tertiary)) padding-box,
+                var(--border-gradient-surface) border-box;
+}
+[data-theme="dark"] .workspace-page[data-workspace="simulator"][data-study-context="medicina"] .mode-card--study {
+    background: linear-gradient(var(--bg-tertiary), var(--bg-tertiary)) padding-box,
+                var(--border-gradient-teal) border-box;
+}
+[data-theme="light"] .workspace-page[data-workspace="simulator"] .mode-card--study {
     background: var(--bg-tertiary);
 }
 .workspace-page[data-workspace="simulator"] .mode-card::before, .workspace-page[data-workspace="simulator"] .stat-box::before {

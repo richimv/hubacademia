@@ -128,6 +128,8 @@
 .bulletin-story-image {
     aspect-ratio:16/10;
     background:var(--bg-secondary);
+    border:1px solid var(--border-color);
+    border-radius:4px;
     overflow:hidden;
     margin-bottom:20px;
 }
@@ -136,10 +138,14 @@
     height:100%;
     object-fit:cover;
     display:block;
-    transition:transform .3s ease;
+    transition:transform .28s cubic-bezier(.22,1,.36,1);
 }
 .bulletin-story-link:hover img {
     transform:scale(1.025);
+}
+@media(prefers-reduced-motion: reduce) {
+    .bulletin-story-image img { transition:none; }
+    .bulletin-story-link:hover img { transform:none; }
 }
 .bulletin-story-meta {
     color:var(--primary-light);

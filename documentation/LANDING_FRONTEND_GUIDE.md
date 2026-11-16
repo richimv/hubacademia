@@ -1,27 +1,27 @@
 # Guía del frontend de la landing
 
-Actualización: 3 de noviembre de 2026, V6. Videos entregados, comprimidos y conectados al scroll. Implementación en HTML, CSS, JavaScript del navegador y GSAP/ScrollTrigger locales. Las pruebas siguen a cargo del usuario. Detalles y tamaños en [LANDING_VIDEO_INTEGRATION.md](LANDING_VIDEO_INTEGRATION.md).
+Actualización: 15 de noviembre de 2026, V7 Dark Cinema + Escenario WebGL de IA Aplicada. Se reemplaza el video/póster anterior en `H` del Hero por un escenario WebGL 3D interactivo (`js/landing/world.js` + `js/landing/world-math.js`) alineado al propósito de divulgación y soluciones en IA de [BRIEF_MASTER.md](BRIEF_MASTER.md). Los videos controlados por scroll de Inicial (`S03`) y Boletín (`S04`) se conservan intactos (`LANDING_VIDEO_INTEGRATION.md`).
 
 ## Dónde realizar cada cambio
 
 | Necesidad | Archivo responsable |
 | --- | --- |
-| Texto, orden y estructura de secciones | `src/presentation/public/index.html` |
-| Colores y tipografía institucionales | `src/presentation/public/css/theme.css` |
-| Variables de la página pública y estructura de navegación | `src/presentation/public/css/public-shell.css` |
+| Texto, orden y estructura de secciones (`data-theme-locked="dark"`) | `src/presentation/public/index.html` |
+| Colores, tokens oscuros neutros y bordes gradiente | `src/presentation/public/css/theme.css` |
+| Cabecera fija traslúcida y shell público | `src/presentation/public/css/public-shell.css` |
 | Avatar y desplegable de sesión compartidos | `src/presentation/public/css/header.css` y `js/app.js` |
-| Disposición, componentes, medios y adaptación móvil de la landing | `src/presentation/public/css/landing-home.css` |
+| Disposición, bordes focales, chapter rail y adaptación móvil | `src/presentation/public/css/landing-home.css` |
 | Footer compartido | `src/presentation/public/css/footer.css` |
 | Arranque de la landing | `src/presentation/public/js/landing-home.js` |
+| Matemática pura de proyección WebGL y estado de capítulos | `src/presentation/public/js/landing/world-math.js` |
+| Escenario WebGL 3D, órbita por arrastre, modos e índice | `src/presentation/public/js/landing/world.js` |
 | Ejemplos locales de Inicial | `src/presentation/public/js/landing/data.js` |
 | Tabs de productos, Flashcard y formulario de Inicial | `src/presentation/public/js/landing/demos.js` |
 | Menú móvil, anclas y enlace heredado `?openChat=true` | `src/presentation/public/js/landing/navigation.js` |
 | Apariciones y escenas sincronizadas con scroll | `src/presentation/public/js/landing/motion.js` |
-| Activar cada vídeo y configurar sus archivos | `src/presentation/public/js/landing/media-config.js` |
+| Activar cada vídeo y configurar sus archivos (`hero.enabled = false`) | `src/presentation/public/js/landing/media-config.js` |
 | Selección de orientación, carga diferida y fotograma según scroll | `src/presentation/public/js/landing/media.js` |
-| Originales, derivados y prompts de imágenes | `src/presentation/public/assets/landing/` |
-| Exportar imágenes responsivas y fotogramas | `scripts/prepare-landing-assets.js` |
-| Comprimir videos y extraer primeros fotogramas reales | `scripts/prepare-landing-videos.py` |
+| Pruebas unitarias de `world-math.js` y contratos de portada | `tests/unit/landingWorld.test.js` |
 | Cache bust de HTML e imports locales | `src/presentation/update-cache.js` |
 
 `landing-home.js` es un módulo ES que únicamente importa y coordina inicializadores. No contiene ejemplos, lógica de sesión ni HTML generado para toda la página. Los módulos usan imports estáticos; el build actualiza sus versiones junto con las referencias del HTML.
@@ -83,3 +83,13 @@ Los tres slots están habilitados con los seis archivos recibidos. La web consum
 Se generaron ocho originales con la herramienta integrada `image_gen`, se inspeccionaron sus resultados como imágenes y se exportaron sus derivados web/fotogramas. No se ejecutaron pruebas unitarias, lint, navegador, capturas de la web, build ni mediciones de rendimiento por solicitud del usuario. Por ello no se certifican resultados de pruebas ni puntuaciones visuales.
 
 La exportación de imágenes ejecutada fue `node scripts/prepare-landing-assets.js`. Para los próximos cambios, leer primero esta guía y el documento del módulo afectado; mantener las reglas de negocio en sus capas actuales.
+
+## Actualización V7 — Dark Cinema fijo y Escenario WebGL de IA Aplicada (16 de noviembre de 2026)
+
+- **Portada fija en Dark Cinema:** `index.html` declara `data-theme="dark" data-theme-locked="dark"` y retira `#theme-toggle-btn` en portada. `ThemeManager` (`js/utils/themeManager.js`) respeta el bloqueo vía `dataset.themeLocked` sin sobrescribir la preferencia `hub_theme` del usuario en otros módulos.
+- **Esfera/Astrolabio 360° Fotorrealista y Escenas 2.5D (`js/landing/world.js`, `scripts/prepare-hero-v6-assets.js`):**
+  - Se exportan derivados WebP de Hero V6 (`assets/landing/images/v6/hero-ai-desktop-{960,1376}.webp` y `hero-ai-mobile-{540,768}.webp`) y una textura equirectangular 2:1 continua (`assets/landing/textures/astrolabe-equirect-2048.webp`, 2048×1024 sin costuras).
+  - Un único `<canvas id="landing-webgl-stage">` renderiza sobre fondo puro `#050507` (sin lámina 2D detrás) la esfera/astrolabio 360° texturizada con iluminación Fresnel, dos anillos orbitales con oclusión 3D real y 240 partículas de profundidad sincronizadas con vuelo de cámara entre `S01`–`S06`.
+  - `index.html` usa `<picture>` responsive V6 dentro de `data-media-slot="hero"` como respaldo instantáneo para `prefers-reduced-motion` o ausencia de WebGL, y `motion.js` añade paralaje de profundidad 2.5D en `.inicial-visual` (`S03`) y `.bulletin-art` (`S04`).
+- **Interacción y accesibilidad:** Hero fijado en escritorio (`sticky` en `#hero-scroll-scene`) con scrub de entrada/salida, rotación por arrastre directo sobre el escenario (`touch-action: pan-y`), sincronización cromática al cambiar entre Docentes, Salud y Flashcards (`hub:product-focus`), cabecera con desenfoque progresivo inferior (`.home-progressive-blur`) y botón accesible `Pausar animación` (`[data-motion-toggle]`) sincronizado con `prefers-reduced-motion`, sin barras redundantes inferiores ni referencias técnicas de backend en UI pública.
+- **Estado de verificación:** Queda pendiente ejecutar `npm run build` (actualización determinista de `?v=` por `update-cache.js`), `npm test -- --runInBand` (incluyendo `tests/unit/landingWorld.test.js` y `tests/unit/themeManager.test.js`) e inspección visual en navegador porque el directorio de trabajo de terminal de la sesión apuntaba a la carpeta eliminada `HubSaludApp`.
