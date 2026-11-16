@@ -407,5 +407,22 @@ describe('Check Limits Middleware', () => {
             expect(mockNext).toHaveBeenCalled();
             expect(mockRes.status).not.toHaveBeenCalledWith(403);
         });
+
+        it('should downgrade local tier variable to free and reset lives when paid subscription has expired', async () => {
+            mockReq.user = { id: 1, emailVerified: true, role: 'student' };
+            dbUser.subscription_tier = 'advanced';
+            dbUser.subscription_status = 'active';
+            dbUser.subscription_expires_at = new Date(Date.now() - 86400000).toISOString(); // Expired yesterday
+            dbUser.usage_count = 9;
+
+            mockReq.body = { context: { type: 'quiz_tutor' } };
+            const middleware = checkAILimits('chat_standard');
+            await middleware(mockReq, mockRes, mockNext);
+
+            expect(mockReq.userTier).toBe('free');
+            expect(mockReq.usageType).toBe('usage_count');
+            expect(mockReq.useRag).toBe(false);
+            expect(mockNext).toHaveBeenCalled();
+        });
     });
 });

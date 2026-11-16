@@ -1,4 +1,3 @@
-const AuthService = require('../../domain/services/authService');
 const { LIMITS } = require('../../infrastructure/config/limits');
 
 class AuthController {
@@ -89,7 +88,7 @@ class AuthController {
             res.json({ message: 'Perfil actualizado con éxito', user: userWithoutPassword });
         } catch (error) {
             // 🛡️ Filtro de errores de validación (Business Rules)
-            if (error.message.includes('Solo puedes cambiar tu nombre')) {
+            if (error.message && error.message.includes('Solo puedes cambiar tu nombre')) {
                 return res.status(400).json({ error: error.message });
             }
             

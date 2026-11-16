@@ -1,6 +1,14 @@
 const medicoService = require('../../domain/services/medicoService');
 const quizSessionService = require('../../domain/services/quizSessionService');
-const { secureQuizSessionsEnabled, sendQuizSessionError, buildQuizEvolutionChartData } = require('./quizSessionControllerSupport');
+const {
+    secureQuizSessionsEnabled,
+    sendQuizSessionError,
+    buildQuizEvolutionChartData,
+    buildSafeTimeFilter,
+    extractSeenIds,
+    parseDemoExcludeIds,
+    handleStartQuizError
+} = require('./quizSessionControllerSupport');
 const UsageService = require('../../domain/services/usageService');
 const usageService = new UsageService();
 const { LIMITS } = require('../../infrastructure/config/limits');
@@ -58,7 +66,7 @@ class MedicoController {
 
             console.log(`🎮 Generando Ronda ${round} de ${finalTarget} para ${user.name}. Limit: ${limit}`);
 
-            const seenIds = Array.isArray(req.body.seenIds) ? req.body.seenIds : (Array.isArray(req.body.excludeIds) ? req.body.excludeIds : []);
+            const seenIds = extractSeenIds(req.body);
             const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode };
             const quizData = await medicoService.generateQuiz(categoryOptions, user.id, limit, user.subscriptionTier, seenIds);
             const secureSession = secureQuizSessionsEnabled()
@@ -82,29 +90,7 @@ class MedicoController {
             });
 
         } catch (error) {
-            console.error('❌ [Error] startQuiz (Medico):', error);
-            if (sendQuizSessionError(res, error)) return;
-            if (error.cause) {
-                console.error('🔍 [Causa Original]:', error.cause);
-            }
-
-            if (error.message === "AI_REPLENISHMENT_FAILED" || error.message === "AI_GENERATION_EMPTY") {
-                return res.status(500).json({
-                    success: false,
-                    error: "Hubo un problema técnico al generar nuevas preguntas de IA. Por favor, intenta de nuevo en unos segundos.",
-                    technicalError: true
-                });
-            }
-
-            if (error.message === "BANK_EXHAUSTED_AND_IA_FAILED") {
-                return res.status(404).json({
-                    success: false,
-                    error: "Has completado todas las preguntas disponibles para este tema.",
-                    noQuestions: true
-                });
-            }
-
-            return res.status(500).json({ success: false, error: 'Error interno al iniciar el simulador.' });
+            return handleStartQuizError(res, error, 'Medico');
         }
     }
 
@@ -217,7 +203,7 @@ class MedicoController {
 
     async getEvolution(req, res) {
         try {
-            const { context, target, limit, days, areas, career } = req.query;
+            const { target, limit, days, areas, career } = req.query;
             const areaList = areas ? areas.split(',') : null;
 
             if (!req.user) {
@@ -230,11 +216,7 @@ class MedicoController {
 
             const userId = req.user.id;
             const medicoRepository = require('../../domain/repositories/medicoRepository');
-
-            let timeFilter = '';
-            if (days) {
-                timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
-            }
+            const timeFilter = buildSafeTimeFilter(days);
 
             const data = await medicoRepository.getQuizEvolution(userId, target, limit, timeFilter, areaList, career);
             const chartData = buildQuizEvolutionChartData(data);
@@ -310,10 +292,8 @@ class MedicoController {
 
     async getDemoQuestions(req, res) {
         try {
-            const limit = parseInt(req.query.limit) || 10;
-            const excludeIds = req.query.excludeIds 
-                ? req.query.excludeIds.split(',').filter(id => id && id.length > 30)
-                : [];
+            const limit = parseInt(req.query.limit, 10) || 10;
+            const excludeIds = parseDemoExcludeIds(req.query.excludeIds);
             
             const target = req.query.target || 'SERUMS';
             const career = req.query.career || null;

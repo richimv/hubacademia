@@ -140,7 +140,24 @@ describe('Security Hardening & Cleanup Verification', () => {
                     resDelete
                 );
                 expect(resDelete.statusCode).toBe(400);
+
+                const resToggle = createMockRes();
+                await libraryController.toggleItem(
+                    { user: { id: 'user-1' }, body: { type: 'course', id: badId, action: 'save' } },
+                    resToggle
+                );
+                expect(resToggle.statusCode).toBe(400);
             }
+        });
+
+        it('sanitizes days in buildSafeTimeFilter to prevent SQL interval NaN errors', () => {
+            const { buildSafeTimeFilter } = require('../../src/application/controllers/quizSessionControllerSupport');
+            expect(buildSafeTimeFilter('')).toBe('');
+            expect(buildSafeTimeFilter('abc')).toBe('');
+            expect(buildSafeTimeFilter('-5')).toBe('');
+            expect(buildSafeTimeFilter(0)).toBe('');
+            expect(buildSafeTimeFilter('30')).toBe(" AND created_at >= NOW() - INTERVAL '30 days'");
+            expect(buildSafeTimeFilter(99999)).toBe(" AND created_at >= NOW() - INTERVAL '3650 days'");
         });
 
         it('rejects invalid numeric IDs with 400 and hides internal error.message on 500 in CoursesController', async () => {

@@ -1,6 +1,3 @@
-const KnowledgeBaseRepository = require('../../domain/repositories/knowledgeBaseRepository');
-// ✅ FASE II: Importar el nuevo servicio de chat para manejar el historial.
-const ChatService = require('../../domain/services/chatService');
 const TutorAiService = require('../../domain/services/tutorAiService');
 const asistenteGuiaKnowledge = require('../../domain/services/asistenteGuiaKnowledge');
 const { MAX_MESSAGE_CHARS } = require('../../domain/services/platformSupportService');
@@ -11,7 +8,6 @@ class ChatController {
         console.log('🔄 Inicializando ChatController...');
         this.analyticsService = analyticsService;
         this.usageService = usageService;
-        this.knowledgeBaseRepo = new KnowledgeBaseRepository();
         this.chatService = chatService;
         this.platformSupportService = platformSupportService;
         console.log('✅ ChatController inicializado correctamente');
@@ -29,7 +25,7 @@ class ChatController {
         try {
             console.log('💬 ChatController.processMessage iniciado');
 
-            const { message, specialization = 'neutral', context, ephemeral = true, resourceId = null, resourceContext = null } = req.body;
+            const { message, context, resourceContext = null } = req.body;
             let { conversationId } = req.body;
             const userId = req.user ? req.user.id : null; // Soporte para visitantes no autenticados
 
@@ -240,20 +236,11 @@ ${message}`;
         };
     }
 
-    // findRelevantCourses ya no es necesario aquí, la lógica de búsqueda de cursos
-    // se maneja directamente en mlService a través de la herramienta getCourseDetails
-    // que llama a CourseRepository.
-
     async generateChatSuggestions(intencion, llmResult) {
-        // Si el LLM ya proveyó sugerencias, podríamos usarlas.
         if (llmResult.sugerencias && llmResult.sugerencias.length > 0) {
             return llmResult.sugerencias;
         }
 
-        // Si no, usamos las sugerencias predefinidas como fallback.
-        // Si no, usamos las sugerencias predefinidas como fallback.
-        // ✅ MEJORA: Sugerencias centradas en el usuario ("Yo quiero...") en lugar de preguntas del bot.
-        // ✅ MEJORA: Sugerencias centradas en el usuario ("Yo quiero...") 
         const predefinedSuggestions = {
             'solicitar_material': [
                 "Ver libros del curso",

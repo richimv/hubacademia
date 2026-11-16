@@ -197,4 +197,121 @@ describe('AI Diagnostic Controller & Heuristic Analytics Engine', () => {
             expect(securityUtils.validateDiagnosticStats({ avg_score: 10, accuracy: 50, mastered_cards: 0, radar_data: [], targetScale: 10 }).targetScale).toBe(8);
         });
     });
+
+    describe('AnalyticsController Pulse & View Deduplication (Supabase Write Protection)', () => {
+        const AnalyticsController = require('../../src/application/controllers/analyticsController');
+        let mockAnalyticsService;
+        let mockUserRepository;
+        let controller;
+
+        const createRes = () => {
+            const res = {
+                statusCode: 200,
+                body: null,
+                status: jest.fn(code => {
+                    res.statusCode = code;
+                    return res;
+                }),
+                json: jest.fn(payload => {
+                    res.body = payload;
+                    return res;
+                }),
+                send: jest.fn(() => res)
+            };
+            return res;
+        };
+
+        beforeEach(() => {
+            mockAnalyticsService = {
+                logPulse: jest.fn().mockResolvedValue(undefined),
+                recordView: jest.fn().mockResolvedValue(undefined),
+                recordFeedback: jest.fn().mockResolvedValue(undefined)
+            };
+            mockUserRepository = {
+                findById: jest.fn()
+            };
+            controller = new AnalyticsController(mockAnalyticsService, mockUserRepository);
+        });
+
+        it('rejects missing or invalid sessionId in recordPulse with 400', async () => {
+            const resEmpty = createRes();
+            await controller.recordPulse({ body: { sessionId: '   ' }, headers: {} }, resEmpty);
+            expect(resEmpty.statusCode).toBe(400);
+            expect(mockAnalyticsService.logPulse).not.toHaveBeenCalled();
+
+            const resTooLong = createRes();
+            await controller.recordPulse({ body: { sessionId: 'x'.repeat(200) }, headers: {} }, resTooLong);
+            expect(resTooLong.statusCode).toBe(400);
+            expect(mockAnalyticsService.logPulse).not.toHaveBeenCalled();
+        });
+
+        it('throttles duplicate pulses for the same sessionId within 2 minutes while allowing userId promotion', async () => {
+            const res1 = createRes();
+            await controller.recordPulse({ body: { sessionId: 'sess-abc-1', isMobile: false }, headers: {} }, res1);
+            expect(res1.statusCode).toBe(204);
+            expect(mockAnalyticsService.logPulse).toHaveBeenCalledTimes(1);
+            expect(mockAnalyticsService.logPulse).toHaveBeenCalledWith('sess-abc-1', null, false);
+
+            // Second pulse right after (e.g., page navigation or second tab): suppressed in memory
+            const res2 = createRes();
+            await controller.recordPulse({ body: { sessionId: 'sess-abc-1', isMobile: false }, headers: {} }, res2);
+            expect(res2.statusCode).toBe(204);
+            expect(mockAnalyticsService.logPulse).toHaveBeenCalledTimes(1);
+
+            // User logs in on the same sessionId: immediately promoted to DB
+            const res3 = createRes();
+            await controller.recordPulse({
+                body: { sessionId: 'sess-abc-1', isMobile: true },
+                user: { id: 'usr-999' },
+                headers: {}
+            }, res3);
+            expect(res3.statusCode).toBe(204);
+            expect(mockAnalyticsService.logPulse).toHaveBeenCalledTimes(2);
+            expect(mockAnalyticsService.logPulse).toHaveBeenLastCalledWith('sess-abc-1', 'usr-999', true);
+
+            // Subsequent pulse with the same authenticated userId: throttled again
+            const res4 = createRes();
+            await controller.recordPulse({
+                body: { sessionId: 'sess-abc-1', isMobile: true },
+                user: { id: 'usr-999' },
+                headers: {}
+            }, res4);
+            expect(res4.statusCode).toBe(204);
+            expect(mockAnalyticsService.logPulse).toHaveBeenCalledTimes(2);
+        });
+
+        it('ignores automated bot and crawler User-Agents in recordPulse without hitting Supabase', async () => {
+            const resBot = createRes();
+            await controller.recordPulse({
+                body: { sessionId: 'sess-bot-1', isMobile: false },
+                headers: { 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' }
+            }, resBot);
+            expect(resBot.statusCode).toBe(204);
+            expect(mockAnalyticsService.logPulse).not.toHaveBeenCalled();
+        });
+
+        it('deduplicates rapid repeat page views in recordView within 30s window', async () => {
+            const req = { body: { entityType: 'course', entityId: 42 }, user: { id: 'usr-1' }, ip: '127.0.0.1' };
+            const res1 = createRes();
+            await controller.recordView(req, res1);
+            expect(res1.statusCode).toBe(202);
+            expect(mockAnalyticsService.recordView).toHaveBeenCalledTimes(1);
+
+            const res2 = createRes();
+            await controller.recordView(req, res2);
+            expect(res2.statusCode).toBe(202);
+            expect(mockAnalyticsService.recordView).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not query userRepository.findById redundantly in recordFeedback', async () => {
+            const res = createRes();
+            await controller.recordFeedback({
+                body: { query: 'q', response: 'r', isHelpful: true, messageId: 'm1' },
+                user: { id: 'usr-77' }
+            }, res);
+            expect(res.statusCode).toBe(204);
+            expect(mockUserRepository.findById).not.toHaveBeenCalled();
+            expect(mockAnalyticsService.recordFeedback).toHaveBeenCalledWith('q', 'r', true, 'usr-77', 'm1');
+        });
+    });
 });

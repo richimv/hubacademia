@@ -1,6 +1,4 @@
-const AnalyticsService = require('../../domain/services/analyticsService');
-const UserRepository = require('../../domain/repositories/userRepository'); // 1. Importar la CLASE del repositorio.
-const { VertexAI } = require('@google-cloud/vertexai'); // ✅ NUEVO: Importar Vertex para el Analizador
+const { VertexAI } = require('@google-cloud/vertexai');
 const securityUtils = require('../../domain/utils/securityUtils');
 const mineduScoringService = require('../../domain/services/mineduScoringService');
 const { generateEducationDiagnostic } = require('../../domain/services/educationDiagnosticService');
@@ -11,6 +9,12 @@ const {
     buildVertexGenerationConfig,
     extractModelResponsePayload
 } = require('../../infrastructure/config/vertexAiConfig');
+
+// Ventana de deduplicación serverless para evitar escrituras redundantes a web_traffic y page_views
+const PULSE_THROTTLE_MS = 2 * 60 * 1000; // 2 minutos (ventana active_now en BD es de 5 minutos)
+const VIEW_THROTTLE_MS = 30 * 1000;      // 30 segundos por entidad/sesión
+const MAX_CACHE_ENTRIES = 5000;
+const BOT_USER_AGENT_REGEX = /bot|crawler|spider|crawling|uptimerobot|headlesschrome|lighthouse|pagespeed|gtmetrix|pingdom|curl|wget|python-requests/i;
 
 // CONFIGURACIÓN VERTEX AI
 const googleAuthOptions = resolveGoogleAuthOptions('AnalyticsController');
@@ -27,12 +31,12 @@ try {
 }
 
 class AnalyticsController {
-    constructor(analyticsService, userRepository) { // 2. Recibir el repositorio en el constructor.
+    constructor(analyticsService, userRepository) {
         this.analyticsService = analyticsService;
-        this.userRepository = userRepository; // 3. Guardar la instancia del repositorio.
+        this.userRepository = userRepository;
+        this._pulseCache = new Map();
+        this._viewCache = new Map();
 
-        // SOLUCIÓN DEFINITIVA: Bindeo explícito para mantener el contexto de 'this' en las rutas de Express.
-        // Esto asegura que `this.analyticsService` siempre esté disponible.
         // BIND EXPLÍCITO para mantener el contexto de 'this' en las rutas de Express
         this.getAnalytics = this.getAnalytics.bind(this);
         this.getSearchTrends = this.getSearchTrends.bind(this);
@@ -137,15 +141,25 @@ class AnalyticsController {
             res.status(500).json({ error: 'Error al obtener las series de tiempo.' });
         }
     }
+    _pruneCacheIfNeeded(cache, ttlMs, now = Date.now()) {
+        if (cache.size < MAX_CACHE_ENTRIES) return;
+        for (const [key, entry] of cache.entries()) {
+            const timestamp = typeof entry === 'number' ? entry : entry.lastWriteAt;
+            if (now - timestamp >= ttlMs) {
+                cache.delete(key);
+            }
+        }
+        if (cache.size >= MAX_CACHE_ENTRIES) {
+            const oldestKey = cache.keys().next().value;
+            if (oldestKey !== undefined) cache.delete(oldestKey);
+        }
+    }
+
     async recordFeedback(req, res) {
         try {
-            const { query, response, isHelpful, messageId } = req.body;
-            // ✅ OBTENER EL ID DEL USUARIO DESDE EL TOKEN
-            // El middleware 'auth' ya nos da el usuario en req.user.
-            // ✅ 4. Usar la instancia correcta del repositorio que fue inyectada.
-            const userRecord = req.user ? await this.userRepository.findById(req.user.id) : null;
-            await this.analyticsService.recordFeedback(query, response, isHelpful, userRecord ? userRecord.id : null, messageId);
-            // Se cambia a 204 No Content, que es más apropiado para una acción que no necesita devolver datos.
+            const { query, response, isHelpful, messageId } = req.body || {};
+            const userId = req.user ? req.user.id : null;
+            await this.analyticsService.recordFeedback(query, response, isHelpful, userId, messageId);
             res.status(204).send();
         } catch (error) {
             console.error('❌ Error registrando feedback:', error);
@@ -153,17 +167,35 @@ class AnalyticsController {
         }
     }
 
-    // Controlador para registrar una vista de página.
+    // Controlador para registrar una vista de página con deduplicación en ráfaga.
     async recordView(req, res) {
         try {
-            const { entityType, entityId } = req.body;
-            const userId = req.user ? req.user.id : null; // ✅ Soporte para invitados
+            const { entityType, entityId } = req.body || {};
+            const userId = req.user ? req.user.id : null;
 
             if (!entityType || !entityId) {
                 return res.status(400).json({ error: 'entityType y entityId son requeridos.' });
             }
-            await this.analyticsService.recordView(entityType, entityId, userId);
-            res.status(202).send(); // 202 Accepted
+
+            const normalizedType = String(entityType).trim();
+            const normalizedId = String(entityId).trim();
+            if (!normalizedType || !normalizedId) {
+                return res.status(400).json({ error: 'entityType y entityId son requeridos.' });
+            }
+
+            const actorKey = userId || req.ip || 'anon';
+            const viewKey = `${actorKey}:${normalizedType}:${normalizedId}`;
+            const now = Date.now();
+            const lastViewedAt = this._viewCache.get(viewKey);
+
+            if (lastViewedAt && (now - lastViewedAt) < VIEW_THROTTLE_MS) {
+                return res.status(202).send();
+            }
+
+            this._pruneCacheIfNeeded(this._viewCache, VIEW_THROTTLE_MS, now);
+            await this.analyticsService.recordView(normalizedType, entityId, userId);
+            this._viewCache.set(viewKey, now);
+            res.status(202).send();
         } catch (error) {
             console.error('❌ Error registrando vista de página:', error);
             res.status(500).json({ error: 'Error al registrar la vista.' });
@@ -309,8 +341,7 @@ class AnalyticsController {
             // 💸 DESCONTAR CUOTA / VIDAS según el tipo definido por el middleware (usage_count para Free, daily_ai_usage para Advanced)
             if (req.usageType && tier !== 'admin') {
                 try {
-                    const { isValidUsageColumn } = require('../../domain/utils/securityUtils');
-                    if (isValidUsageColumn(req.usageType)) {
+                    if (securityUtils.isValidUsageColumn(req.usageType)) {
                         const db = require('../../infrastructure/database/db');
                         await db.query(
                             `UPDATE users SET ${req.usageType} = ${req.usageType} + 1 WHERE id = $1`,
@@ -439,42 +470,62 @@ class AnalyticsController {
     }
 
     // ==========================================
-    // NUEVO: CONTROLADORES DE TRÁFICO REAL-TIME
+    // CONTROLADORES DE TRÁFICO REAL-TIME
     // ==========================================
 
     async recordPulse(req, res) {
-    try {
-        const { sessionId, isMobile } = req.body;
-        const userId = req.user ? req.user.id : null;
+        try {
+            const { sessionId: rawSessionId, isMobile } = req.body || {};
+            const userId = req.user ? req.user.id : null;
+            const sessionId = typeof rawSessionId === 'string' ? rawSessionId.trim() : '';
 
-        if (!sessionId) {
-            return res.status(400).json({ error: 'sessionId es requerido.' });
-        }
+            if (!sessionId || sessionId.length > 128) {
+                return res.status(400).json({ error: 'sessionId es requerido.' });
+            }
 
-        await this.analyticsService.logPulse(sessionId, userId, isMobile);
-        res.status(204).send();
-    } catch (error) {
-        // ✅ CORRECCIÓN: Si es un error de red (DNS/Conexión), logeamos un warning silencioso
-        // Esto evita que el servidor se llene de errores rojos por micro-cortes de internet.
-        if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.syscall === 'getaddrinfo') {
-            console.warn('⚠️ Pulso de tráfico omitido temporalmente por inestabilidad de red (DNS/Supabase).');
-        } else {
-            console.error('❌ Error registrando pulso:', error);
+            // Ignorar crawlers, bots y sondas automatizadas para no inflar web_traffic
+            const userAgent = String(req.headers?.['user-agent'] || '');
+            if (userAgent && BOT_USER_AGENT_REGEX.test(userAgent)) {
+                return res.status(204).send();
+            }
+
+            const now = Date.now();
+            const cached = this._pulseCache.get(sessionId);
+            const isFreshPulse = cached && (now - cached.lastWriteAt) < PULSE_THROTTLE_MS;
+            const isUserPromoted = Boolean(userId && (!cached || cached.userId !== userId));
+
+            // Si la misma sesión ya registró pulso dentro de la ventana de 2 min y no cambió de anónimo a autenticado,
+            // evitamos escribir innecesariamente en Supabase (ON CONFLICT DO UPDATE).
+            if (isFreshPulse && !isUserPromoted) {
+                return res.status(204).send();
+            }
+
+            this._pruneCacheIfNeeded(this._pulseCache, PULSE_THROTTLE_MS, now);
+            await this.analyticsService.logPulse(sessionId, userId, Boolean(isMobile));
+            this._pulseCache.set(sessionId, {
+                lastWriteAt: now,
+                userId: userId || cached?.userId || null
+            });
+            res.status(204).send();
+        } catch (error) {
+            if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.syscall === 'getaddrinfo') {
+                console.warn('⚠️ Pulso de tráfico omitido temporalmente por inestabilidad de red (DNS/Supabase).');
+            } else {
+                console.error('❌ Error registrando pulso:', error);
+            }
+            res.status(204).send();
         }
-        // Respondemos 200/204 de todos modos para no afectar al frontend
-        res.status(204).send();
     }
-}
 
     async getRealTimeStats(req, res) {
-    try {
-        const stats = await this.analyticsService.getRealTimeStats();
-        res.json(stats);
-    } catch (error) {
-        console.error('❌ Error obteniendo tráfico real-time:', error);
-        res.status(500).json({ error: 'Error al obtener estadísticas en vivo.' });
+        try {
+            const stats = await this.analyticsService.getRealTimeStats();
+            res.json(stats);
+        } catch (error) {
+            console.error('❌ Error obteniendo tráfico real-time:', error);
+            res.status(500).json({ error: 'Error al obtener estadísticas en vivo.' });
+        }
     }
-}
 }
 
 module.exports = AnalyticsController;

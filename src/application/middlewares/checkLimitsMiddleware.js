@@ -95,6 +95,7 @@ const checkAILimits = (type) => {
                         user.usage_count = 0;
                         user.max_free_limit = 10;
                         user.last_free_renewal = new Date();
+                        tier = isAdmin ? 'admin' : 'free';
                     }
                 }
             }
@@ -105,14 +106,7 @@ const checkAILimits = (type) => {
             if (!user.last_usage_reset || lastResetDateStr !== todayDate) {
                 console.log(`♻️ [Quota Reset] Iniciando reset para ${user.subscription_tier} (${userId}). De ${lastResetDateStr} a ${todayDate}`);
 
-                const lastResetDateObj = user.last_usage_reset ? new Date(user.last_usage_reset) : new Date(0);
-                const currentMonth = now.getUTCMonth();
-                const lastResetMonth = lastResetDateObj.getUTCMonth();
-
-                let resetMonthlyFlashcards = false;
-                if (!user.last_usage_reset || lastResetMonth !== currentMonth) {
-                    resetMonthlyFlashcards = true;
-                }
+                const resetMonthlyFlashcards = !lastResetDateStr || lastResetDateStr.slice(0, 7) !== todayDate.slice(0, 7);
 
                 if (resetMonthlyFlashcards) {
                     await pool.query(`
@@ -126,7 +120,6 @@ const checkAILimits = (type) => {
                         WHERE id = $2
                     `, [todayDate, userId]);
                     user.monthly_flashcards_usage = 0;
-                    user.daily_import_usage = 0;
                 } else {
                     await pool.query(`
                         UPDATE users SET 
@@ -137,9 +130,9 @@ const checkAILimits = (type) => {
                             last_usage_reset = $1 
                         WHERE id = $2
                     `, [todayDate, userId]);
-                    user.daily_import_usage = 0;
                 }
 
+                user.daily_import_usage = 0;
                 user.daily_ai_usage = 0;
                 user.daily_rag_usage = 0;
                 user.daily_simulator_usage = 0;
