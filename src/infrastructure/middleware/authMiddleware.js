@@ -4,19 +4,75 @@ const userRepository = new UserRepository();
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-// Caché en memoria para almacenar verificaciones exitosas de tokens (token -> { user, cachedAt, exp })
+// Caché en memoria acotada sin timers en background (compatible con Vercel Serverless)
+const TOKEN_CACHE_TTL_MS = 3 * 60 * 1000;
+const DB_USER_CACHE_TTL_MS = 15 * 1000;
+const MAX_TOKEN_CACHE_ENTRIES = 500;
 const tokenCache = new Map();
+const inFlightTokenVerifications = new Map();
+const inFlightDbUserLookups = new Map();
 
-// Limpiar caché periódicamente para evitar fugas de memoria
-const tokenCacheCleanupTimer = setInterval(() => {
-    const now = Date.now();
+function pruneTokenCache(now = Date.now()) {
+    const nowSec = now / 1000;
     for (const [token, entry] of tokenCache.entries()) {
-        if (now > entry.cachedAt + 3 * 60 * 1000 || now / 1000 > entry.exp) {
+        if (now > entry.cachedAt + TOKEN_CACHE_TTL_MS || nowSec > entry.exp) {
             tokenCache.delete(token);
         }
     }
-}, 60 * 1000);
-tokenCacheCleanupTimer.unref?.();
+    while (tokenCache.size > MAX_TOKEN_CACHE_ENTRIES) {
+        const oldestKey = tokenCache.keys().next().value;
+        if (oldestKey === undefined) break;
+        tokenCache.delete(oldestKey);
+    }
+}
+
+function clearTokenCache() {
+    tokenCache.clear();
+    inFlightTokenVerifications.clear();
+    inFlightDbUserLookups.clear();
+}
+
+function shouldBypassDbUserCache(req) {
+    const method = String(req?.method || 'GET').toUpperCase();
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+        return false;
+    }
+    const reqPath = String(req?.originalUrl || req?.path || '');
+    return /\/(auth|payment|users|admin|usage)\b/i.test(reqPath);
+}
+
+async function resolveDbUser(token, sbUser, req) {
+    const now = Date.now();
+    const bypassCache = shouldBypassDbUserCache(req);
+    const cachedEntry = tokenCache.get(token);
+
+    if (!bypassCache && cachedEntry?.dbUser && cachedEntry.dbUserCachedAt && (now - cachedEntry.dbUserCachedAt < DB_USER_CACHE_TTL_MS)) {
+        return { ...cachedEntry.dbUser };
+    }
+
+    let lookupPromise = !bypassCache ? inFlightDbUserLookups.get(sbUser.id) : null;
+    if (!lookupPromise) {
+        lookupPromise = Promise.resolve()
+            .then(() => userRepository.findById(sbUser.id))
+            .finally(() => {
+                inFlightDbUserLookups.delete(sbUser.id);
+            });
+        if (!bypassCache) {
+            inFlightDbUserLookups.set(sbUser.id, lookupPromise);
+        }
+    }
+
+    const dbUser = await lookupPromise;
+    if (dbUser) {
+        dbUser.emailVerified = !!sbUser.email_confirmed_at;
+        if (cachedEntry) {
+            cachedEntry.dbUser = { ...dbUser };
+            cachedEntry.dbUserCachedAt = Date.now();
+        }
+        return { ...dbUser };
+    }
+    return null;
+}
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 500;
@@ -89,31 +145,58 @@ function getBearerToken(req) {
     return token || null;
 }
 
+async function resolveSupabaseUser(token, decoded, now = Date.now()) {
+    pruneTokenCache(now);
+    const cached = tokenCache.get(token);
+    if (cached && now < cached.cachedAt + TOKEN_CACHE_TTL_MS) {
+        return cached.user;
+    }
+
+    let verifyPromise = inFlightTokenVerifications.get(token);
+    if (!verifyPromise) {
+        verifyPromise = (async () => {
+            try {
+                const result = await getUserWithRetry(token);
+                if (result?.user) {
+                    const currentCached = tokenCache.get(token);
+                    const verifiedAt = Date.now();
+                    tokenCache.set(token, {
+                        user: result.user,
+                        cachedAt: verifiedAt,
+                        exp: decoded.exp,
+                        dbUser: currentCached?.dbUser || null,
+                        dbUserCachedAt: currentCached?.dbUserCachedAt || 0
+                    });
+                    pruneTokenCache(verifiedAt);
+                }
+                return result?.user || null;
+            } finally {
+                inFlightTokenVerifications.delete(token);
+            }
+        })();
+        inFlightTokenVerifications.set(token, verifyPromise);
+    }
+
+    return verifyPromise;
+}
+
 async function getVerifiedIdentity(token) {
     const decoded = jwt.decode(token);
-    if (!decoded || !decoded.exp || Date.now() / 1000 > decoded.exp) {
-        const error = new Error('Sesión inválida o expirada.');
-        error.status = 401;
-        throw error;
-    }
-
-    const cached = tokenCache.get(token);
     const now = Date.now();
-    if (cached && now < cached.cachedAt + 3 * 60 * 1000) return cached.user;
-
-    const result = await getUserWithRetry(token);
-    if (!result.user) {
+    if (!decoded || !decoded.exp || now / 1000 > decoded.exp) {
         const error = new Error('Sesión inválida o expirada.');
         error.status = 401;
         throw error;
     }
 
-    tokenCache.set(token, {
-        user: result.user,
-        cachedAt: now,
-        exp: decoded.exp
-    });
-    return result.user;
+    const sbUser = await resolveSupabaseUser(token, decoded, now);
+    if (!sbUser) {
+        const error = new Error('Sesión inválida o expirada.');
+        error.status = 401;
+        throw error;
+    }
+
+    return sbUser;
 }
 
 async function auth(req, res, next) {
@@ -130,58 +213,44 @@ async function auth(req, res, next) {
             return res.status(401).json({ error: 'Sesión inválida o expirada.' });
         }
 
-        if (Date.now() / 1000 > decoded.exp) {
+        const now = Date.now();
+        if (now / 1000 > decoded.exp) {
+            tokenCache.delete(token);
             console.warn('🕒 [AuthMiddleware] Token expirado detectado por validación local de JWT.');
             return res.status(401).json({ error: 'Sesión expirada. Por favor inicie sesión nuevamente.' });
         }
 
-        // 2. Verificar caché en memoria
+        // 2. Verificar en caché o con Supabase (con deduplicación en vuelo y Retry)
         let sbUser;
-        const cached = tokenCache.get(token);
-        const now = Date.now();
-        if (cached && now < cached.cachedAt + 3 * 60 * 1000) {
-            sbUser = cached.user;
-        } else {
-            // 3. Si no está en caché o expiró la caché de 3 min, validar con Supabase (con Retry)
-            try {
-                const result = await getUserWithRetry(token);
-                sbUser = result.user;
-                if (sbUser) {
-                    tokenCache.set(token, {
-                        user: sbUser,
-                        cachedAt: now,
-                        exp: decoded.exp
-                    });
-                }
-            } catch (err) {
-                if (isInvalidAuthError(err)) {
-                    console.warn('⚠️ Sesión de usuario inválida:', err.message);
-                    tokenCache.delete(token);
-                    return res.status(401).json({ error: 'Sesión expirada. Por favor inicie sesión nuevamente.' });
-                }
-
-                if (isRetryableAuthError(err)) {
-                    console.warn('⚠️ Supabase Auth Connectivity Warning (DNS/Network).');
-                } else {
-                    console.error('❌ Supabase Auth unexpected error:', err);
-                }
-                return res.status(503).json({ error: 'Error de conexión con servicio de autenticación. Intente nuevamente.' });
+        try {
+            sbUser = await resolveSupabaseUser(token, decoded, now);
+        } catch (err) {
+            if (isInvalidAuthError(err)) {
+                console.warn('⚠️ Sesión de usuario inválida:', err.message);
+                tokenCache.delete(token);
+                return res.status(401).json({ error: 'Sesión expirada. Por favor inicie sesión nuevamente.' });
             }
+
+            if (isRetryableAuthError(err)) {
+                console.warn('⚠️ Supabase Auth Connectivity Warning (DNS/Network).');
+            } else {
+                console.error('❌ Supabase Auth unexpected error:', err);
+            }
+            return res.status(503).json({ error: 'Error de conexión con servicio de autenticación. Intente nuevamente.' });
         }
 
         if (!sbUser) {
             return res.status(401).json({ error: 'Sesión inválida o expirada.' });
         }
 
-        // 4. Obtener usuario de nuestra Base de Datos (Roles, Usage, Subscription)
-        const dbUser = await userRepository.findById(sbUser.id);
+        // 3. Obtener usuario de nuestra Base de Datos con deduplicación e hidratación ligera
+        const dbUser = await resolveDbUser(token, sbUser, req);
 
         if (!dbUser) {
             console.error(`❌ Usuario Auth ${sbUser.id} no encontrado en DB Local.`);
             return res.status(401).json({ error: 'Usuario no registrado en el sistema.' });
         }
 
-        dbUser.emailVerified = !!sbUser.email_confirmed_at;
         req.user = dbUser;
         next();
 
@@ -198,38 +267,23 @@ async function optionalAuth(req, res, next) {
     try {
         // 1. Decodificar localmente el JWT
         const decoded = jwt.decode(token);
-        if (!decoded || !decoded.exp || Date.now() / 1000 > decoded.exp) {
+        const now = Date.now();
+        if (!decoded || !decoded.exp || now / 1000 > decoded.exp) {
+            tokenCache.delete(token);
             return next();
         }
 
-        // 2. Verificar caché en memoria
-        let sbUser;
-        const cached = tokenCache.get(token);
-        const now = Date.now();
-        if (cached && now < cached.cachedAt + 3 * 60 * 1000) {
-            sbUser = cached.user;
-        } else {
-            // 3. Validar con Supabase
-            const result = await getUserWithRetry(token);
-            sbUser = result.user;
-            if (sbUser) {
-                tokenCache.set(token, {
-                    user: sbUser,
-                    cachedAt: now,
-                    exp: decoded.exp
-                });
-            }
-        }
+        // 2. Verificar en caché o con Supabase (con deduplicación en vuelo)
+        const sbUser = await resolveSupabaseUser(token, decoded, now);
 
         if (sbUser) {
-            const dbUser = await userRepository.findById(sbUser.id);
+            const dbUser = await resolveDbUser(token, sbUser, req);
             if (dbUser) {
-                dbUser.emailVerified = !!sbUser.email_confirmed_at;
                 req.user = dbUser;
             }
         }
     } catch (err) {
-        if (err.message.includes('fetch failed') || err.code === 'UND_ERR_CONNECT_TIMEOUT') {
+        if (err.message?.includes('fetch failed') || err.code === 'UND_ERR_CONNECT_TIMEOUT') {
             console.warn('⚠️ Supabase Auth (Optional) Timeout/Network Error. Ignorando...');
         }
     }
@@ -289,4 +343,4 @@ function internalServiceAuth(req, res, next) {
     return next();
 }
 
-module.exports = { auth, optionalAuth, adminOnly, authIdentity, internalServiceAuth };
+module.exports = { auth, optionalAuth, adminOnly, authIdentity, internalServiceAuth, clearTokenCache, pruneTokenCache };

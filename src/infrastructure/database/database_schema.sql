@@ -5,12 +5,10 @@
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
--- 1. EXTENSIONS
+-- 1. EXTENSIONS & IMMUTABLE WRAPPERS
 -- ------------------------------------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS extensions;
 CREATE EXTENSION IF NOT EXISTS "fuzzystrmatch" WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS "hypopg" WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS "index_advisor" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
@@ -18,7 +16,15 @@ CREATE EXTENSION IF NOT EXISTS "plpgsql" WITH SCHEMA pg_catalog;
 CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA vault;
 CREATE EXTENSION IF NOT EXISTS "unaccent" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS "vector" WITH SCHEMA extensions;
+
+CREATE OR REPLACE FUNCTION public.f_unaccent(text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE PARALLEL SAFE STRICT
+SET search_path = public, extensions, pg_temp
+AS $func$
+    SELECT extensions.unaccent($1);
+$func$;
 
 -- ------------------------------------------------------------------------------
 -- 2. CUSTOM TYPES & ENUMS
@@ -1087,18 +1093,25 @@ CREATE INDEX idx_course_books_resource ON public.course_books USING btree (resou
 CREATE UNIQUE INDEX courses_course_id_key ON public.courses USING btree (course_id);
 CREATE INDEX idx_case_scenarios_domain_target_topic ON public.case_scenarios USING btree (domain, target, topic);
 CREATE UNIQUE INDEX case_scenarios_code_key ON public.case_scenarios USING btree (code);
+CREATE INDEX idx_case_scenarios_title_trgm ON public.case_scenarios USING gin (title extensions.gin_trgm_ops);
+CREATE INDEX idx_case_scenarios_code_trgm ON public.case_scenarios USING gin (code extensions.gin_trgm_ops);
 CREATE INDEX idx_courses_name_trgm ON public.courses USING gin (f_unaccent((name)::text) gin_trgm_ops);
+CREATE INDEX idx_courses_name_lower_trgm ON public.courses USING gin (public.f_unaccent(lower((name)::text)) extensions.gin_trgm_ops);
 CREATE INDEX idx_decks_public_category ON public.decks USING btree (is_public, category) WHERE (is_public = true);
 CREATE INDEX idx_decks_user_parent ON public.decks USING btree (user_id, parent_id, type);
 CREATE INDEX idx_page_views_entity ON public.page_views USING btree (entity_type, entity_id);
 CREATE INDEX idx_payment_events_user_id ON public.payment_events USING btree (user_id, received_at DESC);
-CREATE INDEX idx_qbank_domain ON public.question_bank USING btree (domain);
 CREATE INDEX idx_qbank_topic ON public.question_bank USING btree (topic);
 CREATE INDEX idx_question_bank_career ON public.question_bank USING btree (career);
-CREATE INDEX idx_question_bank_case_id ON public.question_bank USING btree (case_id);
 CREATE INDEX idx_question_bank_case_id_order ON public.question_bank USING btree (case_id, case_order ASC);
 CREATE INDEX idx_question_bank_created_at ON public.question_bank USING btree (created_at DESC);
+CREATE INDEX idx_question_bank_domain_created_at ON public.question_bank USING btree (domain, created_at DESC);
+CREATE INDEX idx_question_bank_simulator_lookup ON public.question_bank USING btree (domain, target, difficulty, topic);
+CREATE INDEX idx_question_bank_domain_topic_unaccent ON public.question_bank USING btree (domain, public.f_unaccent(upper((topic)::text)));
 CREATE INDEX idx_question_bank_domain_topic_sub ON public.question_bank USING btree (domain, topic, subtopic);
+CREATE INDEX idx_question_bank_qtext_trgm ON public.question_bank USING gin (question_text extensions.gin_trgm_ops);
+CREATE INDEX idx_question_bank_topic_trgm ON public.question_bank USING gin (topic extensions.gin_trgm_ops);
+CREATE INDEX idx_question_bank_subtopic_trgm ON public.question_bank USING gin (subtopic extensions.gin_trgm_ops);
 CREATE UNIQUE INDEX question_bank_question_hash_key ON public.question_bank USING btree (question_hash);
 CREATE INDEX idx_quiz_history_user_date ON public.quiz_history USING btree (user_id, created_at);
 CREATE UNIQUE INDEX quiz_history_source_session_unique ON public.quiz_history USING btree (source_session_id) WHERE (source_session_id IS NOT NULL);
@@ -1106,19 +1119,21 @@ CREATE INDEX quiz_sessions_user_status_idx ON public.quiz_sessions USING btree (
 CREATE INDEX quiz_session_questions_session_idx ON public.quiz_session_questions USING btree (session_id, position);
 CREATE INDEX idx_resources_created_at ON public.resources USING btree (created_at DESC);
 CREATE INDEX idx_resources_bulletin_created ON public.resources (created_at DESC, id DESC) WHERE publish_in_bulletin AND visible;
+CREATE INDEX idx_resources_title_trgm ON public.resources USING gin (public.f_unaccent(lower((title)::text)) extensions.gin_trgm_ops);
 CREATE UNIQUE INDEX resources_resource_id_key ON public.resources USING btree (resource_id);
 CREATE UNIQUE INDEX resources_url_key ON public.resources USING btree (url);
 CREATE INDEX idx_search_history_query ON public.search_history USING btree (query);
+CREATE INDEX idx_search_history_created_source ON public.search_history USING btree (created_at DESC, source);
 CREATE INDEX idx_topic_resources_resource ON public.topic_resources USING btree (resource_id);
 CREATE INDEX idx_topic_resources_topic ON public.topic_resources USING btree (topic_id);
 CREATE INDEX idx_topics_name_trgm ON public.topics USING gin (f_unaccent((name)::text) gin_trgm_ops);
+CREATE INDEX idx_topics_name_lower_trgm ON public.topics USING gin (public.f_unaccent(lower((name)::text)) extensions.gin_trgm_ops);
 CREATE UNIQUE INDEX topics_topic_id_key ON public.topics USING btree (topic_id);
 CREATE INDEX idx_flashcards_user_review ON public.user_flashcards USING btree (user_id, next_review_at);
 CREATE INDEX idx_user_flashcards_deck_sort ON public.user_flashcards USING btree (deck_id, sort_order, created_at);
 CREATE INDEX idx_user_flashcards_user_deck_next ON public.user_flashcards USING btree (user_id, deck_id, next_review_at);
-CREATE INDEX idx_uhist_user_q ON public.user_question_history USING btree (user_id, question_id);
-CREATE UNIQUE INDEX unique_user_question ON public.user_question_history USING btree (user_id, question_id);
 CREATE UNIQUE INDEX user_question_history_user_id_question_id_key ON public.user_question_history USING btree (user_id, question_id);
+CREATE INDEX idx_user_question_history_user_seen_at ON public.user_question_history USING btree (user_id, seen_at DESC) INCLUDE (question_id);
 CREATE INDEX idx_users_name_trgm ON public.users USING gin (f_unaccent((name)::text) gin_trgm_ops);
 CREATE INDEX idx_users_subscription_status ON public.users USING btree (subscription_status);
 CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email);

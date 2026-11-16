@@ -6,7 +6,6 @@ const { bulletinController, coursesController, analyticsController, authControll
 
 // --- Importar Middleware ---
 const { auth, optionalAuth, adminOnly, authIdentity, internalServiceAuth } = require('../middleware/authMiddleware');
-const usageMiddleware = require('../middleware/usageMiddleware');
 const checkAILimits = require('../../application/middlewares/checkLimitsMiddleware'); // ✅ NUEVO LÍMITE DE PRECIOS
 const { authLimiter, platformSupportLimiter } = require('../config/rateLimiters');
 

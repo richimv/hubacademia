@@ -73,13 +73,19 @@ class Server {
         return this._setupPromise;
     }
 
-    async testDBConnection() {
+    async testDBConnection({ force = false } = {}) {
         try {
             const db = require('../database/db');
             require('./googleCredentials').resolveGoogleAuthOptions('ServerAuth');
 
+            if (isServerlessRuntime() && !force) {
+                console.log('⚡ [Serverless] Conexión a PostgreSQL diferida bajo demanda (lazy pool).');
+                return true;
+            }
+
             const client = await db.query('SELECT NOW()');
             console.log('💾 PostgreSQL conectado exitosamente. Hora del servidor de BD:', client.rows[0].now);
+            return true;
         } catch (error) {
             console.error('❌ Error al conectar con la base de datos PostgreSQL:', error.message);
             if (isServerlessRuntime()) {
