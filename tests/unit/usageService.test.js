@@ -69,4 +69,24 @@ describe('UsageService', () => {
         const usageService = new UsageService({});
         await expect(usageService.checkAndIncrementUsage('user-123', 0)).rejects.toThrow('entero positivo');
     });
+
+    it('delegates findLimitsProfileById, expireSubscription, resetDailyUsage and resetMonthlyFlashcards to UserRepository', async () => {
+        const userRepository = {
+            findLimitsProfileById: jest.fn().mockResolvedValue({ subscription_tier: 'basic' }),
+            expireSubscription: jest.fn().mockResolvedValue(true),
+            resetDailyUsage: jest.fn().mockResolvedValue(true),
+            resetMonthlyFlashcards: jest.fn().mockResolvedValue({ reset: true, month: '2026-11' })
+        };
+        const usageService = new UsageService(userRepository);
+
+        await expect(usageService.findLimitsProfileById('user-1')).resolves.toEqual({ subscription_tier: 'basic' });
+        await expect(usageService.expireSubscription('user-1')).resolves.toBe(true);
+        await expect(usageService.resetDailyUsage('user-1', { todayDate: '2026-11-16' })).resolves.toBe(true);
+        await expect(usageService.resetMonthlyFlashcards('user-1', '2026-11')).resolves.toEqual({ reset: true, month: '2026-11' });
+
+        expect(userRepository.findLimitsProfileById).toHaveBeenCalledWith('user-1');
+        expect(userRepository.expireSubscription).toHaveBeenCalledWith('user-1');
+        expect(userRepository.resetDailyUsage).toHaveBeenCalledWith('user-1', { todayDate: '2026-11-16' });
+        expect(userRepository.resetMonthlyFlashcards).toHaveBeenCalledWith('user-1', '2026-11');
+    });
 });

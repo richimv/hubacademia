@@ -44,6 +44,146 @@ class UserRepository {
     }
 
     /**
+     * Obtiene únicamente las columnas de perfil y cuotas requeridas por checkLimitsMiddleware.
+     * @param {string} userId - UUID del usuario
+     * @returns {Promise<Object|null>}
+     */
+    async findLimitsProfileById(userId) {
+        if (!userId) return null;
+        try {
+            const result = await db.query(`
+                SELECT
+                    role,
+                    subscription_tier,
+                    subscription_status,
+                    usage_count,
+                    max_free_limit,
+                    subscription_expires_at,
+                    daily_ai_usage,
+                    daily_rag_usage,
+                    monthly_flashcards_usage,
+                    daily_simulator_usage,
+                    daily_import_usage,
+                    last_usage_reset,
+                    last_free_renewal
+                FROM public.users
+                WHERE id = $1
+            `, [userId]);
+            return result.rows[0] || null;
+        } catch (error) {
+            console.error('❌ [UserRepository] Error en findLimitsProfileById:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Rebaja una suscripción expirada a plan gratuito con 10 vidas de fidelización.
+     * @param {string} userId - UUID del usuario
+     * @returns {Promise<boolean>}
+     */
+    async expireSubscription(userId) {
+        if (!userId) throw new Error('userId es requerido para expireSubscription');
+        try {
+            const maxLives = FREE_PLAN_CONFIG?.MAX_LIVES || 10;
+            const result = await db.query(`
+                UPDATE public.users
+                SET subscription_tier = 'free',
+                    subscription_status = 'expired',
+                    usage_count = 0,
+                    max_free_limit = $2,
+                    last_free_renewal = CURRENT_TIMESTAMP
+                WHERE id = $1
+            `, [userId, maxLives]);
+            return result.rowCount > 0;
+        } catch (error) {
+            console.error('❌ [UserRepository] Error en expireSubscription:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Reinicia contadores diarios de uso (y opcionalmente monthly_flashcards_usage) junto con last_usage_reset.
+     * @param {string} userId - UUID del usuario
+     * @param {Object|Array<string>|string} [fields={}] - Fecha o campos de cuota a reiniciar
+     * @returns {Promise<boolean>}
+     */
+    async resetDailyUsage(userId, fields = {}) {
+        if (!userId) throw new Error('userId es requerido para resetDailyUsage');
+        try {
+            const allowedResetColumns = [
+                'daily_ai_usage',
+                'daily_rag_usage',
+                'daily_simulator_usage',
+                'daily_import_usage',
+                'monthly_flashcards_usage'
+            ];
+
+            let todayDate = null;
+            let columnsToReset = [
+                'daily_ai_usage',
+                'daily_rag_usage',
+                'daily_simulator_usage',
+                'daily_import_usage'
+            ];
+
+            if (typeof fields === 'string') {
+                todayDate = fields;
+            } else if (Array.isArray(fields)) {
+                const filtered = fields.filter(col => allowedResetColumns.includes(col));
+                if (filtered.length > 0) columnsToReset = filtered;
+            } else if (fields && typeof fields === 'object') {
+                todayDate = fields.last_usage_reset || fields.lastUsageReset || fields.todayDate || null;
+                const explicitCols = Object.keys(fields).filter(key => allowedResetColumns.includes(key));
+                if (explicitCols.length > 0) {
+                    columnsToReset = explicitCols;
+                } else if (fields.includeMonthlyFlashcards === true || fields.resetMonthlyFlashcards === true) {
+                    columnsToReset = [...columnsToReset, 'monthly_flashcards_usage'];
+                }
+            }
+
+            if (!todayDate) {
+                todayDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' });
+            }
+
+            const setClauses = columnsToReset.map(col => `${col} = 0`);
+            setClauses.push('last_usage_reset = $1');
+
+            const result = await db.query(
+                `UPDATE public.users SET ${setClauses.join(', ')} WHERE id = $2`,
+                [todayDate, userId]
+            );
+            return result.rowCount > 0;
+        } catch (error) {
+            console.error('❌ [UserRepository] Error en resetDailyUsage:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Reinicia el contador mensual de generación de flashcards para el usuario.
+     * @param {string} userId - UUID del usuario
+     * @param {string} [currentMonth] - Mes actual YYYY-MM
+     * @returns {Promise<{reset: boolean, month: string}>}
+     */
+    async resetMonthlyFlashcards(userId, currentMonth = null) {
+        if (!userId) throw new Error('userId es requerido para resetMonthlyFlashcards');
+        try {
+            const normalizedMonth = typeof currentMonth === 'string' && currentMonth.trim()
+                ? currentMonth.trim().slice(0, 7)
+                : new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' }).slice(0, 7);
+
+            const result = await db.query(
+                `UPDATE public.users SET monthly_flashcards_usage = 0 WHERE id = $1`,
+                [userId]
+            );
+            return { reset: result.rowCount > 0, month: normalizedMonth };
+        } catch (error) {
+            console.error('❌ [UserRepository] Error en resetMonthlyFlashcards:', error.message);
+            throw error;
+        }
+    }
+
+    /**
      * Renueva las vidas gratuitas de un usuario elegible de forma atómica cada 30 días (mensual).
      * La regla de negocio se orquesta desde UsageService; el repositorio
      * mantiene aquí el acceso SQL a la tabla users.

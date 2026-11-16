@@ -768,5 +768,12 @@ Se integró `tests/unit/tutorAiResponseIntegrity.test.js`, validando contra el c
    - Se preservan únicamente los contadores numéricos agregados de consumo y cuotas (`daily_ai_usage`, `daily_rag_usage`, `usage_count`) necesarios para el cumplimiento de límites de suscripción y control de costos de API, sin persistir jamás el texto o contenido de las consultas.
 
 ---
-*Última actualización: 10 de septiembre de 2026 (Blindaje Anti-Alucinación RAG para Free/Basic, Privacidad Estricta de Chats, Títulos de Alto Contraste en Modo Claro y Paridad Centralizada con Apps Móviles)*
+
+## 26. Desacoplamiento de Visión Multimodal GCS en `TutorAiService` (Noviembre 2026)
+
+- Se eliminó la dependencia inversa `domain -> application` (`TutorAiService` ya no importa `application/controllers/mediaController.js`).
+- Se extrajo la resolución de rutas y descarga de buffers de imagen desde Google Cloud Storage al gateway de infraestructura `src/infrastructure/storage/gcsMediaStorage.js` (`downloadImageBuffer(gcsUrlOrPath)` y `resolveGcsPath(gcsUrlOrPath)`), consumido por `TutorAiService._extractMultimodalParts` con manejo defensivo `try/catch`.
+
+---
+*Última actualización: 16 de noviembre de 2026 (Desacoplamiento de Visión Multimodal GCS hacia Infrastructure Storage)*
 

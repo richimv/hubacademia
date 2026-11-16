@@ -1,5 +1,5 @@
 const tutorAiService = require('../../src/domain/services/tutorAiService');
-const mediaController = require('../../src/application/controllers/mediaController');
+const gcsMediaStorage = require('../../src/infrastructure/storage/gcsMediaStorage');
 
 describe('TutorAiService - Multimodal Vision (Quiz & Flashcards)', () => {
     let mockDownload;
@@ -9,7 +9,7 @@ describe('TutorAiService - Multimodal Vision (Quiz & Flashcards)', () => {
         mockDownload = jest.fn().mockResolvedValue([Buffer.from('fake-image-bytes-webp')]);
         mockExists = jest.fn().mockResolvedValue([true]);
 
-        jest.spyOn(mediaController.storage, 'bucket').mockReturnValue({
+        jest.spyOn(gcsMediaStorage.storage, 'bucket').mockReturnValue({
             file: jest.fn().mockReturnValue({
                 exists: mockExists,
                 download: mockDownload
@@ -127,5 +127,20 @@ describe('TutorAiService - Multimodal Vision (Quiz & Flashcards)', () => {
         // Debe haber descargado únicamente la válida sin arrojar error fatal
         expect(result.parts).toHaveLength(1);
         expect(result.parts[0].inlineData.mimeType).toBe('image/webp');
+    });
+
+    test('gcsMediaStorage.downloadImageBuffer soporta URLs con ?file=/?path=, rutas relativas y rechaza traversal', async () => {
+        expect(gcsMediaStorage.resolveGcsPath('../secreto.png')).toBeNull();
+        expect(gcsMediaStorage.resolveGcsPath('https://cdn.example.com/public.png')).toBeNull();
+        expect(gcsMediaStorage.resolveGcsPath('/assets/logo.png')).toBeNull();
+        expect(gcsMediaStorage.resolveGcsPath('https://www.hubacademia.com/api/media/gcs?path=cases%2Fc1.webp')).toBe('cases/c1.webp');
+
+        const buf = await gcsMediaStorage.downloadImageBuffer('https://www.hubacademia.com/api/media/gcs?file=editor-content/pregunta1.webp');
+        expect(Buffer.isBuffer(buf)).toBe(true);
+        expect(buf.toString()).toBe('fake-image-bytes-webp');
+
+        mockDownload.mockRejectedValueOnce(new Error('GCS network timeout'));
+        const failedBuf = await gcsMediaStorage.downloadImageBuffer('editor-content/roto.webp');
+        expect(failedBuf).toBeNull();
     });
 });

@@ -13,28 +13,17 @@ describe('Deck Clone Reactive Sync & Code Health Auditing', () => {
     });
 
     describe('Backend: DeckService.cloneDeck Clean Architecture', () => {
-        it('clones deck cleanly without executing dead redundant queries (Clean Code)', async () => {
-            db.query.mockImplementation((sql, params) => {
-                if (sql.includes('SELECT * FROM decks WHERE id = $1 AND is_public = true')) {
-                    return Promise.resolve({
-                        rows: [{
-                            id: 'public-deck-1',
-                            name: 'Neuroanatomía Clínica',
-                            icon: 'fas fa-brain',
-                            description: 'Guía de neuro',
-                            color: '#f472b6',
-                            category: 'Medicina'
-                        }]
-                    });
-                }
-                if (sql.includes('SELECT id FROM decks WHERE user_id = $1')) {
-                    return Promise.resolve({ rows: [] }); // Not yet cloned
-                }
-                if (sql.includes('SELECT COUNT(*) as count FROM decks')) {
-                    return Promise.resolve({ rows: [{ count: '0' }] });
-                }
-                return Promise.resolve({ rows: [] });
+        it('clones deck cleanly delegating to flashcardRepository without direct db queries (Clean Code)', async () => {
+            trainingRepository.getPublicDeckForClone.mockResolvedValue({
+                id: 'public-deck-1',
+                name: 'Neuroanatomía Clínica',
+                icon: 'fas fa-brain',
+                description: 'Guía de neuro',
+                color: '#f472b6',
+                category: 'Medicina'
             });
+            trainingRepository.hasUserClonedDeck.mockResolvedValue(false);
+            trainingRepository.countDailyClones.mockResolvedValue(0);
 
             trainingRepository.createDeck.mockResolvedValue({
                 id: 'cloned-deck-uuid',
@@ -52,6 +41,10 @@ describe('Deck Clone Reactive Sync & Code Health Auditing', () => {
 
             expect(cloned.id).toBe('cloned-deck-uuid');
             expect(cloned.name).toBe('Neuroanatomía Clínica (Clon)');
+            expect(db.query).not.toHaveBeenCalled();
+            expect(trainingRepository.getPublicDeckForClone).toHaveBeenCalledWith('public-deck-1');
+            expect(trainingRepository.hasUserClonedDeck).toHaveBeenCalledWith('user-test-uuid', 'Neuroanatomía Clínica (Clon)', 'Neuroanatomía Clínica');
+            expect(trainingRepository.countDailyClones).toHaveBeenCalledWith('user-test-uuid');
 
             // Verificación de Clean Code (@code-health-rules):
             // No debe llamarse a getDeckById con 'GUEST' (código muerto eliminado)

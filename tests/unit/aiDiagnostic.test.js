@@ -314,4 +314,101 @@ describe('AI Diagnostic Controller & Heuristic Analytics Engine', () => {
             expect(mockAnalyticsService.recordFeedback).toHaveBeenCalledWith('q', 'r', true, 'usr-77', 'm1');
         });
     });
+
+    describe('AnalyticsService generateDiagnosticInsight (Domain VertexAI)', () => {
+        const sampleMedStats = {
+            avg_score: '15.0',
+            accuracy: 75,
+            mastered_cards: 12,
+            radar_data: [
+                { subject: 'Cardiología', accuracy: 85, correct: 17, total: 20 },
+                { subject: 'Pediatría', accuracy: 55, correct: 11, total: 20 }
+            ]
+        };
+
+        it('returns heuristic diagnostic without calling VertexAI for non-advanced tiers or fallbackToStatic', async () => {
+            const mockGenerateContent = jest.fn();
+            const service = new AnalyticsService({
+                vertexAi: { getGenerativeModel: jest.fn(() => ({ generateContent: mockGenerateContent })) }
+            });
+
+            const basicRes = await service.generateDiagnosticInsight({
+                user: { id: 'u1', subscriptionTier: 'basic' },
+                userTier: 'basic',
+                stats: sampleMedStats,
+                context: 'MEDICINA'
+            });
+            expect(basicRes.source).toBe('heuristic');
+            expect(mockGenerateContent).not.toHaveBeenCalled();
+
+            const fallbackRes = await service.generateDiagnosticInsight({
+                user: { id: 'u2', subscriptionTier: 'advanced' },
+                userTier: 'advanced',
+                stats: sampleMedStats,
+                context: 'MEDICINA',
+                fallbackToStatic: true
+            });
+            expect(fallbackRes.source).toBe('heuristic');
+            expect(mockGenerateContent).not.toHaveBeenCalled();
+        });
+
+        it('generates AI diagnostic via VertexAI for advanced/admin users and preserves MINEDU metrics in EDUCACION', async () => {
+            const aiPayload = {
+                readinessIndex: 99,
+                readinessLevel: 'AI Level',
+                strengths: '<p>Fortaleza clínica probada (75%).</p>',
+                weaknesses: '<p>Refuerzo en Pediatría.</p>',
+                strategy: 'Practicar casos clínicos comentados.',
+                highYieldTip: 'Revisa criterios de choque séptico.',
+                sprint: [{ step: 1, title: 'Paso 1', desc: 'Repasar guías' }]
+            };
+            const mockGenerateContent = jest.fn().mockResolvedValue({
+                response: {
+                    candidates: [{ content: { parts: [{ text: JSON.stringify(aiPayload) }] } }]
+                }
+            });
+            const service = new AnalyticsService({
+                vertexAi: { getGenerativeModel: jest.fn(() => ({ generateContent: mockGenerateContent })) }
+            });
+
+            const medRes = await service.generateDiagnosticInsight({
+                user: { id: 'adv-1', subscriptionTier: 'advanced' },
+                userTier: 'advanced',
+                stats: sampleMedStats,
+                context: 'MEDICINA'
+            });
+            expect(medRes.source).toBe('ai');
+            expect(medRes.strengths).toContain('Fortaleza clínica');
+            expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+
+            const eduRes = await service.generateDiagnosticInsight({
+                user: { id: 'adm-1', role: 'admin' },
+                userTier: 'admin',
+                stats: { avg_score: 14, accuracy: 70, mastered_cards: 5, total_questions: 60, total_correct: 42 },
+                context: 'EDUCACION',
+                targetScale: 4
+            });
+            expect(eduRes.source).toBe('ai');
+            expect(eduRes.hasHistory).toBe(true);
+            expect(eduRes.readinessIndex).toBe(70);
+            expect(eduRes.mineduEvaluation).toBeDefined();
+            expect(eduRes.mineduEvaluation.targetScale).toBe(4);
+        });
+
+        it('falls back to heuristic diagnostic if VertexAI throws or returns invalid JSON', async () => {
+            const mockGenerateContent = jest.fn().mockRejectedValue(new Error('Vertex quota exceeded'));
+            const service = new AnalyticsService({
+                vertexAi: { getGenerativeModel: jest.fn(() => ({ generateContent: mockGenerateContent })) }
+            });
+
+            const res = await service.generateDiagnosticInsight({
+                user: { id: 'adv-2' },
+                userTier: 'advanced',
+                stats: sampleMedStats,
+                context: 'MEDICINA'
+            });
+            expect(res.source).toBe('heuristic');
+            expect(res.strengths).toContain('Cardiología');
+        });
+    });
 });

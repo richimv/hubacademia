@@ -120,28 +120,17 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
     });
 
     describe('Clone Deck Category Preservation', () => {
-        it('DeckService.cloneDeck should preserve the original deck category', async () => {
-            db.query.mockImplementation((sql, params) => {
-                if (sql.includes('SELECT * FROM decks WHERE id = $1 AND is_public = true')) {
-                    return Promise.resolve({
-                        rows: [{
-                            id: 'public-deck-1',
-                            name: 'Vocabulario Italiano',
-                            icon: 'fas fa-language',
-                            description: 'Guía de italiano',
-                            color: '#a78bfa',
-                            category: 'Idiomas'
-                        }]
-                    });
-                }
-                if (sql.includes('SELECT id FROM decks WHERE user_id = $1')) {
-                    return Promise.resolve({ rows: [] }); // Not yet cloned
-                }
-                if (sql.includes('SELECT COUNT(*) as count FROM decks')) {
-                    return Promise.resolve({ rows: [{ count: '2' }] });
-                }
-                return Promise.resolve({ rows: [] });
+        it('DeckService.cloneDeck should preserve the original deck category using flashcardRepository', async () => {
+            trainingRepository.getPublicDeckForClone.mockResolvedValue({
+                id: 'public-deck-1',
+                name: 'Vocabulario Italiano',
+                icon: 'fas fa-language',
+                description: 'Guía de italiano',
+                color: '#a78bfa',
+                category: 'Idiomas'
             });
+            trainingRepository.hasUserClonedDeck.mockResolvedValue(false);
+            trainingRepository.countDailyClones.mockResolvedValue(2);
 
             trainingRepository.getDeckById.mockResolvedValue({ id: 'public-deck-1', name: 'Vocabulario Italiano' });
             trainingRepository.createDeck.mockResolvedValue({
@@ -154,6 +143,7 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
 
             const cloned = await DeckService.cloneDeck('user-alice', 'public-deck-1');
 
+            expect(db.query).not.toHaveBeenCalled();
             expect(trainingRepository.createDeck).toHaveBeenCalledWith(
                 'user-alice',
                 'Vocabulario Italiano (Clon)',
@@ -166,6 +156,16 @@ describe('Deck Idiomas Category, Security & IDOR Protection', () => {
                 'Idiomas'
             );
             expect(cloned.category).toBe('Idiomas');
+        });
+
+        it('DeckService.isMediaInUse should delegate to flashcardRepository without direct db queries', async () => {
+            trainingRepository.isMediaInUse.mockResolvedValue(true);
+
+            const inUse = await DeckService.isMediaInUse('flashcards/sample.webp');
+
+            expect(inUse).toBe(true);
+            expect(trainingRepository.isMediaInUse).toHaveBeenCalledWith('flashcards/sample.webp');
+            expect(db.query).not.toHaveBeenCalled();
         });
     });
 

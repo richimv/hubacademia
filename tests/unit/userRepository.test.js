@@ -140,4 +140,61 @@ describe('UserRepository', () => {
             await expect(userRepository.delete('user-missing')).rejects.toThrow('Usuario no encontrado.');
         });
     });
+
+    describe('Limits profile & usage reset helpers', () => {
+        it('findLimitsProfileById selects only quota and subscription columns', async () => {
+            const mockProfile = {
+                role: 'student',
+                subscription_tier: 'advanced',
+                subscription_status: 'active',
+                daily_ai_usage: 4
+            };
+            db.query.mockResolvedValue({ rows: [mockProfile] });
+
+            const result = await userRepository.findLimitsProfileById('user-123');
+
+            expect(result).toEqual(mockProfile);
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('FROM public.users'),
+                ['user-123']
+            );
+        });
+
+        it('resetDailyUsage resets daily columns and optionally monthly_flashcards_usage', async () => {
+            db.query.mockResolvedValue({ rowCount: 1 });
+
+            await expect(userRepository.resetDailyUsage('user-123', { todayDate: '2026-11-16' })).resolves.toBe(true);
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('daily_ai_usage = 0'),
+                ['2026-11-16', 'user-123']
+            );
+
+            db.query.mockClear();
+            await expect(userRepository.resetDailyUsage('user-123', {
+                todayDate: '2026-11-16',
+                includeMonthlyFlashcards: true
+            })).resolves.toBe(true);
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('monthly_flashcards_usage = 0'),
+                ['2026-11-16', 'user-123']
+            );
+        });
+
+        it('resetMonthlyFlashcards and expireSubscription execute targeted updates', async () => {
+            db.query.mockResolvedValue({ rowCount: 1 });
+
+            const monthlyRes = await userRepository.resetMonthlyFlashcards('user-123', '2026-11');
+            expect(monthlyRes).toEqual({ reset: true, month: '2026-11' });
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('monthly_flashcards_usage = 0'),
+                ['user-123']
+            );
+
+            await expect(userRepository.expireSubscription('user-123')).resolves.toBe(true);
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining("subscription_status = 'expired'"),
+                ['user-123', 10]
+            );
+        });
+    });
 });

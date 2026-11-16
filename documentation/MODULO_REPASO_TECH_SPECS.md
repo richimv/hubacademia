@@ -518,9 +518,14 @@ Se ha realizado una reingeniería del flujo de navegación y persistencia para s
     - Se incorporaron pruebas unitarias dedicadas en `tests/unit/deckIdiomasAndSecurity.test.js` verificando que las consultas SQL de `getPublicDecks` no referencien `author_name` ni unan la tabla `users`, y que el template en `repaso.js` no contenga referencias a autores.
     - 63/63 suites de Jest ejecutadas con éxito (578/578 pruebas al 100%).
 
+- **Desacoplamiento de Dominio en `DeckService` (Noviembre 2026)**:
+  - Se eliminó toda importación y consulta SQL directa (`db.query`) dentro de `src/domain/services/deckService.js`.
+  - `DeckService.cloneDeck` delega la lectura del mazo público, verificación de clon previo y conteo de clonaciones en 24h a `FlashcardRepository` (`getPublicDeckForClone`, `hasUserClonedDeck`, `countDailyClones`).
+  - `DeckService.isMediaInUse` delega la verificación de referencias activas directamente a `FlashcardRepository.isMediaInUse(url)`.
+
 ---
 
-**Documentación Técnica Actualizada - Septiembre 2026.**
+**Documentación Técnica Actualizada - Noviembre 2026.**
 
 
 

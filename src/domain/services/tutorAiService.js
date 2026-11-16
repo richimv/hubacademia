@@ -5,7 +5,7 @@ const RagService = require('./ragService');
 const chatPrompts = require('../prompts/chatPrompts');
 const BookRepository = require('../repositories/bookRepository');
 const securityUtils = require('../utils/securityUtils');
-const mediaController = require('../../application/controllers/mediaController');
+const gcsMediaStorage = require('../../infrastructure/storage/gcsMediaStorage');
 
 const { resolveGoogleAuthOptions } = require('../../infrastructure/config/googleCredentials');
 const {
@@ -211,39 +211,26 @@ class TutorAiService {
                 continue;
             }
 
-            // Normalizar y extraer ruta GCS
-            let gcsPath = null;
-            if (candidate.includes('?file=')) {
-                gcsPath = candidate.split('?file=')[1].split('&')[0];
-            } else if (candidate.includes('?path=')) {
-                gcsPath = candidate.split('?path=')[1].split('&')[0];
-            } else if (!candidate.startsWith('http://') && !candidate.startsWith('https://') && !candidate.startsWith('/') && !candidate.startsWith('assets/')) {
-                gcsPath = candidate;
-            }
+            // Normalizar y extraer ruta GCS sin acoplarse a la capa de aplicación
+            const gcsPath = gcsMediaStorage.resolveGcsPath(candidate);
 
             if (gcsPath) {
                 try {
-                    gcsPath = decodeURIComponent(gcsPath).replace(/\\/g, '/');
                     if (visitedSources.has(gcsPath)) continue;
                     visitedSources.add(gcsPath);
 
                     const ext = path.extname(gcsPath).toLowerCase();
                     const mimeType = ext === '.png' ? 'image/png' : (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg' : 'image/webp';
 
-                    const bucket = mediaController.storage.bucket(mediaController.bucketName);
-                    const file = bucket.file(gcsPath);
-                    const [exists] = await file.exists();
-                    if (exists) {
-                        const [buffer] = await file.download();
-                        if (buffer && buffer.length > 0) {
-                            parts.push({
-                                inlineData: {
-                                    mimeType,
-                                    data: buffer.toString('base64')
-                                }
-                            });
-                            console.log(`🖼️ [TutorAiService] Imagen GCS resuelta como inlineData: ${gcsPath} (${buffer.length} bytes)`);
-                        }
+                    const buffer = await gcsMediaStorage.downloadImageBuffer(gcsPath);
+                    if (buffer && buffer.length > 0) {
+                        parts.push({
+                            inlineData: {
+                                mimeType,
+                                data: buffer.toString('base64')
+                            }
+                        });
+                        console.log(`🖼️ [TutorAiService] Imagen GCS resuelta como inlineData: ${gcsPath} (${buffer.length} bytes)`);
                     }
                 } catch (gcsErr) {
                     console.warn(`⚠️ [TutorAiService] No se pudo descargar imagen de GCS (${gcsPath}):`, gcsErr.message);

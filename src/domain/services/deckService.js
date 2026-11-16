@@ -1,6 +1,10 @@
 const trainingRepository = require('../repositories/flashcardRepository');
 
 class DeckService {
+    constructor(flashcardRepository = trainingRepository) {
+        this.flashcardRepository = flashcardRepository;
+    }
+
     async getUserDecks(userId, parentId = null) {
         return await trainingRepository.getDecks(userId, parentId);
     }
@@ -95,76 +99,64 @@ class DeckService {
     }
 
     async cloneDeck(userId, publicDeckId) {
-        // 1. Obtener mazo público original
-        const db = require('../../infrastructure/database/db');
-        const deckQuery = `SELECT * FROM decks WHERE id = $1 AND is_public = true`;
-        const deckRes = await db.query(deckQuery, [publicDeckId]);
+        try {
+            // 1. Obtener mazo público original
+            const deck = await this.flashcardRepository.getPublicDeckForClone(publicDeckId);
+            if (!deck) {
+                throw new Error('Mazo público no encontrado o no está disponible.');
+            }
 
-        if (deckRes.rows.length === 0) {
-            throw new Error('Mazo público no encontrado o no está disponible.');
+            // 2. Anti-Spam / Anti-Duplicados: Verificar si el usuario ya tiene este mazo clonado
+            const cloneName = `${deck.name} (Clon)`;
+            const alreadyCloned = await this.flashcardRepository.hasUserClonedDeck(userId, cloneName, deck.name);
+            if (alreadyCloned) {
+                throw new Error('Ya has clonado este mazo en tu biblioteca.');
+            }
+
+            // Anti-Abuso: Límite de seguridad contra scripts maliciosos (máx 30 clonaciones por día)
+            const dailyClonesCount = await this.flashcardRepository.countDailyClones(userId);
+            if (dailyClonesCount >= 30) {
+                throw new Error('Has alcanzado el límite de 30 clonaciones de mazos por día. Vuelve mañana.');
+            }
+
+            // 3. Crear el mazo clonado para el usuario
+            const newDeck = await this.createDeck(userId, cloneName, deck.icon, null, deck.description, deck.color, deck.category || 'General');
+
+            // 4. Obtener tarjetas originales
+            const cards = await this.getDeckCards(publicDeckId);
+
+            // 5. Inserción masiva vinculando URLs existentes sin re-sintetizar audio ni duplicar imágenes en GCS
+            if (cards && cards.length > 0) {
+                const mappedCards = cards.map(c => ({
+                    front: c.front_content,
+                    back: c.back_content,
+                    image_url: c.image_url,
+                    explanation_image_url: c.explanation_image_url,
+                    audioUrlFront: c.audio_url_frente,
+                    audioUrlBack: c.audio_url_dorso
+                }));
+
+                await this.addBulkCards(userId, newDeck.id, mappedCards);
+            }
+
+            // 6. Incrementar contador de guardados en la comunidad
+            await this.flashcardRepository.incrementDeckSaves(publicDeckId);
+
+            return newDeck;
+        } catch (error) {
+            console.error('❌ [DeckService] Error en cloneDeck:', error.message);
+            throw error;
         }
-
-        const deck = deckRes.rows[0];
-
-        // 2. Anti-Spam / Anti-Duplicados: Verificar si el usuario ya tiene este mazo clonado
-        const cloneName = `${deck.name} (Clon)`;
-        const existingCloneQuery = `SELECT id FROM decks WHERE user_id = $1 AND (name = $2 OR name = $3) LIMIT 1`;
-        const existingCloneRes = await db.query(existingCloneQuery, [userId, cloneName, deck.name]);
-        if (existingCloneRes.rows.length > 0) {
-            throw new Error('Ya has clonado este mazo en tu biblioteca.');
-        }
-
-        // Anti-Abuso: Límite de seguridad contra scripts maliciosos (máx 30 clonaciones por día)
-        const dailyClonesQuery = `
-            SELECT COUNT(*) as count FROM decks 
-            WHERE user_id = $1 AND name LIKE '% (Clon)' AND created_at > NOW() - INTERVAL '24 hours'
-        `;
-        const dailyClonesRes = await db.query(dailyClonesQuery, [userId]);
-        if (parseInt(dailyClonesRes.rows[0]?.count || 0) >= 30) {
-            throw new Error('Has alcanzado el límite de 30 clonaciones de mazos por día. Vuelve mañana.');
-        }
-
-        // 3. Crear el mazo clonado para el usuario
-        const newDeck = await this.createDeck(userId, cloneName, deck.icon, null, deck.description, deck.color, deck.category || 'General');
-
-        // 4. Obtener tarjetas originales
-        const cards = await this.getDeckCards(publicDeckId);
-
-        // 5. Inserción masiva vinculando URLs existentes sin re-sintetizar audio ni duplicar imágenes en GCS
-        if (cards && cards.length > 0) {
-            const mappedCards = cards.map(c => ({
-                front: c.front_content,
-                back: c.back_content,
-                image_url: c.image_url,
-                explanation_image_url: c.explanation_image_url,
-                audioUrlFront: c.audio_url_frente,
-                audioUrlBack: c.audio_url_dorso
-            }));
-
-            await this.addBulkCards(userId, newDeck.id, mappedCards);
-        }
-
-        // 6. Incrementar contador de guardados en la comunidad
-        await trainingRepository.incrementDeckSaves(publicDeckId);
-
-        return newDeck;
     }
 
     async isMediaInUse(url) {
-        if (typeof trainingRepository.isMediaInUse === 'function') {
-            const repoResult = await trainingRepository.isMediaInUse(url);
-            if (typeof repoResult === 'boolean') return repoResult;
+        if (!url || typeof url !== 'string') return false;
+        try {
+            return Boolean(await this.flashcardRepository.isMediaInUse(url));
+        } catch (error) {
+            console.error('❌ [DeckService] Error en isMediaInUse:', error.message);
+            throw error;
         }
-        const db = require('../../infrastructure/database/db');
-        const cardsQuery = `SELECT count(*) FROM user_flashcards WHERE image_url = $1 OR explanation_image_url = $1 OR audio_url_frente = $1 OR audio_url_dorso = $1`;
-        const decksQuery = `SELECT count(*) FROM decks WHERE description LIKE '%' || $1 || '%'`;
-
-        const [cardsRes, decksRes] = await Promise.all([
-            db.query(cardsQuery, [url]),
-            db.query(decksQuery, [url])
-        ]);
-
-        return (parseInt(cardsRes.rows[0].count, 10) + parseInt(decksRes.rows[0].count, 10)) > 0;
     }
 }
 

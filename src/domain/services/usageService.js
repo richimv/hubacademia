@@ -66,8 +66,62 @@ class UsageService {
      * Incrementa una columna de uso validada contra la lista blanca en el repositorio de usuarios.
      */
     async incrementUsageColumn(userId, columnName, amount = 1) {
-        if (typeof this.userRepository.incrementUsageColumn === 'function') {
-            return await this.userRepository.incrementUsageColumn(userId, columnName, amount);
+        try {
+            if (typeof this.userRepository.incrementUsageColumn === 'function') {
+                return await this.userRepository.incrementUsageColumn(userId, columnName, amount);
+            }
+        } catch (error) {
+            console.error('❌ [UsageService] Error en incrementUsageColumn:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtiene el perfil de límites y cuotas del usuario para el middleware de control.
+     */
+    async findLimitsProfileById(userId) {
+        if (!userId) return null;
+        try {
+            return await this.userRepository.findLimitsProfileById(userId);
+        } catch (error) {
+            console.error('❌ [UsageService] Error en findLimitsProfileById:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Rebaja una suscripción expirada a plan gratuito con 10 vidas de fidelización.
+     */
+    async expireSubscription(userId) {
+        try {
+            return await this.userRepository.expireSubscription(userId);
+        } catch (error) {
+            console.error('❌ [UsageService] Error en expireSubscription:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Reinicia contadores diarios de uso en el repositorio de usuarios.
+     */
+    async resetDailyUsage(userId, fields = {}) {
+        try {
+            return await this.userRepository.resetDailyUsage(userId, fields);
+        } catch (error) {
+            console.error('❌ [UsageService] Error en resetDailyUsage:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Reinicia el contador mensual de flashcards en el repositorio de usuarios.
+     */
+    async resetMonthlyFlashcards(userId, currentMonth = null) {
+        try {
+            return await this.userRepository.resetMonthlyFlashcards(userId, currentMonth);
+        } catch (error) {
+            console.error('❌ [UsageService] Error en resetMonthlyFlashcards:', error.message);
+            throw error;
         }
     }
 }
