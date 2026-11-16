@@ -136,11 +136,11 @@ class CourseRepository {
                         ${isGenericCourseQuery ? `WHEN 1=1 THEN 50` : ''}
 
                         -- Prioridad 1: Coincidencia exacta o parcial fuerte (LIKE)
-                        WHEN unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%')) THEN 100
+                        WHEN public.f_unaccent(lower(c.name)) LIKE public.f_unaccent(lower('%' || $1 || '%')) THEN 100
                         
                         -- Prioridad 2: Similitud Difusa (Trigramas)
                         -- Multiplicamos por 100 para normalizar con el puntaje anterior.
-                        ELSE (similarity(unaccent(lower(c.name)), unaccent(lower($1))) * 80)
+                        ELSE (similarity(public.f_unaccent(lower(c.name)), public.f_unaccent(lower($1))) * 80)
                     END
                 ) as relevance_score
             FROM courses c
@@ -151,12 +151,12 @@ class CourseRepository {
                 ${isGenericCourseQuery ? `(1=1) OR` : ''}
 
                 -- 1. Coincidencia clásica (rápida)
-                unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%')) 
-                OR unaccent(lower(t.name)) LIKE unaccent(lower('%' || $1 || '%'))
+                public.f_unaccent(lower(c.name)) LIKE public.f_unaccent(lower('%' || $1 || '%')) 
+                OR public.f_unaccent(lower(t.name)) LIKE public.f_unaccent(lower('%' || $1 || '%'))
                 
                 -- 2. Coincidencia difusa (Typos)
-                OR word_similarity(unaccent(lower($1)), unaccent(lower(c.name))) > 0.3
-                OR word_similarity(unaccent(lower($1)), unaccent(lower(t.name))) > 0.3
+                OR word_similarity(public.f_unaccent(lower($1)), public.f_unaccent(lower(c.name))) > 0.3
+                OR word_similarity(public.f_unaccent(lower($1)), public.f_unaccent(lower(t.name))) > 0.3
             ORDER BY relevance_score DESC, c.name ASC
             LIMIT 20
         `;

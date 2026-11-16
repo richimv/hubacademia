@@ -53,7 +53,7 @@ class CareerRepository {
     async search(query) {
         const normalizedQuery = normalizeText(query);
         const { rows } = await db.query(
-            "SELECT * FROM careers WHERE unaccent(name) ILIKE unaccent($1) LIMIT 1",
+            "SELECT * FROM careers WHERE public.f_unaccent(name) ILIKE public.f_unaccent($1) LIMIT 1",
             [`%${normalizedQuery}%`]
         );
         return rows[0] || null;

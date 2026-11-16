@@ -340,19 +340,19 @@ class BookRepository {
                         ${detectedType ? `WHEN r.resource_type = $2 THEN 50` : ''}
 
                         -- Prioridad 1: Match Exacto Título Libro (100 pts)
-                        WHEN unaccent(lower(r.title)) LIKE unaccent(lower('%' || $1 || '%')) THEN 100
+                        WHEN public.f_unaccent(lower(r.title)) LIKE public.f_unaccent(lower('%' || $1 || '%')) THEN 100
                         
                         -- Prioridad 2: Match Exacto Nombre Curso (95 pts)
-                        WHEN unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%')) THEN 95
+                        WHEN public.f_unaccent(lower(c.name)) LIKE public.f_unaccent(lower('%' || $1 || '%')) THEN 95
 
                         -- Prioridad 3: Match Exacto Tema (80 pts)
-                        WHEN unaccent(lower(t.name)) LIKE unaccent(lower('%' || $1 || '%')) THEN 80
+                        WHEN public.f_unaccent(lower(t.name)) LIKE public.f_unaccent(lower('%' || $1 || '%')) THEN 80
                         
                         -- Prioridad 4: Match Exacto Carrera (70 pts)
-                        WHEN unaccent(lower(car.name)) LIKE unaccent(lower('%' || $1 || '%')) THEN 70
+                        WHEN public.f_unaccent(lower(car.name)) LIKE public.f_unaccent(lower('%' || $1 || '%')) THEN 70
 
                         -- Prioridad 5: Match Difuso (Typos) en Título (Score variable)
-                        ELSE (similarity(unaccent(lower(r.title)), unaccent(lower($1))) * 60)
+                        ELSE (similarity(public.f_unaccent(lower(r.title)), public.f_unaccent(lower($1))) * 60)
                     END
                 ) as relevance_score
             FROM resources r
@@ -369,24 +369,24 @@ class BookRepository {
                 ${detectedType ? `(r.resource_type = $2) OR` : ''}
 
                 -- Match Título Libro
-                (unaccent(lower(r.title)) LIKE unaccent(lower('%' || $1 || '%'))) OR 
-                (word_similarity(unaccent(lower($1)), unaccent(lower(r.title))) > 0.3) OR
+                (public.f_unaccent(lower(r.title)) LIKE public.f_unaccent(lower('%' || $1 || '%'))) OR 
+                (word_similarity(public.f_unaccent(lower($1)), public.f_unaccent(lower(r.title))) > 0.3) OR
                 
                 -- Match Autor
-                (unaccent(lower(r.author)) LIKE unaccent(lower('%' || $1 || '%'))) OR
+                (public.f_unaccent(lower(r.author)) LIKE public.f_unaccent(lower('%' || $1 || '%'))) OR
 
                 -- Match Tema
-                (unaccent(lower(t.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
-                (word_similarity(unaccent(lower($1)), unaccent(lower(t.name))) > 0.3) OR
+                (public.f_unaccent(lower(t.name)) LIKE public.f_unaccent(lower('%' || $1 || '%'))) OR
+                (word_similarity(public.f_unaccent(lower($1)), public.f_unaccent(lower(t.name))) > 0.3) OR
 
                 -- Match Contexto Curso
-                (unaccent(lower(c.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
-                (word_similarity(unaccent(lower($1)), unaccent(lower(c.name))) > 0.3) OR
+                (public.f_unaccent(lower(c.name)) LIKE public.f_unaccent(lower('%' || $1 || '%'))) OR
+                (word_similarity(public.f_unaccent(lower($1)), public.f_unaccent(lower(c.name))) > 0.3) OR
 
                 -- ✅ NUEVO Match: Contexto Carrera (STRICT MODE)
                 -- Solo si coincide MUCHO con el nombre de la carrera (evitar "Humana" -> "Medicina Humana" -> traer todo)
-                (unaccent(lower(car.name)) LIKE unaccent(lower('%' || $1 || '%'))) OR
-                (word_similarity(unaccent(lower($1)), unaccent(lower(car.name))) > 0.75)
+                (public.f_unaccent(lower(car.name)) LIKE public.f_unaccent(lower('%' || $1 || '%'))) OR
+                (word_similarity(public.f_unaccent(lower($1)), public.f_unaccent(lower(car.name))) > 0.75)
                 )
             ORDER BY relevance_score DESC, r.title
             LIMIT 60
@@ -423,8 +423,8 @@ class BookRepository {
         }
 
         const conditions = cleanKeywords.map((_, i) => `(
-            unaccent(LOWER(r.title)) LIKE unaccent(LOWER($${i + 1}))
-            OR unaccent(LOWER(COALESCE(t.name, ''))) LIKE unaccent(LOWER($${i + 1}))
+            public.f_unaccent(LOWER(r.title)) LIKE public.f_unaccent(LOWER($${i + 1}))
+            OR public.f_unaccent(LOWER(COALESCE(t.name, ''))) LIKE public.f_unaccent(LOWER($${i + 1}))
         )`).join(' OR ');
 
         const domainIndex = cleanKeywords.length + 1;
@@ -433,8 +433,8 @@ class BookRepository {
         const sqlQuery = `
             SELECT DISTINCT r.title, r.image_url,
                    MAX(CASE 
-                     WHEN unaccent(LOWER(r.title)) LIKE unaccent(LOWER($1)) THEN 100
-                     WHEN unaccent(LOWER(COALESCE(t.name, ''))) LIKE unaccent(LOWER($1)) THEN 80
+                     WHEN public.f_unaccent(LOWER(r.title)) LIKE public.f_unaccent(LOWER($1)) THEN 100
+                     WHEN public.f_unaccent(LOWER(COALESCE(t.name, ''))) LIKE public.f_unaccent(LOWER($1)) THEN 80
                      ELSE 50
                    END) as relevance
             FROM resources r

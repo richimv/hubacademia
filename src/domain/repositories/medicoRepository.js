@@ -28,7 +28,7 @@ class MedicoRepository {
         const filterTopics = topics && topics.length > 0 && !topics.includes('*') && !topics.includes('ALL') && !topics.includes('all');
         let whereClauses = `WHERE qb.domain = 'medicine' AND ($2::text IS NULL OR qb.target = $2)`;
         if (filterTopics) {
-            whereClauses += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))`;
+            whereClauses += ` AND public.f_unaccent(UPPER(qb.topic)) = ANY(SELECT public.f_unaccent(UPPER(unnest($1::text[]))))`;
         }
 
         const params = [topics, target];
@@ -102,7 +102,7 @@ class MedicoRepository {
                 const siblingParams = [caseIdsInBatch];
                 if (filterTopics) {
                     siblingParams.push(topics);
-                    siblingQuery += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($2::text[]))))`;
+                    siblingQuery += ` AND public.f_unaccent(UPPER(qb.topic)) = ANY(SELECT public.f_unaccent(UPPER(unnest($2::text[]))))`;
                 }
                 siblingQuery += ` ORDER BY qb.case_id, qb.case_order ASC, qb.created_at ASC`;
 
@@ -138,7 +138,7 @@ class MedicoRepository {
                 const currentQuestionIds = questions.map(q => q.id).filter(Boolean);
                 let fallbackWhere = `WHERE qb.domain = 'medicine' AND ($2::text IS NULL OR qb.target = $2)`;
                 if (filterTopics) {
-                    fallbackWhere += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($1::text[]))))`;
+                    fallbackWhere += ` AND public.f_unaccent(UPPER(qb.topic)) = ANY(SELECT public.f_unaccent(UPPER(unnest($1::text[]))))`;
                 }
                 const fallbackParams = [topics, target];
                 let fbIdx = 3;
@@ -223,7 +223,7 @@ class MedicoRepository {
         if (areas) {
             const areasArray = Array.isArray(areas) ? areas : String(areas).split(',').map(a => a.trim()).filter(Boolean);
             if (areasArray.length > 0) {
-                whereClause += ` AND unaccent(UPPER(qb.topic)) = ANY(SELECT unaccent(UPPER(unnest($${paramIdx}::text[])))) `;
+                whereClause += ` AND public.f_unaccent(UPPER(qb.topic)) = ANY(SELECT public.f_unaccent(UPPER(unnest($${paramIdx}::text[])))) `;
                 params.push(areasArray);
                 paramIdx++;
             }
@@ -395,7 +395,7 @@ class MedicoRepository {
             params.push(areas);
             filter += ` AND jsonb_typeof(area_stats) = 'object' AND EXISTS (
                 SELECT 1 FROM jsonb_each(area_stats) 
-                WHERE unaccent(UPPER(key)) = ANY(SELECT unaccent(UPPER(unnest($${params.length}::text[]))))
+                WHERE public.f_unaccent(UPPER(key)) = ANY(SELECT public.f_unaccent(UPPER(unnest($${params.length}::text[]))))
             )`;
         }
 
@@ -427,7 +427,7 @@ class MedicoRepository {
             queryParams.push(areas);
             areaFilter = ` AND jsonb_typeof(area_stats) = 'object' AND EXISTS (
                 SELECT 1 FROM jsonb_each(area_stats) 
-                WHERE unaccent(UPPER(key)) = ANY(SELECT unaccent(UPPER(unnest($${queryParams.length}::text[]))))
+                WHERE public.f_unaccent(UPPER(key)) = ANY(SELECT public.f_unaccent(UPPER(unnest($${queryParams.length}::text[]))))
             )`;
         }
 
@@ -448,7 +448,7 @@ class MedicoRepository {
         let areaFilter = '';
         if (areas && Array.isArray(areas) && areas.length > 0) {
             queryParams.push(areas);
-            areaFilter = ` AND unaccent(UPPER(key)) = ANY(SELECT unaccent(UPPER(unnest($${queryParams.length}::text[]))))`;
+            areaFilter = ` AND public.f_unaccent(UPPER(key)) = ANY(SELECT public.f_unaccent(UPPER(unnest($${queryParams.length}::text[]))))`;
         }
 
         const query = `

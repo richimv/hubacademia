@@ -1088,7 +1088,6 @@ CREATE POLICY "Admins y Servidor ven tráfico" ON public.web_traffic
 -- 6. PERFORMANCE & UNIQUE INDEXES
 -- ------------------------------------------------------------------------------
 CREATE UNIQUE INDEX careers_career_id_key ON public.careers USING btree (career_id);
-CREATE INDEX idx_course_books_course ON public.course_books USING btree (course_id);
 CREATE INDEX idx_course_books_resource ON public.course_books USING btree (resource_id);
 CREATE UNIQUE INDEX courses_course_id_key ON public.courses USING btree (course_id);
 CREATE INDEX idx_case_scenarios_domain_target_topic ON public.case_scenarios USING btree (domain, target, topic);
@@ -1116,7 +1115,6 @@ CREATE UNIQUE INDEX question_bank_question_hash_key ON public.question_bank USIN
 CREATE INDEX idx_quiz_history_user_date ON public.quiz_history USING btree (user_id, created_at);
 CREATE UNIQUE INDEX quiz_history_source_session_unique ON public.quiz_history USING btree (source_session_id) WHERE (source_session_id IS NOT NULL);
 CREATE INDEX quiz_sessions_user_status_idx ON public.quiz_sessions USING btree (user_id, status, expires_at DESC);
-CREATE INDEX quiz_session_questions_session_idx ON public.quiz_session_questions USING btree (session_id, position);
 CREATE INDEX idx_resources_created_at ON public.resources USING btree (created_at DESC);
 CREATE INDEX idx_resources_bulletin_created ON public.resources (created_at DESC, id DESC) WHERE publish_in_bulletin AND visible;
 CREATE INDEX idx_resources_title_trgm ON public.resources USING gin (public.f_unaccent(lower((title)::text)) extensions.gin_trgm_ops);
@@ -1125,7 +1123,6 @@ CREATE UNIQUE INDEX resources_url_key ON public.resources USING btree (url);
 CREATE INDEX idx_search_history_query ON public.search_history USING btree (query);
 CREATE INDEX idx_search_history_created_source ON public.search_history USING btree (created_at DESC, source);
 CREATE INDEX idx_topic_resources_resource ON public.topic_resources USING btree (resource_id);
-CREATE INDEX idx_topic_resources_topic ON public.topic_resources USING btree (topic_id);
 CREATE INDEX idx_topics_name_trgm ON public.topics USING gin (f_unaccent((name)::text) gin_trgm_ops);
 CREATE INDEX idx_topics_name_lower_trgm ON public.topics USING gin (public.f_unaccent(lower((name)::text)) extensions.gin_trgm_ops);
 CREATE UNIQUE INDEX topics_topic_id_key ON public.topics USING btree (topic_id);

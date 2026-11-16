@@ -265,6 +265,7 @@ describe('Database & Vercel Serverless Infrastructure Optimization', () => {
 
             expect(migrationSql).toContain('DROP TABLE IF EXISTS public.documents CASCADE;');
             expect(migrationSql).toContain('CREATE OR REPLACE FUNCTION public.f_unaccent(text)');
+            expect(migrationSql).toContain('DROP CONSTRAINT IF EXISTS unique_user_question;');
             expect(migrationSql).toContain('DROP INDEX IF EXISTS public.idx_uhist_user_q;');
             expect(migrationSql).toContain('DROP INDEX IF EXISTS public.unique_user_question;');
             expect(migrationSql).toContain('idx_question_bank_domain_created_at');

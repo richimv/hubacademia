@@ -48,15 +48,17 @@ DROP TABLE IF EXISTS public.section_careers CASCADE;
 DROP TABLE IF EXISTS public.sections CASCADE;
 
 -- Retiro de extensiones de vectores/diagnóstico que ya no tienen tablas asociadas
-DROP EXTENSION IF EXISTS "hypopg";
-DROP EXTENSION IF EXISTS "index_advisor";
-DROP EXTENSION IF EXISTS "vector";
+-- index_advisor depende de hypopg, por lo que se retira en orden inverso y con CASCADE
+DROP EXTENSION IF EXISTS "index_advisor" CASCADE;
+DROP EXTENSION IF EXISTS "hypopg" CASCADE;
+DROP EXTENSION IF EXISTS "vector" CASCADE;
 
 -- ------------------------------------------------------------------------------
 -- 3. ELIMINACIÓN DE ÍNDICES DUPLICADOS O REDUNDANTES (AHORRO DE SHARED_BUFFERS)
 -- ------------------------------------------------------------------------------
--- user_question_history tenía 3 índices idénticos sobre (user_id, question_id).
+-- user_question_history tenía 3 índices/constraints idénticos sobre (user_id, question_id).
 -- Se conserva únicamente `user_question_history_user_id_question_id_key`.
+ALTER TABLE public.user_question_history DROP CONSTRAINT IF EXISTS unique_user_question;
 DROP INDEX IF EXISTS public.idx_uhist_user_q;
 DROP INDEX IF EXISTS public.unique_user_question;
 
@@ -65,6 +67,12 @@ DROP INDEX IF EXISTS public.unique_user_question;
 -- `idx_qbank_domain` está cubierto por `idx_question_bank_domain_topic_sub` y `idx_question_bank_domain_created_at`.
 DROP INDEX IF EXISTS public.idx_question_bank_case_id;
 DROP INDEX IF EXISTS public.idx_qbank_domain;
+
+-- Otros índices duplicados detectados en producción cubiertos por PK/UNIQUE existentes:
+DROP INDEX IF EXISTS public.quiz_session_questions_session_idx;
+DROP INDEX IF EXISTS public.idx_case_scenarios_code;
+DROP INDEX IF EXISTS public.idx_course_books_course;
+DROP INDEX IF EXISTS public.idx_topic_resources_topic;
 
 -- ------------------------------------------------------------------------------
 -- 4. CREACIÓN DE ÍNDICES COMPUESTOS Y TRIGRAM (GIN) DE ALTO RENDIMIENTO
