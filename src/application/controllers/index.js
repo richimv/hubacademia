@@ -20,11 +20,7 @@ const BulletinController = require('./bulletinController');
 const BookRepository = require('../../domain/repositories/bookRepository');
 const AnalyticsController = require('./analyticsController');
 const CoursesController = require('./coursesController');
-const UsageController = require('./usageController'); // ✅ NUEVO
-const AdminController = require('./adminController'); // Importar la CLASE del controlador
-// Removed QuizController require
-const UserPreferencesController = require('./userPreferencesController'); // Importar la CLASE del controlador
-const LibraryController = require('./libraryController'); // ✅ NUEVO: Importar la CLASE del controlador
+const UsageController = require('./usageController');
 
 // --- 2. Crear una ÚNICA instancia de cada SERVICIO ---
 const userRepository = new UserRepository(); // ✅ 2. Crear una ÚNICA instancia del repositorio.

@@ -1,13 +1,23 @@
 const UserRepository = require('../../domain/repositories/userRepository');
 const UsageService = require('./usageService');
-const UserPreferencesService = require('../../domain/services/userPreferencesService');
-const userPreferencesService = new UserPreferencesService();
-const supabase = require('../../infrastructure/config/supabaseClient'); // ✅ SUPABASE CLIENT
+const supabase = require('../../infrastructure/config/supabaseClient');
 
 class AuthService {
     constructor(userRepository = new UserRepository(), usageService = new UsageService(userRepository)) {
         this.userRepository = userRepository;
         this.usageService = usageService;
+        this._supabaseAdminClient = null;
+    }
+
+    _getSupabaseAdmin() {
+        if (supabase && supabase.supabaseAdmin) return supabase.supabaseAdmin;
+        if (this._supabaseAdminClient) return this._supabaseAdminClient;
+        if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            const { createClient } = require('@supabase/supabase-js');
+            this._supabaseAdminClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+            return this._supabaseAdminClient;
+        }
+        return null;
     }
 
     /**
@@ -31,9 +41,7 @@ class AuthService {
         }
 
         try {
-            const supabaseAdmin = supabase.supabaseAdmin || (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-                ? require('@supabase/supabase-js').createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-                : null);
+            const supabaseAdmin = this._getSupabaseAdmin();
 
             if (supabaseAdmin) {
                 const { data: { user: sbUser }, error } = await supabaseAdmin.auth.admin.getUserById(userId);
@@ -174,9 +182,7 @@ class AuthService {
 
             // 🔄 Sincronizar metadatos en Supabase Auth si la clave administrativa está disponible
             try {
-                const supabaseAdmin = supabase.supabaseAdmin || (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-                    ? require('@supabase/supabase-js').createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-                    : null);
+                const supabaseAdmin = this._getSupabaseAdmin();
                 if (supabaseAdmin) {
                     await supabaseAdmin.auth.admin.updateUserById(userId, {
                         user_metadata: { full_name: name, name: name }

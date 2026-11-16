@@ -1,9 +1,29 @@
 const db = require('../../infrastructure/database/db');
 
+const globalPulseCache = new Map();
+const PULSE_THROTTLE_MS = 60 * 1000; // 60 segundos entre escrituras de pulso por sesión
+const MAX_PULSE_CACHE_SIZE = 5000;
+
 class AnalyticsRepository {
-    async getSearchHistory() {
-        const { rows } = await db.query('SELECT query, results_count, is_educational_query, created_at FROM search_history');
-        // Mapear para que coincida con el formato que espera el servicio de ML
+    constructor() {
+        this.pulseCache = globalPulseCache;
+        this.PULSE_THROTTLE_MS = PULSE_THROTTLE_MS;
+    }
+
+    clearPulseCache() {
+        globalPulseCache.clear();
+    }
+
+    static clearPulseCache() {
+        globalPulseCache.clear();
+    }
+
+    async getSearchHistory(limit = 5000) {
+        const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 5000, 1), 10000);
+        const { rows } = await db.query(
+            'SELECT query, results_count, is_educational_query, created_at FROM search_history ORDER BY created_at DESC LIMIT $1',
+            [safeLimit]
+        );
         return rows.map(row => ({
             query: row.query,
             resultsCount: row.results_count,
@@ -110,10 +130,6 @@ class AnalyticsRepository {
         return rows;
     }
 
-    // ===============================================
-    // NUEVOS METODOS (MIGRADOS DESDE ANALYTICSSERVICE)
-    // ===============================================
-
     async recordSearchWithIntent(queryText, resultsCount, isEducationalQuery, userId, source) {
         const query = `
             INSERT INTO search_history(query, results_count, is_educational_query, user_id, source)
@@ -122,25 +138,61 @@ class AnalyticsRepository {
         await db.query(query, [queryText, resultsCount, isEducationalQuery, userId, source]);
     }
 
-    async isMessageExists(messageId) {
+    async isMessageExists(_messageId) {
         return false;
     }
 
-    async recordFeedbackFromService(queryText, response, isHelpful, userId, messageId) {
-        // Obsoleto: tabla feedback eliminada
+    async recordFeedbackFromService(_queryText, _response, _isHelpful, _userId, _messageId) {
         return;
     }
 
+    /**
+     * Registra un pulso de tráfico con throttling en memoria y actualización condicional en PostgreSQL
+     * para evitar escrituras redundantes (MVCC bloat) y saturación de RAM en Supabase.
+     */
     async logPulse(sessionId, userId, isMobile) {
+        if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
+            return { skipped: true };
+        }
+        const cleanSessionId = sessionId.trim().slice(0, 128);
+        const now = Date.now();
+        const cached = this.pulseCache.get(cleanSessionId);
+
+        const hasUserUpgrade = Boolean(userId && (!cached || !cached.userId));
+        if (cached && (now - cached.timestamp < this.PULSE_THROTTLE_MS) && !hasUserUpgrade) {
+            return { throttled: true };
+        }
+
+        if (this.pulseCache.size >= MAX_PULSE_CACHE_SIZE && !this.pulseCache.has(cleanSessionId)) {
+            const oldestKey = this.pulseCache.keys().next().value;
+            if (oldestKey !== undefined) {
+                this.pulseCache.delete(oldestKey);
+            }
+        }
+
+        this.pulseCache.set(cleanSessionId, {
+            timestamp: now,
+            userId: userId || cached?.userId || null
+        });
+
         const queryText = `
             INSERT INTO web_traffic(session_id, user_id, is_mobile, last_ping)
             VALUES($1, $2, $3, NOW())
             ON CONFLICT (session_id) 
             DO UPDATE SET 
                 last_ping = EXCLUDED.last_ping,
-                user_id = COALESCE(EXCLUDED.user_id, web_traffic.user_id);
+                user_id = COALESCE(EXCLUDED.user_id, web_traffic.user_id)
+            WHERE web_traffic.last_ping < NOW() - INTERVAL '60 seconds'
+               OR (web_traffic.user_id IS NULL AND EXCLUDED.user_id IS NOT NULL);
         `;
-        await db.query(queryText, [sessionId, userId, isMobile]);
+
+        try {
+            await db.query(queryText, [cleanSessionId, userId || null, Boolean(isMobile)]);
+            return { throttled: false };
+        } catch (error) {
+            this.pulseCache.delete(cleanSessionId);
+            throw error;
+        }
     }
 
     async getRealTimeStats() {
@@ -159,53 +211,51 @@ class AnalyticsRepository {
         const safeDays = this._sanitizeDays(days);
         const dateFilter = `created_at >= NOW() - ($1 || ' days')::interval`;
 
-        const queries = [
-            { sql: `SELECT COUNT(*) FROM search_history WHERE source = 'search_bar' AND ${dateFilter}`, params: [safeDays] },
-            { sql: `SELECT COUNT(*) FROM search_history WHERE source = 'chatbot' AND ${dateFilter}`, params: [safeDays] },
-            { sql: `SELECT COUNT(*) FROM search_history WHERE is_educational_query = TRUE AND ${dateFilter}`, params: [safeDays] },
-            { sql: `SELECT 0 AS count` },
-            { sql: `SELECT 0 AS count` },
-            {
-                sql: `
-                SELECT COUNT(DISTINCT user_id) 
-                FROM search_history 
-                WHERE ${dateFilter} AND user_id IS NOT NULL;
-            `,
-                params: [safeDays]
-            },
-            { sql: `SELECT 0 AS count` },
-            {
-                sql: `
-                SELECT query, COUNT(*) as count 
-                FROM search_history 
-                WHERE ${dateFilter}
-                GROUP BY query 
-                ORDER BY count DESC
-                LIMIT 5
-            `,
-                params: [safeDays]
-            },
-            { sql: 'SELECT COUNT(*) FROM users' }
-        ];
+        const summarySql = `
+            SELECT
+                COUNT(*) FILTER (WHERE source = 'search_bar') AS search_bar_count,
+                COUNT(*) FILTER (WHERE source = 'chatbot') AS chatbot_count,
+                COUNT(*) FILTER (WHERE is_educational_query = TRUE) AS educational_count,
+                COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL) AS active_users_count
+            FROM search_history
+            WHERE ${dateFilter}
+        `;
 
-        const results = await Promise.all(
-            queries.map(q => (q.params ? db.query(q.sql, q.params) : db.query(q.sql)))
-        );
-        
+        const topSearchesSql = `
+            SELECT query, COUNT(*) as count 
+            FROM search_history 
+            WHERE ${dateFilter}
+            GROUP BY query 
+            ORDER BY count DESC
+            LIMIT 5
+        `;
+
+        const usersCountSql = `SELECT COUNT(*) FROM users`;
+
+        const [summaryRes, topSearchesRes, usersRes] = await Promise.all([
+            db.query(summarySql, [safeDays]),
+            db.query(topSearchesSql, [safeDays]),
+            db.query(usersCountSql)
+        ]);
+
+        const summaryRow = (summaryRes && summaryRes.rows && summaryRes.rows[0]) ? summaryRes.rows[0] : {};
+        const fallbackCount = parseInt(summaryRow.count, 10) || 0;
+        const usersRow = (usersRes && usersRes.rows && usersRes.rows[0]) ? usersRes.rows[0] : {};
+
         return {
-            totalSearches: parseInt(results[0].rows[0].count, 10),
-            totalChatQueries: parseInt(results[1].rows[0].count, 10),
-            educationalQueries: parseInt(results[2].rows[0].count, 10),
-            totalFeedbacks: parseInt(results[3].rows[0].count, 10),
-            positiveFeedbacks: parseInt(results[4].rows[0].count, 10),
-            activeUsers: parseInt(results[5].rows[0].count, 10),
-            totalChatMessages: parseInt(results[6].rows[0].count, 10),
-            topSearchesRaw: results[7].rows,
-            totalUsers: parseInt(results[8].rows[0].count, 10)
+            totalSearches: parseInt(summaryRow.search_bar_count ?? fallbackCount, 10) || 0,
+            totalChatQueries: parseInt(summaryRow.chatbot_count ?? fallbackCount, 10) || 0,
+            educationalQueries: parseInt(summaryRow.educational_count ?? fallbackCount, 10) || 0,
+            totalFeedbacks: 0,
+            positiveFeedbacks: 0,
+            activeUsers: parseInt(summaryRow.active_users_count ?? fallbackCount, 10) || 0,
+            totalChatMessages: 0,
+            topSearchesRaw: (topSearchesRes && topSearchesRes.rows) ? topSearchesRes.rows : [],
+            totalUsers: parseInt(usersRow.count, 10) || 0
         };
     }
 
-    async getUniqueVisitorsCountRaw(days = 1) {
+    async getUniqueVisitorsCountRaw(_days = 1) {
         const query = `SELECT COUNT(DISTINCT session_id) FROM web_traffic WHERE created_at >= CURRENT_DATE`;
         const res = await db.query(query);
         return parseInt(res.rows[0].count, 10);
@@ -251,7 +301,7 @@ class AnalyticsRepository {
     async getTopViewedEntitiesRaw(type, days) {
         const safeDays = this._sanitizeDays(days);
         let tableName = '';
-        let nameField = 'name';
+        const nameField = 'name';
         switch (type) {
             case 'career': tableName = 'careers'; break;
             case 'course': tableName = 'courses'; break;
@@ -272,8 +322,9 @@ class AnalyticsRepository {
         return res.rows;
     }
 
-    async getTopSearchesRawData(days, limit) {
+    async getTopSearchesRawData(days, limit = 100) {
         const safeDays = this._sanitizeDays(days);
+        const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 1000);
         const query = `
             SELECT query, COUNT(*) as count 
             FROM search_history 
@@ -281,7 +332,7 @@ class AnalyticsRepository {
             GROUP BY query 
             ORDER BY count DESC
             LIMIT $2`;
-        const res = await db.query(query, [safeDays, limit]);
+        const res = await db.query(query, [safeDays, safeLimit]);
         return res.rows;
     }
 
@@ -302,7 +353,7 @@ class AnalyticsRepository {
 
     async getAnalyticsForMLRaw(days) {
         const safeDays = this._sanitizeDays(days);
-        const querySearch = `SELECT query, results_count, created_at FROM search_history WHERE created_at >= NOW() - ($1 || ' days')::interval ORDER BY created_at DESC LIMIT 50000`;
+        const querySearch = `SELECT query, results_count, created_at FROM search_history WHERE created_at >= NOW() - ($1 || ' days')::interval ORDER BY created_at DESC LIMIT 5000`;
         const searchHistoryRes = await db.query(querySearch, [safeDays]);
         return { searchHistory: searchHistoryRes.rows, feedback: [] };
     }

@@ -1,10 +1,8 @@
-// const db = require('../../infrastructure/database/db'); // ❌ REMOVED: Clean Architecture enforcement
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-// Removed trainingRepository import
 const AnalyticsService = require('../../domain/services/analyticsService');
-const adminService = require('../../domain/services/adminService'); // ✅ IMPORTANTE: Se inyecta capa de Negocio
+const adminService = require('../../domain/services/adminService');
 const mediaController = require('./mediaController');
 
 const os = require('os');
@@ -295,20 +293,53 @@ class AdminController {
         }
     }
 
+    async _cleanupCaseMedia(oldCase) {
+        if (!oldCase) return;
+        if (oldCase.image_url) {
+            try { await mediaController.deleteFile(oldCase.image_url); } catch (e) { console.error('Error deleting case image:', e); }
+        }
+        const embeddedPaths = this._extractGcsPaths(oldCase.description_text);
+        for (const gcsPath of embeddedPaths) {
+            try { await mediaController.deleteFile(gcsPath); } catch (e) { console.error('Error deleting case embedded image:', e); }
+        }
+    }
+
+    async _cleanupQuestionMedia(qData) {
+        if (!qData) return;
+        const { image_url, explanation_image_url, question_text, explanation } = qData;
+        if (image_url) await mediaController.deleteFile(image_url);
+        if (explanation_image_url) await mediaController.deleteFile(explanation_image_url);
+
+        const embeddedPaths = [
+            ...this._extractGcsPaths(question_text),
+            ...this._extractGcsPaths(explanation)
+        ];
+        for (const gcsPath of embeddedPaths) {
+            try { await mediaController.deleteFile(gcsPath); } catch (e) { console.error('Error deleting question embedded image:', e); }
+        }
+    }
+
+    async _cleanupEntityMedia(oldItem) {
+        if (!oldItem) return;
+        if (oldItem.image_url) {
+            try { await mediaController.deleteFile(oldItem.image_url); }
+            catch (err) { console.error('Error deleting cover image:', err); }
+        }
+        if (oldItem.content_html) {
+            try {
+                const contentPaths = this._extractGcsPaths(oldItem.content_html);
+                for (const gcsPath of contentPaths) {
+                    await mediaController.deleteFile(gcsPath);
+                }
+            } catch (err) { console.error('Error deleting editor images:', err); }
+        }
+    }
+
     async deleteCase(req, res) {
         try {
             const { id } = req.params;
-
             const oldCase = await adminService.getCaseById(id);
-            if (oldCase) {
-                if (oldCase.image_url) {
-                    try { await mediaController.deleteFile(oldCase.image_url); } catch (e) { console.error('Error deleting case image:', e); }
-                }
-                const embeddedPaths = this._extractGcsPaths(oldCase.description_text);
-                for (const gcsPath of embeddedPaths) {
-                    try { await mediaController.deleteFile(gcsPath); } catch (e) { console.error('Error deleting case embedded image:', e); }
-                }
-            }
+            await this._cleanupCaseMedia(oldCase);
 
             const success = await adminService.deleteCase(id);
             res.json({ success });
@@ -460,20 +491,7 @@ class AdminController {
             const { id } = req.params;
 
             const qData = await adminService.getQuestionImages(id);
-            if (qData) {
-                const { image_url, explanation_image_url, career, question_text, explanation } = qData;
-                if (image_url) await mediaController.deleteFile(image_url);
-                if (explanation_image_url) await mediaController.deleteFile(explanation_image_url);
-                
-                // ✅ Borrar imágenes embebidas en el texto de la pregunta o explicación
-                const embeddedPaths = [
-                    ...this._extractGcsPaths(question_text),
-                    ...this._extractGcsPaths(explanation)
-                ];
-                for (const gcsPath of embeddedPaths) {
-                    try { await mediaController.deleteFile(gcsPath); } catch (e) { console.error('Error deleting question embedded image:', e); }
-                }
-            }
+            await this._cleanupQuestionMedia(qData);
 
             const isDeleted = await adminService.deleteSingleQuestion(id);
             if (!isDeleted) return res.status(404).json({ error: 'Pregunta no encontrada.' });
@@ -700,52 +718,18 @@ class AdminController {
                 try {
                     if (type === 'question') {
                         const qData = await adminService.getQuestionImages(id);
-                        if (qData) {
-                            const { image_url, explanation_image_url, question_text, explanation } = qData;
-                            if (image_url) await mediaController.deleteFile(image_url);
-                            if (explanation_image_url) await mediaController.deleteFile(explanation_image_url);
-                            const embeddedPaths = [
-                                ...this._extractGcsPaths(question_text),
-                                ...this._extractGcsPaths(explanation)
-                            ];
-                            for (const gcsPath of embeddedPaths) {
-                                try { await mediaController.deleteFile(gcsPath); } catch (e) {}
-                            }
-                        }
+                        await this._cleanupQuestionMedia(qData);
                         const isDeleted = await adminService.deleteSingleQuestion(id);
                         if (isDeleted) successCount++;
                     } else if (type === 'case') {
                         const oldCase = await adminService.getCaseById(id);
-                        if (oldCase) {
-                            if (oldCase.image_url) {
-                                try { await mediaController.deleteFile(oldCase.image_url); } catch (e) {}
-                            }
-                            const embeddedPaths = this._extractGcsPaths(oldCase.description_text);
-                            for (const gcsPath of embeddedPaths) {
-                                try { await mediaController.deleteFile(gcsPath); } catch (e) {}
-                            }
-                        }
+                        await this._cleanupCaseMedia(oldCase);
                         const isDeleted = await adminService.deleteCase(id);
                         if (isDeleted) successCount++;
                     } else {
                         const entityId = (['student', 'admin'].includes(type)) ? String(id) : parseInt(id, 10);
                         const oldItem = await adminService.getById(type, entityId);
-                        if (oldItem) {
-                            // 1. Borrar portada (Cover)
-                            if (oldItem.image_url) {
-                                try { await mediaController.deleteFile(oldItem.image_url); }
-                                catch (err) { console.error('Error deleting cover image:', err); }
-                            }
-                            // 2. Borrar todas las imágenes internas del editor (TinyMCE)
-                            if (oldItem.content_html) {
-                                try {
-                                    const contentPaths = this._extractGcsPaths(oldItem.content_html);
-                                    for (const gcsPath of contentPaths) {
-                                        await mediaController.deleteFile(gcsPath);
-                                    }
-                                } catch (err) { console.error('Error deleting editor images:', err); }
-                            }
-                        }
+                        await this._cleanupEntityMedia(oldItem);
                         await adminService.delete(type, entityId);
                         successCount++;
                     }

@@ -1,4 +1,3 @@
-const axios = require('axios');
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 const sharp = require('sharp');

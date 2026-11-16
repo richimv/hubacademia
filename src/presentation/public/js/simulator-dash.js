@@ -259,6 +259,8 @@ const SimulatorDash = (() => {
         if (!tabs.length) return;
 
         tabs.forEach(tab => {
+            if (tab.dataset.bound) return;
+            tab.dataset.bound = 'true';
             tab.addEventListener('click', () => {
                 // Actualizar estado activo
                 tabs.forEach(t => t.classList.remove('active'));
@@ -283,6 +285,8 @@ const SimulatorDash = (() => {
         if (!tabs.length) return;
 
         tabs.forEach(tab => {
+            if (tab.dataset.bound) return;
+            tab.dataset.bound = 'true';
             tab.addEventListener('click', () => {
                 // Actualizar estado activo
                 tabs.forEach(t => t.classList.remove('active'));
@@ -516,7 +520,7 @@ const SimulatorDash = (() => {
                             }
                         };
 
-                        selectEl.addEventListener('change', () => window._updateEduSpecialties());
+                        selectEl.onchange = () => window._updateEduSpecialties();
                         // Initial call will be handled by setupConfigModal to ensure consistency with loaded config
                     }
                 }
@@ -607,6 +611,8 @@ const SimulatorDash = (() => {
         if (content) content.style.display = 'block';
     }
 
+    let kpiOutsideClickBound = false;
+
     function setupOnboardingGuide() {
         const btnGuide = document.getElementById('btn-show-guide');
         if (btnGuide) {
@@ -626,25 +632,28 @@ const SimulatorDash = (() => {
             }
         }, 800);
 
-        // Soporte Touch / Tap para Tooltips de KPIs informativos
-        document.addEventListener('click', (e) => {
-            const kpiBtn = e.target.closest('.kpi-info-btn');
-            if (kpiBtn) {
-                e.stopPropagation();
-                const container = kpiBtn.closest('.kpi-info-container');
-                if (container) {
-                    const wasActive = container.classList.contains('active');
-                    document.querySelectorAll('.kpi-info-container.active').forEach(c => c.classList.remove('active'));
-                    if (!wasActive) container.classList.add('active');
+        // Soporte Touch / Tap para Tooltips de KPIs informativos (evitar duplicar listener en pageshow)
+        if (!kpiOutsideClickBound) {
+            kpiOutsideClickBound = true;
+            document.addEventListener('click', (e) => {
+                const kpiBtn = e.target.closest('.kpi-info-btn');
+                if (kpiBtn) {
+                    e.stopPropagation();
+                    const container = kpiBtn.closest('.kpi-info-container');
+                    if (container) {
+                        const wasActive = container.classList.contains('active');
+                        document.querySelectorAll('.kpi-info-container.active').forEach(c => c.classList.remove('active'));
+                        if (!wasActive) container.classList.add('active');
+                    }
+                    return;
                 }
-                return;
-            }
 
-            // Si hace clic fuera, cerrar cualquier KPI tooltip abierto
-            if (!e.target.closest('.kpi-tooltip-content')) {
-                document.querySelectorAll('.kpi-info-container.active').forEach(c => c.classList.remove('active'));
-            }
-        });
+                // Si hace clic fuera, cerrar cualquier KPI tooltip abierto
+                if (!e.target.closest('.kpi-tooltip-content')) {
+                    document.querySelectorAll('.kpi-info-container.active').forEach(c => c.classList.remove('active'));
+                }
+            });
+        }
     }
 
     function updateModeLinks(ctxConfig) {
@@ -777,7 +786,8 @@ const SimulatorDash = (() => {
         const ids = ['btn-mode-arcade', 'btn-mode-study', 'btn-mode-real'];
         ids.forEach(id => {
             const btn = document.getElementById(id);
-            if (btn) {
+            if (btn && !btn.dataset.bound) {
+                btn.dataset.bound = 'true';
                 btn.addEventListener('click', (e) => {
                     const token = localStorage.getItem('authToken');
 
@@ -951,6 +961,8 @@ const SimulatorDash = (() => {
 
         const modeOptionLabels = document.querySelectorAll('.mode-toggle-option');
         modeOptionLabels.forEach(label => {
+            if (label.dataset.bound) return;
+            label.dataset.bound = 'true';
             label.addEventListener('click', (e) => {
                 const radio = label.querySelector('input[name="configMode"]');
                 if (radio) {
@@ -974,6 +986,8 @@ const SimulatorDash = (() => {
         const modeRadioButtons = document.getElementsByName('configMode');
         if (modeRadioButtons.length > 0) {
             modeRadioButtons.forEach(radio => {
+                if (radio.dataset.bound) return;
+                radio.dataset.bound = 'true';
                 radio.addEventListener('change', () => {
                     const token = localStorage.getItem('authToken');
                     if (!token && radio.value === 'custom' && radio.checked) {

@@ -61,6 +61,15 @@ class UsageService {
             ? { allowed: true, plan: 'free', usage: result.usage, limit: result.limit }
             : { allowed: false, plan: 'free', usage: result.usage, limit: result.limit, reason: 'LIMIT_REACHED' };
     }
+
+    /**
+     * Incrementa una columna de uso validada contra la lista blanca en el repositorio de usuarios.
+     */
+    async incrementUsageColumn(userId, columnName, amount = 1) {
+        if (typeof this.userRepository.incrementUsageColumn === 'function') {
+            return await this.userRepository.incrementUsageColumn(userId, columnName, amount);
+        }
+    }
 }
 
 module.exports = UsageService;

@@ -24,14 +24,18 @@ exports.toggleItem = async (req, res) => {
         if (!['save', 'favorite'].includes(action)) {
             return res.status(400).json({ error: 'Invalid action' });
         }
+        const itemId = parsePositiveIntId(id);
+        if (!itemId) {
+            return res.status(400).json({ error: 'Invalid item id' });
+        }
 
         const dbField = action === 'save' ? 'is_saved' : 'is_favorite';
         let result;
 
         if (type === 'course') {
-            result = await libraryRepo.toggleCourse(userId, id, dbField);
+            result = await libraryRepo.toggleCourse(userId, itemId, dbField);
         } else {
-            result = await libraryRepo.toggleBook(userId, id, dbField);
+            result = await libraryRepo.toggleBook(userId, itemId, dbField);
         }
 
         res.json({ success: true, item: result });

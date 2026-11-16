@@ -8,6 +8,11 @@ const {
     extractModelResponsePayload
 } = require('../../infrastructure/config/vertexAiConfig');
 
+const MAX_EMBEDDING_CACHE_SIZE = 200;
+const EMBEDDING_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
+const MAX_SEARCH_CACHE_SIZE = 100;
+const SEARCH_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutos
+
 /**
  * 🚀 RAG SERVICE V6.2: Motor Vectorial Puro (Pinecone + Vertex AI)
  * - Eliminado FTS local y dependencias huérfanas de PostgreSQL.
@@ -18,6 +23,8 @@ const {
 class RagService {
     constructor() {
         this._rewriterModel = null;
+        this._embeddingCache = new Map();
+        this._searchCache = new Map();
         const authOptions = resolveGoogleAuthOptions('RagService');
         this._auth = new GoogleAuth({
             scopes: 'https://www.googleapis.com/auth/cloud-platform',
@@ -28,6 +35,11 @@ class RagService {
         this._pineconeKey = process.env.PINECONE_API_KEY;
 
         console.log("✅ RagService V6.2: Motor Híbrido (Pinecone) inicializado.");
+    }
+
+    clearCache() {
+        this._embeddingCache.clear();
+        this._searchCache.clear();
     }
 
     get pineconeHost() {
@@ -143,11 +155,20 @@ class RagService {
     }
 
     /**
-     * Genera un embedding para la búsqueda semántica.
+     * Genera un embedding para la búsqueda semántica con caché LRU/TTL en memoria.
      * Sincronizado con: text-multilingual-embedding-002
      */
     async _getEmbedding(text) {
         try {
+            const cleanText = String(text || '').trim();
+            if (!cleanText) return null;
+
+            const cacheKey = cleanText.toLowerCase();
+            const cached = this._embeddingCache.get(cacheKey);
+            if (cached && (Date.now() - cached.timestamp < EMBEDDING_CACHE_TTL_MS)) {
+                return cached.vector;
+            }
+
             resolveGoogleAuthOptions('RagService');
             const client = await this._auth.getClient();
             const tokenRes = await client.getAccessToken();
@@ -155,12 +176,21 @@ class RagService {
             const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_CLOUD_PROJECT}/locations/${location}/publishers/google/models/text-multilingual-embedding-002:predict`;
 
             const response = await axios.post(url, {
-                instances: [{ content: text.trim(), task_type: "RETRIEVAL_QUERY" }]
+                instances: [{ content: cleanText, task_type: "RETRIEVAL_QUERY" }]
             }, {
-                headers: { 'Authorization': `Bearer ${tokenRes.token}`, 'Content-Type': 'application/json' }
+                headers: { 'Authorization': `Bearer ${tokenRes.token}`, 'Content-Type': 'application/json' },
+                timeout: 8000
             });
 
-            return response.data.predictions[0].embeddings.values;
+            const vector = response.data.predictions[0].embeddings.values;
+            if (vector) {
+                if (this._embeddingCache.size >= MAX_EMBEDDING_CACHE_SIZE && !this._embeddingCache.has(cacheKey)) {
+                    const oldestKey = this._embeddingCache.keys().next().value;
+                    if (oldestKey !== undefined) this._embeddingCache.delete(oldestKey);
+                }
+                this._embeddingCache.set(cacheKey, { vector, timestamp: Date.now() });
+            }
+            return vector;
         } catch (error) {
             console.error("❌ Error en Vectorización (Vertex AI):", error.message);
             return null;
@@ -199,6 +229,12 @@ class RagService {
         }
 
         try {
+            const searchCacheKey = `${activeNamespace}|${limit}|${String(query || '').trim().toLowerCase()}`;
+            const cachedSearch = this._searchCache.get(searchCacheKey);
+            if (cachedSearch && (Date.now() - cachedSearch.timestamp < SEARCH_CACHE_TTL_MS)) {
+                return cachedSearch.result;
+            }
+
             const vector = await this._getEmbedding(query);
             if (!vector) return this._formatResults([], activeNamespace);
 
@@ -208,7 +244,8 @@ class RagService {
                 includeMetadata: true,
                 namespace: activeNamespace
             }, {
-                headers: { 'Api-Key': key, 'Content-Type': 'application/json' }
+                headers: { 'Api-Key': key, 'Content-Type': 'application/json' },
+                timeout: 8000
             });
 
             const matches = response.data.matches || [];
@@ -222,7 +259,13 @@ class RagService {
             }));
 
             console.log(`✨ Pinecone [${activeNamespace}]: ${results.length} fragmentos recuperados (filtrados de ${matches.length}).`);
-            return this._formatResults(results, activeNamespace);
+            const formatted = this._formatResults(results, activeNamespace);
+            if (this._searchCache.size >= MAX_SEARCH_CACHE_SIZE && !this._searchCache.has(searchCacheKey)) {
+                const oldestKey = this._searchCache.keys().next().value;
+                if (oldestKey !== undefined) this._searchCache.delete(oldestKey);
+            }
+            this._searchCache.set(searchCacheKey, { result: formatted, timestamp: Date.now() });
+            return formatted;
         } catch (error) {
             console.error(`❌ Error crítico en Pinecone [${activeNamespace}]:`, error.message);
             return this._formatResults([], activeNamespace);

@@ -430,13 +430,45 @@ class FlashcardRepository {
 
             if (rows.length === 0) return;
 
-            for (const row of rows) {
-                await db.query('DELETE FROM decks WHERE id = $1 AND user_id = $2', [row.id, userId]);
-            }
+            const deckIds = rows.map(row => row.id).filter(Boolean);
+            await db.query('DELETE FROM decks WHERE id = ANY($1::uuid[]) AND user_id = $2', [deckIds, userId]);
         } catch (error) {
             console.error("Error deleting deck tree:", error);
             throw error;
         }
+    }
+
+    async getPublicDeckForClone(publicDeckId) {
+        const result = await db.query(`SELECT * FROM decks WHERE id = $1 AND is_public = true`, [publicDeckId]);
+        return result.rows[0] || null;
+    }
+
+    async hasUserClonedDeck(userId, cloneName, originalName) {
+        const result = await db.query(
+            `SELECT id FROM decks WHERE user_id = $1 AND (name = $2 OR name = $3) LIMIT 1`,
+            [userId, cloneName, originalName]
+        );
+        return result.rows.length > 0;
+    }
+
+    async countDailyClones(userId) {
+        const result = await db.query(
+            `SELECT COUNT(*) as count FROM decks WHERE user_id = $1 AND name LIKE '% (Clon)' AND created_at > NOW() - INTERVAL '24 hours'`,
+            [userId]
+        );
+        return parseInt(result.rows[0]?.count || 0, 10);
+    }
+
+    async isMediaInUse(url) {
+        const cardsQuery = `SELECT count(*) FROM user_flashcards WHERE image_url = $1 OR explanation_image_url = $1 OR audio_url_frente = $1 OR audio_url_dorso = $1`;
+        const decksQuery = `SELECT count(*) FROM decks WHERE description LIKE '%' || $1 || '%'`;
+
+        const [cardsRes, decksRes] = await Promise.all([
+            db.query(cardsQuery, [url]),
+            db.query(decksQuery, [url])
+        ]);
+
+        return (parseInt(cardsRes.rows[0].count, 10) + parseInt(decksRes.rows[0].count, 10)) > 0;
     }
 
     async getCardsImages(userId, cardIds) {

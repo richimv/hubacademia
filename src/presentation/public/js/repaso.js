@@ -785,12 +785,15 @@ class RepasoManager {
         };
 
         // --- 2. Mouse Wheel Scroll (PC) ---
-        slider.addEventListener('wheel', (e) => {
-            if (e.deltaY !== 0) {
-                e.preventDefault();
-                slider.scrollLeft += e.deltaY * 1.2;
-            }
-        }, { passive: false });
+        if (!slider.dataset.wheelBound) {
+            slider.dataset.wheelBound = 'true';
+            slider.addEventListener('wheel', (e) => {
+                if (e.deltaY !== 0) {
+                    e.preventDefault();
+                    slider.scrollLeft += e.deltaY * 1.2;
+                }
+            }, { passive: false });
+        }
 
         // --- 3. Delegación y manejo de click en las píldoras de categoría ---
         slider.querySelectorAll('.category-pill').forEach(btn => {

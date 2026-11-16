@@ -466,14 +466,16 @@ class UIManager {
             modal.style.display = 'flex';
             this.pushModalState('video-player-modal');
 
-            // ✅ Listener para tecla ESC
-            const escListener = (e) => {
+            // ✅ Listener para tecla ESC (con limpieza garantizada al cerrar)
+            if (this._videoEscListener) {
+                document.removeEventListener('keydown', this._videoEscListener);
+            }
+            this._videoEscListener = (e) => {
                 if (e.key === 'Escape') {
                     this.closeVideoModal();
-                    document.removeEventListener('keydown', escListener);
                 }
             };
-            document.addEventListener('keydown', escListener);
+            document.addEventListener('keydown', this._videoEscListener);
 
             // OPTIMIZACIÓN MÓVIL: Fullscreen Automático si es posible
             if (window.innerWidth < 768) {
@@ -489,6 +491,10 @@ class UIManager {
     }
 
     closeVideoModal() {
+        if (this._videoEscListener) {
+            document.removeEventListener('keydown', this._videoEscListener);
+            this._videoEscListener = null;
+        }
         const modal = document.getElementById('video-player-modal');
         const container = document.getElementById('video-modal-content-area');
         if (modal) {

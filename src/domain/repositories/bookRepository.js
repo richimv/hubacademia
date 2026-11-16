@@ -400,6 +400,68 @@ class BookRepository {
             return [];
         }
     }
+
+    /**
+     * Busca recursos visuales (infografías, esquemas) relevantes para el Tutor IA.
+     * Incluye caché de 5 minutos para evitar consultas repetidas con unaccent/LIKE.
+     * @param {Array<string>} keywords
+     * @param {string} specialization
+     * @returns {Promise<Array<{title: string, image_url: string}>>}
+     */
+    async searchVisualResources(keywords = [], specialization = 'medicine') {
+        const cleanKeywords = (Array.isArray(keywords) ? keywords : [])
+            .map(t => String(t || '').toLowerCase().trim())
+            .filter(Boolean)
+            .slice(0, 5);
+
+        if (cleanKeywords.length === 0) return [];
+
+        const cacheKey = `visual_${specialization}_${cleanKeywords.join('|')}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL_MS)) {
+            return cached.data;
+        }
+
+        const conditions = cleanKeywords.map((_, i) => `(
+            unaccent(LOWER(r.title)) LIKE unaccent(LOWER($${i + 1}))
+            OR unaccent(LOWER(COALESCE(t.name, ''))) LIKE unaccent(LOWER($${i + 1}))
+        )`).join(' OR ');
+
+        const domainIndex = cleanKeywords.length + 1;
+        const params = [...cleanKeywords.map(k => `%${k}%`), specialization];
+
+        const sqlQuery = `
+            SELECT DISTINCT r.title, r.image_url,
+                   MAX(CASE 
+                     WHEN unaccent(LOWER(r.title)) LIKE unaccent(LOWER($1)) THEN 100
+                     WHEN unaccent(LOWER(COALESCE(t.name, ''))) LIKE unaccent(LOWER($1)) THEN 80
+                     ELSE 50
+                   END) as relevance
+            FROM resources r
+            LEFT JOIN topic_resources tr ON r.id = tr.resource_id
+            LEFT JOIN topics t ON t.id = tr.topic_id
+            WHERE r.resource_type = 'other' 
+              AND r.image_url IS NOT NULL
+              AND r.visible = true
+              AND EXISTS (
+                  SELECT 1 FROM course_books cb
+                  JOIN courses c ON c.id = cb.course_id
+                  WHERE cb.resource_id = r.id AND c.domain = $${domainIndex}
+              )
+              AND (${conditions})
+            GROUP BY r.title, r.image_url
+            ORDER BY relevance DESC
+            LIMIT 5
+        `;
+
+        const { rows } = await db.query(sqlQuery, params);
+        if (this.cache.size >= 200 && !this.cache.has(cacheKey)) {
+            const oldestKey = this.cache.keys().next().value;
+            if (oldestKey !== undefined) this.cache.delete(oldestKey);
+        }
+        this.cache.set(cacheKey, { timestamp: Date.now(), data: rows });
+        return rows;
+    }
 }
 
 module.exports = BookRepository;

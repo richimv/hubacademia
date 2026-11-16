@@ -92,3 +92,17 @@ Si Pinecone no devuelve resultados con una similitud suficiente, el sistema util
    - Vaciar por completo los namespaces afectados en Pinecone (`deleteAll: true`).
    - Volver a correr el pipeline de ingesta (`python scripts/ingest_rag.py`) directamente desde los PDFs originales locales para regenerar los vectores y metadatos con el nuevo modelo de forma limpia e íntegra.
 
+---
+
+## ⚡ Optimización de Memoria, Caché y Consultas de Dominio (Noviembre 2026)
+
+1. **Caché Acotada con TTL en `RagService` y `TutorAiService`:**
+   - `RagService._embeddingCache` (máx. 200 entradas, TTL 30 min) y `RagService._searchCache` (máx. 100 entradas, TTL 15 min) con `timeout: 8000ms` en llamadas HTTP hacia Vertex AI Embeddings y Pinecone.
+   - `TutorAiService._topicCache` acotado a máx. 200 conversaciones con expiración TTL de 30 minutos (`_getCachedTopics` / `_setCachedTopics`), erradicando fugas de memoria en instancias Serverless reutilizadas.
+   - Desacoplamiento limpio en `TutorAiService._searchVisualResources`: delega la consulta SQL del catálogo visual a `BookRepository.searchVisualResources(keywords, specialization)` con caché compartida de 5 minutos.
+2. **Optimización de Consultas Pesadas en Repositorios de Dominio (`question_bank`, `user_question_history`, `web_traffic`):**
+   - **Late Row Lookup en `question_bank` (`adminRepository`, `medicoRepository`, `docenteRepository`):** Las consultas de paginación y selección aleatoria filtran y ordenan primero únicamente los `UUID` ligeros en CTEs (`FilteredIds`, `CandidateIds`, `SelectedPool`, `DemoCandidateIds`) antes de ejecutar el `JOIN` con las columnas pesadas `TEXT`/`JSONB` y `LEFT JOIN case_scenarios`.
+   - **Batch Atómico en `user_question_history`:** `saveQuizHistory` reemplaza el bucle N+1 (`SELECT` + `INSERT`/`UPDATE` por pregunta) por un único `INSERT INTO user_question_history ... VALUES ... ON CONFLICT (user_id, question_id) DO UPDATE`.
+   - **Throttling en `AnalyticsRepository.logPulse`:** Deduplicación en memoria por sesión (ventana de 60s, máx. 5,000 sesiones) combinada con cláusula condicional `WHERE web_traffic.last_ping < NOW() - INTERVAL '60 seconds'` en el `ON CONFLICT DO UPDATE` de PostgreSQL.
+
+

@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const RagService = require('./ragService');
 const chatPrompts = require('../prompts/chatPrompts');
-const db = require('../../infrastructure/database/db'); // Mover al inicio
+const BookRepository = require('../repositories/bookRepository');
 const securityUtils = require('../utils/securityUtils');
 const mediaController = require('../../application/controllers/mediaController');
 
@@ -15,6 +15,9 @@ const {
     extractModelResponsePayload
 } = require('../../infrastructure/config/vertexAiConfig');
 
+const MAX_TOPIC_CACHE_SIZE = 200;
+const TOPIC_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
+
 /**
  * 🎓 TUTOR AI SERVICE V7.0: El Cerebro del Chat y Tutoría.
  * - Estándar oficial Vertex AI: modelos definidos en vertexAiConfig (sin parámetros de muestreo depreciados).
@@ -23,6 +26,8 @@ const {
  */
 class TutorAiService {
     constructor() {
+        this.bookRepository = new BookRepository();
+        this._topicCache = new Map();
         const googleAuthOptions = resolveGoogleAuthOptions('TutorAiService');
         const project = process.env.GOOGLE_CLOUD_PROJECT || 'mock-gcp-project';
 
@@ -49,60 +54,61 @@ class TutorAiService {
     }
 
     /**
-     * Busca recursos visuales (imágenes) relevantes en Postgres.
+     * Obtiene temas en caché para una conversación con control de expiración TTL.
+     */
+    _getCachedTopics(conversationId) {
+        if (!this._topicCache || !this._topicCache.has(conversationId)) return null;
+        const entry = this._topicCache.get(conversationId);
+        if (Array.isArray(entry)) return entry;
+        if (entry && Array.isArray(entry.topics)) {
+            if (Date.now() - (entry.timestamp || 0) <= TOPIC_CACHE_TTL_MS) {
+                return entry.topics;
+            }
+            this._topicCache.delete(conversationId);
+        }
+        return null;
+    }
+
+    /**
+     * Guarda temas en caché con cota máxima (LRU/FIFO) y marca de tiempo TTL.
+     */
+    _setCachedTopics(conversationId, topics) {
+        if (!this._topicCache) this._topicCache = new Map();
+        if (this._topicCache.size >= MAX_TOPIC_CACHE_SIZE && !this._topicCache.has(conversationId)) {
+            const oldestKey = this._topicCache.keys().next().value;
+            if (oldestKey !== undefined) {
+                this._topicCache.delete(oldestKey);
+            }
+        }
+        this._topicCache.set(conversationId, {
+            topics,
+            timestamp: Date.now()
+        });
+    }
+
+    /**
+     * Busca recursos visuales (imágenes) relevantes delegando al repositorio de recursos.
      * Solo busca en specializations que tienen recursos visuales (medicine, education).
-     * Usa búsqueda por título + temas relacionados para mayor relevancia.
-     * @param {string} query - El mensaje del usuario.
+     * @param {Array<string>} topics - Temas extraídos de la consulta.
      * @param {string} specialization - 'medicine', 'education', etc.
-     * @returns {string} Texto del catálogo visual para inyectar en el prompt, o '' si no hay.
+     * @returns {Promise<string>} Texto del catálogo visual para inyectar en el prompt, o '' si no hay.
      */
     async _searchVisualResources(topics, specialization) {
         try {
             const visualDomains = ['medicine', 'education'];
             if (!visualDomains.includes(specialization)) return '';
 
-            // Usar temas expandidos o fallback a palabras clave
             const keywords = (topics && topics.length > 0)
                 ? topics.map(t => t.toLowerCase()).slice(0, 5)
                 : [];
 
             if (keywords.length === 0) return '';
 
-            // Buscar por título del recurso Y por nombre del tema relacionado
-            const conditions = keywords.map((_, i) => `(
-                unaccent(LOWER(r.title)) LIKE unaccent(LOWER($${i + 1}))
-                OR unaccent(LOWER(COALESCE(t.name, ''))) LIKE unaccent(LOWER($${i + 1}))
-            )`).join(' OR ');
-
-            const domainIndex = keywords.length + 1;
-            const params = [...keywords.map(k => `%${k}%`), specialization];
-
-            const sqlQuery = `
-                SELECT DISTINCT r.title, r.image_url,
-                       MAX(CASE 
-                         WHEN unaccent(LOWER(r.title)) LIKE unaccent(LOWER($1)) THEN 100
-                         WHEN unaccent(LOWER(COALESCE(t.name, ''))) LIKE unaccent(LOWER($1)) THEN 80
-                         ELSE 50
-                       END) as relevance
-                FROM resources r
-                LEFT JOIN topic_resources tr ON r.id = tr.resource_id
-                LEFT JOIN topics t ON t.id = tr.topic_id
-                WHERE r.resource_type = 'other' 
-                  AND r.image_url IS NOT NULL
-                  AND r.visible = true
-                  AND EXISTS (
-                      SELECT 1 FROM course_books cb
-                      JOIN courses c ON c.id = cb.course_id
-                      WHERE cb.resource_id = r.id AND c.domain = $${domainIndex}
-                  )
-                  AND (${conditions})
-                GROUP BY r.title, r.image_url
-                ORDER BY relevance DESC
-                LIMIT 5
-            `;
-
-            const { rows } = await db.query(sqlQuery, params);
-            if (rows.length === 0) return '';
+            if (!this.bookRepository) {
+                this.bookRepository = new BookRepository();
+            }
+            const rows = await this.bookRepository.searchVisualResources(keywords, specialization);
+            if (!rows || rows.length === 0) return '';
 
             const catalog = rows.map(r => `- RECURSO: "${r.title}" | URL: ${r.image_url}`).join('\n');
             console.log(`🖼️ [TutorAiService] ${rows.length} imagen(es) encontrada(s) para temas: ${keywords.join(', ')}`);
@@ -367,13 +373,13 @@ class TutorAiService {
             if (specialization !== 'flashcard_tutor') {
                 smartTopics = await RagService.extractSmartTerms(ragQuerySeed, specialization, target);
                 
-                // LÓGICA DE PERSISTENCIA: Si no hay temas nuevos pero hay historial, recuperar últimos temas
-                if ((!smartTopics || smartTopics.length === 0 || smartTopics[0].toLowerCase() === 'ninguno') && this._topicCache.has(conversationId)) {
-                    smartTopics = this._topicCache.get(conversationId);
+                // LÓGICA DE PERSISTENCIA CON COTA Y TTL: Si no hay temas nuevos pero hay historial, recuperar últimos temas
+                const cachedTopics = this._getCachedTopics(conversationId);
+                if ((!smartTopics || smartTopics.length === 0 || smartTopics[0].toLowerCase() === 'ninguno') && cachedTopics) {
+                    smartTopics = cachedTopics;
                     console.log(`♻️ [TutorAiService] Reutilizando temas del cache para ${conversationId}: ${smartTopics.join(', ')}`);
                 } else if (smartTopics && smartTopics.length > 0 && smartTopics[0].toLowerCase() !== 'ninguno') {
-                    // Guardar nuevos temas técnicos en el caché
-                    this._topicCache.set(conversationId, smartTopics);
+                    this._setCachedTopics(conversationId, smartTopics);
                 }
             }
 

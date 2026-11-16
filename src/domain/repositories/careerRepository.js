@@ -1,17 +1,23 @@
 const db = require('../../infrastructure/database/db');
 const { normalizeText } = require('../utils/textUtils');
 
+const globalCareerCache = new Map();
+
 /**
  * Repositorio para manejar las operaciones de datos de las carreras desde Supabase.
  */
 class CareerRepository {
     constructor() {
-        this.cache = new Map();
+        this.cache = globalCareerCache;
         this.CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
     }
 
     clearCache() {
         this.cache.clear();
+    }
+
+    static clearCache() {
+        globalCareerCache.clear();
     }
 
     async findAll(filters = {}) {

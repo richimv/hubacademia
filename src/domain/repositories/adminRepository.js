@@ -4,23 +4,18 @@ const { validateCSVExportParams, sanitizeCSVCell } = require('../utils/securityU
 function formatPlainTextToHtml(text) {
     if (!text) return '';
     const str = String(text);
-    // Si ya empieza con tags HTML, lo dejamos tal cual
     if (str.trimStart().startsWith('<')) {
         return str;
     }
-    
-    // Normalizar saltos de línea a \n
+
     const clean = str.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    
-    // Dividir por doble salto de línea (o más) para párrafos
     const paragraphs = clean.split(/\n\n+/);
-    
-    // Para cada párrafo, reemplazar saltos de línea simples con <br> y envolver en <p>
+
     const html = paragraphs.map(p => {
         const pClean = p.trim().replace(/\n/g, '<br>');
         return pClean ? `<p>${pClean}</p>` : '';
     }).filter(Boolean).join('');
-    
+
     return html;
 }
 
@@ -44,11 +39,10 @@ function decodeHtmlEntities(str) {
 
 class AdminRepository {
     async getOverallStats() {
-        const [usersRes, premiumRes, searchesRes, chatsRes, topCoursesRes, topResourcesRes] = await Promise.all([
+        const [usersRes, premiumRes, searchesRes, topCoursesRes, topResourcesRes] = await Promise.all([
             db.query('SELECT COUNT(*) as count FROM users'),
             db.query("SELECT COUNT(*) as count FROM users WHERE subscription_status = 'active'"),
             db.query('SELECT COUNT(*) as count FROM search_history'),
-            db.query('SELECT 0 as count'),
             db.query(`SELECT c.name, COUNT(*) as visits FROM page_views pv JOIN courses c ON pv.entity_id = c.id WHERE pv.entity_type = 'course' GROUP BY c.name ORDER BY visits DESC LIMIT 5`),
             db.query(`
                 SELECT 
@@ -67,22 +61,13 @@ class AdminRepository {
             usersCount: parseInt(usersRes.rows[0].count, 10),
             premiumCount: parseInt(premiumRes.rows[0].count, 10),
             searchesCount: parseInt(searchesRes.rows[0].count, 10),
-            chatsCount: parseInt(chatsRes.rows[0].count, 10),
+            chatsCount: 0,
             topCourses: topCoursesRes.rows,
             topResources: topResourcesRes.rows
         };
     }
 
     async getAllQuestions(domain, search, page = 1, limit = 100, caseFilter = 'all') {
-        let query = `
-            SELECT qb.id, qb.question_text, qb.domain, qb.target, qb.career, qb.topic, qb.subtopic, 
-                   qb.difficulty, qb.created_at, qb.options, qb.correct_option_index as correct_answer, 
-                   qb.explanation, qb.explanation_image_url, qb.image_url,
-                   qb.case_id, qb.case_order,
-                   cs.code as case_code, cs.title as case_title, cs.description_text as case_description
-            FROM question_bank qb
-            LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
-        `;
         const params = [];
         const conditions = [];
 
@@ -91,9 +76,18 @@ class AdminRepository {
             conditions.push(`qb.domain = $${params.length}`);
         }
 
-        if (search) {
-            params.push(`%${search}%`);
-            conditions.push(`(qb.question_text ILIKE $${params.length} OR qb.topic ILIKE $${params.length} OR qb.subtopic ILIKE $${params.length} OR cs.code ILIKE $${params.length} OR cs.title ILIKE $${params.length})`);
+        if (search && String(search).trim()) {
+            params.push(`%${String(search).trim()}%`);
+            const pIdx = params.length;
+            conditions.push(`(
+                qb.question_text ILIKE $${pIdx}
+                OR qb.topic ILIKE $${pIdx}
+                OR qb.subtopic ILIKE $${pIdx}
+                OR qb.case_id IN (
+                    SELECT cs_sub.id FROM case_scenarios cs_sub
+                    WHERE cs_sub.code ILIKE $${pIdx} OR cs_sub.title ILIKE $${pIdx}
+                )
+            )`);
         }
 
         if (caseFilter === 'linked') {
@@ -102,15 +96,33 @@ class AdminRepository {
             conditions.push(`qb.case_id IS NULL`);
         }
 
-        if (conditions.length > 0) {
-            query += ` WHERE ` + conditions.join(' AND ');
-        }
-
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
         const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 1000);
         const safeOffset = Math.max((parseInt(page, 10) - 1) * safeLimit, 0);
 
         params.push(safeLimit, safeOffset);
-        query += ` ORDER BY qb.created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`;
+        const limitIdx = params.length - 1;
+        const offsetIdx = params.length;
+
+        // Late Row Lookup: ordena y pagina solo IDs antes de unir textos pesados y casuísticas
+        const query = `
+            WITH FilteredIds AS (
+                SELECT qb.id
+                FROM question_bank qb
+                ${whereClause}
+                ORDER BY qb.created_at DESC
+                LIMIT $${limitIdx} OFFSET $${offsetIdx}
+            )
+            SELECT qb.id, qb.question_text, qb.domain, qb.target, qb.career, qb.topic, qb.subtopic, 
+                   qb.difficulty, qb.created_at, qb.options, qb.correct_option_index as correct_answer, 
+                   qb.explanation, qb.explanation_image_url, qb.image_url,
+                   qb.case_id, qb.case_order,
+                   cs.code as case_code, cs.title as case_title, cs.description_text as case_description
+            FROM FilteredIds f
+            JOIN question_bank qb ON qb.id = f.id
+            LEFT JOIN case_scenarios cs ON qb.case_id = cs.id
+            ORDER BY qb.created_at DESC
+        `;
 
         const result = await db.query(query, params);
         return result.rows;
@@ -120,9 +132,8 @@ class AdminRepository {
         let query = `
             SELECT cs.id, cs.code, cs.title, cs.description_text, cs.image_url,
                    cs.domain, cs.target, cs.topic, cs.created_at, cs.updated_at,
-                   COUNT(qb.id)::int as questions_count
+                   (SELECT COUNT(*)::int FROM question_bank qb WHERE qb.case_id = cs.id) as questions_count
             FROM case_scenarios cs
-            LEFT JOIN question_bank qb ON cs.id = qb.case_id
         `;
         const params = [];
         const conditions = [];
@@ -140,8 +151,6 @@ class AdminRepository {
         if (conditions.length > 0) {
             query += ` WHERE ` + conditions.join(' AND ');
         }
-
-        query += ` GROUP BY cs.id `;
 
         const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 1000);
         const safeOffset = Math.max((parseInt(page, 10) - 1) * safeLimit, 0);
@@ -304,7 +313,6 @@ class AdminRepository {
     }
 
     async deleteCase(id) {
-        // Questions will automatically have case_id set to NULL due to ON DELETE SET NULL
         const result = await db.query('DELETE FROM case_scenarios WHERE id = $1 RETURNING id', [id]);
         return result.rowCount > 0;
     }
@@ -322,7 +330,7 @@ class AdminRepository {
                 const item = questionIdsWithOrder[i];
                 const qId = typeof item === 'object' ? item.id : item;
                 const order = (typeof item === 'object' && item.order !== undefined) ? parseInt(item.order, 10) : (i + 1);
-                
+
                 await client.query(
                     `UPDATE question_bank SET case_id = $1, case_order = $2 WHERE id = $3`,
                     [caseId, order, qId]
@@ -407,14 +415,13 @@ class AdminRepository {
             [title, resourceType, imageUrl, publishInBulletin, isPremium, visible, openDirectly, id]
         );
         if (id && Array.isArray(topicIds) && topicIds.length > 0) {
-            for (const tId of topicIds) {
-                const cleanTId = parseInt(tId, 10);
-                if (!isNaN(cleanTId)) {
-                    await db.query(
-                        'INSERT INTO topic_resources (resource_id, topic_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-                        [id, cleanTId]
-                    );
-                }
+            const cleanTopicIds = topicIds.map(tId => parseInt(tId, 10)).filter(n => !isNaN(n));
+            if (cleanTopicIds.length > 0) {
+                const placeholders = cleanTopicIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+                await db.query(
+                    `INSERT INTO topic_resources (resource_id, topic_id) VALUES ${placeholders} ON CONFLICT DO NOTHING`,
+                    [id, ...cleanTopicIds]
+                );
             }
         }
         try {
@@ -432,14 +439,13 @@ class AdminRepository {
         );
         const numericId = result.rows[0]?.id;
         if (numericId && Array.isArray(topicIds) && topicIds.length > 0) {
-            for (const tId of topicIds) {
-                const cleanTId = parseInt(tId, 10);
-                if (!isNaN(cleanTId)) {
-                    await db.query(
-                        'INSERT INTO topic_resources (resource_id, topic_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-                        [numericId, cleanTId]
-                    );
-                }
+            const cleanTopicIds = topicIds.map(tId => parseInt(tId, 10)).filter(n => !isNaN(n));
+            if (cleanTopicIds.length > 0) {
+                const placeholders = cleanTopicIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+                await db.query(
+                    `INSERT INTO topic_resources (resource_id, topic_id) VALUES ${placeholders} ON CONFLICT DO NOTHING`,
+                    [numericId, ...cleanTopicIds]
+                );
             }
         }
         try {
@@ -453,7 +459,7 @@ class AdminRepository {
 
     async exportTableToCSVBuffer(tableName, columns = '*') {
         validateCSVExportParams(tableName, columns);
-        const res = await db.query(`SELECT ${columns} FROM ${tableName}`);
+        const res = await db.query(`SELECT ${columns} FROM ${tableName} LIMIT 10000`);
         if (res.rows.length === 0) return null;
 
         const headers = Object.keys(res.rows[0]).join(',');
@@ -481,11 +487,9 @@ class AdminRepository {
                 return allowed.includes(v) ? v : 'medicine';
             };
 
-            // Pre-process case scenarios for questions that have case code/description
             const caseCodeToIdMap = new Map();
             const caseOrderCounters = new Map();
 
-            // 1. Recolectar y consolidar la información más completa de cada código de caso
             const caseDefinitions = new Map();
             for (const q of questionsArray) {
                 const rawCaseCode = q.codigo_caso || q.case_code || q.code_caso || q.CODIGO_CASO || q.caso_codigo;
@@ -508,7 +512,6 @@ class AdminRepository {
                         });
                     } else {
                         const def = caseDefinitions.get(normKey);
-                        // Si una fila subsiguiente trae un enunciado más largo/completo, priorizarlo
                         if (desc && desc.length > (def.desc || '').length) {
                             def.desc = desc;
                         }
@@ -522,13 +525,11 @@ class AdminRepository {
                 }
             }
 
-            // 2. Crear o resolver en DB cada casuística única consolidada
             for (const [normKey, def] of caseDefinitions.entries()) {
                 const existingCaseRes = await client.query('SELECT id, description_text FROM case_scenarios WHERE UPPER(code) = $1', [normKey]);
                 if (existingCaseRes.rows.length > 0) {
                     const existingId = existingCaseRes.rows[0].id;
                     caseCodeToIdMap.set(normKey, existingId);
-                    // Si el caso existente en DB no tenía enunciado y el Excel sí lo provee, enriquecerlo
                     if ((!existingCaseRes.rows[0].description_text || existingCaseRes.rows[0].description_text.trim() === '') && def.desc) {
                         const formattedDesc = decodeHtmlEntities(formatPlainTextToHtml(def.desc));
                         await client.query('UPDATE case_scenarios SET description_text = $1, updated_at = NOW() WHERE id = $2', [formattedDesc, existingId]);
@@ -569,7 +570,7 @@ class AdminRepository {
                         const a = q.option_a || q.opcion_a || q.OPCION_A || q.optionA || q.opcionA || '';
                         const b = q.option_b || q.opcion_b || q.OPCION_B || q.optionB || q.opcionB || '';
                         const c = q.option_c || q.opcion_c || q.OPCION_C || q.optionC || q.opcionC || '';
-                        const d = q.option_d || q.opcion_d || q.OPCION_D || q.optionD || q.opcionD || '';
+                        const d = q.option_d || q.opcion_d || q.OPCION_D || q.optionD || q.optionD || '';
                         const e = q.option_e || q.opcion_e || q.OPCION_E || q.optionE || q.opcionE || '';
                         if (a || b || c) {
                             options = [a, b, c];
@@ -586,7 +587,6 @@ class AdminRepository {
                     const image_url = q.image_url || null;
                     const career = q.career || null;
 
-                    // Resolve case_id and case_order
                     const rawCaseCode = q.codigo_caso || q.case_code || q.code_caso || q.CODIGO_CASO || q.caso_codigo;
                     let case_id = q.case_id || null;
                     if (rawCaseCode && caseCodeToIdMap.has(String(rawCaseCode).trim().toUpperCase())) {

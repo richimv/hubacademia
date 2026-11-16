@@ -1,8 +1,8 @@
 const User = require('../models/user');
-const bcrypt = require('bcryptjs');
 const db = require('../../infrastructure/database/db');
 const crypto = require('crypto');
 const { FREE_PLAN_CONFIG } = require('../../infrastructure/config/limits');
+const { isValidUsageColumn } = require('../utils/securityUtils');
 
 class UserRepository {
     // Helper privado para mapear fila de DB a Modelo
@@ -113,6 +113,21 @@ class UserRepository {
         };
     }
 
+    /**
+     * Incrementa de forma atómica una columna de uso validada contra lista blanca.
+     */
+    async incrementUsageColumn(userId, columnName, amount = 1) {
+        if (!isValidUsageColumn(columnName)) {
+            throw new Error(`Invalid usage column: ${columnName}`);
+        }
+        const safeAmount = Math.max(1, parseInt(amount, 10) || 1);
+        const col = columnName.trim();
+        await db.query(
+            `UPDATE public.users SET ${col} = COALESCE(${col}, 0) + $2 WHERE id = $1`,
+            [userId, safeAmount]
+        );
+    }
+
     async findByRole(role) {
         const res = await db.query(`SELECT * FROM users WHERE role = $1 ORDER BY name`, [role]);
         return res.rows.map(row => this._mapRowToUser(row));
@@ -120,28 +135,21 @@ class UserRepository {
 
     async create(userData) {
         const { email, name, role = 'student', id: externalId = null, avatar_url = null } = userData;
-        
-        const placeholderPassword = crypto.randomBytes(32).toString('hex');
-        const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash(placeholderPassword, salt);
 
+        // Placeholder criptográfico ligero (sin bloqueo CPU de bcrypt, dado que el login es OAuth/Supabase)
+        const passwordHash = `oauth_sha256_${crypto.createHash('sha256').update(crypto.randomBytes(32)).digest('hex')}`;
         const id = externalId || crypto.randomUUID();
 
-        // console.log(`💾 Persistiendo usuario en DB local: ${email} (${id})`);
-
         try {
-            // Intentar usar el Procedimiento Almacenado (Optimizado y Atómico)
             const queryText = 'SELECT * FROM sp_register_user($1, $2, $3, $4, $5, $6)';
             const values = [id, name, email.toLowerCase(), passwordHash, role, avatar_url];
             const res = await db.query(queryText, values);
-            
+
             if (res.rows.length > 0) return this._mapRowToUser(res.rows[0]);
         } catch (dbError) {
-            // 🛡️ FALLBACK SENIOR: Si la función no existe (42883) o hay conflicto de email, lo hacemos manual.
             if (dbError.code === '42883' || dbError.message.includes('function sp_register_user')) {
                 console.warn('⚠️ sp_register_user no encontrada. Usando SQL manual con resolución de conflictos...');
-                
-                // Estrategia: Intentar insertar por ID, pero si el EMAIL ya existe, actualizar el registro existente.
+
                 const manualQuery = `
                     INSERT INTO public.users (id, name, email, password_hash, role, avatar_url, subscription_status, subscription_tier, usage_count, max_free_limit, last_usage_reset, last_free_renewal, updated_at)
                     VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'free', 0, 10, CURRENT_DATE, NOW(), NOW())
@@ -160,10 +168,9 @@ class UserRepository {
                 const manualRes = await db.query(manualQuery, [id, name, email.toLowerCase(), passwordHash, role, avatar_url]);
                 return this._mapRowToUser(manualRes.rows[0]);
             }
-            
-            // Si el error es específicamente de duplicado de email (23505) y no usamos el fallback arriba
-             if (dbError.code === '23505') {
-                  const updateQuery = `
+
+            if (dbError.code === '23505') {
+                const updateQuery = `
                     UPDATE public.users 
                     SET id = $1, 
                         name = COALESCE(NULLIF(TRIM(public.users.name), ''), $3),
@@ -171,20 +178,14 @@ class UserRepository {
                         updated_at = NOW() 
                     WHERE lower(email) = $2
                     RETURNING *;
-                  `;
-                  const updateRes = await db.query(updateQuery, [id, email.toLowerCase(), name, avatar_url]);
-                  return this._mapRowToUser(updateRes.rows[0]);
-             }
+                `;
+                const updateRes = await db.query(updateQuery, [id, email.toLowerCase(), name, avatar_url]);
+                return this._mapRowToUser(updateRes.rows[0]);
+            }
 
             console.error('❌ Error crítico en persistencia de usuario:', dbError.message);
             throw dbError;
         }
-    }
-
-    async updatePassword(userId, newPasswordHash) {
-        const res = await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newPasswordHash, userId]);
-        if (res.rowCount === 0) throw new Error('Usuario no encontrado.');
-        return { success: true };
     }
 
     // ✅ ACTUALIZACIÓN ROBUSTA: Soporta camelCase y snake_case
@@ -193,28 +194,22 @@ class UserRepository {
         const values = [];
         let idx = 1;
 
-        // Mapeo inteligente de campos
         if (userData.name !== undefined) { fields.push(`name = $${idx++}`); values.push(userData.name); }
         if (userData.email !== undefined) { fields.push(`email = $${idx++}`); values.push(userData.email); }
         if (userData.role !== undefined) { fields.push(`role = $${idx++}`); values.push(userData.role); }
 
-        // Manejo de suscripción
         if (userData.subscriptionStatus !== undefined) { fields.push(`subscription_status = $${idx++}`); values.push(userData.subscriptionStatus); }
         else if (userData.subscription_status !== undefined) { fields.push(`subscription_status = $${idx++}`); values.push(userData.subscription_status); }
 
-        // Manejo de Payment ID
         if (userData.paymentId !== undefined) { fields.push(`payment_id = $${idx++}`); values.push(userData.paymentId); }
         else if (userData.payment_id !== undefined) { fields.push(`payment_id = $${idx++}`); values.push(userData.payment_id); }
 
-        // Manejo de Tier
         if (userData.subscriptionTier !== undefined) { fields.push(`subscription_tier = $${idx++}`); values.push(userData.subscriptionTier); }
         else if (userData.subscription_tier !== undefined) { fields.push(`subscription_tier = $${idx++}`); values.push(userData.subscription_tier); }
 
-        // Manejo de Expiración
         if (userData.subscriptionExpiresAt !== undefined) { fields.push(`subscription_expires_at = $${idx++}`); values.push(userData.subscriptionExpiresAt); }
         else if (userData.subscription_expires_at !== undefined) { fields.push(`subscription_expires_at = $${idx++}`); values.push(userData.subscription_expires_at); }
 
-        // ✅ CRÍTICO: Actualizar contadores (Soporta userData.usageCount o usage_count)
         const usage = userData.usageCount !== undefined ? userData.usageCount : userData.usage_count;
         if (usage !== undefined) { fields.push(`usage_count = $${idx++}`); values.push(usage); }
 
@@ -226,8 +221,6 @@ class UserRepository {
 
         const ragUsage = userData.dailyRagUsage !== undefined ? userData.dailyRagUsage : userData.daily_rag_usage;
         if (ragUsage !== undefined) { fields.push(`daily_rag_usage = $${idx++}`); values.push(ragUsage); }
-
-
 
         const lastReset = userData.lastUsageReset !== undefined ? userData.lastUsageReset : userData.last_usage_reset;
         if (lastReset !== undefined) { fields.push(`last_usage_reset = $${idx++}`); values.push(lastReset); }
@@ -264,34 +257,33 @@ class UserRepository {
                     await client.query('BEGIN');
 
                     // 1. Eliminar datos dependientes de flashcards y mazos
-                    await client.query('DELETE FROM user_flashcards WHERE user_id = $1', [id]).catch(() => {});
-                    await client.query('DELETE FROM decks WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM user_flashcards WHERE user_id = $1', [id]);
+                    await client.query('DELETE FROM decks WHERE user_id = $1', [id]);
 
                     // 2. Eliminar sesiones de simulacros, preguntas asociadas y estadísticas
                     await client.query(`
                         DELETE FROM quiz_session_questions 
                         WHERE session_id IN (SELECT id FROM quiz_sessions WHERE user_id = $1)
-                    `, [id]).catch(() => {});
-                    await client.query('DELETE FROM quiz_sessions WHERE user_id = $1', [id]).catch(() => {});
-                    await client.query('DELETE FROM quiz_history WHERE user_id = $1', [id]).catch(() => {});
-                    await client.query('DELETE FROM user_question_history WHERE user_id = $1', [id]).catch(() => {});
-                    await client.query('DELETE FROM user_simulator_preferences WHERE user_id = $1', [id]).catch(() => {});
+                    `, [id]);
+                    await client.query('DELETE FROM quiz_sessions WHERE user_id = $1', [id]);
+                    await client.query('DELETE FROM quiz_history WHERE user_id = $1', [id]);
+                    await client.query('DELETE FROM user_question_history WHERE user_id = $1', [id]);
+                    await client.query('DELETE FROM user_simulator_preferences WHERE user_id = $1', [id]);
 
                     // 3. Eliminar bibliotecas guardadas y notas del usuario
-                    await client.query('DELETE FROM user_book_library WHERE user_id = $1', [id]).catch(() => {});
-                    await client.query('DELETE FROM user_course_library WHERE user_id = $1', [id]).catch(() => {});
-                    await client.query('DELETE FROM user_notes WHERE user_id = $1', [id]).catch(() => {});
+                    await client.query('DELETE FROM user_book_library WHERE user_id = $1', [id]);
+                    await client.query('DELETE FROM user_course_library WHERE user_id = $1', [id]);
+                    await client.query('DELETE FROM user_notes WHERE user_id = $1', [id]);
 
-                    // 4. Eliminar feedback, historial de búsqueda y eventos de pago
-                    await client.query('DELETE FROM feedback WHERE user_id = $1', [id]).catch(() => {});
-                    await client.query('DELETE FROM search_history WHERE user_id = $1', [id]).catch(() => {});
-                    await client.query('DELETE FROM payment_events WHERE user_id = $1', [id]).catch(() => {});
+                    // 4. Eliminar historial de búsqueda y eventos de pago (tabla feedback obsoleta removida para no abortar la transacción 25P02)
+                    await client.query('DELETE FROM search_history WHERE user_id = $1', [id]);
+                    await client.query('DELETE FROM payment_events WHERE user_id = $1', [id]);
 
-                    // 6. Anonimizar analíticas históricas
-                    await client.query('UPDATE page_views SET user_id = NULL WHERE user_id = $1', [id]).catch(() => {});
-                    await client.query('UPDATE web_traffic SET user_id = NULL WHERE user_id = $1', [id]).catch(() => {});
+                    // 5. Anonimizar analíticas históricas
+                    await client.query('UPDATE page_views SET user_id = NULL WHERE user_id = $1', [id]);
+                    await client.query('UPDATE web_traffic SET user_id = NULL WHERE user_id = $1', [id]);
 
-                    // 7. Eliminar el registro maestro del usuario
+                    // 6. Eliminar el registro maestro del usuario
                     const { rowCount } = await client.query('DELETE FROM users WHERE id = $1', [id]);
 
                     await client.query('COMMIT');
@@ -320,13 +312,14 @@ class UserRepository {
         await db.query('DELETE FROM user_book_library WHERE user_id = $1', [id]).catch(() => {});
         await db.query('DELETE FROM user_course_library WHERE user_id = $1', [id]).catch(() => {});
         await db.query('DELETE FROM user_notes WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('DELETE FROM search_history WHERE user_id = $1', [id]).catch(() => {});
         await db.query('DELETE FROM payment_events WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('UPDATE page_views SET user_id = NULL WHERE user_id = $1', [id]).catch(() => {});
+        await db.query('UPDATE web_traffic SET user_id = NULL WHERE user_id = $1', [id]).catch(() => {});
         const { rowCount } = await db.query('DELETE FROM users WHERE id = $1', [id]);
         if (rowCount === 0) throw new Error(`Usuario no encontrado.`);
         return { success: true };
     }
 }
-
-
 
 module.exports = UserRepository;

@@ -1,28 +1,13 @@
 const docenteRepository = require('../repositories/docenteRepository');
+const { shuffleQuestionOptions, packExamQuestions } = require('../utils/quizPackingUtils');
 
 class DocenteService {
 
     shuffleOptions(question) {
-        if (!question.options || !question.options.length) return question;
-
-        const originalOptions = question.options;
-        const mappedOptions = originalOptions.map((opt, index) => ({
-            text: opt,
-            isCorrect: index === question.correct_option_index
-        }));
-
-        for (let i = mappedOptions.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [mappedOptions[i], mappedOptions[j]] = [mappedOptions[j], mappedOptions[i]];
-        }
-
-        question.options = mappedOptions.map(o => o.text);
-        question.correct_option_index = mappedOptions.findIndex(o => o.isCorrect);
-
-        return question;
+        return shuffleQuestionOptions(question);
     }
 
-    async generateQuiz(categoryOptions, userId, limit = 10, subscriptionTier = 'free', seenIds = []) {
+    async generateQuiz(categoryOptions, userId, limit = 10, _subscriptionTier = 'free', seenIds = []) {
         // Education classifications are not reliable; legacy area preferences are ignored.
         const target = categoryOptions.target || 'ASCENSO';
         const career = categoryOptions.career || 'EBR - Primaria';
@@ -71,13 +56,14 @@ class DocenteService {
         await docenteRepository.incrementSimulatorUsage(userId);
     }
 
-    async getUserQuizStats(userId, context, target, limit, days = null, _areas = null, career = null) {
+    async getUserQuizStats(userId, _context, target, limit, days = null, _areas = null, career = null) {
         let topicFilter = ` AND target IN ('NOMBRAMIENTO', 'ASCENSO', 'ACCESO_CARGOS')`;
         let timeFilter = '';
         const params = [userId];
 
         if (days) {
-            timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
+            const safeDays = Math.min(Math.max(parseInt(days, 10) || 30, 1), 3650);
+            timeFilter = ` AND created_at >= NOW() - INTERVAL '${safeDays} days'`;
         }
 
         if (target) {
@@ -111,22 +97,14 @@ class DocenteService {
 
         let accuracy = 0;
         let avgScore20 = 0;
-        const totalQ = parseInt(qStats.total_questions) || 0;
-        const totalCorrect = parseInt(qStats.total_correct) || 0;
+        const totalQ = parseInt(qStats.total_questions, 10) || 0;
+        const totalCorrect = parseInt(qStats.total_correct, 10) || 0;
         const totalIncorrect = totalQ - totalCorrect;
 
         if (totalQ > 0) {
             accuracy = (totalCorrect / totalQ) * 100;
             avgScore20 = (totalCorrect / totalQ) * 20;
         }
-
-        const flashcardRepository = require('../repositories/flashcardRepository');
-        const mastered = await flashcardRepository.getMasteredFlashcardsCount ? await flashcardRepository.getMasteredFlashcardsCount(userId) : 0;
-
-        const strongest = 'N/A';
-        const weakest = 'N/A';
-        const radarData = [];
-        const deckId = null;
 
         return {
             avg_score: avgScore20.toFixed(1),
@@ -135,11 +113,11 @@ class DocenteService {
             total_incorrect: totalIncorrect,
             total_questions: totalQ,
             total_games: parseInt(qStats.total_games, 10) || 0,
-            mastered_cards: mastered,
-            strongest_topic: strongest,
-            weakest_topic: weakest,
-            radar_data: radarData,
-            system_deck_id: deckId
+            mastered_cards: 0,
+            strongest_topic: 'N/A',
+            weakest_topic: 'N/A',
+            radar_data: [],
+            system_deck_id: null
         };
     }
 
@@ -147,110 +125,8 @@ class DocenteService {
      * Empaqueta de forma atómica e indivisible casuísticas (preguntas hermanas) y reactivos individuales
      * garantizando que ninguna casuística sea cortada a la mitad y alcanzando con exactitud el límite solicitado.
      */
-    packExamQuestions(rawBankQuestions, limit, activeAreas = [], isDefault = true) {
-        if (!rawBankQuestions || rawBankQuestions.length === 0) return [];
-        if (rawBankQuestions.length <= limit) {
-            return rawBankQuestions;
-        }
-
-        // 1. Mapeo de casos completos
-        const casesMap = new Map();
-        rawBankQuestions.forEach(q => {
-            if (q.case_id) {
-                if (!casesMap.has(q.case_id)) casesMap.set(q.case_id, []);
-                casesMap.get(q.case_id).push(q);
-            }
-        });
-
-        // Ordenar las preguntas dentro de cada casuística por case_order ASC
-        casesMap.forEach(siblings => {
-            siblings.sort((a, b) => (a.case_order || 1) - (b.case_order || 1));
-        });
-
-        // 2. Clasificar en bloques de casos y preguntas sueltas agrupadas por área
-        const caseUnitsByArea = new Map();
-        const soloQuestionsByArea = new Map();
-        const registeredCaseIds = new Set();
-
-        rawBankQuestions.forEach(q => {
-            const topicKey = q.topic ? q.topic.toUpperCase() : 'GENERAL';
-            if (q.case_id) {
-                if (!registeredCaseIds.has(q.case_id)) {
-                    registeredCaseIds.add(q.case_id);
-                    const fullCase = casesMap.get(q.case_id);
-                    if (!caseUnitsByArea.has(topicKey)) caseUnitsByArea.set(topicKey, []);
-                    caseUnitsByArea.get(topicKey).push(fullCase);
-                }
-            } else {
-                if (!soloQuestionsByArea.has(topicKey)) soloQuestionsByArea.set(topicKey, []);
-                soloQuestionsByArea.get(topicKey).push(q);
-            }
-        });
-
-        const packedUnits = [];
-        let currentCount = 0;
-        const areasList = activeAreas.length > 0
-            ? activeAreas
-            : Array.from(new Set([...soloQuestionsByArea.keys(), ...caseUnitsByArea.keys()]));
-
-        // 3. Selección balanceada de casos completos (solo si caben enteros en el cupo restante)
-        let hasCasesToProcess = true;
-        while (hasCasesToProcess && currentCount < limit) {
-            let addedAnyCaseInRound = false;
-            for (const area of areasList) {
-                const spaceLeft = limit - currentCount;
-                if (spaceLeft <= 0) break;
-
-                const areaCases = caseUnitsByArea.get(area);
-                if (areaCases && areaCases.length > 0) {
-                    const fittingCaseIdx = areaCases.findIndex(c => c.length <= spaceLeft);
-                    if (fittingCaseIdx !== -1) {
-                        const [fittingCase] = areaCases.splice(fittingCaseIdx, 1);
-                        packedUnits.push(fittingCase);
-                        currentCount += fittingCase.length;
-                        addedAnyCaseInRound = true;
-                    }
-                }
-            }
-            if (!addedAnyCaseInRound) {
-                hasCasesToProcess = false;
-            }
-        }
-
-        // 4. Completar el espacio restante con Preguntas Sueltas (size 1) de forma balanceada
-        let hasSoloToProcess = true;
-        while (hasSoloToProcess && currentCount < limit) {
-            let addedAnySoloInRound = false;
-            for (const area of areasList) {
-                const spaceLeft = limit - currentCount;
-                if (spaceLeft <= 0) break;
-
-                const soloList = soloQuestionsByArea.get(area);
-                if (soloList && soloList.length > 0) {
-                    packedUnits.push([soloList.shift()]);
-                    currentCount += 1;
-                    addedAnySoloInRound = true;
-                }
-            }
-            if (!addedAnySoloInRound) {
-                hasSoloToProcess = false;
-            }
-        }
-
-        // 5. Salvaguarda: Si aún faltara completar cupo y quedan solos en cualquier área
-        if (currentCount < limit) {
-            for (const soloList of soloQuestionsByArea.values()) {
-                while (soloList.length > 0 && currentCount < limit) {
-                    packedUnits.push([soloList.shift()]);
-                    currentCount += 1;
-                }
-            }
-        }
-
-        // 6. Mezclar de forma balanceada los bloques para que los casos no queden siempre agrupados al principio,
-        // garantizando que las preguntas de cada casuística se mantengan siempre contiguas y en su orden oficial
-        const shuffledUnits = packedUnits.sort(() => 0.5 - Math.random());
-        return shuffledUnits.flat();
+    packExamQuestions(rawBankQuestions, limit, activeAreas = [], _isDefault = true) {
+        return packExamQuestions(rawBankQuestions, limit, activeAreas);
     }
 
     async getLeaderboard() {

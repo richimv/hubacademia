@@ -7,13 +7,13 @@ El sistema de analíticas de Hub Academia está diseñado siguiendo una arquitec
 ### Capas de Monitoreo
 1.  **Tráfico en Tiempo Real (Heartbeat):**
     -   **Captura:** `app.js` (`initTrafficTracking`).
-    -   **Flujo:** Envía un primer pulso con retraso de 5 segundos (para mitigar errores durante el cold start del servidor en Render), luego repite cada 3 minutos con `session_id` e `is_mobile`. Usa `fetch` nativo silencioso (no `NetworkService`) para evitar reintentos ruidosos y toasts de error por telemetría secundaria, pero conserva el `Authorization` del token vigente para asociar usuarios autenticados.
-    -   **Disponibilidad:** El retraso del cliente reduce la probabilidad de una carrera con el cold start, pero no reemplaza un backend disponible ni corrige por sí mismo respuestas `503` del proveedor.
+    -   **Flujo:** Envía un pulso periódico con `session_id` e `is_mobile`. Usa `fetch` nativo silencioso (no `NetworkService`) para evitar reintentos ruidosos y toasts de error por telemetría secundaria, conservando el `Authorization` del token vigente para asociar usuarios autenticados.
+    -   **Deduplicación y Protección en Servidor (`AnalyticsController.recordPulse`):** En entorno Vercel Serverless, el controlador aplica una ventana de enfriamiento acotada en memoria (`PULSE_THROTTLE_MS = 120s`, `MAX_CACHE_ENTRIES = 5000`, sin timers `setInterval` en background) por `session_id` y filtra bots/crawlers automatizados (`User-Agent`). Esto evita escrituras redundantes `INSERT INTO web_traffic ... ON CONFLICT (session_id) DO UPDATE` en Supabase durante cambios rápidos de vista o múltiples pestañas abiertas, permitiendo escritura inmediata solo cuando una sesión anónima pasa a estado autenticado (`user_id`).
     -   **Rutas:** Consolidadas en `infrastructure/routes/analyticsRoutes.js` (`POST /api/analytics/pulse`).
     -   **Tabla:** `web_traffic` (almacena el `last_ping`).
 2.  **Vistas de Contenido:**
     -   **Captura:** `app.js` (Interceptor de rutas).
-    -   **Flujo:** Registra cada visita a Carreras, Cursos o Temas.
+    -   **Flujo:** Registra cada visita a Carreras, Cursos o Temas, aplicando deduplicación en ráfaga de 30 segundos (`VIEW_THROTTLE_MS`) en `AnalyticsController.recordView`.
     -   **Tabla:** `page_views`.
 3.  **Clics en Recursos (Multimedia/Videos):**
     -   **Captura:** `uiManager.js` (`unlockResource`) y `recordResourceClick`.

@@ -107,22 +107,45 @@ async function syncPendingSubmissions() {
 
 /**
  * Tracking de Tráfico en Tiempo Real (Heartbeat / Pulso).
+ * Optimizado con Page Visibility API, deduplicación por sesión MPA y limpieza de timers.
  */
 function initTrafficTracking() {
     const SESSION_KEY = 'hub_visitor_session_id';
-    let sessionId = sessionStorage.getItem(SESSION_KEY);
+    const LAST_PULSE_KEY = 'hub_visitor_last_pulse_ts';
+    const PULSE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos (alineado con ventana activa de analítica)
+    const INITIAL_DELAY_MS = 5000;
 
+    let sessionId = sessionStorage.getItem(SESSION_KEY);
     if (!sessionId) {
         sessionId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
         sessionStorage.setItem(SESSION_KEY, sessionId);
     }
 
+    // Limpiar timers o listeners previos para evitar fugas de memoria o pulsos duplicados
+    if (typeof window !== 'undefined') {
+        if (window._hubTrafficTimeoutId) clearTimeout(window._hubTrafficTimeoutId);
+        if (window._hubTrafficIntervalId) clearInterval(window._hubTrafficIntervalId);
+        if (window._hubTrafficVisibilityHandler && typeof document !== 'undefined' && typeof document.removeEventListener === 'function') {
+            document.removeEventListener('visibilitychange', window._hubTrafficVisibilityHandler);
+        }
+    }
+
     const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const apiUrl = window.AppConfig?.API_URL || window.API_URL || '';
 
+    const isTabHidden = () => typeof document !== 'undefined' && (document.visibilityState === 'hidden' || document.hidden === true);
+
     const sendPulse = async () => {
         if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+        if (isTabHidden()) return;
         if (!apiUrl) return;
+
+        // Evitar pulsos duplicados al navegar entre páginas MPA dentro de la misma ventana de tiempo
+        const lastPulseTs = parseInt(sessionStorage.getItem(LAST_PULSE_KEY) || '0', 10);
+        const now = Date.now();
+        if (lastPulseTs > 0 && (now - lastPulseTs) < (PULSE_INTERVAL_MS - 10000)) {
+            return;
+        }
 
         try {
             const headers = { 'Content-Type': 'application/json' };
@@ -130,16 +153,14 @@ function initTrafficTracking() {
                 ? localStorage.getItem('authToken')
                 : null;
 
-            // NetworkService añade este header, pero el heartbeat usa fetch nativo
-            // para no mostrar toasts ni reintentos globales. Mantenerlo conserva
-            // la asociación del pulso con el usuario autenticado en optionalAuth.
+            // El heartbeat usa fetch nativo para no mostrar toasts ni reintentos globales.
+            // Mantener Authorization conserva la asociación con el usuario en optionalAuth.
             if (authToken && authToken !== 'null' && authToken !== 'undefined') {
                 headers.Authorization = `Bearer ${authToken}`;
             }
 
-            // ✅ FIX: Usar fetch nativo en lugar de NetworkService para evitar:
-            // 1. Reintentos ruidosos que generan errores CORS en consola durante cold start de Render
-            // 2. Toasts de error visibles al usuario por un endpoint secundario de telemetría
+            sessionStorage.setItem(LAST_PULSE_KEY, String(now));
+
             await fetch(`${apiUrl}/api/analytics/pulse`, {
                 method: 'POST',
                 headers,
@@ -151,12 +172,22 @@ function initTrafficTracking() {
         }
     };
 
-    // ✅ FIX: Retrasar el primer pulso 5s para dar tiempo al servidor de Render
-    // a despertar (cold start) antes de intentar la primera petición CORS.
-    setTimeout(sendPulse, 5000);
+    const timeoutId = setTimeout(sendPulse, INITIAL_DELAY_MS);
+    const intervalId = setInterval(sendPulse, PULSE_INTERVAL_MS);
 
-    // Enviar pulso cada 3 minutos para mantener activo el servidor
-    setInterval(sendPulse, 3 * 60 * 1000);
+    if (typeof window !== 'undefined') {
+        window._hubTrafficTimeoutId = timeoutId;
+        window._hubTrafficIntervalId = intervalId;
+
+        if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+            window._hubTrafficVisibilityHandler = () => {
+                if (!isTabHidden()) {
+                    sendPulse();
+                }
+            };
+            document.addEventListener('visibilitychange', window._hubTrafficVisibilityHandler);
+        }
+    }
 }
 
 /**
@@ -534,11 +565,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-// Resetear estados de botones y refrescar vidas al volver a la página (evita spinners infinitos y datos desactualizados)
-window.addEventListener('pageshow', () => {
-    console.log('🔄 [App] Página mostrada. Reseteando estados de botones y actualizando sesión...');
+// Resetear estados de botones y refrescar vidas al volver a la página desde BFCache (evita spinners infinitos y datos desactualizados)
+window.addEventListener('pageshow', (event) => {
     ensureThemeToggleButton();
-    if (window.sessionManager) {
+    if (event && event.persisted && window.sessionManager) {
+        console.log('🔄 [App] Página restaurada desde BFCache. Actualizando sesión...');
         window.sessionManager.refreshUser().catch(() => {});
     }
     

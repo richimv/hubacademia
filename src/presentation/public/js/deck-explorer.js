@@ -32,13 +32,15 @@ class DeckExplorer {
     }
 
     async init() {
-        if (this.treeContainer) {
+        if (this.treeContainer && !this.treeContainer.dataset.scrollBound) {
+            this.treeContainer.dataset.scrollBound = 'true';
             this.treeContainer.addEventListener('scroll', () => {
                 localStorage.setItem('repaso_explorer_scroll', this.treeContainer.scrollTop);
             });
         }
         this.restoreCollapseState();
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && !this._resizeBound) {
+            this._resizeBound = true;
             window.addEventListener('resize', () => {
                 const sidebar = document.getElementById('explorer-sidebar');
                 const isCollapsed = sidebar ? sidebar.classList.contains('is-collapsed') : false;
@@ -538,10 +540,13 @@ class DeckExplorer {
     }
 
     static _cleanupSessionImages(urls) {
+        const list = Array.isArray(urls) ? urls : [urls];
+        list.filter(Boolean).forEach((url) => {
             window.NetworkService.fetch(`${window.AppConfig.API_URL}/api/media/delete`, {
                 method: 'DELETE',
                 body: JSON.stringify({ url })
             }).catch(err => console.error('Error cleaning up session image:', err));
+        });
     }
 
     static async saveGuide() {

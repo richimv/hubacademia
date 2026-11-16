@@ -1,6 +1,14 @@
 const docenteService = require('../../domain/services/docenteService');
 const quizSessionService = require('../../domain/services/quizSessionService');
-const { secureQuizSessionsEnabled, sendQuizSessionError, buildQuizEvolutionChartData } = require('./quizSessionControllerSupport');
+const {
+    secureQuizSessionsEnabled,
+    sendQuizSessionError,
+    buildQuizEvolutionChartData,
+    buildSafeTimeFilter,
+    extractSeenIds,
+    parseDemoExcludeIds,
+    handleStartQuizError
+} = require('./quizSessionControllerSupport');
 const UsageService = require('../../domain/services/usageService');
 const usageService = new UsageService();
 const { LIMITS } = require('../../infrastructure/config/limits');
@@ -56,7 +64,7 @@ class DocenteController {
 
             console.log(`🎮 Generando Ronda ${round} de ${finalTarget} para ${user.name}. Limit: ${limit}`);
 
-            const seenIds = Array.isArray(req.body.seenIds) ? req.body.seenIds : (Array.isArray(req.body.excludeIds) ? req.body.excludeIds : []);
+            const seenIds = extractSeenIds(req.body);
             const categoryOptions = { target: finalTarget, areas: finalAreas, career: finalCareer, difficulty, mode };
             const quizData = await docenteService.generateQuiz(categoryOptions, user.id, limit, user.subscriptionTier, seenIds);
             const secureSession = secureQuizSessionsEnabled()
@@ -80,29 +88,7 @@ class DocenteController {
             });
 
         } catch (error) {
-            console.error('❌ [Error] startQuiz (Docente):', error);
-            if (sendQuizSessionError(res, error)) return;
-            if (error.cause) {
-                console.error('🔍 [Causa Original]:', error.cause);
-            }
-
-            if (error.message === "AI_REPLENISHMENT_FAILED" || error.message === "AI_GENERATION_EMPTY") {
-                return res.status(500).json({
-                    success: false,
-                    error: "Hubo un problema técnico al generar nuevas preguntas de IA. Por favor, intenta de nuevo en unos segundos.",
-                    technicalError: true
-                });
-            }
-
-            if (error.message === "BANK_EXHAUSTED_AND_IA_FAILED") {
-                return res.status(404).json({
-                    success: false,
-                    error: "Has completado todas las preguntas disponibles para este tema.",
-                    noQuestions: true
-                });
-            }
-
-            return res.status(500).json({ success: false, error: 'Error interno al iniciar el simulador.' });
+            return handleStartQuizError(res, error, 'Docente');
         }
     }
 
@@ -220,7 +206,7 @@ class DocenteController {
 
     async getEvolution(req, res) {
         try {
-            const { context, target, limit, days, career, targetScale } = req.query;
+            const { target, limit, days, career, targetScale } = req.query;
             const scaleInfo = mineduScoringService.getScaleCutoff(targetScale || 2);
 
             if (!req.user) {
@@ -242,11 +228,7 @@ class DocenteController {
 
             const userId = req.user.id;
             const docenteRepository = require('../../domain/repositories/docenteRepository');
-
-            let timeFilter = '';
-            if (days) {
-                timeFilter = ` AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
-            }
+            const timeFilter = buildSafeTimeFilter(days);
 
             const data = await docenteRepository.getQuizEvolution(userId, target, limit, timeFilter, null, career);
             const chartData = {
@@ -330,10 +312,8 @@ class DocenteController {
 
     async getDemoQuestions(req, res) {
         try {
-            const limit = parseInt(req.query.limit) || 10;
-            const excludeIds = req.query.excludeIds 
-                ? req.query.excludeIds.split(',').filter(id => id && id.length > 30)
-                : [];
+            const limit = parseInt(req.query.limit, 10) || 10;
+            const excludeIds = parseDemoExcludeIds(req.query.excludeIds);
             
             const target = req.query.target || 'ASCENSO';
             const career = req.query.career || null;

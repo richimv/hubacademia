@@ -216,15 +216,7 @@ class DeckController {
             const oldImages = this._extractImageUrls(currentDeck.description);
             const newImages = this._extractImageUrls(description);
             const orphanedImages = oldImages.filter(url => !newImages.includes(url));
-
-            if (orphanedImages.length > 0) {
-                const mediaController = require('./mediaController');
-                for (const url of orphanedImages) {
-                    if (!(await DeckService.isMediaInUse(url))) {
-                        await mediaController.deleteFile(url);
-                    }
-                }
-            }
+            await this._cleanOrphanMedia(orphanedImages);
 
             res.json({ success: true, deck });
         } catch (error) {
@@ -285,7 +277,7 @@ class DeckController {
     listCards = async (req, res) => {
         try {
             const { deckId } = req.params;
-            const { userId, isGuest } = this._getUserContext(req);
+            const { isGuest } = this._getUserContext(req);
 
             // Security: If Guest, ensure it's a SYSTEM deck OR a PUBLIC deck
             if (isGuest) {

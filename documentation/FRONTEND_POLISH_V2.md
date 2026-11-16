@@ -59,3 +59,21 @@ Dependencias directas sin consumidor retiradas del manifiesto y lock: `@pinecone
 `header.css` es propietario de los controles de cuenta y tema. `modal.css` contiene diálogos y toasts. `ui-overlays.css` contiene visor multimedia y barras de estado. `public-shell.js` y `workspace-shell.js` comparten navegación con el renderizador de cuenta existente. El CSS actualizado está separado por responsabilidad y formateado para lectura.
 
 Para revisar manualmente: cabeceras con/sin sesión en móvil, ambos simuladores en ambos temas, perfil y verificación, formularios de preguntas/casos con imágenes, mazos, notas, confirmaciones y página de pases. El despliegue queda reservado a una indicación posterior.
+
+## Optimización de Rendimiento Cliente, Telemetría y Memoria — 16 de noviembre de 2026
+
+- **Telemetría y Heartbeat (`src/presentation/public/js/app.js`):**
+  - Se eliminó la lógica legacy de *keep-alive* de Render y se incrementó el intervalo de `initTrafficTracking()` de 3 a 5 minutos (`PULSE_INTERVAL_MS = 300000`), alineado con la ventana de sesión activa de analítica.
+  - Se integró `Page Visibility API` (`document.visibilityState === 'hidden'` / `document.hidden`) para detener por completo el envío de pulsos cuando la pestaña está en segundo plano y retomar limpiamente al volver a primer plano si venció la ventana.
+  - Se implementó deduplicación transversal entre vistas MPA mediante `sessionStorage` (`hub_visitor_last_pulse_ts`) y limpieza de timers/listeners previos (`_hubTrafficTimeoutId`, `_hubTrafficIntervalId`, `_hubTrafficVisibilityHandler`).
+- **Deduplicación de Sincronización de Sesión (`src/presentation/public/js/sessionManager.js`, `app.js`):**
+  - `SessionManager.refreshUser()` incorpora deduplicación de promesas en vuelo (`_refreshPromise`) y ventana de enfriamiento (`_lastRefreshTime`, 1.5s; 30s en `visibilitychange`), evitando peticiones concurrentes o redundantes a `/api/auth/me`.
+  - El listener `pageshow` en `app.js` restringe `refreshUser()` exclusivamente a restauraciones desde BFCache (`event.persisted`).
+- **Carga Selectiva y Perezosa (`src/presentation/public/js/admin.js`, `ui/repasoNotesUI.js`):**
+  - `AdminManager.refreshEntityByType(type)` refresca únicamente la entidad afectada tras operaciones CRUD, borrado en lote o sincronización con Drive, evitando re-descargar todo el banco de preguntas (`/api/admin/questions`) y casuísticas (`/api/admin/cases`) en cada cambio administrativo.
+  - `RepasoNotesUI.init()` difiere la carga completa de `/api/library/my-library` hasta que el usuario abre efectivamente el tablero de Notas (`renderNotesBoard()`).
+- **Corrección de Bugs y Fugas de Event Listeners (`deck-explorer.js`, `simulator-dash.js`, `ui/uiManager.js`, `quiz.js`, `repaso.js`):**
+  - `DeckExplorer._cleanupSessionImages(urls)`: corregido `ReferenceError: url is not defined` iterando sobre la lista de URLs huérfanas, y añadidas guardas en `init()`.
+  - `SimulatorDash`: añadidas guardas `dataset.bound` en `setupModeTabs`, `setupTimeTabs`, `bindModeClicks`, `setupConfigModal` y `setupOnboardingGuide` para impedir listeners duplicados al re-ejecutar `init()` en `pageshow`.
+  - `UIManager.openVideoModal` / `closeVideoModal`: limpieza garantizada del listener `keydown` (`_videoEscListener`) al cerrar el modal por botón o clic en overlay.
+  - `quiz.js` (`initLightbox`) y `repaso.js` (`enableCategoryBarDrag`): añadidas guardas `dataset.lightboxBound` y `dataset.wheelBound` para evitar acumulación de listeners globales.
