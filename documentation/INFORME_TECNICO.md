@@ -2,6 +2,19 @@
 
 Este documento es el **Historial Técnico Central de Mejoras por Fecha** de **Hub Academia**. Registra cronológicamente todas las optimizaciones de arquitectura, correcciones de errores, refactorizaciones de base de datos, mejoras de interfaz y actualizaciones de infraestructura implementadas en la plataforma.
 
+### 🟢 [2026-11-16] - Optimización de Memoria en Knowledge Base, Reutilización de Cliente Supabase Admin y Observabilidad DNS/PostgreSQL
+* **Carga Liviana de Títulos en Knowledge Base (`src/domain/repositories/bookRepository.js`, `src/domain/repositories/knowledgeBaseRepository.js`):**
+  * **Diagnóstico:** `KnowledgeBaseRepository.load()` invocaba `this.bookRepo.findAll()`, descargando innecesariamente `content_html` y ejecutando 3 subconsultas `JSON_AGG` (`areas`, `topics`, `courseIds`) cuando únicamente consumía `b.title`.
+  * **Corrección:** Se agregó `BookRepository.findAllTitles(limit = 2000)` con consulta mínima `SELECT id, title FROM resources WHERE visible = true ORDER BY title ASC LIMIT $1`, límite acotado (`Math.min(..., 10000)`) y caché en memoria con TTL de 5 minutos (`this.cache`, acotada a 200 entradas e invalidada en `clearCache()`). `KnowledgeBaseRepository.load()` ahora consume `this.bookRepo.findAllTitles()`, preservando intacto el contrato de `BookRepository.findAll()`.
+* **Reutilización de Cliente Supabase Admin en `AuthService` (`src/domain/services/authService.js`):**
+  * **Diagnóstico:** `deleteAccount(userId)` instanciaba `createClient(...)` por petición sin opciones stateless y omitía el singleton compartido `_getSupabaseAdmin()`.
+  * **Corrección:** `deleteAccount(userId)` delega en `this._getSupabaseAdmin()`, y el fallback `createClient(...)` en `_getSupabaseAdmin()` configura `{ auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } }`.
+* **Observabilidad Real de Errores DNS/PostgreSQL (`src/application/controllers/coursesController.js`):**
+  * **Diagnóstico:** `getCourses` y `getBooks` enmascaraban errores `ENOTFOUND` / `getaddrinfo` bajo el mensaje genérico `"Red inestable."`.
+  * **Corrección:** Se extrajo el helper `logFetchError` para emitir en `console.warn` los detalles reales (`error.code`, `error.hostname`, `error.message`) sin exponer detalles internos en la respuesta HTTP 500.
+* **Cobertura de Pruebas (`tests/unit/domainPerformanceOptimization.test.js`, `tests/unit/authService.test.js`):**
+  * Se añadieron pruebas unitarias para `BookRepository.findAllTitles`, preservación de `findAll`, delegación en `KnowledgeBaseRepository.load`, reutilización y opciones stateless de `_getSupabaseAdmin()` en `AuthService.deleteAccount`, y trazado real de errores DNS/PostgreSQL en `CoursesController.getCourses` y `CoursesController.getBooks`. Suite completa validada con `--runInBand` (**66 suites, 553 pruebas aprobadas**).
+
 ### 🟢 [2026-11-16] - Saneamiento de Build en Vercel, Exclusión de Python/ESM en Serverless y Limpieza de `package.json`
 * **Aislamiento de Python/`uv` (`requirements.txt` -> `ml_service/requirements.txt`):**
   * **Diagnóstico:** La presencia de `requirements.txt` en la raíz hacía que Vercel detectara un proyecto Python en cada despliegue Node.js, invocando `uv` para descargar/instalar `sentence-transformers`, `pymupdf`, `pandas`, `scikit-learn`, etc., generando el warning `Failed to hardlink files; falling back to full copy... uv link-mode=copy`.

@@ -231,6 +231,16 @@ describe('AuthService', () => {
     });
 
     describe('deleteAccount', () => {
+        const originalEnv = process.env;
+
+        beforeEach(() => {
+            process.env = { ...originalEnv };
+        });
+
+        afterAll(() => {
+            process.env = originalEnv;
+        });
+
         it('should trigger cascading repository delete and complete successfully', async () => {
             const userId = 'user-delete-test';
             mockDelete.mockResolvedValue({ success: true });
@@ -239,6 +249,53 @@ describe('AuthService', () => {
 
             expect(mockDelete).toHaveBeenCalledWith(userId);
             expect(result).toEqual({ success: true });
+        });
+
+        it('should reuse _getSupabaseAdmin with stateless auth options instead of calling createClient per deleteAccount request', async () => {
+            const { createClient } = require('@supabase/supabase-js');
+            const supabaseModule = require('../../src/infrastructure/config/supabaseClient');
+            supabaseModule.supabaseAdmin = null;
+            process.env.SUPABASE_URL = 'https://example.supabase.co';
+            process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-secret';
+            mockDelete.mockResolvedValue({ success: true });
+
+            await authService.deleteAccount('user-1');
+            await authService.deleteAccount('user-2');
+
+            expect(createClient).toHaveBeenCalledTimes(1);
+            expect(createClient).toHaveBeenCalledWith(
+                'https://example.supabase.co',
+                'service-role-secret',
+                {
+                    auth: {
+                        autoRefreshToken: false,
+                        persistSession: false,
+                        detectSessionInUrl: false
+                    }
+                }
+            );
+            const adminClient = createClient.mock.results[0].value;
+            expect(adminClient.auth.admin.deleteUser).toHaveBeenCalledTimes(2);
+            expect(adminClient.auth.admin.deleteUser).toHaveBeenNthCalledWith(1, 'user-1');
+            expect(adminClient.auth.admin.deleteUser).toHaveBeenNthCalledWith(2, 'user-2');
+        });
+
+        it('should reuse shared supabase.supabaseAdmin singleton without calling fallback createClient', async () => {
+            const { createClient } = require('@supabase/supabase-js');
+            const supabaseModule = require('../../src/infrastructure/config/supabaseClient');
+            const sharedDeleteUser = jest.fn().mockResolvedValue({ error: null });
+            supabaseModule.supabaseAdmin = {
+                auth: { admin: { deleteUser: sharedDeleteUser } }
+            };
+            process.env.SUPABASE_URL = 'https://example.supabase.co';
+            process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-secret';
+            mockDelete.mockResolvedValue({ success: true });
+
+            await authService.deleteAccount('user-shared-1');
+
+            expect(createClient).not.toHaveBeenCalled();
+            expect(sharedDeleteUser).toHaveBeenCalledWith('user-shared-1');
+            supabaseModule.supabaseAdmin = null;
         });
     });
 });

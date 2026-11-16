@@ -84,6 +84,34 @@ class BookRepository {
         return rows;
     }
 
+    /**
+     * Obtiene únicamente id y título de recursos visibles para poblar la base de conocimiento
+     * evitando descargar content_html y las 3 subconsultas JSON_AGG.
+     * @param {number} [limit=2000]
+     * @returns {Promise<Array<{id: number, title: string}>>}
+     */
+    async findAllTitles(limit = 2000) {
+        const parsedLimit = Number.parseInt(limit, 10);
+        const safeLimit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 10000) : 2000;
+        const cacheKey = `findAllTitles_${safeLimit}`;
+
+        const cached = this.cache.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL_MS)) {
+            return cached.data;
+        }
+
+        const query = 'SELECT id, title FROM resources WHERE visible = true ORDER BY title ASC LIMIT $1';
+        const { rows } = await db.query(query, [safeLimit]);
+
+        if (this.cache.size >= 200 && !this.cache.has(cacheKey)) {
+            const oldestKey = this.cache.keys().next().value;
+            if (oldestKey !== undefined) this.cache.delete(oldestKey);
+        }
+        this.cache.set(cacheKey, { timestamp: Date.now(), data: rows });
+
+        return rows;
+    }
+
     /** Public editorial selection. Course materials keep their existing associations. */
     async findBulletin({ type, query = '' } = {}) {
         const params = [];

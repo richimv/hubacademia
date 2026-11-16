@@ -14,7 +14,17 @@ class AuthService {
         if (this._supabaseAdminClient) return this._supabaseAdminClient;
         if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
             const { createClient } = require('@supabase/supabase-js');
-            this._supabaseAdminClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+            this._supabaseAdminClient = createClient(
+                process.env.SUPABASE_URL,
+                process.env.SUPABASE_SERVICE_ROLE_KEY,
+                {
+                    auth: {
+                        autoRefreshToken: false,
+                        persistSession: false,
+                        detectSessionInUrl: false
+                    }
+                }
+            );
             return this._supabaseAdminClient;
         }
         return null;
@@ -136,11 +146,9 @@ class AuthService {
         await this.userRepository.delete(userId);
 
         // 2. Eliminar de Supabase (Admin API) si la clave de servicio está configurada
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (serviceRoleKey && process.env.SUPABASE_URL) {
-            try {
-                const { createClient } = require('@supabase/supabase-js');
-                const supabaseAdmin = createClient(process.env.SUPABASE_URL, serviceRoleKey);
+        try {
+            const supabaseAdmin = this._getSupabaseAdmin();
+            if (supabaseAdmin) {
                 const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
                 if (deleteError) {
@@ -149,9 +157,9 @@ class AuthService {
                         console.error('Error eliminando usuario de Supabase Auth:', deleteError);
                     }
                 }
-            } catch (supaErr) {
-                console.warn('⚠️ Supabase Admin deleteUser warning:', supaErr.message);
             }
+        } catch (supaErr) {
+            console.warn('⚠️ Supabase Admin deleteUser warning:', supaErr.message);
         }
 
         return { success: true };

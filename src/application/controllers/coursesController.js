@@ -15,6 +15,21 @@ function parsePositiveIntId(rawId) {
     return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+/**
+ * Registra fallos de conexión DNS/red sin enmascarar código, host ni mensaje real.
+ * @param {string} connectionPrefix
+ * @param {string} fallbackPrefix
+ * @param {Error} error
+ */
+function logFetchError(connectionPrefix, fallbackPrefix, error) {
+    if (error && (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo')) {
+        const details = [error.code, error.hostname, error.message].filter(Boolean).join(' ');
+        console.warn(`${connectionPrefix} ${details}`.trim());
+        return;
+    }
+    console.error(fallbackPrefix, error);
+}
+
 class CoursesController {
     constructor(searchService, adminService) {
         this.searchService = searchService;
@@ -87,11 +102,7 @@ class CoursesController {
             res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
             res.json(courses);
         } catch (error) {
-            if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
-                console.warn('⚠️ Fallo de conexión al obtener cursos: Red inestable.');
-            } else {
-                console.error('Error in getCourses:', error);
-            }
+            logFetchError('⚠️ Fallo de conexión al obtener cursos:', 'Error in getCourses:', error);
             res.status(500).json({ error: 'Error al obtener los cursos base' });
         }
     }
@@ -211,11 +222,7 @@ class CoursesController {
             }
             res.json(books);
         } catch (error) {
-            if (error.code === 'ENOTFOUND' || error.syscall === 'getaddrinfo') {
-                console.warn('⚠️ Fallo de conexión al obtener libros: Red inestable.');
-            } else {
-                console.error('❌ Error al obtener los libros:', error);
-            }
+            logFetchError('⚠️ Fallo de conexión al obtener libros:', '❌ Error al obtener los libros:', error);
             res.status(500).json({ message: 'Error al obtener los libros' });
         }
     }

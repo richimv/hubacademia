@@ -6,6 +6,8 @@ const medicoRepository = require('../../src/domain/repositories/medicoRepository
 const flashcardRepository = require('../../src/domain/repositories/flashcardRepository');
 const UserRepository = require('../../src/domain/repositories/userRepository');
 const BookRepository = require('../../src/domain/repositories/bookRepository');
+const KnowledgeBaseRepository = require('../../src/domain/repositories/knowledgeBaseRepository');
+const CoursesController = require('../../src/application/controllers/coursesController');
 const tutorAiService = require('../../src/domain/services/tutorAiService');
 const ragService = require('../../src/domain/services/ragService');
 const quizPackingUtils = require('../../src/domain/utils/quizPackingUtils');
@@ -218,6 +220,116 @@ describe('Domain Layer Performance, Memory & N+1 Query Optimizations', () => {
             const validUuid = '11111111-1111-4111-8111-111111111111';
             const cleaned = quizPackingUtils.sanitizeUuidList([validUuid, validUuid, 'not-a-uuid', null, '']);
             expect(cleaned).toEqual([validUuid]);
+        });
+    });
+
+    describe('6. BookRepository.findAllTitles, KnowledgeBaseRepository & CoursesController Observability', () => {
+        it('BookRepository.findAllTitles queries only id and title with LIMIT and caches for 5 minutes', async () => {
+            const repo = new BookRepository();
+            const sampleRows = [
+                { id: 1, title: 'Anatomía Humana' },
+                { id: 2, title: 'Curriculo Nacional' }
+            ];
+            db.query.mockResolvedValueOnce({ rows: sampleRows });
+
+            const first = await repo.findAllTitles();
+            const second = await repo.findAllTitles();
+
+            expect(first).toEqual(sampleRows);
+            expect(second).toBe(first);
+            expect(db.query).toHaveBeenCalledTimes(1);
+
+            const [sql, params] = db.query.mock.calls[0];
+            expect(sql).toBe('SELECT id, title FROM resources WHERE visible = true ORDER BY title ASC LIMIT $1');
+            expect(sql).not.toContain('content_html');
+            expect(sql).not.toContain('JSON_AGG');
+            expect(params).toEqual([2000]);
+
+            repo.clearCache();
+            db.query.mockResolvedValueOnce({ rows: [{ id: 3, title: 'Pediatría' }] });
+            const third = await repo.findAllTitles(500);
+            expect(third).toEqual([{ id: 3, title: 'Pediatría' }]);
+            expect(db.query).toHaveBeenCalledTimes(2);
+            expect(db.query.mock.calls[1][1]).toEqual([500]);
+        });
+
+        it('BookRepository.findAll preserves full catalog query contract and cache behavior', async () => {
+            const repo = new BookRepository();
+            const fullRows = [{ id: 10, title: 'Manual ENAM', content_html: '<p>Detalle</p>', areas: ['Medicina'], topics: [], courseIds: [1] }];
+            db.query.mockResolvedValueOnce({ rows: fullRows });
+
+            const first = await repo.findAll({ type: 'book' });
+            const second = await repo.findAll({ type: 'book' });
+
+            expect(first).toEqual(fullRows);
+            expect(second).toBe(first);
+            expect(db.query).toHaveBeenCalledTimes(1);
+            expect(db.query.mock.calls[0][0]).toContain('r.content_html');
+            expect(db.query.mock.calls[0][0]).toContain('JSON_AGG');
+            expect(db.query.mock.calls[0][1]).toEqual(['book']);
+        });
+
+        it('KnowledgeBaseRepository.load calls bookRepo.findAllTitles instead of findAll', async () => {
+            const kbRepo = new KnowledgeBaseRepository();
+            kbRepo.userRepo = { findByRole: jest.fn().mockResolvedValue([{ name: 'Dr. Pérez' }]) };
+            kbRepo.courseRepo = { findAll: jest.fn().mockResolvedValue([{ name: 'Cardiología' }]) };
+            kbRepo.topicRepo = { findAll: jest.fn().mockResolvedValue([{ name: 'Arritmias' }]) };
+            kbRepo.careerRepo = { findAll: jest.fn().mockResolvedValue([{ name: 'Medicina' }]) };
+            kbRepo.bookRepo = {
+                findAll: jest.fn(),
+                findAllTitles: jest.fn().mockResolvedValue([{ id: 1, title: 'Tratado de Cardiología' }])
+            };
+
+            const kb = await kbRepo.load();
+
+            expect(kbRepo.bookRepo.findAllTitles).toHaveBeenCalledTimes(1);
+            expect(kbRepo.bookRepo.findAll).not.toHaveBeenCalled();
+            expect(kb.has('tratado de cardiologia')).toBe(true);
+            expect(kb.has('cardiologia')).toBe(true);
+        });
+
+        it('CoursesController.getCourses and getBooks log real DNS/Postgres details on ENOTFOUND/getaddrinfo', async () => {
+            const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+            try {
+                const dnsError = Object.assign(new Error('getaddrinfo ENOTFOUND db.internal.supabase.co'), {
+                    code: 'ENOTFOUND',
+                    syscall: 'getaddrinfo',
+                    hostname: 'db.internal.supabase.co'
+                });
+                const adminService = {
+                    getAll: jest.fn().mockRejectedValue(dnsError)
+                };
+                const controller = new CoursesController({}, adminService);
+                const createRes = () => {
+                    const res = { statusCode: 200, body: null };
+                    res.status = jest.fn((code) => { res.statusCode = code; return res; });
+                    res.json = jest.fn((payload) => { res.body = payload; return res; });
+                    res.set = jest.fn();
+                    return res;
+                };
+
+                const resCourses = createRes();
+                await controller.getCourses({ query: {} }, resCourses);
+                expect(resCourses.statusCode).toBe(500);
+                expect(resCourses.body).toEqual({ error: 'Error al obtener los cursos base' });
+
+                const resBooks = createRes();
+                await controller.getBooks({ query: {} }, resBooks);
+                expect(resBooks.statusCode).toBe(500);
+                expect(resBooks.body).toEqual({ message: 'Error al obtener los libros' });
+
+                expect(warnSpy).toHaveBeenCalledTimes(2);
+                const coursesWarn = warnSpy.mock.calls[0][0];
+                const booksWarn = warnSpy.mock.calls[1][0];
+                for (const logMsg of [coursesWarn, booksWarn]) {
+                    expect(logMsg).toContain('ENOTFOUND');
+                    expect(logMsg).toContain('db.internal.supabase.co');
+                    expect(logMsg).toContain('getaddrinfo ENOTFOUND db.internal.supabase.co');
+                    expect(logMsg).not.toContain('Red inestable');
+                }
+            } finally {
+                warnSpy.mockRestore();
+            }
         });
     });
 });

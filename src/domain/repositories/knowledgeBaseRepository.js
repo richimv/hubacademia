@@ -47,7 +47,7 @@ class KnowledgeBaseRepository {
                     this.courseRepo.findAll(),
                     this.topicRepo.findAll(),
                     this.careerRepo.findAll(),
-                    this.bookRepo.findAll()
+                    this.bookRepo.findAllTitles()
                 ]);
 
                 this.courseNames.clear();
